@@ -1,0 +1,292 @@
+import { useState, useEffect, useRef } from "react";
+
+// ── Farb-Tokens ─────────────────────────────────────────────
+// Nächtliches Flutlicht-Stadion: tiefes Indigo, Flutlicht-Gold,
+// Zocker-Koralle, Aufstiegs-Mint. Scores als Anzeigetafel (mono).
+const C = {
+  ink: "#0B0E1F",
+  ink2: "#12172E",
+  surface: "#1A2040",
+  line: "rgba(255,255,255,0.09)",
+  text: "#EDEEF6",
+  muted: "#8A90B4",
+  gold: "#F5C451",
+  coral: "#FF5470",
+  mint: "#54E0A0",
+};
+
+const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+
+// Mock-Spieltag: dein kühner Tipp Jordanien 4:1 gegen Spanien,
+// real wird es 5:1 — Distanz 1 zum Sensationsergebnis.
+const DATA = {
+  spieltag: 14,
+  home: "Jordanien",
+  away: "Spanien",
+  tippHome: 4, tippAway: 1,
+  realHome: 5, realAway: 1,
+  siegerQuote: 9.0,      // Außenseiter schlägt Spanien
+  exaktQuote: 96.0,      // Correct Score des realen 5:1
+  bodenPunkte: 8,        // Sieger richtig → Quote-1, gerundet
+  naehePunkte: 48,       // decay(Distanz1)=0.50 × Exaktquote
+  rangVon: 5, rangZu: 2,
+};
+
+function useCountUp(target, run, ms = 1100) {
+  const [v, setV] = useState(0);
+  const raf = useRef();
+  useEffect(() => {
+    if (!run) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { setV(target); return; }
+    const t0 = performance.now();
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / ms);
+      const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      setV(target * e);
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, [target, run, ms]);
+  return v;
+}
+
+export default function Abrechnung() {
+  const [stage, setStage] = useState(0);   // 0..5 gestaffelte Enthüllung
+  const [key, setKey] = useState(0);        // Replay
+  const [fair, setFair] = useState(false);  // Ranking-Toggle
+
+  useEffect(() => {
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const gaps = reduce ? [0, 0, 0, 0, 0, 0] : [200, 900, 1500, 2200, 3000, 4100];
+    const ts = gaps.map((g, i) => setTimeout(() => setStage(i), g));
+    return () => ts.forEach(clearTimeout);
+  }, [key]);
+
+  const punkte = useCountUp(DATA.naehePunkte, stage >= 4);
+
+  const board = [
+    { name: "Du", pts: 48, hot: true },
+    { name: "Lena", pts: 34 },
+    { name: "Kemal", pts: 21 },
+    { name: "Max", pts: 8, safe: true },
+    { name: "Jonas", pts: -12 },
+  ];
+  const min = Math.min(...board.map((b) => b.pts));
+  const shown = [...board]
+    .map((b) => ({ ...b, disp: fair ? b.pts - min : b.pts }))
+    .sort((a, b) => b.disp - a.disp);
+
+  const show = (n) => ({
+    opacity: stage >= n ? 1 : 0,
+    transform: stage >= n ? "translateY(0)" : "translateY(14px)",
+    transition: "opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1)",
+  });
+
+  return (
+    <div style={{
+      minHeight: "100%", background: C.ink, color: C.text,
+      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      padding: "28px 16px", display: "flex", justifyContent: "center",
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 400, position: "relative",
+        borderRadius: 26, overflow: "hidden",
+        background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
+        border: `1px solid ${C.line}`,
+        boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
+      }}>
+        {/* Flutlicht-Schein oben */}
+        <div style={{
+          position: "absolute", top: -90, left: "50%", transform: "translateX(-50%)",
+          width: 320, height: 200, pointerEvents: "none",
+          background: `radial-gradient(circle, ${C.gold}22 0%, transparent 70%)`,
+        }} />
+
+        <div style={{ position: "relative", padding: "26px 22px 22px" }}>
+          {/* Eyebrow */}
+          <div style={{ ...show(0), display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+              Spieltag {DATA.spieltag}
+            </span>
+            <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>deine abrechnung</span>
+          </div>
+
+          {/* Anzeigetafel */}
+          <div style={{ ...show(1), marginTop: 18 }}>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 8 }}>
+              {DATA.home} <span style={{ opacity: .5 }}>vs</span> {DATA.away}
+            </div>
+            <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
+              <ScoreBox label="Dein Tipp" a={DATA.tippHome} b={DATA.tippAway} tone={C.muted} />
+              <div style={{ display: "flex", alignItems: "center", color: C.muted, fontSize: 20 }}>→</div>
+              <ScoreBox label="Endstand" a={DATA.realHome} b={DATA.realAway} tone={C.gold}
+                stamped={stage >= 2} big />
+            </div>
+          </div>
+
+          {/* Distanz / Nähe */}
+          <div style={{ ...show(3), marginTop: 20 }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
+            }}>
+              <span style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>Distanz zum Ergebnis</span>
+              <span style={{
+                fontFamily: MONO, fontSize: 12, color: C.coral,
+                border: `1px solid ${C.coral}55`, borderRadius: 999, padding: "2px 8px",
+              }}>1 Tor — hauchdünn</span>
+            </div>
+            <DistanceLadder active={stage >= 3} />
+          </div>
+
+          {/* Punkte-Zähler */}
+          <div style={{ ...show(4), marginTop: 22, textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: C.muted, letterSpacing: 1, textTransform: "uppercase" }}>
+              gewertet
+            </div>
+            <div style={{
+              fontFamily: MONO, fontWeight: 700, color: C.gold,
+              fontSize: 68, lineHeight: 1, marginTop: 4,
+              fontVariantNumeric: "tabular-nums",
+              textShadow: `0 0 34px ${C.gold}66`,
+            }}>
+              +{Math.round(punkte)}
+            </div>
+            <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              <Chip>Sieger-Boden +{DATA.bodenPunkte}</Chip>
+              <Chip tone={C.coral}>Nähebonus +{DATA.naehePunkte}</Chip>
+            </div>
+            <p style={{ fontSize: 12.5, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
+              Das reale 5:1 war ein Freak-Ergebnis mit riesiger Quote. Du warst nur
+              ein Tor daneben — die Nähe zahlt fast so viel wie ein exakter Treffer.
+            </p>
+          </div>
+
+          {/* Rang + Badge */}
+          <div style={{ ...show(5), marginTop: 20, display: "flex", gap: 10 }}>
+            <div style={{ flex: 1, background: C.surface, borderRadius: 14, padding: "12px 14px", border: `1px solid ${C.line}` }}>
+              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Rang</div>
+              <div style={{ fontFamily: MONO, fontSize: 20, marginTop: 2 }}>
+                <span style={{ color: C.muted }}>#{DATA.rangVon}</span>
+                <span style={{ color: C.muted, margin: "0 6px" }}>→</span>
+                <span style={{ color: C.mint }}>#{DATA.rangZu}</span>
+              </div>
+            </div>
+            <div style={{ flex: 1, background: `${C.coral}18`, borderRadius: 14, padding: "12px 14px", border: `1px solid ${C.coral}44` }}>
+              <div style={{ fontSize: 11, color: C.coral, textTransform: "uppercase", letterSpacing: 1 }}>Auszeichnung</div>
+              <div style={{ fontSize: 16, marginTop: 4, fontWeight: 700 }}>Zocker des Spieltags</div>
+            </div>
+          </div>
+
+          {/* Mini-Leaderboard mit Toggle */}
+          <div style={{ ...show(5), marginTop: 18 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Tabelle</span>
+              <button onClick={() => setFair((f) => !f)} style={{
+                fontFamily: MONO, fontSize: 11, color: C.text, cursor: "pointer",
+                background: C.surface, border: `1px solid ${C.line}`,
+                borderRadius: 999, padding: "4px 10px",
+              }}>
+                {fair ? "fair verschoben" : "echte Werte"}
+              </button>
+            </div>
+            {shown.map((b, i) => (
+              <div key={b.name} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "7px 0",
+                borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
+              }}>
+                <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 16 }}>{i + 1}</span>
+                <span style={{ flex: 1, fontSize: 14, color: b.hot ? C.gold : C.text, fontWeight: b.hot ? 700 : 400 }}>
+                  {b.name}
+                  {b.hot && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● Zocker</span>}
+                  {b.safe && <span style={{ color: C.muted, fontSize: 11, marginLeft: 6 }}>brav</span>}
+                </span>
+                <span style={{
+                  fontFamily: MONO, fontSize: 14, fontVariantNumeric: "tabular-nums",
+                  color: b.disp < 0 ? C.coral : C.text,
+                }}>
+                  {b.disp > 0 && !fair ? "+" : ""}{b.disp}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Replay */}
+          <button onClick={() => { setStage(0); setKey((k) => k + 1); }} style={{
+            ...show(5), marginTop: 18, width: "100%", cursor: "pointer",
+            background: C.gold, color: C.ink, fontWeight: 700, fontSize: 14,
+            border: "none", borderRadius: 14, padding: "13px 0",
+          }}>
+            Nochmal ansehen
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScoreBox({ label, a, b, tone, big, stamped }) {
+  return (
+    <div style={{
+      flex: 1, background: C.surface, borderRadius: 14, padding: "10px 12px 12px",
+      border: `1px solid ${C.line}`, textAlign: "center",
+      transform: stamped ? "scale(1)" : big ? "scale(0.9)" : "scale(1)",
+      transition: "transform .5s cubic-bezier(.2,1.5,.4,1)",
+    }}>
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>{label}</div>
+      <div style={{
+        fontFamily: MONO, fontWeight: 700, color: tone,
+        fontSize: big ? 30 : 26, letterSpacing: 1,
+        fontVariantNumeric: "tabular-nums",
+        textShadow: big && stamped ? `0 0 22px ${C.gold}55` : "none",
+      }}>
+        {a}:{b}
+      </div>
+    </div>
+  );
+}
+
+function DistanceLadder({ active }) {
+  // Leiter: Sieger → Tordifferenz → Exakt. Marker bei Distanz 1.
+  const steps = [
+    { label: "Sieger", reached: true },
+    { label: "Nähe (Δ1)", reached: true, hot: true },
+    { label: "Exakt", reached: false },
+  ];
+  return (
+    <div style={{ display: "flex", gap: 6 }}>
+      {steps.map((s, i) => (
+        <div key={s.label} style={{ flex: 1 }}>
+          <div style={{
+            height: 8, borderRadius: 999,
+            background: s.reached ? (s.hot ? C.coral : C.gold) : C.surface,
+            border: s.reached ? "none" : `1px solid ${C.line}`,
+            transform: active ? "scaleX(1)" : "scaleX(0)",
+            transformOrigin: "left",
+            transition: `transform .5s ease ${i * 0.18}s`,
+            boxShadow: s.hot && active ? `0 0 16px ${C.coral}aa` : "none",
+          }} />
+          <div style={{
+            fontSize: 10.5, marginTop: 6, textAlign: "center",
+            color: s.reached ? (s.hot ? C.coral : C.muted) : C.muted,
+            fontWeight: s.hot ? 700 : 400,
+          }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Chip({ children, tone }) {
+  return (
+    <span style={{
+      fontFamily: MONO, fontSize: 12,
+      color: tone || C.muted,
+      border: `1px solid ${tone ? tone + "55" : C.line}`,
+      borderRadius: 999, padding: "4px 10px",
+    }}>
+      {children}
+    </span>
+  );
+}

@@ -1,0 +1,164 @@
+// ============================================================
+//  TIPPSPIEL – ENGINE ("das Gehirn")  ·  v2
+//  Reine Logik, kein UI. Eine Quelle für Tippabgabe,
+//  Abrechnung und Auszahlungs-Explorer.
+// ============================================================
+
+
+// ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
+export function createMockOddsSource() {
+  const snap = {
+    matchId: "JOR-ESP", home: "Jordanien", away: "Spanien",
+    frozenAt: "2026-06-20T18:00:00Z",            // Snapshot: gilt bis Anpfiff
+    winner: { home: 9.0, draw: 6.5, away: 1.28 },
+    margin: { home: [0, 7, 14, 28, 70, 180], away: [0, 2.6, 4.0, 7, 15, 38] },
+    correctScore: [
+      [ 11,  6.5,  6.0,  8.0,  15,  34],
+      [  9,  7.5,  8.5,   13,  26,  60],
+      [ 15,   12,   16,   26,  55, 130],
+      [ 30,   21,   34,   60, 140, 320],
+      [ 70,   41,   80,  150, 340, 700],
+      [160,   96,  180,  340, 750,1500],
+    ],
+    teamGoals: { home: [2.1, 3.0, 6.0, 11, 24, 55], away: [4.5, 3.0, 3.4, 5.5, 10, 22] },
+    players: {
+      home: { "Al-Naimat": { anytime: 3.2, double: 11 }, "Olwan": { anytime: 4.1, double: 15 },
+        "Al-Tamari": { anytime: 3.6, double: 13 }, "Al-Rashdan": { anytime: 5.5, double: 21 }, "Haddad": { anytime: 7.0, double: 30 } },
+      away: { "Yamal": { anytime: 1.9, double: 5.5 }, "Oyarzabal": { anytime: 2.6, double: 8.0 },
+        "Merino": { anytime: 3.4, double: 12 }, "Williams": { anytime: 3.0, double: 10 }, "Olmo": { anytime: 3.8, double: 14 } },
+    },
+    startingXI: ["Al-Naimat", "Olwan", "Yamal", "Oyarzabal", "Merino", "Williams"],
+  };
+  return {
+    getSnapshot: (id) => (id === "JOR-ESP" ? snap : null),
+    getResult: (id) => (id === "JOR-ESP"
+      ? { home: 5, away: 1, playerGoals: { "Al-Naimat": 2, "Yamal": 1 } } : null),
+  };
+}
+
+
+// ── 2) REGELWERK (Admin bei Spielerstellung · per Code teilbar) ─
+export const DEFAULT_RULES = {
+  name: "Standard",
+  k: 0.7,              // Steilheit Ergebnis-Nähe (Underdog-Regler)
+  m: 0.5,              // Steilheit Team-Tore-Nähe
+  minPayout: 1.0,      // Cutoff: Nähe-Boni darunter zählen nicht
+  winnerFloor: true,
+  wrongPenalty: 0,     // Minus bei komplett falsch (opt-in, z.B. -1)
+  combo: { tendenz: 1.15, abstand: 1.5, exakt: 2.3 },
+  displayScale: 15,    // roh × 15 → schöne hohe Zahlen (Fairness/Rang unberührt)
+  perGameCap: null,    // optionaler harter Deckel pro Spiel (z.B. 1000), null = offen
+  markets: { result: true, goals: { enabled: true, picksPerTeam: 2, allowDouble: true, allowBackups: true } },
+  oddsMode: "snapshot",
+};
+
+
+// ── 3) SCORING ──────────────────────────────────────────────
+const sgn = (h, a) => (h > a ? 1 : h < a ? -1 : 0);
+
+// Ergebnis-Tipp → Ebenen, Maximum gewinnt. Team-Tore-Nähe ist siegerunabhängig.
+export function scoreResult(tip, actual, snap, rules = DEFAULT_RULES) {
+  const dist = Math.abs(tip.home - actual.home) + Math.abs(tip.away - actual.away);
+  const winnerRight = sgn(tip.home, tip.away) === sgn(actual.home, actual.away);
+  const marginRight = winnerRight && Math.abs(tip.home - tip.away) === Math.abs(actual.home - actual.away);
+
+  const tendBoden = winnerRight && rules.winnerFloor
+    ? (sgn(actual.home, actual.away) === 1 ? snap.winner.home
+      : sgn(actual.home, actual.away) === -1 ? snap.winner.away : snap.winner.draw) - 1 : 0;
+  const abstand = marginRight
+    ? (sgn(actual.home, actual.away) === 1 ? snap.margin.home : snap.margin.away)[Math.abs(actual.home - actual.away)] - 1 : 0;
+  const ergNaehe = Math.exp(-rules.k * dist) * snap.correctScore[actual.home][actual.away];
+  const teamTore =
+      Math.exp(-rules.m * Math.abs(tip.home - actual.home)) * snap.teamGoals.home[actual.home]
+    + Math.exp(-rules.m * Math.abs(tip.away - actual.away)) * snap.teamGoals.away[actual.away];
+
+  let nearParts = Math.max(ergNaehe, teamTore);
+  if (nearParts < rules.minPayout) nearParts = 0;
+
+  let resultPart = Math.max(tendBoden, abstand, nearParts);
+  if (!winnerRight && resultPart === 0) resultPart = rules.wrongPenalty;
+
+  const ebene = dist === 0 ? "exakt" : marginRight ? "abstand" : winnerRight ? "tendenz" : "keiner";
+  return { resultPart, ebene, dist, winnerRight, parts: { tendBoden, abstand, ergNaehe, teamTore } };
+}
+
+// Tore: gleicher Spieler 2× = Doppelpack. 2 Tore → double, 1 Tor → anytime (Floor), 0 → nichts.
+export function scoreGoals(picks, snap, rules = DEFAULT_RULES, playerGoals = null) {
+  let net = 0; const detail = [];
+  for (const side of ["home", "away"]) {
+    const counts = {};
+    for (const p of picks[side] || []) if (p) counts[p] = (counts[p] || 0) + 1;
+    for (const [p, c] of Object.entries(counts)) {
+      const P = snap.players[side][p]; if (!P) continue;
+      const scored = playerGoals ? (playerGoals[p] || 0) : null;   // null = "angenommen es trifft"
+      if (c >= 2) {
+        const goals2 = scored == null ? 2 : scored;                // Auswertung: echte Toranzahl
+        const q = goals2 >= 2 ? P.double : goals2 === 1 ? P.anytime : 1;
+        if (goals2 >= 1) net += q - 1;
+        detail.push({ side, player: p, type: "double", single: P.anytime, double: P.double, scored });
+      } else {
+        const hit = scored == null ? true : scored >= 1;
+        if (hit) net += P.anytime - 1;
+        detail.push({ side, player: p, type: "single", anytime: P.anytime, scored });
+      }
+    }
+  }
+  return { net, detail };
+}
+
+// Anzeige-Skalierung: intern wird roh gerechnet, erst hier hochskaliert.
+export function toDisplay(raw, rules = DEFAULT_RULES) {
+  let v = raw * (rules.displayScale ?? 1);
+  if (rules.perGameCap != null) v = Math.min(v, rules.perGameCap);
+  return Math.round(v);
+}
+
+// Gesamtwertung eines Tipps inkl. Kombi-Multiplikator.
+export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
+  const res = scoreResult(tip, actual, snap, rules);
+  const goals = scoreGoals(tip.goals || { home: [], away: [] }, snap, rules, actual.playerGoals);
+  let raw = res.resultPart;
+  if (goals.net > 0) {
+    raw = res.ebene === "keiner" ? res.resultPart + goals.net : (res.resultPart + goals.net) * rules.combo[res.ebene];
+  }
+  return { total: toDisplay(raw, rules), raw: +raw.toFixed(1), ...res, goals };
+}
+
+
+// ── 4) CREATOR-CODES (Modi teilen & anpassen) ───────────────
+export function encodePreset(rules) {
+  const j = JSON.stringify(rules);
+  const b64 = typeof btoa !== "undefined" ? btoa(unescape(encodeURIComponent(j))) : Buffer.from(j, "utf8").toString("base64");
+  return "TS1-" + b64.replace(/=+$/, "");
+}
+export function decodePreset(code) {
+  if (!code?.startsWith("TS1-")) throw new Error("Ungültiger Creator-Code");
+  const b = code.slice(4);
+  const j = typeof atob !== "undefined" ? decodeURIComponent(escape(atob(b))) : Buffer.from(b, "base64").toString("utf8");
+  return JSON.parse(j);
+}
+
+
+// ── 5) DEMO ─────────────────────────────────────────────────
+export function demo() {
+  const odds = createMockOddsSource();
+  const snap = odds.getSnapshot("JOR-ESP");
+  const result = odds.getResult("JOR-ESP");   // real 5:1, Al-Naimat 2, Yamal 1
+  const S = DEFAULT_RULES.displayScale;
+
+  const tipp = { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal", ""] } };
+  const r = scoreTip(tipp, result, snap);
+  console.log("Voll-Tipp 4:1 + Al-Naimat-Doppelpack + Yamal → real 5:1:");
+  console.log(`  roh ${r.raw}  →  angezeigt ${r.total} Punkte  (Ebene: ${r.ebene})`);
+  console.log("  Aufschlüsselung (skaliert):",
+    `Nähebonus ${Math.round(r.parts.ergNaehe * S)} · Tore +${Math.round(r.goals.net * S)} · Kombi ×${DEFAULT_RULES.combo[r.ebene]}`);
+
+  console.log("\nSkalen-Gefühl (angezeigte Punkte):");
+  for (const [h, a] of [[2, 1], [4, 1], [5, 1]]) {
+    const t = scoreTip({ home: h, away: a, goals: { home: [], away: [] } }, result, snap);
+    console.log(`  Tipp ${h}:${a} (nur Ergebnis) → ${t.total}`);
+  }
+
+  const code = encodePreset({ ...DEFAULT_RULES, name: "Hardcore", k: 1.1 });
+  console.log("\nCreator-Code:", code.slice(0, 24) + "…", "→", decodePreset(code).name);
+}
