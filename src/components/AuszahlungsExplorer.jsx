@@ -1,4 +1,7 @@
+"use client";
+
 import { useState, useMemo } from "react";
+import { createMockOddsSource, scoreResult, scoreGoals, applyCombo, DEFAULT_RULES } from "@/lib/engine";
 
 const C = {
   ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
@@ -7,55 +10,21 @@ const C = {
 };
 const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
-const CS = [
-  [ 11,  6.5,  6.0,  8.0,  15,  34],
-  [  9,  7.5,  8.5,   13,  26,  60],
-  [ 15,   12,   16,   26,  55, 130],
-  [ 30,   21,   34,   60, 140, 320],
-  [ 70,   41,   80,  150, 340, 700],
-  [160,   96,  180,  340, 750,1500],
-];
-const TEAM_GOALS = { Jordanien: [2.1, 3.0, 6.0, 11, 24, 55], Spanien: [4.5, 3.0, 3.4, 5.5, 10, 22] };
-const WIN = { home: 9.0, draw: 6.5, away: 1.28 };
-const MARGIN = { home: [0, 7, 14, 28, 70, 180], away: [0, 2.6, 4.0, 7, 15, 38] };
+// ── Eine Quelle: Engine liefert Quoten, Regeln und Scoring ──
+const RULES = DEFAULT_RULES;
+const odds = createMockOddsSource();
+const SNAP = odds.getSnapshot("JOR-ESP");
+const SIDES = ["home", "away"];
+const short = (side) => (side === "home" ? SNAP.home : SNAP.away).slice(0, 3).toUpperCase();
 
-// Torschützen-Quoten: anytime (1 Tor) und double (Doppelpack, 2 Tore)
-const PLAYERS = {
-  Jordanien: {
-    "Al-Naimat": { anytime: 3.2, double: 11 }, "Olwan": { anytime: 4.1, double: 15 },
-    "Al-Tamari": { anytime: 3.6, double: 13 }, "Al-Rashdan": { anytime: 5.5, double: 21 },
-    "Haddad": { anytime: 7.0, double: 30 },
-  },
-  Spanien: {
-    "Yamal": { anytime: 1.9, double: 5.5 }, "Oyarzabal": { anytime: 2.6, double: 8.0 },
-    "Merino": { anytime: 3.4, double: 12 }, "Williams": { anytime: 3.0, double: 10 },
-    "Olmo": { anytime: 3.8, double: 14 },
-  },
-};
-
-const R = { k: 0.7, m: 0.5, minPayout: 1.0, picksPerTeam: 2, combo: { tendenz: 1.15, abstand: 1.5, exakt: 2.3 } };
-const sgn = (h, a) => (h > a ? 1 : h < a ? -1 : 0);
 const braceBtn = (on) => ({ fontFamily: MONO, fontSize: 11, cursor: "pointer", padding: "4px 9px", borderRadius: 999,
   background: on ? `${C.gold}22` : C.surface2, color: on ? C.gold : C.muted, border: `1px solid ${on ? C.gold + "66" : C.line}` });
 
+// Ein hypothetischer Endstand {h,a}: Engine wertet, Kombi-Regel obendrauf.
 function scoreOutcome(tip, r, withScorer, scorerNet) {
-  const dist = Math.abs(tip.h - r.h) + Math.abs(tip.a - r.a);
-  const winnerRight = sgn(tip.h, tip.a) === sgn(r.h, r.a);
-  const marginRight = winnerRight && Math.abs(tip.h - tip.a) === Math.abs(r.h - r.a);
-  const tendBoden = winnerRight
-    ? (sgn(r.h, r.a) === 1 ? WIN.home : sgn(r.h, r.a) === -1 ? WIN.away : WIN.draw) - 1 : 0;
-  const abstand = marginRight ? (sgn(r.h, r.a) === 1 ? MARGIN.home : MARGIN.away)[Math.abs(r.h - r.a)] - 1 : 0;
-  const ergNaehe = Math.exp(-R.k * dist) * CS[r.h][r.a];
-  const jN = Math.exp(-R.m * Math.abs(tip.h - r.h)) * TEAM_GOALS.Jordanien[r.h];
-  const sN = Math.exp(-R.m * Math.abs(tip.a - r.a)) * TEAM_GOALS.Spanien[r.a];
-  const teamTore = jN + sN;
-  let nearParts = Math.max(ergNaehe, teamTore);
-  if (nearParts < R.minPayout) nearParts = 0;
-  const resultPart = Math.max(tendBoden, abstand, nearParts);
-  const ebene = dist === 0 ? "exakt" : marginRight ? "abstand" : winnerRight ? "tendenz" : "keiner";
-  let total = resultPart;
-  if (withScorer) total = ebene === "keiner" ? resultPart + scorerNet : (resultPart + scorerNet) * R.combo[ebene];
-  return { total, dist, winnerRight, ebene, parts: { tendBoden, abstand, ergNaehe, teamTore, resultPart } };
+  const res = scoreResult({ home: tip.h, away: tip.a }, { home: r.h, away: r.a }, SNAP, RULES);
+  const total = withScorer ? applyCombo(res.resultPart, res.ebene, scorerNet, RULES) : res.resultPart;
+  return { total, ...res };
 }
 
 export default function AuszahlungsExplorer() {
@@ -64,27 +33,19 @@ export default function AuszahlungsExplorer() {
   const [aroundOnly, setAroundOnly] = useState(false);
   const [dec, setDec] = useState(false);
   const [sel, setSel] = useState({ h: 5, a: 1 });
-  const [goals, setGoals] = useState({ Jordanien: ["Al-Naimat", ""], Spanien: ["Yamal", "Yamal"] });
+  const [goals, setGoals] = useState({ home: ["Al-Naimat", ""], away: ["Yamal", "Yamal"] });
   const [braceGoals, setBraceGoals] = useState(2); // Annahme bei Doppel-Pick: 1 oder 2 Tore
 
   const fmt = (q) => q == null ? "—" : q.toFixed(dec ? 2 : 1);
 
-  // Tore auswerten: gleicher Spieler 2× = Doppelpack (double-Quote statt 2× anytime)
+  // Tore über die Engine auswerten. braceGoals=1 simuliert "trifft nur einmal"
+  // über hypothetische Torschützen-Daten (jeder Pick trifft genau 1×).
   const sc = useMemo(() => {
-    let net = 0; const braces = [];
-    for (const team of ["Jordanien", "Spanien"]) {
-      const counts = {};
-      for (const p of goals[team]) if (p) counts[p] = (counts[p] || 0) + 1;
-      for (const [p, c] of Object.entries(counts)) {
-        const P = PLAYERS[team][p];
-        if (c >= 2) {
-          // Beide Tipps auf einen Spieler: 2 Tore = Doppelpack-Quote, 1 Tor = Einzelquote (Floor)
-          net += (braceGoals === 2 ? P.double : P.anytime) - 1;
-          braces.push({ team, p, single: P.anytime, double: P.double });
-        } else net += P.anytime - 1;
-      }
-    }
-    return { net, braces };
+    const assumed = braceGoals === 1
+      ? Object.fromEntries(SIDES.flatMap((s) => goals[s].filter(Boolean).map((p) => [p, 1])))
+      : null; // null = Engine nimmt an: jeder trifft, Doppel-Pick trifft 2×
+    const { net, detail } = scoreGoals(goals, SNAP, RULES, assumed);
+    return { net, braces: detail.filter((d) => d.type === "double") };
   }, [goals, braceGoals]);
 
   const grid = useMemo(() => {
@@ -100,7 +61,7 @@ export default function AuszahlungsExplorer() {
 
   const selScore = scoreOutcome(tip, sel, withScorer, sc.net);
   const step = (key, d) => setTip((t) => ({ ...t, [key]: Math.max(0, Math.min(5, t[key] + d)) }));
-  const setGoal = (team, i, v) => setGoals((prev) => ({ ...prev, [team]: prev[team].map((p, j) => (j === i ? v : p)) }));
+  const setGoal = (side, i, v) => setGoals((prev) => ({ ...prev, [side]: prev[side].map((p, j) => (j === i ? v : p)) }));
 
   const heat = (v, visible) => {
     if (!visible) return { bg: C.ink2, fg: "rgba(255,255,255,0.15)", glow: "none" };
@@ -109,9 +70,9 @@ export default function AuszahlungsExplorer() {
   };
 
   return (
-    <div style={{ minHeight: "100%", background: C.ink, color: C.text,
+    <div style={{ minHeight: "100vh", background: C.ink, color: C.text,
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", padding: "26px 14px", display: "flex", justifyContent: "center" }}>
-      <div style={{ width: "100%", maxWidth: 400, borderRadius: 24, position: "relative", overflow: "hidden",
+      <div style={{ width: "100%", maxWidth: 400, borderRadius: 24, position: "relative", overflow: "hidden", alignSelf: "flex-start",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)", padding: "22px 18px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -122,7 +83,7 @@ export default function AuszahlungsExplorer() {
           </button>
         </div>
         <div style={{ fontSize: 17, fontWeight: 700, marginTop: 6 }}>
-          Jordanien <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> Spanien
+          {SNAP.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {SNAP.away}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
@@ -135,14 +96,14 @@ export default function AuszahlungsExplorer() {
         {/* Tore (gleicher Spieler 2× = Doppelpack) */}
         <div style={{ marginTop: 14, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Tore (je {R.picksPerTeam} pro Team)</span>
+            <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Tore (je {RULES.markets.goals.picksPerTeam} pro Team)</span>
             <span style={{ fontFamily: MONO, fontSize: 12, color: C.coral }}>Wert +{fmt(sc.net)}</span>
           </div>
-          {["Jordanien", "Spanien"].map((team) => (
-            <div key={team} style={{ display: "flex", gap: 6, marginBottom: team === "Jordanien" ? 8 : 0, alignItems: "center" }}>
-              <span style={{ width: 34, fontSize: 10.5, color: C.muted, fontFamily: MONO }}>{team === "Jordanien" ? "JOR" : "ESP"}</span>
-              {goals[team].map((p, i) => (
-                <Sel key={i} team={team} value={p} fmt={fmt} onChange={(v) => setGoal(team, i, v)} />
+          {SIDES.map((side) => (
+            <div key={side} style={{ display: "flex", gap: 6, marginBottom: side === "home" ? 8 : 0, alignItems: "center" }}>
+              <span style={{ width: 34, fontSize: 10.5, color: C.muted, fontFamily: MONO }}>{short(side)}</span>
+              {goals[side].map((p, i) => (
+                <Sel key={i} side={side} value={p} fmt={fmt} onChange={(v) => setGoal(side, i, v)} />
               ))}
             </div>
           ))}
@@ -152,7 +113,7 @@ export default function AuszahlungsExplorer() {
                 {sc.braces.map((b, i) => (
                   <span key={i} style={{ fontFamily: MONO, fontSize: 11, color: C.gold,
                     background: `${C.gold}18`, border: `1px solid ${C.gold}55`, borderRadius: 999, padding: "3px 9px" }}>
-                    ⚽ {b.p} · 1 Tor {fmt(b.single)} / 2 Tore {fmt(b.double)}
+                    ⚽ {b.player} · 1 Tor {fmt(b.single)} / 2 Tore {fmt(b.double)}
                   </span>
                 ))}
               </div>
@@ -200,7 +161,7 @@ export default function AuszahlungsExplorer() {
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 10.5, color: C.muted }}>
             <span><span style={{ color: C.text }}>▢</span> dein Tipp</span>
-            <span>Zeile = Jordanien · Spalte = Spanien</span>
+            <span>Zeile = {SNAP.home} · Spalte = {SNAP.away}</span>
           </div>
         </div>
 
@@ -222,9 +183,9 @@ export default function AuszahlungsExplorer() {
             <span style={{ color: C.muted }}>gewertet{withScorer ? " + Tore × Kombi" : ""}</span>
             <span style={{ fontFamily: MONO, color: C.text }}>
               {withScorer ? (selScore.ebene === "keiner"
-                ? `${selScore.parts.resultPart.toFixed(1)}+${sc.net.toFixed(1)}`
-                : `(${selScore.parts.resultPart.toFixed(1)}+${sc.net.toFixed(1)})×${R.combo[selScore.ebene]}`)
-                : selScore.parts.resultPart.toFixed(1)}
+                ? `${selScore.resultPart.toFixed(1)}+${sc.net.toFixed(1)}`
+                : `(${selScore.resultPart.toFixed(1)}+${sc.net.toFixed(1)})×${RULES.combo[selScore.ebene]}`)
+                : selScore.resultPart.toFixed(1)}
             </span>
           </div>
         </div>
@@ -244,8 +205,8 @@ function Mini({ value, onStep }) {
   );
 }
 
-function Sel({ team, value, onChange, fmt }) {
-  const players = PLAYERS[team];
+function Sel({ side, value, onChange, fmt }) {
+  const players = SNAP.players[side];
   return (
     <div style={{ flex: 1, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 8px", minWidth: 0 }}>
       <select value={value} onChange={(e) => onChange(e.target.value)} style={{

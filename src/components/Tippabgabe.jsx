@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from "react";
+import { createMockOddsSource, DEFAULT_RULES } from "@/lib/engine";
 
 // ── Design-Tokens (gleich wie das Abrechnungsfenster) ───────
 const C = {
@@ -9,26 +12,16 @@ const C = {
 };
 const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
-// ── Regelwerk (käme vom Admin bei Spielerstellung) ──────────
-// Der Screen RENDERT aus diesem Objekt: schaltet man scorer.enabled
-// aus oder picksPerTeam auf 1, ändert sich die Oberfläche mit.
-const RULES = {
-  markets: { result: true, scorer: { enabled: true, picksPerTeam: 2, allowBackups: true } },
-  oddsMode: "snapshot",
-};
+// ── Eine Quelle: Engine liefert Regelwerk + Snapshot-Quoten ──
+// Der Screen RENDERT nur: schaltet der Admin markets.goals aus
+// oder picksPerTeam auf 1, ändert sich die Oberfläche mit.
+const RULES = DEFAULT_RULES;
+const odds = createMockOddsSource();
+const SNAP = odds.getSnapshot("JOR-ESP");
 
-// ── Snapshot-Quoten (Mock – später echter API-Call) ─────────
-const MATCH = {
-  home: "Jordanien", away: "Spanien", kickoff: "Sa 20:45",
-  correctScore: {
-    "1:0":5.5,"2:0":9,"2:1":12,"3:1":21,"4:1":41,"5:1":96,
-    "1:1":7.5,"0:0":11,"3:0":15,"3:2":34,"4:2":80,"5:2":180,
-  },
-  players: {
-    Jordanien: { "Al-Naimat":3.2, "Olwan":4.1, "Al-Tamari":3.6, "Al-Rashdan":5.5, "Haddad":7.0 },
-    Spanien:   { "Yamal":1.9, "Oyarzabal":2.6, "Merino":3.4, "Williams":3.0, "Olmo":3.8 },
-  },
-};
+const kickoffLabel = new Intl.DateTimeFormat("de-DE", {
+  weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
+}).format(new Date(SNAP.kickoff));
 
 const risk = (q) =>
   q == null ? { label: "—", col: C.muted }
@@ -40,17 +33,20 @@ const risk = (q) =>
 export default function Tippabgabe() {
   const [h, setH] = useState(2);
   const [a, setA] = useState(1);
-  const teams = [MATCH.home, MATCH.away];
+  const scorer = RULES.markets.goals;
+  const teams = [
+    { side: "home", name: SNAP.home },
+    { side: "away", name: SNAP.away },
+  ];
   const [picks, setPicks] = useState(
-    teams.map((t) => Array.from({ length: RULES.markets.scorer.picksPerTeam }, () => ({
-      main: Object.keys(MATCH.players[t])[0], backup: "",
+    teams.map((t) => Array.from({ length: scorer.picksPerTeam }, () => ({
+      main: Object.keys(SNAP.players[t.side])[0], backup: "",
     })))
   );
   const [done, setDone] = useState(false);
 
-  const csKey = `${h}:${a}`;
-  const csQuote = MATCH.correctScore[csKey] ?? null;
-  const winner = h > a ? MATCH.home : h < a ? MATCH.away : "Unentschieden";
+  const csQuote = SNAP.correctScore[h]?.[a] ?? null;
+  const winner = h > a ? SNAP.home : h < a ? SNAP.away : "Unentschieden";
   const r = risk(csQuote);
 
   const setPick = (ti, pi, field, val) =>
@@ -61,13 +57,13 @@ export default function Tippabgabe() {
 
   return (
     <div style={{
-      minHeight: "100%", background: C.ink, color: C.text,
+      minHeight: "100vh", background: C.ink, color: C.text,
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
       padding: "28px 16px", display: "flex", justifyContent: "center",
     }}>
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
-        borderRadius: 26, overflow: "hidden",
+        borderRadius: 26, overflow: "hidden", alignSelf: "flex-start",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
@@ -84,10 +80,10 @@ export default function Tippabgabe() {
               <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
                 Tipp abgeben
               </span>
-              <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>Anpfiff {MATCH.kickoff}</span>
+              <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>Anpfiff {kickoffLabel}</span>
             </div>
             <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>
-              {MATCH.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {MATCH.away}
+              {SNAP.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {SNAP.away}
             </div>
 
             {/* Ergebnis-Eingabe */}
@@ -120,26 +116,26 @@ export default function Tippabgabe() {
             )}
 
             {/* Torschützen aus dem Regelwerk */}
-            {RULES.markets.scorer.enabled && (
-              <Section title={`Torschützen — je ${RULES.markets.scorer.picksPerTeam} pro Team`}>
+            {scorer.enabled && (
+              <Section title={`Torschützen — je ${scorer.picksPerTeam} pro Team`}>
                 {teams.map((team, ti) => (
-                  <div key={team} style={{ marginBottom: ti === 0 ? 14 : 0 }}>
+                  <div key={team.side} style={{ marginBottom: ti === 0 ? 14 : 0 }}>
                     <div style={{ fontSize: 12, color: C.muted, marginBottom: 8, fontFamily: MONO, letterSpacing: 1 }}>
-                      {team.toUpperCase()}
+                      {team.name.toUpperCase()}
                     </div>
                     {picks[ti].map((p, pi) => (
                       <div key={pi} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                         <PlayerSelect
                           flex={1.4} label={`Wahl ${pi + 1}`} value={p.main}
-                          quote={MATCH.players[team][p.main]}
-                          players={MATCH.players[team]}
+                          quote={SNAP.players[team.side][p.main]?.anytime}
+                          players={SNAP.players[team.side]}
                           onChange={(v) => setPick(ti, pi, "main", v)}
                         />
-                        {RULES.markets.scorer.allowBackups && (
+                        {scorer.allowBackups && (
                           <PlayerSelect
                             flex={1} label="Backup" value={p.backup} dim
-                            quote={p.backup ? MATCH.players[team][p.backup] : null}
-                            players={MATCH.players[team]} allowEmpty
+                            quote={p.backup ? SNAP.players[team.side][p.backup]?.anytime : null}
+                            players={SNAP.players[team.side]} allowEmpty
                             onChange={(v) => setPick(ti, pi, "backup", v)}
                           />
                         )}
@@ -171,8 +167,8 @@ export default function Tippabgabe() {
           </div>
         ) : (
           <Confirmation
-            match={MATCH} h={h} a={a} winner={winner} csQuote={csQuote}
-            picks={picks} teams={teams} onEdit={() => setDone(false)}
+            snap={SNAP} h={h} a={a} winner={winner} csQuote={csQuote}
+            kickoffLabel={kickoffLabel} picks={picks} teams={teams} onEdit={() => setDone(false)}
           />
         )}
       </div>
@@ -234,7 +230,7 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
   );
 }
 
-function Confirmation({ match, h, a, winner, csQuote, picks, teams, onEdit }) {
+function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, onEdit }) {
   return (
     <div style={{ position: "relative", padding: "30px 22px 24px" }}>
       <div style={{
@@ -245,7 +241,7 @@ function Confirmation({ match, h, a, winner, csQuote, picks, teams, onEdit }) {
       }}>✓</div>
       <div style={{ textAlign: "center", marginTop: 14, fontSize: 18, fontWeight: 700 }}>Tipp eingefroren</div>
       <div style={{ textAlign: "center", fontSize: 12.5, color: C.muted, marginTop: 4 }}>
-        Quote gesichert · gilt bis Anpfiff {match.kickoff}
+        Quote gesichert · gilt bis Anpfiff {kickoffLabel}
       </div>
 
       <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginTop: 20 }}>
@@ -254,14 +250,16 @@ function Confirmation({ match, h, a, winner, csQuote, picks, teams, onEdit }) {
         <Row label="Exakt-Quote" value={csQuote ? csQuote.toFixed(1) : "seltenes Ergebnis"} mono />
         <div style={{ height: 1, background: C.line, margin: "10px 0" }} />
         {teams.map((team, ti) => (
-          <div key={team} style={{ marginBottom: 6 }}>
+          <div key={team.side} style={{ marginBottom: 6 }}>
             <div style={{ fontSize: 10.5, color: C.muted, fontFamily: MONO, letterSpacing: 1, marginBottom: 4 }}>
-              {team.toUpperCase()}
+              {team.name.toUpperCase()}
             </div>
             {picks[ti].map((p, pi) => (
               <div key={pi} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "2px 0" }}>
                 <span>{p.main}{p.backup && <span style={{ color: C.muted }}> · Backup {p.backup}</span>}</span>
-                <span style={{ fontFamily: MONO, color: C.gold }}>{match.players[team][p.main].toFixed(1)}</span>
+                <span style={{ fontFamily: MONO, color: C.gold }}>
+                  {snap.players[team.side][p.main].anytime.toFixed(1)}
+                </span>
               </div>
             ))}
           </div>

@@ -9,6 +9,7 @@
 export function createMockOddsSource() {
   const snap = {
     matchId: "JOR-ESP", home: "Jordanien", away: "Spanien",
+    kickoff: "2026-06-20T18:45:00Z",             // Anpfiff (UTC)
     frozenAt: "2026-06-20T18:00:00Z",            // Snapshot: gilt bis Anpfiff
     winner: { home: 9.0, draw: 6.5, away: 1.28 },
     margin: { home: [0, 7, 14, 28, 70, 180], away: [0, 2.6, 4.0, 7, 15, 38] },
@@ -113,14 +114,17 @@ export function toDisplay(raw, rules = DEFAULT_RULES) {
   return Math.round(v);
 }
 
+// Kombi-Regel: Tor-Gewinne verstärken das Ergebnis nur bei richtiger Tendenz.
+export function applyCombo(resultPart, ebene, goalsNet, rules = DEFAULT_RULES) {
+  if (goalsNet <= 0) return resultPart;
+  return ebene === "keiner" ? resultPart + goalsNet : (resultPart + goalsNet) * rules.combo[ebene];
+}
+
 // Gesamtwertung eines Tipps inkl. Kombi-Multiplikator.
 export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   const res = scoreResult(tip, actual, snap, rules);
   const goals = scoreGoals(tip.goals || { home: [], away: [] }, snap, rules, actual.playerGoals);
-  let raw = res.resultPart;
-  if (goals.net > 0) {
-    raw = res.ebene === "keiner" ? res.resultPart + goals.net : (res.resultPart + goals.net) * rules.combo[res.ebene];
-  }
+  const raw = applyCombo(res.resultPart, res.ebene, goals.net, rules);
   return { total: toDisplay(raw, rules), raw: +raw.toFixed(1), ...res, goals };
 }
 

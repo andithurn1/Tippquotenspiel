@@ -1,4 +1,7 @@
+"use client";
+
 import { useState, useEffect, useRef } from "react";
+import { createMockOddsSource, scoreResult } from "@/lib/engine";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
 // Nächtliches Flutlicht-Stadion: tiefes Indigo, Flutlicht-Gold,
@@ -17,19 +20,25 @@ const C = {
 
 const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
-// Mock-Spieltag: dein kühner Tipp Jordanien 4:1 gegen Spanien,
+// ── Eine Quelle: Engine rechnet, der Screen zeigt nur an ────
+// Demo-Spieltag: kühner Tipp Jordanien 4:1 gegen Spanien,
 // real wird es 5:1 — Distanz 1 zum Sensationsergebnis.
+const odds = createMockOddsSource();
+const snap = odds.getSnapshot("JOR-ESP");
+const result = odds.getResult("JOR-ESP");
+const TIPP = { home: 4, away: 1 };
+const wertung = scoreResult(TIPP, result, snap);
+
 const DATA = {
   spieltag: 14,
-  home: "Jordanien",
-  away: "Spanien",
-  tippHome: 4, tippAway: 1,
-  realHome: 5, realAway: 1,
-  siegerQuote: 9.0,      // Außenseiter schlägt Spanien
-  exaktQuote: 96.0,      // Correct Score des realen 5:1
-  bodenPunkte: 8,        // Sieger richtig → Quote-1, gerundet
-  naehePunkte: 48,       // decay(Distanz1)=0.50 × Exaktquote
-  rangVon: 5, rangZu: 2,
+  home: snap.home,
+  away: snap.away,
+  tippHome: TIPP.home, tippAway: TIPP.away,
+  realHome: result.home, realAway: result.away,
+  bodenPunkte: Math.round(wertung.parts.tendBoden),
+  naehePunkte: Math.round(wertung.resultPart),
+  dist: wertung.dist,
+  rangVon: 5, rangZu: 2,   // Mock, bis das Backend ein Leaderboard liefert
 };
 
 function useCountUp(target, run, ms = 1100) {
@@ -66,8 +75,9 @@ export default function Abrechnung() {
 
   const punkte = useCountUp(DATA.naehePunkte, stage >= 4);
 
+  // Mock-Tabelle, bis das Backend ein Leaderboard liefert ("Du" kommt aus der Engine)
   const board = [
-    { name: "Du", pts: 48, hot: true },
+    { name: "Du", pts: DATA.naehePunkte, hot: true },
     { name: "Lena", pts: 34 },
     { name: "Kemal", pts: 21 },
     { name: "Max", pts: 8, safe: true },
@@ -86,13 +96,13 @@ export default function Abrechnung() {
 
   return (
     <div style={{
-      minHeight: "100%", background: C.ink, color: C.text,
+      minHeight: "100vh", background: C.ink, color: C.text,
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
       padding: "28px 16px", display: "flex", justifyContent: "center",
     }}>
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
-        borderRadius: 26, overflow: "hidden",
+        borderRadius: 26, overflow: "hidden", alignSelf: "flex-start",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`,
         boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
@@ -135,9 +145,9 @@ export default function Abrechnung() {
               <span style={{
                 fontFamily: MONO, fontSize: 12, color: C.coral,
                 border: `1px solid ${C.coral}55`, borderRadius: 999, padding: "2px 8px",
-              }}>1 Tor — hauchdünn</span>
+              }}>{DATA.dist} {DATA.dist === 1 ? "Tor — hauchdünn" : "Tore"}</span>
             </div>
-            <DistanceLadder active={stage >= 3} />
+            <DistanceLadder active={stage >= 3} wertung={wertung} />
           </div>
 
           {/* Punkte-Zähler */}
@@ -158,7 +168,7 @@ export default function Abrechnung() {
               <Chip tone={C.coral}>Nähebonus +{DATA.naehePunkte}</Chip>
             </div>
             <p style={{ fontSize: 12.5, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
-              Das reale 5:1 war ein Freak-Ergebnis mit riesiger Quote. Du warst nur
+              Das reale {DATA.realHome}:{DATA.realAway} war ein Freak-Ergebnis mit riesiger Quote. Du warst nur
               ein Tor daneben — die Nähe zahlt fast so viel wie ein exakter Treffer.
             </p>
           </div>
@@ -247,12 +257,12 @@ function ScoreBox({ label, a, b, tone, big, stamped }) {
   );
 }
 
-function DistanceLadder({ active }) {
-  // Leiter: Sieger → Tordifferenz → Exakt. Marker bei Distanz 1.
+function DistanceLadder({ active, wertung }) {
+  // Leiter: Sieger → Nähe → Exakt. Stufen kommen aus der Engine-Wertung.
   const steps = [
-    { label: "Sieger", reached: true },
-    { label: "Nähe (Δ1)", reached: true, hot: true },
-    { label: "Exakt", reached: false },
+    { label: "Sieger", reached: wertung.winnerRight },
+    { label: `Nähe (Δ${wertung.dist})`, reached: wertung.dist > 0 && wertung.resultPart > 0, hot: true },
+    { label: "Exakt", reached: wertung.dist === 0 },
   ];
   return (
     <div style={{ display: "flex", gap: 6 }}>
@@ -265,7 +275,7 @@ function DistanceLadder({ active }) {
             transform: active ? "scaleX(1)" : "scaleX(0)",
             transformOrigin: "left",
             transition: `transform .5s ease ${i * 0.18}s`,
-            boxShadow: s.hot && active ? `0 0 16px ${C.coral}aa` : "none",
+            boxShadow: s.hot && s.reached && active ? `0 0 16px ${C.coral}aa` : "none",
           }} />
           <div style={{
             fontSize: 10.5, marginTop: 6, textAlign: "center",

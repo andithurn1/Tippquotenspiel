@@ -8,15 +8,25 @@ Ziel: gesunder, spielerischer Ersatz zum Echtgeld-Wetten.
 
 ---
 
-## Dateien in diesem Paket
+## Projekt-Setup (Next.js + React)
 
-- `engine.js` — das „Gehirn": reine Logik, kein UI. Eine Quelle für alle Screens.
-- `Tippabgabe.jsx` — Tipp abgeben (Ergebnis + Tore je Team), friert Snapshot-Quote ein.
-- `Abrechnung.jsx` — animiertes Öffnungsfenster: Spieltag-Abrechnung mit Punkte-Zähler.
-- `AuszahlungsExplorer.jsx` — zeigt für jeden möglichen Endstand die Auszahlung (Heat-Grid).
+```bash
+npm install     # Abhängigkeiten
+npm run dev     # Entwicklung → http://localhost:3000
+npm test        # Engine-Tests (Vitest)
+npm run build   # Produktions-Build
+```
 
-Die Screens rechnen aktuell noch mit eigenen Kopien der Logik. **Erster Bau-Schritt
-in der echten Umgebung:** Screens an `engine.js` anschließen (eine Quelle).
+- `src/lib/engine.js` — das „Gehirn": reine Logik, kein UI. **Die eine Quelle
+  für alle Screens** (von `engine.test.js` abgesichert).
+- `src/components/Tippabgabe.jsx` — Tipp abgeben (Ergebnis + Tore je Team), friert Snapshot-Quote ein.
+- `src/components/Abrechnung.jsx` — animiertes Öffnungsfenster: Spieltag-Abrechnung mit Punkte-Zähler.
+- `src/components/AuszahlungsExplorer.jsx` — zeigt für jeden möglichen Endstand die Auszahlung (Heat-Grid).
+- `src/app/` — Routen: `/` (Übersicht), `/tippen`, `/abrechnung`, `/explorer`.
+
+✅ **Bau-Schritt 1 erledigt:** Alle Screens rechnen über `engine.js`, die
+Logik-Kopien sind entfernt. Quoten kommen aus `createMockOddsSource()` —
+diese eine Stelle wird später gegen die echte API getauscht.
 
 ---
 
@@ -77,9 +87,9 @@ in der echten Umgebung:** Screens an `engine.js` anschließen (eine Quelle).
 
 ## Nächste Schritte in der Bau-Umgebung (Claude Code)
 
-1. Projekt anlegen, mit GitHub verbinden (einmalig, am Desktop leichter).
-2. Diese Dateien importieren.
-3. Screens an `engine.js` anschließen.
+1. ~~Projekt anlegen, mit GitHub verbinden.~~ ✅
+2. ~~Dateien importieren.~~ ✅
+3. ~~Screens an `engine.js` anschließen.~~ ✅ (+ Next.js-Setup, Engine-Tests, `CLAUDE.md`)
 4. Spielerstellungs-Screen bauen (Regler + Creator-Code).
-5. Einfaches Backend (Nutzer / Tipps / Leaderboard).
-6. Ganz zuletzt: echte Quoten-API mit Test-Key.
+5. Einfaches Backend (Nutzer / Tipps / Leaderboard) — Plan: Supabase.
+6. Ganz zuletzt: echte Quoten-API mit Test-Key (Key nur serverseitig).

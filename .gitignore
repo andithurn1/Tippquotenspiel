@@ -1,0 +1,21 @@
+# Abhängigkeiten
+/node_modules
+
+# Next.js Build
+/.next
+/out
+
+# Produktion
+/build
+
+# Sonstiges
+.DS_Store
+*.pem
+npm-debug.log*
+
+# Lokale Env-Dateien (API-Keys gehören NIE ins Repo)
+.env
+.env*.local
+
+# Vercel
+.vercel
