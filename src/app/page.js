@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import AuthBar from "@/components/AuthBar";
 
 const C = {
   ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040",
@@ -28,12 +31,14 @@ export default function Home() {
         <h1 style={{ fontSize: 26, fontWeight: 800, margin: "8px 0 6px" }}>
           Mut zahlt sich aus.
         </h1>
-        <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.6, marginTop: 0 }}>
+        <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.6, marginTop: 0, marginBottom: 24 }}>
           Quoten-gewichtetes Tippspiel unter Freunden. Kein Echtgeld — Ehre und
           ein Wichtelgeschenk.
         </p>
 
-        <div style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 12 }}>
+        <AuthBar />
+
+        <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 12 }}>
           {SCREENS.map((s) => (
             <Link key={s.href} href={s.href} style={{
               textDecoration: "none", color: C.text,

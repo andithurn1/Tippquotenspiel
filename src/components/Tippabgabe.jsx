@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { createMockOddsSource, DEFAULT_RULES } from "@/lib/engine";
 import { getStore } from "@/lib/store";
-import { getCurrentUser, DEMO_ROUND_ID } from "@/lib/session";
+import { DEMO_ROUND_ID } from "@/lib/session";
+import { useAuth } from "@/components/AuthProvider";
 
 // ── Design-Tokens (gleich wie das Abrechnungsfenster) ───────
 const C = {
@@ -33,6 +34,7 @@ const risk = (q) =>
   : { label: "Wahnsinn", col: C.coral };
 
 export default function Tippabgabe() {
+  const { user } = useAuth();
   const [h, setH] = useState(2);
   const [a, setA] = useState(1);
   const scorer = RULES.markets.goals;
@@ -63,7 +65,6 @@ export default function Tippabgabe() {
     setDone(true);
     setSaveState("saving");
     try {
-      const user = await getCurrentUser();
       if (!user) { setSaveState("guest"); return; }
       const goals = {
         home: picks[0].map((p) => p.main).filter(Boolean),

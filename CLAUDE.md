@@ -57,7 +57,9 @@ der erreichten Ebene. `toDisplay`: roh × `displayScale` (Anzeige, nie Fairness)
 - Demo-Daten: Match „JOR-ESP" (Jordanien vs Spanien, real 5:1). Mock-Werte in
   Screens (Leaderboard, Spieltag, Rang) sind als solche kommentiert — sie
   verschwinden, sobald das Backend steht.
-- Roadmap (Stand: Screens ✓ an Engine, Spielerstellungs-Screen ✓, Backend-
-  Daten-Schicht ✓ als Mock/Supabase-Store): als Nächstes die UI an `getStore()`
-  hängen (Login + echte Daten statt Mock-Arrays), zuletzt echte Quoten-API mit
-  Test-Key (Key nur serverseitig).
+- Auth: `AuthProvider` (Context) ist die eine Quelle für den Nutzer — Mock liefert
+  Demo-User „Du", live kommt supabase.auth (Magic-Link) + Auto-Beitritt zur
+  Freundeskreis-Runde (`DEMO_ROUND_ID` in `constants.js`, gleich in Mock + DB).
+- Roadmap (Stand: Screens ✓, Spielerstellung ✓, Backend-Daten-Schicht ✓,
+  UI an `getStore()` + E-Mail-Login ✓): als Nächstes echte Quoten-API mit
+  Test-Key (Key nur serverseitig) sowie Runden-Erstellung/-Beitritt im UI.

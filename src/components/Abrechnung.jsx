@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { createMockOddsSource, scoreTip, toDisplay } from "@/lib/engine";
 import { getStore } from "@/lib/store";
 import { DEMO_ROUND_ID } from "@/lib/session";
+import { useAuth } from "@/components/AuthProvider";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
 // Nächtliches Flutlicht-Stadion: tiefes Indigo, Flutlicht-Gold,
@@ -66,6 +67,8 @@ function useCountUp(target, run, ms = 1100) {
 }
 
 export default function Abrechnung() {
+  const { user } = useAuth();
+  const meId = user?.id ?? "u-du";          // im Mock „u-du", live die echte Id
   const [stage, setStage] = useState(0);   // 0..5 gestaffelte Enthüllung
   const [key, setKey] = useState(0);        // Replay
   const [fair, setFair] = useState(false);  // Ranking-Toggle
@@ -88,7 +91,7 @@ export default function Abrechnung() {
 
   const punkte = useCountUp(DATA.total, stage >= 4);
 
-  const myRank = board?.find((b) => b.userId === "u-du")?.rank ?? null;
+  const myRank = board?.find((b) => b.userId === meId)?.rank ?? null;
   const min = board?.length ? Math.min(...board.map((b) => b.total)) : 0;
   const shown = (board ?? [])
     .map((b) => ({ ...b, disp: fair ? b.total - min : b.total }))
@@ -214,9 +217,9 @@ export default function Abrechnung() {
                 borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
               }}>
                 <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 16 }}>{i + 1}</span>
-                <span style={{ flex: 1, fontSize: 14, color: b.userId === "u-du" ? C.gold : C.text, fontWeight: b.userId === "u-du" ? 700 : 400 }}>
+                <span style={{ flex: 1, fontSize: 14, color: b.userId === meId ? C.gold : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
                   {b.name}
-                  {b.userId === "u-du" && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● Zocker</span>}
+                  {b.userId === meId && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● du</span>}
                 </span>
                 <span style={{
                   fontFamily: MONO, fontSize: 14, fontVariantNumeric: "tabular-nums",

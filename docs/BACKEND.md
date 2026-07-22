@@ -39,6 +39,23 @@ Match ein `result` hat — vorher sieht jeder nur die eigenen. Kein Abschreiben.
    serverseitiger Job (Ergebnis-Eintragung) gebraucht wird — nie mit `NEXT_PUBLIC_`.
 5. **Starten:** `npm run dev`. `getStore()` schaltet automatisch auf Supabase um.
 
+## Deployment (Vercel)
+
+1. **Projekt importieren:** [vercel.com](https://vercel.com) → *Add New… → Project* →
+   das GitHub-Repo auswählen. Next.js wird automatisch erkannt (kein Config nötig).
+2. **Env-Variablen setzen** (im Vercel-Projekt → *Settings → Environment Variables*):
+   `NEXT_PUBLIC_SUPABASE_URL` und `NEXT_PUBLIC_SUPABASE_ANON_KEY` aus Supabase
+   *Settings → API*. (`service_role` erst, wenn ein serverseitiger Job dazukommt.)
+3. **Deployen** → Vercel gibt dir eine URL. Jeder Branch/PR bekommt automatisch eine
+   Preview-URL; für eine stabile Produktions-URL den Branch nach `main` mergen
+   (oder in Vercel den Production-Branch auf den Feature-Branch setzen).
+4. **WICHTIG — Auth-Redirect erlauben:** Supabase → *Authentication → URL
+   Configuration* → *Site URL* auf die Vercel-URL setzen und dieselbe URL unter
+   *Redirect URLs* eintragen. Sonst führt der Magic-Link-Login ins Leere.
+
+Ohne gesetzte Env-Variablen läuft auch das Deployment im Demo-Modus (Mock) —
+die App ist also nie „kaputt", sie zeigt dann nur lokale Demo-Daten.
+
 ## Was noch offen ist
 
 - **UI an den Store hängen:** Die Screens zeigen aktuell noch Mock-Werte (in den
