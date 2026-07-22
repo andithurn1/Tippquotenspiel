@@ -126,12 +126,16 @@ export function scoreResult(tip, actual, snap, rules = DEFAULT_RULES) {
   const tendBoden = winnerRight && rules.winnerFloor
     ? (sgn(actual.home, actual.away) === 1 ? snap.winner.home
       : sgn(actual.home, actual.away) === -1 ? snap.winner.away : snap.winner.draw) - 1 : 0;
-  const abstand = marginRight
-    ? (sgn(actual.home, actual.away) === 1 ? snap.margin.home : snap.margin.away)[Math.abs(actual.home - actual.away)] - 1 : 0;
-  const ergNaehe = Math.exp(-rules.k * dist) * snap.correctScore[actual.home][actual.away];
+  // Alle Quoten-Zugriffe gegen Ergebnisse außerhalb des Rasters (z. B. 6+ Tore,
+  // seltene Endstände) absichern — fehlt eine Quote, zahlt der Teil 0.
+  const marginArr = sgn(actual.home, actual.away) === 1 ? snap.margin.home : snap.margin.away;
+  const marginRaw = marginArr[Math.abs(actual.home - actual.away)];
+  const abstand = marginRight && marginRaw != null ? marginRaw - 1 : 0;
+  const csRaw = snap.correctScore?.[actual.home]?.[actual.away];
+  const ergNaehe = csRaw != null ? Math.exp(-rules.k * dist) * csRaw : 0;
   const teamTore =
-      Math.exp(-rules.m * Math.abs(tip.home - actual.home)) * snap.teamGoals.home[actual.home]
-    + Math.exp(-rules.m * Math.abs(tip.away - actual.away)) * snap.teamGoals.away[actual.away];
+      Math.exp(-rules.m * Math.abs(tip.home - actual.home)) * (snap.teamGoals.home[actual.home] ?? 0)
+    + Math.exp(-rules.m * Math.abs(tip.away - actual.away)) * (snap.teamGoals.away[actual.away] ?? 0);
 
   let nearParts = Math.max(ergNaehe, teamTore);
   if (nearParts < rules.minPayout) nearParts = 0;
@@ -188,6 +192,22 @@ export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   return { total: toDisplay(raw, rules), raw: +raw.toFixed(1), ...res, goals };
 }
 
+
+// Vorschau beim Tippen: was BRINGT der Tipp, wenn er exakt so eintrifft?
+// Anker ist hier bewusst das GETIPPTE Ergebnis — reine Aussicht, nicht die
+// echte Wertung (die ankert immer am realen Ergebnis). playerGoals=null heißt
+// „angenommen, die getippten Schützen treffen". Nur Anzeige, nie Fairness.
+export function projectTip(tip, snap, rules = DEFAULT_RULES) {
+  const actual = { home: tip.home, away: tip.away, playerGoals: null };
+  const s = scoreTip(tip, actual, snap, rules);
+  return {
+    points: s.total,                                        // mögliche Punkte (Display-Skala)
+    exaktQuote: snap.correctScore?.[tip.home]?.[tip.away] ?? null,
+    goalsNet: s.goals.net,                                  // roher Tor-Beitrag
+    ergNaehe: s.parts.ergNaehe,                             // roher Ergebnis-Nähe-Anteil
+    combo: rules.combo.exakt,
+  };
+}
 
 // Leaderboard: aggregiert die angezeigten Punkte je Nutzer über mehrere Tipps.
 // entries: [{ userId, name, tip, snapshot, result, rules? }]. Tipps ohne Ergebnis

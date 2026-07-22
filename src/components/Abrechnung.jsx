@@ -5,6 +5,7 @@ import { createMockOddsSource, scoreTip, toDisplay } from "@/lib/engine";
 import { getStore } from "@/lib/store";
 import { DEMO_ROUND_ID } from "@/lib/session";
 import { useAuth } from "@/components/AuthProvider";
+import { usePrefs } from "@/components/PrefsProvider";
 import BackLink from "@/components/BackLink";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
@@ -69,6 +70,8 @@ function useCountUp(target, run, ms = 1100) {
 
 export default function Abrechnung() {
   const { user } = useAuth();
+  const { prefs } = usePrefs();
+  const lvl = prefs.abrechnung;             // voll | dezent | aus
   const meId = user?.id ?? "u-du";          // im Mock „u-du", live die echte Id
   const [stage, setStage] = useState(0);   // 0..5 gestaffelte Enthüllung
   const [key, setKey] = useState(0);        // Replay
@@ -147,19 +150,21 @@ export default function Abrechnung() {
             </div>
           </div>
 
-          {/* Distanz / Nähe */}
-          <div style={{ ...show(3), marginTop: 20 }}>
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
-            }}>
-              <span style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>Distanz zum Ergebnis</span>
-              <span style={{
-                fontFamily: MONO, fontSize: 12, color: C.coral,
-                border: `1px solid ${C.coral}55`, borderRadius: 999, padding: "2px 8px",
-              }}>{DATA.dist} {DATA.dist === 1 ? "Tor — hauchdünn" : "Tore"}</span>
+          {/* Distanz / Nähe — nur bei voller Transparenz */}
+          {lvl === "voll" && (
+            <div style={{ ...show(3), marginTop: 20 }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
+              }}>
+                <span style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>Distanz zum Ergebnis</span>
+                <span style={{
+                  fontFamily: MONO, fontSize: 12, color: C.coral,
+                  border: `1px solid ${C.coral}55`, borderRadius: 999, padding: "2px 8px",
+                }}>{DATA.dist} {DATA.dist === 1 ? "Tor — hauchdünn" : "Tore"}</span>
+              </div>
+              <DistanceLadder active={stage >= 3} wertung={me} />
             </div>
-            <DistanceLadder active={stage >= 3} wertung={me} />
-          </div>
+          )}
 
           {/* Punkte-Zähler */}
           <div style={{ ...show(4), marginTop: 22, textAlign: "center" }}>
@@ -174,15 +179,19 @@ export default function Abrechnung() {
             }}>
               +{Math.round(punkte)}
             </div>
-            <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-              <Chip>Sieger-Boden +{DATA.bodenPunkte}</Chip>
-              <Chip tone={C.coral}>Nähebonus +{DATA.naehePunkte}</Chip>
-              {DATA.torePunkte > 0 && <Chip tone={C.mint}>Tore +{DATA.torePunkte}</Chip>}
-            </div>
-            <p style={{ fontSize: 12.5, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
-              Das reale {DATA.realHome}:{DATA.realAway} war ein Freak-Ergebnis mit riesiger Quote. Du warst nur
-              ein Tor daneben — die Nähe zahlt fast so viel wie ein exakter Treffer.
-            </p>
+            {lvl === "voll" && (
+              <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                <Chip>Sieger-Boden +{DATA.bodenPunkte}</Chip>
+                <Chip tone={C.coral}>Nähebonus +{DATA.naehePunkte}</Chip>
+                {DATA.torePunkte > 0 && <Chip tone={C.mint}>Tore +{DATA.torePunkte}</Chip>}
+              </div>
+            )}
+            {lvl !== "aus" && (
+              <p style={{ fontSize: 12.5, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
+                Das reale {DATA.realHome}:{DATA.realAway} war ein Freak-Ergebnis mit riesiger Quote. Du warst nur
+                ein Tor daneben — die Nähe zahlt fast so viel wie ein exakter Treffer.
+              </p>
+            )}
           </div>
 
           {/* Rang + Badge */}

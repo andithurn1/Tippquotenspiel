@@ -15,6 +15,7 @@ const SCREENS = [
   { href: "/abrechnung", title: "Abrechnung", desc: "Spieltag-Abrechnung mit animiertem Punkte-Zähler.", tone: C.coral },
   { href: "/explorer", title: "Auszahlungs-Explorer", desc: "Heat-Grid: was jeder mögliche Endstand zahlen würde.", tone: C.mint },
   { href: "/erstellen", title: "Spiel erstellen", desc: "Regelwerk einstellen und per Creator-Code teilen.", tone: "#8B9BFF", tag: "Admin" },
+  { href: "/einstellungen", title: "Meine Anzeige", desc: "Wie viel Mathematik & Vorschau du sehen willst.", tone: "#B98BFF", tag: "persönlich" },
 ];
 
 export default function Home() {

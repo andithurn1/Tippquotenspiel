@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createMockOddsSource, DEFAULT_RULES } from "@/lib/engine";
+import { createMockOddsSource, DEFAULT_RULES, projectTip } from "@/lib/engine";
 import { getStore } from "@/lib/store";
 import { DEMO_ROUND_ID } from "@/lib/session";
 import { useAuth } from "@/components/AuthProvider";
+import { usePrefs } from "@/components/PrefsProvider";
 import BackLink from "@/components/BackLink";
 
 // ── Design-Tokens (gleich wie das Abrechnungsfenster) ───────
@@ -37,6 +38,7 @@ const risk = (q) =>
 
 export default function Tippabgabe() {
   const { user } = useAuth();
+  const { prefs } = usePrefs();
   const [h, setH] = useState(2);
   const [a, setA] = useState(1);
   const scorer = RULES.markets.goals;
@@ -55,6 +57,13 @@ export default function Tippabgabe() {
   const csQuote = SNAP.correctScore[h]?.[a] ?? null;
   const winner = h > a ? SNAP.home : h < a ? SNAP.away : "Unentschieden";
   const r = risk(csQuote);
+
+  // Tipp-Vorschau: Potenzial, wenn der Tipp exakt aufgeht (Engine rechnet).
+  const projGoals = {
+    home: picks[0].map((p) => p.main).filter(Boolean),
+    away: picks[1].map((p) => p.main).filter(Boolean),
+  };
+  const proj = projectTip({ home: h, away: a, goals: projGoals }, SNAP, RULES);
 
   const setPick = (ti, pi, field, val) =>
     setPicks((prev) => prev.map((team, i) =>
@@ -175,6 +184,48 @@ export default function Tippabgabe() {
                   Steht deine Erstwahl ~1 h vor Anpfiff nicht in der Aufstellung, rückt der Backup automatisch nach.
                 </p>
               </Section>
+            )}
+
+            {/* Tipp-Vorschau (je nach persönlicher Einstellung) */}
+            {prefs.vorschau !== "aus" && (
+              <div style={{
+                marginTop: 20, background: `${C.gold}10`, border: `1px solid ${C.gold}33`,
+                borderRadius: 14, padding: "12px 14px",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+                    Wenn dein Tipp exakt aufgeht
+                  </span>
+                  <span style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: C.gold }}>+{proj.points}</span>
+                </div>
+                <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 11, color: r.col, border: `1px solid ${r.col}55`, borderRadius: 999, padding: "2px 8px" }}>{r.label}</span>
+                  <span style={{ fontSize: 11.5, color: C.muted }}>
+                    {csQuote ? `Exakt-Quote ${csQuote.toFixed(1)}` : "seltenes Ergebnis"}
+                  </span>
+                </div>
+                {prefs.vorschau === "voll" && (
+                  <div style={{ marginTop: 10, fontSize: 11.5, color: C.muted, lineHeight: 1.7 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>Ergebnis-Nähe (roh)</span>
+                      <span style={{ fontFamily: MONO }}>{proj.ergNaehe.toFixed(1)}</span>
+                    </div>
+                    {proj.goalsNet > 0 && (
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span>Tor-Potenzial (roh)</span>
+                        <span style={{ fontFamily: MONO }}>+{proj.goalsNet.toFixed(1)}</span>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>Kombi bei exaktem Ergebnis</span>
+                      <span style={{ fontFamily: MONO }}>×{proj.combo}</span>
+                    </div>
+                  </div>
+                )}
+                <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
+                  Nur eine Aussicht auf dein getipptes Ergebnis — die echte Wertung richtet sich nach dem realen Ausgang.
+                </p>
+              </div>
             )}
 
             {/* Snapshot-Hinweis + Absenden */}

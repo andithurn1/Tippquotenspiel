@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   createMockOddsSource, DEFAULT_RULES, RULE_LIMITS,
   scoreResult, scoreGoals, scoreTip, applyCombo, toDisplay,
-  encodePreset, decodePreset, sanitizeRules, scoreLeaderboard,
+  encodePreset, decodePreset, sanitizeRules, scoreLeaderboard, projectTip,
 } from "./engine";
 
 const odds = createMockOddsSource();
@@ -192,6 +192,27 @@ describe("sanitizeRules — Import & Regler-Grenzen", () => {
   it("Runde durch Creator-Code: encode → decode → sanitize ist stabil", () => {
     const rules = sanitizeRules({ name: "Zocker-Modus", k: 1.2, combo: { exakt: 3.5 } });
     expect(sanitizeRules(decodePreset(encodePreset(rules)))).toEqual(rules);
+  });
+});
+
+describe("projectTip — Tipp-Vorschau (Potenzial)", () => {
+  it("exaktes Ergebnis ohne Tore: Punkte = skalierte Exakt-Quote, plus Quote", () => {
+    const p = projectTip({ home: 5, away: 1, goals: { home: [], away: [] } }, snap);
+    expect(p.exaktQuote).toBe(snap.correctScore[5][1]);
+    expect(p.points).toBe(toDisplay(snap.correctScore[5][1])); // ebene exakt, decay(0)=1
+    expect(p.goalsNet).toBe(0);
+  });
+
+  it("getippte Schützen heben das Potenzial (Kombi greift auf Ebene exakt)", () => {
+    const ohne = projectTip({ home: 5, away: 1, goals: { home: [], away: [] } }, snap);
+    const mit = projectTip({ home: 5, away: 1, goals: { home: ["Al-Naimat"], away: [] } }, snap);
+    expect(mit.points).toBeGreaterThan(ohne.points);
+    expect(mit.goalsNet).toBeCloseTo(snap.players.home["Al-Naimat"].anytime - 1, 5);
+  });
+
+  it("seltenes Ergebnis ohne Correct-Score-Quote: exaktQuote null", () => {
+    const p = projectTip({ home: 9, away: 9, goals: { home: [], away: [] } }, snap);
+    expect(p.exaktQuote).toBeNull();
   });
 });
 
