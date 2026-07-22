@@ -1,10 +1,11 @@
 -- ============================================================
---  Tippquotenspiel — Demo-Seed (Match JOR-ESP)
---  Nach schema.sql ausführen. Snapshot/Ergebnis stammen 1:1 aus
---  der Engine-Quoten-Quelle (createMockOddsSource), damit DB und
---  App exakt dieselben Zahlen verwenden.
+--  Tippquotenspiel — Demo-Seed
+--  Nach schema.sql ausführen. Snapshot/Ergebnis/Regelwerk stammen
+--  1:1 aus der Engine (createMockOddsSource, DEFAULT_RULES), damit
+--  DB und App exakt dieselben Zahlen verwenden.
 -- ============================================================
 
+-- Demo-Match JOR-ESP (real 5:1)
 insert into public.matches (id, home, away, kickoff, matchday, snapshot, result)
 values (
   'JOR-ESP', 'Jordanien', 'Spanien',
@@ -16,3 +17,15 @@ on conflict (id) do update
   set snapshot = excluded.snapshot,
       result   = excluded.result,
       kickoff  = excluded.kickoff;
+
+-- Gemeinsame Runde „Freundeskreis" mit Standard-Regelwerk. admin_id bleibt
+-- null (Gemeinschaftsrunde); neue Nutzer treten ihr nach dem Login automatisch
+-- bei (round_members). Feste Id, damit App und DB dieselbe Runde meinen.
+insert into public.rounds (id, name, admin_id, rules, join_code)
+values (
+  '00000000-0000-0000-0000-000000000001', 'Freundeskreis', null,
+  '{"name":"Standard","k":0.7,"m":0.5,"minPayout":1,"winnerFloor":true,"wrongPenalty":0,"combo":{"tendenz":1.15,"abstand":1.5,"exakt":2.3},"displayScale":15,"perGameCap":null,"markets":{"result":true,"goals":{"enabled":true,"picksPerTeam":2,"allowDouble":true,"allowBackups":true}},"oddsMode":"snapshot"}'::jsonb, 'DEMO'
+)
+on conflict (id) do update
+  set rules = excluded.rules,
+      name  = excluded.name;

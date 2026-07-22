@@ -7,9 +7,10 @@
 // Umstellen — analog zur Daten-Schicht (getStore).
 
 import { hasSupabaseEnv, getSupabaseBrowserClient } from "./supabaseClient";
+import { DEMO_ROUND_ID } from "./constants";
 
-// Demo-Runde aus dem Mock-Store (store.mock.js).
-export const DEMO_ROUND_ID = "r-demo";
+// Gemeinsame Demo-Runde (gleiche Id in Mock-Store und DB).
+export { DEMO_ROUND_ID };
 export const DEMO_USER = { id: "u-du", name: "Du" };
 
 // Aktueller Nutzer oder null (nicht eingeloggt). Async, weil Supabase

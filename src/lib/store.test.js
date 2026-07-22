@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createMockStore } from "./store.mock";
+import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 
 describe("Mock-Store — Seed & Schnittstelle", () => {
   it("liefert das Demo-Match JOR-ESP mit Snapshot und Ergebnis", async () => {
@@ -12,15 +13,15 @@ describe("Mock-Store — Seed & Schnittstelle", () => {
 
   it("Demo-Runde ist per Code und Id auffindbar, mit 5 Mitgliedern", async () => {
     const store = createMockStore();
-    const byCode = await store.getRoundByCode("DEMO");
-    expect(byCode.id).toBe("r-demo");
-    expect((await store.getRound("r-demo")).name).toBe("Freundeskreis");
-    expect(await store.listMembers("r-demo")).toHaveLength(5);
+    const byCode = await store.getRoundByCode(DEMO_JOIN_CODE);
+    expect(byCode.id).toBe(DEMO_ROUND_ID);
+    expect((await store.getRound(DEMO_ROUND_ID)).name).toBe("Freundeskreis");
+    expect(await store.listMembers(DEMO_ROUND_ID)).toHaveLength(5);
   });
 
   it("Leaderboard rankt die 5 Demo-Tipps über die Engine", async () => {
     const store = createMockStore();
-    const board = await store.getLeaderboard("r-demo");
+    const board = await store.getLeaderboard(DEMO_ROUND_ID);
     expect(board).toHaveLength(5);
     expect(board.map((b) => b.rank)).toEqual([1, 2, 3, 4, 5]);
     // absteigend sortiert
@@ -34,15 +35,24 @@ describe("Mock-Store — Seed & Schnittstelle", () => {
   it("saveTip legt an und aktualisiert denselben Tipp (kein Duplikat)", async () => {
     const store = createMockStore();
     const snap = (await store.getMatch("JOR-ESP")).snapshot;
-    await store.saveTip({ roundId: "r-demo", matchId: "JOR-ESP", userId: "u-neu", tip: { home: 3, away: 3 }, snapshot: snap });
-    let mine = await store.listTips({ roundId: "r-demo", matchId: "JOR-ESP" });
+    await store.saveTip({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP", userId: "u-neu", tip: { home: 3, away: 3 }, snapshot: snap });
+    let mine = await store.listTips({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP" });
     const neu = mine.filter((t) => t.user_id === "u-neu");
     expect(neu).toHaveLength(1);
     expect(neu[0].tip).toEqual({ home: 3, away: 3 });
 
-    await store.saveTip({ roundId: "r-demo", matchId: "JOR-ESP", userId: "u-neu", tip: { home: 1, away: 0 }, snapshot: snap });
-    mine = await store.listTips({ roundId: "r-demo", matchId: "JOR-ESP" });
+    await store.saveTip({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP", userId: "u-neu", tip: { home: 1, away: 0 }, snapshot: snap });
+    mine = await store.listTips({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP" });
     expect(mine.filter((t) => t.user_id === "u-neu")).toHaveLength(1);
     expect(mine.find((t) => t.user_id === "u-neu").tip).toEqual({ home: 1, away: 0 });
+  });
+
+  it("joinRound ist idempotent (kein doppeltes Mitglied)", async () => {
+    const store = createMockStore();
+    await store.joinRound({ roundId: DEMO_ROUND_ID, userId: "u-neu", name: "Neu" });
+    await store.joinRound({ roundId: DEMO_ROUND_ID, userId: "u-neu", name: "Neu" });
+    const members = await store.listMembers(DEMO_ROUND_ID);
+    expect(members.filter((m) => m.user_id === "u-neu")).toHaveLength(1);
+    expect(members).toHaveLength(6);
   });
 });

@@ -1,6 +1,7 @@
 -- ============================================================
 --  Tippquotenspiel — Supabase-Schema (MVP)
 --  Im Supabase-Dashboard unter SQL Editor einmal ausführen.
+--  Idempotent: kann gefahrlos erneut ausgeführt werden.
 --  Modelliert: Nutzer-Profile, Matches (mit Snapshot-Quoten +
 --  Ergebnis), Runden (Regelwerk + Beitritts-Code), Mitglieder,
 --  Tipps. Scoring passiert NICHT in der DB, sondern in der
@@ -30,10 +31,12 @@ create table if not exists public.matches (
 
 -- ── Runden (eine Freundes-Runde mit eigenem Regelwerk) ──────
 -- rules = per sanitizeRules() gültiges Regelwerk (JSON).
+-- admin_id nullable, damit eine geseedete Gemeinschaftsrunde ohne
+-- konkreten Admin existieren kann.
 create table if not exists public.rounds (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
-  admin_id   uuid not null references public.profiles(id) on delete cascade,
+  admin_id   uuid references public.profiles(id) on delete set null,
   rules      jsonb not null,
   join_code  text not null unique,           -- kurzer Beitritts-Code
   created_at timestamptz not null default now()
@@ -64,6 +67,32 @@ create table if not exists public.tips (
 create index if not exists tips_round_match_idx on public.tips (round_id, match_id);
 create index if not exists round_members_user_idx on public.round_members (user_id);
 
+-- Falls die rounds-Tabelle aus einer früheren Schema-Version noch
+-- admin_id NOT NULL hat: für die Gemeinschaftsrunde nullable machen.
+alter table public.rounds alter column admin_id drop not null;
+
+
+-- ============================================================
+--  Profil automatisch anlegen, sobald sich jemand registriert
+-- ============================================================
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id, display_name)
+  values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)))
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
 
 -- ============================================================
 --  Row Level Security — nur eingeloggte Nutzer, faire Sicht
@@ -75,16 +104,21 @@ alter table public.round_members enable row level security;
 alter table public.tips          enable row level security;
 
 -- Profile: jeder Eingeloggte darf lesen; eigenes Profil schreiben.
+drop policy if exists "profiles_read"        on public.profiles;
+drop policy if exists "profiles_insert_self" on public.profiles;
+drop policy if exists "profiles_update_self" on public.profiles;
 create policy "profiles_read"        on public.profiles for select to authenticated using (true);
 create policy "profiles_insert_self" on public.profiles for insert to authenticated with check (id = auth.uid());
 create policy "profiles_update_self" on public.profiles for update to authenticated using (id = auth.uid());
 
 -- Matches: für alle Eingeloggten lesbar (Schreiben nur serverseitig
 -- via service_role, das RLS umgeht — z. B. Quoten-/Ergebnis-Job).
+drop policy if exists "matches_read" on public.matches;
 create policy "matches_read" on public.matches for select to authenticated using (true);
 
--- Runden: Mitglieder dürfen ihre Runde sehen; jeder darf eine anlegen
--- (und wird damit Admin).
+-- Runden: Mitglieder dürfen ihre Runde sehen; jeder darf eine anlegen.
+drop policy if exists "rounds_read_members" on public.rounds;
+drop policy if exists "rounds_insert"       on public.rounds;
 create policy "rounds_read_members" on public.rounds for select to authenticated
   using (exists (select 1 from public.round_members m
                  where m.round_id = rounds.id and m.user_id = auth.uid()));
@@ -92,6 +126,8 @@ create policy "rounds_insert" on public.rounds for insert to authenticated
   with check (admin_id = auth.uid());
 
 -- Mitgliedschaft: eigene Mitgliedschaften sehen; sich selbst beitreten lassen.
+drop policy if exists "members_read_self" on public.round_members;
+drop policy if exists "members_join_self" on public.round_members;
 create policy "members_read_self" on public.round_members for select to authenticated
   using (user_id = auth.uid());
 create policy "members_join_self" on public.round_members for insert to authenticated
@@ -99,6 +135,9 @@ create policy "members_join_self" on public.round_members for insert to authenti
 
 -- Tipps: eigene immer sichtbar. Fremde Tipps einer Runde erst, wenn das
 -- Match ein Ergebnis hat — verhindert Abschreiben vor Anpfiff.
+drop policy if exists "tips_read_own_or_settled" on public.tips;
+drop policy if exists "tips_insert_self"         on public.tips;
+drop policy if exists "tips_update_own"          on public.tips;
 create policy "tips_read_own_or_settled" on public.tips for select to authenticated
   using (
     user_id = auth.uid()
@@ -109,8 +148,6 @@ create policy "tips_read_own_or_settled" on public.tips for select to authentica
                   where mt.id = tips.match_id and mt.result is not null)
     )
   );
-
--- Tipp abgeben/ändern nur als man selbst und nur als Mitglied der Runde.
 create policy "tips_insert_self" on public.tips for insert to authenticated
   with check (
     user_id = auth.uid()

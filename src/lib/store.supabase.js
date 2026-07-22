@@ -42,6 +42,13 @@ export function createSupabaseStore() {
         .eq("round_id", roundId));
       return data.map((m) => ({ round_id: m.round_id, user_id: m.user_id, name: m.profiles?.display_name ?? m.user_id }));
     },
+    async joinRound({ roundId, userId }) {
+      // idempotent: bereits Mitglied → nichts tun
+      return orThrow(await sb
+        .from("round_members")
+        .upsert({ round_id: roundId, user_id: userId }, { onConflict: "round_id,user_id", ignoreDuplicates: true })
+        .select());
+    },
 
     async saveTip({ roundId, matchId, userId, tip, snapshot }) {
       // ein Tipp je (round, match, user) → upsert auf dem Unique-Key

@@ -4,6 +4,7 @@
 // jedem Prozessstart — bewusst, es ist nur eine Attrappe.
 
 import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard } from "./engine";
+import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
@@ -18,7 +19,7 @@ const DEMO_TIPS = [
   { userId: "u-jonas", name: "Jonas", tip: { home: 0, away: 2, goals: { home: [], away: ["Oyarzabal", ""] } } },
 ];
 
-const ROUND_ID = "r-demo";
+const ROUND_ID = DEMO_ROUND_ID;
 
 export function createMockStore() {
   // frische Kopien pro Store, damit Schreibvorgänge isoliert sind
@@ -28,7 +29,7 @@ export function createMockStore() {
   }]]);
   const rounds = new Map([[ROUND_ID, {
     id: ROUND_ID, name: "Freundeskreis", admin_id: "u-du",
-    rules: DEFAULT_RULES, join_code: "DEMO",
+    rules: DEFAULT_RULES, join_code: DEMO_JOIN_CODE,
   }]]);
   const members = DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name }));
   const tips = DEMO_TIPS.map((t) => ({
@@ -48,6 +49,12 @@ export function createMockStore() {
     },
     async listMembers(roundId) {
       return members.filter((m) => m.round_id === roundId);
+    },
+    async joinRound({ roundId, userId, name }) {
+      if (!members.some((m) => m.round_id === roundId && m.user_id === userId)) {
+        members.push({ round_id: roundId, user_id: userId, name: name ?? userId });
+      }
+      return { round_id: roundId, user_id: userId };
     },
 
     async saveTip({ roundId, matchId, userId, tip, snapshot }) {
