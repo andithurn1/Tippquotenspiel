@@ -53,6 +53,66 @@ export const DEFAULT_RULES = {
   oddsMode: "snapshot",
 };
 
+// Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
+// und die Import-Sanitisierung. UI liest min/max/step hieraus, statt sie zu duplizieren.
+export const RULE_LIMITS = {
+  k:            { min: 0.2, max: 1.6,  step: 0.05 },
+  m:            { min: 0.2, max: 1.6,  step: 0.05 },
+  minPayout:    { min: 0,   max: 5,    step: 0.5  },
+  wrongPenalty: { min: -5,  max: 0,    step: 0.5  },
+  displayScale: { min: 1,   max: 50,   step: 1    },
+  perGameCap:   { min: 50,  max: 5000, step: 50   },
+  combo: {
+    tendenz: { min: 1, max: 2, step: 0.05 },
+    abstand: { min: 1, max: 3, step: 0.05 },
+    exakt:   { min: 1, max: 4, step: 0.1  },
+  },
+  picksPerTeam: { min: 1, max: 3, step: 1 },
+};
+
+// Nimmt ein (evtl. aus einem Creator-Code importiertes) Teil-Regelwerk und macht
+// daraus ein vollständiges, gültiges Regelwerk: fehlende Felder aus DEFAULT_RULES,
+// Zahlen auf die RULE_LIMITS beschnitten, Fremdschlüssel verworfen.
+export function sanitizeRules(partial = {}) {
+  const L = RULE_LIMITS;
+  const src = partial && typeof partial === "object" ? partial : {};
+  const c = src.combo || {};
+  const mk = src.markets || {};
+  const g = mk.goals || {};
+  const num = (v, d) => {
+    if (typeof v === "number") return Number.isFinite(v) ? v : d;
+    if (typeof v === "string" && v.trim() !== "" && Number.isFinite(+v)) return +v;
+    return d;   // null, undefined, "", Booleans, Unsinn → Default
+  };
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const D = DEFAULT_RULES;
+  return {
+    name: (typeof src.name === "string" && src.name.trim()) ? src.name.trim().slice(0, 40) : D.name,
+    k: clamp(num(src.k, D.k), L.k.min, L.k.max),
+    m: clamp(num(src.m, D.m), L.m.min, L.m.max),
+    minPayout: clamp(num(src.minPayout, D.minPayout), L.minPayout.min, L.minPayout.max),
+    winnerFloor: src.winnerFloor !== false,
+    wrongPenalty: clamp(num(src.wrongPenalty, D.wrongPenalty), L.wrongPenalty.min, L.wrongPenalty.max),
+    combo: {
+      tendenz: clamp(num(c.tendenz, D.combo.tendenz), L.combo.tendenz.min, L.combo.tendenz.max),
+      abstand: clamp(num(c.abstand, D.combo.abstand), L.combo.abstand.min, L.combo.abstand.max),
+      exakt:   clamp(num(c.exakt,   D.combo.exakt),   L.combo.exakt.min,   L.combo.exakt.max),
+    },
+    displayScale: clamp(num(src.displayScale, D.displayScale), L.displayScale.min, L.displayScale.max),
+    perGameCap: src.perGameCap == null ? null : clamp(num(src.perGameCap, 0), L.perGameCap.min, L.perGameCap.max),
+    markets: {
+      result: mk.result !== false,
+      goals: {
+        enabled: g.enabled !== false,
+        picksPerTeam: clamp(Math.round(num(g.picksPerTeam, D.markets.goals.picksPerTeam)), L.picksPerTeam.min, L.picksPerTeam.max),
+        allowDouble: g.allowDouble !== false,
+        allowBackups: g.allowBackups !== false,
+      },
+    },
+    oddsMode: src.oddsMode === "average" ? "average" : "snapshot",
+  };
+}
+
 
 // ── 3) SCORING ──────────────────────────────────────────────
 const sgn = (h, a) => (h > a ? 1 : h < a ? -1 : 0);

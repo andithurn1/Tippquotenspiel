@@ -11,6 +11,7 @@ const SCREENS = [
   { href: "/tippen", title: "Tipp abgeben", desc: "Ergebnis + Torschützen tippen, Snapshot-Quote einfrieren.", tone: C.gold },
   { href: "/abrechnung", title: "Abrechnung", desc: "Spieltag-Abrechnung mit animiertem Punkte-Zähler.", tone: C.coral },
   { href: "/explorer", title: "Auszahlungs-Explorer", desc: "Heat-Grid: was jeder mögliche Endstand zahlen würde.", tone: C.mint },
+  { href: "/erstellen", title: "Spiel erstellen", desc: "Regelwerk einstellen und per Creator-Code teilen.", tone: "#8B9BFF", tag: "Admin" },
 ];
 
 export default function Home() {
@@ -42,6 +43,13 @@ export default function Home() {
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: 999, background: s.tone, boxShadow: `0 0 12px ${s.tone}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>{s.title}</span>
+                {s.tag && (
+                  <span style={{
+                    marginLeft: "auto", fontFamily: MONO, fontSize: 10, color: s.tone,
+                    border: `1px solid ${s.tone}55`, borderRadius: 999, padding: "2px 8px",
+                    textTransform: "uppercase", letterSpacing: 1,
+                  }}>{s.tag}</span>
+                )}
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>{s.desc}</div>
             </Link>

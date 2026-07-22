@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
-  createMockOddsSource, DEFAULT_RULES,
+  createMockOddsSource, DEFAULT_RULES, RULE_LIMITS,
   scoreResult, scoreGoals, scoreTip, applyCombo, toDisplay,
-  encodePreset, decodePreset,
+  encodePreset, decodePreset, sanitizeRules,
 } from "./engine";
 
 const odds = createMockOddsSource();
@@ -146,5 +146,51 @@ describe("Creator-Codes", () => {
   it("ungültige Codes werfen einen Fehler", () => {
     expect(() => decodePreset("QUATSCH")).toThrow();
     expect(() => decodePreset(null)).toThrow();
+  });
+});
+
+describe("sanitizeRules — Import & Regler-Grenzen", () => {
+  it("leeres Objekt ergibt das Standard-Regelwerk", () => {
+    expect(sanitizeRules({})).toEqual(DEFAULT_RULES);
+    expect(sanitizeRules()).toEqual(DEFAULT_RULES);
+  });
+
+  it("beschneidet Zahlen auf die RULE_LIMITS", () => {
+    const r = sanitizeRules({ k: 99, m: -5, displayScale: 9999, combo: { exakt: 100 } });
+    expect(r.k).toBe(RULE_LIMITS.k.max);
+    expect(r.m).toBe(RULE_LIMITS.m.min);
+    expect(r.displayScale).toBe(RULE_LIMITS.displayScale.max);
+    expect(r.combo.exakt).toBe(RULE_LIMITS.combo.exakt.max);
+  });
+
+  it("verwirft Fremdschlüssel und ersetzt Unsinn durch Defaults", () => {
+    const r = sanitizeRules({ hack: true, k: "abc", combo: { tendenz: null } });
+    expect(r.hack).toBeUndefined();
+    expect(r.k).toBe(DEFAULT_RULES.k);
+    expect(r.combo.tendenz).toBe(DEFAULT_RULES.combo.tendenz);
+  });
+
+  it("perGameCap: null bleibt null, Zahl wird beschnitten", () => {
+    expect(sanitizeRules({ perGameCap: null }).perGameCap).toBeNull();
+    expect(sanitizeRules({ perGameCap: 999999 }).perGameCap).toBe(RULE_LIMITS.perGameCap.max);
+  });
+
+  it("Name wird getrimmt und auf 40 Zeichen begrenzt", () => {
+    expect(sanitizeRules({ name: "  Hardcore  " }).name).toBe("Hardcore");
+    expect(sanitizeRules({ name: "x".repeat(80) }).name.length).toBe(40);
+    expect(sanitizeRules({ name: "   " }).name).toBe(DEFAULT_RULES.name);
+  });
+
+  it("Märkte: picksPerTeam gerundet & beschnitten, Booleans normalisiert", () => {
+    const r = sanitizeRules({ markets: { result: false, goals: { picksPerTeam: 9, allowDouble: false } } });
+    expect(r.markets.result).toBe(false);
+    expect(r.markets.goals.picksPerTeam).toBe(RULE_LIMITS.picksPerTeam.max);
+    expect(r.markets.goals.allowDouble).toBe(false);
+    expect(r.markets.goals.enabled).toBe(true);
+  });
+
+  it("Runde durch Creator-Code: encode → decode → sanitize ist stabil", () => {
+    const rules = sanitizeRules({ name: "Zocker-Modus", k: 1.2, combo: { exakt: 3.5 } });
+    expect(sanitizeRules(decodePreset(encodePreset(rules)))).toEqual(rules);
   });
 });

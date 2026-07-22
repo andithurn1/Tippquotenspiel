@@ -18,7 +18,8 @@ vor Bundesliga-Start am 28.08.2026. Details zur Strategie: `README.md`.
   Quoten-Quelle, Creator-Codes). UI-frei. Von `src/lib/engine.test.js` abgesichert.
 - `src/components/*.jsx` — die drei Screens (Client Components). Sie rechnen
   NICHT selbst, sie importieren aus der Engine.
-- `src/app/` — Routen: `/` (Übersicht), `/tippen`, `/abrechnung`, `/explorer`.
+- `src/app/` — Routen: `/` (Übersicht), `/tippen`, `/abrechnung`, `/explorer`,
+  `/erstellen` (Admin: Regelwerk einstellen + Creator-Code).
 
 ## Architektur-Regeln (nicht brechen)
 
@@ -39,6 +40,8 @@ Teile: Sieger-Boden, Abstand, Ergebnis-Nähe (`exp(-k·dist) × Exakt-Quote`),
 siegerunabhängige Team-Tore-Nähe. `scoreGoals`: gleicher Spieler 2× =
 Doppelpack, 1 Tor = anytime-Floor. `applyCombo`: Tor-Gewinne × Kombi-Faktor
 der erreichten Ebene. `toDisplay`: roh × `displayScale` (Anzeige, nie Fairness).
+`sanitizeRules` macht aus einem (evtl. importierten) Teil-Regelwerk ein gültiges
+— Zahlen auf `RULE_LIMITS` beschnitten; `RULE_LIMITS` speist auch die UI-Regler.
 
 ## Arbeitsweise
 
@@ -46,6 +49,6 @@ der erreichten Ebene. `toDisplay`: roh × `displayScale` (Anzeige, nie Fairness)
 - Demo-Daten: Match „JOR-ESP" (Jordanien vs Spanien, real 5:1). Mock-Werte in
   Screens (Leaderboard, Spieltag, Rang) sind als solche kommentiert — sie
   verschwinden, sobald das Backend steht.
-- Roadmap (Stand: Screens ✓ an Engine angeschlossen): als Nächstes
-  Spielerstellungs-Screen (Regler + Creator-Code), dann Supabase-Backend,
-  zuletzt echte Quoten-API mit Test-Key.
+- Roadmap (Stand: Screens ✓ an Engine, Spielerstellungs-Screen ✓): als Nächstes
+  Supabase-Backend (Nutzer/Tipps/Leaderboard), zuletzt echte Quoten-API mit
+  Test-Key (Key nur serverseitig).

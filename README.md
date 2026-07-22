@@ -90,6 +90,6 @@ diese eine Stelle wird später gegen die echte API getauscht.
 1. ~~Projekt anlegen, mit GitHub verbinden.~~ ✅
 2. ~~Dateien importieren.~~ ✅
 3. ~~Screens an `engine.js` anschließen.~~ ✅ (+ Next.js-Setup, Engine-Tests, `CLAUDE.md`)
-4. Spielerstellungs-Screen bauen (Regler + Creator-Code).
+4. ~~Spielerstellungs-Screen bauen (Regler + Creator-Code).~~ ✅ (`/erstellen`, `sanitizeRules`)
 5. Einfaches Backend (Nutzer / Tipps / Leaderboard) — Plan: Supabase.
 6. Ganz zuletzt: echte Quoten-API mit Test-Key (Key nur serverseitig).
