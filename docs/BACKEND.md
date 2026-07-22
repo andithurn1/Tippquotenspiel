@@ -26,6 +26,22 @@ hält nur Rohdaten (Tipps, Snapshots, Ergebnisse).
 **Fairness per RLS:** Fremde Tipps einer Runde werden erst sichtbar, wenn das
 Match ein `result` hat — vorher sieht jeder nur die eigenen. Kein Abschreiben.
 
+**Runden erstellen & beitreten:** Jede Runde hat einen `join_code` (6-stellig,
+generiert in `src/lib/joinCode.js`, kein O/0/I/1 zur Verwechslungsgefahr).
+`rounds` ist für alle Eingeloggten lesbar (RLS `using (true)`) — das ist
+bewusst so: der Beitritt per Code muss die Runde finden können, BEVOR man
+Mitglied ist. Der Code selbst ist die Zugangsschranke (er steht nicht öffentlich,
+nur wer ihn von einem Mitspieler bekommt, kann beitreten), nicht die
+Sichtbarkeit der (unsensiblen) Rundendaten. `round_members` erlaubt SELECT für
+alle Mitglieder derselben Runde — sonst würde das Leaderboard nach dem Beitritt
+nur die eigene Zeile zeigen.
+
+⚠️ **Falls dein Supabase-Projekt schon vor diesem Feature eingerichtet wurde:**
+`schema.sql` im SQL Editor **erneut komplett ausführen** — es ist idempotent
+(kann gefahrlos mehrfach laufen) und bringt die beiden oben genannten
+RLS-Policies auf den aktuellen Stand. Ohne den Re-Run würde „Runde beitreten"
+in der Live-DB keine fremde Runde finden.
+
 ## Einrichtung in 5 Schritten
 
 1. **Projekt anlegen** auf [supabase.com](https://supabase.com) (kostenlose Stufe reicht fürs MVP).

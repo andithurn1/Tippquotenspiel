@@ -3,8 +3,9 @@
 //    sind (siehe store.js). Scoring bleibt in der Engine — hier werden
 //    nur Rohdaten geladen/geschrieben.
 
-import { DEFAULT_RULES, scoreLeaderboard } from "./engine";
+import { DEFAULT_RULES, scoreLeaderboard, sanitizeRules } from "./engine";
 import { getSupabaseBrowserClient } from "./supabaseClient";
+import { generateJoinCode } from "./joinCode";
 
 // Match-Zeile (DB) → Store-Form
 const mapMatch = (m) => m && ({
@@ -48,6 +49,22 @@ export function createSupabaseStore() {
         .from("round_members")
         .upsert({ round_id: roundId, user_id: userId }, { onConflict: "round_id,user_id", ignoreDuplicates: true })
         .select());
+    },
+    async createRound({ name, adminId, rules }) {
+      // Kollisionen beim Beitritts-Code sind bei 6 Zeichen extrem selten;
+      // der unique-Constraint in der DB schützt zusätzlich (Retry bei 23505).
+      let joinCode = generateJoinCode();
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { data, error } = await sb
+          .from("rounds")
+          .insert({ name: (name ?? "").trim() || "Neue Runde", admin_id: adminId, rules: sanitizeRules(rules), join_code: joinCode })
+          .select()
+          .single();
+        if (!error) { await this.joinRound({ roundId: data.id, userId: adminId }); return data; }
+        if (error.code !== "23505") throw error;
+        joinCode = generateJoinCode();
+      }
+      throw new Error("Konnte keinen eindeutigen Beitritts-Code erzeugen.");
     },
 
     async saveTip({ roundId, matchId, userId, tip, snapshot }) {

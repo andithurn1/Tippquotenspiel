@@ -18,15 +18,23 @@ vor Bundesliga-Start am 28.08.2026. Details zur Strategie: `README.md`.
 ## Struktur
 
 - `src/lib/engine.js` — **die einzige Logik-Quelle** (Scoring, Regelwerk,
-  Quoten-Quelle, Creator-Codes). UI-frei. Von `src/lib/engine.test.js` abgesichert.
-- `src/components/*.jsx` — die vier Screens (Client Components). Sie rechnen
-  NICHT selbst, sie importieren aus der Engine.
+  Quoten-Quelle, Creator-Codes, `scoreLeaderboard`, `projectTip`). UI-frei.
+  Von `src/lib/engine.test.js` abgesichert.
+- `src/components/*.jsx` — die Screens + Provider (Client Components). Screens
+  rechnen NICHT selbst, sie importieren aus der Engine: `Tippabgabe`,
+  `Abrechnung`, `AuszahlungsExplorer`, `Spielerstellung` (Regelwerk + Runde
+  anlegen), `RundeBeitreten`, `Einstellungen`. Provider: `AuthProvider`
+  (`useAuth`), `RoundProvider` (`useCurrentRound` — aktive Runde, localStorage),
+  `PrefsProvider` (`usePrefs` — persönliche Anzeige-Stufen).
 - `src/app/` — Routen: `/` (Übersicht), `/tippen`, `/abrechnung`, `/explorer`,
-  `/erstellen` (Admin: Regelwerk einstellen + Creator-Code).
+  `/erstellen` (Admin: Regelwerk einstellen + Runde anlegen + Creator-Code),
+  `/beitreten` (Runde per Code beitreten/wechseln), `/einstellungen`.
 - `src/lib/store.js` — **die eine Stelle Mock ↔ Supabase** (wie die Quoten-Quelle).
   `store.mock.js` (In-Memory, seeded), `store.supabase.js` (echte DB),
-  `supabaseClient.js` (Client-Factory). Gleiche Schnittstelle, Scoring in der Engine.
-- `supabase/schema.sql` + `seed.sql` — DB-Schema (mit RLS) und Demo-Match-Seed.
+  `supabaseClient.js` (Client-Factory), `joinCode.js` (Beitritts-Code-Generator).
+  Gleiche Schnittstelle inkl. `createRound`/`joinRound`, Scoring in der Engine.
+- `supabase/schema.sql` + `seed.sql` — DB-Schema (mit RLS, idempotent) und
+  Demo-Match-Seed + Gemeinschaftsrunde.
 
 ## Architektur-Regeln (nicht brechen)
 
@@ -60,6 +68,19 @@ der erreichten Ebene. `toDisplay`: roh × `displayScale` (Anzeige, nie Fairness)
 - Auth: `AuthProvider` (Context) ist die eine Quelle für den Nutzer — Mock liefert
   Demo-User „Du", live kommt supabase.auth (Magic-Link) + Auto-Beitritt zur
   Freundeskreis-Runde (`DEMO_ROUND_ID` in `constants.js`, gleich in Mock + DB).
+- Runden: `RoundProvider`/`useCurrentRound` hält die AKTIVE Runde (localStorage,
+  Default `DEMO_ROUND_ID`) — unabhängig vom Regelwerk und vom Login. Neue Runde
+  → `getStore().createRound()` (generiert Beitritts-Code via `joinCode.js`,
+  Admin wird automatisch Mitglied). Beitreten → `getRoundByCode()` +
+  `joinRound()`, dann `setRoundId()`. Tippabgabe/Abrechnung lesen `roundId`
+  ausschließlich aus `useCurrentRound()`, nie mehr hart codiert.
+- **RLS-Hinweis (wichtig bei Schema-Änderungen):** `rounds` ist für alle
+  Eingeloggten lesbar (`using (true)`) — nötig, damit Beitritt-per-Code eine
+  Runde findet, BEVOR man Mitglied ist; der Code selbst ist die Zugangsschranke,
+  nicht die Sichtbarkeit. `round_members` erlaubt SELECT für alle Mitglieder
+  DERSELBEN Runde (Self-Join-Policy), sonst sähe das Leaderboard nur die eigene
+  Zeile. Bei Supabase-Schema-Updates: `schema.sql` ist idempotent, im SQL Editor
+  einfach erneut komplett ausführen.
 - Roadmap (Stand: Screens ✓, Spielerstellung ✓, Backend-Daten-Schicht ✓,
-  UI an `getStore()` + E-Mail-Login ✓): als Nächstes echte Quoten-API mit
-  Test-Key (Key nur serverseitig) sowie Runden-Erstellung/-Beitritt im UI.
+  UI an `getStore()` + E-Mail-Login ✓, Runden-Erstellung/-Beitritt ✓): als
+  Nächstes echte Quoten-API mit Test-Key (Key nur serverseitig).

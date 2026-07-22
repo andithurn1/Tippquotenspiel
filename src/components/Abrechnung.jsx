@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { createMockOddsSource, scoreTip, toDisplay } from "@/lib/engine";
 import { getStore } from "@/lib/store";
-import { DEMO_ROUND_ID } from "@/lib/session";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
+import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
@@ -71,20 +72,25 @@ function useCountUp(target, run, ms = 1100) {
 export default function Abrechnung() {
   const { user } = useAuth();
   const { prefs } = usePrefs();
+  const { roundId } = useCurrentRound();
   const lvl = prefs.abrechnung;             // voll | dezent | aus
   const meId = user?.id ?? "u-du";          // im Mock „u-du", live die echte Id
   const [stage, setStage] = useState(0);   // 0..5 gestaffelte Enthüllung
   const [key, setKey] = useState(0);        // Replay
   const [fair, setFair] = useState(false);  // Ranking-Toggle
   const [board, setBoard] = useState(null); // Leaderboard aus dem Store
+  const [roundName, setRoundName] = useState(null);
 
   useEffect(() => {
     let live = true;
-    getStore().getLeaderboard(DEMO_ROUND_ID)
+    getStore().getLeaderboard(roundId)
       .then((b) => { if (live) setBoard(b); })
       .catch(() => { if (live) setBoard([]); });
+    getStore().getRound(roundId)
+      .then((r) => { if (live) setRoundName(r?.name ?? null); })
+      .catch(() => {});
     return () => { live = false; };
-  }, []);
+  }, [roundId]);
 
   useEffect(() => {
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -114,6 +120,13 @@ export default function Abrechnung() {
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink />
+      <div style={{
+        width: "100%", maxWidth: 400, display: "flex", justifyContent: "space-between",
+        alignItems: "center", marginBottom: 10, fontFamily: MONO, fontSize: 11.5, color: C.muted,
+      }}>
+        <span>Runde: <span style={{ color: C.text }}>{roundName ?? "…"}</span></span>
+        <Link href="/beitreten" style={{ color: C.mint, textDecoration: "none" }}>wechseln</Link>
+      </div>
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
         borderRadius: 26, overflow: "hidden",

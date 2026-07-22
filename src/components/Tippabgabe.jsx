@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createMockOddsSource, DEFAULT_RULES, projectTip } from "@/lib/engine";
 import { getStore } from "@/lib/store";
-import { DEMO_ROUND_ID } from "@/lib/session";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
+import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 
 // ── Design-Tokens (gleich wie das Abrechnungsfenster) ───────
@@ -39,8 +39,10 @@ const risk = (q) =>
 export default function Tippabgabe() {
   const { user } = useAuth();
   const { prefs } = usePrefs();
+  const { roundId } = useCurrentRound();
   const [h, setH] = useState(2);
   const [a, setA] = useState(1);
+  const [roundName, setRoundName] = useState(null);
   const scorer = RULES.markets.goals;
   const teams = [
     { side: "home", name: SNAP.home },
@@ -53,6 +55,12 @@ export default function Tippabgabe() {
   );
   const [done, setDone] = useState(false);
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error
+
+  useEffect(() => {
+    let live = true;
+    getStore().getRound(roundId).then((r) => { if (live) setRoundName(r?.name ?? null); }).catch(() => {});
+    return () => { live = false; };
+  }, [roundId]);
 
   const csQuote = SNAP.correctScore[h]?.[a] ?? null;
   const winner = h > a ? SNAP.home : h < a ? SNAP.away : "Unentschieden";
@@ -82,7 +90,7 @@ export default function Tippabgabe() {
         away: picks[1].map((p) => p.main).filter(Boolean),
       };
       await getStore().saveTip({
-        roundId: DEMO_ROUND_ID, matchId: SNAP.matchId, userId: user.id,
+        roundId, matchId: SNAP.matchId, userId: user.id,
         tip: { home: h, away: a, goals }, snapshot: SNAP,
       });
       setSaveState("saved");
@@ -248,6 +256,7 @@ export default function Tippabgabe() {
           <Confirmation
             snap={SNAP} h={h} a={a} winner={winner} csQuote={csQuote}
             kickoffLabel={kickoffLabel} picks={picks} teams={teams} saveState={saveState}
+            roundName={roundName}
             onEdit={() => { setSaveState("idle"); setDone(false); }}
           />
         )}
@@ -312,13 +321,14 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
 
 const SAVE_HINT = {
   saving: { text: "wird gespeichert …", col: C.muted },
-  saved:  { text: "✓ in deiner Runde gespeichert", col: C.mint },
   guest:  { text: "nicht eingeloggt — lokal eingefroren, aber nicht gespeichert", col: C.gold },
   error:  { text: "Speichern fehlgeschlagen — später erneut versuchen", col: C.coral },
 };
 
-function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState, onEdit }) {
-  const hint = SAVE_HINT[saveState];
+function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState, roundName, onEdit }) {
+  const hint = saveState === "saved"
+    ? { text: `✓ gespeichert in „${roundName ?? "deiner Runde"}"`, col: C.mint }
+    : SAVE_HINT[saveState];
   return (
     <div style={{ position: "relative", padding: "30px 22px 24px" }}>
       <div style={{

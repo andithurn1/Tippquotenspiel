@@ -3,8 +3,9 @@
 // „Freundeskreis" auf dem Match JOR-ESP (real 5:1). Zurücksetzen bei
 // jedem Prozessstart — bewusst, es ist nur eine Attrappe.
 
-import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard } from "./engine";
+import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, sanitizeRules } from "./engine";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
+import { generateJoinCode } from "./joinCode";
 
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
@@ -55,6 +56,20 @@ export function createMockStore() {
         members.push({ round_id: roundId, user_id: userId, name: name ?? userId });
       }
       return { round_id: roundId, user_id: userId };
+    },
+    async createRound({ name, adminId, adminName, rules }) {
+      let joinCode = generateJoinCode();
+      while ([...rounds.values()].some((r) => r.join_code === joinCode)) joinCode = generateJoinCode();
+      const round = {
+        id: `r-${joinCode.toLowerCase()}`,
+        name: (name ?? "").trim() || "Neue Runde",
+        admin_id: adminId,
+        rules: sanitizeRules(rules),
+        join_code: joinCode,
+      };
+      rounds.set(round.id, round);
+      members.push({ round_id: round.id, user_id: adminId, name: adminName ?? adminId });
+      return round;
     },
 
     async saveTip({ roundId, matchId, userId, tip, snapshot }) {

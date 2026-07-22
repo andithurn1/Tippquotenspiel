@@ -1,7 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import AuthBar from "@/components/AuthBar";
+import { useCurrentRound } from "@/components/RoundProvider";
+import { getStore } from "@/lib/store";
 
 const C = {
   ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040",
@@ -14,11 +17,21 @@ const SCREENS = [
   { href: "/tippen", title: "Tipp abgeben", desc: "Ergebnis + Torschützen tippen, Snapshot-Quote einfrieren.", tone: C.gold },
   { href: "/abrechnung", title: "Abrechnung", desc: "Spieltag-Abrechnung mit animiertem Punkte-Zähler.", tone: C.coral },
   { href: "/explorer", title: "Auszahlungs-Explorer", desc: "Heat-Grid: was jeder mögliche Endstand zahlen würde.", tone: C.mint },
-  { href: "/erstellen", title: "Spiel erstellen", desc: "Regelwerk einstellen und per Creator-Code teilen.", tone: "#8B9BFF", tag: "Admin" },
+  { href: "/erstellen", title: "Spiel erstellen", desc: "Regelwerk einstellen, Runde anlegen und per Code teilen.", tone: "#8B9BFF", tag: "Admin" },
+  { href: "/beitreten", title: "Runde beitreten", desc: "Mit Beitritts-Code einer Runde beitreten oder wechseln.", tone: "#4FD1E8" },
   { href: "/einstellungen", title: "Meine Anzeige", desc: "Wie viel Mathematik & Vorschau du sehen willst.", tone: "#B98BFF", tag: "persönlich" },
 ];
 
 export default function Home() {
+  const { roundId } = useCurrentRound();
+  const [roundName, setRoundName] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    getStore().getRound(roundId).then((r) => { if (live) setRoundName(r?.name ?? null); }).catch(() => {});
+    return () => { live = false; };
+  }, [roundId]);
+
   return (
     <main style={{
       minHeight: "100vh", background: C.ink, color: C.text,
@@ -38,6 +51,13 @@ export default function Home() {
         </p>
 
         <AuthBar />
+
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          marginBottom: 16, fontFamily: MONO, fontSize: 11.5, color: C.muted,
+        }}>
+          <span>Aktive Runde: <span style={{ color: C.text }}>{roundName ?? "…"}</span></span>
+        </div>
 
         <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 12 }}>
           {SCREENS.map((s) => (

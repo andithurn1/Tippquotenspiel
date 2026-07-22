@@ -93,5 +93,6 @@ diese eine Stelle wird später gegen die echte API getauscht.
 4. ~~Spielerstellungs-Screen bauen (Regler + Creator-Code).~~ ✅ (`/erstellen`, `sanitizeRules`)
 5. Einfaches Backend (Nutzer / Tipps / Leaderboard) — ✅ Daten-Schicht,
    UI an `getStore()` gehängt, E-Mail-Login (Magic-Link) + Auto-Beitritt zur
-   Freundeskreis-Runde. Setup & Vercel-Deploy: `docs/BACKEND.md`.
+   Freundeskreis-Runde, eigene Runden erstellen & per Code beitreten
+   (`/erstellen`, `/beitreten`). Setup & Vercel-Deploy: `docs/BACKEND.md`.
 6. Ganz zuletzt: echte Quoten-API mit Test-Key (Key nur serverseitig).

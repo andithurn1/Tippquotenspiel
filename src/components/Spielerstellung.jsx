@@ -5,6 +5,9 @@ import {
   DEFAULT_RULES, RULE_LIMITS, createMockOddsSource, scoreTip,
   encodePreset, decodePreset, sanitizeRules,
 } from "@/lib/engine";
+import { getStore } from "@/lib/store";
+import { useAuth } from "@/components/AuthProvider";
+import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 
 // ── Design-Tokens (gleich wie die anderen Screens) ──────────
@@ -25,10 +28,16 @@ const BOLD = { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away
 const SAFE = { home: 2, away: 1, goals: { home: [], away: ["Yamal", ""] } };
 
 export default function Spielerstellung() {
+  const { user } = useAuth();
+  const { setRoundId } = useCurrentRound();
   const [rules, setRules] = useState(DEFAULT_RULES);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [created, setCreated] = useState(null);
+  const [createErr, setCreateErr] = useState("");
+  const [codeCopied, setCodeCopied] = useState(false);
 
   const patch = (p) => setRules((r) => ({ ...r, ...p }));
   const patchCombo = (p) => setRules((r) => ({ ...r, combo: { ...r.combo, ...p } }));
@@ -49,6 +58,26 @@ export default function Spielerstellung() {
   const load = () => {
     try { setRules(sanitizeRules(decodePreset(imp.trim()))); setImp(""); setImpErr(""); }
     catch { setImpErr("Kein gültiger Creator-Code (TS1-…)"); }
+  };
+
+  const createRound = async () => {
+    if (!user) { setCreateErr("Bitte zuerst einloggen (Startseite)."); return; }
+    setCreating(true); setCreateErr("");
+    try {
+      const round = await getStore().createRound({ name: rules.name, adminId: user.id, adminName: user.name, rules });
+      setCreated(round);
+      setRoundId(round.id);
+    } catch {
+      setCreateErr("Runde konnte nicht angelegt werden. Später erneut versuchen.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const copyJoinCode = async () => {
+    if (!created) return;
+    try { await navigator.clipboard.writeText(created.join_code); setCodeCopied(true); setTimeout(() => setCodeCopied(false), 1500); }
+    catch { /* Nutzer kann den Code markieren */ }
   };
 
   const L = RULE_LIMITS;
@@ -176,6 +205,45 @@ export default function Spielerstellung() {
                 onChange={(on) => patchGoals({ allowDouble: on })} />
               <Toggle label="Backup-Schützen erlaubt" on={g.allowBackups}
                 onChange={(on) => patchGoals({ allowBackups: on })} />
+            </div>
+          )}
+
+          {/* Runde erstellen */}
+          <SectionTitle>Runde erstellen</SectionTitle>
+          {!created ? (
+            <>
+              <p style={{ fontSize: 12.5, color: C.muted, marginTop: -4, marginBottom: 10, lineHeight: 1.5 }}>
+                Legt mit diesem Regelwerk eine echte Runde an. Du wirst Admin,
+                bekommst einen Beitritts-Code zum Teilen, und diese Runde wird
+                deine aktive Runde zum Tippen.
+              </p>
+              {!user && (
+                <p style={{ fontSize: 12, color: C.gold, marginBottom: 10 }}>
+                  Bitte zuerst auf der Startseite einloggen.
+                </p>
+              )}
+              <button onClick={createRound} disabled={creating || !user} style={{
+                width: "100%", cursor: creating || !user ? "default" : "pointer",
+                background: C.mint, color: C.ink, fontWeight: 700, fontSize: 14,
+                border: "none", borderRadius: 14, padding: "13px 0", opacity: creating || !user ? 0.6 : 1,
+              }}>
+                {creating ? "wird angelegt …" : "Runde jetzt erstellen"}
+              </button>
+              {createErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{createErr}</div>}
+            </>
+          ) : (
+            <div style={{ background: `${C.mint}12`, border: `1px solid ${C.mint}44`, borderRadius: 14, padding: "14px 16px" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.mint }}>✓ „{created.name}" ist angelegt — deine aktive Runde</div>
+              <div style={{ marginTop: 10, fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Beitritts-Code</div>
+              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: C.gold, marginTop: 4, letterSpacing: 3 }}>{created.join_code}</div>
+              <button onClick={copyJoinCode} style={{
+                marginTop: 10, width: "100%", cursor: "pointer",
+                background: codeCopied ? C.mint : C.surface2, color: codeCopied ? C.ink : C.text, fontWeight: 700, fontSize: 13,
+                border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 0",
+              }}>{codeCopied ? "✓ kopiert" : "Code kopieren"}</button>
+              <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
+                Freunde geben diesen Code unter „Runde beitreten" ein.
+              </p>
             </div>
           )}
 

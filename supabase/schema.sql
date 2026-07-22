@@ -116,20 +116,28 @@ create policy "profiles_update_self" on public.profiles for update to authentica
 drop policy if exists "matches_read" on public.matches;
 create policy "matches_read" on public.matches for select to authenticated using (true);
 
--- Runden: Mitglieder dürfen ihre Runde sehen; jeder darf eine anlegen.
+-- Runden: für alle Eingeloggten lesbar (Beitritt per Code muss die Runde
+-- VOR der Mitgliedschaft finden können — der Code selbst ist die Schranke,
+-- nicht die Sichtbarkeit; Regelwerk/Name sind nicht sensibel). Jeder darf
+-- eine Runde anlegen und wird dabei automatisch ihr Admin.
 drop policy if exists "rounds_read_members" on public.rounds;
+drop policy if exists "rounds_read"         on public.rounds;
 drop policy if exists "rounds_insert"       on public.rounds;
-create policy "rounds_read_members" on public.rounds for select to authenticated
-  using (exists (select 1 from public.round_members m
-                 where m.round_id = rounds.id and m.user_id = auth.uid()));
+create policy "rounds_read" on public.rounds for select to authenticated using (true);
 create policy "rounds_insert" on public.rounds for insert to authenticated
   with check (admin_id = auth.uid());
 
--- Mitgliedschaft: eigene Mitgliedschaften sehen; sich selbst beitreten lassen.
+-- Mitgliedschaft: wer selbst Mitglied einer Runde ist, sieht ALLE Mitglieder
+-- dieser Runde (nötig fürs Leaderboard — sonst sähe man nur die eigene
+-- Zeile). Sich selbst beitreten lassen bleibt streng auf die eigene Id begrenzt.
 drop policy if exists "members_read_self" on public.round_members;
+drop policy if exists "members_read_same_round" on public.round_members;
 drop policy if exists "members_join_self" on public.round_members;
-create policy "members_read_self" on public.round_members for select to authenticated
-  using (user_id = auth.uid());
+create policy "members_read_same_round" on public.round_members for select to authenticated
+  using (
+    exists (select 1 from public.round_members m2
+            where m2.round_id = round_members.round_id and m2.user_id = auth.uid())
+  );
 create policy "members_join_self" on public.round_members for insert to authenticated
   with check (user_id = auth.uid());
 

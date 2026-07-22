@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createMockStore } from "./store.mock";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
+import { DEFAULT_RULES, RULE_LIMITS } from "./engine";
 
 describe("Mock-Store — Seed & Schnittstelle", () => {
   it("liefert das Demo-Match JOR-ESP mit Snapshot und Ergebnis", async () => {
@@ -54,5 +55,36 @@ describe("Mock-Store — Seed & Schnittstelle", () => {
     const members = await store.listMembers(DEMO_ROUND_ID);
     expect(members.filter((m) => m.user_id === "u-neu")).toHaveLength(1);
     expect(members).toHaveLength(6);
+  });
+});
+
+describe("createRound", () => {
+  it("legt eine neue Runde mit generiertem Beitritts-Code an, Admin wird Mitglied", async () => {
+    const store = createMockStore();
+    const round = await store.createRound({ name: "Büro-Liga", adminId: "u-chef", adminName: "Chef", rules: DEFAULT_RULES });
+    expect(round.join_code).toHaveLength(6);
+    expect(round.name).toBe("Büro-Liga");
+    expect(await store.getRoundByCode(round.join_code)).toEqual(round);
+    const members = await store.listMembers(round.id);
+    expect(members).toContainEqual({ round_id: round.id, user_id: "u-chef", name: "Chef" });
+  });
+
+  it("sanitized ein unvollständiges/übertriebenes Regelwerk beim Anlegen", async () => {
+    const store = createMockStore();
+    const round = await store.createRound({ name: "X", adminId: "u1", rules: { k: 99 } });
+    expect(round.rules.k).toBeLessThanOrEqual(RULE_LIMITS.k.max);
+  });
+
+  it("neue Runde ist unabhängig von der Demo-Runde (eigenes, leeres Leaderboard)", async () => {
+    const store = createMockStore();
+    const round = await store.createRound({ name: "Neu", adminId: "u1", rules: DEFAULT_RULES });
+    expect(await store.getLeaderboard(round.id)).toEqual([]);
+    expect(await store.getLeaderboard(DEMO_ROUND_ID)).toHaveLength(5); // Demo-Runde unberührt
+  });
+
+  it("ohne Namen bekommt die Runde einen Standardnamen", async () => {
+    const store = createMockStore();
+    const round = await store.createRound({ adminId: "u1", rules: DEFAULT_RULES });
+    expect(round.name).toBe("Neue Runde");
   });
 });
