@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { createMockOddsSource, DEFAULT_RULES } from "@/lib/engine";
+import { getStore } from "@/lib/store";
+import { getCurrentUser, DEMO_ROUND_ID } from "@/lib/session";
 
 // ── Design-Tokens (gleich wie das Abrechnungsfenster) ───────
 const C = {
@@ -44,6 +46,7 @@ export default function Tippabgabe() {
     })))
   );
   const [done, setDone] = useState(false);
+  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error
 
   const csQuote = SNAP.correctScore[h]?.[a] ?? null;
   const winner = h > a ? SNAP.home : h < a ? SNAP.away : "Unentschieden";
@@ -54,6 +57,27 @@ export default function Tippabgabe() {
       i !== ti ? team : team.map((p, j) => (j !== pi ? p : { ...p, [field]: val }))));
 
   const step = (setter, val, d) => setter(Math.max(0, Math.min(9, val + d)));
+
+  // Tipp abgeben: Snapshot-Quote einfrieren + über den Store persistieren.
+  const submit = async () => {
+    setDone(true);
+    setSaveState("saving");
+    try {
+      const user = await getCurrentUser();
+      if (!user) { setSaveState("guest"); return; }
+      const goals = {
+        home: picks[0].map((p) => p.main).filter(Boolean),
+        away: picks[1].map((p) => p.main).filter(Boolean),
+      };
+      await getStore().saveTip({
+        roundId: DEMO_ROUND_ID, matchId: SNAP.matchId, userId: user.id,
+        tip: { home: h, away: a, goals }, snapshot: SNAP,
+      });
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
+  };
 
   return (
     <div style={{
@@ -157,7 +181,7 @@ export default function Tippabgabe() {
               <span style={{ color: C.gold }}>◆</span>
               <span>Snapshot-Quote: alle Mitspieler bekommen dieselbe Quote, egal wann sie tippen. Gilt bis Anpfiff.</span>
             </div>
-            <button onClick={() => setDone(true)} style={{
+            <button onClick={submit} style={{
               marginTop: 14, width: "100%", cursor: "pointer",
               background: C.gold, color: C.ink, fontWeight: 700, fontSize: 15,
               border: "none", borderRadius: 14, padding: "14px 0",
@@ -168,7 +192,8 @@ export default function Tippabgabe() {
         ) : (
           <Confirmation
             snap={SNAP} h={h} a={a} winner={winner} csQuote={csQuote}
-            kickoffLabel={kickoffLabel} picks={picks} teams={teams} onEdit={() => setDone(false)}
+            kickoffLabel={kickoffLabel} picks={picks} teams={teams} saveState={saveState}
+            onEdit={() => { setSaveState("idle"); setDone(false); }}
           />
         )}
       </div>
@@ -230,7 +255,15 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
   );
 }
 
-function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, onEdit }) {
+const SAVE_HINT = {
+  saving: { text: "wird gespeichert …", col: C.muted },
+  saved:  { text: "✓ in deiner Runde gespeichert", col: C.mint },
+  guest:  { text: "nicht eingeloggt — lokal eingefroren, aber nicht gespeichert", col: C.gold },
+  error:  { text: "Speichern fehlgeschlagen — später erneut versuchen", col: C.coral },
+};
+
+function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState, onEdit }) {
+  const hint = SAVE_HINT[saveState];
   return (
     <div style={{ position: "relative", padding: "30px 22px 24px" }}>
       <div style={{
@@ -243,6 +276,11 @@ function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams,
       <div style={{ textAlign: "center", fontSize: 12.5, color: C.muted, marginTop: 4 }}>
         Quote gesichert · gilt bis Anpfiff {kickoffLabel}
       </div>
+      {hint && (
+        <div style={{ textAlign: "center", fontSize: 12, color: hint.col, marginTop: 8, fontFamily: MONO }}>
+          {hint.text}
+        </div>
+      )}
 
       <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginTop: 20 }}>
         <Row label="Endstand" value={`${h}:${a}`} accent={C.gold} mono />

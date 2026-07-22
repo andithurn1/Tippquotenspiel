@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { createMockOddsSource, scoreResult } from "@/lib/engine";
+import { createMockOddsSource, scoreTip, toDisplay } from "@/lib/engine";
+import { getStore } from "@/lib/store";
+import { DEMO_ROUND_ID } from "@/lib/session";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
 // Nächtliches Flutlicht-Stadion: tiefes Indigo, Flutlicht-Gold,
@@ -20,25 +22,27 @@ const C = {
 
 const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
-// ── Eine Quelle: Engine rechnet, der Screen zeigt nur an ────
-// Demo-Spieltag: kühner Tipp Jordanien 4:1 gegen Spanien,
-// real wird es 5:1 — Distanz 1 zum Sensationsergebnis.
+// ── Eine Quelle: Engine rechnet, Store liefert das Leaderboard ──
+// Demo-Spieltag: kühner Tipp Jordanien 4:1 gegen Spanien, real 5:1.
+// Der Tipp von „Du" ist identisch zum Seed im Mock-Store, damit
+// Hero-Zahl und Tabellenplatz konsistent sind (alles Display-Punkte).
 const odds = createMockOddsSource();
 const snap = odds.getSnapshot("JOR-ESP");
 const result = odds.getResult("JOR-ESP");
-const TIPP = { home: 4, away: 1 };
-const wertung = scoreResult(TIPP, result, snap);
+const DU_TIP = { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal", ""] } };
+const me = scoreTip(DU_TIP, result, snap);
 
 const DATA = {
   spieltag: 14,
   home: snap.home,
   away: snap.away,
-  tippHome: TIPP.home, tippAway: TIPP.away,
+  tippHome: DU_TIP.home, tippAway: DU_TIP.away,
   realHome: result.home, realAway: result.away,
-  bodenPunkte: Math.round(wertung.parts.tendBoden),
-  naehePunkte: Math.round(wertung.resultPart),
-  dist: wertung.dist,
-  rangVon: 5, rangZu: 2,   // Mock, bis das Backend ein Leaderboard liefert
+  total: me.total,                              // Display-Punkte (skaliert)
+  bodenPunkte: toDisplay(me.parts.tendBoden),
+  naehePunkte: toDisplay(me.parts.ergNaehe),
+  torePunkte: toDisplay(me.goals.net),
+  dist: me.dist,
 };
 
 function useCountUp(target, run, ms = 1100) {
@@ -65,6 +69,15 @@ export default function Abrechnung() {
   const [stage, setStage] = useState(0);   // 0..5 gestaffelte Enthüllung
   const [key, setKey] = useState(0);        // Replay
   const [fair, setFair] = useState(false);  // Ranking-Toggle
+  const [board, setBoard] = useState(null); // Leaderboard aus dem Store
+
+  useEffect(() => {
+    let live = true;
+    getStore().getLeaderboard(DEMO_ROUND_ID)
+      .then((b) => { if (live) setBoard(b); })
+      .catch(() => { if (live) setBoard([]); });
+    return () => { live = false; };
+  }, []);
 
   useEffect(() => {
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -73,19 +86,12 @@ export default function Abrechnung() {
     return () => ts.forEach(clearTimeout);
   }, [key]);
 
-  const punkte = useCountUp(DATA.naehePunkte, stage >= 4);
+  const punkte = useCountUp(DATA.total, stage >= 4);
 
-  // Mock-Tabelle, bis das Backend ein Leaderboard liefert ("Du" kommt aus der Engine)
-  const board = [
-    { name: "Du", pts: DATA.naehePunkte, hot: true },
-    { name: "Lena", pts: 34 },
-    { name: "Kemal", pts: 21 },
-    { name: "Max", pts: 8, safe: true },
-    { name: "Jonas", pts: -12 },
-  ];
-  const min = Math.min(...board.map((b) => b.pts));
-  const shown = [...board]
-    .map((b) => ({ ...b, disp: fair ? b.pts - min : b.pts }))
+  const myRank = board?.find((b) => b.userId === "u-du")?.rank ?? null;
+  const min = board?.length ? Math.min(...board.map((b) => b.total)) : 0;
+  const shown = (board ?? [])
+    .map((b) => ({ ...b, disp: fair ? b.total - min : b.total }))
     .sort((a, b) => b.disp - a.disp);
 
   const show = (n) => ({
@@ -147,7 +153,7 @@ export default function Abrechnung() {
                 border: `1px solid ${C.coral}55`, borderRadius: 999, padding: "2px 8px",
               }}>{DATA.dist} {DATA.dist === 1 ? "Tor — hauchdünn" : "Tore"}</span>
             </div>
-            <DistanceLadder active={stage >= 3} wertung={wertung} />
+            <DistanceLadder active={stage >= 3} wertung={me} />
           </div>
 
           {/* Punkte-Zähler */}
@@ -166,6 +172,7 @@ export default function Abrechnung() {
             <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
               <Chip>Sieger-Boden +{DATA.bodenPunkte}</Chip>
               <Chip tone={C.coral}>Nähebonus +{DATA.naehePunkte}</Chip>
+              {DATA.torePunkte > 0 && <Chip tone={C.mint}>Tore +{DATA.torePunkte}</Chip>}
             </div>
             <p style={{ fontSize: 12.5, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
               Das reale {DATA.realHome}:{DATA.realAway} war ein Freak-Ergebnis mit riesiger Quote. Du warst nur
@@ -176,11 +183,9 @@ export default function Abrechnung() {
           {/* Rang + Badge */}
           <div style={{ ...show(5), marginTop: 20, display: "flex", gap: 10 }}>
             <div style={{ flex: 1, background: C.surface, borderRadius: 14, padding: "12px 14px", border: `1px solid ${C.line}` }}>
-              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Rang</div>
-              <div style={{ fontFamily: MONO, fontSize: 20, marginTop: 2 }}>
-                <span style={{ color: C.muted }}>#{DATA.rangVon}</span>
-                <span style={{ color: C.muted, margin: "0 6px" }}>→</span>
-                <span style={{ color: C.mint }}>#{DATA.rangZu}</span>
+              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Rang in der Runde</div>
+              <div style={{ fontFamily: MONO, fontSize: 22, marginTop: 2, color: C.mint }}>
+                {myRank ? `#${myRank}` : "…"}
               </div>
             </div>
             <div style={{ flex: 1, background: `${C.coral}18`, borderRadius: 14, padding: "12px 14px", border: `1px solid ${C.coral}44` }}>
@@ -201,16 +206,17 @@ export default function Abrechnung() {
                 {fair ? "fair verschoben" : "echte Werte"}
               </button>
             </div>
-            {shown.map((b, i) => (
-              <div key={b.name} style={{
+            {board == null ? (
+              <div style={{ fontSize: 12.5, color: C.muted, fontFamily: MONO, padding: "8px 0" }}>Tabelle lädt …</div>
+            ) : shown.map((b, i) => (
+              <div key={b.userId} style={{
                 display: "flex", alignItems: "center", gap: 10, padding: "7px 0",
                 borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
               }}>
                 <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 16 }}>{i + 1}</span>
-                <span style={{ flex: 1, fontSize: 14, color: b.hot ? C.gold : C.text, fontWeight: b.hot ? 700 : 400 }}>
+                <span style={{ flex: 1, fontSize: 14, color: b.userId === "u-du" ? C.gold : C.text, fontWeight: b.userId === "u-du" ? 700 : 400 }}>
                   {b.name}
-                  {b.hot && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● Zocker</span>}
-                  {b.safe && <span style={{ color: C.muted, fontSize: 11, marginLeft: 6 }}>brav</span>}
+                  {b.userId === "u-du" && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● Zocker</span>}
                 </span>
                 <span style={{
                   fontFamily: MONO, fontSize: 14, fontVariantNumeric: "tabular-nums",
