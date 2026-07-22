@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   createMockOddsSource, DEFAULT_RULES, RULE_LIMITS,
   scoreResult, scoreGoals, scoreTip, applyCombo, toDisplay,
-  encodePreset, decodePreset, sanitizeRules,
+  encodePreset, decodePreset, sanitizeRules, scoreLeaderboard,
 } from "./engine";
 
 const odds = createMockOddsSource();
@@ -192,5 +192,42 @@ describe("sanitizeRules — Import & Regler-Grenzen", () => {
   it("Runde durch Creator-Code: encode → decode → sanitize ist stabil", () => {
     const rules = sanitizeRules({ name: "Zocker-Modus", k: 1.2, combo: { exakt: 3.5 } });
     expect(sanitizeRules(decodePreset(encodePreset(rules)))).toEqual(rules);
+  });
+});
+
+describe("scoreLeaderboard — Aggregation & Rang", () => {
+  const base = { snapshot: snap, result, rules: DEFAULT_RULES };
+
+  it("summiert Punkte je Nutzer und sortiert absteigend mit Rang", () => {
+    const board = scoreLeaderboard([
+      { userId: "u1", name: "Du", tip: { home: 4, away: 1 }, ...base },   // Nähe-Treffer
+      { userId: "u2", name: "Max", tip: { home: 2, away: 1 }, ...base },  // nur Tendenz
+    ]);
+    expect(board[0].rank).toBe(1);
+    expect(board[0].userId).toBe("u1");
+    expect(board[0].total).toBeGreaterThan(board[1].total);
+    expect(board.map((b) => b.rank)).toEqual([1, 2]);
+  });
+
+  it("mehrere Tipps eines Nutzers werden aufsummiert", () => {
+    const board = scoreLeaderboard([
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, ...base },
+      { userId: "u1", name: "Du", tip: { home: 4, away: 1 }, ...base },
+    ]);
+    expect(board).toHaveLength(1);
+    expect(board[0].tips).toBe(2);
+    expect(board[0].gewertet).toBe(2);
+    const einzeln = scoreTip({ home: 2, away: 1 }, result, snap).total
+      + scoreTip({ home: 4, away: 1 }, result, snap).total;
+    expect(board[0].total).toBe(einzeln);
+  });
+
+  it("Tipps ohne Ergebnis zählen 0, werden aber als abgegeben gezählt", () => {
+    const board = scoreLeaderboard([
+      { userId: "u1", name: "Du", tip: { home: 3, away: 0 }, snapshot: snap, result: null },
+    ]);
+    expect(board[0].total).toBe(0);
+    expect(board[0].tips).toBe(1);
+    expect(board[0].gewertet).toBe(0);
   });
 });

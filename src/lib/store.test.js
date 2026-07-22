@@ -1,0 +1,48 @@
+import { describe, it, expect } from "vitest";
+import { createMockStore } from "./store.mock";
+
+describe("Mock-Store — Seed & Schnittstelle", () => {
+  it("liefert das Demo-Match JOR-ESP mit Snapshot und Ergebnis", async () => {
+    const store = createMockStore();
+    const m = await store.getMatch("JOR-ESP");
+    expect(m.home).toBe("Jordanien");
+    expect(m.result).toEqual({ home: 5, away: 1, playerGoals: { "Al-Naimat": 2, "Yamal": 1 } });
+    expect(await store.getMatch("XXX")).toBeNull();
+  });
+
+  it("Demo-Runde ist per Code und Id auffindbar, mit 5 Mitgliedern", async () => {
+    const store = createMockStore();
+    const byCode = await store.getRoundByCode("DEMO");
+    expect(byCode.id).toBe("r-demo");
+    expect((await store.getRound("r-demo")).name).toBe("Freundeskreis");
+    expect(await store.listMembers("r-demo")).toHaveLength(5);
+  });
+
+  it("Leaderboard rankt die 5 Demo-Tipps über die Engine", async () => {
+    const store = createMockStore();
+    const board = await store.getLeaderboard("r-demo");
+    expect(board).toHaveLength(5);
+    expect(board.map((b) => b.rank)).toEqual([1, 2, 3, 4, 5]);
+    // absteigend sortiert
+    for (let i = 1; i < board.length; i++) {
+      expect(board[i - 1].total).toBeGreaterThanOrEqual(board[i].total);
+    }
+    // jeder Demo-Spieler hat genau einen gewerteten Tipp
+    expect(board.every((b) => b.tips === 1 && b.gewertet === 1)).toBe(true);
+  });
+
+  it("saveTip legt an und aktualisiert denselben Tipp (kein Duplikat)", async () => {
+    const store = createMockStore();
+    const snap = (await store.getMatch("JOR-ESP")).snapshot;
+    await store.saveTip({ roundId: "r-demo", matchId: "JOR-ESP", userId: "u-neu", tip: { home: 3, away: 3 }, snapshot: snap });
+    let mine = await store.listTips({ roundId: "r-demo", matchId: "JOR-ESP" });
+    const neu = mine.filter((t) => t.user_id === "u-neu");
+    expect(neu).toHaveLength(1);
+    expect(neu[0].tip).toEqual({ home: 3, away: 3 });
+
+    await store.saveTip({ roundId: "r-demo", matchId: "JOR-ESP", userId: "u-neu", tip: { home: 1, away: 0 }, snapshot: snap });
+    mine = await store.listTips({ roundId: "r-demo", matchId: "JOR-ESP" });
+    expect(mine.filter((t) => t.user_id === "u-neu")).toHaveLength(1);
+    expect(mine.find((t) => t.user_id === "u-neu").tip).toEqual({ home: 1, away: 0 });
+  });
+});

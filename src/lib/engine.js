@@ -189,6 +189,26 @@ export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
 }
 
 
+// Leaderboard: aggregiert die angezeigten Punkte je Nutzer über mehrere Tipps.
+// entries: [{ userId, name, tip, snapshot, result, rules? }]. Tipps ohne Ergebnis
+// (Match noch nicht ausgewertet) zählen 0. Rückgabe absteigend sortiert mit Rang.
+export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES) {
+  const byUser = new Map();
+  for (const e of entries) {
+    const cur = byUser.get(e.userId) || { userId: e.userId, name: e.name, total: 0, tips: 0, gewertet: 0 };
+    cur.tips += 1;
+    if (e.result) {
+      cur.total += scoreTip(e.tip, e.result, e.snapshot, e.rules || rules).total;
+      cur.gewertet += 1;
+    }
+    byUser.set(e.userId, cur);
+  }
+  return [...byUser.values()]
+    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+    .map((u, i) => ({ ...u, rank: i + 1 }));
+}
+
+
 // ── 4) CREATOR-CODES (Modi teilen & anpassen) ───────────────
 export function encodePreset(rules) {
   const j = JSON.stringify(rules);
