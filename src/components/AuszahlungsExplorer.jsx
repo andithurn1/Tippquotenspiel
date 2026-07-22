@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { createMockOddsSource, scoreResult, scoreGoals, applyCombo, DEFAULT_RULES } from "@/lib/engine";
+import BackLink from "@/components/BackLink";
 
 const C = {
   ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
@@ -71,8 +72,9 @@ export default function AuszahlungsExplorer() {
 
   return (
     <div style={{ minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", padding: "26px 14px", display: "flex", justifyContent: "center" }}>
-      <div style={{ width: "100%", maxWidth: 400, borderRadius: 24, position: "relative", overflow: "hidden", alignSelf: "flex-start",
+      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", padding: "26px 14px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <BackLink />
+      <div style={{ width: "100%", maxWidth: 400, borderRadius: 24, position: "relative", overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)", padding: "22px 18px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

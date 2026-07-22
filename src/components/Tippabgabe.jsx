@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createMockOddsSource, DEFAULT_RULES } from "@/lib/engine";
 import { getStore } from "@/lib/store";
 import { DEMO_ROUND_ID } from "@/lib/session";
 import { useAuth } from "@/components/AuthProvider";
+import BackLink from "@/components/BackLink";
 
 // ── Design-Tokens (gleich wie das Abrechnungsfenster) ───────
 const C = {
@@ -84,11 +86,12 @@ export default function Tippabgabe() {
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-      padding: "28px 16px", display: "flex", justifyContent: "center",
+      padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
+      <BackLink />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
-        borderRadius: 26, overflow: "hidden", alignSelf: "flex-start",
+        borderRadius: 26, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
@@ -312,6 +315,13 @@ function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams,
       }}>
         Vor Anpfiff noch bearbeiten
       </button>
+      <Link href="/abrechnung" style={{
+        marginTop: 10, display: "block", textAlign: "center", textDecoration: "none",
+        color: C.ink, background: C.mint, fontWeight: 700, fontSize: 14,
+        borderRadius: 14, padding: "12px 0",
+      }}>
+        Zum Leaderboard →
+      </Link>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   DEFAULT_RULES, RULE_LIMITS, createMockOddsSource, scoreTip,
   encodePreset, decodePreset, sanitizeRules,
 } from "@/lib/engine";
+import BackLink from "@/components/BackLink";
 
 // ── Design-Tokens (gleich wie die anderen Screens) ──────────
 const C = {
@@ -57,11 +58,12 @@ export default function Spielerstellung() {
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-      padding: "28px 16px", display: "flex", justifyContent: "center",
+      padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
+      <BackLink />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
-        borderRadius: 26, overflow: "hidden", alignSelf: "flex-start",
+        borderRadius: 26, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
