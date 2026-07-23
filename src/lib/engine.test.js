@@ -69,6 +69,42 @@ describe("scoreResult — Ebenen", () => {
   });
 });
 
+describe("scoreResult — Underdog-Boost", () => {
+  // JOR-ESP: reales Ergebnis 5:1, Sieger Jordanien mit winner.home = 9.0 (der
+  // krasse Außenseiter hat gewonnen) — ideal, um den Boost zu testen.
+  it("Standard (boost=1) ist ein No-op: identisch zu ohne Boost-Feldern", () => {
+    const r = scoreResult({ home: 1, away: 0 }, result, snap, DEFAULT_RULES);
+    expect(r.underdogMult).toBe(1);
+  });
+
+  it("Sieger-Quote über dem Ramp-Ende → voller Boost", () => {
+    const rules = { ...DEFAULT_RULES, underdogBoost: 2, underdogRampStart: 3, underdogRampEnd: 8 };
+    const ohneBoost = scoreResult({ home: 1, away: 0 }, result, snap, DEFAULT_RULES);
+    const mitBoost = scoreResult({ home: 1, away: 0 }, result, snap, rules);
+    expect(mitBoost.underdogMult).toBe(2); // winner.home = 9.0 ≥ rampEnd 8 → volle Stärke
+    expect(mitBoost.resultPart).toBeCloseTo(ohneBoost.resultPart * 2, 5);
+  });
+
+  it("fließender Übergang: Quote genau in der Mitte von Ramp-Start/-Ende → halber Boost", () => {
+    const rules = { ...DEFAULT_RULES, underdogBoost: 2, underdogRampStart: 5, underdogRampEnd: 13 };
+    const r = scoreResult({ home: 1, away: 0 }, result, snap, rules); // winner.home=9 → Mitte von [5,13]
+    expect(r.underdogMult).toBeCloseTo(1.5, 5);
+  });
+
+  it("Sieger-Quote unter Ramp-Start → kein Effekt, auch bei hohem Boost", () => {
+    const rules = { ...DEFAULT_RULES, underdogBoost: 3, underdogRampStart: 10, underdogRampEnd: 20 };
+    const r = scoreResult({ home: 1, away: 0 }, result, snap, rules); // winner.home=9 < 10
+    expect(r.underdogMult).toBe(1);
+  });
+
+  it("wrongPenalty wird NICHT vom Boost verstärkt (bleibt exakt der konfigurierte Wert)", () => {
+    const rules = { ...DEFAULT_RULES, wrongPenalty: -1, minPayout: 1000, underdogBoost: 3, underdogRampStart: 1.2, underdogRampEnd: 2 };
+    const r = scoreResult({ home: 0, away: 5 }, result, snap, rules);
+    expect(r.resultPart).toBe(-1);
+    expect(r.underdogMult).toBe(1);
+  });
+});
+
 describe("scoreGoals — Torschützen", () => {
   it("Einzel-Pick trifft: anytime − 1", () => {
     const g = scoreGoals({ home: ["Al-Naimat"], away: [] }, snap, DEFAULT_RULES, result.playerGoals);

@@ -51,6 +51,14 @@ export const DEFAULT_RULES = {
   perGameCap: null,    // optionaler harter Deckel pro Spiel (z.B. 1000), null = offen
   markets: { result: true, goals: { enabled: true, picksPerTeam: 2, allowDouble: true, allowBackups: true } },
   oddsMode: "snapshot",
+  // Underdog-Boost: zusätzlicher Multiplikator auf den Ergebnis-Teil, wenn das
+  // REALE Ergebnis ein Außenseiter-Sieg war (Sieger-Quote als Maßstab). Boost=1
+  // ist ein neutrales No-op (Standard) — die Quote selbst belohnt Außenseiter
+  // schon von sich aus, das hier ist ein zusätzlicher, expliziter Admin-Regler.
+  // Fließender Übergang zwischen Ramp-Start/-Ende statt hartem Cutoff.
+  underdogBoost: 1,
+  underdogRampStart: 3,
+  underdogRampEnd: 8,
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -68,6 +76,9 @@ export const RULE_LIMITS = {
     exakt:   { min: 1, max: 4, step: 0.1  },
   },
   picksPerTeam: { min: 1, max: 3, step: 1 },
+  underdogBoost:     { min: 1,   max: 3,  step: 0.1 },
+  underdogRampStart: { min: 1.2, max: 15, step: 0.1 },
+  underdogRampEnd:   { min: 2,   max: 30, step: 0.5 },
 };
 
 // Nimmt ein (evtl. aus einem Creator-Code importiertes) Teil-Regelwerk und macht
@@ -110,12 +121,32 @@ export function sanitizeRules(partial = {}) {
       },
     },
     oddsMode: src.oddsMode === "average" ? "average" : "snapshot",
+    underdogBoost: clamp(num(src.underdogBoost, D.underdogBoost), L.underdogBoost.min, L.underdogBoost.max),
+    underdogRampStart: clamp(num(src.underdogRampStart, D.underdogRampStart), L.underdogRampStart.min, L.underdogRampStart.max),
+    underdogRampEnd: clamp(num(src.underdogRampEnd, D.underdogRampEnd), L.underdogRampEnd.min, L.underdogRampEnd.max),
   };
 }
 
 
 // ── 3) SCORING ──────────────────────────────────────────────
 const sgn = (h, a) => (h > a ? 1 : h < a ? -1 : 0);
+
+// Underdog-Boost: Multiplikator auf den Ergebnis-Teil, wenn das REALE Ergebnis
+// (nicht der Tipp!) ein Außenseiter-Ausgang war — gemessen an dessen Sieger-
+// Quote. Fließender Übergang zwischen rampStart/-Ende statt hartem Cutoff;
+// unterhalb rampStart bleibt der Multiplikator 1 (kein Effekt). boost=1 ist
+// per Default ein reines No-op, unabhängig von den Ramp-Werten.
+function underdogMultiplier(actual, snap, rules) {
+  const boost = rules.underdogBoost ?? 1;
+  if (boost === 1) return 1;
+  const winnerQuote = sgn(actual.home, actual.away) === 1 ? snap.winner.home
+    : sgn(actual.home, actual.away) === -1 ? snap.winner.away : snap.winner.draw;
+  const start = rules.underdogRampStart ?? Infinity;
+  const end = rules.underdogRampEnd ?? Infinity;
+  if (winnerQuote == null || !(end > start)) return 1;
+  const t = Math.min(1, Math.max(0, (winnerQuote - start) / (end - start)));
+  return 1 + (boost - 1) * t;
+}
 
 // Ergebnis-Tipp → Ebenen, Maximum gewinnt. Team-Tore-Nähe ist siegerunabhängig.
 export function scoreResult(tip, actual, snap, rules = DEFAULT_RULES) {
@@ -141,10 +172,16 @@ export function scoreResult(tip, actual, snap, rules = DEFAULT_RULES) {
   if (nearParts < rules.minPayout) nearParts = 0;
 
   let resultPart = Math.max(tendBoden, abstand, nearParts);
-  if (!winnerRight && resultPart === 0) resultPart = rules.wrongPenalty;
+  let underdogMult = 1;
+  if (!winnerRight && resultPart === 0) {
+    resultPart = rules.wrongPenalty;
+  } else if (resultPart > 0) {
+    underdogMult = underdogMultiplier(actual, snap, rules);
+    resultPart *= underdogMult;
+  }
 
   const ebene = dist === 0 ? "exakt" : marginRight ? "abstand" : winnerRight ? "tendenz" : "keiner";
-  return { resultPart, ebene, dist, winnerRight, parts: { tendBoden, abstand, ergNaehe, teamTore } };
+  return { resultPart, ebene, dist, winnerRight, underdogMult, parts: { tendBoden, abstand, ergNaehe, teamTore } };
 }
 
 // Tore: gleicher Spieler 2× = Doppelpack. 2 Tore → double, 1 Tor → anytime (Floor), 0 → nichts.

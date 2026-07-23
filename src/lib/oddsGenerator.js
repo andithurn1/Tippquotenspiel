@@ -64,7 +64,7 @@ function pick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
 // 5 Angriffsspieler je Team, jeder trägt einen Anteil an der Team-Tor-Erwartung.
 const SCORER_SHARES = [0.30, 0.22, 0.18, 0.12, 0.09];
 
-function makeSquad(rng, teamLambda) {
+function makeSquad(rng, teamLambda, cap) {
   const used = new Set();
   const squad = {};
   for (const share of SCORER_SHARES) {
@@ -74,23 +74,26 @@ function makeSquad(rng, teamLambda) {
     const playerLambda = teamLambda * share;
     const pAnytime = 1 - Math.exp(-playerLambda);
     const pDouble = Math.max(1 - Math.exp(-playerLambda) - playerLambda * Math.exp(-playerLambda), 0.0005);
-    squad[name] = { anytime: oddsFrom(pAnytime, 1.15), double: oddsFrom(pDouble, 1.15) };
+    squad[name] = { anytime: oddsFrom(pAnytime, 1.15, cap), double: oddsFrom(pDouble, 1.15, cap) };
   }
   return squad;
 }
 
-// Haupt-Erzeugungsfunktion: ein vollständiger Match-Snapshot.
+// Haupt-Erzeugungsfunktion: ein vollständiger Match-Snapshot. `cap` deckelt
+// alle Quoten (Standard 200 — reale Buchmacher gehen bei Correct-Score/Torschützen-
+// Außenseitern selten höher; ein zu hoher Deckel lässt seltene Ereignisse auch bei
+// bloßer NÄHE unrealistisch viele Punkte zahlen, siehe balanceCheck.js).
 export function generateMatchOdds({
   matchId, home, away, kickoff, seed = matchId,
   homeAttack, homeDefense, awayAttack, awayDefense,
-  overround = 1.07,
+  overround = 1.07, cap = 200,
 }) {
   const { home: lamH, away: lamA } = expectedGoals({ homeAttack, homeDefense, awayAttack, awayDefense });
   const rng = rngFromSeed(seed);
 
   const pHome = []; const pAway = [];
   for (let i = 0; i < GOAL_GRID; i++) { pHome.push(poissonPmf(lamH, i)); pAway.push(poissonPmf(lamA, i)); }
-  const correctScore = pHome.map((ph) => pAway.map((pa) => oddsFrom(ph * pa, overround)));
+  const correctScore = pHome.map((ph) => pAway.map((pa) => oddsFrom(ph * pa, overround, cap)));
 
   // Sieger + Abstand: über ein größeres Raster summieren (Wahrscheinlichkeits-
   // masse jenseits von GOAL_GRID fließt in Sieger/Remis mit ein).
@@ -110,14 +113,14 @@ export function generateMatchOdds({
   return {
     matchId, home, away, kickoff,
     frozenAt: new Date(new Date(kickoff).getTime() - 45 * 60 * 1000).toISOString(),
-    winner: { home: oddsFrom(pH, overround), draw: oddsFrom(pD, overround), away: oddsFrom(pA, overround) },
+    winner: { home: oddsFrom(pH, overround, cap), draw: oddsFrom(pD, overround, cap), away: oddsFrom(pA, overround, cap) },
     margin: {
-      home: marginHomeP.map((p, i) => (i === 0 ? 0 : oddsFrom(p, overround))),
-      away: marginAwayP.map((p, i) => (i === 0 ? 0 : oddsFrom(p, overround))),
+      home: marginHomeP.map((p, i) => (i === 0 ? 0 : oddsFrom(p, overround, cap))),
+      away: marginAwayP.map((p, i) => (i === 0 ? 0 : oddsFrom(p, overround, cap))),
     },
     correctScore,
-    teamGoals: { home: pHome.map((p) => oddsFrom(p, overround)), away: pAway.map((p) => oddsFrom(p, overround)) },
-    players: { home: makeSquad(rng, lamH), away: makeSquad(rng, lamA) },
+    teamGoals: { home: pHome.map((p) => oddsFrom(p, overround, cap)), away: pAway.map((p) => oddsFrom(p, overround, cap)) },
+    players: { home: makeSquad(rng, lamH, cap), away: makeSquad(rng, lamA, cap) },
   };
 }
 
