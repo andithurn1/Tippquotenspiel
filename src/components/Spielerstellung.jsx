@@ -5,6 +5,10 @@ import {
   DEFAULT_RULES, RULE_LIMITS, createMockOddsSource, scoreTip,
   encodePreset, decodePreset, sanitizeRules,
 } from "@/lib/engine";
+import { PRESETS } from "@/lib/presets";
+import { TEAM_RATINGS } from "@/lib/bundesligaData";
+
+const ALL_TEAMS = Object.keys(TEAM_RATINGS);
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -31,6 +35,9 @@ export default function Spielerstellung() {
   const { user } = useAuth();
   const { setRoundId } = useCurrentRound();
   const [rules, setRules] = useState(DEFAULT_RULES);
+  const [presetKey, setPresetKey] = useState("standard");
+  const [teamFilterOn, setTeamFilterOn] = useState(false);
+  const [selectedTeams, setSelectedTeams] = useState([]);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -39,10 +46,14 @@ export default function Spielerstellung() {
   const [createErr, setCreateErr] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
 
-  const patch = (p) => setRules((r) => ({ ...r, ...p }));
-  const patchCombo = (p) => setRules((r) => ({ ...r, combo: { ...r.combo, ...p } }));
-  const patchMarkets = (p) => setRules((r) => ({ ...r, markets: { ...r.markets, ...p } }));
-  const patchGoals = (p) => setRules((r) => ({ ...r, markets: { ...r.markets, goals: { ...r.markets.goals, ...p } } }));
+  const applyPreset = (preset) => {
+    setPresetKey(preset.key);
+    setRules({ ...sanitizeRules(preset.rules), name: preset.label });
+  };
+  const patch = (p) => { setPresetKey(null); setRules((r) => ({ ...r, ...p })); };
+  const patchCombo = (p) => { setPresetKey(null); setRules((r) => ({ ...r, combo: { ...r.combo, ...p } })); };
+  const patchMarkets = (p) => { setPresetKey(null); setRules((r) => ({ ...r, markets: { ...r.markets, ...p } })); };
+  const patchGoals = (p) => { setPresetKey(null); setRules((r) => ({ ...r, markets: { ...r.markets, goals: { ...r.markets.goals, ...p } } })); };
 
   const code = useMemo(() => encodePreset(rules), [rules]);
   const preview = useMemo(() => ({
@@ -89,7 +100,7 @@ export default function Spielerstellung() {
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
-      <BackLink />
+      <BackLink href="/menu" label="Menü" />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
         borderRadius: 26, overflow: "hidden",
@@ -108,7 +119,7 @@ export default function Spielerstellung() {
             <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
               Spiel erstellen
             </span>
-            <button onClick={() => setRules(DEFAULT_RULES)} style={{
+            <button onClick={() => { setRules(DEFAULT_RULES); setPresetKey("standard"); }} style={{
               fontFamily: MONO, fontSize: 11, color: C.muted, cursor: "pointer",
               background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 10px",
             }}>zurücksetzen</button>
@@ -117,6 +128,36 @@ export default function Spielerstellung() {
           <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
             Du als Admin legst fest, wie mutig belohnt wird. Teile das fertige Regelwerk
             per Creator-Code — alle Mitspieler bekommen exakt dieselben Regeln.
+          </p>
+
+          {/* Presets: Startpunkt, danach bleibt alles frei einstellbar */}
+          <SectionTitle>Presets</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 4 }}>
+            {PRESETS.map((p) => {
+              const active = presetKey === p.key;
+              return (
+                <button key={p.key} onClick={() => applyPreset(p)} style={{
+                  textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+                  background: active ? `${C.gold}14` : C.surface,
+                  border: `1px solid ${active ? C.gold + "66" : C.line}`,
+                  borderRadius: 14, padding: "12px 14px", color: C.text,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{p.label}</span>
+                    {active && (
+                      <span style={{
+                        fontFamily: MONO, fontSize: 10, color: C.gold, border: `1px solid ${C.gold}55`,
+                        borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
+                      }}>gewählt</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{p.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
+            Nur ein Startpunkt — alle Regler unten bleiben danach frei einstellbar.
           </p>
 
           {/* Name */}
@@ -152,6 +193,26 @@ export default function Spielerstellung() {
             hint="Höher = die Belohnung fällt mit jedem Tor Abstand steiler ab (Underdog-Regler)." />
           <Slider label="Team-Tore-Nähe (m)" value={rules.m} {...L.m} onChange={(v) => patch({ m: v })}
             hint="Steilheit der siegerunabhängigen Team-Tore-Nähe." />
+
+          {/* Underdog-Boost */}
+          <SectionTitle>Underdog-Boost</SectionTitle>
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+            Zusätzlicher Multiplikator, wenn das REALE Ergebnis ein Außenseiter-Sieg war
+            — oben drauf auf die ohnehin schon höhere Außenseiter-Quote. 1,0 = aus.
+          </p>
+          <Slider label="Boost-Stärke" value={rules.underdogBoost} {...L.underdogBoost}
+            onChange={(v) => patch({ underdogBoost: v })} fmt={(x) => "×" + x.toFixed(1)}
+            hint="1,0 = kein Effekt. Höher = Außenseiter-Siege zahlen zusätzlich mehr." />
+          {rules.underdogBoost > 1 && (
+            <>
+              <Slider label="Boost beginnt ab Sieger-Quote" value={rules.underdogRampStart} {...L.underdogRampStart}
+                onChange={(v) => patch({ underdogRampStart: v })} fmt={(x) => x.toFixed(1)}
+                hint="Unterhalb dieser Quote: kein Boost." />
+              <Slider label="Voller Boost ab Sieger-Quote" value={rules.underdogRampEnd} {...L.underdogRampEnd}
+                onChange={(v) => patch({ underdogRampEnd: v })} fmt={(x) => x.toFixed(1)}
+                hint="Dazwischen fließender Übergang statt hartem Cutoff." />
+            </>
+          )}
 
           {/* Kombi-Multiplikatoren */}
           <SectionTitle>Kombi-Multiplikatoren (Tore × Ebene)</SectionTitle>
