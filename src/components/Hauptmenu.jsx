@@ -49,7 +49,7 @@ export default function Hauptmenu() {
   }, [user]);
 
   const switchTo = (id) => {
-    setRoundId(id);
+    if (id !== roundId) setRoundId(id);
     router.push("/hub");
   };
 
@@ -78,8 +78,8 @@ export default function Hauptmenu() {
             {rounds?.map((r) => {
               const active = r.id === roundId;
               return (
-                <button key={r.id} onClick={() => !active && switchTo(r.id)} style={{
-                  textAlign: "left", cursor: active ? "default" : "pointer", fontFamily: "inherit",
+                <button key={r.id} onClick={() => switchTo(r.id)} style={{
+                  textAlign: "left", cursor: "pointer", fontFamily: "inherit",
                   background: active ? `${C.gold}14` : C.surface,
                   border: `1px solid ${active ? C.gold + "55" : C.line}`,
                   borderRadius: 16, padding: "14px 16px", color: C.text,
