@@ -12,6 +12,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import RegelVorschau from "@/components/RegelVorschau";
+import PresetRating from "@/components/PresetRating";
 
 const ALL_TEAMS = Object.keys(TEAM_RATINGS);
 
@@ -169,6 +170,9 @@ export default function Spielerstellung() {
 
           {/* Live-Vorschau über typische Spielarten */}
           <RegelVorschau rules={rules} />
+
+          {/* Reale Verteilung + Underdog-Neigung des Regelwerks */}
+          <PresetRating rules={rules} />
 
           {/* Schärfe */}
           <SectionTitle>Schärfe der Nähe-Belohnung</SectionTitle>
