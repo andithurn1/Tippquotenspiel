@@ -56,14 +56,15 @@ export function createSupabaseStore() {
         .upsert({ round_id: roundId, user_id: userId }, { onConflict: "round_id,user_id", ignoreDuplicates: true })
         .select());
     },
-    async createRound({ name, adminId, rules }) {
+    async createRound({ name, adminId, rules, teamFilter }) {
       // Kollisionen beim Beitritts-Code sind bei 6 Zeichen extrem selten;
       // der unique-Constraint in der DB schützt zusätzlich (Retry bei 23505).
       let joinCode = generateJoinCode();
+      const team_filter = Array.isArray(teamFilter) && teamFilter.length >= 2 ? teamFilter : null;
       for (let attempt = 0; attempt < 5; attempt++) {
         const { data, error } = await sb
           .from("rounds")
-          .insert({ name: (name ?? "").trim() || "Neue Runde", admin_id: adminId, rules: sanitizeRules(rules), join_code: joinCode })
+          .insert({ name: (name ?? "").trim() || "Neue Runde", admin_id: adminId, rules: sanitizeRules(rules), join_code: joinCode, team_filter })
           .select()
           .single();
         if (!error) { await this.joinRound({ roundId: data.id, userId: adminId }); return data; }

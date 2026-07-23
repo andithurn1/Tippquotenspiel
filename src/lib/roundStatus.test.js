@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeMatchStatus, countTippedByUser } from "./roundStatus";
+import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "./roundStatus";
 
 const now = new Date("2026-07-23T00:00:00Z");
 const matches = [
@@ -35,5 +35,28 @@ describe("countTippedByUser", () => {
   it("ohne userId (Gast) ergibt 0, statt zu crashen", () => {
     expect(countTippedByUser(tips, null)).toBe(0);
     expect(countTippedByUser(tips, undefined)).toBe(0);
+  });
+});
+
+describe("filterMatchesByTeams", () => {
+  const bl = [
+    { id: "m1", home: "FC Bayern München", away: "VfB Stuttgart" },
+    { id: "m2", home: "SV Elversberg", away: "Bayer 04 Leverkusen" },
+    { id: "m3", home: "RB Leipzig", away: "Borussia Mönchengladbach" },
+  ];
+
+  it("ohne Filter (null/leer) bleiben alle Matches", () => {
+    expect(filterMatchesByTeams(bl, null)).toEqual(bl);
+    expect(filterMatchesByTeams(bl, [])).toEqual(bl);
+  });
+
+  it("mit Filter bleibt ein Match, wenn MINDESTENS eine Seite ausgewählt ist", () => {
+    const result = filterMatchesByTeams(bl, ["FC Bayern München", "Bayer 04 Leverkusen"]);
+    expect(result.map((m) => m.id)).toEqual(["m1", "m2"]);
+  });
+
+  it("Match ohne ausgewähltes Team fällt raus", () => {
+    const result = filterMatchesByTeams(bl, ["RB Leipzig"]);
+    expect(result.map((m) => m.id)).toEqual(["m3"]);
   });
 });

@@ -104,4 +104,18 @@ describe("createRound", () => {
     const round = await store.createRound({ adminId: "u1", rules: DEFAULT_RULES });
     expect(round.name).toBe("Neue Runde");
   });
+
+  it("team_filter: mit ≥2 Teams wird er übernommen, sonst null (alle Spiele)", async () => {
+    const store = createMockStore();
+    const gefiltert = await store.createRound({
+      adminId: "u1", rules: DEFAULT_RULES, teamFilter: ["FC Bayern München", "Borussia Dortmund"],
+    });
+    expect(gefiltert.team_filter).toEqual(["FC Bayern München", "Borussia Dortmund"]);
+
+    const ohne = await store.createRound({ adminId: "u1", rules: DEFAULT_RULES });
+    expect(ohne.team_filter).toBeNull();
+
+    const zuWenig = await store.createRound({ adminId: "u1", rules: DEFAULT_RULES, teamFilter: ["Nur Ein Team"] });
+    expect(zuWenig.team_filter).toBeNull();
+  });
 });

@@ -67,15 +67,24 @@ export default function Spielerstellung() {
   };
 
   const load = () => {
-    try { setRules(sanitizeRules(decodePreset(imp.trim()))); setImp(""); setImpErr(""); }
+    try { setPresetKey(null); setRules(sanitizeRules(decodePreset(imp.trim()))); setImp(""); setImpErr(""); }
     catch { setImpErr("Kein gültiger Creator-Code (TS1-…)"); }
   };
 
+  const toggleTeam = (team) =>
+    setSelectedTeams((prev) => prev.includes(team) ? prev.filter((t) => t !== team) : [...prev, team]);
+
+  const teamFilterInvalid = teamFilterOn && selectedTeams.length < 2;
+
   const createRound = async () => {
     if (!user) { setCreateErr("Bitte zuerst einloggen (Startseite)."); return; }
+    if (teamFilterInvalid) { setCreateErr("Bitte mindestens 2 Teams auswählen (oder Team-Auswahl ausschalten)."); return; }
     setCreating(true); setCreateErr("");
     try {
-      const round = await getStore().createRound({ name: rules.name, adminId: user.id, adminName: user.name, rules });
+      const round = await getStore().createRound({
+        name: rules.name, adminId: user.id, adminName: user.name, rules,
+        teamFilter: teamFilterOn ? selectedTeams : null,
+      });
       setCreated(round);
       setRoundId(round.id);
     } catch {
@@ -269,6 +278,37 @@ export default function Spielerstellung() {
             </div>
           )}
 
+          {/* Teams */}
+          <SectionTitle>Teams</SectionTitle>
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+            Standardmäßig zählen alle Bundesliga-Spiele. Willst du dich auf bestimmte Teams
+            beschränken (z. B. weniger Aufwand mit Torschützen, oder ihr wollt nur eure
+            Lieblingsklubs plus Nachbarschaftsduelle), wählt hier mindestens 2 Teams —
+            ein Spiel zählt für diese Runde, sobald mindestens eine Seite dabei ist.
+          </p>
+          <Toggle label="Auf bestimmte Teams beschränken" on={teamFilterOn}
+            onChange={(on) => setTeamFilterOn(on)} />
+          {teamFilterOn && (
+            <div style={{ marginTop: 8, marginBottom: 8 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {ALL_TEAMS.map((team) => {
+                  const on = selectedTeams.includes(team);
+                  return (
+                    <button key={team} onClick={() => toggleTeam(team)} style={{
+                      cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
+                      background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
+                      border: `1px solid ${on ? C.mint + "66" : C.line}`,
+                    }}>{team}</button>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 11, color: teamFilterInvalid ? C.coral : C.muted, marginTop: 8 }}>
+                {selectedTeams.length} von mindestens 2 Teams ausgewählt
+                {teamFilterInvalid && " — bitte noch mindestens ein weiteres Team wählen"}.
+              </div>
+            </div>
+          )}
+
           {/* Runde erstellen */}
           <SectionTitle>Runde erstellen</SectionTitle>
           {!created ? (
@@ -283,10 +323,10 @@ export default function Spielerstellung() {
                   Bitte zuerst auf der Startseite einloggen.
                 </p>
               )}
-              <button onClick={createRound} disabled={creating || !user} style={{
-                width: "100%", cursor: creating || !user ? "default" : "pointer",
+              <button onClick={createRound} disabled={creating || !user || teamFilterInvalid} style={{
+                width: "100%", cursor: creating || !user || teamFilterInvalid ? "default" : "pointer",
                 background: C.mint, color: C.ink, fontWeight: 700, fontSize: 14,
-                border: "none", borderRadius: 14, padding: "13px 0", opacity: creating || !user ? 0.6 : 1,
+                border: "none", borderRadius: 14, padding: "13px 0", opacity: creating || !user || teamFilterInvalid ? 0.6 : 1,
               }}>
                 {creating ? "wird angelegt …" : "Runde jetzt erstellen"}
               </button>

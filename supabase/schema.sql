@@ -33,14 +33,22 @@ create table if not exists public.matches (
 -- rules = per sanitizeRules() gültiges Regelwerk (JSON).
 -- admin_id nullable, damit eine geseedete Gemeinschaftsrunde ohne
 -- konkreten Admin existieren kann.
+-- team_filter = Array von Team-Namen oder null ("alle Teams/Spiele").
+-- Filtert NICHT den globalen matches-Katalog, sondern nur, welche Matches
+-- dieser Runde beim Tippen angezeigt werden (siehe roundStatus.js).
 create table if not exists public.rounds (
-  id         uuid primary key default gen_random_uuid(),
-  name       text not null,
-  admin_id   uuid references public.profiles(id) on delete set null,
-  rules      jsonb not null,
-  join_code  text not null unique,           -- kurzer Beitritts-Code
-  created_at timestamptz not null default now()
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null,
+  admin_id    uuid references public.profiles(id) on delete set null,
+  rules       jsonb not null,
+  join_code   text not null unique,           -- kurzer Beitritts-Code
+  team_filter jsonb,
+  created_at  timestamptz not null default now()
 );
+
+-- Falls die rounds-Tabelle aus einer früheren Schema-Version noch keine
+-- team_filter-Spalte hat: nachträglich ergänzen (idempotent).
+alter table public.rounds add column if not exists team_filter jsonb;
 
 -- ── Mitglieder einer Runde ──────────────────────────────────
 create table if not exists public.round_members (

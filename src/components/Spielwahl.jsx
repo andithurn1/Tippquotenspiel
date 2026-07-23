@@ -6,6 +6,7 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
+import { filterMatchesByTeams } from "@/lib/roundStatus";
 
 const C = {
   ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
@@ -26,15 +27,19 @@ export default function Spielwahl() {
   const { user } = useAuth();
   const { roundId } = useCurrentRound();
   const [matches, setMatches] = useState(null);
+  const [teamFilter, setTeamFilter] = useState(null);
   const [tippedIds, setTippedIds] = useState(new Set());
 
   useEffect(() => {
     let live = true;
-    getStore().listMatches().then((ms) => {
-      if (live) setMatches([...ms].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)));
+    Promise.all([getStore().getRound(roundId), getStore().listMatches()]).then(([round, ms]) => {
+      if (!live) return;
+      setTeamFilter(round?.team_filter ?? null);
+      const relevant = filterMatchesByTeams(ms, round?.team_filter);
+      setMatches([...relevant].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)));
     });
     return () => { live = false; };
-  }, []);
+  }, [roundId]);
 
   useEffect(() => {
     let live = true;
@@ -65,7 +70,12 @@ export default function Spielwahl() {
         <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Spielwahl
         </span>
-        <h1 style={{ fontSize: 20, fontWeight: 800, margin: "8px 0 18px" }}>Auf welches Spiel willst du tippen?</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 800, margin: "8px 0 10px" }}>Auf welches Spiel willst du tippen?</h1>
+        {teamFilter?.length > 0 && (
+          <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 12 }}>
+            Diese Runde ist beschränkt auf: {teamFilter.join(", ")}
+          </div>
+        )}
 
         {matches == null && (
           <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>Spiele laden …</div>

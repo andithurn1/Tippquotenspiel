@@ -5,6 +5,16 @@
 // (Rundenübersicht) und Spielwahl genutzt, damit „X Spiele · Y offen · Z
 // getippt" überall gleich berechnet wird statt an drei Stellen zu drifted.
 
+// Team-Filter einer Runde: null/leer = alle Spiele. Sonst nur Spiele, an
+// denen MINDESTENS eines der ausgewählten Teams beteiligt ist (Heim ODER
+// Gast) — so bleiben z.B. auch Spiele gegen ein nicht ausgewähltes Team
+// sichtbar, solange die andere Seite ausgewählt ist.
+export function filterMatchesByTeams(matches, teamFilter) {
+  if (!teamFilter || !teamFilter.length) return matches;
+  const set = new Set(teamFilter);
+  return matches.filter((m) => set.has(m.home) || set.has(m.away));
+}
+
 export function computeMatchStatus(matches, now = new Date()) {
   const open = matches.filter((m) => new Date(m.kickoff) > now).length;
   return { total: matches.length, open, closed: matches.length - open };

@@ -7,7 +7,7 @@ import AuthBar from "@/components/AuthBar";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { getStore } from "@/lib/store";
-import { computeMatchStatus, countTippedByUser } from "@/lib/roundStatus";
+import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "@/lib/roundStatus";
 
 const C = {
   ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
@@ -37,8 +37,9 @@ export default function Hauptmenu() {
     if (!user) { setRounds([]); return; }
     Promise.all([getStore().listRoundsForUser(user.id), getStore().listMatches()]).then(async ([myRounds, matches]) => {
       if (!live) return;
-      const { total, open } = computeMatchStatus(matches);
       const withStatus = await Promise.all(myRounds.map(async (r) => {
+        const relevant = filterMatchesByTeams(matches, r.team_filter);
+        const { total, open } = computeMatchStatus(relevant);
         const tips = await getStore().listTips({ roundId: r.id });
         return { ...r, status: { total, open, tippedByMe: countTippedByUser(tips, user.id) } };
       }));

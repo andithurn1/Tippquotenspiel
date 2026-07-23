@@ -5,7 +5,7 @@ import Link from "next/link";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
-import { computeMatchStatus, countTippedByUser } from "@/lib/roundStatus";
+import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "@/lib/roundStatus";
 
 const C = {
   ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
@@ -43,7 +43,8 @@ export default function RundenHub() {
       .then(([round, matches, tips]) => {
         if (!live) return;
         setRoundName(round?.name ?? null);
-        const { total, open } = computeMatchStatus(matches);
+        const relevant = filterMatchesByTeams(matches, round?.team_filter);
+        const { total, open } = computeMatchStatus(relevant);
         setStatus({ total, open, tippedByMe: countTippedByUser(tips, user?.id) });
       }).catch(() => {});
     return () => { live = false; };

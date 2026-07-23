@@ -77,6 +77,7 @@ export function createMockStore() {
         admin_id: adminId,
         rules: sanitizeRules(rules),
         join_code: joinCode,
+        team_filter: Array.isArray(teamFilter) && teamFilter.length >= 2 ? teamFilter : null,
       };
       rounds.set(round.id, round);
       members.push({ round_id: round.id, user_id: adminId, name: adminName ?? adminId });
