@@ -56,6 +56,23 @@ describe("Mock-Store — Seed & Schnittstelle", () => {
     expect(members.filter((m) => m.user_id === "u-neu")).toHaveLength(1);
     expect(members).toHaveLength(6);
   });
+
+  it("listRoundsForUser liefert alle Runden eines Mitglieds, keine fremden", async () => {
+    const store = createMockStore();
+    const eigene = await store.createRound({ name: "Büro-Liga", adminId: "u-du", rules: DEFAULT_RULES });
+    const fremde = await store.createRound({ name: "Fremd", adminId: "u-anderer", rules: DEFAULT_RULES });
+    const meine = await store.listRoundsForUser("u-du");
+    expect(meine.map((r) => r.id)).toEqual(expect.arrayContaining([DEMO_ROUND_ID, eigene.id]));
+    expect(meine.map((r) => r.id)).not.toContain(fremde.id);
+  });
+
+  it("getLeaderboardHistory: Demo-Runde hat nur JOR-ESP (matchday 14) → ein Historien-Eintrag", async () => {
+    const store = createMockStore();
+    const history = await store.getLeaderboardHistory(DEMO_ROUND_ID);
+    expect(history).toHaveLength(1);
+    expect(history[0].matchday).toBe(14);
+    expect(history[0].board).toHaveLength(5);
+  });
 });
 
 describe("createRound", () => {

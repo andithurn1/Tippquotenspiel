@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { createMockOddsSource, DEFAULT_RULES, projectTip } from "@/lib/engine";
+import { DEFAULT_RULES, projectTip } from "@/lib/engine";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -18,16 +18,10 @@ const C = {
 };
 const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
-// ── Eine Quelle: Engine liefert Regelwerk + Snapshot-Quoten ──
+// ── Eine Quelle: Engine liefert das Regelwerk, der Store das Match ──
 // Der Screen RENDERT nur: schaltet der Admin markets.goals aus
 // oder picksPerTeam auf 1, ändert sich die Oberfläche mit.
 const RULES = DEFAULT_RULES;
-const odds = createMockOddsSource();
-const SNAP = odds.getSnapshot("JOR-ESP");
-
-const kickoffLabel = new Intl.DateTimeFormat("de-DE", {
-  weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
-}).format(new Date(SNAP.kickoff));
 
 const risk = (q) =>
   q == null ? { label: "—", col: C.muted }
@@ -36,31 +30,64 @@ const risk = (q) =>
   : q < 100 ? { label: "Zocker", col: C.coral }
   : { label: "Wahnsinn", col: C.coral };
 
-export default function Tippabgabe() {
+// Löst den Anfangs-Pick je Torschützen-Slot: erster Spieler des Teams.
+const initialPicks = (snap, scorer, teams) =>
+  teams.map((t) => Array.from({ length: scorer.picksPerTeam }, () => ({
+    main: Object.keys(snap.players[t.side])[0], backup: "",
+  })));
+
+export default function Tippabgabe({ matchId }) {
   const { user } = useAuth();
   const { prefs } = usePrefs();
   const { roundId } = useCurrentRound();
+  const [match, setMatch] = useState(null);
   const [h, setH] = useState(2);
   const [a, setA] = useState(1);
   const [roundName, setRoundName] = useState(null);
   const scorer = RULES.markets.goals;
-  const teams = [
-    { side: "home", name: SNAP.home },
-    { side: "away", name: SNAP.away },
-  ];
-  const [picks, setPicks] = useState(
-    teams.map((t) => Array.from({ length: scorer.picksPerTeam }, () => ({
-      main: Object.keys(SNAP.players[t.side])[0], backup: "",
-    })))
-  );
+  const [picks, setPicks] = useState(null);
   const [done, setDone] = useState(false);
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error
+
+  useEffect(() => {
+    let live = true;
+    getStore().getMatch(matchId).then((m) => {
+      if (!live || !m) return;
+      setMatch(m);
+      const teams = [{ side: "home", name: m.snapshot.home }, { side: "away", name: m.snapshot.away }];
+      setPicks(initialPicks(m.snapshot, scorer, teams));
+    });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId]);
 
   useEffect(() => {
     let live = true;
     getStore().getRound(roundId).then((r) => { if (live) setRoundName(r?.name ?? null); }).catch(() => {});
     return () => { live = false; };
   }, [roundId]);
+
+  if (!match || !picks) {
+    return (
+      <div style={{
+        minHeight: "100vh", background: C.ink, color: C.text,
+        fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+        padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
+      }}>
+        <BackLink href="/tippen" label="Spielwahl" />
+        <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted, marginTop: 40 }}>Match lädt …</div>
+      </div>
+    );
+  }
+
+  const SNAP = match.snapshot;
+  const teams = [
+    { side: "home", name: SNAP.home },
+    { side: "away", name: SNAP.away },
+  ];
+  const kickoffLabel = new Intl.DateTimeFormat("de-DE", {
+    weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
+  }).format(new Date(SNAP.kickoff));
 
   const csQuote = SNAP.correctScore[h]?.[a] ?? null;
   const winner = h > a ? SNAP.home : h < a ? SNAP.away : "Unentschieden";
@@ -105,7 +132,7 @@ export default function Tippabgabe() {
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
-      <BackLink />
+      <BackLink href="/tippen" label="Spielwahl" />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
         borderRadius: 26, overflow: "hidden",
@@ -376,7 +403,7 @@ function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams,
       }}>
         Vor Anpfiff noch bearbeiten
       </button>
-      <Link href="/abrechnung" style={{
+      <Link href="/ranking" style={{
         marginTop: 10, display: "block", textAlign: "center", textDecoration: "none",
         color: C.ink, background: C.mint, fontWeight: 700, fontSize: 14,
         borderRadius: 14, padding: "12px 0",

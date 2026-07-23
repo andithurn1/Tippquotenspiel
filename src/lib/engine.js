@@ -228,6 +228,17 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES) {
     .map((u, i) => ({ ...u, rank: i + 1 }));
 }
 
+// Ranking-Verlauf: wie scoreLeaderboard, aber je Spieltag ein kumulatives Zwischenstand-
+// Ranking (Spieltag N = alle Tipps mit matchday <= N). entries brauchen zusätzlich
+// `matchday`. Kein neuer Scoring-Code — ruft scoreLeaderboard je Cutoff wieder auf.
+export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES) {
+  const matchdays = [...new Set(entries.map((e) => e.matchday).filter((m) => m != null))].sort((a, b) => a - b);
+  return matchdays.map((matchday) => ({
+    matchday,
+    board: scoreLeaderboard(entries.filter((e) => e.matchday <= matchday), rules),
+  }));
+}
+
 
 // ── 4) CREATOR-CODES (Modi teilen & anpassen) ───────────────
 export function encodePreset(rules) {

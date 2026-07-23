@@ -52,7 +52,7 @@ export default function RundeBeitreten() {
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
-      <BackLink />
+      <BackLink href="/menu" label="Menü" />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
         borderRadius: 26, overflow: "hidden",

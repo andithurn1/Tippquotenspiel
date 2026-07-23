@@ -2,7 +2,7 @@
 
 import { createMockOddsSource, scoreTip, toDisplay, projectTip } from "@/lib/engine";
 import { usePrefs } from "@/components/PrefsProvider";
-import { PREF_META, LEVELS, LEVEL_LABEL } from "@/lib/prefs";
+import { PREF_META, LEVELS, LEVEL_LABEL, START_SCREENS, START_SCREEN_LABEL } from "@/lib/prefs";
 import BackLink from "@/components/BackLink";
 
 const C = {
@@ -33,7 +33,7 @@ export default function Einstellungen() {
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
-      <BackLink />
+      <BackLink href="/menu" label="Menü" />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
         borderRadius: 26, overflow: "hidden",
@@ -57,6 +57,29 @@ export default function Einstellungen() {
 
           <PrefSection meta={PREF_META.vorschau} value={prefs.vorschau} onChange={(v) => setPref("vorschau", v)} />
           <VorschauPreview lvl={prefs.vorschau} />
+
+          <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
+
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>App-Start</div>
+            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+              Was du siehst, sobald du die App öffnest.
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+              {START_SCREENS.map((s) => (
+                <button key={s} onClick={() => setPref("startScreen", s)} style={{
+                  flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: 10,
+                  background: prefs.startScreen === s ? C.gold : C.surface, color: prefs.startScreen === s ? C.ink : C.muted,
+                  border: `1px solid ${prefs.startScreen === s ? C.gold : C.line}`, fontFamily: "inherit",
+                }}>{START_SCREEN_LABEL[s]}</button>
+              ))}
+            </div>
+            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+              {prefs.startScreen === "hub"
+                ? "Direkt rein ins Tippen: Tipp abgeben, Ranking & Co. deiner aktiven Runde."
+                : "Erst die Übersicht: eigene Tippspiele, erstellen, beitreten, Einstellungen."}
+            </div>
+          </div>
         </div>
       </div>
     </div>

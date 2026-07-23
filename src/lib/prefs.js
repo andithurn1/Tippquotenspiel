@@ -6,7 +6,12 @@
 export const LEVELS = ["voll", "dezent", "aus"];
 export const LEVEL_LABEL = { voll: "Voll", dezent: "Dezent", aus: "Aus" };
 
-export const DEFAULT_PREFS = { abrechnung: "voll", vorschau: "voll" };
+// App-Start: Standard ist das Hauptmenü (Runde wählen, erstellen, beitreten, …);
+// wer will, kann optional direkt in die aktive Tipprunde springen.
+export const START_SCREENS = ["menu", "hub"];
+export const START_SCREEN_LABEL = { menu: "Hauptmenü", hub: "Aktive Tipprunde" };
+
+export const DEFAULT_PREFS = { abrechnung: "voll", vorschau: "voll", startScreen: "menu" };
 
 // Texte für den Einstellungs-Screen.
 export const PREF_META = {
@@ -36,5 +41,6 @@ export function sanitizePrefs(p = {}) {
   return {
     abrechnung: pick(src.abrechnung, DEFAULT_PREFS.abrechnung),
     vorschau: pick(src.vorschau, DEFAULT_PREFS.vorschau),
+    startScreen: START_SCREENS.includes(src.startScreen) ? src.startScreen : DEFAULT_PREFS.startScreen,
   };
 }

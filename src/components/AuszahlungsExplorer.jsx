@@ -73,7 +73,7 @@ export default function AuszahlungsExplorer() {
   return (
     <div style={{ minHeight: "100vh", background: C.ink, color: C.text,
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", padding: "26px 14px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <BackLink />
+      <BackLink href="/menu" label="Menü" />
       <div style={{ width: "100%", maxWidth: 400, borderRadius: 24, position: "relative", overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)", padding: "22px 18px" }}>

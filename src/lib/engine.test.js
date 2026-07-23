@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   createMockOddsSource, DEFAULT_RULES, RULE_LIMITS,
   scoreResult, scoreGoals, scoreTip, applyCombo, toDisplay,
-  encodePreset, decodePreset, sanitizeRules, scoreLeaderboard, projectTip,
+  encodePreset, decodePreset, sanitizeRules, scoreLeaderboard, scoreLeaderboardHistory, projectTip,
 } from "./engine";
 
 const odds = createMockOddsSource();
@@ -250,5 +250,34 @@ describe("scoreLeaderboard — Aggregation & Rang", () => {
     expect(board[0].total).toBe(0);
     expect(board[0].tips).toBe(1);
     expect(board[0].gewertet).toBe(0);
+  });
+});
+
+describe("scoreLeaderboardHistory — kumulativer Rang-Verlauf je Spieltag", () => {
+  const base = { snapshot: snap, result, rules: DEFAULT_RULES };
+
+  it("ein Eintrag je vorkommendem Spieltag, aufsteigend sortiert", () => {
+    const history = scoreLeaderboardHistory([
+      { userId: "u1", name: "Du", tip: { home: 4, away: 1 }, matchday: 2, ...base },
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 1, ...base },
+    ]);
+    expect(history.map((h) => h.matchday)).toEqual([1, 2]);
+  });
+
+  it("Spieltag N enthält kumulativ alle Tipps bis einschließlich N", () => {
+    const history = scoreLeaderboardHistory([
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 1, ...base },
+      { userId: "u1", name: "Du", tip: { home: 4, away: 1 }, matchday: 2, ...base },
+    ]);
+    const nachMd1 = history.find((h) => h.matchday === 1).board[0];
+    const nachMd2 = history.find((h) => h.matchday === 2).board[0];
+    expect(nachMd1.gewertet).toBe(1);
+    expect(nachMd2.gewertet).toBe(2);
+    expect(nachMd2.total).toBeGreaterThan(nachMd1.total);
+  });
+
+  it("Einträge ohne matchday werden ignoriert (keine Historie ohne Zuordnung)", () => {
+    const history = scoreLeaderboardHistory([{ userId: "u1", name: "Du", tip: { home: 1, away: 0 }, ...base }]);
+    expect(history).toEqual([]);
   });
 });

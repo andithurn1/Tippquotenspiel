@@ -3,7 +3,7 @@
 //    sind (siehe store.js). Scoring bleibt in der Engine — hier werden
 //    nur Rohdaten geladen/geschrieben.
 
-import { DEFAULT_RULES, scoreLeaderboard, sanitizeRules } from "./engine";
+import { DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules } from "./engine";
 import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 
@@ -42,6 +42,12 @@ export function createSupabaseStore() {
         .select("round_id, user_id, profiles(display_name)")
         .eq("round_id", roundId));
       return data.map((m) => ({ round_id: m.round_id, user_id: m.user_id, name: m.profiles?.display_name ?? m.user_id }));
+    },
+    async listRoundsForUser(userId) {
+      const memberRows = orThrow(await sb.from("round_members").select("round_id").eq("user_id", userId));
+      const roundIds = memberRows.map((m) => m.round_id);
+      if (!roundIds.length) return [];
+      return orThrow(await sb.from("rounds").select("*").in("id", roundIds));
     },
     async joinRound({ roundId, userId }) {
       // idempotent: bereits Mitglied → nichts tun
@@ -99,6 +105,24 @@ export function createSupabaseStore() {
         tip: t.tip, snapshot: t.snapshot, result: resultOf(t.match_id),
       }));
       return scoreLeaderboard(entries, round?.rules ?? DEFAULT_RULES);
+    },
+
+    async getLeaderboardHistory(roundId) {
+      const [round, members, tips, matches] = await Promise.all([
+        this.getRound(roundId),
+        this.listMembers(roundId),
+        this.listTips({ roundId }),
+        this.listMatches(),
+      ]);
+      const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
+      const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
+      const entries = tips.map((t) => ({
+        userId: t.user_id, name: nameOf(t.user_id),
+        tip: t.tip, snapshot: t.snapshot,
+        result: matchOf(t.match_id)?.result ?? null,
+        matchday: matchOf(t.match_id)?.matchday ?? null,
+      }));
+      return scoreLeaderboardHistory(entries, round?.rules ?? DEFAULT_RULES);
     },
   };
 }

@@ -19,3 +19,6 @@ npm-debug.log*
 
 # Vercel
 .vercel
+
+# Persönliche Claude-Code-Einstellungen (nicht teamweit)
+.claude/settings.local.json

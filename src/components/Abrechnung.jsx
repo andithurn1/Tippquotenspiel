@@ -119,7 +119,7 @@ export default function Abrechnung() {
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
-      <BackLink />
+      <BackLink href="/menu" label="Menü" />
       <div style={{
         width: "100%", maxWidth: 400, display: "flex", justifyContent: "space-between",
         alignItems: "center", marginBottom: 10, fontFamily: MONO, fontSize: 11.5, color: C.muted,

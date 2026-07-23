@@ -58,13 +58,17 @@ export function createMockStore() {
     async listMembers(roundId) {
       return members.filter((m) => m.round_id === roundId);
     },
+    async listRoundsForUser(userId) {
+      const roundIds = new Set(members.filter((m) => m.user_id === userId).map((m) => m.round_id));
+      return [...rounds.values()].filter((r) => roundIds.has(r.id));
+    },
     async joinRound({ roundId, userId, name }) {
       if (!members.some((m) => m.round_id === roundId && m.user_id === userId)) {
         members.push({ round_id: roundId, user_id: userId, name: name ?? userId });
       }
       return { round_id: roundId, user_id: userId };
     },
-    async createRound({ name, adminId, adminName, rules }) {
+    async createRound({ name, adminId, adminName, rules, teamFilter }) {
       let joinCode = generateJoinCode();
       while ([...rounds.values()].some((r) => r.join_code === joinCode)) joinCode = generateJoinCode();
       const round = {
@@ -100,6 +104,20 @@ export function createMockStore() {
         result: matches.get(t.match_id)?.result ?? null,
       }));
       return scoreLeaderboard(entries, round?.rules ?? DEFAULT_RULES);
+    },
+
+    // Ranking-Verlauf: gleiche Rohdaten wie getLeaderboard, zusätzlich mit matchday
+    // je Tipp angereichert, damit die Engine kumulativ je Spieltag rechnen kann.
+    async getLeaderboardHistory(roundId) {
+      const round = rounds.get(roundId);
+      const roundTips = tips.filter((t) => t.round_id === roundId);
+      const entries = roundTips.map((t) => ({
+        userId: t.user_id, name: nameOf(t.user_id),
+        tip: t.tip, snapshot: t.snapshot,
+        result: matches.get(t.match_id)?.result ?? null,
+        matchday: matches.get(t.match_id)?.matchday ?? null,
+      }));
+      return scoreLeaderboardHistory(entries, round?.rules ?? DEFAULT_RULES);
     },
   };
 }

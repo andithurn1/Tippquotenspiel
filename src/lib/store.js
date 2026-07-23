@@ -6,8 +6,9 @@
 // Beide Stores teilen dieselbe Schnittstelle:
 //   listMatches() · getMatch(id)
 //   getRound(id) · getRoundByCode(code) · listMembers(roundId)
+//   listRoundsForUser(userId)   ← alle Runden, in denen der User Mitglied ist
 //   saveTip({roundId,matchId,userId,tip,snapshot}) · listTips({roundId,matchId})
-//   getLeaderboard(roundId)   ← rechnet über die Engine
+//   getLeaderboard(roundId) · getLeaderboardHistory(roundId)   ← rechnen über die Engine
 
 import { hasSupabaseEnv } from "./supabaseClient";
 import { createMockStore } from "./store.mock";

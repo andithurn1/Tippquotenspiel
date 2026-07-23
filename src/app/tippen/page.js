@@ -1,7 +1,7 @@
-import Tippabgabe from "@/components/Tippabgabe";
+import Spielwahl from "@/components/Spielwahl";
 
-export const metadata = { title: "Tipp abgeben · Tippquotenspiel" };
+export const metadata = { title: "Spielwahl · Tippquotenspiel" };
 
 export default function TippenPage() {
-  return <Tippabgabe />;
+  return <Spielwahl />;
 }
