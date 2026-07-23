@@ -8,6 +8,8 @@ import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
+import ReactionGif from "@/components/ReactionGif";
+import { tipScenario, rankReaction } from "@/lib/reactions";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
 // Nächtliches Flutlicht-Stadion: tiefes Indigo, Flutlicht-Gold,
@@ -35,6 +37,7 @@ const snap = odds.getSnapshot("JOR-ESP");
 const result = odds.getResult("JOR-ESP");
 const DU_TIP = { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal", ""] } };
 const me = scoreTip(DU_TIP, result, snap);
+const TIP_REACTION = tipScenario(me);   // GIF nach Tipp-Genauigkeit (hier: „Hauchdünn")
 
 const DATA = {
   spieltag: 14,
@@ -102,6 +105,7 @@ export default function Abrechnung() {
   const punkte = useCountUp(DATA.total, stage >= 4);
 
   const myRank = board?.find((b) => b.userId === meId)?.rank ?? null;
+  const rankReact = rankReaction(myRank, board?.length ?? null); // Rollen-GIF (Sieger/…)
   const min = board?.length ? Math.min(...board.map((b) => b.total)) : 0;
   const shown = (board ?? [])
     .map((b) => ({ ...b, disp: fair ? b.total - min : b.total }))
@@ -179,8 +183,13 @@ export default function Abrechnung() {
             </div>
           )}
 
+          {/* Reaktions-GIF zum Tipp — erscheint zum Höhepunkt */}
+          <div style={{ ...show(4), marginTop: 22, display: "flex", justifyContent: "center" }}>
+            <ReactionGif reaction={TIP_REACTION} size={132} />
+          </div>
+
           {/* Punkte-Zähler */}
-          <div style={{ ...show(4), marginTop: 22, textAlign: "center" }}>
+          <div style={{ ...show(4), marginTop: 14, textAlign: "center" }}>
             <div style={{ fontSize: 12, color: C.muted, letterSpacing: 1, textTransform: "uppercase" }}>
               gewertet
             </div>
@@ -207,18 +216,24 @@ export default function Abrechnung() {
             )}
           </div>
 
-          {/* Rang + Badge */}
-          <div style={{ ...show(5), marginTop: 20, display: "flex", gap: 10 }}>
+          {/* Rang + Rollen-GIF */}
+          <div style={{ ...show(5), marginTop: 20, display: "flex", gap: 10, alignItems: "stretch" }}>
             <div style={{ flex: 1, background: C.surface, borderRadius: 14, padding: "12px 14px", border: `1px solid ${C.line}` }}>
               <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Rang in der Runde</div>
               <div style={{ fontFamily: MONO, fontSize: 22, marginTop: 2, color: C.mint }}>
                 {myRank ? `#${myRank}` : "…"}
               </div>
+              {rankReact && (
+                <div style={{ fontSize: 13, marginTop: 6, fontWeight: 700, color: rankReact.tone }}>
+                  {rankReact.emoji} {rankReact.label}
+                </div>
+              )}
             </div>
-            <div style={{ flex: 1, background: `${C.coral}18`, borderRadius: 14, padding: "12px 14px", border: `1px solid ${C.coral}44` }}>
-              <div style={{ fontSize: 11, color: C.coral, textTransform: "uppercase", letterSpacing: 1 }}>Auszeichnung</div>
-              <div style={{ fontSize: 16, marginTop: 4, fontWeight: 700 }}>Zocker des Spieltags</div>
-            </div>
+            {rankReact && (
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
+                <ReactionGif reaction={rankReact} size={92} />
+              </div>
+            )}
           </div>
 
           {/* Mini-Leaderboard mit Toggle */}
