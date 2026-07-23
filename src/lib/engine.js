@@ -59,6 +59,12 @@ export const DEFAULT_RULES = {
   underdogBoost: 1,
   underdogRampStart: 3,
   underdogRampEnd: 8,
+  // Favoriten-Reinfall-Malus (Zwilling zum Underdog-Boost): Abzug, wenn du den
+  // FAVORITEN als Sieger getippt hast und der REAL verloren hat. Skaliert über
+  // dieselbe Underdog-Ramp (je krasser der Sieger ein Außenseiter war, desto
+  // härter). 0 = aus. Wird vom Gesamt-Ergebnis abgezogen, aber bei 0 gedeckelt
+  // (kein tiefes Minus) — richtig getippte Underdog-Tore federn also ab.
+  favFlopPenalty: 0,
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -79,6 +85,7 @@ export const RULE_LIMITS = {
   underdogBoost:     { min: 1,   max: 3,  step: 0.1 },
   underdogRampStart: { min: 1.2, max: 15, step: 0.1 },
   underdogRampEnd:   { min: 2,   max: 30, step: 0.5 },
+  favFlopPenalty:    { min: 0,   max: 20, step: 1   },
 };
 
 // Nimmt ein (evtl. aus einem Creator-Code importiertes) Teil-Regelwerk und macht
@@ -124,6 +131,7 @@ export function sanitizeRules(partial = {}) {
     underdogBoost: clamp(num(src.underdogBoost, D.underdogBoost), L.underdogBoost.min, L.underdogBoost.max),
     underdogRampStart: clamp(num(src.underdogRampStart, D.underdogRampStart), L.underdogRampStart.min, L.underdogRampStart.max),
     underdogRampEnd: clamp(num(src.underdogRampEnd, D.underdogRampEnd), L.underdogRampEnd.min, L.underdogRampEnd.max),
+    favFlopPenalty: clamp(num(src.favFlopPenalty, D.favFlopPenalty), L.favFlopPenalty.min, L.favFlopPenalty.max),
   };
 }
 
@@ -131,21 +139,44 @@ export function sanitizeRules(partial = {}) {
 // ── 3) SCORING ──────────────────────────────────────────────
 const sgn = (h, a) => (h > a ? 1 : h < a ? -1 : 0);
 
+// Anteil auf der Underdog-Ramp (0 unterhalb rampStart … 1 ab rampEnd) für eine
+// gegebene Sieger-Quote. Von Boost UND Favoriten-Malus geteilt: der Admin legt
+// „ab welcher Quote gilt jemand als Außenseiter" nur einmal fest. Ungültige Ramp
+// oder fehlende Quote → 0 (kein Effekt), also sicher.
+function rampFactor(winnerQuote, rules) {
+  const start = rules.underdogRampStart ?? Infinity;
+  const end = rules.underdogRampEnd ?? Infinity;
+  if (winnerQuote == null || !(end > start)) return 0;
+  return Math.min(1, Math.max(0, (winnerQuote - start) / (end - start)));
+}
+
 // Underdog-Boost: Multiplikator auf den Ergebnis-Teil, wenn das REALE Ergebnis
 // (nicht der Tipp!) ein Außenseiter-Ausgang war — gemessen an dessen Sieger-
-// Quote. Fließender Übergang zwischen rampStart/-Ende statt hartem Cutoff;
-// unterhalb rampStart bleibt der Multiplikator 1 (kein Effekt). boost=1 ist
-// per Default ein reines No-op, unabhängig von den Ramp-Werten.
+// Quote (fließend über die Ramp). boost=1 ist ein reines No-op.
 function underdogMultiplier(actual, snap, rules) {
   const boost = rules.underdogBoost ?? 1;
   if (boost === 1) return 1;
   const winnerQuote = sgn(actual.home, actual.away) === 1 ? snap.winner.home
     : sgn(actual.home, actual.away) === -1 ? snap.winner.away : snap.winner.draw;
-  const start = rules.underdogRampStart ?? Infinity;
-  const end = rules.underdogRampEnd ?? Infinity;
-  if (winnerQuote == null || !(end > start)) return 1;
-  const t = Math.min(1, Math.max(0, (winnerQuote - start) / (end - start)));
-  return 1 + (boost - 1) * t;
+  return 1 + (boost - 1) * rampFactor(winnerQuote, rules);
+}
+
+// Favoriten-Reinfall-Malus: roher Abzug, wenn der Tipp den FAVORITEN als Sieger
+// hatte und der real verloren hat. Skaliert mit der Außenseiter-Quote des echten
+// Siegers (via rampFactor) × Admin-Stärke. 0, wenn nicht anwendbar (Remis-Tipp,
+// Remis-Ausgang, Außenseiter richtig getippt, Malus aus).
+function favoriteFlopPenalty(tip, actual, snap, rules) {
+  const strength = rules.favFlopPenalty ?? 0;
+  if (strength <= 0) return 0;
+  const actualWinner = sgn(actual.home, actual.away);
+  const tipWinner = sgn(tip.home, tip.away);
+  if (actualWinner === 0 || tipWinner === 0) return 0;         // kein klarer Sieger/Tipp
+  const favIsHome = snap.winner.home <= snap.winner.away;      // Favorit = niedrigere Quote
+  const backedFavorite = favIsHome ? tipWinner === 1 : tipWinner === -1;
+  const favoriteLost = actualWinner === (favIsHome ? -1 : 1);  // die andere Seite hat gewonnen
+  if (!(backedFavorite && favoriteLost)) return 0;
+  const winnerQuote = actualWinner === 1 ? snap.winner.home : snap.winner.away;
+  return strength * rampFactor(winnerQuote, rules);
 }
 
 // Ergebnis-Tipp → Ebenen, Maximum gewinnt. Team-Tore-Nähe ist siegerunabhängig.
@@ -221,12 +252,16 @@ export function applyCombo(resultPart, ebene, goalsNet, rules = DEFAULT_RULES) {
   return ebene === "keiner" ? resultPart + goalsNet : (resultPart + goalsNet) * rules.combo[ebene];
 }
 
-// Gesamtwertung eines Tipps inkl. Kombi-Multiplikator.
+// Gesamtwertung eines Tipps inkl. Kombi-Multiplikator und Favoriten-Malus.
 export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   const res = scoreResult(tip, actual, snap, rules);
   const goals = scoreGoals(tip.goals || { home: [], away: [] }, snap, rules, actual.playerGoals);
-  const raw = applyCombo(res.resultPart, res.ebene, goals.net, rules);
-  return { total: toDisplay(raw, rules), raw: +raw.toFixed(1), ...res, goals };
+  const combined = applyCombo(res.resultPart, res.ebene, goals.net, rules);
+  // Favoriten-Reinfall: Abzug vom Gesamt-Roh-Wert, aber nicht unter 0
+  // (kein tiefes Minus — die richtig getippten Underdog-Tore federn ab).
+  const favFlop = favoriteFlopPenalty(tip, actual, snap, rules);
+  const raw = favFlop > 0 ? Math.max(0, combined - favFlop) : combined;
+  return { total: toDisplay(raw, rules), raw: +raw.toFixed(1), favFlop: +favFlop.toFixed(1), ...res, goals };
 }
 
 

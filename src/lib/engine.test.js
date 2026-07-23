@@ -105,6 +105,52 @@ describe("scoreResult — Underdog-Boost", () => {
   });
 });
 
+describe("scoreTip — Favoriten-Reinfall-Malus", () => {
+  // JOR-ESP: real 5:1, HEIM (Jordanien) gewinnt — der Außenseiter (winner.home=9.0).
+  // Spanien (away, winner.away=1.28) ist der Favorit. Wer Spanien-Sieg tippt und
+  // real verliert der Favorit → Malus greift. backFav = Tipp auf Favoriten-Sieg.
+  const backFav = { home: 0, away: 2, goals: { home: [], away: [] } };
+
+  it("Standard (favFlopPenalty=0) ist ein No-op", () => {
+    expect(scoreTip(backFav, result, snap, DEFAULT_RULES).favFlop).toBe(0);
+  });
+
+  it("greift, wenn man den Favoriten tippt und der real verliert", () => {
+    const ohne = scoreTip(backFav, result, snap, DEFAULT_RULES);
+    const mit = scoreTip(backFav, result, snap, { ...DEFAULT_RULES, favFlopPenalty: 20 });
+    expect(mit.favFlop).toBeGreaterThan(0);
+    expect(mit.total).toBeLessThan(ohne.total);
+  });
+
+  it("deckelt bei 0 — kein tiefes Minus", () => {
+    const mit = scoreTip(backFav, result, snap, { ...DEFAULT_RULES, favFlopPenalty: 20 });
+    expect(mit.total).toBeGreaterThanOrEqual(0);
+    expect(mit.raw).toBeGreaterThanOrEqual(0);
+    expect(mit.total).toBe(0); // 20 reicht, um dieses Spiel auf null zu ziehen
+  });
+
+  it("graduell: kleiner Malus lässt mehr übrig als großer", () => {
+    const klein = scoreTip(backFav, result, snap, { ...DEFAULT_RULES, favFlopPenalty: 1 });
+    const gross = scoreTip(backFav, result, snap, { ...DEFAULT_RULES, favFlopPenalty: 20 });
+    expect(klein.total).toBeGreaterThan(gross.total);
+  });
+
+  it("kein Malus, wenn man den Außenseiter RICHTIG getippt hat", () => {
+    const backDog = { home: 2, away: 0, goals: { home: [], away: [] } }; // Heim/Außenseiter-Sieg
+    expect(scoreTip(backDog, result, snap, { ...DEFAULT_RULES, favFlopPenalty: 20 }).favFlop).toBe(0);
+  });
+
+  it("kein Malus bei Remis-Tipp", () => {
+    expect(scoreTip({ home: 1, away: 1, goals: { home: [], away: [] } }, result, snap,
+      { ...DEFAULT_RULES, favFlopPenalty: 20 }).favFlop).toBe(0);
+  });
+
+  it("quotenabhängig: unter Ramp-Start kein Malus (Sieger galt nicht als Außenseiter)", () => {
+    const rules = { ...DEFAULT_RULES, favFlopPenalty: 20, underdogRampStart: 10, underdogRampEnd: 20 };
+    expect(scoreTip(backFav, result, snap, rules).favFlop).toBe(0); // winner.home 9.0 < 10
+  });
+});
+
 describe("scoreGoals — Torschützen", () => {
   it("Einzel-Pick trifft: anytime − 1", () => {
     const g = scoreGoals({ home: ["Al-Naimat"], away: [] }, snap, DEFAULT_RULES, result.playerGoals);

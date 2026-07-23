@@ -2,17 +2,18 @@
 
 import { useState, useMemo } from "react";
 import {
-  DEFAULT_RULES, RULE_LIMITS, createMockOddsSource, scoreTip,
+  DEFAULT_RULES, RULE_LIMITS,
   encodePreset, decodePreset, sanitizeRules,
 } from "@/lib/engine";
 import { PRESETS } from "@/lib/presets";
 import { TEAM_RATINGS } from "@/lib/bundesligaData";
-
-const ALL_TEAMS = Object.keys(TEAM_RATINGS);
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
+import RegelVorschau from "@/components/RegelVorschau";
+
+const ALL_TEAMS = Object.keys(TEAM_RATINGS);
 
 // ── Design-Tokens (gleich wie die anderen Screens) ──────────
 const C = {
@@ -21,15 +22,6 @@ const C = {
   gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
 };
 const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
-
-// ── Eine Quelle: Engine liefert Standardregeln, Grenzen & Scoring ──
-const odds = createMockOddsSource();
-const SNAP = odds.getSnapshot("JOR-ESP");
-const RESULT = odds.getResult("JOR-ESP"); // real 5:1, Al-Naimat 2×, Yamal 1×
-
-// Zwei Referenz-Tipps für die Live-Vorschau: mutig vs. brav.
-const BOLD = { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal", ""] } };
-const SAFE = { home: 2, away: 1, goals: { home: [], away: ["Yamal", ""] } };
 
 export default function Spielerstellung() {
   const { user } = useAuth();
@@ -56,10 +48,6 @@ export default function Spielerstellung() {
   const patchGoals = (p) => { setPresetKey(null); setRules((r) => ({ ...r, markets: { ...r.markets, goals: { ...r.markets.goals, ...p } } })); };
 
   const code = useMemo(() => encodePreset(rules), [rules]);
-  const preview = useMemo(() => ({
-    bold: scoreTip(BOLD, RESULT, SNAP, rules),
-    safe: scoreTip(SAFE, RESULT, SNAP, rules),
-  }), [rules]);
 
   const copy = async () => {
     try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500); }
@@ -179,22 +167,8 @@ export default function Spielerstellung() {
               }} />
           </Field>
 
-          {/* Live-Vorschau */}
-          <div style={{
-            marginTop: 18, background: `${C.gold}10`, border: `1px solid ${C.gold}33`,
-            borderRadius: 14, padding: "14px 16px",
-          }}>
-            <div style={{ fontSize: 11, color: C.gold, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
-              Live-Vorschau · Demo Jordanien 5:1 Spanien
-            </div>
-            <PreviewRow label="Mutiger Tipp 4:1 + Doppelpack" score={preview.bold} tone={C.coral} />
-            <div style={{ height: 1, background: C.line, margin: "8px 0" }} />
-            <PreviewRow label="Braver Tipp 2:1" score={preview.safe} tone={C.mint} />
-            <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
-              So viele Punkte gäbe es mit den aktuellen Reglern. Dreh an den Werten und
-              beobachte, wie sich mutig vs. brav spreizt.
-            </p>
-          </div>
+          {/* Live-Vorschau über typische Spielarten */}
+          <RegelVorschau rules={rules} />
 
           {/* Schärfe */}
           <SectionTitle>Schärfe der Nähe-Belohnung</SectionTitle>
@@ -203,21 +177,25 @@ export default function Spielerstellung() {
           <Slider label="Team-Tore-Nähe (m)" value={rules.m} {...L.m} onChange={(v) => patch({ m: v })}
             hint="Steilheit der siegerunabhängigen Team-Tore-Nähe." />
 
-          {/* Underdog-Boost */}
-          <SectionTitle>Underdog-Boost</SectionTitle>
+          {/* Underdog-Boost & Favoriten-Malus (teilen sich die Quoten-Ramp) */}
+          <SectionTitle>Underdog-Boost & Favoriten-Malus</SectionTitle>
           <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Zusätzlicher Multiplikator, wenn das REALE Ergebnis ein Außenseiter-Sieg war
-            — oben drauf auf die ohnehin schon höhere Außenseiter-Quote. 1,0 = aus.
+            Belohne das Vorhersagen von Überraschungen — und/oder bestrafe, wer stur auf den
+            Favoriten setzt, wenn der patzt. Beide wirken nur bei echten Außenseiter-Siegen
+            und werden über dieselbe Sieger-Quote skaliert.
           </p>
-          <Slider label="Boost-Stärke" value={rules.underdogBoost} {...L.underdogBoost}
+          <Slider label="Underdog-Boost (×)" value={rules.underdogBoost} {...L.underdogBoost}
             onChange={(v) => patch({ underdogBoost: v })} fmt={(x) => "×" + x.toFixed(1)}
-            hint="1,0 = kein Effekt. Höher = Außenseiter-Siege zahlen zusätzlich mehr." />
-          {rules.underdogBoost > 1 && (
+            hint="1,0 = aus. Höher = korrekt getippte Außenseiter-Siege zahlen zusätzlich mehr." />
+          <Slider label="Favoriten-Reinfall-Malus" value={rules.favFlopPenalty} {...L.favFlopPenalty}
+            onChange={(v) => patch({ favFlopPenalty: v })} fmt={(x) => x === 0 ? "aus" : "−" + x}
+            hint="Abzug, wenn du den Favoriten getippt hast und der real verliert. Gedeckelt bei 0 (kein tiefes Minus)." />
+          {(rules.underdogBoost > 1 || rules.favFlopPenalty > 0) && (
             <>
-              <Slider label="Boost beginnt ab Sieger-Quote" value={rules.underdogRampStart} {...L.underdogRampStart}
+              <Slider label="Wirkt ab Sieger-Quote" value={rules.underdogRampStart} {...L.underdogRampStart}
                 onChange={(v) => patch({ underdogRampStart: v })} fmt={(x) => x.toFixed(1)}
-                hint="Unterhalb dieser Quote: kein Boost." />
-              <Slider label="Voller Boost ab Sieger-Quote" value={rules.underdogRampEnd} {...L.underdogRampEnd}
+                hint="Unterhalb dieser Quote gilt der Sieger nicht als Außenseiter — kein Boost, kein Malus." />
+              <Slider label="Volle Wirkung ab Sieger-Quote" value={rules.underdogRampEnd} {...L.underdogRampEnd}
                 onChange={(v) => patch({ underdogRampEnd: v })} fmt={(x) => x.toFixed(1)}
                 hint="Dazwischen fließender Übergang statt hartem Cutoff." />
             </>
@@ -381,20 +359,6 @@ export default function Spielerstellung() {
   );
 }
 
-function PreviewRow({ label, score, tone }) {
-  const ebeneLabel = { exakt: "exakt", abstand: "Abstand", tendenz: "Tendenz", keiner: "daneben" }[score.ebene];
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <div>
-        <div style={{ fontSize: 13 }}>{label}</div>
-        <div style={{ fontSize: 11, color: tone, fontFamily: MONO }}>Ebene: {ebeneLabel}</div>
-      </div>
-      <div style={{ fontFamily: MONO, fontSize: 24, fontWeight: 700, color: C.gold, fontVariantNumeric: "tabular-nums" }}>
-        {score.total}
-      </div>
-    </div>
-  );
-}
 
 function SectionTitle({ children }) {
   return (
