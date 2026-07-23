@@ -119,3 +119,30 @@ describe("createRound", () => {
     expect(zuWenig.team_filter).toBeNull();
   });
 });
+
+describe("Kurzcode-Presets (publishPreset / getPresetByCode)", () => {
+  it("veröffentlicht ein Regelwerk unter einem kurzen Code, der wieder abrufbar ist", async () => {
+    const store = createMockStore();
+    const pub = await store.publishPreset({ name: "Hardcore", rules: { ...DEFAULT_RULES, k: 1.2 }, creatorId: "u-du" });
+    expect(pub.code).toHaveLength(6);
+    expect(pub.name).toBe("Hardcore");
+
+    const loaded = await store.getPresetByCode(pub.code);
+    expect(loaded.rules.k).toBe(1.2);
+    expect(loaded.name).toBe("Hardcore");
+  });
+
+  it("Code ist case-insensitiv abrufbar, unbekannter Code ergibt null", async () => {
+    const store = createMockStore();
+    const pub = await store.publishPreset({ name: "X", rules: DEFAULT_RULES, creatorId: "u-du" });
+    expect(await store.getPresetByCode(pub.code.toLowerCase())).not.toBeNull();
+    expect(await store.getPresetByCode("ZZZZZZ")).toBeNull();
+  });
+
+  it("sanitized das Regelwerk beim Veröffentlichen", async () => {
+    const store = createMockStore();
+    const pub = await store.publishPreset({ name: "Böse", rules: { k: 99, hack: true }, creatorId: "u-du" });
+    expect(pub.rules.k).toBeLessThanOrEqual(RULE_LIMITS.k.max);
+    expect(pub.rules.hack).toBeUndefined();
+  });
+});

@@ -7,6 +7,7 @@
 //   listMatches() · getMatch(id)
 //   getRound(id) · getRoundByCode(code) · listMembers(roundId)
 //   listRoundsForUser(userId)   ← alle Runden, in denen der User Mitglied ist
+//   publishPreset({name,rules,creatorId}) · getPresetByCode(code)   ← Kurzcode-Presets
 //   saveTip({roundId,matchId,userId,tip,snapshot}) · listTips({roundId,matchId})
 //   getLeaderboard(roundId) · getLeaderboardHistory(roundId)   ← rechnen über die Engine
 

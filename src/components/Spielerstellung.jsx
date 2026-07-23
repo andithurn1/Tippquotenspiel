@@ -38,15 +38,21 @@ export default function Spielerstellung() {
   const [created, setCreated] = useState(null);
   const [createErr, setCreateErr] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
+  const [shortCode, setShortCode] = useState(null);   // veröffentlichter Kurzcode
+  const [publishing, setPublishing] = useState(false);
+  const [shortCopied, setShortCopied] = useState(false);
 
+  // Jede Regeländerung macht einen zuvor erzeugten Kurzcode ungültig (er zeigt
+  // sonst auf ein altes Regelwerk).
+  const touched = () => { setPresetKey(null); setShortCode(null); };
   const applyPreset = (preset) => {
-    setPresetKey(preset.key);
+    setPresetKey(preset.key); setShortCode(null);
     setRules({ ...sanitizeRules(preset.rules), name: preset.label });
   };
-  const patch = (p) => { setPresetKey(null); setRules((r) => ({ ...r, ...p })); };
-  const patchCombo = (p) => { setPresetKey(null); setRules((r) => ({ ...r, combo: { ...r.combo, ...p } })); };
-  const patchMarkets = (p) => { setPresetKey(null); setRules((r) => ({ ...r, markets: { ...r.markets, ...p } })); };
-  const patchGoals = (p) => { setPresetKey(null); setRules((r) => ({ ...r, markets: { ...r.markets, goals: { ...r.markets.goals, ...p } } })); };
+  const patch = (p) => { touched(); setRules((r) => ({ ...r, ...p })); };
+  const patchCombo = (p) => { touched(); setRules((r) => ({ ...r, combo: { ...r.combo, ...p } })); };
+  const patchMarkets = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, ...p } })); };
+  const patchGoals = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, goals: { ...r.markets.goals, ...p } } })); };
 
   const code = useMemo(() => encodePreset(rules), [rules]);
 
@@ -55,9 +61,40 @@ export default function Spielerstellung() {
     catch { /* Clipboard nicht verfügbar — Nutzer kann den Code markieren */ }
   };
 
-  const load = () => {
-    try { setPresetKey(null); setRules(sanitizeRules(decodePreset(imp.trim()))); setImp(""); setImpErr(""); }
-    catch { setImpErr("Kein gültiger Creator-Code (TS1-…)"); }
+  // Lädt entweder einen langen Text-Creator-Code (TS1-…) oder einen kurzen
+  // Content-Creator-Code (server-gespeichertes Preset).
+  const load = async () => {
+    const val = imp.trim();
+    setImpErr("");
+    if (val.startsWith("TS1-")) {
+      try { setPresetKey(null); setRules(sanitizeRules(decodePreset(val))); setImp(""); }
+      catch { setImpErr("Kein gültiger Creator-Code (TS1-…)"); }
+      return;
+    }
+    try {
+      const preset = await getStore().getPresetByCode(val);
+      if (!preset) { setImpErr("Kein Regelwerk unter diesem Code gefunden."); return; }
+      setPresetKey(null);
+      setRules({ ...sanitizeRules(preset.rules), name: preset.name || sanitizeRules(preset.rules).name });
+      setImp("");
+    } catch { setImpErr("Konnte den Code nicht laden. Später erneut versuchen."); }
+  };
+
+  // Veröffentlicht das aktuelle Regelwerk unter einem kurzen, teilbaren Code.
+  const publish = async () => {
+    if (!user) { setImpErr("Zum Erstellen eines Kurzcodes bitte einloggen."); return; }
+    setPublishing(true);
+    try {
+      const p = await getStore().publishPreset({ name: rules.name, rules, creatorId: user.id });
+      setShortCode(p.code);
+    } catch { setImpErr("Kurzcode konnte nicht erstellt werden. Später erneut versuchen."); }
+    finally { setPublishing(false); }
+  };
+
+  const copyShort = async () => {
+    if (!shortCode) return;
+    try { await navigator.clipboard.writeText(shortCode); setShortCopied(true); setTimeout(() => setShortCopied(false), 1500); }
+    catch { /* Nutzer kann den Code markieren */ }
   };
 
   const toggleTeam = (team) =>
@@ -341,12 +378,37 @@ export default function Spielerstellung() {
             marginTop: 10, width: "100%", cursor: "pointer",
             background: copied ? C.mint : C.gold, color: C.ink, fontWeight: 700, fontSize: 14,
             border: "none", borderRadius: 14, padding: "13px 0", transition: "background .2s",
-          }}>{copied ? "✓ kopiert" : "Code kopieren & teilen"}</button>
+          }}>{copied ? "✓ kopiert" : "Langen Code kopieren & teilen"}</button>
 
-          {/* Import */}
+          {/* Kurzcode (Content-Creator) */}
+          <div style={{ marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: "12px 14px" }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700 }}>Kurzcode statt langem Code</div>
+            <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 10px", lineHeight: 1.4 }}>
+              Speichert dein Regelwerk unter einem kurzen, merkbaren Code — perfekt zum
+              Teilen (z. B. von Content-Creatorn). Andere laden ihn unten einfach ein.
+            </p>
+            {!shortCode ? (
+              <button onClick={publish} disabled={publishing || !user} style={{
+                width: "100%", cursor: publishing || !user ? "default" : "pointer",
+                background: C.surface2, color: user ? C.text : C.muted, fontWeight: 700, fontSize: 13,
+                border: `1px solid ${C.line}`, borderRadius: 12, padding: "11px 0", opacity: publishing || !user ? 0.6 : 1,
+              }}>{publishing ? "wird erstellt …" : user ? "Kurzcode erstellen & teilen" : "Zum Erstellen einloggen"}</button>
+            ) : (
+              <div>
+                <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: C.gold, letterSpacing: 3, textAlign: "center" }}>{shortCode}</div>
+                <button onClick={copyShort} style={{
+                  marginTop: 8, width: "100%", cursor: "pointer",
+                  background: shortCopied ? C.mint : C.surface2, color: shortCopied ? C.ink : C.text, fontWeight: 700, fontSize: 13,
+                  border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 0",
+                }}>{shortCopied ? "✓ kopiert" : "Kurzcode kopieren"}</button>
+              </div>
+            )}
+          </div>
+
+          {/* Import: langer ODER kurzer Code */}
           <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
             <input value={imp} onChange={(e) => { setImp(e.target.value); setImpErr(""); }}
-              placeholder="Code laden (TS1-…)" style={{
+              placeholder="Code laden (TS1-… oder Kurzcode)" style={{
                 flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
                 borderRadius: 12, padding: "10px 12px", fontSize: 13, fontFamily: MONO, outline: "none",
               }} />

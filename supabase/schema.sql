@@ -72,6 +72,17 @@ create table if not exists public.tips (
   unique (round_id, match_id, user_id)
 );
 
+-- ── Kurzcode-Presets (Content-Creator-Codes) ───────────────
+-- Ein geteiltes Regelwerk unter einem kurzen, merkbaren Code — statt des
+-- langen Text-Creator-Codes. rules = per sanitizeRules() gültiges Regelwerk.
+create table if not exists public.presets (
+  code       text primary key,
+  name       text not null,
+  rules      jsonb not null,
+  creator_id uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists tips_round_match_idx on public.tips (round_id, match_id);
 create index if not exists round_members_user_idx on public.round_members (user_id);
 
@@ -110,6 +121,7 @@ alter table public.matches       enable row level security;
 alter table public.rounds        enable row level security;
 alter table public.round_members enable row level security;
 alter table public.tips          enable row level security;
+alter table public.presets       enable row level security;
 
 -- Profile: jeder Eingeloggte darf lesen; eigenes Profil schreiben.
 drop policy if exists "profiles_read"        on public.profiles;
@@ -134,6 +146,15 @@ drop policy if exists "rounds_insert"       on public.rounds;
 create policy "rounds_read" on public.rounds for select to authenticated using (true);
 create policy "rounds_insert" on public.rounds for insert to authenticated
   with check (admin_id = auth.uid());
+
+-- Presets: für alle Eingeloggten lesbar (der Kurzcode ist die Zugangsschranke,
+-- nicht die Sichtbarkeit; ein Regelwerk ist nicht sensibel). Anlegen darf jeder
+-- für sich selbst (creator_id = eigene Id).
+drop policy if exists "presets_read"   on public.presets;
+drop policy if exists "presets_insert" on public.presets;
+create policy "presets_read" on public.presets for select to authenticated using (true);
+create policy "presets_insert" on public.presets for insert to authenticated
+  with check (creator_id = auth.uid());
 
 -- Mitgliedschaft: wer selbst Mitglied einer Runde ist, sieht ALLE Mitglieder
 -- dieser Runde (nötig fürs Leaderboard — sonst sähe man nur die eigene

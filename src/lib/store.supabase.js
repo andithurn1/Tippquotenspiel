@@ -49,6 +49,25 @@ export function createSupabaseStore() {
       if (!roundIds.length) return [];
       return orThrow(await sb.from("rounds").select("*").in("id", roundIds));
     },
+
+    // Kurzcode-Presets (Content-Creator-Codes).
+    async publishPreset({ name, rules, creatorId }) {
+      let code = generateJoinCode();
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { data, error } = await sb
+          .from("presets")
+          .insert({ code, name: (name ?? "").trim() || "Regelwerk", rules: sanitizeRules(rules), creator_id: creatorId })
+          .select()
+          .single();
+        if (!error) return data;
+        if (error.code !== "23505") throw error;   // nur bei Code-Kollision neu würfeln
+        code = generateJoinCode();
+      }
+      throw new Error("Konnte keinen eindeutigen Kurzcode erzeugen.");
+    },
+    async getPresetByCode(code) {
+      return orThrow(await sb.from("presets").select("*").eq("code", (code ?? "").trim().toUpperCase()).maybeSingle());
+    },
     async joinRound({ roundId, userId }) {
       // idempotent: bereits Mitglied → nichts tun
       return orThrow(await sb

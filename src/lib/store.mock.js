@@ -39,6 +39,7 @@ export function createMockStore() {
     id: ROUND_ID, name: "Freundeskreis", admin_id: "u-du",
     rules: DEFAULT_RULES, join_code: DEMO_JOIN_CODE,
   }]]);
+  const presets = new Map();  // Kurzcode → geteiltes Regelwerk (Content-Creator-Codes)
   const members = DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name }));
   const tips = DEMO_TIPS.map((t) => ({
     id: `tip-${t.userId}`, round_id: ROUND_ID, match_id: SNAP.matchId,
@@ -61,6 +62,22 @@ export function createMockStore() {
     async listRoundsForUser(userId) {
       const roundIds = new Set(members.filter((m) => m.user_id === userId).map((m) => m.round_id));
       return [...rounds.values()].filter((r) => roundIds.has(r.id));
+    },
+
+    // Kurzcode-Presets (Content-Creator-Codes): Regelwerk unter einem kurzen,
+    // teilbaren Code speichern statt als langem Text-Creator-Code.
+    async publishPreset({ name, rules, creatorId }) {
+      let code = generateJoinCode();
+      while (presets.has(code)) code = generateJoinCode();
+      const row = {
+        code, name: (name ?? "").trim() || "Regelwerk",
+        rules: sanitizeRules(rules), creator_id: creatorId ?? null,
+      };
+      presets.set(code, row);
+      return row;
+    },
+    async getPresetByCode(code) {
+      return presets.get((code ?? "").trim().toUpperCase()) ?? null;
     },
     async joinRound({ roundId, userId, name }) {
       if (!members.some((m) => m.round_id === roundId && m.user_id === userId)) {
