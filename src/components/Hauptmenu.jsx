@@ -125,20 +125,17 @@ export default function Hauptmenu() {
               </Link>
             ))}
 
-            <div style={{
-              color: C.muted, background: C.ink2, border: `1px solid ${C.line}`,
-              borderRadius: 18, padding: "16px 18px", opacity: 0.6,
+            <Link href="/tutorial" style={{
+              textDecoration: "none", color: C.text,
+              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
+              border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.gold, boxShadow: `0 0 12px ${C.gold}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>Tutorial</span>
-                <span style={{
-                  marginLeft: "auto", fontFamily: MONO, fontSize: 10, color: C.muted,
-                  border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 8px",
-                  textTransform: "uppercase", letterSpacing: 1,
-                }}>bald verfügbar</span>
               </div>
-              <div style={{ fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>Erklärung von Quoten, Regelwerk & Scoring.</div>
-            </div>
+              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>Quoten, Punkte & das Admin-System — mit Beispielen erklärt.</div>
+            </Link>
           </div>
         </Section>
       </div>
