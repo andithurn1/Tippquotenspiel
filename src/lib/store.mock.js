@@ -3,9 +3,10 @@
 // „Freundeskreis" auf dem Match JOR-ESP (real 5:1). Zurücksetzen bei
 // jedem Prozessstart — bewusst, es ist nur eine Attrappe.
 
-import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, sanitizeRules } from "./engine";
+import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules } from "./engine";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { generateJoinCode } from "./joinCode";
+import { getBundesligaMatches } from "./bundesligaData";
 
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
@@ -24,10 +25,16 @@ const ROUND_ID = DEMO_ROUND_ID;
 
 export function createMockStore() {
   // frische Kopien pro Store, damit Schreibvorgänge isoliert sind
-  const matches = new Map([[SNAP.matchId, {
-    id: SNAP.matchId, home: SNAP.home, away: SNAP.away,
-    kickoff: SNAP.kickoff, matchday: 14, snapshot: SNAP, result: RESULT,
-  }]]);
+  const matches = new Map([
+    [SNAP.matchId, {
+      id: SNAP.matchId, home: SNAP.home, away: SNAP.away,
+      kickoff: SNAP.kickoff, matchday: 14, snapshot: SNAP, result: RESULT,
+    }],
+    ...getBundesligaMatches().map((m) => [m.matchId, {
+      id: m.matchId, home: m.home, away: m.away,
+      kickoff: m.kickoff, matchday: m.matchday, snapshot: m.snapshot, result: m.result,
+    }]),
+  ]);
   const rounds = new Map([[ROUND_ID, {
     id: ROUND_ID, name: "Freundeskreis", admin_id: "u-du",
     rules: DEFAULT_RULES, join_code: DEMO_JOIN_CODE,
