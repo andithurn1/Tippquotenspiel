@@ -15,6 +15,7 @@ const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 // (mutig vs. brav, Favorit vs. Außenseiter) sofort sieht.
 export default function RegelVorschau({ rules }) {
   const rows = useMemo(() => previewArchetypes(rules), [rules]);
+  const jokerMax = rows[0]?.jokerFaktorMax ?? 1;
 
   return (
     <div style={{
@@ -27,6 +28,10 @@ export default function RegelVorschau({ rules }) {
       <p style={{ fontSize: 10.5, color: C.muted, margin: "0 0 12px", lineHeight: 1.4 }}>
         Punkte, die verschiedene nahe Tipps mit deinen aktuellen Reglern gäben. Dreh an
         k / Underdog-Boost / Favoriten-Malus und beobachte, wie sich die Spielarten spreizen.
+        {jokerMax > 1 && (
+          <> Der zweite Wert zeigt, was dasselbe Spiel mit dem höchsten Gewicht
+          (×{jokerMax.toFixed(1)}) bringt.</>
+        )}
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -55,6 +60,12 @@ export default function RegelVorschau({ rules }) {
                       fontFamily: MONO, fontSize: 13, fontWeight: 700,
                       color: t.points > 0 ? (best ? C.gold : C.text) : C.coral,
                     }}>{t.points}</span>
+                    {t.pointsJoker != null && (
+                      <span style={{ fontFamily: MONO, fontSize: 11, color: C.mint }}
+                        title={`mit Gewicht ×${jokerMax.toFixed(1)}`}>
+                        →{t.pointsJoker}
+                      </span>
+                    )}
                   </div>
                 );
               })}

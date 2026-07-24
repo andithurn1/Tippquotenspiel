@@ -48,7 +48,9 @@ export const PRESETS = [
     desc: "Du verteilst feste Gewichte (2× · 1,5× · 1,2× · 1×) auf deine Spiele — gleicher Pool für alle, die Verteilung ist die Kunst.",
     rules: sanitizeRules({
       ...DEFAULT_RULES, name: "Rangliste",
-      joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1.2, 1] },
+      // faktor spiegelt den Pool-Höchstwert, damit ein Wechsel auf „einzel"
+      // nicht plötzlich einen anderen Faktor zeigt.
+      joker: { enabled: true, modus: "ranking", faktor: 2, faktoren: [2, 1.5, 1.2, 1] },
     }),
   },
   {
