@@ -15,6 +15,7 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
+import BalanceAmpel from "@/components/BalanceAmpel";
 
 const ALL_TEAMS = Object.keys(TEAM_RATINGS);
 
@@ -245,6 +246,9 @@ export default function Spielerstellung() {
 
           {/* Live-Vorschau über typische Spielarten */}
           <RegelVorschau rules={rules} />
+
+          {/* Balance-Ampel: eine Aussage, ob die Runde noch ein Tippspiel bleibt */}
+          <BalanceAmpel rules={rules} />
 
           {/* Reale Verteilung + Underdog-Neigung des Regelwerks */}
           <PresetRating rules={rules} />

@@ -84,6 +84,13 @@ function snapshots() {
   return _snaps;
 }
 
+// Die Spielart-Snapshots nach außen — EINE Quelle dafür, „wie sieht ein
+// typisches Spiel aus". Der Balance-Simulator baut darauf auf, statt eigene
+// Archetypen zu duplizieren.
+export function archetypeSnapshots() {
+  return snapshots();
+}
+
 // Für ein Regelwerk: je Spielart die nahen Tipps mit ihren angezeigten Punkten,
 // plus die Sieger-Quote des realen Ausgangs (macht den Underdog-Boost greifbar).
 export function previewArchetypes(rules) {

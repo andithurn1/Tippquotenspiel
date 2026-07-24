@@ -31,6 +31,21 @@ ALLE in der Runde gelten (anders als der Joker, den jeder Tipper selbst setzt).
   Abstimmung pro Spieltag, Team-Mods pro Begegnung). Reihenfolge + Deckelung
   bewusst festlegen, damit sie sich nicht unkontrolliert aufschaukeln. Premium.
 
+### Aufhol-Mechanismus (Anschluss halten) — NEU
+Einstellbar bei der Rundenerstellung: Wenn der Abstand zur Spitze zu groß wird,
+bekommen Zurückliegende je Spieltag Punkte dazu, damit Mitspielen weiter lohnt.
+
+- **Auswahl, wen es betrifft:** Letzter · schlechtestes Quantil · alle unter dem
+  Schnitt — variabel.
+- **Simpel zuerst:** ein Regler „Anschluss halten: aus / sanft / stark" mit
+  vernünftigem Default. Aufklappbar dann die volle Zahlenregel
+  (Schwelle, Formel, Deckel).
+- **Balance:** unbedingt über den Balance-Simulator prüfen — ein zu starker
+  Ausgleich entwertet gutes Tippen (Punkte-Verhältnis kippt Richtung 1,0 und
+  darunter wird das Ranking beliebig).
+- Verwandt: „verdiente" Joker an Zurückliegende (siehe Kontingent-Idee) — beides
+  sind Aufhol-Mechaniken und sollten sich nicht doppeln.
+
 ### Preset-Mischen
 Zwei Presets kombinieren („Schärfe von A, Kombi von B"). Auswahl-Dialog; die
 Bedienung ist der knifflige Teil. Premium.
