@@ -10,23 +10,12 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import ReactionGif from "@/components/ReactionGif";
 import { tipScenario, rankReaction } from "@/lib/reactions";
+import { C, MONO } from "@/lib/theme";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
 // Nächtliches Flutlicht-Stadion: tiefes Indigo, Flutlicht-Gold,
 // Zocker-Koralle, Aufstiegs-Mint. Scores als Anzeigetafel (mono).
-const C = {
-  ink: "#0B0E1F",
-  ink2: "#12172E",
-  surface: "#1A2040",
-  line: "rgba(255,255,255,0.09)",
-  text: "#EDEEF6",
-  muted: "#8A90B4",
-  gold: "#F5C451",
-  coral: "#FF5470",
-  mint: "#54E0A0",
-};
 
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 // ── Eine Quelle: Engine rechnet, Store liefert das Leaderboard ──
 // Demo-Spieltag: kühner Tipp Jordanien 4:1 gegen Spanien, real 5:1.

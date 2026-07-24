@@ -17,10 +17,13 @@
 //  eine Regel hier + eine GIF-Datei, kein UI-Umbau.
 // ============================================================
 
-const GOLD = "#F5C451";
-const MINT = "#54E0A0";
-const CORAL = "#FF5470";
-const MUTED = "#8A90B4";
+// Farben aus der zentralen Design-Ebene — nicht erneut hart eintragen.
+import { COLORS } from "./theme";
+
+const GOLD = COLORS.gold;
+const MINT = COLORS.mint;
+const CORAL = COLORS.coral;
+const MUTED = COLORS.muted;
 
 // ── 1) Tipp-Szenarien ───────────────────────────────────────
 // Priorisierte Liste: das erste Szenario, dessen test(ctx) zutrifft, gewinnt.

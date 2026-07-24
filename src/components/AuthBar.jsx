@@ -2,13 +2,8 @@
 
 import { useState } from "react";
 import { useAuth } from "./AuthProvider";
+import { C, MONO } from "@/lib/theme";
 
-const C = {
-  ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
-  line: "rgba(255,255,255,0.09)", text: "#EDEEF6", muted: "#8A90B4",
-  gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 // Kopfzeile mit Login-Status. Im Mock-Betrieb nur ein dezenter Demo-Hinweis;
 // im Live-Betrieb E-Mail-Login (Magic-Link) bzw. Abmelden.
@@ -84,7 +79,7 @@ export default function AuthBar() {
             borderRadius: 12, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={state === "sending"} style={{
-          cursor: state === "sending" ? "default" : "pointer", background: C.gold, color: "#0B0E1F",
+          cursor: state === "sending" ? "default" : "pointer", background: C.gold, color: C.ink,
           fontWeight: 700, fontSize: 14, border: "none", borderRadius: 12, padding: "0 16px",
         }}>{state === "sending" ? "…" : "Link senden"}</button>
       </div>

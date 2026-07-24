@@ -2,12 +2,8 @@
 
 import { useMemo } from "react";
 import { simulateBalance } from "@/lib/balanceSim";
+import { C, MONO, AMPEL } from "@/lib/theme";
 
-const C = {
-  ink2: "#12172E", surface: "#1A2040", line: "rgba(255,255,255,0.09)",
-  text: "#EDEEF6", muted: "#8A90B4", gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 const FARBE = { gruen: C.mint, gelb: C.gold, rot: C.coral };
 const SYMBOL = { gruen: "●", gelb: "●", rot: "●" };
@@ -20,7 +16,7 @@ const LIVE = { seasons: 40, matchdays: 17, perMatchday: 9, seed: 12345 };
 // klein, damit der Admin nicht in Kennzahlen ertrinkt.
 export default function BalanceAmpel({ rules }) {
   const sim = useMemo(() => simulateBalance(rules, LIVE), [rules]);
-  const farbe = FARBE[sim.ampel.stufe];
+  const farbe = AMPEL[sim.ampel.stufe];
   const v = sim.punkteVerhaeltnis;
 
   return (

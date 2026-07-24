@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { reactionSrc } from "@/lib/reactions";
-
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+import { MONO } from "@/lib/theme";
 
 // Zeigt den Reaktions-Clip einer Reaktion (aus reactions.js). Format ist ein
 // kurzes, stummes, loopendes MP4 unter public/reactions/<key>.mp4 (kleiner und

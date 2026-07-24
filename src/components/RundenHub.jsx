@@ -6,19 +6,14 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "@/lib/roundStatus";
+import { C, MONO } from "@/lib/theme";
 
-const C = {
-  ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
-  line: "rgba(255,255,255,0.09)", text: "#EDEEF6", muted: "#8A90B4",
-  gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 // Landing-Karten der aktiven Runde: Tipp abgeben / Ranking / Ranking-Verlauf.
 const CARDS = [
   { href: "/tippen", title: "Tipp abgeben", desc: "Spiel wählen, Ergebnis + Torschützen tippen.", tone: C.gold },
   { href: "/ranking", title: "Ranking", desc: "Wer in dieser Runde gerade vorne liegt.", tone: C.mint },
-  { href: "/historie", title: "Historie & Rekorde", desc: "Verlauf, Auszeichnungen und „was wäre mit anderem Preset gewesen?“.", tone: "#4FD1E8" },
+  { href: "/historie", title: "Historie & Rekorde", desc: "Verlauf, Auszeichnungen und „was wäre mit anderem Preset gewesen?“.", tone: C.sky },
 ];
 
 // Geparkte Premium-Features (siehe CLAUDE.md-Roadmap) — nur als sichtbare,

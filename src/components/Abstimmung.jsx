@@ -7,13 +7,8 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { DEFAULT_RULES } from "@/lib/engine";
 import { tallyVotes, eigeneStimme } from "@/lib/voting";
+import { C, MONO } from "@/lib/theme";
 
-const C = {
-  ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
-  line: "rgba(255,255,255,0.09)", text: "#EDEEF6", muted: "#8A90B4",
-  gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 const tag = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "Europe/Berlin" });
 

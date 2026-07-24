@@ -8,18 +8,12 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { getStore } from "@/lib/store";
 import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "@/lib/roundStatus";
-
-const C = {
-  ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
-  line: "rgba(255,255,255,0.09)", text: "#EDEEF6", muted: "#8A90B4",
-  gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+import { C, MONO } from "@/lib/theme";
 
 const SCREENS = [
-  { href: "/erstellen", title: "Spiel erstellen", desc: "Regelwerk einstellen, Runde anlegen und per Code teilen.", tone: "#8B9BFF", tag: "Admin" },
-  { href: "/beitreten", title: "Runde beitreten", desc: "Mit Beitritts-Code einer Runde beitreten oder wechseln.", tone: "#4FD1E8" },
-  { href: "/einstellungen", title: "Meine Anzeige", desc: "Wie viel Mathematik & Vorschau du sehen willst.", tone: "#B98BFF", tag: "persönlich" },
+  { href: "/erstellen", title: "Spiel erstellen", desc: "Regelwerk einstellen, Runde anlegen und per Code teilen.", tone: C.indigo, tag: "Admin" },
+  { href: "/beitreten", title: "Runde beitreten", desc: "Mit Beitritts-Code einer Runde beitreten oder wechseln.", tone: C.sky },
+  { href: "/einstellungen", title: "Meine Anzeige", desc: "Wie viel Mathematik & Vorschau du sehen willst.", tone: C.violet, tag: "persönlich" },
   { href: "/abrechnung", title: "Abrechnung (Demo)", desc: "Spieltag-Abrechnung mit animiertem Punkte-Zähler.", tone: C.coral },
   { href: "/explorer", title: "Auszahlungs-Explorer", desc: "Heat-Grid: was jeder mögliche Endstand zahlen würde.", tone: C.mint },
 ];

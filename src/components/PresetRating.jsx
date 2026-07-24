@@ -3,19 +3,14 @@
 import { useMemo } from "react";
 import { ratePreset } from "@/lib/presetRating";
 import { archetypeDistribution, OUTCOME_SPLIT, AVG_GOALS } from "@/lib/bundesligaStats";
-
-const C = {
-  ink2: "#12172E", surface: "#1A2040", surface2: "#232A50", line: "rgba(255,255,255,0.09)",
-  text: "#EDEEF6", muted: "#8A90B4", gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+import { C, MONO } from "@/lib/theme";
 
 const DIST = archetypeDistribution();
 const MAX_FREQ = Math.max(...DIST.map((d) => d.freq));
 
 // Farbe der Underdog-Neigung: favoritenfreundlich (kühl) → underdog-lastig (heiß).
 function leanColor(lean) {
-  return lean >= 66 ? C.coral : lean >= 45 ? C.gold : lean >= 25 ? C.mint : "#8B9BFF";
+  return lean >= 66 ? C.coral : lean >= 45 ? C.gold : lean >= 25 ? C.mint : C.indigo;
 }
 
 // Panel: reale Verteilung der Spielarten + wie „underdog-freundlich" das aktuelle
@@ -57,7 +52,7 @@ export default function PresetRating({ rules }) {
           <div key={d.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 12, width: 128, flexShrink: 0 }}>{d.label}</span>
             <div style={{ flex: 1, height: 7, borderRadius: 999, background: C.surface, overflow: "hidden" }}>
-              <div style={{ width: `${(d.freq / MAX_FREQ) * 100}%`, height: "100%", background: d.key === "aussenseiter" ? C.coral : "#4a5488" }} />
+              <div style={{ width: `${(d.freq / MAX_FREQ) * 100}%`, height: "100%", background: d.key === "aussenseiter" ? C.coral : C.bar }} />
             </div>
             <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, width: 34, textAlign: "right" }}>
               {Math.round(d.freq * 100)}%

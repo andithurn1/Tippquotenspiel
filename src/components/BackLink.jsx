@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+import { C, MONO } from "@/lib/theme";
 
 // Schmaler „Zurück"-Link, sitzt über der Karte jedes Screens. Zeigt standardmäßig
 // auf die Übersicht (/); einzelne Screens können ein näherliegendes Ziel angeben
@@ -12,7 +11,7 @@ export default function BackLink({ href = "/", label = "Übersicht" }) {
     <div style={{ width: "100%", maxWidth: 400, marginBottom: 12 }}>
       <Link href={href} style={{
         display: "inline-flex", alignItems: "center", gap: 6,
-        fontFamily: MONO, fontSize: 12, color: "#8A90B4", textDecoration: "none",
+        fontFamily: MONO, fontSize: 12, color: C.muted, textDecoration: "none",
       }}>
         <span style={{ fontSize: 15, lineHeight: 1 }}>←</span> {label}
       </Link>

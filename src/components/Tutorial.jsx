@@ -4,13 +4,7 @@ import BackLink from "@/components/BackLink";
 import Begriff from "@/components/Begriff";
 import { createMockOddsSource, scoreTip, DEFAULT_RULES } from "@/lib/engine";
 import { previewArchetypes } from "@/lib/rulePreview";
-
-const C = {
-  ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
-  line: "rgba(255,255,255,0.09)", text: "#EDEEF6", muted: "#8A90B4",
-  gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+import { C, MONO } from "@/lib/theme";
 
 // Ein echtes Rechenbeispiel (Engine, nicht ausgedacht): JOR-ESP real 5:1,
 // Tipp 4:1 → „hauchdünn" (richtiger Sieger, ein Tor daneben).
@@ -62,7 +56,7 @@ export default function Tutorial() {
           <div style={{ display: "flex", flexDirection: "column", gap: 6, margin: "10px 0" }}>
             <Ebene tone={C.mint} label="Exakt" desc="Endstand genau getroffen — volle Punkte." />
             <Ebene tone={C.gold} label="Abstand" desc="Tordifferenz stimmt (z.B. 3:1 statt 2:0)." />
-            <Ebene tone="#8B9BFF" label="Tendenz" desc="Nur der Sieger stimmt." />
+            <Ebene tone={C.indigo} label="Tendenz" desc="Nur der Sieger stimmt." />
             <Ebene tone={C.coral} label="Daneben" desc="Sieger falsch — aber die Toranzahl kann trotzdem zählen." />
           </div>
           <p style={pStyle}>

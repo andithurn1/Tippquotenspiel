@@ -8,13 +8,8 @@ import BackLink from "@/components/BackLink";
 import { DEFAULT_RULES, scoreLeaderboardHistory, scoreTip } from "@/lib/engine";
 import { computeRecords, matchdayDeltas } from "@/lib/records";
 import { PRESETS } from "@/lib/presets";
+import { C, MONO, SERIES } from "@/lib/theme";
 
-const C = {
-  ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
-  line: "rgba(255,255,255,0.09)", text: "#EDEEF6", muted: "#8A90B4",
-  gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 // Serien-Farben (bewusst gut unterscheidbare Farbtöne, hell auf dunklem Grund).
 const SERIE = ["#F5C451", "#54E0A0", "#FF5470", "#4FD1E8", "#A78BFA", "#FF9F43", "#F368E0", "#B4E04F"];
@@ -30,7 +25,7 @@ const KRITERIEN = [
 function buildSeries(history, kriterium) {
   const letzte = history[history.length - 1]?.board ?? [];
   const players = [...letzte].sort((a, b) => a.name.localeCompare(b.name))
-    .map((b, i) => ({ userId: b.userId, name: b.name, color: SERIE[i % SERIE.length] }));
+    .map((b, i) => ({ userId: b.userId, name: b.name, color: SERIES[i % SERIES.length] }));
   const deltas = kriterium === "spieltag" ? matchdayDeltas(history) : null;
 
   const mds = history.map((h) => h.matchday);

@@ -16,6 +16,7 @@ import BackLink from "@/components/BackLink";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import BalanceAmpel from "@/components/BalanceAmpel";
+import { C, MONO } from "@/lib/theme";
 
 const ALL_TEAMS = Object.keys(TEAM_RATINGS);
 
@@ -32,12 +33,6 @@ function buildWeightPool(max, anzahl) {
 }
 
 // ── Design-Tokens (gleich wie die anderen Screens) ──────────
-const C = {
-  ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
-  line: "rgba(255,255,255,0.09)", text: "#EDEEF6", muted: "#8A90B4",
-  gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 export default function Spielerstellung() {
   const { user } = useAuth();

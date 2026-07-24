@@ -3,13 +3,8 @@
 import { useState, useMemo } from "react";
 import { createMockOddsSource, scoreResult, scoreGoals, applyCombo, DEFAULT_RULES } from "@/lib/engine";
 import BackLink from "@/components/BackLink";
+import { C, MONO } from "@/lib/theme";
 
-const C = {
-  ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
-  line: "rgba(255,255,255,0.09)", text: "#EDEEF6", muted: "#8A90B4",
-  gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 // ── Eine Quelle: Engine liefert Quoten, Regeln und Scoring ──
 const RULES = DEFAULT_RULES;
@@ -65,7 +60,7 @@ export default function AuszahlungsExplorer() {
   const setGoal = (side, i, v) => setGoals((prev) => ({ ...prev, [side]: prev[side].map((p, j) => (j === i ? v : p)) }));
 
   const heat = (v, visible) => {
-    if (!visible) return { bg: C.ink2, fg: "rgba(255,255,255,0.15)", glow: "none" };
+    if (!visible) return { bg: C.ink2, fg: C.ghost, glow: "none" };
     const t = grid.max > 0 ? v / grid.max : 0; const a = 0.06 + t * 0.9;
     return { bg: `rgba(245,196,81,${a})`, fg: t > 0.45 ? C.ink : C.text, glow: t > 0.7 ? `0 0 14px rgba(245,196,81,0.5)` : "none" };
   };

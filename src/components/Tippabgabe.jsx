@@ -9,15 +9,9 @@ import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
+import { C, MONO } from "@/lib/theme";
 
 // ── Design-Tokens (gleich wie das Abrechnungsfenster) ───────
-const C = {
-  ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040",
-  surface2: "#232A50", line: "rgba(255,255,255,0.09)",
-  text: "#EDEEF6", muted: "#8A90B4",
-  gold: "#F5C451", coral: "#FF5470", mint: "#54E0A0",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 // ── Eine Quelle: Engine liefert das Regelwerk, der Store das Match ──
 // Der Screen RENDERT nur: schaltet der Admin markets.goals aus
