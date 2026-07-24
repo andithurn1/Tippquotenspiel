@@ -12,6 +12,7 @@
 //   saveTip({roundId,matchId,userId,tip,snapshot}) · listTips({roundId,matchId})
 //   saveVote({roundId,matchday,userId,ja}) · listVotes({roundId})   ← Joker-Abstimmung
 //   getLeaderboard(roundId) · getLeaderboardHistory(roundId)   ← rechnen über die Engine
+//   getRoundEntries(roundId) ← Roh-Einträge, neu bewertbar unter jedem Regelwerk
 
 import { hasSupabaseEnv } from "./supabaseClient";
 import { createMockStore } from "./store.mock";

@@ -18,7 +18,7 @@ const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 const CARDS = [
   { href: "/tippen", title: "Tipp abgeben", desc: "Spiel wählen, Ergebnis + Torschützen tippen.", tone: C.gold },
   { href: "/ranking", title: "Ranking", desc: "Wer in dieser Runde gerade vorne liegt.", tone: C.mint },
-  { href: "/ranking/verlauf", title: "Ranking-Verlauf", desc: "Dein Rang je Spieltag im Zeitverlauf.", tone: "#4FD1E8" },
+  { href: "/historie", title: "Historie & Rekorde", desc: "Verlauf, Auszeichnungen und „was wäre mit anderem Preset gewesen?“.", tone: "#4FD1E8" },
 ];
 
 // Geparkte Premium-Features (siehe CLAUDE.md-Roadmap) — nur als sichtbare,

@@ -172,6 +172,23 @@ export function createSupabaseStore() {
       return scoreLeaderboard(entries, round?.rules ?? DEFAULT_RULES);
     },
 
+    async getRoundEntries(roundId) {
+      const [members, tips, matches] = await Promise.all([
+        this.listMembers(roundId),
+        this.listTips({ roundId }),
+        this.listMatches(),
+      ]);
+      const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
+      const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
+      return tips.map((t) => ({
+        userId: t.user_id, name: nameOf(t.user_id),
+        tip: t.tip, snapshot: t.snapshot,
+        result: matchOf(t.match_id)?.result ?? null,
+        matchday: matchOf(t.match_id)?.matchday ?? null,
+        matchId: t.match_id,
+      }));
+    },
+
     async getLeaderboardHistory(roundId) {
       const [round, members, tips, matches] = await Promise.all([
         this.getRound(roundId),

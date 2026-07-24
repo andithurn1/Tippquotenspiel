@@ -169,6 +169,20 @@ export function createMockStore() {
       return scoreLeaderboard(entries, round?.rules ?? DEFAULT_RULES);
     },
 
+    // Roh-Einträge einer Runde (Tipp + Snapshot + Ergebnis + matchday, ohne
+    // Scoring). Damit lassen sich Leaderboard, Verlauf und Rekorde unter EINEM
+    // BELIEBIGEN Regelwerk neu berechnen — Grundlage fürs „was wäre mit Preset
+    // X gewesen?" (die Runde selbst wechselt ihr Regelwerk nie).
+    async getRoundEntries(roundId) {
+      return tips.filter((t) => t.round_id === roundId).map((t) => ({
+        userId: t.user_id, name: nameOf(t.user_id),
+        tip: t.tip, snapshot: t.snapshot,
+        result: matches.get(t.match_id)?.result ?? null,
+        matchday: matches.get(t.match_id)?.matchday ?? null,
+        matchId: t.match_id,
+      }));
+    },
+
     // Ranking-Verlauf: gleiche Rohdaten wie getLeaderboard, zusätzlich mit matchday
     // je Tipp angereichert, damit die Engine kumulativ je Spieltag rechnen kann.
     async getLeaderboardHistory(roundId) {
