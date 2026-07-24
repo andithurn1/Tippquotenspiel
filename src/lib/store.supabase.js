@@ -7,6 +7,7 @@ import { DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules
 import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
+import { isPremium, applyEntitlements } from "./premium";
 
 // Match-Zeile (DB) → Store-Form
 const mapMatch = (m) => m && ({
@@ -52,7 +53,7 @@ export function createSupabaseStore() {
     // ── Profil (Anzeigename + Avatar) ───────────────────────
     async getProfile(userId) {
       const data = orThrow(await sb
-        .from("profiles").select("id, display_name, avatar").eq("id", userId).maybeSingle());
+        .from("profiles").select("id, display_name, avatar, premium_until").eq("id", userId).maybeSingle());
       return data ? { ...data, avatar: sanitizeAvatar(data.avatar) } : null;
     },
     // Nur übergebene Felder ändern. Gesäubert wird auch hier — die DB-Policy
@@ -106,10 +107,15 @@ export function createSupabaseStore() {
       // der unique-Constraint in der DB schützt zusätzlich (Retry bei 23505).
       let joinCode = generateJoinCode();
       const team_filter = Array.isArray(teamFilter) && teamFilter.length >= 2 ? teamFilter : null;
+      // Premium-Durchsetzung: Premium-Bestandteile greifen nur, wenn der ADMIN
+      // berechtigt ist. premium_until kann kein Client setzen (Spalten-Rechte
+      // im Schema), der Wert ist hier also vertrauenswürdig.
+      const admin = await this.getProfile(adminId);
+      const wirksameRegeln = applyEntitlements(sanitizeRules(rules), { premium: isPremium(admin) });
       for (let attempt = 0; attempt < 5; attempt++) {
         const { data, error } = await sb
           .from("rounds")
-          .insert({ name: (name ?? "").trim() || "Neue Runde", admin_id: adminId, rules: sanitizeRules(rules), join_code: joinCode, team_filter })
+          .insert({ name: (name ?? "").trim() || "Neue Runde", admin_id: adminId, rules: wirksameRegeln, join_code: joinCode, team_filter })
           .select()
           .single();
         if (!error) { await this.joinRound({ roundId: data.id, userId: adminId }); return data; }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   DEFAULT_RULES, RULE_LIMITS,
   encodePreset, decodePreset, sanitizeRules,
 } from "@/lib/engine";
 import { PRESETS } from "@/lib/presets";
 import { recommendedDisplayScale } from "@/lib/rulePreview";
+import { isPremium } from "@/lib/premium";
 import { TEAM_RATINGS } from "@/lib/bundesligaData";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
@@ -70,6 +71,18 @@ export default function Spielerstellung() {
 
   // Empfohlene Anzeige-Skalierung — hängt am Regelwerk inkl. Joker-Faktor.
   const empfohleneSkala = useMemo(() => recommendedDisplayScale(rules), [rules]);
+
+  // Premium des Admins: schaltet die Gewichtung frei. Die Anzeige hier ist
+  // nur Komfort — durchgesetzt wird beim Anlegen im Store (applyEntitlements).
+  const [premium, setPremium] = useState(false);
+  useEffect(() => {
+    if (!user) { setPremium(false); return; }
+    let live = true;
+    getStore().getProfile(user.id)
+      .then((p) => { if (live) setPremium(isPremium(p)); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [user]);
 
   const code = useMemo(() => encodePreset(rules), [rules]);
 
@@ -195,8 +208,15 @@ export default function Spielerstellung() {
                   border: `1px solid ${active ? C.gold + "66" : C.line}`,
                   borderRadius: 14, padding: "12px 14px", color: C.text,
                 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 14, fontWeight: 700 }}>{p.label}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>
+                      {p.label}
+                      {/* Ohne Premium greift der Joker-Anteil nicht — das gehört
+                          sichtbar an den Preset, nicht erst in eine Fehlermeldung. */}
+                      {p.premium && !premium && (
+                        <span style={{ fontSize: 12, color: C.gold, marginLeft: 6 }} title="Premium-Funktion">🔒</span>
+                      )}
+                    </span>
                     {active && (
                       <span style={{
                         fontFamily: MONO, fontSize: 10, color: C.gold, border: `1px solid ${C.gold}55`,
@@ -339,10 +359,25 @@ export default function Spielerstellung() {
             fertige Wertung — Ergebnis <em>und</em> Torschützen zusammen — und wirkt in
             beide Richtungen: ein gewichtetes Spiel, das danebengeht, tut auch mehr weh.
           </p>
-          <Toggle label="Gewichtung erlauben" on={j.enabled}
-            onChange={(on) => patchJoker({ enabled: on })} />
+          {!premium ? (
+            <div style={{
+              background: `${C.gold}12`, border: `1px solid ${C.gold}44`,
+              borderRadius: 14, padding: "13px 15px", marginBottom: 8,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>
+                🔒 Premium-Funktion
+              </div>
+              <p style={{ fontSize: 11.5, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
+                Es genügt, wenn <strong>du als Admin</strong> Premium hast — die ganze
+                Runde kann dann gewichten. Alle anderen Regler bleiben frei nutzbar.
+              </p>
+            </div>
+          ) : (
+            <Toggle label="Gewichtung erlauben" on={j.enabled}
+              onChange={(on) => patchJoker({ enabled: on })} />
+          )}
 
-          {j.enabled && (
+          {premium && j.enabled && (
             <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
               <Field label="Modus">
                 <div style={{ display: "flex", gap: 6 }}>

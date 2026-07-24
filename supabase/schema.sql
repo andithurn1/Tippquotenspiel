@@ -13,15 +13,24 @@
 -- Bewusst ein Text-Feld statt einer Bild-Referenz: hochgeladene Fotos sind
 -- eine eigene Baustelle (Moderation, Rechte, Speicher). Ein späterer Upload
 -- wird als "url:<adresse>" abgelegt — dafür muss die Spalte nicht wandern.
+-- premium_until = Zeitpunkt, bis zu dem Premium gilt (null = kein Premium).
+-- Bewusst ein Datum statt eines Boolean: Abos passen später ohne Schema-Umbau
+-- hinein. Solange es keinen Bezahlweg gibt, setzt man das Feld von Hand:
+--   update public.profiles set premium_until = now() + interval '1 year'
+--   where id = '<user-uuid>';
+-- Schreiben darf das NUR service_role (siehe RLS unten) — sonst könnte sich
+-- jeder selbst Premium eintragen.
 create table if not exists public.profiles (
-  id           uuid primary key references auth.users on delete cascade,
-  display_name text not null,
-  avatar       text,
-  created_at   timestamptz not null default now()
+  id            uuid primary key references auth.users on delete cascade,
+  display_name  text not null,
+  avatar        text,
+  premium_until timestamptz,
+  created_at    timestamptz not null default now()
 );
 
 -- Für Bestands-Datenbanken aus einer früheren Schema-Version (idempotent).
 alter table public.profiles add column if not exists avatar text;
+alter table public.profiles add column if not exists premium_until timestamptz;
 
 -- ── Matches (das, worauf getippt wird) ──────────────────────
 -- snapshot = eingefrorene Quoten (Form der Engine-Quoten-Quelle),
@@ -138,6 +147,15 @@ drop policy if exists "profiles_update_self" on public.profiles;
 create policy "profiles_read"        on public.profiles for select to authenticated using (true);
 create policy "profiles_insert_self" on public.profiles for insert to authenticated with check (id = auth.uid());
 create policy "profiles_update_self" on public.profiles for update to authenticated using (id = auth.uid());
+
+-- WICHTIG: Die Policy oben erlaubt das Ändern des EIGENEN Profils — ohne
+-- weitere Einschränkung könnte sich damit jeder selbst `premium_until`
+-- setzen. RLS kennt keine Spalten-Einschränkung, deshalb hier zusätzlich
+-- Spalten-Rechte: Eingeloggte dürfen nur Name und Avatar schreiben.
+-- premium_until bleibt allein service_role vorbehalten (umgeht RLS ohnehin)
+-- und wird damit nur serverseitig bzw. von Hand gesetzt.
+revoke update on public.profiles from authenticated;
+grant  update (display_name, avatar) on public.profiles to authenticated;
 
 -- Matches: für alle Eingeloggten lesbar (Schreiben nur serverseitig
 -- via service_role, das RLS umgeht — z. B. Quoten-/Ergebnis-Job).

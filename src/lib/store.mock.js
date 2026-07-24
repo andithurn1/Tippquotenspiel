@@ -8,6 +8,7 @@ import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { generateJoinCode } from "./joinCode";
 import { getBundesligaMatches } from "./bundesligaData";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
+import { isPremium, applyEntitlements } from "./premium";
 
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
@@ -43,8 +44,12 @@ export function createMockStore() {
   const presets = new Map();  // Kurzcode → geteiltes Regelwerk (Content-Creator-Codes)
   const members = DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar }));
   // Profile getrennt von der Mitgliedschaft halten — wie in der DB (profiles).
+  // Der Demo-Nutzer „Du" hat Premium, damit die Premium-Funktionen beim
+  // Entwickeln ohne Backend sichtbar sind; die übrigen bewusst nicht, damit
+  // auch der gesperrte Zustand testbar bleibt.
   const profiles = new Map(DEMO_TIPS.map((t) => [t.userId, {
     id: t.userId, display_name: t.name, avatar: t.avatar,
+    premium_until: t.userId === "u-du" ? "2099-12-31T00:00:00Z" : null,
   }]));
   const tips = DEMO_TIPS.map((t) => ({
     id: `tip-${t.userId}`, round_id: ROUND_ID, match_id: SNAP.matchId,
@@ -110,11 +115,15 @@ export function createMockStore() {
     async createRound({ name, adminId, adminName, rules, teamFilter }) {
       let joinCode = generateJoinCode();
       while ([...rounds.values()].some((r) => r.join_code === joinCode)) joinCode = generateJoinCode();
+      // Premium-Durchsetzung: Premium-Bestandteile des Regelwerks greifen nur,
+      // wenn der ADMIN berechtigt ist. Hier — nicht erst in der UI, die ist
+      // umgehbar.
+      const admin = profiles.get(adminId) ?? null;
       const round = {
         id: `r-${joinCode.toLowerCase()}`,
         name: (name ?? "").trim() || "Neue Runde",
         admin_id: adminId,
-        rules: sanitizeRules(rules),
+        rules: applyEntitlements(sanitizeRules(rules), { premium: isPremium(admin) }),
         join_code: joinCode,
         team_filter: Array.isArray(teamFilter) && teamFilter.length >= 2 ? teamFilter : null,
       };

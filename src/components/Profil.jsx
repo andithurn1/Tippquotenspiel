@@ -8,6 +8,7 @@ import {
   AVATARS, DEFAULT_AVATAR, NAME_LIMITS,
   getAvatar, avatarColor, sanitizeDisplayName,
 } from "@/lib/avatars";
+import { isPremium, PREMIUM_FEATURES } from "@/lib/premium";
 
 const C = {
   ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
@@ -35,6 +36,7 @@ export default function Profil() {
   const [avatar, setAvatar] = useState(DEFAULT_AVATAR);
   const [status, setStatus] = useState("laden");   // laden | bereit | speichern | ok | fehler
   const [geladen, setGeladen] = useState(false);
+  const [premium, setPremium] = useState(false);
 
   useEffect(() => {
     if (!user) { setStatus("bereit"); return; }
@@ -44,6 +46,7 @@ export default function Profil() {
         if (!live) return;
         setName(p?.display_name ?? user.name ?? "");
         setAvatar(p?.avatar ?? DEFAULT_AVATAR);
+        setPremium(isPremium(p));
         setGeladen(true);
         setStatus("bereit");
       })
@@ -98,6 +101,35 @@ export default function Profil() {
                   So sehen dich deine Mitspieler
                 </div>
               </div>
+              {premium && (
+                <span style={{
+                  marginLeft: "auto", fontSize: 10, letterSpacing: 1, textTransform: "uppercase",
+                  color: C.gold, border: `1px solid ${C.gold}55`, borderRadius: 999, padding: "3px 9px",
+                }}>Premium</span>
+              )}
+            </div>
+
+            {/* Status der Berechtigung — zeigt, was Premium in Runden freischaltet */}
+            <div style={{
+              marginTop: 12, background: premium ? `${C.mint}10` : C.ink2,
+              border: `1px solid ${premium ? C.mint + "33" : C.line}`,
+              borderRadius: 14, padding: "12px 15px",
+            }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: premium ? C.mint : C.text }}>
+                {premium ? "✓ Premium aktiv" : "Premium nicht aktiv"}
+              </div>
+              <p style={{ fontSize: 11.5, color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
+                {premium
+                  ? "In Runden, die du als Admin anlegst, stehen die Zusatzfunktionen bereit."
+                  : "Legst du eine Runde als Admin an, sind diese Funktionen gesperrt:"}
+              </p>
+              {!premium && (
+                <ul style={{ margin: "7px 0 0", paddingLeft: 18, fontSize: 11.5, color: C.muted, lineHeight: 1.6 }}>
+                  {PREMIUM_FEATURES.map((f) => (
+                    <li key={f.key}><strong style={{ color: C.text }}>{f.label}</strong> — {f.desc}</li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {/* Anzeigename */}
