@@ -34,6 +34,24 @@ export const PRESETS = [
     }),
   },
   {
+    key: "joker",
+    label: "Joker",
+    desc: "Ein Spiel pro Spieltag zählt doppelt — ein mutiger Tipp kann den ganzen Spieltag drehen.",
+    rules: sanitizeRules({
+      ...DEFAULT_RULES, name: "Joker",
+      joker: { enabled: true, modus: "einzel", faktor: 2 },
+    }),
+  },
+  {
+    key: "rangliste",
+    label: "Rangliste",
+    desc: "Du verteilst feste Gewichte (2× · 1,5× · 1,2× · 1×) auf deine Spiele — gleicher Pool für alle, die Verteilung ist die Kunst.",
+    rules: sanitizeRules({
+      ...DEFAULT_RULES, name: "Rangliste",
+      joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1.2, 1] },
+    }),
+  },
+  {
     key: "gemuetlich",
     label: "Gemütlich",
     desc: "Nähe zählt großzügig, kein Cutoff, keine Strafen — entspannt mittippen.",

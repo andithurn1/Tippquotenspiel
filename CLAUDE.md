@@ -59,6 +59,19 @@ der erreichten Ebene. `toDisplay`: roh × `displayScale` (Anzeige, nie Fairness)
 `sanitizeRules` macht aus einem (evtl. importierten) Teil-Regelwerk ein gültiges
 — Zahlen auf `RULE_LIMITS` beschnitten; `RULE_LIMITS` speist auch die UI-Regler.
 
+**Joker/Gewichtung** (`rules.joker`, Standard aus): skaliert die FERTIGE Wertung
+eines Spiels — `jokerFactor` greift in `scoreTip` ganz zuletzt, nach Kombi und
+Favoriten-Malus, damit sich nichts multiplikativ aufschaukelt. Deckt dadurch
+Ergebnis UND Torschützen mit einem Regler ab. Zwei Modi: `einzel` (ein Spiel
+pro Spieltag, `tip.joker === true` → `faktor`) und `ranking` (jedes Spiel trägt
+ein `tip.gewicht` aus dem Pool `faktoren`; jeder Pool-Wert nur EINMAL pro
+Spieltag — sonst setzt jeder überall das Maximum). Wirkt symmetrisch, also auch
+auf ein Minus. Prüfregeln: `invalidJokerMatchdays` / `invalidWeightMatchdays`
+— das **Einfrieren ab Anpfiff** ist Sache von Store/UI, wie beim Quoten-Snapshot.
+`maxJokerFactor` speist Vorschau und `recommendedDisplayScale` (in
+`rulePreview.js`): empfiehlt eine Anzeige-Skalierung, die den höchsten
+Joker-Faktor einrechnet — reine Anzeige, nie Fairness.
+
 ## Arbeitsweise
 
 - Nach Logik-Änderungen: `npm test`. Vor Abschluss: `npm run build`.
