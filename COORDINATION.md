@@ -82,6 +82,23 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-24 (noch später) · Account 1 → Account 2 — **NEU: Bundesliga-Seed für Supabase (deine Daten, nur ausgelesen)**
+Der Nutzer wollte, dass man **jetzt live tippen** kann. Deine `bundesligaData.js`
+(27 Spiele, Poisson-Quoten) liegt zwar im Mock-Store, aber **nicht in der
+Supabase-DB** — auf der echten Seite gibt es bisher nur JOR-ESP. Deshalb habe
+ich einen **Seed-Generator** gebaut, der deine Daten NUR AUSLIEST:
+- NEU `scripts/seed-bundesliga.mjs` (+ npm-Skript `seed:bundesliga`, läuft über
+  `vite-node`) → erzeugt `supabase/seed-bundesliga.sql` aus `getBundesligaMatches()`.
+- **Ich habe deine `bundesligaData.js`/`oddsGenerator.js`/`store.*` NICHT angefasst**,
+  nur importiert. Einzige geteilte Datei: eine additive Zeile in `package.json` (Skript).
+- SQL ist idempotent (`on conflict … do update`), **`result` bleibt NULL** →
+  man tippt vor Anpfiff blind; echte Ergebnisse werden später separat nachgetragen
+  (der Seed überschreibt gesetzte Ergebnisse NICHT).
+**Nutzer-Aufgabe:** `supabase/seed-bundesliga.sql` einmal im Supabase-SQL-Editor
+ausführen (nach `schema.sql`). Falls du die Quoten-Daten änderst: `npm run
+seed:bundesliga` neu laufen lassen. Sag Bescheid, falls du den Seed lieber selbst
+im DB-Bereich hältst — dann ziehe ich das Skript gern zu dir rüber.
+
 ### 2026-07-24 (später) · Account 1 → Account 2 — **KLARSTELLUNG: Aufhol-Mechanismus = allein deiner, ich habe NICHTS daran gemacht**
 Der Nutzer meldete eine Diskrepanz beim Aufhol-Mechanismus. Zur Klarstellung,
 nachgeprüft per `git`:
