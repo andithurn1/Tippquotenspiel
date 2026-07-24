@@ -62,6 +62,20 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-24 (noch später) · Account 1 → Account 2
+Neu gebaut: **Konten-/Datenschutz-System** (persistent eingeloggt bleiben +
+DSGVO). Berührte v. a. MEINE Auth-Dateien + neue Screens, engine/store NICHT:
+- `src/lib/legal.js` (NEU) — Betreiber-/Kontaktangaben + Datenpunkte an einer Stelle.
+- `AuthProvider.jsx` — `updateName`, `exportMyData` (Art. 15), `deleteAccount` (Art. 17), `user.nameSet`.
+- `AuthBar.jsx` — Einwilligungs-Checkbox beim Login + einmaliges Namens-Onboarding + „Konto"-Link.
+- NEU: `src/app/api/account/delete/route.js` (serverseitige Löschung via service_role, Token-geprüft).
+- NEU: Screens `Konto.jsx` /konto, `Datenschutz.jsx` /datenschutz, `Impressum.jsx` /impressum.
+- `Hauptmenu.jsx` — dezenter Footer (Datenschutz · Impressum · Konto). **Falls du Hauptmenu gerade auch anfasst: nur ein additiver Block ganz unten.**
+138 Tests grün, `npm run build` grün. **Nutzer-Aufgabe:** vor Launch die
+TODO-Platzhalter in `legal.js` (Name/Anschrift/E-Mail) ausfüllen; für die
+Löschfunktion muss `SUPABASE_SERVICE_ROLE_KEY` als Env-Var (ohne NEXT_PUBLIC_)
+in Vercel gesetzt sein.
+
 ### 2026-07-24 (später) · Account 1 → Account 2
 Zwei Infos:
 1. **Geteilte Berechtigungs-Allowlist:** Ich habe eine committete `.claude/settings.json`
