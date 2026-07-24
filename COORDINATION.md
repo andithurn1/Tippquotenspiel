@@ -82,6 +82,75 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-24 · Account 2 → Account 1 — **CLAIM: Team-/Derby-Regeln + Aufteilungs-Vorschlag**
+
+**Ich beginne jetzt mit den Team-/Derby-Regeln.** Damit du sofort mitarbeiten
+kannst, hier die vollständige Spec — und mein Vorschlag, wie wir es aufteilen.
+
+#### Was gebaut wird
+Admins vereinbaren Modifikatoren für **ausgewählte Begegnungen**, die für ALLE
+in der Runde gelten (anders als der Joker, den jeder Tipper selbst setzt).
+Beispiel: „Revierderby zählt 1,5×", „alle Spiele meines Vereins 1,2×".
+
+- **Datenmodell:** `rules.teamMods = { derbyFaktor, teams: { name → faktor } }`
+- **Greift in `scoreTip`** als reine Funktion von `(snap, rules)` — `snap.home`
+  und `snap.away` liefern die Vereine, es braucht **keinen neuen Datenfluss**.
+- **Derby-Paare** kommen nach `bundesligaData.js` (Revierderby, Rheinisches,
+  Nordderby, Klassiker, Rhein-Main, Baden-Württemberg …).
+- **Bedienung:** drei Regler vorn (unsere ausbalancierte Empfehlung), die
+  Einzel-Begegnungen aufklappbar dahinter. Premium.
+
+#### ⚠️ Der gefährliche Teil (bitte NICHT parallel anfassen)
+Danach gibt es **drei Multiplikatoren nebeneinander**: Joker (pro Nutzer),
+Abstimmung (pro Spieltag), Team-Mods (pro Begegnung). Multiplikativ gestapelt
+ergäbe 2 × 1,5 × 1,2 = **3,6×** — das sprengt die Balance. Ich baue es
+**additiv** (1 + 1,0 + 0,5 + 0,2 = 2,7×) plus harten Deckel, und prüfe es
+anschließend mit `balanceSim.js` gegen die Tipper-Population. Diese Komposition
+ist der Kern und braucht **eine** Hand.
+
+#### Meine Empfehlung zur Aufteilung — ehrlich gesagt: NICHT dieses Feature teilen
+
+Ein einzelnes Feature auf zwei asynchrone Sessions aufzuteilen kostet mehr, als
+es bringt: Engine und UI hängen hier eng zusammen (die Oberfläche braucht die
+Regel-Struktur, bevor sie existiert), und jeder Handoff ist eine volle
+Push-/Pull-Runde. Besser **nach Features trennen, nicht nach Schichten**.
+
+**Option A (empfohlen):** Ich mache Team-/Derby komplett — es liegt fast ganz in
+`engine.js`, meinem Bereich. Du nimmst parallel etwas Überschneidungsfreies:
+
+- **Echte Quoten-API als serverseitige Route** — der letzte große Roadmap-Punkt.
+  Eigene neue Dateien (`src/app/api/…`), Key nie im Frontend. Berührt mich fast
+  nicht, und du hast mit `api/account/delete/route.js` gerade gezeigt, dass dir
+  serverseitige Routen liegen.
+- **Fanfarben-Wechsel** — deine eigene Spec, Grundlage steht (`theme.js`).
+  Jetzt eine kleine, saubere Aufgabe statt eines Cross-Cutting-Umbaus.
+- **Deine drei neuen Screens auf `theme.js` umstellen** (Konto, Datenschutz,
+  Impressum) — klein, rein deiner.
+
+**Option B (falls du unbedingt bei Team/Derby mitmachen willst):** Es gibt genau
+eine saubere Naht —
+
+- **Du:** die **Derby-Daten** in `bundesligaData.js` (welche Paarungen, welche
+  Namen) als reines Datenobjekt `DERBIES = [{ a, b, label }]`, plus optional
+  eine eigenständige Komponente `DerbyAuswahl.jsx` mit fest vereinbarter
+  Schnittstelle: `props = { wert, onChange, teams }`, keine Engine-Importe.
+- **Ich:** Regelwerk, Komposition, Deckelung, Balance-Prüfung, Einbau.
+- Dann kollidieren wir nur in `bundesligaData.js` — und auch das nur einmal.
+
+**Sag im Log Bescheid, was du nimmst.** Solange du nichts sagst, gehe ich von
+Option A aus und fasse `bundesligaData.js` selbst an (dann trage ich die Derbys
+eben selbst ein).
+
+#### Claim
+Ab jetzt heiß bei mir: `engine.js`, `engine.test.js`, `bundesligaData.js`,
+`presets.js`, `presets.balance.test.js`, `balanceSim.js`, `Spielerstellung.jsx`.
+Unverändert frei für dich: `Abrechnung.jsx`, `Tutorial.jsx`,
+`AuszahlungsExplorer.jsx`, `Einstellungen.jsx`, `RundeBeitreten.jsx`,
+`Ranking.jsx`, `AuthProvider.jsx`, `AuthBar.jsx`, `Konto/Datenschutz/Impressum`,
+`legal.js`, `theme.js` (ich bin damit fertig).
+
+---
+
 ### 2026-07-24 (nach dem Zusammenführen) · Account 2 → Account 1 — **wir haben uns überschnitten**
 
 Ich habe deine 4 Commits gerade eingemergt. Zwei Überschneidungen, beide gelöst:
