@@ -4,6 +4,8 @@
 //  Abrechnung und Auszahlungs-Explorer.
 // ============================================================
 
+import { applyCatchup } from "./catchup";
+
 
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
 export function createMockOddsSource() {
@@ -100,6 +102,15 @@ export const DEFAULT_RULES = {
   // ergeben 1 + 1,0 + 0,5 = 2,5× statt 3,0×. Multiplikativ würde sich das
   // aufschaukeln und die Balance sprengen; additiv bleibt es vorhersagbar.
   modCap: 2.5,
+
+  // Aufhol-Mechanismus („Anschluss halten"): Zurückliegende bekommen je
+  // Spieltag einen Teil ihres Rückstands gutgeschrieben, damit Mitspielen
+  // lohnt. Greift NICHT in scoreTip (das kennt nur ein Spiel), sondern im
+  // Spieltag-Verlauf — Berechnung in catchup.js.
+  //  staerke  — welcher ANTEIL des Rückstands je Spieltag aufgeholt wird
+  //  schwelle — ab welchem Rückstand (Anteil an der Spitze) es überhaupt greift
+  //  betrifft — "letzter" | "unteres-drittel" | "unter-schnitt"
+  aufholen: { enabled: false, staerke: 0.2, schwelle: 0.2, betrifft: "unteres-drittel" },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -124,6 +135,7 @@ export const RULE_LIMITS = {
   joker: { faktor: { min: 1, max: 2, step: 0.1 }, anzahlFaktoren: { min: 2, max: 6, step: 1 } },
   teamMods: { derbyFaktor: { min: 1, max: 2, step: 0.1 }, teamFaktor: { min: 1, max: 2, step: 0.1 } },
   modCap: { min: 1, max: 4, step: 0.1 },
+  aufholen: { staerke: { min: 0.05, max: 0.5, step: 0.05 }, schwelle: { min: 0, max: 0.5, step: 0.05 } },
 };
 
 // Joker-Block eigenständig säubern: Modus, Einzelfaktor und Ranking-Pool.
@@ -213,6 +225,16 @@ export function sanitizeRules(partial = {}) {
     joker: sanitizeJoker(jk, num, clamp),
     teamMods: sanitizeTeamMods(src.teamMods && typeof src.teamMods === "object" ? src.teamMods : {}, num, clamp),
     modCap: clamp(num(src.modCap, D.modCap), L.modCap.min, L.modCap.max),
+    aufholen: (() => {
+      const a = src.aufholen && typeof src.aufholen === "object" ? src.aufholen : {};
+      const erlaubt = ["letzter", "unteres-drittel", "unter-schnitt"];
+      return {
+        enabled: a.enabled === true,
+        staerke: clamp(num(a.staerke, D.aufholen.staerke), L.aufholen.staerke.min, L.aufholen.staerke.max),
+        schwelle: clamp(num(a.schwelle, D.aufholen.schwelle), L.aufholen.schwelle.min, L.aufholen.schwelle.max),
+        betrifft: erlaubt.includes(a.betrifft) ? a.betrifft : D.aufholen.betrifft,
+      };
+    })(),
   };
 }
 
@@ -534,10 +556,14 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES) {
 // `matchday`. Kein neuer Scoring-Code — ruft scoreLeaderboard je Cutoff wieder auf.
 export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES) {
   const matchdays = [...new Set(entries.map((e) => e.matchday).filter((m) => m != null))].sort((a, b) => a - b);
-  return matchdays.map((matchday) => ({
+  const roh = matchdays.map((matchday) => ({
     matchday,
     board: scoreLeaderboard(entries.filter((e) => e.matchday <= matchday), rules),
   }));
+  // Aufhol-Boni erst hier drauf: sie hängen am Stand VOR dem Spieltag, lassen
+  // sich also nur über den fertigen Verlauf berechnen (siehe catchup.js).
+  // Ist die Regel aus, gibt applyCatchup den Verlauf unverändert zurück.
+  return applyCatchup(roh, rules);
 }
 
 
