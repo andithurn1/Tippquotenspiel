@@ -132,6 +132,17 @@ export default function Hauptmenu() {
             </Link>
           </div>
         </Section>
+
+        <div style={{
+          textAlign: "center", fontFamily: MONO, fontSize: 11, color: C.muted,
+          paddingTop: 6, borderTop: `1px solid ${C.line}`,
+        }}>
+          <Link href="/datenschutz" style={{ color: C.muted, textDecoration: "none" }}>Datenschutz</Link>
+          <span style={{ opacity: 0.5 }}>{"  ·  "}</span>
+          <Link href="/impressum" style={{ color: C.muted, textDecoration: "none" }}>Impressum</Link>
+          <span style={{ opacity: 0.5 }}>{"  ·  "}</span>
+          <Link href="/konto" style={{ color: C.muted, textDecoration: "none" }}>Konto</Link>
+        </div>
       </div>
     </main>
   );
