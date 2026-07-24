@@ -7,6 +7,7 @@ import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboard
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { generateJoinCode } from "./joinCode";
 import { getBundesligaMatches } from "./bundesligaData";
+import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
@@ -14,11 +15,11 @@ const RESULT = odds.getResult("JOR-ESP");
 
 // Demo-Mitspieler mit ihren (bereits abgegebenen) Tipps auf JOR-ESP.
 const DEMO_TIPS = [
-  { userId: "u-du",    name: "Du",    tip: { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal", ""] } } },
-  { userId: "u-lena",  name: "Lena",  tip: { home: 2, away: 1, goals: { home: [], away: ["Yamal", ""] } } },
-  { userId: "u-kemal", name: "Kemal", tip: { home: 1, away: 1, goals: { home: [], away: ["Yamal", ""] } } },
-  { userId: "u-max",   name: "Max",   tip: { home: 2, away: 1, goals: { home: [], away: [] } } },
-  { userId: "u-jonas", name: "Jonas", tip: { home: 0, away: 2, goals: { home: [], away: ["Oyarzabal", ""] } } },
+  { userId: "u-du",    name: "Du",    avatar: "fan-schal",   tip: { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal", ""] } } },
+  { userId: "u-lena",  name: "Lena",  avatar: "fan-rakete",  tip: { home: 2, away: 1, goals: { home: [], away: ["Yamal", ""] } } },
+  { userId: "u-kemal", name: "Kemal", avatar: "fan-trommel", tip: { home: 1, away: 1, goals: { home: [], away: ["Yamal", ""] } } },
+  { userId: "u-max",   name: "Max",   avatar: "fan-bier",    tip: { home: 2, away: 1, goals: { home: [], away: [] } } },
+  { userId: "u-jonas", name: "Jonas", avatar: "fan-clown",   tip: { home: 0, away: 2, goals: { home: [], away: ["Oyarzabal", ""] } } },
 ];
 
 const ROUND_ID = DEMO_ROUND_ID;
@@ -40,7 +41,11 @@ export function createMockStore() {
     rules: DEFAULT_RULES, join_code: DEMO_JOIN_CODE,
   }]]);
   const presets = new Map();  // Kurzcode → geteiltes Regelwerk (Content-Creator-Codes)
-  const members = DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name }));
+  const members = DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar }));
+  // Profile getrennt von der Mitgliedschaft halten — wie in der DB (profiles).
+  const profiles = new Map(DEMO_TIPS.map((t) => [t.userId, {
+    id: t.userId, display_name: t.name, avatar: t.avatar,
+  }]));
   const tips = DEMO_TIPS.map((t) => ({
     id: `tip-${t.userId}`, round_id: ROUND_ID, match_id: SNAP.matchId,
     user_id: t.userId, tip: t.tip, snapshot: SNAP,
@@ -51,6 +56,23 @@ export function createMockStore() {
   return {
     async listMatches() { return [...matches.values()]; },
     async getMatch(id) { return matches.get(id) ?? null; },
+
+    // ── Profil (Anzeigename + Avatar) ───────────────────────
+    async getProfile(userId) {
+      return profiles.get(userId) ?? null;
+    },
+    // Nur die übergebenen Felder ändern; beide werden gesäubert, damit weder
+    // ein leerer Name noch eine unbekannte Avatar-id im Profil landet.
+    async updateProfile(userId, { displayName, avatar } = {}) {
+      const vorher = profiles.get(userId) ?? { id: userId, display_name: userId, avatar: DEFAULT_AVATAR };
+      const name = displayName === undefined ? vorher.display_name : (sanitizeDisplayName(displayName) ?? vorher.display_name);
+      const bild = avatar === undefined ? vorher.avatar : sanitizeAvatar(avatar);
+      const neu = { ...vorher, display_name: name, avatar: bild };
+      profiles.set(userId, neu);
+      // Mitglieder-Liste mitziehen, damit Leaderboard/Runde sofort stimmen.
+      for (const m of members) if (m.user_id === userId) { m.name = name; m.avatar = bild; }
+      return neu;
+    },
 
     async getRound(id) { return rounds.get(id) ?? null; },
     async getRoundByCode(code) {

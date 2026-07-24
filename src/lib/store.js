@@ -5,6 +5,7 @@
 //
 // Beide Stores teilen dieselbe Schnittstelle:
 //   listMatches() · getMatch(id)
+//   getProfile(userId) · updateProfile(userId, {displayName, avatar})
 //   getRound(id) · getRoundByCode(code) · listMembers(roundId)
 //   listRoundsForUser(userId)   ← alle Runden, in denen der User Mitglied ist
 //   publishPreset({name,rules,creatorId}) · getPresetByCode(code)   ← Kurzcode-Presets

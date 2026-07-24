@@ -6,6 +6,7 @@
 import { DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules } from "./engine";
 import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
+import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 
 // Match-Zeile (DB) → Store-Form
 const mapMatch = (m) => m && ({
@@ -36,12 +37,37 @@ export function createSupabaseStore() {
       return orThrow(await sb.from("rounds").select("*").eq("join_code", code).maybeSingle());
     },
     async listMembers(roundId) {
-      // Join auf profiles für den Anzeigenamen
+      // Join auf profiles für Anzeigename + Avatar
       const data = orThrow(await sb
         .from("round_members")
-        .select("round_id, user_id, profiles(display_name)")
+        .select("round_id, user_id, profiles(display_name, avatar)")
         .eq("round_id", roundId));
-      return data.map((m) => ({ round_id: m.round_id, user_id: m.user_id, name: m.profiles?.display_name ?? m.user_id }));
+      return data.map((m) => ({
+        round_id: m.round_id, user_id: m.user_id,
+        name: m.profiles?.display_name ?? m.user_id,
+        avatar: sanitizeAvatar(m.profiles?.avatar),
+      }));
+    },
+
+    // ── Profil (Anzeigename + Avatar) ───────────────────────
+    async getProfile(userId) {
+      const data = orThrow(await sb
+        .from("profiles").select("id, display_name, avatar").eq("id", userId).maybeSingle());
+      return data ? { ...data, avatar: sanitizeAvatar(data.avatar) } : null;
+    },
+    // Nur übergebene Felder ändern. Gesäubert wird auch hier — die DB-Policy
+    // erlaubt zwar nur das eigene Profil, prüft aber keine Inhalte.
+    async updateProfile(userId, { displayName, avatar } = {}) {
+      const patch = {};
+      if (displayName !== undefined) {
+        const name = sanitizeDisplayName(displayName);
+        if (name) patch.display_name = name;
+      }
+      if (avatar !== undefined) patch.avatar = sanitizeAvatar(avatar);
+      if (!Object.keys(patch).length) return this.getProfile(userId);
+      const data = orThrow(await sb
+        .from("profiles").update(patch).eq("id", userId).select("id, display_name, avatar").maybeSingle());
+      return data ? { ...data, avatar: sanitizeAvatar(data.avatar) } : null;
     },
     async listRoundsForUser(userId) {
       const memberRows = orThrow(await sb.from("round_members").select("round_id").eq("user_id", userId));

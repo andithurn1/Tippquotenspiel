@@ -9,11 +9,19 @@
 -- ============================================================
 
 -- ── Profile (1:1 zu auth.users) ─────────────────────────────
+-- avatar = id aus dem Katalog in src/lib/avatars.js (z. B. "fan-schal").
+-- Bewusst ein Text-Feld statt einer Bild-Referenz: hochgeladene Fotos sind
+-- eine eigene Baustelle (Moderation, Rechte, Speicher). Ein späterer Upload
+-- wird als "url:<adresse>" abgelegt — dafür muss die Spalte nicht wandern.
 create table if not exists public.profiles (
   id           uuid primary key references auth.users on delete cascade,
   display_name text not null,
+  avatar       text,
   created_at   timestamptz not null default now()
 );
+
+-- Für Bestands-Datenbanken aus einer früheren Schema-Version (idempotent).
+alter table public.profiles add column if not exists avatar text;
 
 -- ── Matches (das, worauf getippt wird) ──────────────────────
 -- snapshot = eingefrorene Quoten (Form der Engine-Quoten-Quelle),
