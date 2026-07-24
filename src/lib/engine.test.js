@@ -3,7 +3,7 @@ import {
   createMockOddsSource, DEFAULT_RULES, RULE_LIMITS,
   scoreResult, scoreGoals, scoreTip, applyCombo, toDisplay,
   encodePreset, decodePreset, sanitizeRules, scoreLeaderboard, scoreLeaderboardHistory, projectTip,
-  jokerFactor, maxJokerFactor, invalidJokerMatchdays, invalidWeightMatchdays,
+  jokerFactor, maxJokerFactor, invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday,
 } from "./engine";
 
 const odds = createMockOddsSource();
@@ -484,6 +484,28 @@ describe("Joker — Gewichtung einzelner Spiele", () => {
     ], rules)).toEqual([1]);
     expect(invalidWeightMatchdays([{ matchday: 2, gewicht: 1.7 }], rules)).toEqual([2]); // nicht im Pool
     expect(invalidWeightMatchdays([], rules)).toEqual([]);
+  });
+
+  it("weightUsageForMatchday: freie vs. belegte Gewichte je Spieltag", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1.2, 1] } });
+    const tips = [
+      { match_id: "a", matchday: 1, gewicht: 2 },
+      { match_id: "b", matchday: 1, gewicht: 1.5 },
+      { match_id: "c", matchday: 2, gewicht: 2 },   // anderer Spieltag → egal
+    ];
+    const u = weightUsageForMatchday(tips, 1, rules);
+    expect(u.frei).toEqual([1.2]);                                 // 2 und 1.5 vergeben, 1 ist neutral
+    expect(u.alleVergeben).toBe(false);
+    expect(u.belegt.find((b) => b.gewicht === 2).matchId).toBe("a");
+    expect(u.belegt.find((b) => b.gewicht === 1.2).matchId).toBeNull();
+  });
+
+  it("weightUsageForMatchday: der eigene Tipp blockiert sein Gewicht nicht", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1] } });
+    const tips = [{ match_id: "a", matchday: 1, gewicht: 2 }];
+    // Beim Bearbeiten von "a" soll 2 wieder als frei gelten (man stellt es ja gerade ein).
+    expect(weightUsageForMatchday(tips, 1, rules, "a").frei).toEqual([2, 1.5]);
+    expect(weightUsageForMatchday(tips, 1, rules, "b").frei).toEqual([1.5]);
   });
 
   it("Leaderboard rechnet den Joker mit — ein gejokertes Spiel hebt die Gesamtsumme", () => {

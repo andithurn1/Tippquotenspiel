@@ -353,6 +353,27 @@ export function invalidWeightMatchdays(tips = [], rules = DEFAULT_RULES) {
   return [...fehler];
 }
 
+// Belegung der Ranking-Gewichte für EINEN Spieltag — speist direkt die UI.
+// tips = die Tipps eines Nutzers (beliebige Spieltage, wird hier gefiltert).
+// Rückgabe: pro Pool-Gewicht, ob und auf welchem Match es liegt, plus die noch
+// freien Gewichte. `exceptMatchId` blendet den gerade bearbeiteten Tipp aus,
+// damit sein eigenes Gewicht beim Umstellen nicht als „belegt" gilt.
+export function weightUsageForMatchday(tips = [], matchday, rules = DEFAULT_RULES, exceptMatchId = null) {
+  const pool = rules?.joker?.faktoren || [];
+  const belegtVon = new Map();   // gewicht → matchId
+  for (const t of tips) {
+    if ((t.matchday ?? null) !== matchday) continue;
+    if (t.match_id === exceptMatchId || t.matchId === exceptMatchId) continue;
+    const w = t?.gewicht;
+    if (Number.isFinite(w) && w !== 1 && pool.includes(w) && !belegtVon.has(w)) {
+      belegtVon.set(w, t.match_id ?? t.matchId ?? null);
+    }
+  }
+  const belegt = pool.map((gewicht) => ({ gewicht, matchId: belegtVon.get(gewicht) ?? null }));
+  const frei = pool.filter((g) => g !== 1 && !belegtVon.has(g));
+  return { pool, belegt, frei, alleVergeben: frei.length === 0 };
+}
+
 // Gesamtwertung eines Tipps inkl. Kombi-Multiplikator, Favoriten-Malus und Joker.
 export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   const res = scoreResult(tip, actual, snap, rules);

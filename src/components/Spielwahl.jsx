@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { filterMatchesByTeams } from "@/lib/roundStatus";
+import { DEFAULT_RULES, weightUsageForMatchday } from "@/lib/engine";
 
 const C = {
   ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
@@ -29,12 +30,15 @@ export default function Spielwahl() {
   const [matches, setMatches] = useState(null);
   const [teamFilter, setTeamFilter] = useState(null);
   const [tippedIds, setTippedIds] = useState(new Set());
+  const [rules, setRules] = useState(DEFAULT_RULES);
+  const [meineTips, setMeineTips] = useState([]);   // { match_id, matchday, gewicht }
 
   useEffect(() => {
     let live = true;
     Promise.all([getStore().getRound(roundId), getStore().listMatches()]).then(([round, ms]) => {
       if (!live) return;
       setTeamFilter(round?.team_filter ?? null);
+      setRules(round?.rules ?? DEFAULT_RULES);
       const relevant = filterMatchesByTeams(ms, round?.team_filter);
       setMatches([...relevant].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)));
     });
@@ -43,12 +47,17 @@ export default function Spielwahl() {
 
   useEffect(() => {
     let live = true;
-    getStore().listTips({ roundId }).then((tips) => {
+    Promise.all([getStore().listTips({ roundId }), getStore().listMatches()]).then(([tips, ms]) => {
       if (!live || !user) return;
-      setTippedIds(new Set(tips.filter((t) => t.user_id === user.id).map((t) => t.match_id)));
+      const eigene = tips.filter((t) => t.user_id === user.id);
+      setTippedIds(new Set(eigene.map((t) => t.match_id)));
+      const mdOf = new Map(ms.map((m) => [m.id, m.matchday ?? null]));
+      setMeineTips(eigene.map((t) => ({ match_id: t.match_id, matchday: mdOf.get(t.match_id) ?? null, gewicht: t.tip?.gewicht })));
     });
     return () => { live = false; };
   }, [roundId, user]);
+
+  const rankingModus = rules.joker?.enabled === true && rules.joker?.modus === "ranking";
 
   const now = Date.now();
   const groups = new Map();
@@ -81,24 +90,51 @@ export default function Spielwahl() {
           <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>Spiele laden …</div>
         )}
 
-        {matchdays.map((md) => (
-          <div key={md} style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-              {md ? `Spieltag ${md}` : "Sonstige"}
+        {matchdays.map((md) => {
+          const belegung = rankingModus ? weightUsageForMatchday(meineTips, md, rules) : null;
+          const gewichtVon = (id) => meineTips.find((t) => t.match_id === id)?.gewicht;
+          return (
+            <div key={md} style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                {md ? `Spieltag ${md}` : "Sonstige"}
+              </div>
+              {belegung && (
+                <div style={{
+                  display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6,
+                  background: `${C.gold}0E`, border: `1px solid ${C.gold}2E`,
+                  borderRadius: 10, padding: "7px 10px", marginBottom: 8,
+                }}>
+                  <span style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Gewichte:</span>
+                  {belegung.belegt.filter((b) => b.gewicht !== 1).map((b) => (
+                    <span key={b.gewicht} style={{
+                      fontFamily: MONO, fontSize: 11, padding: "2px 7px", borderRadius: 999,
+                      background: b.matchId ? "transparent" : `${C.gold}22`,
+                      color: b.matchId ? "rgba(138,144,180,0.5)" : C.gold,
+                      border: `1px solid ${b.matchId ? C.line : C.gold + "66"}`,
+                      textDecoration: b.matchId ? "line-through" : "none",
+                    }}>×{b.gewicht.toFixed(1)}</span>
+                  ))}
+                  <span style={{ fontSize: 10.5, color: C.muted, marginLeft: "auto" }}>
+                    {belegung.alleVergeben ? "alle vergeben" : `${belegung.frei.length} frei`}
+                  </span>
+                </div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {groups.get(md).map((m) => (
+                  <MatchRow key={m.id} match={m} open={new Date(m.kickoff) > now}
+                    tipped={tippedIds.has(m.id)} gewicht={gewichtVon(m.id)} />
+                ))}
+              </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {groups.get(md).map((m) => (
-                <MatchRow key={m.id} match={m} open={new Date(m.kickoff) > now} tipped={tippedIds.has(m.id)} />
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function MatchRow({ match, open, tipped }) {
+function MatchRow({ match, open, tipped, gewicht }) {
+  const gewichtet = Number.isFinite(gewicht) && gewicht > 1;
   const content = (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -109,13 +145,16 @@ function MatchRow({ match, open, tipped }) {
         <div style={{ fontSize: 14, fontWeight: 700 }}>{match.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {match.away}</div>
         <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginTop: 3 }}>{timeFmt.format(new Date(match.kickoff))}</div>
       </div>
-      {open ? (
-        tipped
-          ? <Tag tone={C.mint}>✓ getippt</Tag>
-          : <Tag tone={C.gold}>offen</Tag>
-      ) : (
-        <Tag tone={C.muted}>Anpfiff war</Tag>
-      )}
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {gewichtet && <Tag tone={C.gold}>×{gewicht.toFixed(1)}</Tag>}
+        {open ? (
+          tipped
+            ? <Tag tone={C.mint}>✓ getippt</Tag>
+            : <Tag tone={C.gold}>offen</Tag>
+        ) : (
+          <Tag tone={C.muted}>Anpfiff war</Tag>
+        )}
+      </div>
     </div>
   );
   return open

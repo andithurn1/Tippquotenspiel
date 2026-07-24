@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { DEFAULT_RULES, projectTip } from "@/lib/engine";
+import { DEFAULT_RULES, projectTip, weightUsageForMatchday } from "@/lib/engine";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -53,6 +53,9 @@ export default function Tippabgabe({ matchId }) {
   // Gewichtung dieses Spiels: Flag (Modus „einzel") bzw. Faktor (Modus „ranking").
   const [joker, setJoker] = useState(false);
   const [gewicht, setGewicht] = useState(1);
+  // Andere Tipps des Nutzers in dieser Runde — für „welche Gewichte am selben
+  // Spieltag sind schon vergeben" (Ranking-Modus).
+  const [meineTips, setMeineTips] = useState([]);
 
   useEffect(() => {
     let live = true;
@@ -77,6 +80,26 @@ export default function Tippabgabe({ matchId }) {
     }).catch(() => {});
     return () => { live = false; };
   }, [roundId]);
+
+  // Eigene Tipps laden (für belegte Ranking-Gewichte am selben Spieltag) und
+  // ein evtl. schon gesetztes Gewicht/den Joker dieses Spiels vorbelegen.
+  // matchday je Tipp fehlt in den Roh-Rows → aus dem Match-Katalog nachreichen.
+  useEffect(() => {
+    if (!user) return;
+    let live = true;
+    Promise.all([getStore().listTips({ roundId }), getStore().listMatches()]).then(([tips, ms]) => {
+      if (!live) return;
+      const mdOf = new Map(ms.map((m) => [m.id, m.matchday ?? null]));
+      const eigene = tips
+        .filter((t) => t.user_id === user.id)
+        .map((t) => ({ match_id: t.match_id, matchday: mdOf.get(t.match_id) ?? null, gewicht: t.tip?.gewicht }));
+      setMeineTips(eigene);
+      const dieser = tips.find((t) => t.user_id === user.id && t.match_id === matchId);
+      if (dieser?.tip?.joker === true) setJoker(true);
+      if (Number.isFinite(dieser?.tip?.gewicht)) setGewicht(dieser.tip.gewicht);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [roundId, user, matchId]);
 
   if (!match || !picks) {
     return (
@@ -115,6 +138,12 @@ export default function Tippabgabe({ matchId }) {
   const gesperrt = Date.now() >= new Date(SNAP.kickoff).getTime();
   const jokerAktiv = RULES.joker?.enabled === true;
   const rankingModus = RULES.joker?.modus === "ranking";
+  // Ranking: welche Gewichte hat der Nutzer an DIESEM Spieltag schon vergeben?
+  // Der eigene Tipp ist ausgenommen (man stellt ihn ja gerade ein).
+  const belegung = rankingModus
+    ? weightUsageForMatchday(meineTips, match.matchday ?? null, RULES, matchId)
+    : null;
+  const gewichtBelegtVon = (g) => belegung?.belegt.find((b) => b.gewicht === g)?.matchId ?? null;
   // Gewichtung fließt in die Vorschau ein, damit man sofort sieht, was sie bringt.
   const gewichtung = rankingModus ? { gewicht } : { joker };
   const proj = projectTip({ home: h, away: a, goals: projGoals, ...gewichtung }, SNAP, RULES);
@@ -135,10 +164,14 @@ export default function Tippabgabe({ matchId }) {
         home: picks[0].map((p) => p.main).filter(Boolean),
         away: picks[1].map((p) => p.main).filter(Boolean),
       };
+      // Absicherung gegen veralteten Zustand: ein Ranking-Gewicht, das
+      // inzwischen anderweitig belegt ist, wird auf neutral zurückgesetzt.
+      let gewichtungSicher = gewichtung;
+      if (rankingModus && gewicht !== 1 && gewichtBelegtVon(gewicht)) gewichtungSicher = { gewicht: 1 };
       await getStore().saveTip({
         roundId, matchId: SNAP.matchId, userId: user.id,
         // Gewichtung nur mitschicken, wenn sie erlaubt UND noch nicht gesperrt ist.
-        tip: { home: h, away: a, goals, ...(jokerAktiv && !gesperrt ? gewichtung : {}) },
+        tip: { home: h, away: a, goals, ...(jokerAktiv && !gesperrt ? gewichtungSicher : {}) },
         snapshot: SNAP,
       });
       setSaveState("saved");
@@ -296,22 +329,28 @@ export default function Tippabgabe({ matchId }) {
                 {rankingModus ? (
                   <>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                      {/* ×1,0 (neutral) ist immer wählbar; höhere Gewichte nur, wenn
+                          sie an diesem Spieltag noch nicht auf einem anderen Spiel liegen. */}
                       {RULES.joker.faktoren.map((f) => {
                         const on = gewicht === f;
+                        const belegtVon = f === 1 ? null : gewichtBelegtVon(f);
+                        const blockiert = !!belegtVon && !on;
                         return (
-                          <button key={f} disabled={gesperrt}
-                            onClick={() => setGewicht(f)} style={{
-                              cursor: gesperrt ? "default" : "pointer", fontFamily: MONO, fontSize: 13, fontWeight: 700,
+                          <button key={f} disabled={gesperrt || blockiert}
+                            title={blockiert ? "Dieses Gewicht liegt schon auf einem anderen Spiel dieses Spieltags" : undefined}
+                            onClick={() => setGewicht(on ? 1 : f)} style={{
+                              cursor: gesperrt || blockiert ? "default" : "pointer", fontFamily: MONO, fontSize: 13, fontWeight: 700,
                               padding: "8px 14px", borderRadius: 999,
                               background: on ? `${C.gold}22` : C.surface,
-                              color: on ? C.gold : C.muted,
+                              color: on ? C.gold : blockiert ? "rgba(138,144,180,0.4)" : C.muted,
                               border: `1px solid ${on ? C.gold + "77" : C.line}`,
+                              textDecoration: blockiert ? "line-through" : "none",
                             }}>×{f.toFixed(1)}</button>
                         );
                       })}
                     </div>
                     <p style={{ fontSize: 10.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
-                      Jedes Gewicht darfst du pro Spieltag nur einmal vergeben. Übrige Spiele zählen ×1,0.
+                      Jedes Gewicht nur einmal pro Spieltag — vergebene sind ausgegraut. Übrige Spiele zählen ×1,0.
                     </p>
                   </>
                 ) : (
