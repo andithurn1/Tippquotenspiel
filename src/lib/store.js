@@ -10,6 +10,7 @@
 //   listRoundsForUser(userId)   ← alle Runden, in denen der User Mitglied ist
 //   publishPreset({name,rules,creatorId}) · getPresetByCode(code)   ← Kurzcode-Presets
 //   saveTip({roundId,matchId,userId,tip,snapshot}) · listTips({roundId,matchId})
+//   saveVote({roundId,matchday,userId,ja}) · listVotes({roundId})   ← Joker-Abstimmung
 //   getLeaderboard(roundId) · getLeaderboardHistory(roundId)   ← rechnen über die Engine
 
 import { hasSupabaseEnv } from "./supabaseClient";

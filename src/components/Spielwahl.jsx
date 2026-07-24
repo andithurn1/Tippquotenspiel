@@ -8,6 +8,7 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { filterMatchesByTeams } from "@/lib/roundStatus";
 import { DEFAULT_RULES, weightUsageForMatchday } from "@/lib/engine";
+import { jokerGiltFuerSpieltag } from "@/lib/voting";
 
 const C = {
   ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040", surface2: "#232A50",
@@ -32,13 +33,15 @@ export default function Spielwahl() {
   const [tippedIds, setTippedIds] = useState(new Set());
   const [rules, setRules] = useState(DEFAULT_RULES);
   const [meineTips, setMeineTips] = useState([]);   // { match_id, matchday, gewicht }
+  const [votes, setVotes] = useState([]);           // Joker-Abstimmung der Runde
 
   useEffect(() => {
     let live = true;
-    Promise.all([getStore().getRound(roundId), getStore().listMatches()]).then(([round, ms]) => {
+    Promise.all([getStore().getRound(roundId), getStore().listMatches(), getStore().listVotes({ roundId })]).then(([round, ms, vs]) => {
       if (!live) return;
       setTeamFilter(round?.team_filter ?? null);
       setRules(round?.rules ?? DEFAULT_RULES);
+      setVotes(vs);
       const relevant = filterMatchesByTeams(ms, round?.team_filter);
       setMatches([...relevant].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)));
     });
@@ -91,7 +94,10 @@ export default function Spielwahl() {
         )}
 
         {matchdays.map((md) => {
-          const belegung = rankingModus ? weightUsageForMatchday(meineTips, md, rules) : null;
+          // Ranking-Leiste nur zeigen, wenn der Joker an diesem Spieltag gilt
+          // (bei aktiver Abstimmung also nur an beschlossenen Spieltagen).
+          const belegung = rankingModus && jokerGiltFuerSpieltag(rules, md, votes)
+            ? weightUsageForMatchday(meineTips, md, rules) : null;
           const gewichtVon = (id) => meineTips.find((t) => t.match_id === id)?.gewicht;
           return (
             <div key={md} style={{ marginBottom: 20 }}>

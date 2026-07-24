@@ -439,6 +439,17 @@ export default function Spielerstellung() {
                   </p>
                 </>
               )}
+
+              {/* Gemeinsame Abstimmung, an welchen Spieltagen es einen Joker gibt */}
+              <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 6, paddingTop: 10 }}>
+                <Toggle label="Spieltage gemeinsam abstimmen" on={j.abstimmung === true}
+                  onChange={(on) => patchJoker({ abstimmung: on })} />
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                  {j.abstimmung
+                    ? "Die Runde stimmt ab: Joker gibt es nur an Spieltagen mit Mehrheit."
+                    : "Aus = Joker an jedem Spieltag. An = die Runde entscheidet per Mehrheit, welche Spieltage einen Joker bekommen."}
+                </p>
+              </div>
             </div>
           )}
 

@@ -143,6 +143,19 @@ export function createSupabaseStore() {
       return orThrow(await q);
     },
 
+    // ── Joker-Abstimmung ────────────────────────────────────
+    // Eine Stimme je Nutzer/Runde/Spieltag (unique-Constraint) → upsert.
+    async saveVote({ roundId, matchday, userId, ja }) {
+      return orThrow(await sb
+        .from("votes")
+        .upsert({ round_id: roundId, matchday, user_id: userId, ja: ja === true },
+          { onConflict: "round_id,matchday,user_id" })
+        .select().single());
+    },
+    async listVotes({ roundId }) {
+      return orThrow(await sb.from("votes").select("*").eq("round_id", roundId));
+    },
+
     async getLeaderboard(roundId) {
       const [round, members, tips, matches] = await Promise.all([
         this.getRound(roundId),

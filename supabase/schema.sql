@@ -89,6 +89,21 @@ create table if not exists public.tips (
   unique (round_id, match_id, user_id)
 );
 
+-- ── Joker-Abstimmung (eine Stimme je Nutzer/Runde/Spieltag) ─
+-- ja = true (Joker an diesem Spieltag) / false (dagegen). Die Auswertung
+-- (Mehrheit → Joker-Spieltag) passiert in der Engine (voting.js), die DB
+-- hält nur die Rohstimmen. unique-Constraint erlaubt das upsert beim Umstimmen.
+create table if not exists public.votes (
+  round_id   uuid not null references public.rounds(id) on delete cascade,
+  matchday   int  not null,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  ja         boolean not null,
+  created_at timestamptz not null default now(),
+  primary key (round_id, matchday, user_id)
+);
+
+create index if not exists votes_round_idx on public.votes (round_id);
+
 -- ── Kurzcode-Presets (Content-Creator-Codes) ───────────────
 -- Ein geteiltes Regelwerk unter einem kurzen, merkbaren Code — statt des
 -- langen Text-Creator-Codes. rules = per sanitizeRules() gültiges Regelwerk.
@@ -139,6 +154,7 @@ alter table public.rounds        enable row level security;
 alter table public.round_members enable row level security;
 alter table public.tips          enable row level security;
 alter table public.presets       enable row level security;
+alter table public.votes         enable row level security;
 
 -- Profile: jeder Eingeloggte darf lesen; eigenes Profil schreiben.
 drop policy if exists "profiles_read"        on public.profiles;
@@ -218,4 +234,25 @@ create policy "tips_insert_self" on public.tips for insert to authenticated
                 where m.round_id = tips.round_id and m.user_id = auth.uid())
   );
 create policy "tips_update_own" on public.tips for update to authenticated
+  using (user_id = auth.uid());
+
+-- Abstimmung: Mitglieder derselben Runde sehen ALLE Stimmen (die Auszählung
+-- braucht sie, und wie man abstimmt ist ohnehin ein Gemeinschaftsentscheid).
+-- Setzen/Ändern darf jeder nur die eigene Stimme und nur in einer Runde, in
+-- der er Mitglied ist.
+drop policy if exists "votes_read_same_round" on public.votes;
+drop policy if exists "votes_insert_self"     on public.votes;
+drop policy if exists "votes_update_self"     on public.votes;
+create policy "votes_read_same_round" on public.votes for select to authenticated
+  using (
+    exists (select 1 from public.round_members m
+            where m.round_id = votes.round_id and m.user_id = auth.uid())
+  );
+create policy "votes_insert_self" on public.votes for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and exists (select 1 from public.round_members m
+                where m.round_id = votes.round_id and m.user_id = auth.uid())
+  );
+create policy "votes_update_self" on public.votes for update to authenticated
   using (user_id = auth.uid());

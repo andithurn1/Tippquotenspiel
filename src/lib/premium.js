@@ -29,6 +29,11 @@ export const PREMIUM_FEATURES = [
     label: "Joker & Gewichtung",
     desc: "Einzelne Spiele höher gewichten — als einzelner Joker oder als Rangliste über alle Spiele.",
   },
+  {
+    key: "abstimmung",
+    label: "Joker-Abstimmung",
+    desc: "Die Runde stimmt gemeinsam ab, an welchen Spieltagen es einen Joker gibt.",
+  },
 ];
 
 // Regelwerk auf die Berechtigung zurechtstutzen: ohne Premium werden

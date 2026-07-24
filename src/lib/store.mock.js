@@ -55,6 +55,7 @@ export function createMockStore() {
     id: `tip-${t.userId}`, round_id: ROUND_ID, match_id: SNAP.matchId,
     user_id: t.userId, tip: t.tip, snapshot: SNAP,
   }));
+  const votes = [];   // Joker-Abstimmung: { round_id, matchday, user_id, ja }
 
   const nameOf = (userId) => members.find((m) => m.user_id === userId)?.name ?? userId;
 
@@ -141,6 +142,19 @@ export function createMockStore() {
     },
     async listTips({ roundId, matchId }) {
       return tips.filter((t) => t.round_id === roundId && (!matchId || t.match_id === matchId));
+    },
+
+    // ── Joker-Abstimmung ────────────────────────────────────
+    // Eine Stimme je Nutzer/Runde/Spieltag; erneutes Abstimmen überschreibt.
+    async saveVote({ roundId, matchday, userId, ja }) {
+      const existing = votes.find((v) => v.round_id === roundId && v.matchday === matchday && v.user_id === userId);
+      if (existing) { existing.ja = ja === true; return existing; }
+      const row = { round_id: roundId, matchday, user_id: userId, ja: ja === true };
+      votes.push(row);
+      return row;
+    },
+    async listVotes({ roundId }) {
+      return votes.filter((v) => v.round_id === roundId);
     },
 
     // Leaderboard: Rohdaten sammeln, Engine rechnet.

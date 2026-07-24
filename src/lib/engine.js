@@ -80,7 +80,10 @@ export const DEFAULT_RULES = {
   //              dadurch ist die Gewichtung ein echtes Ranking: alle haben
   //              denselben Pool, die Kunst ist die Verteilung. Ohne diese Regel
   //              würde jeder überall das Maximum setzen und der Modus wäre wertlos.
-  joker: { enabled: false, modus: "einzel", faktor: 1.5, faktoren: [2, 1.5, 1.2, 1] },
+  // abstimmung: die Runde stimmt gemeinsam ab, an WELCHEN Spieltagen es einen
+  // Joker gibt (statt an jedem). Premium-Funktion; die Auszählung liegt in
+  // voting.js, die Durchsetzung greift in Tippabgabe/Spielwahl.
+  joker: { enabled: false, modus: "einzel", faktor: 1.5, faktoren: [2, 1.5, 1.2, 1], abstimmung: false },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -122,6 +125,7 @@ function sanitizeJoker(jk, num, clamp) {
     modus: jk.modus === "ranking" ? "ranking" : "einzel",
     faktor: clamp(num(jk.faktor, D.faktor), L.faktor.min, L.faktor.max),
     faktoren: faktoren.length >= L.anzahlFaktoren.min ? faktoren : [...D.faktoren],
+    abstimmung: jk.abstimmung === true,
   };
 }
 

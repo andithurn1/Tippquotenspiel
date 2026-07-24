@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { DEFAULT_RULES, projectTip, weightUsageForMatchday } from "@/lib/engine";
+import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -56,6 +57,7 @@ export default function Tippabgabe({ matchId }) {
   // Andere Tipps des Nutzers in dieser Runde — für „welche Gewichte am selben
   // Spieltag sind schon vergeben" (Ranking-Modus).
   const [meineTips, setMeineTips] = useState([]);
+  const [votes, setVotes] = useState([]);   // Joker-Abstimmung der Runde
 
   useEffect(() => {
     let live = true;
@@ -87,8 +89,9 @@ export default function Tippabgabe({ matchId }) {
   useEffect(() => {
     if (!user) return;
     let live = true;
-    Promise.all([getStore().listTips({ roundId }), getStore().listMatches()]).then(([tips, ms]) => {
+    Promise.all([getStore().listTips({ roundId }), getStore().listMatches(), getStore().listVotes({ roundId })]).then(([tips, ms, vs]) => {
       if (!live) return;
+      setVotes(vs);
       const mdOf = new Map(ms.map((m) => [m.id, m.matchday ?? null]));
       const eigene = tips
         .filter((t) => t.user_id === user.id)
@@ -136,7 +139,9 @@ export default function Tippabgabe({ matchId }) {
   // nachträglich auf ein bereits gutes Spiel legen. Gleiche Logik wie beim
   // Quoten-Snapshot.
   const gesperrt = Date.now() >= new Date(SNAP.kickoff).getTime();
-  const jokerAktiv = RULES.joker?.enabled === true;
+  // Joker ist aktiv, wenn das Regelwerk ihn erlaubt UND (falls per Abstimmung
+  // geregelt) dieser Spieltag beschlossen wurde.
+  const jokerAktiv = jokerGiltFuerSpieltag(RULES, match.matchday ?? null, votes);
   const rankingModus = RULES.joker?.modus === "ranking";
   // Ranking: welche Gewichte hat der Nutzer an DIESEM Spieltag schon vergeben?
   // Der eigene Tipp ist ausgenommen (man stellt ihn ja gerade ein).
