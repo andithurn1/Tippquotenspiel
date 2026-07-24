@@ -11,7 +11,7 @@
 // ============================================================
 
 import { generateMatchOdds } from "./oddsGenerator";
-import { scoreTip } from "./engine";
+import { scoreTip, maxJokerFactor, DEFAULT_RULES, RULE_LIMITS } from "./engine";
 
 // Jede Spielart: Team-Stärken (für den Generator), ein plausibles REALES
 // Ergebnis (Anker der Wertung) und 2–3 nahe Tipps zum Vergleich.
@@ -84,22 +84,62 @@ function snapshots() {
   return _snaps;
 }
 
+// Die Spielart-Snapshots nach außen — EINE Quelle dafür, „wie sieht ein
+// typisches Spiel aus". Der Balance-Simulator baut darauf auf, statt eigene
+// Archetypen zu duplizieren.
+export function archetypeSnapshots() {
+  return snapshots();
+}
+
 // Für ein Regelwerk: je Spielart die nahen Tipps mit ihren angezeigten Punkten,
 // plus die Sieger-Quote des realen Ausgangs (macht den Underdog-Boost greifbar).
 export function previewArchetypes(rules) {
+  // Höchstes verfügbares Gewicht — damit die Vorschau die Spitzenwirkung des
+  // Jokers zeigt („was, wenn ich AUSGERECHNET dieses Spiel hochgewichte?").
+  const jokerMax = maxJokerFactor(rules);
   return snapshots().map((a) => {
     const sgn = a.real.home > a.real.away ? "home" : a.real.home < a.real.away ? "away" : "draw";
     const winnerQuote = a.snap.winner[sgn];
-    const tips = a.tips.map((t) => ({
-      kind: t.kind,
-      tip: t.tip,
-      points: scoreTip({ ...t.tip, goals: { home: [], away: [] } }, a.real, a.snap, rules).total,
-    }));
+    const tips = a.tips.map((t) => {
+      const basis = { ...t.tip, goals: { home: [], away: [] } };
+      return {
+        kind: t.kind,
+        tip: t.tip,
+        points: scoreTip(basis, a.real, a.snap, rules).total,
+        // null = Joker im Regelwerk aus (die UI blendet die Spalte dann aus).
+        pointsJoker: jokerMax > 1
+          ? scoreTip({ ...basis, joker: true, gewicht: jokerMax }, a.real, a.snap, rules).total
+          : null,
+      };
+    });
     // Höchster Tipp der Spielart, damit die UI den Spitzenwert hervorheben kann.
     const best = Math.max(...tips.map((t) => t.points));
     return {
       key: a.key, label: a.label, hint: a.hint,
       real: a.real, winnerQuote: +winnerQuote.toFixed(1), tips, best,
+      jokerFaktorMax: jokerMax,
     };
   });
+}
+
+// Empfohlene Anzeige-Skalierung: so gewählt, dass ein exakter Tipp im Schnitt
+// über alle Spielarten ungefähr `ziel` Punkte zeigt — der höchste Joker-Faktor
+// eingerechnet, damit die Spitzenwerte nicht aus dem angenehmen Bereich laufen.
+// (Schaltet der Admin also 2× ein, sinkt die Empfehlung etwa auf die Hälfte.)
+// Reine Empfehlung für die UI — Fairness und Rang bleiben davon unberührt,
+// displayScale skaliert nur die Anzeige.
+export function recommendedDisplayScale(rules, ziel = 500) {
+  const L = RULE_LIMITS.displayScale;
+  const roh = snapshots()
+    .map((a) => {
+      const exakt = a.tips.find((t) => t.kind === "exakt") || a.tips[0];
+      // Roh rechnen: ohne Skalierung und ohne Deckel, sonst misst man sich selbst.
+      return scoreTip({ ...exakt.tip, goals: { home: [], away: [] } }, a.real, a.snap,
+        { ...rules, displayScale: 1, perGameCap: null }).raw;
+    })
+    .filter((v) => v > 0);
+  if (!roh.length) return DEFAULT_RULES.displayScale;
+  const schnitt = roh.reduce((s, v) => s + v, 0) / roh.length;
+  const spitze = schnitt * maxJokerFactor(rules);
+  return Math.min(L.max, Math.max(L.min, Math.round(ziel / spitze)));
 }

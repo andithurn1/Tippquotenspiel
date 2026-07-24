@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { DEFAULT_RULES, projectTip } from "@/lib/engine";
+import { DEFAULT_RULES, projectTip, weightUsageForMatchday } from "@/lib/engine";
+import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -21,7 +22,8 @@ const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 // ── Eine Quelle: Engine liefert das Regelwerk, der Store das Match ──
 // Der Screen RENDERT nur: schaltet der Admin markets.goals aus
 // oder picksPerTeam auf 1, ändert sich die Oberfläche mit.
-const RULES = DEFAULT_RULES;
+// Regelwerk kommt aus der aktiven Runde (Fallback: Default) — vorher war es hier
+// hart verdrahtet, dadurch wirkten Admin-Einstellungen beim Tippen gar nicht.
 
 const risk = (q) =>
   q == null ? { label: "—", col: C.muted }
@@ -44,10 +46,18 @@ export default function Tippabgabe({ matchId }) {
   const [h, setH] = useState(2);
   const [a, setA] = useState(1);
   const [roundName, setRoundName] = useState(null);
+  const [RULES, setRules] = useState(DEFAULT_RULES);
   const scorer = RULES.markets.goals;
   const [picks, setPicks] = useState(null);
   const [done, setDone] = useState(false);
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error
+  // Gewichtung dieses Spiels: Flag (Modus „einzel") bzw. Faktor (Modus „ranking").
+  const [joker, setJoker] = useState(false);
+  const [gewicht, setGewicht] = useState(1);
+  // Andere Tipps des Nutzers in dieser Runde — für „welche Gewichte am selben
+  // Spieltag sind schon vergeben" (Ranking-Modus).
+  const [meineTips, setMeineTips] = useState([]);
+  const [votes, setVotes] = useState([]);   // Joker-Abstimmung der Runde
 
   useEffect(() => {
     let live = true;
@@ -58,14 +68,41 @@ export default function Tippabgabe({ matchId }) {
       setPicks(initialPicks(m.snapshot, scorer, teams));
     });
     return () => { live = false; };
+    // Picks hängen an der Pick-Anzahl des Regelwerks — kommt es später aus der
+    // Runde nach, werden sie einmal neu aufgebaut.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId]);
+  }, [matchId, scorer.picksPerTeam]);
 
   useEffect(() => {
     let live = true;
-    getStore().getRound(roundId).then((r) => { if (live) setRoundName(r?.name ?? null); }).catch(() => {});
+    getStore().getRound(roundId).then((r) => {
+      if (!live) return;
+      setRoundName(r?.name ?? null);
+      setRules(r?.rules ?? DEFAULT_RULES);
+    }).catch(() => {});
     return () => { live = false; };
   }, [roundId]);
+
+  // Eigene Tipps laden (für belegte Ranking-Gewichte am selben Spieltag) und
+  // ein evtl. schon gesetztes Gewicht/den Joker dieses Spiels vorbelegen.
+  // matchday je Tipp fehlt in den Roh-Rows → aus dem Match-Katalog nachreichen.
+  useEffect(() => {
+    if (!user) return;
+    let live = true;
+    Promise.all([getStore().listTips({ roundId }), getStore().listMatches(), getStore().listVotes({ roundId })]).then(([tips, ms, vs]) => {
+      if (!live) return;
+      setVotes(vs);
+      const mdOf = new Map(ms.map((m) => [m.id, m.matchday ?? null]));
+      const eigene = tips
+        .filter((t) => t.user_id === user.id)
+        .map((t) => ({ match_id: t.match_id, matchday: mdOf.get(t.match_id) ?? null, gewicht: t.tip?.gewicht }));
+      setMeineTips(eigene);
+      const dieser = tips.find((t) => t.user_id === user.id && t.match_id === matchId);
+      if (dieser?.tip?.joker === true) setJoker(true);
+      if (Number.isFinite(dieser?.tip?.gewicht)) setGewicht(dieser.tip.gewicht);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [roundId, user, matchId]);
 
   if (!match || !picks) {
     return (
@@ -98,7 +135,23 @@ export default function Tippabgabe({ matchId }) {
     home: picks[0].map((p) => p.main).filter(Boolean),
     away: picks[1].map((p) => p.main).filter(Boolean),
   };
-  const proj = projectTip({ home: h, away: a, goals: projGoals }, SNAP, RULES);
+  // Ab Anpfiff ist die Gewichtung eingefroren — sonst könnte man den Joker
+  // nachträglich auf ein bereits gutes Spiel legen. Gleiche Logik wie beim
+  // Quoten-Snapshot.
+  const gesperrt = Date.now() >= new Date(SNAP.kickoff).getTime();
+  // Joker ist aktiv, wenn das Regelwerk ihn erlaubt UND (falls per Abstimmung
+  // geregelt) dieser Spieltag beschlossen wurde.
+  const jokerAktiv = jokerGiltFuerSpieltag(RULES, match.matchday ?? null, votes);
+  const rankingModus = RULES.joker?.modus === "ranking";
+  // Ranking: welche Gewichte hat der Nutzer an DIESEM Spieltag schon vergeben?
+  // Der eigene Tipp ist ausgenommen (man stellt ihn ja gerade ein).
+  const belegung = rankingModus
+    ? weightUsageForMatchday(meineTips, match.matchday ?? null, RULES, matchId)
+    : null;
+  const gewichtBelegtVon = (g) => belegung?.belegt.find((b) => b.gewicht === g)?.matchId ?? null;
+  // Gewichtung fließt in die Vorschau ein, damit man sofort sieht, was sie bringt.
+  const gewichtung = rankingModus ? { gewicht } : { joker };
+  const proj = projectTip({ home: h, away: a, goals: projGoals, ...gewichtung }, SNAP, RULES);
 
   const setPick = (ti, pi, field, val) =>
     setPicks((prev) => prev.map((team, i) =>
@@ -116,9 +169,15 @@ export default function Tippabgabe({ matchId }) {
         home: picks[0].map((p) => p.main).filter(Boolean),
         away: picks[1].map((p) => p.main).filter(Boolean),
       };
+      // Absicherung gegen veralteten Zustand: ein Ranking-Gewicht, das
+      // inzwischen anderweitig belegt ist, wird auf neutral zurückgesetzt.
+      let gewichtungSicher = gewichtung;
+      if (rankingModus && gewicht !== 1 && gewichtBelegtVon(gewicht)) gewichtungSicher = { gewicht: 1 };
       await getStore().saveTip({
         roundId, matchId: SNAP.matchId, userId: user.id,
-        tip: { home: h, away: a, goals }, snapshot: SNAP,
+        // Gewichtung nur mitschicken, wenn sie erlaubt UND noch nicht gesperrt ist.
+        tip: { home: h, away: a, goals, ...(jokerAktiv && !gesperrt ? gewichtungSicher : {}) },
+        snapshot: SNAP,
       });
       setSaveState("saved");
     } catch {
@@ -260,6 +319,67 @@ export default function Tippabgabe({ matchId }) {
                 <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
                   Nur eine Aussicht auf dein getipptes Ergebnis — die echte Wertung richtet sich nach dem realen Ausgang.
                 </p>
+              </div>
+            )}
+
+            {/* Gewichtung dieses Spiels (nur wenn das Regelwerk sie erlaubt) */}
+            {jokerAktiv && (
+              <div style={{
+                marginTop: 18, background: `${C.gold}0E`, border: `1px solid ${C.gold}33`,
+                borderRadius: 14, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
+              }}>
+                <div style={{ fontSize: 11, color: C.gold, textTransform: "uppercase", letterSpacing: 1 }}>
+                  {rankingModus ? "Gewicht dieses Spiels" : "Joker"}
+                </div>
+                {rankingModus ? (
+                  <>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                      {/* ×1,0 (neutral) ist immer wählbar; höhere Gewichte nur, wenn
+                          sie an diesem Spieltag noch nicht auf einem anderen Spiel liegen. */}
+                      {RULES.joker.faktoren.map((f) => {
+                        const on = gewicht === f;
+                        const belegtVon = f === 1 ? null : gewichtBelegtVon(f);
+                        const blockiert = !!belegtVon && !on;
+                        return (
+                          <button key={f} disabled={gesperrt || blockiert}
+                            title={blockiert ? "Dieses Gewicht liegt schon auf einem anderen Spiel dieses Spieltags" : undefined}
+                            onClick={() => setGewicht(on ? 1 : f)} style={{
+                              cursor: gesperrt || blockiert ? "default" : "pointer", fontFamily: MONO, fontSize: 13, fontWeight: 700,
+                              padding: "8px 14px", borderRadius: 999,
+                              background: on ? `${C.gold}22` : C.surface,
+                              color: on ? C.gold : blockiert ? "rgba(138,144,180,0.4)" : C.muted,
+                              border: `1px solid ${on ? C.gold + "77" : C.line}`,
+                              textDecoration: blockiert ? "line-through" : "none",
+                            }}>×{f.toFixed(1)}</button>
+                        );
+                      })}
+                    </div>
+                    <p style={{ fontSize: 10.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
+                      Jedes Gewicht nur einmal pro Spieltag — vergebene sind ausgegraut. Übrige Spiele zählen ×1,0.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <button disabled={gesperrt} onClick={() => setJoker((v) => !v)} style={{
+                      marginTop: 10, width: "100%", cursor: gesperrt ? "default" : "pointer",
+                      fontFamily: "inherit", fontSize: 13.5, fontWeight: 700,
+                      background: joker ? `${C.gold}22` : C.surface,
+                      color: joker ? C.gold : C.muted,
+                      border: `1px solid ${joker ? C.gold + "77" : C.line}`,
+                      borderRadius: 12, padding: "11px 0",
+                    }}>
+                      {joker ? `✓ Joker gesetzt · ×${RULES.joker.faktor.toFixed(1)}` : `Joker setzen · ×${RULES.joker.faktor.toFixed(1)}`}
+                    </button>
+                    <p style={{ fontSize: 10.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
+                      Nur ein Spiel pro Spieltag. Zählt in beide Richtungen — auch ein Reinfall wiegt schwerer.
+                    </p>
+                  </>
+                )}
+                {gesperrt && (
+                  <p style={{ fontSize: 11, color: C.coral, marginTop: 8, lineHeight: 1.4 }}>
+                    Angepfiffen — die Gewichtung ist eingefroren.
+                  </p>
+                )}
               </div>
             )}
 

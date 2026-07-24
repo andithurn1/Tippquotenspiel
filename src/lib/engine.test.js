@@ -3,6 +3,7 @@ import {
   createMockOddsSource, DEFAULT_RULES, RULE_LIMITS,
   scoreResult, scoreGoals, scoreTip, applyCombo, toDisplay,
   encodePreset, decodePreset, sanitizeRules, scoreLeaderboard, scoreLeaderboardHistory, projectTip,
+  jokerFactor, maxJokerFactor, invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday,
 } from "./engine";
 
 const odds = createMockOddsSource();
@@ -361,5 +362,160 @@ describe("scoreLeaderboardHistory — kumulativer Rang-Verlauf je Spieltag", () 
   it("Einträge ohne matchday werden ignoriert (keine Historie ohne Zuordnung)", () => {
     const history = scoreLeaderboardHistory([{ userId: "u1", name: "Du", tip: { home: 1, away: 0 }, ...base }]);
     expect(history).toEqual([]);
+  });
+});
+
+describe("Joker — Gewichtung einzelner Spiele", () => {
+  const AN = { enabled: true, faktor: 2 };
+  const tipp = { home: 4, away: 1, goals: { home: ["Al-Naimat"], away: ["Yamal"] } };
+
+  it("Standard-Regelwerk hat den Joker aus (neutrales No-op)", () => {
+    expect(DEFAULT_RULES.joker.enabled).toBe(false);
+    expect(jokerFactor({ ...tipp, joker: true }, DEFAULT_RULES)).toBe(1);
+  });
+
+  it("greift nur, wenn Regelwerk aktiv UND Tipp markiert ist", () => {
+    const rules = { ...DEFAULT_RULES, joker: AN };
+    expect(jokerFactor({ ...tipp, joker: true }, rules)).toBe(2);
+    expect(jokerFactor(tipp, rules)).toBe(1);                       // nicht markiert
+    expect(jokerFactor({ ...tipp, joker: true }, DEFAULT_RULES)).toBe(1); // Regel aus
+  });
+
+  it("skaliert die Gesamtwertung — Ergebnis UND Tore zusammen", () => {
+    const rules = { ...DEFAULT_RULES, joker: AN };
+    const ohne = scoreTip(tipp, result, snap, rules);
+    const mit = scoreTip({ ...tipp, joker: true }, result, snap, rules);
+    expect(ohne.jokerMult).toBe(1);
+    expect(mit.jokerMult).toBe(2);
+    expect(mit.raw).toBeCloseTo(ohne.raw * 2, 5);
+  });
+
+  it("wirkt NACH der Kombi, schaukelt sich also nicht mit ihr auf", () => {
+    // Erwartung: exakt eine Multiplikation mit dem Faktor, nicht Faktor²
+    const rules = { ...DEFAULT_RULES, joker: { enabled: true, faktor: 1.5 } };
+    const ohne = scoreTip(tipp, result, snap, rules);
+    const mit = scoreTip({ ...tipp, joker: true }, result, snap, rules);
+    expect(mit.raw / ohne.raw).toBeCloseTo(1.5, 5);
+  });
+
+  it("wirkt symmetrisch — verstärkt auch ein Minus (echte Wette, kein Gratis-Bonus)", () => {
+    // wrongPenalty greift nur, wenn der Ergebnis-Teil wirklich 0 ist. Die
+    // Team-Tore-Nähe zahlt aber siegerunabhängig (und teamGoals.home[5] ist mit 55
+    // eine hohe Quote) — erst mit steilen Nähe-Kurven fallen die Boni unter den
+    // minPayout-Cutoff, und der Malus kommt überhaupt zum Tragen.
+    const rules = { ...DEFAULT_RULES, k: 1.6, m: 1.6, wrongPenalty: -2, joker: AN };
+    const daneben = { home: 0, away: 5, goals: { home: [], away: [] } }; // Sieger falsch, nichts getroffen
+    const ohne = scoreTip(daneben, result, snap, rules);
+    const mit = scoreTip({ ...daneben, joker: true }, result, snap, rules);
+    expect(ohne.raw).toBeLessThan(0);
+    expect(mit.raw).toBeCloseTo(ohne.raw * 2, 5);
+  });
+
+  it("sanitizeRules: Faktor wird auf RULE_LIMITS beschnitten, enabled bleibt strikt boolesch", () => {
+    const hoch = sanitizeRules({ joker: { enabled: true, faktor: 99 } });
+    expect(hoch.joker.faktor).toBe(RULE_LIMITS.joker.faktor.max);
+    const tief = sanitizeRules({ joker: { enabled: "ja", faktor: 0 } });
+    expect(tief.joker.faktor).toBe(RULE_LIMITS.joker.faktor.min);
+    expect(tief.joker.enabled).toBe(false);   // nur echtes true zählt
+  });
+
+  it("sanitizeRules: fehlender Joker-Block fällt auf den Default zurück", () => {
+    expect(sanitizeRules({}).joker).toEqual(DEFAULT_RULES.joker);
+  });
+
+  it("Creator-Code transportiert die Joker-Einstellung mit", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, faktor: 1.8 } });
+    const zurueck = sanitizeRules(decodePreset(encodePreset(rules))).joker;
+    expect(zurueck.enabled).toBe(true);
+    expect(zurueck.faktor).toBe(1.8);
+    expect(zurueck.modus).toBe("einzel");
+  });
+
+  it("invalidJokerMatchdays meldet Spieltage mit mehr als einem Joker", () => {
+    expect(invalidJokerMatchdays([
+      { matchday: 1, joker: true }, { matchday: 1 }, { matchday: 2, joker: true },
+    ])).toEqual([]);
+    expect(invalidJokerMatchdays([
+      { matchday: 1, joker: true }, { matchday: 1, joker: true },
+    ])).toEqual([1]);
+    expect(invalidJokerMatchdays([])).toEqual([]);
+  });
+
+  it("maxJokerFactor: 1 wenn aus, sonst Einzelfaktor bzw. größter Pool-Wert", () => {
+    expect(maxJokerFactor(DEFAULT_RULES)).toBe(1);
+    expect(maxJokerFactor({ ...DEFAULT_RULES, joker: { ...DEFAULT_RULES.joker, enabled: true, faktor: 1.7 } })).toBe(1.7);
+    expect(maxJokerFactor({ ...DEFAULT_RULES, joker: { enabled: true, modus: "ranking", faktoren: [1.2, 2, 1] } })).toBe(2);
+  });
+
+  it("Ranking-Modus: das Gewicht des Tipps zählt, aber nur aus dem Pool", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1] } });
+    expect(jokerFactor({ ...tipp, gewicht: 1.5 }, rules)).toBe(1.5);
+    expect(jokerFactor({ ...tipp, gewicht: 2 }, rules)).toBe(2);
+    expect(jokerFactor({ ...tipp, gewicht: 3 }, rules)).toBe(1);      // nicht im Pool → neutral
+    expect(jokerFactor({ ...tipp, joker: true }, rules)).toBe(1);     // Einzel-Markierung zählt hier nicht
+    expect(jokerFactor(tipp, rules)).toBe(1);                         // ohne Gewicht
+  });
+
+  it("Ranking-Modus: scoreTip skaliert mit dem gesetzten Gewicht", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1] } });
+    const neutral = scoreTip({ ...tipp, gewicht: 1 }, result, snap, rules);
+    const schwer = scoreTip({ ...tipp, gewicht: 2 }, result, snap, rules);
+    expect(schwer.raw).toBeCloseTo(neutral.raw * 2, 5);
+  });
+
+  it("sanitizeRules: Ranking-Pool wird beschnitten, entdoppelt und absteigend sortiert", () => {
+    const r = sanitizeRules({ joker: { enabled: true, modus: "ranking", faktoren: [1.5, 99, 1.5, 0.1, 1.2] } });
+    expect(r.joker.modus).toBe("ranking");
+    expect(r.joker.faktoren).toEqual([2, 1.5, 1.2, 1]);   // 99→2, 0.1→1, Dublette raus, sortiert
+  });
+
+  it("sanitizeRules: unbrauchbarer Pool fällt auf den Default-Pool zurück", () => {
+    expect(sanitizeRules({ joker: { faktoren: ["quatsch"] } }).joker.faktoren).toEqual(DEFAULT_RULES.joker.faktoren);
+    expect(sanitizeRules({ joker: { modus: "unsinn" } }).joker.modus).toBe("einzel");
+  });
+
+  it("invalidWeightMatchdays: jeder Pool-Faktor nur einmal pro Spieltag, 1 ist frei", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1] } });
+    expect(invalidWeightMatchdays([
+      { matchday: 1, gewicht: 2 }, { matchday: 1, gewicht: 1.5 }, { matchday: 1, gewicht: 1 }, { matchday: 1, gewicht: 1 },
+    ], rules)).toEqual([]);
+    expect(invalidWeightMatchdays([
+      { matchday: 1, gewicht: 2 }, { matchday: 1, gewicht: 2 },
+    ], rules)).toEqual([1]);
+    expect(invalidWeightMatchdays([{ matchday: 2, gewicht: 1.7 }], rules)).toEqual([2]); // nicht im Pool
+    expect(invalidWeightMatchdays([], rules)).toEqual([]);
+  });
+
+  it("weightUsageForMatchday: freie vs. belegte Gewichte je Spieltag", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1.2, 1] } });
+    const tips = [
+      { match_id: "a", matchday: 1, gewicht: 2 },
+      { match_id: "b", matchday: 1, gewicht: 1.5 },
+      { match_id: "c", matchday: 2, gewicht: 2 },   // anderer Spieltag → egal
+    ];
+    const u = weightUsageForMatchday(tips, 1, rules);
+    expect(u.frei).toEqual([1.2]);                                 // 2 und 1.5 vergeben, 1 ist neutral
+    expect(u.alleVergeben).toBe(false);
+    expect(u.belegt.find((b) => b.gewicht === 2).matchId).toBe("a");
+    expect(u.belegt.find((b) => b.gewicht === 1.2).matchId).toBeNull();
+  });
+
+  it("weightUsageForMatchday: der eigene Tipp blockiert sein Gewicht nicht", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1] } });
+    const tips = [{ match_id: "a", matchday: 1, gewicht: 2 }];
+    // Beim Bearbeiten von "a" soll 2 wieder als frei gelten (man stellt es ja gerade ein).
+    expect(weightUsageForMatchday(tips, 1, rules, "a").frei).toEqual([2, 1.5]);
+    expect(weightUsageForMatchday(tips, 1, rules, "b").frei).toEqual([1.5]);
+  });
+
+  it("Leaderboard rechnet den Joker mit — ein gejokertes Spiel hebt die Gesamtsumme", () => {
+    const rules = { ...DEFAULT_RULES, joker: AN };
+    const base = { snapshot: snap, result, rules };
+    const board = scoreLeaderboard([
+      { userId: "u1", name: "Ohne", tip: tipp, ...base },
+      { userId: "u2", name: "Mit", tip: { ...tipp, joker: true }, ...base },
+    ], rules);
+    expect(board[0].userId).toBe("u2");
+    expect(board[0].total).toBeGreaterThan(board[1].total);
   });
 });

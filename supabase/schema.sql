@@ -9,11 +9,28 @@
 -- ============================================================
 
 -- ── Profile (1:1 zu auth.users) ─────────────────────────────
+-- avatar = id aus dem Katalog in src/lib/avatars.js (z. B. "fan-schal").
+-- Bewusst ein Text-Feld statt einer Bild-Referenz: hochgeladene Fotos sind
+-- eine eigene Baustelle (Moderation, Rechte, Speicher). Ein späterer Upload
+-- wird als "url:<adresse>" abgelegt — dafür muss die Spalte nicht wandern.
+-- premium_until = Zeitpunkt, bis zu dem Premium gilt (null = kein Premium).
+-- Bewusst ein Datum statt eines Boolean: Abos passen später ohne Schema-Umbau
+-- hinein. Solange es keinen Bezahlweg gibt, setzt man das Feld von Hand:
+--   update public.profiles set premium_until = now() + interval '1 year'
+--   where id = '<user-uuid>';
+-- Schreiben darf das NUR service_role (siehe RLS unten) — sonst könnte sich
+-- jeder selbst Premium eintragen.
 create table if not exists public.profiles (
-  id           uuid primary key references auth.users on delete cascade,
-  display_name text not null,
-  created_at   timestamptz not null default now()
+  id            uuid primary key references auth.users on delete cascade,
+  display_name  text not null,
+  avatar        text,
+  premium_until timestamptz,
+  created_at    timestamptz not null default now()
 );
+
+-- Für Bestands-Datenbanken aus einer früheren Schema-Version (idempotent).
+alter table public.profiles add column if not exists avatar text;
+alter table public.profiles add column if not exists premium_until timestamptz;
 
 -- ── Matches (das, worauf getippt wird) ──────────────────────
 -- snapshot = eingefrorene Quoten (Form der Engine-Quoten-Quelle),
@@ -72,6 +89,21 @@ create table if not exists public.tips (
   unique (round_id, match_id, user_id)
 );
 
+-- ── Joker-Abstimmung (eine Stimme je Nutzer/Runde/Spieltag) ─
+-- ja = true (Joker an diesem Spieltag) / false (dagegen). Die Auswertung
+-- (Mehrheit → Joker-Spieltag) passiert in der Engine (voting.js), die DB
+-- hält nur die Rohstimmen. unique-Constraint erlaubt das upsert beim Umstimmen.
+create table if not exists public.votes (
+  round_id   uuid not null references public.rounds(id) on delete cascade,
+  matchday   int  not null,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  ja         boolean not null,
+  created_at timestamptz not null default now(),
+  primary key (round_id, matchday, user_id)
+);
+
+create index if not exists votes_round_idx on public.votes (round_id);
+
 -- ── Kurzcode-Presets (Content-Creator-Codes) ───────────────
 -- Ein geteiltes Regelwerk unter einem kurzen, merkbaren Code — statt des
 -- langen Text-Creator-Codes. rules = per sanitizeRules() gültiges Regelwerk.
@@ -122,6 +154,7 @@ alter table public.rounds        enable row level security;
 alter table public.round_members enable row level security;
 alter table public.tips          enable row level security;
 alter table public.presets       enable row level security;
+alter table public.votes         enable row level security;
 
 -- Profile: jeder Eingeloggte darf lesen; eigenes Profil schreiben.
 drop policy if exists "profiles_read"        on public.profiles;
@@ -130,6 +163,15 @@ drop policy if exists "profiles_update_self" on public.profiles;
 create policy "profiles_read"        on public.profiles for select to authenticated using (true);
 create policy "profiles_insert_self" on public.profiles for insert to authenticated with check (id = auth.uid());
 create policy "profiles_update_self" on public.profiles for update to authenticated using (id = auth.uid());
+
+-- WICHTIG: Die Policy oben erlaubt das Ändern des EIGENEN Profils — ohne
+-- weitere Einschränkung könnte sich damit jeder selbst `premium_until`
+-- setzen. RLS kennt keine Spalten-Einschränkung, deshalb hier zusätzlich
+-- Spalten-Rechte: Eingeloggte dürfen nur Name und Avatar schreiben.
+-- premium_until bleibt allein service_role vorbehalten (umgeht RLS ohnehin)
+-- und wird damit nur serverseitig bzw. von Hand gesetzt.
+revoke update on public.profiles from authenticated;
+grant  update (display_name, avatar) on public.profiles to authenticated;
 
 -- Matches: für alle Eingeloggten lesbar (Schreiben nur serverseitig
 -- via service_role, das RLS umgeht — z. B. Quoten-/Ergebnis-Job).
@@ -192,4 +234,25 @@ create policy "tips_insert_self" on public.tips for insert to authenticated
                 where m.round_id = tips.round_id and m.user_id = auth.uid())
   );
 create policy "tips_update_own" on public.tips for update to authenticated
+  using (user_id = auth.uid());
+
+-- Abstimmung: Mitglieder derselben Runde sehen ALLE Stimmen (die Auszählung
+-- braucht sie, und wie man abstimmt ist ohnehin ein Gemeinschaftsentscheid).
+-- Setzen/Ändern darf jeder nur die eigene Stimme und nur in einer Runde, in
+-- der er Mitglied ist.
+drop policy if exists "votes_read_same_round" on public.votes;
+drop policy if exists "votes_insert_self"     on public.votes;
+drop policy if exists "votes_update_self"     on public.votes;
+create policy "votes_read_same_round" on public.votes for select to authenticated
+  using (
+    exists (select 1 from public.round_members m
+            where m.round_id = votes.round_id and m.user_id = auth.uid())
+  );
+create policy "votes_insert_self" on public.votes for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and exists (select 1 from public.round_members m
+                where m.round_id = votes.round_id and m.user_id = auth.uid())
+  );
+create policy "votes_update_self" on public.votes for update to authenticated
   using (user_id = auth.uid());

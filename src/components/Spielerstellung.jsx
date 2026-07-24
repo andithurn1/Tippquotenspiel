@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   DEFAULT_RULES, RULE_LIMITS,
   encodePreset, decodePreset, sanitizeRules,
 } from "@/lib/engine";
 import { PRESETS } from "@/lib/presets";
+import { recommendedDisplayScale } from "@/lib/rulePreview";
+import { isPremium } from "@/lib/premium";
 import { TEAM_RATINGS } from "@/lib/bundesligaData";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
@@ -13,8 +15,21 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
+import BalanceAmpel from "@/components/BalanceAmpel";
 
 const ALL_TEAMS = Object.keys(TEAM_RATINGS);
+
+// Ranking-Pool aus zwei verständlichen Reglern erzeugen: höchstes Gewicht und
+// Anzahl der Stufen. Dazwischen gleichmäßig bis 1 herunter — so ist der Pool
+// immer gültig (absteigend, ohne Dubletten), ohne dass der Admin einzelne
+// Faktoren von Hand pflegen muss.
+function buildWeightPool(max, anzahl) {
+  const arr = [];
+  for (let i = 0; i < anzahl; i++) {
+    arr.push(+(max - ((max - 1) * i) / (anzahl - 1)).toFixed(1));
+  }
+  return [...new Set(arr)].sort((a, b) => b - a);
+}
 
 // ── Design-Tokens (gleich wie die anderen Screens) ──────────
 const C = {
@@ -27,7 +42,10 @@ const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 export default function Spielerstellung() {
   const { user } = useAuth();
   const { setRoundId } = useCurrentRound();
-  const [rules, setRules] = useState(DEFAULT_RULES);
+  // Start aus dem Standard-Preset (nicht aus DEFAULT_RULES): DEFAULT_RULES ist
+  // der technische Fallback ohne Balance-Dämpfung — als Startwert für einen
+  // Admin wäre das eine unausgewogene Runde.
+  const [rules, setRules] = useState(() => sanitizeRules(PRESETS[0].rules));
   const [presetKey, setPresetKey] = useState("standard");
   const [teamFilterOn, setTeamFilterOn] = useState(false);
   const [selectedTeams, setSelectedTeams] = useState([]);
@@ -53,6 +71,22 @@ export default function Spielerstellung() {
   const patchCombo = (p) => { touched(); setRules((r) => ({ ...r, combo: { ...r.combo, ...p } })); };
   const patchMarkets = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, ...p } })); };
   const patchGoals = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, goals: { ...r.markets.goals, ...p } } })); };
+  const patchJoker = (p) => { touched(); setRules((r) => ({ ...r, joker: { ...r.joker, ...p } })); };
+
+  // Empfohlene Anzeige-Skalierung — hängt am Regelwerk inkl. Joker-Faktor.
+  const empfohleneSkala = useMemo(() => recommendedDisplayScale(rules), [rules]);
+
+  // Premium des Admins: schaltet die Gewichtung frei. Die Anzeige hier ist
+  // nur Komfort — durchgesetzt wird beim Anlegen im Store (applyEntitlements).
+  const [premium, setPremium] = useState(false);
+  useEffect(() => {
+    if (!user) { setPremium(false); return; }
+    let live = true;
+    getStore().getProfile(user.id)
+      .then((p) => { if (live) setPremium(isPremium(p)); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [user]);
 
   const code = useMemo(() => encodePreset(rules), [rules]);
 
@@ -128,6 +162,7 @@ export default function Spielerstellung() {
 
   const L = RULE_LIMITS;
   const g = rules.markets.goals;
+  const j = rules.joker;
 
   return (
     <div style={{
@@ -177,8 +212,15 @@ export default function Spielerstellung() {
                   border: `1px solid ${active ? C.gold + "66" : C.line}`,
                   borderRadius: 14, padding: "12px 14px", color: C.text,
                 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 14, fontWeight: 700 }}>{p.label}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>
+                      {p.label}
+                      {/* Ohne Premium greift der Joker-Anteil nicht — das gehört
+                          sichtbar an den Preset, nicht erst in eine Fehlermeldung. */}
+                      {p.premium && !premium && (
+                        <span style={{ fontSize: 12, color: C.gold, marginLeft: 6 }} title="Premium-Funktion">🔒</span>
+                      )}
+                    </span>
                     {active && (
                       <span style={{
                         fontFamily: MONO, fontSize: 10, color: C.gold, border: `1px solid ${C.gold}55`,
@@ -207,6 +249,9 @@ export default function Spielerstellung() {
 
           {/* Live-Vorschau über typische Spielarten */}
           <RegelVorschau rules={rules} />
+
+          {/* Balance-Ampel: eine Aussage, ob die Runde noch ein Tippspiel bleibt */}
+          <BalanceAmpel rules={rules} />
 
           {/* Reale Verteilung + Underdog-Neigung des Regelwerks */}
           <PresetRating rules={rules} />
@@ -256,6 +301,23 @@ export default function Spielerstellung() {
           <Slider label="Punkte-Skalierung" value={rules.displayScale} {...L.displayScale}
             onChange={(v) => patch({ displayScale: v })} fmt={(x) => "×" + x}
             hint="Nur Optik: macht schöne hohe Zahlen. Fairness & Ranking bleiben unberührt." />
+          {rules.displayScale !== empfohleneSkala && (
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+              background: `${C.gold}12`, border: `1px solid ${C.gold}33`, borderRadius: 12,
+              padding: "9px 12px", marginBottom: 10,
+            }}>
+              <span style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.4 }}>
+                Empfohlen: <strong style={{ color: C.gold }}>×{empfohleneSkala}</strong> — hält
+                exakte Tipps bei angenehmen Werten{j.enabled ? " (Gewichtung eingerechnet)" : ""}.
+              </span>
+              <button onClick={() => patch({ displayScale: empfohleneSkala })} style={{
+                cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 700,
+                background: C.surface2, color: C.gold, border: `1px solid ${C.gold}44`,
+                borderRadius: 10, padding: "7px 12px", whiteSpace: "nowrap",
+              }}>übernehmen</button>
+            </div>
+          )}
           <Slider label="Mindest-Auszahlung (Cutoff)" value={rules.minPayout} {...L.minPayout}
             onChange={(v) => patch({ minPayout: v })} fmt={(x) => x.toFixed(1)}
             hint="Nähe-Boni unter diesem Wert zählen nicht." />
@@ -294,6 +356,107 @@ export default function Spielerstellung() {
                 onChange={(on) => patchGoals({ allowDouble: on })} />
               <Toggle label="Backup-Schützen erlaubt" on={g.allowBackups}
                 onChange={(on) => patchGoals({ allowBackups: on })} />
+            </div>
+          )}
+
+          {/* Joker / Gewichtung */}
+          <SectionTitle>Joker &amp; Gewichtung</SectionTitle>
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+            Lässt Tipper einzelne Spiele höher gewichten. Der Faktor greift auf die
+            fertige Wertung — Ergebnis <em>und</em> Torschützen zusammen — und wirkt in
+            beide Richtungen: ein gewichtetes Spiel, das danebengeht, tut auch mehr weh.
+          </p>
+          {!premium ? (
+            <div style={{
+              background: `${C.gold}12`, border: `1px solid ${C.gold}44`,
+              borderRadius: 14, padding: "13px 15px", marginBottom: 8,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>
+                🔒 Premium-Funktion
+              </div>
+              <p style={{ fontSize: 11.5, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
+                Es genügt, wenn <strong>du als Admin</strong> Premium hast — die ganze
+                Runde kann dann gewichten. Alle anderen Regler bleiben frei nutzbar.
+              </p>
+            </div>
+          ) : (
+            <Toggle label="Gewichtung erlauben" on={j.enabled}
+              onChange={(on) => patchJoker({ enabled: on })} />
+          )}
+
+          {premium && j.enabled && (
+            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
+              <Field label="Modus">
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[
+                    { key: "einzel", label: "Ein Joker", hint: "Ein Spiel pro Spieltag" },
+                    { key: "ranking", label: "Rangliste", hint: "Alle Spiele ranken" },
+                  ].map((m) => {
+                    const on = j.modus === m.key;
+                    return (
+                      <button key={m.key} onClick={() => patchJoker({ modus: m.key })} style={{
+                        cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
+                        borderRadius: 10, flex: 1, textAlign: "left",
+                        background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
+                        border: `1px solid ${on ? C.gold + "66" : C.line}`,
+                      }}>
+                        <div style={{ fontWeight: 700 }}>{m.label}</div>
+                        <div style={{ fontSize: 10.5, opacity: 0.8, marginTop: 2 }}>{m.hint}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+
+              {/* Im Ranking-Modus ist der Pool die Wahrheit — sonst zeigte der
+                  Regler einen anderen Wert als die Stufen darunter. */}
+              <Slider label={j.modus === "ranking" ? "Höchstes Gewicht" : "Joker-Faktor"}
+                value={j.modus === "ranking" ? j.faktoren[0] : j.faktor} {...L.joker.faktor}
+                onChange={(v) => patchJoker(j.modus === "ranking"
+                  ? { faktor: v, faktoren: buildWeightPool(v, j.faktoren.length) }
+                  : { faktor: v })}
+                fmt={(x) => "×" + x.toFixed(1)}
+                hint={j.modus === "ranking"
+                  ? "Das stärkste Gewicht der Rangliste. Die übrigen Stufen liegen gleichmäßig darunter."
+                  : "Womit das markierte Spiel multipliziert wird."} />
+
+              {j.modus === "ranking" && (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
+                    <span style={{ fontSize: 13, color: C.muted }}>Stufen</span>
+                    <Stepper value={j.faktoren.length} min={L.joker.anzahlFaktoren.min} max={L.joker.anzahlFaktoren.max}
+                      onStep={(d) => {
+                        const n = Math.min(L.joker.anzahlFaktoren.max, Math.max(L.joker.anzahlFaktoren.min, j.faktoren.length + d));
+                        patchJoker({ faktoren: buildWeightPool(j.faktor, n) });
+                      }} />
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                    {j.faktoren.map((f) => (
+                      <span key={f} style={{
+                        fontSize: 12, fontFamily: MONO, padding: "5px 10px", borderRadius: 999,
+                        background: f > 1 ? `${C.gold}18` : C.surface,
+                        color: f > 1 ? C.gold : C.muted,
+                        border: `1px solid ${f > 1 ? C.gold + "44" : C.line}`,
+                      }}>×{f.toFixed(1)}</span>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 11, color: C.muted, marginBottom: 8, lineHeight: 1.4 }}>
+                    Jedes Gewicht darf pro Spieltag nur <strong>einmal</strong> vergeben werden —
+                    alle haben denselben Pool, die Verteilung ist die Kunst. Übrige Spiele zählen ×1,0.
+                  </p>
+                </>
+              )}
+
+              {/* Gemeinsame Abstimmung, an welchen Spieltagen es einen Joker gibt */}
+              <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 6, paddingTop: 10 }}>
+                <Toggle label="Spieltage gemeinsam abstimmen" on={j.abstimmung === true}
+                  onChange={(on) => patchJoker({ abstimmung: on })} />
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                  {j.abstimmung
+                    ? "Die Runde stimmt ab: Joker gibt es nur an Spieltagen mit Mehrheit."
+                    : "Aus = Joker an jedem Spieltag. An = die Runde entscheidet per Mehrheit, welche Spieltage einen Joker bekommen."}
+                </p>
+              </div>
             </div>
           )}
 

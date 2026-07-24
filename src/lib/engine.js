@@ -65,6 +65,25 @@ export const DEFAULT_RULES = {
   // härter). 0 = aus. Wird vom Gesamt-Ergebnis abgezogen, aber bei 0 gedeckelt
   // (kein tiefes Minus) — richtig getippte Underdog-Tore federn also ab.
   favFlopPenalty: 0,
+  // Joker: der Tipper markiert EIN Spiel pro Spieltag (`tip.joker === true`),
+  // dessen Gesamtwertung mit `faktor` multipliziert wird — Ergebnis UND Tore,
+  // weil der Faktor erst nach der Kombi auf die Endsumme wirkt (sonst würde er
+  // sich mit Kombi/Underdog multiplikativ aufschaukeln). enabled=false ist ein
+  // neutrales No-op. Der Faktor wirkt SYMMETRISCH, also auch auf ein Minus aus
+  // wrongPenalty/favFlopPenalty — der Joker bleibt damit eine echte Wette statt
+  // eines Gratis-Aufschlags. Wer ihn einschalten DARF (Premium-Admin), ist keine
+  // Engine-Frage, sondern eine Berechtigung in Store/UI.
+  // Zwei Modi:
+  //  "einzel"  — der Tipper markiert EIN Spiel (`tip.joker === true`) → `faktor`.
+  //  "ranking" — jedes Spiel bekommt ein Gewicht (`tip.gewicht`) aus `faktoren`.
+  //              Jeder Pool-Wert darf pro Spieltag nur EINMAL vergeben werden,
+  //              dadurch ist die Gewichtung ein echtes Ranking: alle haben
+  //              denselben Pool, die Kunst ist die Verteilung. Ohne diese Regel
+  //              würde jeder überall das Maximum setzen und der Modus wäre wertlos.
+  // abstimmung: die Runde stimmt gemeinsam ab, an WELCHEN Spieltagen es einen
+  // Joker gibt (statt an jedem). Premium-Funktion; die Auszählung liegt in
+  // voting.js, die Durchsetzung greift in Tippabgabe/Spielwahl.
+  joker: { enabled: false, modus: "einzel", faktor: 1.5, faktoren: [2, 1.5, 1.2, 1], abstimmung: false },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -86,7 +105,29 @@ export const RULE_LIMITS = {
   underdogRampStart: { min: 1.2, max: 15, step: 0.1 },
   underdogRampEnd:   { min: 2,   max: 30, step: 0.5 },
   favFlopPenalty:    { min: 0,   max: 20, step: 1   },
+  joker: { faktor: { min: 1, max: 2, step: 0.1 }, anzahlFaktoren: { min: 2, max: 6, step: 1 } },
 };
+
+// Joker-Block eigenständig säubern: Modus, Einzelfaktor und Ranking-Pool.
+// Der Pool wird entdoppelt, auf die Faktor-Grenzen beschnitten und absteigend
+// sortiert; bleibt zu wenig übrig, gilt der Default-Pool.
+function sanitizeJoker(jk, num, clamp) {
+  const D = DEFAULT_RULES.joker, L = RULE_LIMITS.joker;
+  const roh = Array.isArray(jk.faktoren) ? jk.faktoren : D.faktoren;
+  const faktoren = [...new Set(roh
+    .map((v) => num(v, NaN))
+    .filter((v) => Number.isFinite(v))
+    .map((v) => +clamp(v, L.faktor.min, L.faktor.max).toFixed(1)))]
+    .sort((a, b) => b - a)
+    .slice(0, L.anzahlFaktoren.max);
+  return {
+    enabled: jk.enabled === true,
+    modus: jk.modus === "ranking" ? "ranking" : "einzel",
+    faktor: clamp(num(jk.faktor, D.faktor), L.faktor.min, L.faktor.max),
+    faktoren: faktoren.length >= L.anzahlFaktoren.min ? faktoren : [...D.faktoren],
+    abstimmung: jk.abstimmung === true,
+  };
+}
 
 // Nimmt ein (evtl. aus einem Creator-Code importiertes) Teil-Regelwerk und macht
 // daraus ein vollständiges, gültiges Regelwerk: fehlende Felder aus DEFAULT_RULES,
@@ -97,6 +138,7 @@ export function sanitizeRules(partial = {}) {
   const c = src.combo || {};
   const mk = src.markets || {};
   const g = mk.goals || {};
+  const jk = src.joker || {};
   const num = (v, d) => {
     if (typeof v === "number") return Number.isFinite(v) ? v : d;
     if (typeof v === "string" && v.trim() !== "" && Number.isFinite(+v)) return +v;
@@ -132,6 +174,7 @@ export function sanitizeRules(partial = {}) {
     underdogRampStart: clamp(num(src.underdogRampStart, D.underdogRampStart), L.underdogRampStart.min, L.underdogRampStart.max),
     underdogRampEnd: clamp(num(src.underdogRampEnd, D.underdogRampEnd), L.underdogRampEnd.min, L.underdogRampEnd.max),
     favFlopPenalty: clamp(num(src.favFlopPenalty, D.favFlopPenalty), L.favFlopPenalty.min, L.favFlopPenalty.max),
+    joker: sanitizeJoker(jk, num, clamp),
   };
 }
 
@@ -252,7 +295,90 @@ export function applyCombo(resultPart, ebene, goalsNet, rules = DEFAULT_RULES) {
   return ebene === "keiner" ? resultPart + goalsNet : (resultPart + goalsNet) * rules.combo[ebene];
 }
 
-// Gesamtwertung eines Tipps inkl. Kombi-Multiplikator und Favoriten-Malus.
+// Joker-Faktor eines Tipps: 1 (No-op), wenn der Joker im Regelwerk aus ist oder
+// der Tipp nicht markiert wurde. Greift auf die GESAMTWERTUNG (Ergebnis + Tore
+// nach Kombi), nicht auf Einzelteile — deshalb deckt ein Joker automatisch auch
+// die Torschützen mit ab, ohne zweiten Regler.
+export function jokerFactor(tip, rules = DEFAULT_RULES) {
+  const j = rules?.joker;
+  if (!j?.enabled) return 1;
+  if (j.modus === "ranking") {
+    // Nur Gewichte aus dem Pool zählen — alles andere ist neutral (1). Damit
+    // kann ein manipulierter Tipp keinen Fantasie-Faktor einschleusen.
+    const w = tip?.gewicht;
+    return Number.isFinite(w) && (j.faktoren || []).includes(w) ? w : 1;
+  }
+  if (tip?.joker !== true) return 1;
+  const f = j.faktor;
+  return Number.isFinite(f) && f > 0 ? f : 1;
+}
+
+// Höchster Faktor, den das Regelwerk überhaupt vergeben kann (1 = Joker aus).
+// Basis für Vorschau und Skalierungs-Empfehlung.
+export function maxJokerFactor(rules = DEFAULT_RULES) {
+  const j = rules?.joker;
+  if (!j?.enabled) return 1;
+  if (j.modus === "ranking") return Math.max(1, ...(j.faktoren || [1]));
+  return Number.isFinite(j.faktor) ? j.faktor : 1;
+}
+
+// Prüfregel „ein Joker pro Spieltag": gibt die Spieltage zurück, an denen ein
+// Nutzer mehr als einen Joker gesetzt hat (leeres Array = gültig). Reine
+// Prüfung — das Durchsetzen (Speichern verweigern) und vor allem das EINFRIEREN
+// ab Anpfiff sind Sache von Store/UI, analog zur Snapshot-Quote.
+export function invalidJokerMatchdays(tips = []) {
+  const counts = new Map();
+  for (const t of tips) {
+    if (t?.joker !== true) continue;
+    const md = t.matchday ?? null;
+    counts.set(md, (counts.get(md) || 0) + 1);
+  }
+  return [...counts.entries()].filter(([, n]) => n > 1).map(([md]) => md);
+}
+
+// Prüfregel für den Ranking-Modus: jeder Pool-Faktor darf pro Spieltag nur
+// EINMAL vergeben werden, und nur Werte aus dem Pool sind zulässig. Das neutrale
+// Gewicht 1 ist ausgenommen — es ist der Rest für alle übrigen Spiele.
+// Gibt die beanstandeten Spieltage zurück (leeres Array = gültig).
+export function invalidWeightMatchdays(tips = [], rules = DEFAULT_RULES) {
+  const pool = rules?.joker?.faktoren || [];
+  const belegt = new Map();      // matchday → Set vergebener Faktoren
+  const fehler = new Set();
+  for (const t of tips) {
+    const w = t?.gewicht;
+    if (!Number.isFinite(w) || w === 1) continue;
+    const md = t.matchday ?? null;
+    if (!pool.includes(w)) { fehler.add(md); continue; }
+    const used = belegt.get(md) || new Set();
+    if (used.has(w)) fehler.add(md);
+    used.add(w);
+    belegt.set(md, used);
+  }
+  return [...fehler];
+}
+
+// Belegung der Ranking-Gewichte für EINEN Spieltag — speist direkt die UI.
+// tips = die Tipps eines Nutzers (beliebige Spieltage, wird hier gefiltert).
+// Rückgabe: pro Pool-Gewicht, ob und auf welchem Match es liegt, plus die noch
+// freien Gewichte. `exceptMatchId` blendet den gerade bearbeiteten Tipp aus,
+// damit sein eigenes Gewicht beim Umstellen nicht als „belegt" gilt.
+export function weightUsageForMatchday(tips = [], matchday, rules = DEFAULT_RULES, exceptMatchId = null) {
+  const pool = rules?.joker?.faktoren || [];
+  const belegtVon = new Map();   // gewicht → matchId
+  for (const t of tips) {
+    if ((t.matchday ?? null) !== matchday) continue;
+    if (t.match_id === exceptMatchId || t.matchId === exceptMatchId) continue;
+    const w = t?.gewicht;
+    if (Number.isFinite(w) && w !== 1 && pool.includes(w) && !belegtVon.has(w)) {
+      belegtVon.set(w, t.match_id ?? t.matchId ?? null);
+    }
+  }
+  const belegt = pool.map((gewicht) => ({ gewicht, matchId: belegtVon.get(gewicht) ?? null }));
+  const frei = pool.filter((g) => g !== 1 && !belegtVon.has(g));
+  return { pool, belegt, frei, alleVergeben: frei.length === 0 };
+}
+
+// Gesamtwertung eines Tipps inkl. Kombi-Multiplikator, Favoriten-Malus und Joker.
 export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   const res = scoreResult(tip, actual, snap, rules);
   const goals = scoreGoals(tip.goals || { home: [], away: [] }, snap, rules, actual.playerGoals);
@@ -260,8 +386,11 @@ export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   // Favoriten-Reinfall: Abzug vom Gesamt-Roh-Wert, aber nicht unter 0
   // (kein tiefes Minus — die richtig getippten Underdog-Tore federn ab).
   const favFlop = favoriteFlopPenalty(tip, actual, snap, rules);
-  const raw = favFlop > 0 ? Math.max(0, combined - favFlop) : combined;
-  return { total: toDisplay(raw, rules), raw: +raw.toFixed(1), favFlop: +favFlop.toFixed(1), ...res, goals };
+  const afterFlop = favFlop > 0 ? Math.max(0, combined - favFlop) : combined;
+  // Joker ganz zuletzt: skaliert das fertige Ergebnis dieses einen Spiels.
+  const jokerMult = jokerFactor(tip, rules);
+  const raw = afterFlop * jokerMult;
+  return { total: toDisplay(raw, rules), raw: +raw.toFixed(1), favFlop: +favFlop.toFixed(1), jokerMult, ...res, goals };
 }
 
 
