@@ -42,7 +42,10 @@ const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 export default function Spielerstellung() {
   const { user } = useAuth();
   const { setRoundId } = useCurrentRound();
-  const [rules, setRules] = useState(DEFAULT_RULES);
+  // Start aus dem Standard-Preset (nicht aus DEFAULT_RULES): DEFAULT_RULES ist
+  // der technische Fallback ohne Balance-Dämpfung — als Startwert für einen
+  // Admin wäre das eine unausgewogene Runde.
+  const [rules, setRules] = useState(() => sanitizeRules(PRESETS[0].rules));
   const [presetKey, setPresetKey] = useState("standard");
   const [teamFilterOn, setTeamFilterOn] = useState(false);
   const [selectedTeams, setSelectedTeams] = useState([]);

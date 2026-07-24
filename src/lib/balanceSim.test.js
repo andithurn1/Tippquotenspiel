@@ -8,11 +8,24 @@ const KLEIN = { seasons: 25, matchdays: 9, perMatchday: 9, seed: 7 };
 describe("simulateBalance — Grundverhalten", () => {
   it("liefert plausible Kennzahlen im gültigen Bereich", () => {
     const r = simulateBalance(DEFAULT_RULES, KLEIN);
-    expect(r.koennerQuote + r.zockerQuote + r.unentschieden).toBeCloseTo(1, 2);
+    // Die Siegquoten aller Typen ergeben zusammen 1 (jede Saison hat genau
+    // einen Sieger).
+    const summe = r.profile.reduce((s, p) => s + p.siegquote, 0);
+    expect(summe).toBeCloseTo(1, 2);
+    expect(r.profile).toHaveLength(5);
     expect(r.punkteVerhaeltnis).toBeGreaterThan(0);
     expect(r.modifikatorAnteil).toBeGreaterThanOrEqual(0);
     expect(r.maximalfall).toBeGreaterThan(0);
     expect(["gruen", "gelb", "rot"]).toContain(r.ampel.stufe);
+  });
+
+  it("der Kenner erwischt rund jede vierte Überraschung (Modell-Richtwert)", () => {
+    const r = simulateBalance(DEFAULT_RULES, KLEIN);
+    const anteil = (k) => r.profile.find((p) => p.key === k).ueberraschungsAnteil;
+    expect(anteil("favorit")).toBe(0);          // tippt nie den Außenseiter
+    expect(anteil("zocker")).toBe(1);           // ist bei jeder dabei
+    expect(anteil("kenner")).toBeGreaterThan(0.15);
+    expect(anteil("kenner")).toBeLessThan(0.45);
   });
 
   it("ist deterministisch — gleicher Seed, gleiches Ergebnis", () => {
@@ -63,41 +76,46 @@ describe("simulateBalance — erkennt die Kipp-Punkte", () => {
   });
 });
 
-describe("bewerten — Ampel über das Punkte-Verhältnis", () => {
-  it("ausgewogen, wenn beide Strategien etwa gleichauf liegen", () => {
-    expect(bewerten(1.0, 0.05).stufe).toBe("gruen");
-    expect(bewerten(1.15, 0.1).stufe).toBe("gruen");
+describe("bewerten — Ampel danach, WER gewinnt", () => {
+  const lage = (patch) => bewerten({
+    gewinner: "kenner", kennerQuote: 0.6, zockerQuote: 0.1,
+    favoritQuote: 0.05, modifikatorAnteil: 0.05, ...patch,
   });
 
-  it("gelb, wenn Außenseiter-Setzen spürbar mehr bringt", () => {
-    expect(bewerten(1.25, 0.05).stufe).toBe("gelb");
+  it("grün, wenn der Kenner die Runde gewinnt", () => {
+    expect(lage({}).stufe).toBe("gruen");
   });
 
-  it("gelb auch bei zu hohem Modifikator-Anteil", () => {
-    expect(bewerten(1.0, 0.28).stufe).toBe("gelb");
+  it("grün auch, wenn der solide Tipper vorn liegt", () => {
+    expect(lage({ gewinner: "solide" }).stufe).toBe("gruen");
   });
 
-  it("gelb, wenn Überraschungen gar nicht mehr zahlen", () => {
-    const r = bewerten(0.6, 0.05);
-    expect(r.stufe).toBe("gelb");
-    expect(r.titel).toMatch(/favoritenlastig/);
-  });
-
-  it("rot, wenn Glück das Können klar schlägt", () => {
-    const r = bewerten(1.6, 0.05);
+  it("rot, wenn der Dauerzocker gewinnt", () => {
+    const r = lage({ gewinner: "zocker", zockerQuote: 0.6 });
     expect(r.stufe).toBe("rot");
     expect(r.titel).toMatch(/Glück/);
   });
 
-  it("rot, wenn Modifikatoren dominieren", () => {
-    const r = bewerten(1.0, 0.4);
+  it("gelb, wenn nur der Favoriten-Tipper gewinnt (Mut lohnt nicht)", () => {
+    const r = lage({ gewinner: "favorit", favoritQuote: 0.6 });
+    expect(r.stufe).toBe("gelb");
+    expect(r.titel).toMatch(/Mut/);
+  });
+
+  it("gelb, wenn wildes Tippen sich durchsetzt", () => {
+    expect(lage({ gewinner: "mutig" }).stufe).toBe("gelb");
+  });
+
+  it("rot, wenn Modifikatoren dominieren — unabhängig vom Sieger", () => {
+    const r = lage({ modifikatorAnteil: 0.4 });
     expect(r.stufe).toBe("rot");
     expect(r.titel).toMatch(/Modifikatoren/);
   });
 
-  it("jede Stufe hat Titel und Klartext", () => {
-    for (const [v, m] of [[1.0, 0.05], [1.25, 0.05], [1.6, 0.05], [1.0, 0.4], [0.6, 0.05]]) {
-      const r = bewerten(v, m);
+  it("jede Lage hat Titel und Klartext", () => {
+    for (const patch of [{}, { gewinner: "zocker", zockerQuote: 0.6 }, { gewinner: "favorit", favoritQuote: 0.6 },
+                         { gewinner: "mutig" }, { modifikatorAnteil: 0.4 }]) {
+      const r = lage(patch);
       expect(r.titel).toBeTruthy();
       expect(r.text.length).toBeGreaterThan(20);
     }

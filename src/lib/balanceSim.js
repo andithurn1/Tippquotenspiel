@@ -68,6 +68,33 @@ function impliedDistribution(snap) {
 //           Sieger-Quote), dort aber auf dessen wahrscheinlichsten Endstand.
 // Es geht also nicht um „wer rät wilder", sondern um die Frage, die dich
 // umtreibt: lohnt sich stures Außenseiter-Setzen mehr als gutes Tippen?
+// ── Tipper-Typen ────────────────────────────────────────────
+// In einer echten Runde tippt niemand stur nur Favoriten oder nur Außenseiter.
+// Diese Population bildet gewöhnliches Verhalten ab: die meisten tippen
+// überwiegend Favoriten und wagen ab und zu eine Überraschung.
+//
+// `aussenseiter(istUeberraschung, rand)` entscheidet je Spiel, ob dieser Typ
+// auf den Außenseiter setzt. Der KENNER bekommt dabei eine höhere Trefferquote
+// bei echten Überraschungen — das ist die übliche Art, Sachverstand zu
+// modellieren (Können = Korrelation mit dem tatsächlichen Ausgang), nicht
+// Schummeln: er erwischt nur rund jede vierte Überraschung, liegt also meistens
+// auch daneben.
+//
+// ZIELBILD einer gesunden Runde: Der Kenner gewinnt am häufigsten — nicht der
+// Dauerzocker (reines Glück) und nicht der reine Favoriten-Tipper (kein Mut).
+export const PROFILE = [
+  { key: "favorit", label: "Favoriten-Tipper", desc: "tippt immer den Favoriten",
+    aussenseiter: () => false },
+  { key: "solide", label: "Solide", desc: "fast immer Favorit, selten mal mutig",
+    aussenseiter: (u, r) => r() < 0.12 },
+  { key: "kenner", label: "Kenner", desc: "wagt gezielt — erwischt ~jede 4. Überraschung",
+    aussenseiter: (u, r) => r() < (u ? 0.28 : 0.07) },
+  { key: "mutig", label: "Mutig", desc: "etwa jedes zweite Spiel Außenseiter",
+    aussenseiter: (u, r) => r() < 0.45 },
+  { key: "zocker", label: "Zocker", desc: "setzt stur auf Außenseiter",
+    aussenseiter: () => true },
+];
+
 function strategien(snap, verteilung) {
   let modal = null, upset = null;
   const aussenseiterIstHeim = (snap.winner?.home ?? 0) > (snap.winner?.away ?? 0);
@@ -114,48 +141,80 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
   const ohneMod = { ...rules, joker: { ...(rules.joker || {}), enabled: false } };
 
   const rand = rng(seed);
-  let zockerSiege = 0, koennerSiege = 0, gleich = 0;
+  const n = PROFILE.length;
+  const siege = new Array(n).fill(0);
+  const punkteGesamt = new Array(n).fill(0);
   let summeMit = 0, summeOhne = 0;
-  let punkteKoenner = 0, punkteZocker = 0;
+  // Wie oft war ein Typ bei einer echten Überraschung dabei (Anteil aller
+  // Überraschungen) — genau die Frage „jedes 4.–5. Mal dabei".
+  let ueberraschungen = 0;
+  const dabei = new Array(n).fill(0);
 
   for (let s = 0; s < seasons; s++) {
-    let koenner = 0, zocker = 0;
+    const saison = new Array(n).fill(0);
     for (let md = 0; md < matchdays; md++) {
-      // Spiele dieses Spieltags ziehen
       const arten = [];
       for (let m = 0; m < perMatchday; m++) arten.push(pickArt(rand()));
-      // Joker-Ziele bestimmen: Könner nimmt einen "favorit", Zocker einen "aussenseiter".
-      const jokerKoenner = hatModifikator ? arten.indexOf("favorit") : -1;
-      const jokerZocker = hatModifikator ? arten.indexOf("aussenseiter") : -1;
 
-      arten.forEach((art, idx) => {
+      // Erst alle Spiele des Spieltags auslosen — nötig, weil die Tipp-
+      // Entscheidung davon abhängt, ob es eine Überraschung wird.
+      const spiele = arten.map((art) => {
         const def = artOf.get(art);
-        const snap = def.snap;
         const real = pickWeighted(def.verteilung, rand());
-        const actual = { ...real, playerGoals: null };
+        const aussenseiterIstHeim = (def.snap.winner?.home ?? 0) > (def.snap.winner?.away ?? 0);
+        const ueberraschung = aussenseiterIstHeim ? real.home > real.away : real.away > real.home;
+        return { def, real, ueberraschung };
+      });
 
-        const tippK = { ...def.modal, goals: leer, joker: idx === jokerKoenner, gewicht: idx === jokerKoenner ? jokerMax : 1 };
-        const tippZ = { ...def.upset, goals: leer, joker: idx === jokerZocker, gewicht: idx === jokerZocker ? jokerMax : 1 };
+      // Je Typ entscheiden, wo er auf den Außenseiter setzt.
+      const wahl = PROFILE.map((p) => spiele.map((sp) => p.aussenseiter(sp.ueberraschung, rand)));
+      // Joker: jeder setzt ihn auf sein erstes Außenseiter-Spiel (dort ist am
+      // meisten zu holen), sonst aufs erste Spiel.
+      const jokerIdx = wahl.map((w) => {
+        if (!hatModifikator) return -1;
+        const i = w.indexOf(true);
+        return i >= 0 ? i : 0;
+      });
 
-        const pK = scoreTip(tippK, actual, snap, rules).total;
-        const pZ = scoreTip(tippZ, actual, snap, rules).total;
-        koenner += pK; zocker += pZ;
-        summeMit += pK + pZ;
-        summeOhne += scoreTip(tippK, actual, snap, ohneMod).total
-                   + scoreTip(tippZ, actual, snap, ohneMod).total;
+      spiele.forEach((sp, idx) => {
+        if (sp.ueberraschung) ueberraschungen += 1;
+        const actual = { ...sp.real, playerGoals: null };
+        for (let pi = 0; pi < n; pi++) {
+          const aufAussenseiter = wahl[pi][idx];
+          if (aufAussenseiter && sp.ueberraschung) dabei[pi] += 1;
+          const basis = aufAussenseiter ? sp.def.upset : sp.def.modal;
+          const mitJoker = idx === jokerIdx[pi];
+          const tipp = { ...basis, goals: leer, joker: mitJoker, gewicht: mitJoker ? jokerMax : 1 };
+          const punkte = scoreTip(tipp, actual, sp.def.snap, rules).total;
+          saison[pi] += punkte;
+          summeMit += punkte;
+          summeOhne += scoreTip(tipp, actual, sp.def.snap, ohneMod).total;
+        }
       });
     }
-    punkteKoenner += koenner; punkteZocker += zocker;
-    if (zocker > koenner) zockerSiege += 1;
-    else if (koenner > zocker) koennerSiege += 1;
-    else gleich += 1;
+    // Saisonsieger bestimmen
+    let best = 0;
+    for (let pi = 1; pi < n; pi++) if (saison[pi] > saison[best]) best = pi;
+    siege[best] += 1;
+    for (let pi = 0; pi < n; pi++) punkteGesamt[pi] += saison[pi];
   }
 
-  const zockerQuote = zockerSiege / seasons;
+  const idxOf = (key) => PROFILE.findIndex((p) => p.key === key);
+  const iKenner = idxOf("kenner"), iZocker = idxOf("zocker"), iFavorit = idxOf("favorit");
+
+  const profile = PROFILE.map((p, i) => ({
+    key: p.key, label: p.label, desc: p.desc,
+    siegquote: +(siege[i] / seasons).toFixed(3),
+    punkteSchnitt: Math.round(punkteGesamt[i] / seasons),
+    ueberraschungsAnteil: ueberraschungen > 0 ? +(dabei[i] / ueberraschungen).toFixed(3) : 0,
+  }));
+  const gewinner = profile.reduce((a, b) => (b.siegquote > a.siegquote ? b : a));
+
+  const zockerQuote = siege[iZocker] / seasons;
   // Aussagekräftiger als die Siegquote: Über viele Spiele kippt schon ein
   // winziger EV-Vorteil die Siegquote auf 100 %. Das Punkte-Verhältnis zeigt,
   // WIE GROSS der Vorteil ist. 1,0 = beide Strategien gleichauf.
-  const punkteVerhaeltnis = punkteKoenner > 0 ? punkteZocker / punkteKoenner : 1;
+  const punkteVerhaeltnis = punkteGesamt[iFavorit] > 0 ? punkteGesamt[iZocker] / punkteGesamt[iFavorit] : 1;
   const modifikatorAnteil = summeMit > 0 ? Math.max(0, (summeMit - summeOhne) / summeMit) : 0;
 
   // Maximalfall: bestes einzelnes Spiel — exakt getroffen, mit vollem Modifikator.
@@ -171,40 +230,51 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
   }
 
   return {
+    profile,
+    gewinner: gewinner.key,
+    kennerQuote: profile[iKenner].siegquote,
     zockerQuote: +zockerQuote.toFixed(3),
-    koennerQuote: +(koennerSiege / seasons).toFixed(3),
-    unentschieden: +(gleich / seasons).toFixed(3),
     punkteVerhaeltnis: +punkteVerhaeltnis.toFixed(2),
     modifikatorAnteil: +modifikatorAnteil.toFixed(3),
     maximalfall,
-    ampel: bewerten(punkteVerhaeltnis, modifikatorAnteil),
+    ampel: bewerten({
+      gewinner: gewinner.key,
+      kennerQuote: profile[iKenner].siegquote,
+      zockerQuote,
+      favoritQuote: profile[iFavorit].siegquote,
+      modifikatorAnteil,
+    }),
   };
 }
 
 // Verdichtet die Kennzahlen zu einer Ampel mit Klartext — eine Aussage,
 // kein Zahlenfriedhof. Schwellen bewusst konservativ: ein Tippspiel darf
 // Überraschungen belohnen, aber Können muss sich über die Saison durchsetzen.
-// Bewertet primär über das Punkte-Verhältnis (Zocker/Könner): 1,0 = beide
-// Strategien gleichauf, darunter lohnt gutes Tippen mehr, darüber das
-// Außenseiter-Setzen. Ein Tippspiel darf Überraschungen belohnen — aber wenn
-// stures Longshot-Setzen dauerhaft mehr einbringt, ist es kein Tippspiel mehr.
-export function bewerten(punkteVerhaeltnis, modifikatorAnteil) {
-  if (punkteVerhaeltnis >= 1.5) {
-    return { stufe: "rot", titel: "Glück schlägt Können",
-      text: "Wer stur auf Außenseiter setzt, holt hier deutlich mehr Punkte als ein guter Tipper. Nähe-Cutoff anheben, Sieger-Boden abschalten oder Strafe für Fehltipps einführen." };
-  }
+// Bewertet danach, WER in der simulierten Runde am häufigsten gewinnt.
+// Zielbild: der KENNER — jemand, der gezielt wagt und dabei etwa jede vierte
+// Überraschung erwischt. Gewinnt stattdessen der Dauerzocker, entscheidet
+// Glück; gewinnt der reine Favoriten-Tipper, lohnt Mut überhaupt nicht.
+export function bewerten({ gewinner, kennerQuote, zockerQuote, favoritQuote, modifikatorAnteil }) {
   if (modifikatorAnteil >= 0.35) {
     return { stufe: "rot", titel: "Modifikatoren dominieren",
       text: "Über ein Drittel aller Punkte kommt aus Jokern/Gewichten statt aus guten Tipps. Faktor senken oder seltener vergeben." };
   }
-  if (punkteVerhaeltnis >= 1.2 || modifikatorAnteil >= 0.25) {
-    return { stufe: "gelb", titel: "Sehr überraschungsfreudig",
-      text: "Außenseiter-Setzen lohnt sich hier spürbar mehr als solides Tippen. Bewusst so gewollt? Dann passt es — sonst etwas zurückdrehen." };
+  if (gewinner === "zocker" || zockerQuote >= 0.4) {
+    return { stufe: "rot", titel: "Glück schlägt Können",
+      text: "Wer stur auf Außenseiter setzt, gewinnt hier am häufigsten. Nähe-Cutoff anheben, Sieger-Boden abschalten oder Strafe für Fehltipps einführen." };
   }
-  if (punkteVerhaeltnis <= 0.7) {
-    return { stufe: "gelb", titel: "Sehr favoritenlastig",
-      text: "Überraschungen zahlen sich kaum aus — die Runde belohnt fast nur das Tippen der Favoriten." };
+  if (gewinner === "favorit" || favoritQuote >= 0.5) {
+    return { stufe: "gelb", titel: "Mut lohnt sich nicht",
+      text: "Wer immer nur den Favoriten tippt, gewinnt hier am häufigsten — Überraschungen zahlen zu wenig." };
+  }
+  if (gewinner === "mutig") {
+    return { stufe: "gelb", titel: "Etwas zu überraschungsfreudig",
+      text: "Wildes Tippen setzt sich hier durch. Bewusst so gewollt? Sonst Überraschungs-Prämie leicht zurückdrehen." };
+  }
+  if (modifikatorAnteil >= 0.25) {
+    return { stufe: "gelb", titel: "Modifikatoren wiegen schwer",
+      text: "Ein guter Teil der Punkte kommt aus Jokern/Gewichten. Für den Nervenkitzel okay — aber im Blick behalten." };
   }
   return { stufe: "gruen", titel: "Ausgewogen",
-    text: "Überraschungen zahlen sich aus, aber gute Tipps setzen sich über die Saison durch." };
+    text: `Gewinnt am häufigsten: ${gewinner === "kenner" ? "wer gezielt wagt" : "der solide Tipper"} — Mut zahlt sich aus, ohne dass Glück allein entscheidet.` };
 }
