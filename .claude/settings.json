@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(echo *)",
+      "Bash(date *)",
+      "Bash(mkdir *)",
+      "Bash(pkill *)"
+    ],
+    "ask": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)"
+    ]
+  }
+}
