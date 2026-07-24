@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "sync": "node scripts/sync-status.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
