@@ -22,6 +22,11 @@ export default function Fanfarben() {
   const preview = roles || { gold: C.gold, indigo: C.indigo, violet: C.violet };
   const dirty = JSON.stringify(draft) !== JSON.stringify(fanColors);
 
+  // Wurde eine gewählte Farbe zur Lesbarkeit aufgehellt? (Slot i → Rolle)
+  const ROLE_OF_SLOT = ["gold", "indigo", "violet"];
+  const wasLightened = (i) =>
+    roles && draft[i] && draft[i].toLowerCase() !== roles[ROLE_OF_SLOT[i]].toLowerCase();
+
   const setColor = (i, val) => setDraft((d) => d.map((c, idx) => (idx === i ? val : c)));
   const addColor = () => setDraft((d) => (d.length < 3 ? [...d, DEFAULTS[d.length]] : d));
   const removeColor = (i) => setDraft((d) => d.filter((_, idx) => idx !== i));
@@ -88,7 +93,15 @@ export default function Fanfarben() {
                 }} />
               </label>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{SLOTS[i]?.role || `Farbe ${i + 1}`}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                  {SLOTS[i]?.role || `Farbe ${i + 1}`}
+                  {wasLightened(i) && (
+                    <span title="Für Lesbarkeit leicht aufgehellt" style={{
+                      fontFamily: MONO, fontSize: 9, color: C.mint, textTransform: "uppercase",
+                      border: `1px solid ${C.mint}55`, borderRadius: 999, padding: "1px 6px", letterSpacing: 0.5,
+                    }}>aufgehellt</span>
+                  )}
+                </div>
                 <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.4 }}>{SLOTS[i]?.hint}</div>
               </div>
               <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{color.toUpperCase()}</span>

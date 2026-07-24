@@ -188,4 +188,6 @@ export const CLUB_PRESETS = [
   { id: "gruen-weiss", label: "Grün-Weiß", colors: ["#14804A", "#FFFFFF", "#4FD18B"] },
   { id: "rot-schwarz", label: "Rot-Schwarz", colors: ["#D2001E", "#151515", "#FF5470"] },
   { id: "himmelblau", label: "Himmelblau", colors: ["#3AA3E3", "#0B2A4A", "#7FD1F2"] },
+  { id: "schwarz-weiss", label: "Schwarz-Weiß", colors: ["#111111", "#FFFFFF", "#C9CCDA"] },
+  { id: "lila-weiss", label: "Lila-Weiß", colors: ["#7A3CD0", "#FFFFFF", "#B98BFF"] },
 ];
