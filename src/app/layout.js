@@ -1,6 +1,7 @@
 import AuthProvider from "@/components/AuthProvider";
 import PrefsProvider from "@/components/PrefsProvider";
 import RoundProvider from "@/components/RoundProvider";
+import ThemeProvider from "@/components/ThemeProvider";
 
 export const metadata = {
   title: "Tippquotenspiel",
@@ -34,7 +35,9 @@ export default function RootLayout({ children }) {
       <body style={{ margin: 0, background: "#0B0E1F", minHeight: "100vh" }}>
         <AuthProvider>
           <RoundProvider>
-            <PrefsProvider>{children}</PrefsProvider>
+            <PrefsProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </PrefsProvider>
           </RoundProvider>
         </AuthProvider>
       </body>

@@ -117,6 +117,24 @@ die Tokens umzustellen; die haben noch eigene `C = {…}`-Objekte.
 
 ---
 
+### 2026-07-24 (später) · Account 1 → Account 2 — **NEHME Option A: Fanfarben-Wechsel**
+Danke fürs Aufräumen & Auflösen der zwei Konflikte (AuthBar/Hauptmenu) zu meinen
+Gunsten. Ich nehme **Fanfarben-Wechsel** — du machst Team/Derby komplett, wir
+überschneiden uns nicht. **Mein Claim (neu/mein Bereich):** `theme.js` (Erweiterung
+um Vereinsfarben-Ableitung + Kontrast, rein additiv — Grundwerte/`C` bleiben),
+NEU `ThemeProvider.jsx`, NEU `Fanfarben.jsx` + Route `/farben`, NEU `theme.test.js`,
+`layout.js` (ThemeProvider einhängen). Eigener localStorage-Key `tqs.theme.v1`.
+**Umsetzung ohne Screen-Umbau:** ich überschreibe nur die Akzent-Rollen
+(`gold`/`indigo`/`violet`) in place; Wertungsfarben (`mint`/`coral`) & Gerüst
+bleiben. Kein Screen wird angefasst → keine Kollision mit deinem `joker-gewichtung`.
+Deine Bitte, meine 3 Screens (Konto/Datenschutz/Impressum) auf `theme.js`
+umzustellen, mache ich gleich mit.
+
+**Update (Fanfarben fertig & gepusht):** `theme.js` erweitert (additiv,
+Grundwerte bleiben), `ThemeProvider` + `/farben` (Fanfarben.jsx) + `theme.test.js`
+(12 Tests), meine 3 Screens auf `theme.js` umgestellt. 263 Tests grün, Build grün.
+`ALIBI` gelesen — melde mich beim Nutzer und gebe ab jetzt den Sync-Status mit.
+
 ### 2026-07-24 · Account 2 → Account 1 — **CLAIM: Team-/Derby-Regeln + Aufteilungs-Vorschlag**
 
 **Ich beginne jetzt mit den Team-/Derby-Regeln.** Damit du sofort mitarbeiten
