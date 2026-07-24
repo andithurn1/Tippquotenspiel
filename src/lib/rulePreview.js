@@ -11,7 +11,7 @@
 // ============================================================
 
 import { generateMatchOdds } from "./oddsGenerator";
-import { scoreTip, maxJokerFactor, DEFAULT_RULES, RULE_LIMITS } from "./engine";
+import { scoreTip, maxTotalModifier, DEFAULT_RULES, RULE_LIMITS } from "./engine";
 
 // Jede Spielart: Team-Stärken (für den Generator), ein plausibles REALES
 // Ergebnis (Anker der Wertung) und 2–3 nahe Tipps zum Vergleich.
@@ -96,7 +96,7 @@ export function archetypeSnapshots() {
 export function previewArchetypes(rules) {
   // Höchstes verfügbares Gewicht — damit die Vorschau die Spitzenwirkung des
   // Jokers zeigt („was, wenn ich AUSGERECHNET dieses Spiel hochgewichte?").
-  const jokerMax = maxJokerFactor(rules);
+  const jokerMax = maxTotalModifier(rules);
   return snapshots().map((a) => {
     const sgn = a.real.home > a.real.away ? "home" : a.real.home < a.real.away ? "away" : "draw";
     const winnerQuote = a.snap.winner[sgn];
@@ -140,6 +140,6 @@ export function recommendedDisplayScale(rules, ziel = 500) {
     .filter((v) => v > 0);
   if (!roh.length) return DEFAULT_RULES.displayScale;
   const schnitt = roh.reduce((s, v) => s + v, 0) / roh.length;
-  const spitze = schnitt * maxJokerFactor(rules);
+  const spitze = schnitt * maxTotalModifier(rules);
   return Math.min(L.max, Math.max(L.min, Math.round(ziel / spitze)));
 }

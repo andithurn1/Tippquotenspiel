@@ -3,7 +3,8 @@ import {
   createMockOddsSource, DEFAULT_RULES, RULE_LIMITS,
   scoreResult, scoreGoals, scoreTip, applyCombo, toDisplay,
   encodePreset, decodePreset, sanitizeRules, scoreLeaderboard, scoreLeaderboardHistory, projectTip,
-  jokerFactor, maxJokerFactor, invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday,
+  jokerFactor, maxJokerFactor, maxTotalModifier, teamModFactor, totalModifier,
+  invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday,
 } from "./engine";
 
 const odds = createMockOddsSource();
@@ -517,5 +518,102 @@ describe("Joker — Gewichtung einzelner Spiele", () => {
     ], rules);
     expect(board[0].userId).toBe("u2");
     expect(board[0].total).toBeGreaterThan(board[1].total);
+  });
+});
+
+describe("Team-/Derby-Modifikatoren", () => {
+  const DERBY_SNAP = { ...snap, derby: "Revierderby" };
+  const tipp = { home: 4, away: 1, goals: { home: [], away: [] } };
+
+  it("Standard-Regelwerk ist ein neutrales No-op", () => {
+    expect(DEFAULT_RULES.teamMods.derbyFaktor).toBe(1);
+    expect(teamModFactor(DERBY_SNAP, DEFAULT_RULES)).toBe(1);
+  });
+
+  it("Derby-Faktor greift nur, wenn der Snapshot als Derby markiert ist", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, teamMods: { derbyFaktor: 1.5 } });
+    expect(teamModFactor(DERBY_SNAP, rules)).toBe(1.5);
+    expect(teamModFactor(snap, rules)).toBe(1);          // kein Derby-Label
+  });
+
+  it("Vereins-Faktoren greifen fuer Heim und Gast", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, teamMods: { teams: { [snap.home]: 1.3 } } });
+    expect(teamModFactor(snap, rules)).toBeCloseTo(1.3, 5);
+    const gast = sanitizeRules({ ...DEFAULT_RULES, teamMods: { teams: { [snap.away]: 1.2 } } });
+    expect(teamModFactor(snap, gast)).toBeCloseTo(1.2, 5);
+  });
+
+  it("mehrere Treffer werden ADDITIV zusammengefasst, nicht multipliziert", () => {
+    // Derby 1.5 + Heim 1.3 + Gast 1.2  ->  1 + 0.5 + 0.3 + 0.2 = 2.0 (nicht 2.34)
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      teamMods: { derbyFaktor: 1.5, teams: { [snap.home]: 1.3, [snap.away]: 1.2 } },
+      modCap: 4,
+    });
+    expect(teamModFactor(DERBY_SNAP, rules)).toBeCloseTo(2.0, 5);
+  });
+
+  it("totalModifier fasst Joker UND Team-Mods additiv zusammen", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      joker: { enabled: true, modus: "einzel", faktor: 2 },
+      teamMods: { derbyFaktor: 1.5 },
+      modCap: 4,
+    });
+    const m = totalModifier({ ...tipp, joker: true }, DERBY_SNAP, rules);
+    expect(m.joker).toBe(2);
+    expect(m.team).toBeCloseTo(1.5, 5);
+    expect(m.faktor).toBeCloseTo(2.5, 5);   // 1 + 1.0 + 0.5 — multiplikativ waeren es 3.0
+    expect(m.gedeckelt).toBe(false);
+  });
+
+  it("der Deckel greift und wird gemeldet", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      joker: { enabled: true, modus: "einzel", faktor: 2 },
+      teamMods: { derbyFaktor: 2 },
+      modCap: 2.5,
+    });
+    const m = totalModifier({ ...tipp, joker: true }, DERBY_SNAP, rules);
+    expect(m.faktor).toBe(2.5);             // roh waere 1 + 1.0 + 1.0 = 3.0
+    expect(m.gedeckelt).toBe(true);
+  });
+
+  it("scoreTip wendet den zusammengefassten Faktor an", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, teamMods: { derbyFaktor: 1.5 }, modCap: 4 });
+    const ohne = scoreTip(tipp, result, snap, rules);
+    const mit = scoreTip(tipp, result, DERBY_SNAP, rules);
+    // `raw` ist auf eine Nachkommastelle gerundet — ein exakter Vergleich
+    // scheitert sonst an 71,5 vs. 71,55. Deshalb mit klarer Schranke prüfen.
+    expect(Math.abs(mit.raw - ohne.raw * 1.5)).toBeLessThan(0.2);
+    expect(mit.modifier.faktor).toBeCloseTo(1.5, 5);
+  });
+
+  it("sanitizeRules beschneidet Faktoren und verwirft neutrale Vereins-Eintraege", () => {
+    const r = sanitizeRules({ teamMods: { derbyFaktor: 99, teams: { "FC X": 99, "FC Y": 1, "FC Z": 0.2 } } });
+    expect(r.teamMods.derbyFaktor).toBe(RULE_LIMITS.teamMods.derbyFaktor.max);
+    expect(r.teamMods.teams["FC X"]).toBe(RULE_LIMITS.teamMods.teamFaktor.max);
+    expect(r.teamMods.teams["FC Y"]).toBeUndefined();   // Faktor 1 = wirkungslos
+    expect(r.teamMods.teams["FC Z"]).toBeUndefined();   // unter 1 wird nicht erlaubt
+  });
+
+  it("maxTotalModifier kennt den schlimmsten Fall inklusive Deckel", () => {
+    expect(maxTotalModifier(DEFAULT_RULES)).toBe(1);
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      joker: { enabled: true, modus: "einzel", faktor: 2 },
+      teamMods: { derbyFaktor: 1.5, teams: { A: 1.3, B: 1.2 } },
+      modCap: 4,
+    });
+    // 1 + 1.0 + 0.5 + 0.3 + 0.2 = 3.0
+    expect(maxTotalModifier(rules)).toBeCloseTo(3.0, 5);
+    expect(maxTotalModifier({ ...rules, modCap: 2.5 })).toBe(2.5);
+  });
+
+  it("Creator-Code transportiert Team-Mods mit", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, teamMods: { derbyFaktor: 1.4, teams: { "FC Bayern München": 1.2 } } });
+    const zurueck = sanitizeRules(decodePreset(encodePreset(rules)));
+    expect(zurueck.teamMods.derbyFaktor).toBeCloseTo(1.4, 5);
+    expect(zurueck.teamMods.teams["FC Bayern München"]).toBeCloseTo(1.2, 5);
   });
 });

@@ -19,7 +19,7 @@
 //  die Aussage „Können vs. Glück" nicht verschieben, aber die Laufzeit vervielfachen.
 // ============================================================
 
-import { scoreTip, maxJokerFactor } from "./engine";
+import { scoreTip, maxTotalModifier } from "./engine";
 import { archetypeSnapshots } from "./rulePreview";
 import { ARCHETYPE_FREQ } from "./bundesligaStats";
 
@@ -123,6 +123,10 @@ function pickWeighted(list, r) {
 
 const leer = { home: [], away: [] };
 
+// Anteil der Begegnungen, die als Derby gelten. Grob: ~11 Traditionsduelle bei
+// 306 Saisonspielen. Bestimmt, wie stark ein Derby-Faktor überhaupt durchschlägt.
+const DERBY_ANTEIL = 0.07;
+
 // Führt die Simulation aus. Je Spieltag setzen beide Tipper (falls erlaubt)
 // ihren Joker dorthin, wo er strategisch hingehört — der Könner auf sein
 // sicherstes Spiel (Favorit), der Zocker auf seine Überraschungs-Wette
@@ -132,13 +136,27 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
   // Je Spielart einmal: Quoten-Verteilung + die beiden Tipp-Strategien.
   const artOf = new Map(snaps.map((s) => {
     const verteilung = impliedDistribution(s.snap);
-    return [s.key, { snap: s.snap, verteilung, ...strategien(s.snap, verteilung) }];
-  }));
+    return {
+      key: s.key,
+      wert: {
+        snap: s.snap,
+        // Zweite Fassung derselben Begegnung, als Derby markiert — damit der
+        // Simulator auch Team-/Derby-Modifikatoren misst. Ohne das wäre die
+        // Ampel blind für alles, was der Admin unter „Derby zählt mehr" einstellt.
+        snapDerby: { ...s.snap, derby: "Derby" },
+        verteilung, ...strategien(s.snap, verteilung),
+      },
+    };
+  }).map(({ key, wert }) => [key, wert]));
   const pickArt = buildPicker(ARCHETYPE_FREQ);
-  const jokerMax = maxJokerFactor(rules);
+  const jokerMax = maxTotalModifier(rules);
   const hatModifikator = jokerMax > 1;
   // Ohne Modifikatoren gerechnet — für den Anteil, den sie ausmachen.
-  const ohneMod = { ...rules, joker: { ...(rules.joker || {}), enabled: false } };
+  const ohneMod = {
+    ...rules,
+    joker: { ...(rules.joker || {}), enabled: false },
+    teamMods: { derbyFaktor: 1, teams: {} },
+  };
 
   const rand = rng(seed);
   const n = PROFILE.length;
@@ -163,7 +181,9 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
         const real = pickWeighted(def.verteilung, rand());
         const aussenseiterIstHeim = (def.snap.winner?.home ?? 0) > (def.snap.winner?.away ?? 0);
         const ueberraschung = aussenseiterIstHeim ? real.home > real.away : real.away > real.home;
-        return { def, real, ueberraschung };
+        // Derby-Anteil: ~11 Traditionsduelle bei 306 Saisonspielen ≈ 7 %.
+        const istDerby = rand() < DERBY_ANTEIL;
+        return { def, real, ueberraschung, snap: istDerby ? def.snapDerby : def.snap };
       });
 
       // Je Typ entscheiden, wo er auf den Außenseiter setzt.
@@ -185,10 +205,10 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
           const basis = aufAussenseiter ? sp.def.upset : sp.def.modal;
           const mitJoker = idx === jokerIdx[pi];
           const tipp = { ...basis, goals: leer, joker: mitJoker, gewicht: mitJoker ? jokerMax : 1 };
-          const punkte = scoreTip(tipp, actual, sp.def.snap, rules).total;
+          const punkte = scoreTip(tipp, actual, sp.snap, rules).total;
           saison[pi] += punkte;
           summeMit += punkte;
-          summeOhne += scoreTip(tipp, actual, sp.def.snap, ohneMod).total;
+          summeOhne += scoreTip(tipp, actual, sp.snap, ohneMod).total;
         }
       });
     }
@@ -225,7 +245,9 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
     for (const [real, p] of def.verteilung) {
       if (p < 0.01) continue;
       const exakt = { ...real, goals: leer, joker: true, gewicht: jokerMax };
-      maximalfall = Math.max(maximalfall, scoreTip(exakt, { ...real, playerGoals: null }, def.snap, rules).total);
+      // Gegen die Derby-Fassung gerechnet: der Maximalfall ist der teuerste
+      // denkbare Ausgang, und dazu gehört ein aktiver Derby-Faktor.
+      maximalfall = Math.max(maximalfall, scoreTip(exakt, { ...real, playerGoals: null }, def.snapDerby, rules).total);
     }
   }
 

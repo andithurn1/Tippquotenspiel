@@ -44,6 +44,7 @@ export default function Spielerstellung() {
   const [presetKey, setPresetKey] = useState("standard");
   const [teamFilterOn, setTeamFilterOn] = useState(false);
   const [selectedTeams, setSelectedTeams] = useState([]);
+  const [eigeneVereine, setEigeneVereine] = useState(false);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -67,6 +68,21 @@ export default function Spielerstellung() {
   const patchMarkets = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, ...p } })); };
   const patchGoals = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, goals: { ...r.markets.goals, ...p } } })); };
   const patchJoker = (p) => { touched(); setRules((r) => ({ ...r, joker: { ...r.joker, ...p } })); };
+  const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
+  // Faktor eines Vereins eine Stufe weiterdrehen; über dem Maximum zurück auf
+  // „aus" (1 = kein Modifikator, fliegt aus der Liste, damit das Regelwerk
+  // klein bleibt). Der nächste Wert wird IM Updater aus dem vorherigen Stand
+  // berechnet — sonst lesen mehrere schnelle Klicks denselben alten Wert.
+  const cycleTeamFaktor = (team) => {
+    touched();
+    setRules((r) => {
+      const teams = { ...(r.teamMods?.teams || {}) };
+      const jetzt = teams[team] ?? 1;
+      const naechster = jetzt >= RULE_LIMITS.teamMods.teamFaktor.max ? 1 : +(jetzt + 0.1).toFixed(1);
+      if (naechster > 1) teams[team] = naechster; else delete teams[team];
+      return { ...r, teamMods: { ...r.teamMods, teams } };
+    });
+  };
 
   // Empfohlene Anzeige-Skalierung — hängt am Regelwerk inkl. Joker-Faktor.
   const empfohleneSkala = useMemo(() => recommendedDisplayScale(rules), [rules]);
@@ -158,6 +174,9 @@ export default function Spielerstellung() {
   const L = RULE_LIMITS;
   const g = rules.markets.goals;
   const j = rules.joker;
+  const tm = rules.teamMods || { derbyFaktor: 1, teams: {} };
+  const tmTeams = tm.teams || {};
+  const tmAktiv = tm.derbyFaktor > 1 || Object.keys(tmTeams).length > 0;
 
   return (
     <div style={{
@@ -453,6 +472,73 @@ export default function Spielerstellung() {
                 </p>
               </div>
             </div>
+          )}
+
+          {/* Team- & Derby-Regeln */}
+          <SectionTitle>Team- &amp; Derby-Regeln</SectionTitle>
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+            Gilt für <strong>alle</strong> in der Runde (anders als der Joker, den jeder
+            selbst setzt). Traditionsduelle oder bestimmte Vereine zählen mehr.
+          </p>
+
+          {!premium ? (
+            <div style={{
+              background: `${C.gold}12`, border: `1px solid ${C.gold}44`,
+              borderRadius: 14, padding: "13px 15px", marginBottom: 8,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>🔒 Premium-Funktion</div>
+              <p style={{ fontSize: 11.5, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
+                Es genügt, wenn <strong>du als Admin</strong> Premium hast.
+              </p>
+            </div>
+          ) : (
+            <>
+              <Slider label="Derby zählt" value={tm.derbyFaktor} {...L.teamMods.derbyFaktor}
+                onChange={(v) => patchTeamMods({ derbyFaktor: v })}
+                fmt={(x) => x <= 1 ? "aus" : "×" + x.toFixed(1)}
+                hint="Traditionsduelle (Revierderby, Klassiker, Nordderby …) zählen mehr. 1,0 = aus." />
+
+              <Toggle label="Einzelne Vereine hervorheben" on={eigeneVereine}
+                onChange={(on) => { setEigeneVereine(on); if (!on) patchTeamMods({ teams: {} }); }} />
+              {eigeneVereine && (
+                <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
+                  <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 8px", lineHeight: 1.4 }}>
+                    Antippen erhöht den Faktor in 0,1-Schritten bis ×2,0 und springt dann zurück auf „aus".
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {ALL_TEAMS.map((team) => {
+                      const f = tmTeams[team] ?? 1;
+                      const an = f > 1;
+                      return (
+                        <button key={team}
+                          onClick={() => cycleTeamFaktor(team)}
+                          style={{
+                            cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
+                            background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
+                            border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                          }}>
+                          {team}{an && <strong style={{ marginLeft: 5, fontFamily: MONO }}>×{f.toFixed(1)}</strong>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Deckel — erscheint erst, wenn es überhaupt etwas zu deckeln gibt */}
+              {(tmAktiv || j.enabled) && (
+                <>
+                  <Slider label="Deckel für alle Modifikatoren" value={rules.modCap} {...L.modCap}
+                    onChange={(v) => patch({ modCap: v })} fmt={(x) => "×" + x.toFixed(1)}
+                    hint="Obergrenze, wenn Joker und Team-Regeln zusammentreffen." />
+                  <p style={{ fontSize: 11, color: C.muted, marginTop: -2, marginBottom: 8, lineHeight: 1.45 }}>
+                    Modifikatoren werden <strong>addiert, nicht multipliziert</strong>: Joker ×2,0
+                    und Derby ×1,5 ergeben <strong>×2,5</strong> (nicht ×3,0). Das bleibt
+                    berechenbar — der Deckel fängt den Rest ab.
+                  </p>
+                </>
+              )}
+            </>
           )}
 
           {/* Teams */}

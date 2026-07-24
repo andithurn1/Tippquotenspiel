@@ -38,6 +38,30 @@ export const TEAM_RATINGS = {
   "SC Paderborn 07":          { code: "SCP", attack: 0.72, defense: 1.30 },
 };
 
+// ── Derbys ──────────────────────────────────────────────────
+// Traditionsduelle unter den Vereinen oben. Reine Daten (kein Scoring) — das
+// Regelwerk kann daraus einen eigenen Faktor machen („Derby zählt mehr").
+// Reihenfolge der Teams egal, die Prüfung ist richtungsunabhängig.
+export const DERBYS = [
+  { a: "Borussia Dortmund",        b: "FC Schalke 04",            label: "Revierderby" },
+  { a: "FC Bayern München",        b: "Borussia Dortmund",        label: "Der Klassiker" },
+  { a: "1. FC Köln",               b: "Borussia Mönchengladbach", label: "Rheinisches Derby" },
+  { a: "1. FC Köln",               b: "Bayer 04 Leverkusen",      label: "Rheinisches Derby" },
+  { a: "Bayer 04 Leverkusen",      b: "Borussia Mönchengladbach", label: "Rheinisches Derby" },
+  { a: "Hamburger SV",             b: "SV Werder Bremen",         label: "Nordderby" },
+  { a: "1. FSV Mainz 05",          b: "Eintracht Frankfurt",      label: "Rhein-Main-Derby" },
+  { a: "VfB Stuttgart",            b: "TSG Hoffenheim",           label: "Baden-Württemberg-Derby" },
+  { a: "VfB Stuttgart",            b: "SC Freiburg",              label: "Baden-Württemberg-Derby" },
+  { a: "SC Freiburg",              b: "TSG Hoffenheim",           label: "Baden-Württemberg-Derby" },
+  { a: "FC Bayern München",        b: "FC Augsburg",              label: "Bayerisches Derby" },
+];
+
+// Ist diese Begegnung ein Derby? Richtungsunabhängig. Gibt den Eintrag zurück
+// (mit Label, für die Anzeige) oder null.
+export function findDerby(home, away) {
+  return DERBYS.find((d) => (d.a === home && d.b === away) || (d.a === away && d.b === home)) ?? null;
+}
+
 // [heim, gast, datum, anstoß (MESZ, UTC+2)]
 const FIXTURES = {
   1: [
@@ -91,6 +115,10 @@ function buildMatches() {
       const hr = TEAM_RATINGS[home]; const ar = TEAM_RATINGS[away];
       const strengths = { homeAttack: hr.attack, homeDefense: hr.defense, awayAttack: ar.attack, awayDefense: ar.defense };
       const snapshot = generateMatchOdds({ matchId, home, away, kickoff, seed: matchId, ...strengths });
+      // Derby-Label auf den Snapshot: die Engine kennt keine Vereins-Paarungen
+      // und bleibt so sportart-neutral — sie liest nur `snap.derby`.
+      const derby = findDerby(home, away);
+      if (derby) snapshot.derby = derby.label;
       const result = simulateResult(snapshot, strengths, `${matchId}-result`);
       matches.push({ matchId, matchday: Number(matchday), home, away, kickoff, snapshot, result });
     }

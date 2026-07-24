@@ -84,6 +84,22 @@ export const DEFAULT_RULES = {
   // Joker gibt (statt an jedem). Premium-Funktion; die Auszählung liegt in
   // voting.js, die Durchsetzung greift in Tippabgabe/Spielwahl.
   joker: { enabled: false, modus: "einzel", faktor: 1.5, faktoren: [2, 1.5, 1.2, 1], abstimmung: false },
+
+  // Team-/Derby-Modifikatoren: gelten für ALLE in der Runde (anders als der
+  // Joker, den jeder Tipper selbst setzt). Der Admin vereinbart sie einmal.
+  //  derbyFaktor — Traditionsduelle zählen mehr. Braucht `snap.derby` (setzt
+  //                die Daten-Schicht, siehe bundesligaData.js) — die Engine
+  //                kennt selbst keine Vereinsnamen-Paarungen.
+  //  teams       — { Vereinsname → Faktor } für einzelne Klubs.
+  // Beide 1 bzw. leer = neutrales No-op.
+  teamMods: { derbyFaktor: 1, teams: {} },
+
+  // Deckel für ALLE Modifikatoren zusammen. Wichtig, weil es drei Ebenen gibt
+  // (Joker pro Nutzer · Abstimmung pro Spieltag · Team-Mods pro Begegnung).
+  // Sie werden ADDITIV zusammengefasst statt multipliziert — 2× und 1,5×
+  // ergeben 1 + 1,0 + 0,5 = 2,5× statt 3,0×. Multiplikativ würde sich das
+  // aufschaukeln und die Balance sprengen; additiv bleibt es vorhersagbar.
+  modCap: 2.5,
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -106,6 +122,8 @@ export const RULE_LIMITS = {
   underdogRampEnd:   { min: 2,   max: 30, step: 0.5 },
   favFlopPenalty:    { min: 0,   max: 20, step: 1   },
   joker: { faktor: { min: 1, max: 2, step: 0.1 }, anzahlFaktoren: { min: 2, max: 6, step: 1 } },
+  teamMods: { derbyFaktor: { min: 1, max: 2, step: 0.1 }, teamFaktor: { min: 1, max: 2, step: 0.1 } },
+  modCap: { min: 1, max: 4, step: 0.1 },
 };
 
 // Joker-Block eigenständig säubern: Modus, Einzelfaktor und Ranking-Pool.
@@ -126,6 +144,24 @@ function sanitizeJoker(jk, num, clamp) {
     faktor: clamp(num(jk.faktor, D.faktor), L.faktor.min, L.faktor.max),
     faktoren: faktoren.length >= L.anzahlFaktoren.min ? faktoren : [...D.faktoren],
     abstimmung: jk.abstimmung === true,
+  };
+}
+
+// Team-/Derby-Modifikatoren säubern: Faktoren auf die Grenzen beschneiden,
+// Vereinsnamen nur als Zeichenketten übernehmen, neutrale Einträge (Faktor 1)
+// verwerfen — so bleibt ein importiertes Regelwerk klein und harmlos.
+function sanitizeTeamMods(tm, num, clamp) {
+  const D = DEFAULT_RULES.teamMods, L = RULE_LIMITS.teamMods;
+  const teams = {};
+  const roh = tm.teams && typeof tm.teams === "object" ? tm.teams : {};
+  for (const [name, wert] of Object.entries(roh)) {
+    if (typeof name !== "string" || !name.trim()) continue;
+    const f = +clamp(num(wert, 1), L.teamFaktor.min, L.teamFaktor.max).toFixed(1);
+    if (f > 1) teams[name.trim().slice(0, 60)] = f;
+  }
+  return {
+    derbyFaktor: clamp(num(tm.derbyFaktor, D.derbyFaktor), L.derbyFaktor.min, L.derbyFaktor.max),
+    teams,
   };
 }
 
@@ -175,6 +211,8 @@ export function sanitizeRules(partial = {}) {
     underdogRampEnd: clamp(num(src.underdogRampEnd, D.underdogRampEnd), L.underdogRampEnd.min, L.underdogRampEnd.max),
     favFlopPenalty: clamp(num(src.favFlopPenalty, D.favFlopPenalty), L.favFlopPenalty.min, L.favFlopPenalty.max),
     joker: sanitizeJoker(jk, num, clamp),
+    teamMods: sanitizeTeamMods(src.teamMods && typeof src.teamMods === "object" ? src.teamMods : {}, num, clamp),
+    modCap: clamp(num(src.modCap, D.modCap), L.modCap.min, L.modCap.max),
   };
 }
 
@@ -313,13 +351,71 @@ export function jokerFactor(tip, rules = DEFAULT_RULES) {
   return Number.isFinite(f) && f > 0 ? f : 1;
 }
 
-// Höchster Faktor, den das Regelwerk überhaupt vergeben kann (1 = Joker aus).
-// Basis für Vorschau und Skalierungs-Empfehlung.
+// Team-/Derby-Faktor einer Begegnung. Rein aus `snap` + `rules`:
+//  • Derby — erkannt an `snap.derby` (die Daten-Schicht setzt das Label; die
+//    Engine kennt keine Vereins-Paarungen und bleibt dadurch sportart-neutral).
+//  • Verein — Faktor für Heim und/oder Gast aus `teamMods.teams`.
+// Mehrere Treffer werden ADDITIV zusammengefasst (siehe modCap).
+export function teamModFactor(snap, rules = DEFAULT_RULES) {
+  const tm = rules?.teamMods;
+  if (!tm) return 1;
+  let aufschlag = 0;
+  if (snap?.derby && tm.derbyFaktor > 1) aufschlag += tm.derbyFaktor - 1;
+  const teams = tm.teams || {};
+  for (const seite of [snap?.home, snap?.away]) {
+    const f = seite ? teams[seite] : undefined;
+    if (Number.isFinite(f) && f > 1) aufschlag += f - 1;
+  }
+  return 1 + aufschlag;
+}
+
+// ALLE Modifikatoren eines Spiels zu EINEM Faktor — additiv, dann gedeckelt.
+//
+// Warum additiv: Es gibt drei Ebenen (Joker pro Nutzer, Abstimmung pro
+// Spieltag, Team-Mods pro Begegnung). Multiplikativ ergäbe 2 × 1,5 × 1,2 = 3,6×
+// — ein Ausreißer, der die Balance sprengt. Additiv sind es 1 + 1,0 + 0,5 + 0,2
+// = 2,7×: vorhersagbar, und der Admin kann im Kopf nachrechnen.
+//
+// Gibt die Einzelteile mit zurück, damit die UI erklären kann, WOHER der Faktor
+// kommt („×2,3 — Joker + Revierderby") statt nur eine Zahl zu zeigen.
+export function totalModifier(tip, snap, rules = DEFAULT_RULES) {
+  const joker = jokerFactor(tip, rules);
+  const team = teamModFactor(snap, rules);
+  const aufschlag = Math.max(0, joker - 1) + Math.max(0, team - 1);
+  const roh = 1 + aufschlag;
+  const cap = Number.isFinite(rules?.modCap) ? rules.modCap : Infinity;
+  const faktor = Math.min(roh, cap);
+  return {
+    faktor: +faktor.toFixed(3),
+    joker: +joker.toFixed(3),
+    team: +team.toFixed(3),
+    gedeckelt: roh > cap,
+  };
+}
+
+// Höchster Joker-Faktor allein (1 = Joker aus).
 export function maxJokerFactor(rules = DEFAULT_RULES) {
   const j = rules?.joker;
   if (!j?.enabled) return 1;
   if (j.modus === "ranking") return Math.max(1, ...(j.faktoren || [1]));
   return Number.isFinite(j.faktor) ? j.faktor : 1;
+}
+
+// Höchster Faktor, den ein einzelnes Spiel überhaupt erreichen kann — Joker UND
+// Team-/Derby-Modifikatoren zusammen, additiv und gedeckelt. Das ist der Wert,
+// an dem sich die Skalierungs-Empfehlung und der „Maximalfall" orientieren
+// müssen; sonst laufen die Punktzahlen davon, sobald Team-Mods dazukommen.
+export function maxTotalModifier(rules = DEFAULT_RULES) {
+  const joker = maxJokerFactor(rules);
+  const tm = rules?.teamMods || {};
+  // Ungünstigster Fall: Derby UND beide Vereine mit Faktor belegt.
+  const teamWerte = Object.values(tm.teams || {}).filter((f) => Number.isFinite(f) && f > 1)
+    .sort((a, b) => b - a).slice(0, 2);
+  let aufschlag = Math.max(0, joker - 1);
+  if (tm.derbyFaktor > 1) aufschlag += tm.derbyFaktor - 1;
+  for (const f of teamWerte) aufschlag += f - 1;
+  const cap = Number.isFinite(rules?.modCap) ? rules.modCap : Infinity;
+  return +Math.min(1 + aufschlag, cap).toFixed(3);
 }
 
 // Prüfregel „ein Joker pro Spieltag": gibt die Spieltage zurück, an denen ein
@@ -387,10 +483,14 @@ export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   // (kein tiefes Minus — die richtig getippten Underdog-Tore federn ab).
   const favFlop = favoriteFlopPenalty(tip, actual, snap, rules);
   const afterFlop = favFlop > 0 ? Math.max(0, combined - favFlop) : combined;
-  // Joker ganz zuletzt: skaliert das fertige Ergebnis dieses einen Spiels.
-  const jokerMult = jokerFactor(tip, rules);
-  const raw = afterFlop * jokerMult;
-  return { total: toDisplay(raw, rules), raw: +raw.toFixed(1), favFlop: +favFlop.toFixed(1), jokerMult, ...res, goals };
+  // Modifikatoren ganz zuletzt: skalieren das fertige Ergebnis dieses Spiels.
+  const mod = totalModifier(tip, snap, rules);
+  const raw = afterFlop * mod.faktor;
+  return {
+    total: toDisplay(raw, rules), raw: +raw.toFixed(1), favFlop: +favFlop.toFixed(1),
+    jokerMult: mod.faktor, modifier: mod,
+    ...res, goals,
+  };
 }
 
 
