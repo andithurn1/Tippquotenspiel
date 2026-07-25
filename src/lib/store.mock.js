@@ -157,16 +157,24 @@ export function createMockStore() {
       return votes.filter((v) => v.round_id === roundId);
     },
 
-    // Leaderboard: Rohdaten sammeln, Engine rechnet.
+    // Leaderboard: Rohdaten sammeln, Engine rechnet. Bei aktivem Aufhol-Bonus
+    // über den Verlauf gehen (der Bonus hängt am Stand vor jedem Spieltag) und
+    // den Endstand nehmen — scoreLeaderboardHistory wendet applyCatchup an.
     async getLeaderboard(roundId) {
       const round = rounds.get(roundId);
+      const rules = round?.rules ?? DEFAULT_RULES;
       const roundTips = tips.filter((t) => t.round_id === roundId);
       const entries = roundTips.map((t) => ({
         userId: t.user_id, name: nameOf(t.user_id),
         tip: t.tip, snapshot: t.snapshot,
         result: matches.get(t.match_id)?.result ?? null,
+        matchday: matches.get(t.match_id)?.matchday ?? null,
       }));
-      return scoreLeaderboard(entries, round?.rules ?? DEFAULT_RULES);
+      if (rules.aufholen?.enabled) {
+        const h = scoreLeaderboardHistory(entries, rules);
+        return h.length ? h[h.length - 1].board : [];
+      }
+      return scoreLeaderboard(entries, rules);
     },
 
     // Roh-Einträge einer Runde (Tipp + Snapshot + Ergebnis + matchday, ohne

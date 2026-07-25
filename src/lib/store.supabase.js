@@ -164,12 +164,20 @@ export function createSupabaseStore() {
         this.listMatches(),
       ]);
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
-      const resultOf = (mid) => matches.find((m) => m.id === mid)?.result ?? null;
+      const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
+      const rules = round?.rules ?? DEFAULT_RULES;
       const entries = tips.map((t) => ({
         userId: t.user_id, name: nameOf(t.user_id),
-        tip: t.tip, snapshot: t.snapshot, result: resultOf(t.match_id),
+        tip: t.tip, snapshot: t.snapshot,
+        result: matchOf(t.match_id)?.result ?? null,
+        matchday: matchOf(t.match_id)?.matchday ?? null,
       }));
-      return scoreLeaderboard(entries, round?.rules ?? DEFAULT_RULES);
+      // Bei aktivem Aufhol-Bonus über den Verlauf (Endstand mit Bonus).
+      if (rules.aufholen?.enabled) {
+        const h = scoreLeaderboardHistory(entries, rules);
+        return h.length ? h[h.length - 1].board : [];
+      }
+      return scoreLeaderboard(entries, rules);
     },
 
     async getRoundEntries(roundId) {

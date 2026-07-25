@@ -8,6 +8,7 @@ import {
 import { PRESETS } from "@/lib/presets";
 import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
+import { STAERKE_STUFEN, BETRIFFT } from "@/lib/catchup";
 import { TEAM_RATINGS } from "@/lib/bundesligaData";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
@@ -69,6 +70,7 @@ export default function Spielerstellung() {
   const patchGoals = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, goals: { ...r.markets.goals, ...p } } })); };
   const patchJoker = (p) => { touched(); setRules((r) => ({ ...r, joker: { ...r.joker, ...p } })); };
   const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
+  const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
   // Faktor eines Vereins eine Stufe weiterdrehen; über dem Maximum zurück auf
   // „aus" (1 = kein Modifikator, fliegt aus der Liste, damit das Regelwerk
   // klein bleibt). Der nächste Wert wird IM Updater aus dem vorherigen Stand
@@ -177,6 +179,9 @@ export default function Spielerstellung() {
   const tm = rules.teamMods || { derbyFaktor: 1, teams: {} };
   const tmTeams = tm.teams || {};
   const tmAktiv = tm.derbyFaktor > 1 || Object.keys(tmTeams).length > 0;
+  const au = rules.aufholen || DEFAULT_RULES.aufholen;
+  // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
+  const auStufe = STAERKE_STUFEN.find((s) => s.staerke === au.staerke && s.schwelle === au.schwelle)?.key ?? "custom";
 
   return (
     <div style={{
@@ -539,6 +544,59 @@ export default function Spielerstellung() {
                 </>
               )}
             </>
+          )}
+
+          {/* Aufhol-Mechanismus */}
+          <SectionTitle>Anschluss halten</SectionTitle>
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+            Damit Zurückliegende dranbleiben: Wer abgehängt ist, bekommt je Spieltag
+            einen Teil des Rückstands gutgeschrieben. <strong>Aufholen heißt nicht
+            Überholen</strong> — der Führende bleibt vorn.
+          </p>
+          <Toggle label="Anschluss-Bonus geben" on={au.enabled}
+            onChange={(on) => patchAufholen({ enabled: on })} />
+
+          {au.enabled && (
+            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
+              <Field label="Stärke">
+                <div style={{ display: "flex", gap: 6 }}>
+                  {STAERKE_STUFEN.map((s) => {
+                    const on = auStufe === s.key;
+                    return (
+                      <button key={s.key} onClick={() => patchAufholen({ staerke: s.staerke, schwelle: s.schwelle })} style={{
+                        cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
+                        borderRadius: 10, flex: 1, textAlign: "left",
+                        background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
+                        border: `1px solid ${on ? C.gold + "66" : C.line}`,
+                      }}>
+                        <div style={{ fontWeight: 700 }}>{s.label}</div>
+                        <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>{s.hint}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+
+              <Field label="Wen betrifft es?">
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {Object.values(BETRIFFT).map((b) => {
+                    const on = au.betrifft === b.key;
+                    return (
+                      <button key={b.key} onClick={() => patchAufholen({ betrifft: b.key })}
+                        title={b.desc} style={{
+                          cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                          background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
+                          border: `1px solid ${on ? C.mint + "66" : C.line}`,
+                        }}>{b.label}</button>
+                    );
+                  })}
+                </div>
+              </Field>
+              <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                {Object.values(BETRIFFT).find((b) => b.key === au.betrifft)?.desc}
+                {" "}Die Live-Vorschau unten zeigt, ob der Bonus zu stark wird.
+              </p>
+            </div>
           )}
 
           {/* Teams */}
