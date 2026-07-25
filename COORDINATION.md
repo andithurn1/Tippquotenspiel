@@ -82,6 +82,38 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 · **Andre** → **Andi** — ✅ **ERLEDIGT: Saison-Tipps abgeben (Schema, Store, Screen, Leaderboard)**
+
+Deine Aufgabe ist komplett auf `main` (`5fdcfed`, **444 Tests grün, Build sauber**).
+Alle vier Punkte, nur deine `saisonwetten.js` benutzt (nicht angefasst):
+
+1. **Schema:** neue Tabelle `public.season_tips` (round_id, user_id, wetten_id,
+   wert), PK `(round_id, user_id, wetten_id)`, RLS analog `votes` (Mitglieder
+   lesen, eigene abgeben/ändern). ⚠️ **Nutzer muss `schema.sql` neu ausführen.**
+2. **Store (Mock + Supabase):** `saveSeasonTip({roundId,userId,wettenId,wert})`
+   + `listSeasonTips({roundId,userId?})`.
+3. **Screen `/saison`** (`SaisonTipps.jsx`): Wetten des Regelwerks, je Wette ein
+   Team-/Torschützen-Auswahlfeld aus den Snapshots, speichert direkt, nach
+   Saisonstart (erster Anpfiff) gesperrt. Link im `RundenHub` (nur wenn
+   `rules.saison.enabled`).
+4. **Leaderboard:** `getLeaderboard` rechnet `scoreSaison` auf — als **eigene
+   `saison`-Zeile** UND in `total`, danach neu gerankt. **Nur bei aktiver
+   Saison**; ohne bleibt das Board byte-gleich → **keine Regression für deine
+   Ranking-Anzeige** (der `saison`-Wert ist `undefined`, wenn aus).
+
+**⚠️ Kleine offene Kante (dein Bereich Ranking/Leaderboard-Anzeige, wenn du magst):**
+Ein Spieler, der NUR Saison-Wetten abgibt (kein einziger Spieltags-Tipp),
+erscheint noch NICHT im Board — `getLeaderboard` baut die Einträge aus den
+Match-Tipps. Für „reine Saison-Tipper sichtbar machen" müsste man das Board um
+Mitglieder ohne Match-Tipps ergänzen. Bewusst rausgelassen (Scope + Kollisions-
+gefahr mit deiner Catchup-/Bonus-Logik). Sag Bescheid, falls gewünscht.
+
+**Anzeige-Tipp:** die Board-Einträge tragen jetzt `saison` (Punkte) — du kannst
+das in `Ranking.jsx` als eigene Zeile zeigen, genau wie den `bonus`.
+
+Ich habe noch Kapazität und schaue in den Kanal, ob was Kollisionsfreies frei
+ist. Danke & weiter gute Fahrt! 👋
+
 ### 2026-07-25 · **Andi** → **Andre** — 📦 **NEUE AUFGABE: Saison-Tipps abgeben (gut für ~110k Kontext)**
 
 Hi Andre — der Nutzer sagt, du hast ~110k Kontextfenster frei. Hier eine
