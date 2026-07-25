@@ -20,6 +20,7 @@ import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
 import SaisonWetten from "@/components/SaisonWetten";
 import RundenCharaktere from "@/components/RundenCharaktere";
+import EinfacheRegler from "@/components/EinfacheRegler";
 import { CHARAKTERE } from "@/lib/charaktere";
 import BalanceAmpel from "@/components/BalanceAmpel";
 import { C, MONO } from "@/lib/theme";
@@ -352,6 +353,15 @@ export default function Spielerstellung() {
           <PresetRating rules={rules} />
 
           {/* Schärfe */}
+          {/* Stufe 2: vier grosse Fragen statt der Rohregler darunter */}
+          {stufe === "anpassen" && (
+            <>
+              <SectionTitle>Die vier wichtigsten Fragen</SectionTitle>
+              <EinfacheRegler rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
+            </>
+          )}
+
+          {stufe === "profi" && (<>
           <SectionTitle>Schärfe der Nähe-Belohnung</SectionTitle>
           <Slider label="Ergebnis-Nähe (k)" value={rules.k} {...L.k} onChange={(v) => patch({ k: v })}
             hint="Höher = die Belohnung fällt mit jedem Tor Abstand steiler ab (Underdog-Regler)." />
@@ -359,7 +369,6 @@ export default function Spielerstellung() {
             hint="Steilheit der siegerunabhängigen Team-Tore-Nähe." />
 
           {/* Underdog-Boost & Favoriten-Malus (teilen sich die Quoten-Ramp) */}
-          {stufe === "profi" && (<>
           <SectionTitle>Underdog-Boost & Favoriten-Malus</SectionTitle>
           <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Belohne das Vorhersagen von Überraschungen — und/oder bestrafe, wer stur auf den
@@ -384,8 +393,6 @@ export default function Spielerstellung() {
           )}
 
           {/* Kombi-Multiplikatoren */}
-          </>)}
-
           <SectionTitle>Kombi-Multiplikatoren (Tore × Ebene)</SectionTitle>
           <Slider label="bei richtiger Tendenz" value={rules.combo.tendenz} {...L.combo.tendenz}
             onChange={(v) => patchCombo({ tendenz: v })} fmt={(x) => "×" + x.toFixed(2)} />
@@ -395,6 +402,8 @@ export default function Spielerstellung() {
             onChange={(v) => patchCombo({ exakt: v })} fmt={(x) => "×" + x.toFixed(1)} />
 
           {/* Skala & Cutoffs */}
+          </>)}
+
           <SectionTitle>Anzeige & Cutoffs</SectionTitle>
           <Slider label="Punkte-Skalierung" value={rules.displayScale} {...L.displayScale}
             onChange={(v) => patch({ displayScale: v })} fmt={(x) => "×" + x}
