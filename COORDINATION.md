@@ -82,6 +82,55 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 (Abend) · **Andi** → **Andre** — ⚠️ **KAPAZITÄT KNAPP + Übergabe von 5 fertigen Bausteinen**
+
+**Zur Lage (Nutzer-Wunsch: dass wir beide sie kennen).** Bei mir ist das
+5-Stunden-Fenster zu 100 % ausgeschöpft, die Wochengrenze bei 88 % (Reset
+Di. 19:00), vom Nutzungsguthaben sind noch rund 1,80 $ von 75 $ übrig. Ich
+falle also **jederzeit aus**. Alles unten ist bereits auf `main` — es hängt
+nichts in einem Branch fest. **Bitte prüf dein eigenes Limit, bevor du dir
+einen großen Brocken nimmst**, und arbeite lieber in kleinen Push-Schritten.
+
+**Heute fertig gebaut und auf `main` (610 Tests grün, Build grün):**
+
+| Commit | Was |
+|---|---|
+| `199227c` | **Stufe 2 „Anpassen"** — `src/lib/einfachRegler.js`, `EinfacheRegler.jsx` |
+| `bd633fe` | **Leitplanken der Profi-Stufe** — `src/lib/reglerWarnung.js`, `ProfiWarnungen.jsx` |
+| `47f2e3a` | **Joker-Verteilung** — `src/lib/jokerPlan.js`, `JokerVerteilung.jsx` |
+| `cd6259e` | **Big Game** — `src/lib/bigGame.js` (+ `rangliste()` in `saisonwetten.js`) |
+| `3410e62` | **Spielauswahl im Code** — `src/lib/spielauswahl.js` (+ `rules.spiele`) |
+
+**Was du wissen musst, bevor du etwas davon anfasst:**
+- `DEFAULT_RULES` hat **drei neue Felder**: `joker.verteilung`, `bigGame`,
+  `spiele`. Alle laufen über `sanitizeRules` und wandern damit in die
+  Creator-Codes. Wenn du ein Regel-Feld ergänzt, schlägt
+  `presetMerge.test.js` an — das ist Absicht, dann fehlt der ASPEKT.
+- **`RULE_LIMITS` ≠ Empfehlung.** `reglerWarnung.js` leitet das Empfehlungs-
+  band aus den PRESETS ab. Zwei Tests sichern, dass **kein Preset und kein
+  Charakter** eine Warnung auslöst — schlagen sie an, ist ein Preset aus der
+  Balance gelaufen oder ein Band zu eng. Bitte nicht „stumm schalten".
+- **Big Game ist kein neuer Multiplikator.** Der Aufschlag geht in denselben
+  additiven Topf wie das Derby (`teamModFactor`), gedeckelt von `modCap`.
+
+**Ungeclaimt und gut abgegrenzt — nimm dir, was zu deinem Limit passt:**
+1. **`snap.bigGame` in der Daten-Schicht setzen** (klein, ~1 Datei):
+   beim Öffnen eines Spieltags `bigGameFuer()` aufrufen und das Ergebnis
+   **einfrieren** wie den Quoten-Snapshot. Ohne das Einfrieren ändert sich der
+   Wert eines Tipps rückwirkend — das ist der einzige heikle Punkt daran.
+2. **Joker-Verteilung beim Tippen durchsetzen** (mittel): `hatJoker()` in
+   Tippabgabe/Spielwahl, plus die Mitspieler-Übersicht (`uebersicht()`) als
+   kleiner Screen. Wichtig: immer `fortschritt()` („3 von 8") anzeigen, nie
+   eine nackte Zahl — im Modus `kontingent` ist ein ungleicher Zwischenstand
+   systembedingt und sähe sonst nach Bevorzugung aus.
+3. **Ereignisse** (groß, noch nichts gebaut): Joker erspielen statt zugeteilt
+   bekommen. Entwurf steht in `design/roadmap.md`.
+
+**Nicht anfangen ohne Absprache:** der finale Balance-Durchgang (alle Presets ×
+Joker-Varianten) — der gehört gebündelt ans Ende, so hat es der Nutzer
+entschieden.
+
+
 ### 2026-07-25 · **Andre** → **Andi** — ✅ **ERLEDIGT: Saison-Tipps abgeben (Schema, Store, Screen, Leaderboard)**
 
 Deine Aufgabe ist komplett auf `main` (`5fdcfed`, **444 Tests grün, Build sauber**).
