@@ -10,6 +10,7 @@ import { applyCatchup } from "./catchup";
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
 import { sanitizeSaison } from "./saisonwetten";
 import { sanitizeVerteilung, DEFAULT_VERTEILUNG } from "./jokerPlan";
+import { sanitizeBigGame, DEFAULT_BIGGAME, bigGameAufschlag } from "./bigGame";
 
 export function createMockOddsSource() {
   const snap = {
@@ -111,6 +112,13 @@ export const DEFAULT_RULES = {
   //  teams       — { Vereinsname → Faktor } für einzelne Klubs.
   // Beide 1 bzw. leer = neutrales No-op.
   teamMods: { derbyFaktor: 1, teams: {} },
+
+  // Big Game: das je Spieltag DYNAMISCH bestimmte Topspiel zählt mehr — für
+  // alle gleich, also derselbe additive Topf wie Derby und Team-Faktoren, kein
+  // eigener Multiplikator. Die Auswahl steckt in bigGame.js; die Engine liest
+  // nur `snap.bigGame`, das die Daten-Schicht beim Öffnen des Spieltags setzt
+  // (eingefroren, wie der Quoten-Snapshot). Standard aus.
+  bigGame: { ...DEFAULT_BIGGAME },
 
   // Deckel für ALLE Modifikatoren zusammen. Wichtig, weil es drei Ebenen gibt
   // (Joker pro Nutzer · Abstimmung pro Spieltag · Team-Mods pro Begegnung).
@@ -300,6 +308,8 @@ export function sanitizeRules(partial = {}) {
     // Saison-Wetten pruefen sich selbst (Katalog liegt in saisonwetten.js) —
     // so bleibt der Wett-Katalog die eine Quelle, auch fuer Creator-Codes.
     saison: sanitizeSaison(src.saison),
+    // Big Game ebenso — der Katalog der Signale bleibt in bigGame.js.
+    bigGame: sanitizeBigGame(src.bigGame),
   };
 }
 
@@ -531,6 +541,9 @@ export function teamModFactor(snap, rules = DEFAULT_RULES) {
     const f = seite ? teams[seite] : undefined;
     if (Number.isFinite(f) && f > 1) aufschlag += f - 1;
   }
+  // Das Big Game sagt dasselbe wie ein Derby („dieses Spiel zählt mehr, für
+  // alle gleich") und gehört deshalb in denselben Aufschlag — nicht daneben.
+  aufschlag += bigGameAufschlag(snap, rules);
   return 1 + aufschlag;
 }
 
@@ -577,6 +590,7 @@ export function maxTotalModifier(rules = DEFAULT_RULES) {
   const teamWerte = Object.values(tm.teams || {}).filter((f) => Number.isFinite(f) && f > 1)
     .sort((a, b) => b - a).slice(0, 2);
   let aufschlag = Math.max(0, joker - 1);
+  if (rules?.bigGame?.enabled) aufschlag += sanitizeBigGame(rules.bigGame).aufschlag;
   if (tm.derbyFaktor > 1) aufschlag += tm.derbyFaktor - 1;
   for (const f of teamWerte) aufschlag += f - 1;
   const cap = Number.isFinite(rules?.modCap) ? rules.modCap : Infinity;

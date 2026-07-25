@@ -43,8 +43,10 @@ export const ASPEKTE = [
   {
     key: "modifikatoren",
     label: "Joker & Team-Faktoren",
-    hint: "Joker/Gewichtung, Derby- und Team-Modifikatoren samt Deckel.",
-    keys: ["joker", "teamMods", "modCap"],
+    hint: "Joker/Gewichtung, Derby-, Team- und Big-Game-Modifikatoren samt Deckel.",
+    // bigGame gehört hierher, weil es denselben additiven Topf speist wie
+    // Derby und Team-Faktoren — wer die Modifikatoren übernimmt, will es mit.
+    keys: ["joker", "teamMods", "modCap", "bigGame"],
   },
   {
     key: "fairness",

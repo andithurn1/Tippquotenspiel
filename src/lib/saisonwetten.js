@@ -59,6 +59,17 @@ export function tabelle(matches = []) {
   return [...t.values()];
 }
 
+// Sortierte Tabelle mit Rang. Der Vereinsname als LETZTES Kriterium ist kein
+// Sportrecht, sondern sorgt dafür, dass die Reihenfolge bei völlig gleichen
+// Werten reproduzierbar bleibt — sonst hinge ein Rang an der Einlesereihenfolge.
+export function rangliste(matches = []) {
+  return tabelle(matches)
+    .map((t) => ({ ...t, diff: t.tore - t.gegentore }))
+    .sort((a, b) =>
+      b.punkte - a.punkte || b.diff - a.diff || b.tore - a.tore || a.team.localeCompare(b.team))
+    .map((t, i) => ({ ...t, rang: i + 1 }));
+}
+
 // Torschützen-Liste: Spieler → { tore, team }. Die Team-Zuordnung kommt aus
 // dem Snapshot des jeweiligen Spiels (dort steht, wer zu welchem Kader gehört).
 export function torschuetzen(matches = []) {

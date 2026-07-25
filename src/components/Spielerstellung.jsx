@@ -26,6 +26,7 @@ import BalanceAmpel from "@/components/BalanceAmpel";
 import ProfiWarnungen from "@/components/ProfiWarnungen";
 import JokerVerteilung from "@/components/JokerVerteilung";
 import { band } from "@/lib/reglerWarnung";
+import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { C, MONO } from "@/lib/theme";
 
 const ALL_TEAMS = Object.keys(TEAM_RATINGS);
@@ -88,6 +89,7 @@ export default function Spielerstellung() {
   const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
   const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
+  const patchBigGame = (p) => { touched(); setRules((r) => ({ ...r, bigGame: { ...r.bigGame, ...p } })); };
   const setSaison = (saison) => { touched(); setRules((r) => ({ ...r, saison })); };
   // Faktor eines Vereins eine Stufe weiterdrehen; über dem Maximum zurück auf
   // „aus" (1 = kein Modifikator, fliegt aus der Liste, damit das Regelwerk
@@ -201,6 +203,7 @@ export default function Spielerstellung() {
   const tmAktiv = tm.derbyFaktor > 1 || Object.keys(tmTeams).length > 0;
   const au = rules.aufholen || DEFAULT_RULES.aufholen;
   const ve = rules.versaeumnis || DEFAULT_RULES.versaeumnis;
+  const bg = rules.bigGame || DEFAULT_RULES.bigGame;
   // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
   const auStufe = STAERKE_STUFEN.find((s) => s.staerke === au.staerke && s.schwelle === au.schwelle)?.key ?? "custom";
 
@@ -689,8 +692,38 @@ export default function Spielerstellung() {
                 </div>
               )}
 
+              {/* Big Game: dieselbe Aussage wie ein Derby („dieses Spiel zählt
+                  mehr"), nur wird es erst WÄHREND der Saison bestimmt. Deshalb
+                  steht es hier und nicht in einem eigenen Abschnitt. */}
+              <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 12, marginBottom: 10 }}>
+                <Toggle label="Big Game — das Topspiel des Spieltags" on={bg.enabled}
+                  onChange={(on) => patchBigGame({ enabled: on })} />
+                <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 0", lineHeight: 1.45 }}>
+                  Ein Derby steht vorher fest, „Erster gegen Zweiter am 31. Spieltag"
+                  nicht. Beim Öffnen jedes Spieltags sucht die App das brisanteste
+                  Spiel — aus Tabellenzone, Rangnähe, Quoten und Derby — und hebt es
+                  hervor. Es steht <strong>fest, bevor getippt wird</strong>, und wird
+                  begründet angezeigt.
+                </p>
+
+                {bg.enabled && (
+                  <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginTop: 10 }}>
+                    <Slider label="Big Game zählt zusätzlich" value={bg.aufschlag}
+                      {...BIGGAME_LIMITS.aufschlag}
+                      onChange={(v) => patchBigGame({ aufschlag: v })}
+                      fmt={(x) => `+${x.toFixed(1)} → ×${(1 + x).toFixed(1)}`}
+                      hint="Fließt in denselben Topf wie Derby und Team-Faktoren — addiert, nicht multipliziert." />
+                    <Slider label="Mindest-Brisanz" value={bg.minSpannung}
+                      {...BIGGAME_LIMITS.minSpannung}
+                      onChange={(v) => patchBigGame({ minSpannung: v })}
+                      fmt={(x) => x.toFixed(2)}
+                      hint="Reißt kein Spiel diese Schwelle, hat der Spieltag kein Big Game — besser als ein aufgeblasenes Mittelfeldduell." />
+                  </div>
+                )}
+              </div>
+
               {/* Deckel — erscheint erst, wenn es überhaupt etwas zu deckeln gibt */}
-              {(tmAktiv || j.enabled) && (
+              {(tmAktiv || j.enabled || bg.enabled) && (
                 <>
                   <Slider label="Deckel für alle Modifikatoren" value={rules.modCap} {...L.modCap} pfad="modCap"
                     onChange={(v) => patch({ modCap: v })} fmt={(x) => "×" + x.toFixed(1)}

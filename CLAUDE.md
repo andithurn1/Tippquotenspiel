@@ -136,6 +136,18 @@ auswertbar markiert, weil unsere Ergebnisse nur Tore + Torschützen tragen.
 `sanitizeRules` delegiert an `sanitizeSaison`, damit der Katalog die eine Quelle
 bleibt — dadurch landen Saison-Wetten automatisch in den Creator-Codes.
 
+**Big Game** (`src/lib/bigGame.js`, `rules.bigGame`, Standard aus): das je
+Spieltag DYNAMISCH bestimmte Topspiel — ein Derby steht vorher fest, „Erster
+gegen Zweiter am 31. Spieltag" nicht. Zwei Punkte nicht brechen: (1) der
+Zeitpunkt ist ein FAKTOR, kein Signal — innerhalb eines Spieltags für alle
+Spiele gleich, entscheidet also nur, OB es ein Big Game gibt, nie WELCHES;
+(2) die Tabellenzone (oben Titel, unten Abstieg, Mitte nichts) wiegt schwerer
+als die Ausgeglichenheit der Quoten, sonst gewinnt immer das belanglose
+9.-gegen-10. Der Aufschlag fällt in DENSELBEN additiven Topf wie Derby
+(`teamModFactor`), ist also kein neuer Multiplikator. `snap.bigGame` setzt die
+Daten-Schicht beim Öffnen des Spieltags — eingefroren wie der Quoten-Snapshot,
+sonst änderte sich der Wert eines Tipps rückwirkend.
+
 **Joker-Verteilung** (`src/lib/jokerPlan.js`, `rules.joker.verteilung`, Standard
 `frei`): WANN es überhaupt einen Joker gibt. Der Admin stellt eine FREQUENZ ein
 („etwa jeder 4. Spieltag"), verteilt wird deterministisch aus der Runden-Id —

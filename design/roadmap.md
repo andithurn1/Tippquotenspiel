@@ -68,7 +68,23 @@ geht nichts verloren.
 Offene Entwurfsfragen: Warnung beim Zurückschalten, wenn Profi-Werte nicht mehr
 zu einem Paket passen. Nicht mehr als 3 Stufen — jede kostet Pflege.
 
-### Big Game: das Spiel des Spieltags dynamisch bestimmen — NEU (Nutzerwunsch)
+### Big Game: das Spiel des Spieltags dynamisch bestimmen — GEBAUT ✓
+`src/lib/bigGame.js` + Abschnitt in der Spielerstellung. Zwei Entwurfs-Punkte
+haben sich beim Bauen als die wichtigen herausgestellt:
+
+- **Der Zeitpunkt ist ein FAKTOR, kein Signal.** Innerhalb eines Spieltags ist
+  er fuer alle Spiele gleich, kann also gar nicht entscheiden, WELCHES Spiel
+  das Big Game wird — nur, OB der Spieltag ueberhaupt eins bekommt (Schwelle).
+  Ein Test haelt das fest (`roh` bleibt gleich, `wert` steigt).
+- **Zone schlaegt Ausgeglichenheit.** Die Tabellenzone (oben Titel, unten
+  Abstieg, Mitte nichts) wiegt 0,45, die Quoten nur 0,25 — sonst gewinnt das
+  belanglose 9.-gegen-10., weil es am ausgeglichensten ist. Auch das ist ein
+  eigener Test.
+
+Offen: `snap.bigGame` beim Oeffnen des Spieltags in der Daten-Schicht setzen
+(einfrieren wie den Quoten-Snapshot), Hervorhebung in Spielwahl/Tippabgabe,
+eigene Zeile in den Ertragsquellen, Benachrichtigung.
+
 Beim Anlegen der Runde weiss niemand, welche Begegnungen spannend werden. Ein
 DERBY ist vorher bekannt — „Erster gegen Zweiter am 28. Spieltag" nicht. Ein
 Algorithmus soll waehrend der Saison das jeweils interessanteste Spiel finden

@@ -235,6 +235,7 @@ export function rohModifikator(rules) {
     if (j.heimat?.enabled) aufschlag += Math.max(0, (j.heimat.faktor ?? 1) - 1);
     if (j.mut?.enabled) aufschlag += Math.max(0, (j.mut.faktor ?? 1) - 1);
   }
+  if (rules?.bigGame?.enabled) aufschlag += Math.max(0, rules.bigGame.aufschlag ?? 0);
   const tm = rules?.teamMods ?? {};
   if (tm.derbyFaktor > 1) aufschlag += tm.derbyFaktor - 1;
   const teams = Object.values(tm.teams ?? {}).filter((f) => Number.isFinite(f) && f > 1)
