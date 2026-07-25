@@ -182,6 +182,8 @@ export default function Spielerstellung() {
   const L = RULE_LIMITS;
   const g = rules.markets.goals;
   const j = rules.joker;
+  const jh = j.heimat ?? DEFAULT_RULES.joker.heimat;   // Heimatbonus
+  const jm = j.mut ?? DEFAULT_RULES.joker.mut;         // Mut-Bonus
   const tm = rules.teamMods || { derbyFaktor: 1, teams: {} };
   const tmTeams = tm.teams || {};
   const tmAktiv = tm.derbyFaktor > 1 || Object.keys(tmTeams).length > 0;
@@ -492,6 +494,52 @@ export default function Spielerstellung() {
                   </p>
                 </>
               )}
+
+              {/* Weitere Joker-TYPEN — keine neue Ebene, sondern Spielarten
+                  desselben Jokers: ihre Aufschlaege werden ADDIERT und vom
+                  gemeinsamen Deckel begrenzt. */}
+              <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 6, paddingTop: 10 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 2 }}>Weitere Joker-Arten</div>
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 0, marginBottom: 8, lineHeight: 1.4 }}>
+                  Greifen von allein, ohne dass jemand etwas markieren muss. Ihre
+                  Aufschläge werden <strong>addiert</strong> und vom Deckel oben begrenzt.
+                </p>
+
+                <Toggle label="Heimatbonus — Spiele des eigenen Vereins" on={jh.enabled === true}
+                  onChange={(on) => patchJoker({ heimat: { ...jh, enabled: on } })} />
+                {jh.enabled && (
+                  <Field label={`Faktor: ×${(jh.faktor ?? 1.2).toFixed(1)}`}>
+                    <input type="range"
+                      min={L.joker.faktor.min} max={L.joker.faktor.max} step={L.joker.faktor.step}
+                      value={jh.faktor ?? 1.2}
+                      onChange={(e) => patchJoker({ heimat: { ...jh, faktor: Number(e.target.value) } })}
+                      style={{ width: "100%", accentColor: C.gold }} />
+                    <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                      Jeder wählt seinen Verein selbst. Wirkt symmetrisch — auch auf
+                      Minuspunkte, denn Fans tippen ihr Team gern zu optimistisch.
+                    </div>
+                  </Field>
+                )}
+
+                <div style={{ marginTop: 8 }}>
+                  <Toggle label="Mut-Bonus — gegen den Favoriten, und du behältst recht" on={jm.enabled === true}
+                    onChange={(on) => patchJoker({ mut: { ...jm, enabled: on } })} />
+                </div>
+                {jm.enabled && (
+                  <Field label={`Faktor: ×${(jm.faktor ?? 1.1).toFixed(2)}`}>
+                    <input type="range"
+                      min={L.joker.mutFaktor.min} max={L.joker.mutFaktor.max} step={L.joker.mutFaktor.step}
+                      value={jm.faktor ?? 1.1}
+                      onChange={(e) => patchJoker({ mut: { ...jm, faktor: Number(e.target.value) } })}
+                      style={{ width: "100%", accentColor: C.gold }} />
+                    <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                      Zahlt nur, wenn der mutige Tipp <strong>aufgeht</strong> — sonst würde
+                      blindes Dagegenhalten belohnt. Deshalb auch die engere Obergrenze
+                      (×{L.joker.mutFaktor.max}): darüber gewinnt in der Simulation der Zocker.
+                    </div>
+                  </Field>
+                )}
+              </div>
 
               {/* Gemeinsame Abstimmung, an welchen Spieltagen es einen Joker gibt */}
               <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 6, paddingTop: 10 }}>

@@ -115,6 +115,21 @@ describe("Modifikatoren", () => {
     expect(mod.wert).toBeCloseTo(1.5, 1);
   });
 
+  it("mehrere Joker-Typen ergeben EINE Faktor-Zeile plus Info-Zeilen", () => {
+    // Additiv: 1 + 0.5 (gesetzt) + 0.2 (Heimat) = 1.7 — NICHT 1.5 x 1.2 = 1.8.
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      joker: { enabled: true, modus: "einzel", faktor: 1.5, heimat: { enabled: true, faktor: 1.2 } },
+    });
+    const b = breakdown({ ...tipp(5, 1), joker: true, verein: "Jordanien" }, RESULT, SNAP, rules);
+    const faktoren = b.posten.filter((p) => p.art === "faktor" && p.key === "modifikator");
+    expect(faktoren).toHaveLength(1);
+    expect(faktoren[0].wert).toBeCloseTo(1.7, 1);
+    const infos = b.posten.filter((p) => p.key.startsWith("mod-"));
+    expect(infos.map((i) => i.key).sort()).toEqual(["mod-aktiv", "mod-heimat"]);
+    for (const i of infos) expect(i.art).toBe("info");   // zaehlen nicht mit
+  });
+
   it("ohne Modifikator gibt es keine Zeile", () => {
     const b = breakdown(tipp(5, 1), RESULT, SNAP, DEFAULT_RULES);
     expect(b.posten.some((p) => p.key === "modifikator")).toBe(false);
@@ -127,7 +142,7 @@ describe("Modifikatoren", () => {
     });
     const b = breakdown({ ...tipp(5, 1), joker: true }, RESULT, SNAP, rules);
     const mod = b.posten.find((p) => p.key === "modifikator");
-    expect(mod.hinweis).toContain("gedeckelt");
+    expect(mod.hinweis.toLowerCase()).toContain("gedeckelt");
   });
 });
 

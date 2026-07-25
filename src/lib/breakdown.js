@@ -28,7 +28,7 @@
 //  Reine Funktionen, UI-frei. Rechnet nichts selbst, sondern liest `scoreTip`.
 // ============================================================
 
-import { scoreTip, applyCombo, DEFAULT_RULES } from "./engine";
+import { scoreTip, applyCombo, jokerAufschlaege, DEFAULT_RULES } from "./engine";
 
 const r1 = (v) => Math.round(v * 10) / 10;
 
@@ -140,21 +140,40 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
     });
   }
 
-  // ── 5) Modifikatoren (Joker, Team/Derby) ──────────────────
+  // ── 5) Modifikatoren (Joker-Typen, Team/Derby) ────────────
+  // ⚠️ GENAU EINE Faktor-Zeile. Die einzelnen Joker-Typen erscheinen als
+  // INFO-Zeilen darunter — sie werden ADDIERT, nicht multipliziert. Drei
+  // Faktor-Zeilen nebeneinander würden das Gegenteil suggerieren (×1,5 × ×1,2
+  // × ×1,2 = 2,16 statt der tatsächlichen 1,9).
   const mod = s.modifier;
   if (mod && mod.faktor !== 1) {
-    const teile = [];
-    if (mod.joker > 1) teile.push(`Joker ×${r1(mod.joker)}`);
-    if (mod.team > 1) teile.push(`Team/Derby ×${r1(mod.team)}`);
     posten.push({
       key: "modifikator",
-      label: teile.length === 1 ? teile[0] : "Modifikatoren",
+      label: "Modifikatoren",
       art: "faktor",
       wert: r1(mod.faktor),
       hinweis: mod.gedeckelt
-        ? "Zusammen gedeckelt — mehrere Aufschläge werden addiert, nicht multipliziert."
-        : (teile.length > 1 ? teile.join(" + ") : null),
+        ? "Gedeckelt — die Aufschläge werden addiert, nicht multipliziert."
+        : "Aufschläge werden addiert, nicht multipliziert.",
     });
+    for (const typ of jokerAufschlaege(tip, snap, rules, actual)) {
+      posten.push({
+        key: `mod-${typ.key}`,
+        label: typ.label,
+        art: "info",
+        wert: r1(typ.aufschlag),
+        hinweis: `Aufschlag +${r1(typ.aufschlag)} (oben eingerechnet)`,
+      });
+    }
+    if (mod.team > 1) {
+      posten.push({
+        key: "mod-team",
+        label: "Team / Derby",
+        art: "info",
+        wert: r1(mod.team - 1),
+        hinweis: `Aufschlag +${r1(mod.team - 1)} (oben eingerechnet)`,
+      });
+    }
   }
 
   // ── 6) Deckel je Spiel ────────────────────────────────────
