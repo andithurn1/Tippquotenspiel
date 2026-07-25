@@ -141,6 +141,16 @@ Wettbewerb; unbekannter Stand hält die Wette ZU.
 `sanitizeRules` delegiert an `sanitizeSaison`, damit der Katalog die eine Quelle
 bleibt — dadurch landen Saison-Wetten automatisch in den Creator-Codes.
 
+**Tipp-Fenster** (`src/lib/tippfenster.js`, `rules.tippfenster`, Standard 1
+Woche): wann ein Spiel überhaupt tippbar ist. Öffnet `vorlaufStunden` vor
+Anpfiff (Admin-Sache — echte Quoten gibt es erst wenige Tage vorher), schließt
+beim Anpfiff (dieselbe Kante wie der eingefrorene Snapshot). `tippStatus` ist
+DREIwertig (`zu`/`offen`/`vorbei`) — „noch nicht" und „vorbei" sind für den
+Spieler zwei verschiedene Nachrichten. Ohne verwertbaren Anpfiff gilt ZU.
+Die Spielwahl zeigt nur Anstehendes (sonst 465 Spiele), nennt aber immer die
+Zahlen der ausgeblendeten; ist gerade nichts offen, zeigt sie die nächsten
+gedimmt statt einer leeren Fläche.
+
 **Spielauswahl** (`src/lib/spielauswahl.js`, `rules.spiele`, Standard „alle"):
 welche Spiele überhaupt zur Runde gehören — Vereine, Spieltag-Bereich, feste
 Liste. Liegt im REGELWERK und reist dadurch im Creator-Code mit (ein Creator

@@ -11,6 +11,7 @@ import { filterMatchesByTeams } from "@/lib/roundStatus";
 import { DEFAULT_RULES, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon, phaseVon, wettbewerbLabel, phasenLabel, istKo, wettbewerbeIn } from "@/lib/wettbewerbe";
+import { tippStatus, uebersicht, naechsteOeffnung, beschreibeTippfenster, formatZeitpunkt } from "@/lib/tippfenster";
 import { C, MONO } from "@/lib/theme";
 
 
@@ -68,6 +69,25 @@ export default function Spielwahl() {
   const rankingModus = rules.joker?.enabled === true && rules.joker?.modus === "ranking";
 
   const now = Date.now();
+  // ── Nur zeigen, was ANSTEHT ─────────────────────────────
+  // Der volle Spielplan sind mit zwei Wettbewerben über 450 Spiele. Der
+  // Spieler will die sehen, die jetzt tippbar sind; der Rest ist auf Wunsch
+  // einblendbar, wird aber nicht verschwiegen (die Zahlen stehen daneben).
+  const [alleZeigen, setAlleZeigen] = useState(false);
+  const stand = uebersicht(matches ?? [], rules, now);
+  const naechste = naechsteOeffnung(matches ?? [], rules, now);
+  const offeneUndGelaufene = (matches ?? []).filter((m) => tippStatus(m, rules, now).zustand !== "zu");
+  // Wenn gerade NICHTS tippbar ist (typisch in der Sommerpause), wäre die
+  // Liste leer — ein leerer Screen ist immer die schlechteste Antwort. Dann
+  // zeigen wir die nächsten anstehenden Spiele, deutlich als „noch nicht
+  // tippbar" markiert, statt den Spieler vor eine weiße Fläche zu setzen.
+  const naechsteVorschau = (matches ?? [])
+    .filter((m) => tippStatus(m, rules, now).zustand === "zu")
+    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))
+    .slice(0, 9);
+  const sichtbar = alleZeigen
+    ? (matches ?? [])
+    : (stand.offen === 0 ? [...offeneUndGelaufene, ...naechsteVorschau] : offeneUndGelaufene);
   // Wettbewerbs-Namen nur zeigen, wenn die Runde wirklich mehrere umfasst —
   // bei einer reinen Bundesliga-Runde wäre „Bundesliga ·" vor jedem Spieltag Lärm.
   const mehrereWettbewerbe = wettbewerbeIn(matches ?? []).length > 1;
@@ -76,7 +96,7 @@ export default function Spielwahl() {
   // nach dem frühesten Anpfiff der Gruppe, damit die Wettbewerbe zeitlich
   // ineinandergreifen (so tippt man auch: chronologisch, nicht nach Liga).
   const groups = new Map();
-  for (const m of matches ?? []) {
+  for (const m of sichtbar) {
     const key = `${wettbewerbVon(m)}|${m.matchday ?? 0}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(m);
@@ -104,6 +124,39 @@ export default function Spielwahl() {
           Spielwahl
         </span>
         <h1 style={{ fontSize: 20, fontWeight: 800, margin: "8px 0 10px" }}>Auf welches Spiel willst du tippen?</h1>
+        {/* Ehrliche Übersicht statt stiller Kürzung */}
+        {matches != null && (
+          <div style={{
+            background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12,
+            padding: "10px 12px", marginBottom: 12,
+          }}>
+            <div style={{ fontSize: 12.5, color: C.text, lineHeight: 1.5 }}>
+              <strong style={{ color: C.mint }}>{stand.offen} tippbar</strong>
+              {stand.zu > 0 && ` · ${stand.zu} kommen noch`}
+              {stand.vorbei > 0 && ` · ${stand.vorbei} gelaufen`}
+            </div>
+            {stand.offen === 0 && naechste && (
+              <div style={{ fontSize: 11.5, color: C.sky, marginTop: 4, lineHeight: 1.45 }}>
+                Gerade ist nichts tippbar — das nächste Spiel öffnet am{" "}
+                {formatZeitpunkt(naechste.oeffnetAm)}. Bis dahin siehst du unten,
+                was als Nächstes ansteht.
+              </div>
+            )}
+            <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+              {beschreibeTippfenster(rules)}
+            </div>
+            {stand.zu > 0 && (
+              <button onClick={() => setAlleZeigen((v) => !v)} style={{
+                marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, fontWeight: 700,
+                background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
+                borderRadius: 999, padding: "5px 12px",
+              }}>
+                {alleZeigen ? "Nur anstehende zeigen" : `Auch die ${stand.zu} späteren zeigen`}
+              </button>
+            )}
+          </div>
+        )}
+
         {teamFilter?.length > 0 && (
           <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 12 }}>
             Diese Runde ist beschränkt auf: {teamFilter.join(", ")}
@@ -167,7 +220,7 @@ export default function Spielwahl() {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {g.spiele.map((m) => (
-                  <MatchRow key={m.id} match={m} open={new Date(m.kickoff) > now}
+                  <MatchRow key={m.id} match={m} status={tippStatus(m, rules, now)}
                     tipped={tippedIds.has(m.id)} gewicht={gewichtVon(m.id)} />
                 ))}
               </div>
@@ -179,7 +232,11 @@ export default function Spielwahl() {
   );
 }
 
-function MatchRow({ match, open, tipped, gewicht }) {
+// `status` kommt aus tippfenster.js und ist dreiwertig: „noch nicht", „offen",
+// „vorbei". Ein Boolean würde die ersten beiden zusammenwerfen — für den
+// Spieler sind das aber zwei völlig verschiedene Nachrichten.
+function MatchRow({ match, status, tipped, gewicht }) {
+  const open = status?.offen === true;
   const gewichtet = Number.isFinite(gewicht) && gewicht > 1;
   const content = (
     <div style={{
@@ -198,7 +255,9 @@ function MatchRow({ match, open, tipped, gewicht }) {
         {open ? (
           tipped
             ? <Tag tone={C.mint}>✓ getippt</Tag>
-            : <Tag tone={C.gold}>offen</Tag>
+            : <Tag tone={C.gold}>{status.text}</Tag>
+        ) : status?.zustand === "zu" ? (
+          <Tag tone={C.sky}>{status.text}</Tag>
         ) : (
           <Tag tone={C.muted}>Anpfiff war</Tag>
         )}

@@ -82,6 +82,35 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andi** → **Andre** — ✅ **Tipp-Fenster: die Spielwahl zeigt nur noch, was ansteht**
+
+`main` grün, **739 Tests**, Build sauber. Neu: `src/lib/tippfenster.js`,
+angebunden in `Spielwahl.jsx` + Regler in der Spielerstellung.
+
+**Der Anlass** (Nutzer-Hinweis vor Etappe d): die Spielwahl zeigte den ganzen
+Spielplan — seit deiner CL sind das **465 Spiele**. Der Spieler will sehen,
+was jetzt tippbar ist. Und weil echte Quoten erst wenige Tage vor Anpfiff
+erscheinen, ist der Vorlauf eine Admin-Einstellung (Standard 1 Woche).
+
+**Drei Punkte, die beim Bauen wichtig wurden:**
+- `tippStatus` ist **dreiwertig** (`zu`/`offen`/`vorbei`). Ein Boolean würde
+  „noch nicht" und „vorbei" zusammenwerfen — für den Spieler sind das zwei
+  völlig verschiedene Nachrichten, und die Karte sagt jetzt beides konkret
+  („tippbar ab Fr., 21.08., 18:30").
+- **Nichts wird stillschweigend gekürzt.** Über der Liste steht „0 tippbar ·
+  465 kommen noch · 1 gelaufen" plus ein Schalter für den Rest.
+- **Kein leerer Screen.** Am aktuellen Demo-Stand (Saisonstart 28.08., heute
+  Ende Juli) ist mit Wochen-Vorlauf *nichts* tippbar. Statt einer weißen
+  Fläche zeigt die Liste dann die nächsten neun anstehenden Spiele, deutlich
+  als „noch nicht tippbar" markiert.
+
+**Für dich relevant:** `rules.tippfenster` ist das fünfte neue Regel-Feld; im
+Preset-Mischen liegt es im Aspekt „Spielauswahl & Tipp-Fenster", weil es
+dieselbe Frage beantwortet — was steht wann zum Tippen an.
+
+**Damit ist der Wettbewerbs-Block bis auf Etappe (d) durch.**
+
+
 ### 2026-07-26 · **Andi** → **Andre** — ✅ **ETAPPE (c) + die Schema-Änderung, die ich gebündelt hatte**
 
 `main` grün, **721 Tests**, Build sauber, alle drei berührten Screens

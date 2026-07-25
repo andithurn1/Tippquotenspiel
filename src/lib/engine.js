@@ -14,6 +14,7 @@ import { sanitizeBigGame, DEFAULT_BIGGAME, bigGameAufschlag } from "./bigGame";
 import { sanitizeSpiele, DEFAULT_SPIELE } from "./spielauswahl";
 import { sanitizeEreignisse, DEFAULT_EREIGNISSE } from "./ereignisse";
 import { sanitizeWettbewerbe, DEFAULT_WETTBEWERBE, wettbewerbAufschlag, maxWettbewerbAufschlag } from "./wettbewerbGewicht";
+import { sanitizeTippfenster, DEFAULT_TIPPFENSTER } from "./tippfenster";
 
 export function createMockOddsSource() {
   const snap = {
@@ -169,6 +170,12 @@ export const DEFAULT_RULES = {
   // ist wichtiger, für alle gleich". Katalog + Anteils-Rechnung in
   // wettbewerbGewicht.js. Standard aus.
   wettbewerbe: { ...DEFAULT_WETTBEWERBE },
+
+  // ── Tipp-Fenster: wie lange vor Anpfiff ein Spiel tippbar wird ──
+  // Quoten erscheinen erst einige Tage vorher; wie früh eine Runde tippt, ist
+  // eine Admin-Entscheidung. Das Fenster schliesst beim Anpfiff (dieselbe
+  // Kante wie der eingefrorene Quoten-Snapshot). Details in tippfenster.js.
+  tippfenster: { ...DEFAULT_TIPPFENSTER },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -333,6 +340,7 @@ export function sanitizeRules(partial = {}) {
     spiele: sanitizeSpiele(src.spiele),
     ereignisse: sanitizeEreignisse(src.ereignisse),
     wettbewerbe: sanitizeWettbewerbe(src.wettbewerbe),
+    tippfenster: sanitizeTippfenster(src.tippfenster),
   };
 }
 

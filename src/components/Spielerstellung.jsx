@@ -30,6 +30,7 @@ import JokerVerteilung from "@/components/JokerVerteilung";
 import { band } from "@/lib/reglerWarnung";
 import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } from "@/lib/spielauswahl";
+import { VORLAUF_STUFEN, beschreibeTippfenster } from "@/lib/tippfenster";
 import { C, MONO } from "@/lib/theme";
 
 const ALL_TEAMS = Object.keys(TEAM_RATINGS);
@@ -939,6 +940,36 @@ export default function Spielerstellung() {
               })()}
             </div>
           )}
+
+          {/* Tipp-Fenster: wie früh vor Anpfiff getippt wird. Gehört hierher,
+              weil es dieselbe Frage beantwortet wie die Spielauswahl — WAS
+              steht wann zum Tippen an. */}
+          <div style={{ marginTop: 12, marginBottom: 4 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Ab wann tippbar?</div>
+            <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+              Quoten erscheinen erst einige Tage vor Anpfiff. Wie früh eure Runde
+              tippt, entscheidest du — geschlossen wird immer beim Anpfiff.
+            </p>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {VORLAUF_STUFEN.map((st) => {
+                const an = (rules.tippfenster?.vorlaufStunden ?? 168) === st.stunden;
+                return (
+                  <button key={st.stunden} title={st.hint}
+                    onClick={() => { touched(); setRules((r) => ({ ...r, tippfenster: { vorlaufStunden: st.stunden } })); }}
+                    style={{
+                      flex: "1 1 70px", cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
+                      borderRadius: 11, fontSize: 12, fontWeight: 700,
+                      background: an ? `${C.gold}22` : C.surface,
+                      color: an ? C.gold : C.muted,
+                      border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                    }}>{st.label}</button>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: 10.5, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+              {beschreibeTippfenster(rules)}
+            </p>
+          </div>
 
           {/* Zeitraum — gilt zusätzlich zu jeder Vereins-Auswahl */}
           <div style={{ marginTop: 10 }}>

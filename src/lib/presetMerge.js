@@ -52,11 +52,12 @@ export const ASPEKTE = [
   },
   {
     key: "spiele",
-    label: "Spielauswahl",
-    hint: "Welche Vereine und welcher Zeitraum überhaupt getippt werden.",
+    label: "Spielauswahl & Tipp-Fenster",
+    hint: "Welche Vereine, welcher Zeitraum — und wie früh vor Anpfiff getippt wird.",
     // Eigener Aspekt statt bei den Regeln: „Regeln von A, Spielauswahl von B"
-    // ist genau die Mischung, die man teilen will.
-    keys: ["spiele"],
+    // ist genau die Mischung, die man teilen will. Das Tipp-Fenster gehört
+    // dazu, weil es dieselbe Frage beantwortet: WAS steht wann zum Tippen an.
+    keys: ["spiele", "tippfenster"],
   },
   {
     key: "fairness",
