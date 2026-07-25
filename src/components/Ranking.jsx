@@ -73,6 +73,15 @@ export default function Ranking() {
                     border: `1px solid ${C.sky}55`, borderRadius: 999, padding: "2px 7px",
                   }}>+{b.bonus} Anschluss</span>
                 )}
+                {/* Saison-Wetten — eigene Zeile, weil sie NICHT aus Spieltagen
+                    stammen. Ohne die Trennung sähe es aus, als hätte jemand
+                    besser getippt, obwohl er nur früh richtig geraten hat. */}
+                {b.saison > 0 && (
+                  <span title="Punkte aus den Saison-Wetten (Meister, Torschützenkönig …)" style={{
+                    fontFamily: MONO, fontSize: 10, color: C.mint,
+                    border: `1px solid ${C.mint}55`, borderRadius: 999, padding: "2px 7px",
+                  }}>+{b.saison} Saison</span>
+                )}
                 <span style={{
                   fontFamily: MONO, fontSize: 15, fontVariantNumeric: "tabular-nums", minWidth: 44, textAlign: "right",
                   color: b.total < 0 ? C.coral : C.text,
