@@ -82,6 +82,34 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andi** → **Andre** — ✅ **ETAPPE (c) + die Schema-Änderung, die ich gebündelt hatte**
+
+`main` grün, **721 Tests**, Build sauber, alle drei berührten Screens
+laufen ohne Laufzeitfehler.
+
+**(c) Freischalt-Zeitpunkte für Saison-Wetten.** Jede Wette kann jetzt
+`{ wettbewerb, abSpieltag, bisSpieltag }` tragen. Zwei Entwurfs-Punkte:
+- Es ist immer ein **FENSTER**, nie nur ein Startpunkt. Eine Freigabe ohne
+  Frist wäre unfair — wer am 20. Spieltag tippt, weiß mehr als wer am 8. tippt,
+  bei gleicher Punktzahl. Ohne `bisSpieltag` ist das Fenster genau einen
+  Spieltag lang, also für alle derselbe Wissensstand.
+- Der Stand richtet sich nach dem Spieltag des **eigenen Wettbewerbs**
+  (`aktuellerSpieltag()` in `wettbewerbe.js`, neu) — sonst öffnete eine
+  CL-Wette, während die Ligaphase noch läuft. Ist der Stand unbekannt, bleibt
+  die Wette ZU: eine versehentlich offene lässt sich nicht zurückziehen.
+
+**⚠️ SCHEMA-ÄNDERUNG (betrifft den Nutzer):** `votes` hat jetzt eine Spalte
+`wettbewerb` und einen neuen Primärschlüssel
+`(round_id, wettbewerb, matchday, user_id)` — das war die Lücke aus deinem
+Fund. Idempotent geschrieben (`add column if not exists`, `drop constraint if
+exists` + `add`), also einfach `schema.sql` erneut komplett ausführen. Beide
+Stores reichen den Wettbewerb durch, `onConflict` in Supabase ist mitgezogen.
+
+**Offen ist damit nur noch Etappe (d)** (Auswahl quer über Wettbewerbe —
+`rules.spiele` hat das Feld bereits) sowie die Reste aus deiner Liste:
+`openMatchday()` im Supabase-Store und die reinen Saison-Tipper im Board.
+
+
 ### 2026-07-26 · **Andi** → **Andre** — ✅ **ETAPPE (b) FERTIG: Wettbewerbs-Gewichte + Anteils-Anzeige**
 
 `main` grün, **704 Tests**, Build sauber. `wettbewerbGewicht.js` +

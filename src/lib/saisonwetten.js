@@ -195,7 +195,21 @@ export const SAISON_LIMITS = {
   gewicht: { min: 0.1, max: 3, step: 0.1 },   // wie stark die Saison-Ebene zählt
   punkte: { min: 50, max: 2000, step: 50 },   // Punkte je einzelner Wette
   maxWetten: 8,
+  // Freischaltung: ab welchem Spieltag eine Wette abgegeben werden darf.
+  spieltag: { min: 1, max: 38, step: 1 },
 };
+
+// ── Freischalt-Zeitpunkt (Etappe c der Wettbewerbe) ─────────
+// „Wer gewinnt die Champions League?" vor dem 1. Spieltag ist reines Raten —
+// zu dem Zeitpunkt steht nicht einmal fest, wer die K.-o.-Runde erreicht. Der
+// Admin kann eine Wette deshalb erst ab einem bestimmten Spieltag freigeben.
+//
+// ⚠️ Eine Freigabe OHNE Frist wäre unfair: wer erst am 20. Spieltag tippt,
+// weiß mehr als wer am 8. tippt — bei gleicher Punktzahl. Deshalb gibt es
+// immer ein FENSTER [ab, bis]; ohne Angabe ist es genau ein Spieltag lang,
+// also für alle derselbe Wissensstand. Das ist dieselbe Idee wie beim
+// Quoten-Snapshot: der Zeitpunkt darf den Wert eines Tipps nicht verschieben.
+export const DEFAULT_FREIGABE = { abSpieltag: null, bisSpieltag: null };
 
 export const DEFAULT_SAISON = { enabled: false, gewicht: 1, wetten: [] };
 
@@ -220,6 +234,16 @@ export function sanitizeSaison(partial = {}) {
         ? [...new Set(w.ausser.filter((t) => typeof t === "string" && t.trim()))].slice(0, 5)
         : [];
       if (ausser.length) eintrag.ausser = ausser;
+    }
+    // Freigabe-Fenster; nur setzen, wenn es eines gibt — sonst bläht es jeden
+    // Creator-Code mit Nullen auf.
+    const frei = sanitizeFreigabe(w);
+    if (frei.abSpieltag !== null) {
+      eintrag.abSpieltag = frei.abSpieltag;
+      eintrag.bisSpieltag = frei.bisSpieltag;
+      if (typeof w.wettbewerb === "string" && w.wettbewerb.trim()) {
+        eintrag.wettbewerb = w.wettbewerb.trim().slice(0, 20);
+      }
     }
     wetten.push(eintrag);
     if (wetten.length >= L.maxWetten) break;
@@ -322,3 +346,59 @@ export const SAISON_PRESETS = [
     },
   },
 ];
+
+
+// ── Freischaltung ───────────────────────────────────────────
+
+// Ein Freigabe-Fenster säubern. Ohne `abSpieltag` gibt es keines (die Wette
+// ist von Anfang an offen). `bisSpieltag` fällt auf `abSpieltag` zurück —
+// ein Spieltag Fenster, damit alle mit demselben Wissensstand tippen.
+export function sanitizeFreigabe(w = {}) {
+  const L = SAISON_LIMITS.spieltag;
+  const zahl = (v) => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(L.max, Math.max(L.min, Math.round(n))) : null;
+  };
+  const ab = zahl(w.abSpieltag);
+  if (ab === null) return { ...DEFAULT_FREIGABE };
+  const bis = zahl(w.bisSpieltag);
+  return { abSpieltag: ab, bisSpieltag: bis === null ? ab : Math.max(ab, bis) };
+}
+
+// Ist diese Wette am aktuellen Stand abgebbar? `stand` ist entweder eine Zahl
+// (Spieltag) oder { [wettbewerb]: spieltag } — eine Wette auf die Champions
+// League richtet sich nach dem CL-Spieltag, nicht nach dem der Bundesliga.
+export function istFreigeschaltet(wette, stand) {
+  const { abSpieltag, bisSpieltag } = sanitizeFreigabe(wette ?? {});
+  if (abSpieltag === null) return true;              // ohne Fenster immer offen
+  const aktuell = typeof stand === "object" && stand !== null
+    ? stand[wette?.wettbewerb ?? ""] ?? stand.default ?? null
+    : stand ?? null;
+  if (!Number.isFinite(aktuell)) return false;       // Stand unbekannt → zu
+  return aktuell >= abSpieltag && aktuell <= bisSpieltag;
+}
+
+// Der Zustand in Worten — die Oberfläche soll nie nur „gesperrt" zeigen,
+// sondern auch WANN es losgeht bzw. dass die Frist vorbei ist.
+export function freigabeStatus(wette, stand) {
+  const { abSpieltag, bisSpieltag } = sanitizeFreigabe(wette ?? {});
+  if (abSpieltag === null) return { offen: true, zustand: "immer", text: "jederzeit abgebbar" };
+  const aktuell = typeof stand === "object" && stand !== null
+    ? stand[wette?.wettbewerb ?? ""] ?? stand.default ?? null
+    : stand ?? null;
+  if (!Number.isFinite(aktuell)) {
+    return { offen: false, zustand: "unbekannt", text: `ab Spieltag ${abSpieltag}` };
+  }
+  if (aktuell < abSpieltag) {
+    return { offen: false, zustand: "noch-zu", text: `öffnet an Spieltag ${abSpieltag}` };
+  }
+  if (aktuell > bisSpieltag) {
+    return { offen: false, zustand: "vorbei", text: `Frist war Spieltag ${bisSpieltag}` };
+  }
+  const rest = bisSpieltag - aktuell;
+  return {
+    offen: true, zustand: "offen",
+    text: rest === 0 ? "letzter Spieltag zum Abgeben" : `noch ${rest} Spieltage offen`,
+  };
+}

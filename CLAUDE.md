@@ -133,6 +133,11 @@ den Spieltagen; (2) **konstruierbar** — jede Wette ist TYP + Parameter, mit
 Bayern" (eigene `wettenId`, also eine eigene Wette); (3) **jede Wette deklariert
 ihre Daten** (`braucht`) — Karten/Fouls sind vorbereitet, aber als NICHT
 auswertbar markiert, weil unsere Ergebnisse nur Tore + Torschützen tragen.
+Jede Wette kann ein FREISCHALT-FENSTER tragen (`abSpieltag`/`bisSpieltag`,
+optional `wettbewerb`): „Wer gewinnt die CL?" vor dem 1. Spieltag ist Raten.
+Immer ein Fenster, nie nur ein Startpunkt — sonst wüsste, wer später tippt,
+mehr bei gleicher Punktzahl. Der Stand kommt aus `aktuellerSpieltag()` je
+Wettbewerb; unbekannter Stand hält die Wette ZU.
 `sanitizeRules` delegiert an `sanitizeSaison`, damit der Katalog die eine Quelle
 bleibt — dadurch landen Saison-Wetten automatisch in den Creator-Codes.
 

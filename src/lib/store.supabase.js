@@ -172,11 +172,13 @@ export function createSupabaseStore() {
 
     // ── Joker-Abstimmung ────────────────────────────────────
     // Eine Stimme je Nutzer/Runde/Spieltag (unique-Constraint) → upsert.
-    async saveVote({ roundId, matchday, userId, ja }) {
+    async saveVote({ roundId, matchday, userId, ja, wettbewerb = "bl" }) {
+      // onConflict muss dem Primaerschluessel entsprechen — der traegt seit
+      // den mehreren Wettbewerben auch `wettbewerb` (siehe schema.sql).
       return orThrow(await sb
         .from("votes")
-        .upsert({ round_id: roundId, matchday, user_id: userId, ja: ja === true },
-          { onConflict: "round_id,matchday,user_id" })
+        .upsert({ round_id: roundId, matchday, wettbewerb, user_id: userId, ja: ja === true },
+          { onConflict: "round_id,wettbewerb,matchday,user_id" })
         .select().single());
     },
     async listVotes({ roundId }) {

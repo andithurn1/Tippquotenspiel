@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { getStore } from "@/lib/store";
+import { freigabeStatus } from "@/lib/saisonwetten";
+import { aktuellerSpieltag } from "@/lib/wettbewerbe";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
@@ -53,8 +55,17 @@ export default function SaisonTipps() {
     return [...s].sort((a, b) => a.localeCompare(b));
   }, [matches]);
 
-  // Saisonstart = erster Anpfiff. Danach sind die Wetten gesperrt.
-  const gesperrt = matches.length > 0 && matches.some((m) => new Date(m.kickoff) <= Date.now());
+  // Saisonstart = erster Anpfiff. Wetten OHNE Freischalt-Fenster sind danach
+  // zu — sie gehören vor die Saison.
+  const gestartet = matches.length > 0 && matches.some((m) => new Date(m.kickoff) <= Date.now());
+  // Wetten MIT Fenster richten sich nach dem Spieltag ihres Wettbewerbs: „Wer
+  // gewinnt die Champions League?" öffnet erst, wenn die Ligaphase weit genug
+  // ist, und schließt wieder — sonst wüsste, wer später tippt, schlicht mehr.
+  const stand = useMemo(() => aktuellerSpieltag(matches), [matches]);
+  const statusVon = (w) => (w.abSpieltag == null
+    ? { offen: !gestartet, zustand: gestartet ? "vorbei" : "immer",
+        text: gestartet ? "Saison läuft — vor dem 1. Spieltag abzugeben" : "jederzeit abgebbar" }
+    : freigabeStatus(w, stand));
 
   const setzeTipp = async (id, wert) => {
     setTipps((t) => ({ ...t, [id]: wert }));
@@ -98,12 +109,13 @@ export default function SaisonTipps() {
           </div>
         )}
 
-        {saison?.enabled && gesperrt && (
+        {saison?.enabled && gestartet && (
           <div style={{
             fontSize: 12, color: C.muted, background: C.surface, border: `1px solid ${C.line}`,
-            borderRadius: 10, padding: "8px 12px", margin: "14px 0",
+            borderRadius: 10, padding: "8px 12px", margin: "14px 0", lineHeight: 1.5,
           }}>
-            🔒 Die Saison hat begonnen — die Wetten sind eingefroren.
+            🔒 Die Saison läuft — Wetten ohne eigenes Zeitfenster sind eingefroren.
+            Wetten mit Fenster öffnen sich später von selbst.
           </div>
         )}
 
@@ -115,6 +127,7 @@ export default function SaisonTipps() {
             const optionen = typ.antwort === "spieler" ? spieler : teams;
             const auswertbar = istAuswertbar(wette.key);
             const state = saveState[id];
+            const status = statusVon(wette);
             return (
               <div key={id} style={{
                 background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "14px 16px",
@@ -124,6 +137,16 @@ export default function SaisonTipps() {
                   <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.gold, whiteSpace: "nowrap" }}>{wette.punkte} Pkt.</span>
                 </div>
                 {typ.hint && <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>{typ.hint}</div>}
+                {/* Zustand IMMER benennen: „gesperrt" allein lässt den Spieler
+                    rätseln, ob er etwas verpasst hat oder noch warten muss. */}
+                {status.zustand !== "immer" && (
+                  <div style={{
+                    fontSize: 11, marginTop: 6,
+                    color: status.offen ? C.mint : status.zustand === "noch-zu" ? C.sky : C.muted,
+                  }}>
+                    {status.offen ? "🟢 " : status.zustand === "noch-zu" ? "🕘 " : "🔒 "}{status.text}
+                  </div>
+                )}
                 {!auswertbar && (
                   <div style={{ fontSize: 11, color: C.coral, marginTop: 6 }}>
                     Noch nicht auswertbar (fehlende Statistik) — zählt nicht.
@@ -132,7 +155,7 @@ export default function SaisonTipps() {
                 <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
                   <select
                     value={tipps[id] ?? ""}
-                    disabled={gesperrt || !user || !auswertbar}
+                    disabled={!status.offen || !user || !auswertbar}
                     onChange={(e) => setzeTipp(id, e.target.value)}
                     style={{
                       flex: 1, background: C.ink2, color: tipps[id] ? C.text : C.muted,

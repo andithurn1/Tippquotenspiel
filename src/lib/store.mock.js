@@ -195,10 +195,13 @@ export function createMockStore() {
 
     // ── Joker-Abstimmung ────────────────────────────────────
     // Eine Stimme je Nutzer/Runde/Spieltag; erneutes Abstimmen überschreibt.
-    async saveVote({ roundId, matchday, userId, ja }) {
-      const existing = votes.find((v) => v.round_id === roundId && v.matchday === matchday && v.user_id === userId);
+    async saveVote({ roundId, matchday, userId, ja, wettbewerb = "bl" }) {
+      // Wettbewerb gehoert in den Schluessel: BL-Spieltag 1 und CL-Spieltag 1
+      // sind zwei verschiedene Abstimmungen.
+      const existing = votes.find((v) => v.round_id === roundId && v.matchday === matchday
+        && v.user_id === userId && (v.wettbewerb ?? "bl") === wettbewerb);
       if (existing) { existing.ja = ja === true; return existing; }
-      const row = { round_id: roundId, matchday, user_id: userId, ja: ja === true };
+      const row = { round_id: roundId, matchday, wettbewerb, user_id: userId, ja: ja === true };
       votes.push(row);
       return row;
     },

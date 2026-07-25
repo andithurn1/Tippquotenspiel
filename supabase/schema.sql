@@ -114,6 +114,14 @@ create table if not exists public.votes (
 
 create index if not exists votes_round_idx on public.votes (round_id);
 
+-- Mehrere Wettbewerbe: „Spieltag 1" gibt es seit der Champions League zweimal.
+-- Ohne den Wettbewerb im Schluessel wuerden Bundesliga- und CL-Stimmen
+-- desselben Spieltags zusammenfallen. Nachtraeglich und idempotent:
+alter table public.votes add column if not exists wettbewerb text not null default 'bl';
+alter table public.votes drop constraint if exists votes_pkey;
+alter table public.votes add constraint votes_pkey
+  primary key (round_id, wettbewerb, matchday, user_id);
+
 -- ── Saison-Wetten der Spieler ───────────────────────────────
 -- Langzeit-Tipps (Meister, Torschützenkönig …). Hängen an KEINEM Match —
 -- deshalb eine eigene Tabelle. wetten_id = wettenId() aus saisonwetten.js,

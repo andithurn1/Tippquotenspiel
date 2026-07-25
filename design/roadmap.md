@@ -146,8 +146,19 @@ Zwei Punkte aus (b), die man nicht brechen sollte:
 - K.-o.-Runden brauchen keinen eigenen Regler: EINE Stufe steigt ueber
   `PHASE[...].rang` (AF x1, VF x2, HF x3, Finale x4).
 
-Offen: Etappen (c) Freischalt-Zeitpunkte fuer Saison-Wetten und (d) Auswahl
-quer ueber Wettbewerbe (`rules.spiele` kann das Feld schon).
+(c) Freischalt-Zeitpunkte sind GEBAUT: jede Saison-Wette kann ein Fenster
+`{ wettbewerb, abSpieltag, bisSpieltag }` tragen (`saisonwetten.js`,
+`istFreigeschaltet`/`freigabeStatus`). Der nicht offensichtliche Teil: eine
+Freigabe OHNE Frist waere unfair, weil wer spaeter tippt schlicht mehr weiss —
+bei gleicher Punktzahl. Deshalb ist es immer ein FENSTER, ohne Angabe genau
+einen Spieltag lang. Und der Stand richtet sich nach dem Spieltag des EIGENEN
+Wettbewerbs, sonst oeffnete eine CL-Wette, waehrend die Ligaphase laeuft
+(`aktuellerSpieltag()` in `wettbewerbe.js`). Im Zweifel — Stand unbekannt —
+bleibt die Wette ZU: eine versehentlich offene Wette laesst sich nicht
+zurueckziehen, eine versehentlich gesperrte schon.
+
+Offen: Etappe (d) Auswahl quer ueber Wettbewerbe (`rules.spiele` kann das Feld
+schon).
 
 Bundesliga + Premier League + Champions League zusammen, mit eigenen Regeln je
 Wettbewerb und fairer Gewichtung untereinander. Ziel des Nutzers: ein

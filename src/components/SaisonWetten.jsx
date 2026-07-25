@@ -29,6 +29,8 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
   const entfernen = (id) => setze({ wetten: s.wetten.filter((w) => wettenId(w) !== id) });
   const punkteSetzen = (id, punkte) =>
     setze({ wetten: s.wetten.map((w) => (wettenId(w) === id ? { ...w, punkte } : w)) });
+  const feldSetzen = (id, feld, wert) =>
+    setze({ wetten: s.wetten.map((w) => (wettenId(w) === id ? { ...w, [feld]: wert } : w)) });
 
   const belegt = new Set(s.wetten.map(wettenId));
   const voll = s.wetten.length >= SAISON_LIMITS.maxWetten;
@@ -101,6 +103,33 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                       value={w.punkte} onChange={(e) => punkteSetzen(id, Number(e.target.value))}
                       style={{ flex: 1, accentColor: C.gold }} />
                   </div>
+
+                  {/* Freischalt-Fenster. „Wer gewinnt die Champions League?"
+                      vor dem 1. Spieltag ist reines Raten — da steht nicht
+                      einmal fest, wer die K.-o.-Runde erreicht. */}
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: 8, marginTop: 8 }}>
+                    {[["abSpieltag", "offen ab Spieltag"], ["bisSpieltag", "bis Spieltag"]].map(([feld, label]) => (
+                      <label key={feld} style={{ flex: 1, fontSize: 10.5, color: C.muted }}>
+                        {label}
+                        <input type="number" inputMode="numeric" placeholder="—"
+                          min={SAISON_LIMITS.spieltag.min} max={SAISON_LIMITS.spieltag.max}
+                          value={w[feld] ?? ""}
+                          disabled={feld === "bisSpieltag" && w.abSpieltag == null}
+                          onChange={(e) => feldSetzen(id, feld, e.target.value === "" ? null : Number(e.target.value))}
+                          style={{
+                            display: "block", width: "100%", boxSizing: "border-box", marginTop: 2,
+                            background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
+                            borderRadius: 9, padding: "6px 8px", fontSize: 12, fontFamily: MONO, outline: "none",
+                            opacity: feld === "bisSpieltag" && w.abSpieltag == null ? 0.45 : 1,
+                          }} />
+                      </label>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 10, color: C.muted, marginTop: 5, lineHeight: 1.4 }}>
+                    {w.abSpieltag == null
+                      ? "Leer = von Anfang an abgebbar."
+                      : `Abgabe nur zwischen Spieltag ${w.abSpieltag} und ${w.bisSpieltag ?? w.abSpieltag}. Die Frist ist wichtig: wer später tippt, weiß mehr.`}
+                  </p>
                 </div>
               );
             })}

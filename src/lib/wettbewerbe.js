@@ -89,3 +89,23 @@ export function verteilung(matches = []) {
       anteil: gesamt ? zaehler.get(w.key) / gesamt : 0,
     }));
 }
+
+
+// Aktueller Spieltag JE WETTBEWERB: der höchste, dessen Anpfiff vorbei ist.
+// Rückgabe { [wettbewerb]: spieltag, default: höchster überhaupt } — mehrere
+// Wettbewerbe laufen nicht synchron, deshalb ist eine einzelne Zahl hier
+// wertlos (der 20. Bundesliga-Spieltag fällt mit dem 3. CL-Spieltag zusammen).
+export function aktuellerSpieltag(matches = [], jetzt = Date.now()) {
+  const out = {};
+  let hoechster = 0;
+  for (const m of matches) {
+    const md = Number(m?.matchday);
+    if (!Number.isFinite(md)) continue;
+    if (new Date(m.kickoff).getTime() > jetzt) continue;
+    const k = wettbewerbVon(m);
+    if (md > (out[k] ?? 0)) out[k] = md;
+    if (md > hoechster) hoechster = md;
+  }
+  out.default = hoechster;
+  return out;
+}
