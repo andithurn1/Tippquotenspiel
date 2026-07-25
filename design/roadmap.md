@@ -58,6 +58,19 @@ Der Admin soll nicht 34 Spieltage einzeln anklicken müssen.
   3. *Frei* — jeder setzt selbst (heutiges Verhalten).
 - **Vorschau-Kalender:** 34er-Leiste mit markierten Joker-Spieltagen, damit man
   sofort sieht, was man eingestellt hat.
+- **Sichtbarkeit: ENTSCHIEDEN (Nutzer) — verdeckte Reihenfolge, offenes Kontingent.**
+  Unsere Empfehlung zeigt NICHT vorab, welche Spieltage Joker haben (Spannung),
+  aber sehr wohl:
+  * das **ungefähre Kontingent** („du bekommst über die Saison etwa 8 Joker"),
+  * den **eigenen Fortschritt** („3 von 8 verbraucht"),
+  * und **was die Mitspieler bisher hatten** — damit bei verdeckter Reihenfolge
+    nie der Verdacht aufkommt, jemand werde bevorzugt.
+  Der Admin kann das umstellen; in der **Pro-Variante** ist auch „Spieltage vorab
+  bekannt" wählbar.
+  ⚠️ Wichtig bei Modus 2 (gleiches Kontingent, andere Reihenfolge): mitten in der
+  Saison haben Spieler zwangsläufig UNTERSCHIEDLICH viele Joker gehabt. Deshalb
+  immer als **Fortschritt** anzeigen („3 von 8"), nie als nackte Zahl — sonst
+  wirkt ein systembedingter Zwischenstand wie Bevorzugung.
 - ⚠️ **Balance:** ungleiche Verteilung darf die Simulation nicht kippen —
   vor dem Merge mit `balanceSim.js` gegenprüfen.
 
