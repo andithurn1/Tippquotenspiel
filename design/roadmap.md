@@ -68,6 +68,56 @@ geht nichts verloren.
 Offene Entwurfsfragen: Warnung beim Zurückschalten, wenn Profi-Werte nicht mehr
 zu einem Paket passen. Nicht mehr als 3 Stufen — jede kostet Pflege.
 
+### Mehrere Wettbewerbe in EINEM Tippspiel — NEU (Nutzerwunsch, groesster Brocken)
+Bundesliga + Premier League + Champions League zusammen, mit eigenen Regeln je
+Wettbewerb und fairer Gewichtung untereinander. Ziel des Nutzers: ein
+**Gesamt-Tippspiel nur aus dem Besten und Interessantesten**.
+
+**1) Datenmodell.** Matches brauchen `wettbewerb` und `phase`:
+`{ wettbewerb: "bl" | "pl" | "cl", phase: "liga" | "achtelfinale" | "halbfinale" | "finale", matchday }`.
+Ohne `phase` laesst sich „Halbfinale zaehlt mehr" nicht ausdruecken.
+
+**2) Regeln je Wettbewerb — NICHT drei volle Regelwerke.**
+Empfehlung: EIN Basis-Regelwerk + je Wettbewerb ein `gewicht` und optionale
+Ueberschreibungen (`rules.wettbewerbe = { bl: { gewicht }, cl: { gewicht, ... } }`).
+Drei vollstaendige Regelwerke wuerden die Admin-Oberflaeche verdreifachen,
+obwohl die meisten nur „gleiche Regeln, aber CL zaehlt mehr" wollen.
+
+**3) Phasen-Gewicht ist DIESELBE Art Modifikator wie der Derby-Faktor.**
+Beide sagen: „diese Begegnung ist wichtiger — fuer alle gleich". Deshalb
+gehoert das Wettbewerbs-/Phasen-Gewicht in denselben additiven Topf wie
+`teamMods` und unter `modCap`. Kein vierter Multiplikator, sonst schaukelt es
+sich wieder auf (dieselbe Lehre wie bei den Joker-Typen).
+
+**4) ⚠️ Der Denkfehler, den die Oberflaeche verhindern muss:**
+„Gewicht pro Spiel" ist NICHT „Anteil an der Gesamtwertung". Die Bundesliga hat
+306 Spiele, die CL-Ligaphase ~120. Bei Gewicht 1 vs 1,5 dominiert die
+Bundesliga trotzdem klar die Saison. Der Admin denkt aber in Anteilen.
+→ Die Oberflaeche muss den RESULTIERENDEN ANTEIL anzeigen
+(„Bundesliga 62 % · CL 28 % · PL 10 % der erwarteten Gesamtpunkte"),
+nicht nur den Faktor. Das ist der Punkt, an dem eine naive Umsetzung
+unbemerkt unfair wird.
+
+**5) Saison-Wetten mit Freischalt-Zeitpunkt.**
+Jede Saison-Wette bekommt optional `ab: { wettbewerb, spieltag }` — „CL-
+Halbfinalisten erst ab Spieltag 8 der Ligaphase tippbar". Sinnvoll, weil
+manche Langzeitwetten vorher reines Raten waeren. Vorher: sichtbar, aber
+gesperrt, mit Datum/Spieltag der Freischaltung.
+
+**6) Anschluss an bereits Geplantes:**
+- `rules.spiele` (Spielauswahl im Code) wird zur Auswahl QUER ueber Wettbewerbe
+  — genau der „nur das Beste"-Fall.
+- Preset-Mischen bekaeme einen Aspekt „Wettbewerbe".
+- Die Quoten-API liefert je Liga eigene Endpunkte (`soccer_germany_bundesliga`,
+  `soccer_epl`, `soccer_uefa_champs_league`) — die Route kann das schon, sie
+  nimmt `?liga=`.
+
+**7) Reihenfolge (gross, deshalb in Etappen):**
+a) `wettbewerb`/`phase` ins Datenmodell + Daten erzeugen
+b) Gewichtung + Anteils-Anzeige
+c) Freischalt-Zeitpunkte fuer Saison-Wetten
+d) wettbewerbsuebergreifende Spielauswahl
+
 ### Spiel-Auswahl gehört in den Code — NEU (Nutzerwunsch)
 Ein geteilter Creator-Code trägt heute nur das REGELWERK. Welche Spiele die
 Runde umfasst (`team_filter`) hängt an der Runde, nicht am Code — wer einen
