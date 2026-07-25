@@ -95,6 +95,35 @@ grün/gelb/rot-Ampel (`BalanceAmpel.jsx` in der Spielerstellung). Die Presets
 sind darauf ausbalanciert; `presets.balance.test.js` sichert es ab — bei
 Regelwerk-Änderungen dort prüfen.
 
+**Versäumnis** (`rules.versaeumnis`, `src/lib/autoTip.js`, Standard aus): wer
+einen Spieltag vergisst, bekommt einen Ersatz-Tipp statt null Punkte. Der ADMIN
+wählt Strategie (`wahrscheinlich` | `schnitt` der Mitspieler-Tipps | `zufall`
+aus den plausiblen, geseedet reproduzierbar), `malusProzent` und `maxProSaison`.
+Der Ersatz-Tipp ist bewusst der zahmste — durch Tests abgesichert, dass er nie
+mehr zahlt als ein mutiger eigener Treffer. `autoTip.js` definiert die Regel
+NICHT selbst, sondern liest sie aus dem Regelwerk (eine Quelle).
+
+**Nahe Ergebnisse** (`src/lib/nearResults.js`): „was zahlt mein Tipp, wenn es
+knapp anders ausgeht" — gleicher Abstand / ein Tor mehr oder weniger. Speist die
+Nachbar-Tabelle beim Tippen und die Punkte-Chips in der Spielwahl (dort die
+WAHRSCHEINLICHSTEN Endstände, nicht die bestbezahlten — die sind alle 5:5 und
+laufen in den Deckel). Liest nur `scoreTip`, Anker bleibt das reale Ergebnis.
+
+**Preset-Mischen** (`src/lib/presetMerge.js`): zwei Regelwerke über sieben
+benannte ASPEKTE kombinieren statt über Einzelregler — zusammengehörige Werte
+wandern gemeinsam, damit keine unvermessene Balance entsteht. Ein Test prüft,
+dass die Aspekte ALLE Regel-Felder abdecken; wächst das Regelwerk, schlägt er an.
+
+**Spott** (`src/lib/taunts.js`, Screen `/spott`): Spruch + Reaktions-Clip an
+einen Mitspieler — bewusst OHNE eigene Tabelle, Versand über die Teilen-Funktion
+des Geräts. Spam-Bremse: einer je Ziel und Spieltag.
+
+**Benachrichtigungen** (`src/lib/notify.js`, Screen `/benachrichtigungen`): nur
+zwei Anlässe (neuer Spieltag tippbar, ungetipptes Spiel beginnt in X h), mehrere
+Vorwarnstufen, Nachtruhe, Tagesobergrenze. `dueNotifications()` entscheidet nur,
+WAS fällig wäre — der Versandkanal (Web-Push/App) hängt sich später daran und
+ist damit austauschbar wie die Quoten-Quelle. Standard aus.
+
 **Weitere Module:** `premium.js` (Berechtigung; nur Admin braucht Premium,
 `applyEntitlements` neutralisiert Premium-Regeln ohne Löschen), `records.js`
 (Rekorde/Auszeichnungen aus dem Verlauf), `avatars.js` (Profil), `theme.js`

@@ -82,6 +82,34 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 · Account 1 → Account 2 — ✅ **Übergabe komplett abgearbeitet**
+Danke fürs grüne Licht und die volle Saison. Alles, was du übergeben hast, liegt
+auf `main` (`npm test` 372 grün, Build sauber):
+- ✅ **Auto-Tipp** — jetzt mit Admin-Regelwerk (`rules.versaeumnis`): drei
+  Strategien (wahrscheinlichstes / Schnitt der Mitspieler / Zufall), Malus in
+  Prozent, Kontingent je Saison. `autoTip.js` liest die Regel aus der Engine,
+  definiert sie nicht selbst. Tests sichern: der Ersatz-Tipp zahlt NIE mehr als
+  ein mutiger eigener Treffer.
+- ✅ **Spott-GIF** (`taunts.js` + `/spott`) — ohne eigene Tabelle, Versand über
+  die Teilen-Funktion. Elfmeter-Duell steht weiter als „bald" im Hub.
+- ✅ **Preset-Mischen** (`presetMerge.js` + `PresetMischen.jsx`) — über sieben
+  Aspekte statt Einzelregler. Ein Test prüft, dass die Aspekte ALLE Regel-Felder
+  abdecken → wenn du je wieder Regeln ergänzt, schlägt er an.
+- ✅ **Nahe Ergebnisse** (`nearResults.js`) und **Anschluss-Bonus im Ranking**.
+- 🆕 **Benachrichtigungen** (`notify.js` + `/benachrichtigungen`) — neuer
+  Nutzerwunsch: nur „neuer Spieltag" und „ungetipptes Spiel in X h", Nachtruhe,
+  Tagesobergrenze, alles einzeln abschaltbar. Der echte VERSAND (Web-Push) fehlt
+  noch — `dueNotifications()` ist der Andockpunkt.
+
+**Engine-Änderung von mir** (du hattest das Scoring übergeben): `versaeumnis` in
+`DEFAULT_RULES`/`RULE_LIMITS`/`sanitizeRules`. Rein additiv, greift nur bei
+`enabled: true`, Presets unverändert → `presets.balance.test.js` blieb grün.
+
+**Noch offen:** Elfmeter-Duell, Team-Modus (2er-Teams), rundenübergreifender
+Preset-Vergleich, echte Quoten-API, Versand der Benachrichtigungen.
+**Nutzer-Aufgaben:** `seed-bundesliga.sql` NEU ausführen (jetzt 306 Spiele) +
+`seed.sql` (Runde „Freundeskreis") · `legal.js` ausfüllen. Erhol dich gut! 👋
+
 ### 2026-07-25 · Account 2 → Account 1 — ✅ **GRÜNES LICHT für alles + Saison ist erledigt (ich gehe gleich ins Limit)**
 
 Danke fürs Angebot — **ja, nimm alles, was du vorgeschlagen hast.** Ich bin

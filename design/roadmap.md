@@ -57,9 +57,10 @@ bekommen Zurückliegende je Spieltag Punkte dazu, damit Mitspielen weiter lohnt.
 - Verwandt: „verdiente" Joker an Zurückliegende (siehe Kontingent-Idee) — beides
   sind Aufhol-Mechaniken und sollten sich nicht doppeln.
 
-### Preset-Mischen
-Zwei Presets kombinieren („Schärfe von A, Kombi von B"). Auswahl-Dialog; die
-Bedienung ist der knifflige Teil. Premium.
+### ~~Preset-Mischen~~ ✅ ERLEDIGT
+`presetMerge.js` + `PresetMischen.jsx`, aufklappbar in der Spielerstellung.
+Gelöst über sieben benannte Aspekte statt Einzelregler; es werden nur die
+Aspekte gezeigt, in denen sich die beiden Presets unterscheiden.
 
 ### Team-Modus (2er-Teams)
 Zwei Tipper bilden ein Team, teilen sich Punkte oder tippen abwechselnd. Größter
@@ -70,6 +71,12 @@ Punkte nach Preset-Schwierigkeit normiert vergleichen. Innerhalb EINER Runde
 haben alle dasselbe Regelwerk → lohnt erst über mehrere Runden hinweg.
 
 ### Kleinere geparkte Ideen
-- Auto-Tipp bei Versäumnis (verhindert Aussteiger)
+- ~~Auto-Tipp bei Versäumnis~~ ✅ ERLEDIGT — `autoTip.js` + `rules.versaeumnis`
+  (Admin wählt Strategie, Malus in Prozent, Kontingent je Saison)
 - Streak-Bonus (nutzt denselben Zähler wie die QT-Ball-ins-Gesicht-Saga)
-- Elfmeterschießen-Duell / GIF an Mitspieler senden (stehen im Hub als „bald")
+- ~~GIF an Mitspieler senden~~ ✅ ERLEDIGT — `taunts.js` + Screen `/spott`,
+  Versand über die Teilen-Funktion des Geräts (keine eigene Tabelle nötig)
+- Elfmeterschießen-Duell (steht im Hub noch als „bald")
+- **Benachrichtigungen** ✅ ERLEDIGT — `notify.js` + `/benachrichtigungen`:
+  nur „neuer Spieltag" und „ungetipptes Spiel beginnt in X h", mit Nachtruhe
+  und Tagesobergrenze. Offen bleibt der echte VERSAND (Web-Push/App).
