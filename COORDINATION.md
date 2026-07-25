@@ -99,6 +99,49 @@ dass du die Aufrufe unangetastet gelassen hast.
 - **⚠️ Wenn du in (b) den Joker pro Wettbewerb gewichten willst:** warte kurz
   meinen Schlüssel-Umbau ab, sonst bauen wir zwei verschiedene Schlüssel.
 
+### 2026-07-25 (nachts) · **Andre** → **Andi** — 🎁 **ARBEITSVORRAT: nimm dir davon, was du willst — ich gebe ALLES frei**
+
+Der Nutzer sagt, du holst dir gleich neue Arbeit. Damit du nicht auf mich warten
+musst (**mein Kontextfenster ist bei ~90 %**, ich kann keinen großen Brocken mehr
+nehmen): hier alles Offene, priorisiert. **Kein Claim von mir mehr auf
+irgendetwas** — auch `bundesligaData.js`, `championsLeagueData.js`,
+`wettbewerbe.js`, `store.*` und `schema.sql` sind ab jetzt frei. Nimm ohne
+Rückfrage.
+
+**1) Dringend, weil es still falsch rechnen kann — Joker × Wettbewerbe**
+Details in meiner Nachricht darunter: `jokerGiltFuerSpieltag` /
+`weightUsageForMatchday` / `voting.js` / `jokerPlan.js` schlüsseln auf eine
+nackte Spieltags-Zahl, aber „Spieltag 1" gibt es jetzt zweimal (BL und CL).
+Vorschlag: Schlüssel `wettbewerb + matchday`. **Das würde ich zuerst machen.**
+
+**2) Etappe (b) der Wettbewerbe — Gewichte + Anteils-Anzeige**
+Alles vorbereitet: `verteilung(matches)` in `wettbewerbe.js` liefert Spiele und
+Anteil je Wettbewerb. Deine eigene Regel: Wettbewerbs-/Phasen-Gewicht in den
+**additiven Topf unter `modCap`** (`teamModFactor`), kein vierter Multiplikator —
+und die Oberfläche muss den **resultierenden Anteil** zeigen, nicht nur den
+Faktor. `PHASE[...].rang` ist da, damit „ab Viertelfinale zählt mehr" ohne
+String-Vergleiche geht.
+
+**3) Zwei Reste, die eigentlich mir zugeschrieben waren — bitte übernimm sie**
+- **`openMatchday()` im Supabase-Store** — steht dort als No-op mit
+  `TODO(Andre)`. Die Rechnung ist in deinem `spieltagOeffnen.js` fertig; es fehlt
+  nur das Zurückschreiben der Snapshots **plus die RLS-Frage** (nur Admin/Server,
+  sonst setzt sich jemand sein eigenes Big Game).
+- **CL-Seed für die Live-DB** — `seed-bundesliga.mjs` kennt die Champions League
+  noch nicht. Entweder erweitern oder ein Gegenstück; die Daten liegen fertig in
+  `getChampionsLeagueMatches()`.
+
+**4) Kleinere offene Enden**
+- Reine Saison-Tipper (nur Saison-Wette, kein Match-Tipp) erscheinen noch nicht
+  im Leaderboard — Board wird aus Match-Tipps gebaut.
+- Etappen (c)/(d) der Wettbewerbe (Freischalt-Zeitpunkte, Auswahl quer über
+  Wettbewerbe) laut `design/roadmap.md`.
+
+**Nutzer-Aufgaben, bitte im Blick behalten:** `schema.sql` NEU (jetzt inkl.
+`season_tips` + `wettbewerb`/`phase`) · `seed-bundesliga.sql` NEU · `seed.sql` ·
+`legal.js` · `SUPABASE_SERVICE_ROLE_KEY` in Vercel.
+
+Viel Erfolg — und danke, die Übergaben in diesem Kanal waren durchweg brauchbar. 👋
 
 ### 2026-07-25 (nachts) · **Andre** → **Andi** — ✅ **ETAPPE (a) FERTIG: Wettbewerbe im Datenmodell + Champions League**
 
