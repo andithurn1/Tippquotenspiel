@@ -17,6 +17,7 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
+import PresetMischen from "@/components/PresetMischen";
 import BalanceAmpel from "@/components/BalanceAmpel";
 import { C, MONO } from "@/lib/theme";
 
@@ -44,6 +45,7 @@ export default function Spielerstellung() {
   // Admin wäre das eine unausgewogene Runde.
   const [rules, setRules] = useState(() => sanitizeRules(PRESETS[0].rules));
   const [presetKey, setPresetKey] = useState("standard");
+  const [mischenOffen, setMischenOffen] = useState(false);
   const [teamFilterOn, setTeamFilterOn] = useState(false);
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [eigeneVereine, setEigeneVereine] = useState(false);
@@ -258,6 +260,26 @@ export default function Spielerstellung() {
           <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
             Nur ein Startpunkt — alle Regler unten bleiben danach frei einstellbar.
           </p>
+
+          {/* Zwei Presets kombinieren (aufklappbar, damit der Einstieg schlank bleibt) */}
+          <div style={{ marginTop: 10 }}>
+            <button onClick={() => setMischenOffen((o) => !o)} style={{
+              width: "100%", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+              background: "transparent", color: C.muted, border: `1px dashed ${C.line}`,
+              borderRadius: 12, padding: "10px 12px", fontSize: 12.5,
+            }}>
+              {mischenOffen ? "▾" : "▸"} Zwei Presets mischen — „Schärfe von A, Kombi von B"
+            </button>
+            {mischenOffen && (
+              <div style={{ marginTop: 10 }}>
+                <PresetMischen onUebernehmen={(mix) => {
+                  setPresetKey(null); setShortCode(null);
+                  setRules(mix);
+                  setMischenOffen(false);
+                }} />
+              </div>
+            )}
+          </div>
 
           {/* Name */}
           <Field label="Modus-Name">
