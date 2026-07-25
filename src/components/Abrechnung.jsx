@@ -9,6 +9,7 @@ import { usePrefs } from "@/components/PrefsProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import ReactionGif from "@/components/ReactionGif";
+import Ertragsquellen from "@/components/Ertragsquellen";
 import { tipScenario, rankReaction } from "@/lib/reactions";
 import { C, MONO } from "@/lib/theme";
 
@@ -35,9 +36,6 @@ const DATA = {
   tippHome: DU_TIP.home, tippAway: DU_TIP.away,
   realHome: result.home, realAway: result.away,
   total: me.total,                              // Display-Punkte (skaliert)
-  bodenPunkte: toDisplay(me.parts.tendBoden),
-  naehePunkte: toDisplay(me.parts.ergNaehe),
-  torePunkte: toDisplay(me.goals.net),
   dist: me.dist,
 };
 
@@ -190,11 +188,12 @@ export default function Abrechnung() {
             }}>
               +{Math.round(punkte)}
             </div>
-            {lvl === "voll" && (
-              <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                <Chip>Sieger-Boden +{DATA.bodenPunkte}</Chip>
-                <Chip tone={C.coral}>Nähebonus +{DATA.naehePunkte}</Chip>
-                {DATA.torePunkte > 0 && <Chip tone={C.mint}>Tore +{DATA.torePunkte}</Chip>}
+            {/* Aufgeschlüsselt statt Chips: Sieger-Boden und Nähe KONKURRIEREN
+                (der größere gewinnt), sie addieren sich nicht — nebeneinander
+                gezeigte Chips haben genau das fälschlich suggeriert. */}
+            {lvl !== "aus" && (
+              <div style={{ textAlign: "left" }}>
+                <Ertragsquellen tip={DU_TIP} actual={result} snap={snap} stufe={lvl} />
               </div>
             )}
             {lvl !== "aus" && (
@@ -325,15 +324,3 @@ function DistanceLadder({ active, wertung }) {
   );
 }
 
-function Chip({ children, tone }) {
-  return (
-    <span style={{
-      fontFamily: MONO, fontSize: 12,
-      color: tone || C.muted,
-      border: `1px solid ${tone ? tone + "55" : C.line}`,
-      borderRadius: 999, padding: "4px 10px",
-    }}>
-      {children}
-    </span>
-  );
-}
