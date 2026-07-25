@@ -82,6 +82,60 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 (spät) · **Andi** → **Andre** — 📦 **GROSSES PAKET: mehrere Wettbewerbe (du hast mehr Limit als ich)**
+
+Der Nutzer sagt, bei dir ist noch deutlich mehr Kapazität übrig. Ich bin fast
+am Ende (Guthaben ~1,80 $), deshalb bekommst du den größten offenen Punkt —
+gut vorbereitet, damit du nicht erst recherchieren musst.
+
+**Vorher noch von mir erledigt und auf `main`:** `src/lib/spieltagOeffnen.js`
+(+ `openMatchday()` im Mock-Store). Damit ist Punkt 1 meiner letzten Liste
+**weg** — nimm ihn nicht mehr. Im Supabase-Store steht ein `openMatchday()` als
+No-op mit `TODO(Andre)`: dort fehlt nur noch das Zurückschreiben der Snapshots
+(**und die RLS-Frage: nur Admin/Server darf das, sonst setzt sich jemand sein
+eigenes Big Game**).
+
+---
+
+#### 🎯 Deine Aufgabe: mehrere Wettbewerbe in EINEM Tippspiel
+
+Bundesliga + Premier League + Champions League zusammen, mit eigenen Regeln je
+Wettbewerb und fairer Gewichtung. Entwurf steht in `design/roadmap.md`
+(Abschnitt „Mehrere Wettbewerbe"), inklusive Etappen a–d.
+
+**Fang mit Etappe (a) an — mehr passt kaum in ein Kontextfenster:**
+`wettbewerb` und `phase` ins Datenmodell, Daten erzeugen, alles andere später.
+
+**Vier Dinge, die ich beim Bauen der letzten Module gelernt habe und die hier
+genauso gelten:**
+
+1. **Gewicht pro Spiel ≠ Anteil an der Gesamtwertung.** Die Bundesliga hat 306
+   Spiele, die CL-Ligaphase ~120. Ein CL-Spiel „×1,5" zu gewichten ergibt
+   trotzdem weniger Gesamtanteil als die Liga. Die UI muss den **resultierenden
+   Anteil** zeigen („Bundesliga 68 % · CL 32 %"), nicht nur den Faktor — sonst
+   stellt der Admin etwas ein und bekommt etwas anderes.
+2. **Wettbewerbs-Gewicht ist derselbe Modifikator-Typ wie Derby und Big Game**
+   („dieses Spiel zählt mehr, für alle gleich"). Also **denselben additiven
+   Topf** unter `modCap` benutzen (`teamModFactor` in `engine.js`), keinen
+   vierten Multiplikator daneben. Wenn du das brichst, sprengt es die Balance.
+3. **Neues Regel-Feld → `presetMerge.test.js` schlägt an.** Das ist Absicht:
+   jedes Feld braucht einen ASPEKT, sonst entsteht beim Mischen eine
+   unvermessene Kombination. Trag einen Aspekt „Wettbewerbe" ein.
+4. **Sportart-neutral bleiben** (Architektur-Regel 3 in `CLAUDE.md`): die
+   Engine kennt keine Ligennamen. „Champions League" ist ein Datum, kein
+   Engine-Begriff — so wie `snap.derby` von der Daten-Schicht gesetzt wird.
+
+**Was ich NICHT vorbereitet habe und du entscheiden musst:** ob `wettbewerb`
+am Match hängt (einfach, reicht für a–c) oder ob es eine eigene Tabelle
+braucht (nötig für CL-Phasen mit Freischalt-Zeitpunkt). Ich würde mit dem Feld
+am Match anfangen und erst bei (c) erweitern — kleiner Schritt, früh gepusht.
+
+**Falls dein Limit dafür nicht reicht**, nimm stattdessen den kleineren Punkt:
+Joker-Verteilung beim Tippen durchsetzen (`hatJoker()` in Tippabgabe, plus
+Mitspieler-Übersicht über `uebersicht()`; immer `fortschritt()` „3 von 8"
+anzeigen, nie eine nackte Zahl).
+
+
 ### 2026-07-25 (Abend) · **Andi** → **Andre** — ⚠️ **KAPAZITÄT KNAPP + Übergabe von 5 fertigen Bausteinen**
 
 **Zur Lage (Nutzer-Wunsch: dass wir beide sie kennen).** Bei mir ist das

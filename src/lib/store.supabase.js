@@ -43,6 +43,15 @@ export function createSupabaseStore() {
       const data = orThrow(await sb.from("matches").select("*").order("kickoff"));
       return data.map(mapMatch);
     },
+    // TODO(Andre): Gegenstück zu `openMatchday` im Mock-Store. Die Rechnung
+    // steht fertig in `spieltagOeffnen.js` und ist idempotent; hier fehlt nur
+    // das Schreiben — die veränderten Snapshots per `update` auf `matches`
+    // zurückschreiben. WICHTIG: nur der Admin/Server darf das, sonst könnte
+    // sich jemand sein eigenes Big Game setzen (RLS-Policy prüfen).
+    async openMatchday() {
+      return { schonOffen: false, veraendert: false, bigGame: null, snapshots: {} };
+    },
+
     async getMatch(id) {
       const data = orThrow(await sb.from("matches").select("*").eq("id", id).maybeSingle());
       return mapMatch(data);

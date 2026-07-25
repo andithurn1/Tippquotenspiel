@@ -1,0 +1,115 @@
+import { describe, it, expect } from "vitest";
+import { spieltagOeffnen, istGeoeffnet } from "@/lib/spieltagOeffnen";
+import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
+
+const TEAMS = Array.from({ length: 18 }, (_, i) => `T${String(i + 1).padStart(2, "0")}`);
+
+// Bereits gespielte Saison: die kleinere Nummer gewinnt immer, damit der Rang
+// eines Vereins direkt aus seinem Namen ablesbar ist.
+function gespielteSaison() {
+  const out = [];
+  for (let i = 0; i < TEAMS.length; i++) {
+    for (let j = i + 1; j < TEAMS.length; j++) {
+      out.push({ home: TEAMS[i], away: TEAMS[j], result: { home: 2, away: 0 } });
+    }
+  }
+  return out;
+}
+const GESPIELT = gespielteSaison();
+
+const spiel = (home, away, { h = 2.5, a = 2.5 } = {}) => ({
+  id: `${home}-${away}`, home, away, matchday: 30,
+  snapshot: { matchId: `${home}-${away}`, home, away, winner: { home: h, draw: 3.4, away: a } },
+});
+
+const SPIELTAG = [
+  spiel("T09", "T10"),
+  spiel("T01", "T02", { h: 2.2, a: 3.1 }),
+  spiel("T05", "T14"),
+];
+
+const RULES = sanitizeRules({ ...DEFAULT_RULES, bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 } });
+const oeffnen = (matches = SPIELTAG, rules = RULES) =>
+  spieltagOeffnen({ spieltag: 30, matches, gespielt: GESPIELT, rules, gesamtSpieltage: 34 });
+
+describe("Öffnen bestimmt das Big Game", () => {
+  it("markiert genau ein Spiel", () => {
+    const r = oeffnen();
+    expect(r.bigGame.matchId).toBe("T01-T02");
+    const markiert = Object.values(r.snapshots).filter((s) => s.bigGame === true);
+    expect(markiert).toHaveLength(1);
+    expect(markiert[0].bigGameGrund).toContain("Platz 1 gegen Platz 2");
+  });
+
+  it("ALLE Snapshots werden als geprüft eingefroren, nicht nur der Gewinner", () => {
+    // Das ist die eigentliche Sperre: sonst wäre ein Spieltag ohne Big Game
+    // von einem ungeöffneten nicht zu unterscheiden.
+    const r = oeffnen();
+    for (const s of Object.values(r.snapshots)) expect(s.bigGameGeprueft).toBe(true);
+  });
+
+  it("lässt den übrigen Snapshot unangetastet", () => {
+    const r = oeffnen();
+    expect(r.snapshots["T01-T02"].winner).toEqual(SPIELTAG[1].snapshot.winner);
+  });
+});
+
+describe("Einmal eingefroren, bleibt eingefroren", () => {
+  it("ein zweiter Aufruf ändert nichts", () => {
+    const erste = oeffnen();
+    const eingefroren = SPIELTAG.map((m) => ({ ...m, snapshot: erste.snapshots[m.id] }));
+    const zweite = oeffnen(eingefroren);
+    expect(zweite.schonOffen).toBe(true);
+    expect(zweite.veraendert).toBe(false);
+    expect(zweite.snapshots).toEqual({});
+    expect(zweite.bigGame.matchId).toBe("T01-T02");
+  });
+
+  it("auch ein Spieltag OHNE Big Game bleibt ohne", () => {
+    // Ohne das Prüf-Kennzeichen bekäme er beim nächsten Aufruf mit
+    // gewachsenem Tabellenstand nachträglich doch noch eines.
+    const langweilig = [spiel("T08", "T11"), spiel("T09", "T12")];
+    const erste = spieltagOeffnen({
+      spieltag: 2, matches: langweilig, gespielt: GESPIELT, rules: RULES, gesamtSpieltage: 34,
+    });
+    expect(erste.bigGame).toBeNull();
+    expect(Object.values(erste.snapshots).every((s) => s.bigGameGeprueft)).toBe(true);
+
+    const eingefroren = langweilig.map((m) => ({ ...m, snapshot: erste.snapshots[m.id] }));
+    const zweite = spieltagOeffnen({
+      spieltag: 2, matches: eingefroren, gespielt: GESPIELT, rules: RULES, gesamtSpieltage: 34,
+    });
+    expect(zweite.schonOffen).toBe(true);
+    expect(zweite.bigGame).toBeNull();
+  });
+
+  it("ein späterer Tabellenstand kippt einen offenen Spieltag nicht mehr", () => {
+    const erste = oeffnen();
+    const eingefroren = SPIELTAG.map((m) => ({ ...m, snapshot: erste.snapshots[m.id] }));
+    // Tabelle auf den Kopf stellen: jetzt wäre T09/T10 das Spitzenspiel.
+    const umgedreht = GESPIELT.map((m) => ({ ...m, result: { home: 0, away: 2 } }));
+    const zweite = spieltagOeffnen({
+      spieltag: 30, matches: eingefroren, gespielt: umgedreht, rules: RULES, gesamtSpieltage: 34,
+    });
+    expect(zweite.bigGame.matchId).toBe("T01-T02");
+  });
+});
+
+describe("Neutral, wenn nichts zu tun ist", () => {
+  it("ohne Big-Game-Regel wird nur geprüft markiert", () => {
+    const r = oeffnen(SPIELTAG, DEFAULT_RULES);
+    expect(r.bigGame).toBeNull();
+    expect(Object.values(r.snapshots).some((s) => s.bigGame)).toBe(false);
+  });
+
+  it("ein leerer Spieltag ergibt nichts", () => {
+    const r = oeffnen([]);
+    expect(r.snapshots).toEqual({});
+    expect(r.veraendert).toBe(false);
+  });
+
+  it("istGeoeffnet erkennt beide Zustände", () => {
+    expect(istGeoeffnet(SPIELTAG)).toBe(false);
+    expect(istGeoeffnet([{ snapshot: { bigGameGeprueft: true } }])).toBe(true);
+  });
+});

@@ -81,9 +81,16 @@ haben sich beim Bauen als die wichtigen herausgestellt:
   belanglose 9.-gegen-10., weil es am ausgeglichensten ist. Auch das ist ein
   eigener Test.
 
-Offen: `snap.bigGame` beim Oeffnen des Spieltags in der Daten-Schicht setzen
-(einfrieren wie den Quoten-Snapshot), Hervorhebung in Spielwahl/Tippabgabe,
-eigene Zeile in den Ertragsquellen, Benachrichtigung.
+Das Einfrieren ist inzwischen gebaut: `src/lib/spieltagOeffnen.js` +
+`openMatchday()` im Mock-Store. Der feine Punkt dabei: eingefroren wird
+`bigGameGeprueft` auf ALLEN Snapshots des Spieltags, nicht nur `bigGame: true`
+auf dem Gewinner — sonst waere ein Spieltag OHNE Big Game von einem
+ungeoeffneten nicht zu unterscheiden und bekaeme spaeter, mit gewachsenem
+Tabellenstand, nachtraeglich doch noch eines.
+
+Offen: dasselbe im Supabase-Store (Snapshots zurueckschreiben; nur Admin/Server
+darf das, RLS pruefen), Hervorhebung in Spielwahl/Tippabgabe, eigene Zeile in
+den Ertragsquellen, Benachrichtigung.
 
 Beim Anlegen der Runde weiss niemand, welche Begegnungen spannend werden. Ein
 DERBY ist vorher bekannt — „Erster gegen Zweiter am 28. Spieltag" nicht. Ein

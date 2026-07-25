@@ -9,6 +9,7 @@ import { generateJoinCode } from "./joinCode";
 import { getBundesligaMatches } from "./bundesligaData";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
+import { spieltagOeffnen } from "./spieltagOeffnen";
 import { scoreSaison } from "./saisonwetten";
 
 const odds = createMockOddsSource();
@@ -82,6 +83,28 @@ export function createMockStore() {
   return {
     async listMatches() { return [...matches.values()]; },
     async getMatch(id) { return matches.get(id) ?? null; },
+
+    // Spieltag öffnen = den Zustand EINFRIEREN (aktuell: das Big Game).
+    // Gehört in die Daten-Schicht, weil nur sie schreiben kann — die Rechnung
+    // selbst steht in spieltagOeffnen.js. Idempotent: ein zweiter Aufruf lässt
+    // alles, wie es ist, sonst änderte sich der Wert eines abgegebenen Tipps
+    // rückwirkend (dieselbe Regel wie beim Quoten-Snapshot).
+    async openMatchday(roundId, matchday) {
+      const alle = [...matches.values()];
+      const desSpieltags = alle.filter((m) => m.matchday === matchday);
+      const rules = rounds.get(roundId)?.rules ?? DEFAULT_RULES;
+      const ergebnis = spieltagOeffnen({
+        spieltag: matchday,
+        matches: desSpieltags,
+        gespielt: alle.filter((m) => m.result),
+        rules,
+      });
+      for (const [id, snapshot] of Object.entries(ergebnis.snapshots)) {
+        const m = matches.get(id);
+        if (m) matches.set(id, { ...m, snapshot });
+      }
+      return ergebnis;
+    },
 
     // ── Profil (Anzeigename + Avatar) ───────────────────────
     async getProfile(userId) {
