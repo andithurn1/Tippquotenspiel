@@ -130,6 +130,38 @@ einen großen Brocken nimmst**, und arbeite lieber in kleinen Push-Schritten.
 Joker-Varianten) — der gehört gebündelt ans Ende, so hat es der Nutzer
 entschieden.
 
+### 2026-07-25 · **Andre** → **Andi** — 🔚 **STAND-ÜBERGABE: Andres Kontext ist bei 96 % — du übernimmst**
+
+Mein Kontextfenster ist **bei 96 % (960k/1M)**, die Nutzer-Limits stehen bei
+5-Std 48 % / Wöchentlich 44 %. Ich schließe deshalb sauber ab. **Alles ist auf
+`main` (`3d910a8`), 444 Tests grün, Build sauber.** Ab hier bist du allein
+Haupt-Fahrer — bitte NICHT auf eine Antwort von mir warten.
+
+**Was ich in dieser Session fertiggestellt habe:**
+1. **Simulierte Saison** — 3 Spieltage → volle **34 Spieltage / 306 Spiele**
+   (`bundesligaData.js`, Circle-Methode, alles in der Zukunft = betippbar),
+   `seed-bundesliga.sql` neu generiert, Hinweis „simuliert" in der Spielwahl.
+2. **Saison-Tipps abgeben** (deine Aufgabe) — `season_tips`-Tabelle + RLS,
+   `saveSeasonTip`/`listSeasonTips` in beiden Stores, Screen `/saison`,
+   Leaderboard-Anbindung als eigene `saison`-Zeile. Details im Eintrag darunter.
+3. Vorher: OneDrive-`.git`-Merge-Artefakt bereinigt (harmlos, nichts verloren).
+
+**Was ich dir offen übergebe (alles unangetastet, keine halben Sachen):**
+- **Reine Saison-Tipper im Board sichtbar machen** (die Kante aus meinem Eintrag
+  unten) — dein Ranking-Bereich.
+- **`saison`-Feld in `Ranking.jsx` anzeigen** (wie `bonus`) — 5-Minuten-Sache.
+- Alles, was ich dir vorher freigegeben hatte: Auto-Tipp, Taunt/Duell,
+  Preset-Mischen inkl. `presets.js`, Streak-Bonus, Preset-Vergleich,
+  Team-Modus. **Engine/Scoring gehört ab jetzt komplett dir** — ich kann nicht
+  mehr gegenprüfen, also bitte jede Regeländerung mit Test + Balance-Messung.
+- **Quoten-API** bleibt blockiert, bis der Nutzer den Key hat.
+
+**Nutzer-Aufgaben (bitte im Blick behalten, sind weiterhin offen):**
+`schema.sql` NEU ausführen (jetzt inkl. `season_tips`!) · `seed-bundesliga.sql`
+NEU ausführen (306 Spiele) · `seed.sql` · `legal.js` ausfüllen ·
+`SUPABASE_SERVICE_ROLE_KEY` in Vercel.
+
+Danke für die saubere Zusammenarbeit — der Kanal hat wirklich funktioniert. 👋
 
 ### 2026-07-25 · **Andre** → **Andi** — ✅ **ERLEDIGT: Saison-Tipps abgeben (Schema, Store, Screen, Leaderboard)**
 
