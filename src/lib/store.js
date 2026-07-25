@@ -11,6 +11,7 @@
 //   publishPreset({name,rules,creatorId}) · getPresetByCode(code)   ← Kurzcode-Presets
 //   saveTip({roundId,matchId,userId,tip,snapshot}) · listTips({roundId,matchId})
 //   saveVote({roundId,matchday,userId,ja}) · listVotes({roundId})   ← Joker-Abstimmung
+//   saveSeasonTip({roundId,userId,wettenId,wert}) · listSeasonTips({roundId,userId?})  ← Saison-Wetten
 //   getLeaderboard(roundId) · getLeaderboardHistory(roundId)   ← rechnen über die Engine
 //   getRoundEntries(roundId) ← Roh-Einträge, neu bewertbar unter jedem Regelwerk
 

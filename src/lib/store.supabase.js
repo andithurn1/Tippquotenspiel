@@ -8,12 +8,29 @@ import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
+import { scoreSaison } from "./saisonwetten";
 
 // Match-Zeile (DB) → Store-Form
 const mapMatch = (m) => m && ({
   id: m.id, home: m.home, away: m.away, kickoff: m.kickoff,
   matchday: m.matchday, snapshot: m.snapshot, result: m.result,
 });
+
+// Saison-Wetten-Punkte additiv aufs Board (eigene `saison`-Zeile, in `total`
+// eingerechnet, danach neu sortiert/gerankt). Ohne aktive Saison unverändert.
+function withSaisonPunkte(board, rules, alleMatches, seasonTips) {
+  if (!rules?.saison?.enabled) return board;
+  return board
+    .map((e) => {
+      const tipps = Object.fromEntries(
+        seasonTips.filter((s) => s.user_id === e.userId).map((s) => [s.wetten_id, s.wert])
+      );
+      const s = scoreSaison({ matches: alleMatches, tipps, saison: rules.saison });
+      return { ...e, saison: s.gesamt, total: e.total + s.gesamt };
+    })
+    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+    .map((e, i) => ({ ...e, rank: i + 1 }));
+}
 
 export function createSupabaseStore() {
   const sb = getSupabaseBrowserClient();
@@ -156,12 +173,28 @@ export function createSupabaseStore() {
       return orThrow(await sb.from("votes").select("*").eq("round_id", roundId));
     },
 
+    // ── Saison-Wetten abgeben ───────────────────────────────
+    // Ein Tipp je (Runde, Nutzer, Wette) → upsert auf dem Unique-Key.
+    async saveSeasonTip({ roundId, userId, wettenId, wert }) {
+      return orThrow(await sb
+        .from("season_tips")
+        .upsert({ round_id: roundId, user_id: userId, wetten_id: wettenId, wert },
+          { onConflict: "round_id,user_id,wetten_id" })
+        .select().single());
+    },
+    async listSeasonTips({ roundId, userId }) {
+      let q = sb.from("season_tips").select("*").eq("round_id", roundId);
+      if (userId) q = q.eq("user_id", userId);
+      return orThrow(await q);
+    },
+
     async getLeaderboard(roundId) {
-      const [round, members, tips, matches] = await Promise.all([
+      const [round, members, tips, matches, seasonTips] = await Promise.all([
         this.getRound(roundId),
         this.listMembers(roundId),
         this.listTips({ roundId }),
         this.listMatches(),
+        this.listSeasonTips({ roundId }),
       ]);
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
@@ -173,11 +206,14 @@ export function createSupabaseStore() {
         matchday: matchOf(t.match_id)?.matchday ?? null,
       }));
       // Bei aktivem Aufhol-Bonus über den Verlauf (Endstand mit Bonus).
+      let board;
       if (rules.aufholen?.enabled) {
         const h = scoreLeaderboardHistory(entries, rules);
-        return h.length ? h[h.length - 1].board : [];
+        board = h.length ? h[h.length - 1].board : [];
+      } else {
+        board = scoreLeaderboard(entries, rules);
       }
-      return scoreLeaderboard(entries, rules);
+      return withSaisonPunkte(board, rules, matches, seasonTips);
     },
 
     async getRoundEntries(roundId) {

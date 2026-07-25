@@ -104,6 +104,21 @@ create table if not exists public.votes (
 
 create index if not exists votes_round_idx on public.votes (round_id);
 
+-- ── Saison-Wetten der Spieler ───────────────────────────────
+-- Langzeit-Tipps (Meister, Torschützenkönig …). Hängen an KEINEM Match —
+-- deshalb eine eigene Tabelle. wetten_id = wettenId() aus saisonwetten.js,
+-- wert = getippter Team-/Spielername. Ein Tipp je (Runde, Nutzer, Wette).
+create table if not exists public.season_tips (
+  round_id   uuid not null references public.rounds(id) on delete cascade,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  wetten_id  text not null,
+  wert       text not null,
+  created_at timestamptz not null default now(),
+  primary key (round_id, user_id, wetten_id)
+);
+
+create index if not exists season_tips_round_idx on public.season_tips (round_id);
+
 -- ── Kurzcode-Presets (Content-Creator-Codes) ───────────────
 -- Ein geteiltes Regelwerk unter einem kurzen, merkbaren Code — statt des
 -- langen Text-Creator-Codes. rules = per sanitizeRules() gültiges Regelwerk.
@@ -155,6 +170,7 @@ alter table public.round_members enable row level security;
 alter table public.tips          enable row level security;
 alter table public.presets       enable row level security;
 alter table public.votes         enable row level security;
+alter table public.season_tips   enable row level security;
 
 -- Profile: jeder Eingeloggte darf lesen; eigenes Profil schreiben.
 drop policy if exists "profiles_read"        on public.profiles;
@@ -255,4 +271,23 @@ create policy "votes_insert_self" on public.votes for insert to authenticated
                 where m.round_id = votes.round_id and m.user_id = auth.uid())
   );
 create policy "votes_update_self" on public.votes for update to authenticated
+  using (user_id = auth.uid());
+
+-- Saison-Wetten: sichtbar für Mitglieder derselben Runde (wie das Leaderboard,
+-- das sie mit einrechnet). Setzen/Ändern nur die eigene Wette, nur als Mitglied.
+drop policy if exists "season_tips_read_same_round" on public.season_tips;
+drop policy if exists "season_tips_insert_self"     on public.season_tips;
+drop policy if exists "season_tips_update_self"     on public.season_tips;
+create policy "season_tips_read_same_round" on public.season_tips for select to authenticated
+  using (
+    exists (select 1 from public.round_members m
+            where m.round_id = season_tips.round_id and m.user_id = auth.uid())
+  );
+create policy "season_tips_insert_self" on public.season_tips for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and exists (select 1 from public.round_members m
+                where m.round_id = season_tips.round_id and m.user_id = auth.uid())
+  );
+create policy "season_tips_update_self" on public.season_tips for update to authenticated
   using (user_id = auth.uid());

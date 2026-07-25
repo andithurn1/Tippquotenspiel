@@ -9,6 +9,7 @@ import { generateJoinCode } from "./joinCode";
 import { getBundesligaMatches } from "./bundesligaData";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
+import { scoreSaison } from "./saisonwetten";
 
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
@@ -24,6 +25,24 @@ const DEMO_TIPS = [
 ];
 
 const ROUND_ID = DEMO_ROUND_ID;
+
+// Saison-Wetten-Punkte additiv aufs Leaderboard: je Nutzer über scoreSaison
+// (saisonwetten.js) berechnet, als eigene `saison`-Zeile ausgewiesen UND in
+// `total` eingerechnet, danach neu sortiert/gerankt. Ohne aktive Saison bleibt
+// das Board unverändert (kein stillschweigendes Einrechnen).
+function withSaisonPunkte(board, roundId, rules, alleMatches, seasonTips) {
+  if (!rules?.saison?.enabled) return board;
+  return board
+    .map((e) => {
+      const tipps = Object.fromEntries(
+        seasonTips.filter((s) => s.round_id === roundId && s.user_id === e.userId).map((s) => [s.wetten_id, s.wert])
+      );
+      const s = scoreSaison({ matches: alleMatches, tipps, saison: rules.saison });
+      return { ...e, saison: s.gesamt, total: e.total + s.gesamt };
+    })
+    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+    .map((e, i) => ({ ...e, rank: i + 1 }));
+}
 
 export function createMockStore() {
   // frische Kopien pro Store, damit Schreibvorgänge isoliert sind
@@ -56,6 +75,7 @@ export function createMockStore() {
     user_id: t.userId, tip: t.tip, snapshot: SNAP,
   }));
   const votes = [];   // Joker-Abstimmung: { round_id, matchday, user_id, ja }
+  const seasonTips = [];   // Saison-Wetten: { round_id, user_id, wetten_id, wert }
 
   const nameOf = (userId) => members.find((m) => m.user_id === userId)?.name ?? userId;
 
@@ -157,6 +177,19 @@ export function createMockStore() {
       return votes.filter((v) => v.round_id === roundId);
     },
 
+    // ── Saison-Wetten abgeben ───────────────────────────────
+    // Ein Tipp je (Runde, Nutzer, Wette); erneutes Abgeben überschreibt.
+    async saveSeasonTip({ roundId, userId, wettenId, wert }) {
+      const existing = seasonTips.find((s) => s.round_id === roundId && s.user_id === userId && s.wetten_id === wettenId);
+      if (existing) { existing.wert = wert; return existing; }
+      const row = { round_id: roundId, user_id: userId, wetten_id: wettenId, wert };
+      seasonTips.push(row);
+      return row;
+    },
+    async listSeasonTips({ roundId, userId }) {
+      return seasonTips.filter((s) => s.round_id === roundId && (!userId || s.user_id === userId));
+    },
+
     // Leaderboard: Rohdaten sammeln, Engine rechnet. Bei aktivem Aufhol-Bonus
     // über den Verlauf gehen (der Bonus hängt am Stand vor jedem Spieltag) und
     // den Endstand nehmen — scoreLeaderboardHistory wendet applyCatchup an.
@@ -170,11 +203,14 @@ export function createMockStore() {
         result: matches.get(t.match_id)?.result ?? null,
         matchday: matches.get(t.match_id)?.matchday ?? null,
       }));
+      let board;
       if (rules.aufholen?.enabled) {
         const h = scoreLeaderboardHistory(entries, rules);
-        return h.length ? h[h.length - 1].board : [];
+        board = h.length ? h[h.length - 1].board : [];
+      } else {
+        board = scoreLeaderboard(entries, rules);
       }
-      return scoreLeaderboard(entries, rules);
+      return withSaisonPunkte(board, roundId, rules, [...matches.values()], seasonTips);
     },
 
     // Roh-Einträge einer Runde (Tipp + Snapshot + Ergebnis + matchday, ohne

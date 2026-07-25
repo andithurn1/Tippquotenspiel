@@ -146,3 +146,56 @@ describe("Kurzcode-Presets (publishPreset / getPresetByCode)", () => {
     expect(pub.rules.hack).toBeUndefined();
   });
 });
+
+describe("Saison-Wetten (saveSeasonTip / listSeasonTips + Leaderboard)", () => {
+  it("speichert einen Saison-Tipp und aktualisiert ihn beim erneuten Abgeben (kein Duplikat)", async () => {
+    const store = createMockStore();
+    await store.saveSeasonTip({ roundId: DEMO_ROUND_ID, userId: "u-du", wettenId: "meister", wert: "FC Bayern München" });
+    let mine = await store.listSeasonTips({ roundId: DEMO_ROUND_ID, userId: "u-du" });
+    expect(mine).toHaveLength(1);
+    expect(mine[0].wert).toBe("FC Bayern München");
+
+    await store.saveSeasonTip({ roundId: DEMO_ROUND_ID, userId: "u-du", wettenId: "meister", wert: "Borussia Dortmund" });
+    mine = await store.listSeasonTips({ roundId: DEMO_ROUND_ID, userId: "u-du" });
+    expect(mine).toHaveLength(1);
+    expect(mine[0].wert).toBe("Borussia Dortmund");
+  });
+
+  it("listSeasonTips filtert nach Nutzer bzw. gibt alle der Runde zurück", async () => {
+    const store = createMockStore();
+    await store.saveSeasonTip({ roundId: DEMO_ROUND_ID, userId: "u-du", wettenId: "meister", wert: "A" });
+    await store.saveSeasonTip({ roundId: DEMO_ROUND_ID, userId: "u-lena", wettenId: "meister", wert: "B" });
+    expect(await store.listSeasonTips({ roundId: DEMO_ROUND_ID })).toHaveLength(2);
+    expect(await store.listSeasonTips({ roundId: DEMO_ROUND_ID, userId: "u-du" })).toHaveLength(1);
+  });
+
+  it("ohne aktive Saison verändert ein Saison-Tipp das Leaderboard nicht", async () => {
+    const store = createMockStore();
+    await store.saveSeasonTip({ roundId: DEMO_ROUND_ID, userId: "u-du", wettenId: "meister", wert: "FC Bayern München" });
+    const board = await store.getLeaderboard(DEMO_ROUND_ID);
+    expect(board.every((b) => b.saison === undefined)).toBe(true); // Demo-Runde hat saison aus
+  });
+
+  it("mit aktiver Saison trägt ein Treffer eine eigene saison-Zeile ins Board", async () => {
+    const store = createMockStore();
+    // Runde mit aktiver Saison-Wette: „Meister" (aus den simulierten Ergebnissen ermittelbar)
+    const round = await store.createRound({
+      name: "Saison-Runde", adminId: "u-du", adminName: "Du", rules: DEFAULT_RULES,
+    });
+    // Regelwerk der Runde direkt mit Saison versehen (Admin ist Premium im Mock)
+    const r = await store.getRound(round.id);
+    r.rules = { ...r.rules, saison: { enabled: true, gewicht: 1, wetten: [{ key: "meister", punkte: 300 }] } };
+    // echten Meister aus den Match-Ergebnissen bestimmen und darauf tippen
+    const { scoreSaison } = await import("./saisonwetten");
+    const matches = await store.listMatches();
+    const meister = scoreSaison({ matches, tipps: {}, saison: r.rules.saison }).zeilen[0].gewinner[0];
+    // u-du tippt auch ein Match, damit er im (Spieltags-)Leaderboard erscheint
+    const jor = await store.getMatch("JOR-ESP");
+    await store.saveTip({ roundId: round.id, matchId: "JOR-ESP", userId: "u-du", tip: { home: 2, away: 1, goals: { home: [], away: [] } }, snapshot: jor.snapshot });
+    await store.saveSeasonTip({ roundId: round.id, userId: "u-du", wettenId: "meister", wert: meister });
+    const board = await store.getLeaderboard(round.id);
+    const du = board.find((b) => b.userId === "u-du");
+    expect(du.saison).toBe(300);
+    expect(du.total).toBeGreaterThanOrEqual(300);
+  });
+});

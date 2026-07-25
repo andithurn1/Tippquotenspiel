@@ -32,6 +32,7 @@ export default function RundenHub() {
   const [roundName, setRoundName] = useState(null);
   const [status, setStatus] = useState(null); // { total, open, tippedByMe }
   const [abstimmung, setAbstimmung] = useState(false);
+  const [saison, setSaison] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -40,6 +41,7 @@ export default function RundenHub() {
         if (!live) return;
         setRoundName(round?.name ?? null);
         setAbstimmung(round?.rules?.joker?.enabled === true && round?.rules?.joker?.abstimmung === true);
+        setSaison(round?.rules?.saison?.enabled === true);
         const relevant = filterMatchesByTeams(matches, round?.team_filter);
         const { total, open } = computeMatchStatus(relevant);
         setStatus({ total, open, tippedByMe: countTippedByUser(tips, user?.id) });
@@ -83,6 +85,21 @@ export default function RundenHub() {
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Stimmt ab, an welchen Spieltagen es einen Joker gibt.
+              </div>
+            </Link>
+          )}
+          {saison && (
+            <Link href="/saison" style={{
+              textDecoration: "none", color: C.text,
+              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
+              border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 18px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.violet, boxShadow: `0 0 12px ${C.violet}` }} />
+                <span style={{ fontSize: 16, fontWeight: 700 }}>🏆 Saison-Wetten</span>
+              </div>
+              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+                Langzeit-Tipps: Meister, Torschützenkönig & Co.
               </div>
             </Link>
           )}
