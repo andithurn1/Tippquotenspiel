@@ -64,18 +64,37 @@ function pick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
 // 5 Angriffsspieler je Team, jeder trägt einen Anteil an der Team-Tor-Erwartung.
 const SCORER_SHARES = [0.30, 0.22, 0.18, 0.12, 0.09];
 
-function makeSquad(rng, teamLambda, cap) {
+// Der Kader eines Vereins ist über die SAISON STABIL — er wird deshalb aus dem
+// VEREINSNAMEN gezogen, nicht aus dem Spiel. Sonst hieße Bayerns Torjäger an
+// jedem Spieltag anders, und „Wer trifft?" wäre sinnlos. Nur die QUOTEN der
+// Spieler ändern sich von Spiel zu Spiel (sie hängen an der Tor-Erwartung
+// gegen den jeweiligen Gegner).
+// Kleiner Cache, damit derselbe Verein nicht 34-mal neu ausgewürfelt wird.
+const squadCache = new Map();
+
+export function squadNames(teamName) {
+  if (squadCache.has(teamName)) return squadCache.get(teamName);
+  const rng = rngFromSeed(`squad:${teamName}`);
   const used = new Set();
-  const squad = {};
-  for (const share of SCORER_SHARES) {
+  const namen = [];
+  for (let i = 0; i < SCORER_SHARES.length; i++) {
     let name;
     do { name = `${pick(rng, FIRST_NAMES)} ${pick(rng, LAST_NAMES)}`; } while (used.has(name));
     used.add(name);
-    const playerLambda = teamLambda * share;
+    namen.push(name);
+  }
+  squadCache.set(teamName, namen);
+  return namen;
+}
+
+function makeSquad(teamName, teamLambda, cap) {
+  const squad = {};
+  squadNames(teamName).forEach((name, i) => {
+    const playerLambda = teamLambda * SCORER_SHARES[i];
     const pAnytime = 1 - Math.exp(-playerLambda);
     const pDouble = Math.max(1 - Math.exp(-playerLambda) - playerLambda * Math.exp(-playerLambda), 0.0005);
     squad[name] = { anytime: oddsFrom(pAnytime, 1.15, cap), double: oddsFrom(pDouble, 1.15, cap) };
-  }
+  });
   return squad;
 }
 
@@ -120,7 +139,7 @@ export function generateMatchOdds({
     },
     correctScore,
     teamGoals: { home: pHome.map((p) => oddsFrom(p, overround, cap)), away: pAway.map((p) => oddsFrom(p, overround, cap)) },
-    players: { home: makeSquad(rng, lamH, cap), away: makeSquad(rng, lamA, cap) },
+    players: { home: makeSquad(home, lamH, cap), away: makeSquad(away, lamA, cap) },
   };
 }
 

@@ -28,10 +28,12 @@ describe("generateMatchOdds — Determinismus & Variation", () => {
     expect(s2).toEqual(s1);
   });
 
-  it("anderer Seed → andere Spielernamen, aber gleiche Quoten-Struktur", () => {
+  it("der Seed ändert die Spielernamen NICHT — der Kader hängt am Verein", () => {
+    // Früher kam der Kader aus dem Match-Seed, dadurch hieß derselbe Verein an
+    // jedem Spieltag anders. Jetzt gilt: Namen = Verein, Quoten = Stärkeverhältnis.
     const s1 = generateMatchOdds({ ...favUnderdog, seed: "seed-a" });
     const s2 = generateMatchOdds({ ...favUnderdog, seed: "seed-b" });
-    expect(Object.keys(s1.players.home)).not.toEqual(Object.keys(s2.players.home));
+    expect(Object.keys(s1.players.home)).toEqual(Object.keys(s2.players.home));
     expect(s1.winner).toEqual(s2.winner); // Quoten hängen nur von den Stärken ab, nicht vom Seed
   });
 
@@ -138,5 +140,34 @@ describe("simulateResult", () => {
     const r = simulateResult(snap, favUnderdog);
     const summe = Object.values(r.playerGoals).reduce((s, n) => s + n, 0);
     expect(summe).toBe(r.home + r.away);
+  });
+});
+
+describe("Kader bleibt über die Saison stabil", () => {
+  const stark = { homeAttack: 1.8, homeDefense: 0.6, awayAttack: 0.8, awayDefense: 1.2 };
+  const schwach = { homeAttack: 0.8, homeDefense: 1.3, awayAttack: 1.8, awayDefense: 0.6 };
+
+  it("derselbe Verein hat in verschiedenen Spielen dieselben Torschützen", () => {
+    const a = generateMatchOdds({ matchId: "s1", home: "FC Alpha", away: "SV Beta", kickoff: "2026-08-28T18:30:00Z", ...stark });
+    const b = generateMatchOdds({ matchId: "s2", home: "FC Alpha", away: "SC Gamma", kickoff: "2026-09-04T18:30:00Z", ...stark });
+    expect(Object.keys(a.players.home)).toEqual(Object.keys(b.players.home));
+  });
+
+  it("auch als Auswärtsteam ist es derselbe Kader", () => {
+    const heim = generateMatchOdds({ matchId: "s3", home: "FC Alpha", away: "SV Beta", kickoff: "2026-08-28T18:30:00Z", ...stark });
+    const ausw = generateMatchOdds({ matchId: "s4", home: "SC Gamma", away: "FC Alpha", kickoff: "2026-09-11T18:30:00Z", ...schwach });
+    expect(Object.keys(ausw.players.away)).toEqual(Object.keys(heim.players.home));
+  });
+
+  it("verschiedene Vereine haben verschiedene Kader", () => {
+    const m = generateMatchOdds({ matchId: "s5", home: "FC Alpha", away: "SV Beta", kickoff: "2026-08-28T18:30:00Z", ...stark });
+    expect(Object.keys(m.players.home)).not.toEqual(Object.keys(m.players.away));
+  });
+
+  it("die QUOTEN eines Spielers ändern sich je nach Gegner", () => {
+    const leicht = generateMatchOdds({ matchId: "s6", home: "FC Alpha", away: "SV Beta", kickoff: "2026-08-28T18:30:00Z", homeAttack: 1.8, homeDefense: 0.6, awayAttack: 0.7, awayDefense: 1.4 });
+    const schwer = generateMatchOdds({ matchId: "s7", home: "FC Alpha", away: "SV Beta", kickoff: "2026-09-04T18:30:00Z", homeAttack: 1.8, homeDefense: 0.6, awayAttack: 1.5, awayDefense: 0.6 });
+    const spieler = Object.keys(leicht.players.home)[0];
+    expect(leicht.players.home[spieler].anytime).not.toBe(schwer.players.home[spieler].anytime);
   });
 });
