@@ -19,6 +19,7 @@ import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
 import SaisonWetten from "@/components/SaisonWetten";
+import Ereignisse from "@/components/Ereignisse";
 import RundenCharaktere from "@/components/RundenCharaktere";
 import EinfacheRegler from "@/components/EinfacheRegler";
 import { CHARAKTERE } from "@/lib/charaktere";
@@ -815,6 +816,13 @@ export default function Spielerstellung() {
             onChange={setSaison}
             teams={ALL_TEAMS}
           />
+
+          {/* Joker verdienen — steht bewusst NACH den Saison-Wetten und vor
+              „Spieltag vergessen": beides sind Nebenwege zu Punkten bzw.
+              Jokern, die man zusammen betrachten will. */}
+          <SectionTitle>Joker verdienen</SectionTitle>
+          <Ereignisse rules={rules}
+            onChange={(ereignisse) => { touched(); setRules((r) => ({ ...r, ereignisse })); }} />
 
           {/* Versäumnis: Spieltag vergessen */}
           {stufe === "profi" && (<>

@@ -156,6 +156,17 @@ als die Ausgeglichenheit der Quoten, sonst gewinnt immer das belanglose
 Daten-Schicht beim Öffnen des Spieltags — eingefroren wie der Quoten-Snapshot,
 sonst änderte sich der Wert eines Tipps rückwirkend.
 
+**Ereignisse** (`src/lib/ereignisse.js`, `rules.ereignisse`, Standard aus): der
+ZWEITE Joker-Topf — Joker, die man sich verdient, statt sie zugeteilt zu
+bekommen. Belohnung ist immer eine Joker-Gutschrift, nie ein neuer Punkte-Kanal,
+damit `modCap` weiter greift; dazu ein eigener Deckel (`maxErspielt`), sonst
+gewänne die Runde, wer die Nebenaufgaben am besten erledigt — eine zweite
+Leistungsachse und damit ein Fairness-Bruch. Gedeckelt wird chronologisch.
+Jeder Typ deklariert seine Daten (`braucht`) wie bei den Saison-Wetten;
+Herausforderungen sind vorbereitet, aber nicht auswertbar und lassen sich
+deshalb gar nicht aktivieren. `konflikte()` meldet Trost-Joker + Anschluss-Bonus
+als Doppelbelohnung.
+
 **Joker-Verteilung** (`src/lib/jokerPlan.js`, `rules.joker.verteilung`, Standard
 `frei`): WANN es überhaupt einen Joker gibt. Der Admin stellt eine FREQUENZ ein
 („etwa jeder 4. Spieltag"), verteilt wird deterministisch aus der Runden-Id —

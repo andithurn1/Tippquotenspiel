@@ -82,6 +82,27 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 (spät) · **Andi** → **Andre** — ✅ **ERLEDIGT: Ereignisse (Kategorie 1+2)**
+
+Mein Claim ist abgearbeitet, `main` ist grün (**643 Tests**, Build sauber).
+`src/lib/ereignisse.js` + `Ereignisse.jsx`. Für dich relevant:
+
+- **Noch ein neues Regel-Feld:** `rules.ereignisse`. Zusammen mit `bigGame`,
+  `spiele` und `joker.verteilung` sind das jetzt vier neue Felder gegenüber der
+  Version, die du kanntest. Alle laufen über `sanitizeRules`.
+- **`presetMerge.js`:** `ereignisse` ist im Aspekt „Joker & Team-Faktoren"
+  gelandet, weil es denselben Joker-Topf speist. Wenn du dort für die
+  Wettbewerbe einen Aspekt ergänzt, ist das genau die eine Zeile, an der wir
+  uns treffen — einfach beide behalten.
+- **Nicht mehr frei:** `engine.js` DEFAULT_RULES/sanitizeRules habe ich zuletzt
+  angefasst. Zieh vor deinem ersten Commit `git pull`, dann ist es konfliktfrei.
+
+Die Herausforderungen (Quiz, Duell, Elfmeterschießen) sind bewusst NICHT
+gebaut — sie brauchen ein asynchrones Minispiel. Im Katalog stehen sie als
+nicht auswertbar, damit die Struktur steht und niemand sie versehentlich
+aktiviert.
+
+
 ### 2026-07-25 (spät, kurz) · **Andi** → **Andre** — 🔒 **CLAIM: ich nehme „Ereignisse", du bleibst bei den Wettbewerben**
 
 Du startest gerade frisch — damit wir uns nicht überschneiden, hier vorab mein

@@ -12,6 +12,7 @@ import { sanitizeSaison } from "./saisonwetten";
 import { sanitizeVerteilung, DEFAULT_VERTEILUNG } from "./jokerPlan";
 import { sanitizeBigGame, DEFAULT_BIGGAME, bigGameAufschlag } from "./bigGame";
 import { sanitizeSpiele, DEFAULT_SPIELE } from "./spielauswahl";
+import { sanitizeEreignisse, DEFAULT_EREIGNISSE } from "./ereignisse";
 
 export function createMockOddsSource() {
   const snap = {
@@ -156,6 +157,11 @@ export const DEFAULT_RULES = {
   // teilt, sondern seine ganze Runden-Idee. Katalog + Filter in
   // spielauswahl.js. Standard „alle" = neutrales No-op.
   spiele: { ...DEFAULT_SPIELE },
+
+  // ── Ereignisse: Joker ERSPIELEN statt nur zugeteilt bekommen ──
+  // Zweiter Joker-Topf neben `joker.verteilung`, mit eigener Obergrenze.
+  // Katalog + Auswertung in ereignisse.js. Standard aus.
+  ereignisse: { ...DEFAULT_EREIGNISSE },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -318,6 +324,7 @@ export function sanitizeRules(partial = {}) {
     // Big Game ebenso — der Katalog der Signale bleibt in bigGame.js.
     bigGame: sanitizeBigGame(src.bigGame),
     spiele: sanitizeSpiele(src.spiele),
+    ereignisse: sanitizeEreignisse(src.ereignisse),
   };
 }
 

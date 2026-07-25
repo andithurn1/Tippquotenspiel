@@ -214,7 +214,27 @@ rein, und danach **anpassbar bleiben**.
   nur seine Regeln, sondern seine ganze Runden-Idee („Nur die Top 6, 10
   Spieltage, Hardcore-Wertung") — und man kann sie trotzdem anpassen.
 
-### Ereignisse: Joker ERSPIELEN statt nur zugeteilt bekommen — NEU (Nutzerwunsch)
+### Ereignisse: Joker ERSPIELEN statt nur zugeteilt bekommen — GEBAUT ✓ (Kategorie 1+2)
+`src/lib/ereignisse.js` + `Ereignisse.jsx` in der Spielerstellung. Gebaut sind
+die **Meilensteine** (Serie, erster exakter Treffer, Aussenseiter-Sieg, Spieltag
+vollstaendig) und der **Trost-Joker**. Herausforderungen stehen im Katalog, sind
+aber als NICHT auswertbar markiert (`braucht: ["minispiel"]`) — `sanitizeEreignisse`
+wirft sie beim Aktivieren raus, damit niemand etwas einschaltet, das nie ausloest.
+
+Drei Dinge, die sich beim Bauen als die wichtigen erwiesen haben:
+- Der **Deckel** (`maxErspielt`) steht in der UI GANZ OBEN, nicht am Ende. Er ist
+  keine Feineinstellung, sondern die Zusage, dass niemand das Tippspiel ueber
+  Nebenaufgaben gewinnt. Gedeckelt wird **chronologisch** — die frueh verdienten
+  Joker zaehlen, sonst haenge die Auswahl an der Sortierung.
+- **`konflikte()`** meldet Trost-Joker + Anschluss-Bonus als Doppelbelohnung.
+  Genau die Kante, vor der der Entwurf gewarnt hat — jetzt sichtbar statt nur
+  dokumentiert.
+- **Aussenseiter zaehlt nur, wenn der Tipp AUFGEHT** — sonst waere blindes
+  Dagegenhalten belohnt (dieselbe Regel wie beim Mut-Joker in der Engine).
+
+Offen: die Gutschriften mit `jokerPlan.js` zusammenfuehren (ein Kontingent aus
+beiden Toepfen), Anzeige beim Tippen, und die Herausforderungen selbst.
+
 Bisher kommt ein Joker nur vom Admin (Frequenz/Verteilung). Zusätzlich soll man
 sich welche **verdienen** können — durch Herausforderungen oder weil einem in
 der Runde etwas widerfährt.
