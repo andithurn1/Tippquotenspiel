@@ -136,6 +136,26 @@ auswertbar markiert, weil unsere Ergebnisse nur Tore + Torschützen tragen.
 `sanitizeRules` delegiert an `sanitizeSaison`, damit der Katalog die eine Quelle
 bleibt — dadurch landen Saison-Wetten automatisch in den Creator-Codes.
 
+**Joker-Verteilung** (`src/lib/jokerPlan.js`, `rules.joker.verteilung`, Standard
+`frei`): WANN es überhaupt einen Joker gibt. Der Admin stellt eine FREQUENZ ein
+(„etwa jeder 4. Spieltag"), verteilt wird deterministisch aus der Runden-Id —
+dadurch sehen alle dasselbe, es ist nachprüfbar, und der Creator-Code bleibt
+kurz (gespeichert wird die REGEL, nicht die ausgerollte Liste). Verteilt wird
+BLOCKWEISE (je Block genau einer), sonst bündelt reiner Zufall vier Joker in
+fünf Spieltagen. Modus `kontingent` gibt jedem gleich VIELE Joker an
+verschiedenen Spieltagen — deshalb liefert `fortschritt()` immer „3 von 8" und
+nie eine nackte Zahl: ein ungleicher Zwischenstand ist systembedingt und sähe
+sonst nach Bevorzugung aus. Empfehlung: Reihenfolge verdeckt, Kontingent offen.
+`sanitizeRules` delegiert an `sanitizeVerteilung`.
+
+**Leitplanken der Profi-Stufe** (`src/lib/reglerWarnung.js`): `RULE_LIMITS` ist
+die Grenze des ERLAUBTEN, das Empfehlungsband die des ERPROBTEN. Das Band wird
+aus den PRESETS abgeleitet (was `presets.balance.test.js` durchmisst, gilt als
+erprobt) — ändern sich die Presets, wandert es mit. Dazu handgeschriebene
+KOMBINATIONS-Regeln für das, was in keinem Einzelwert steckt (kein Abzug + kein
+Cutoff = Gratis-Lose). Jede Meldung kennt ihre Korrektur; Tests sichern, dass
+kein Preset und kein Charakter eine Warnung auslöst.
+
 **Weitere Module:** `premium.js` (Berechtigung; nur Admin braucht Premium,
 `applyEntitlements` neutralisiert Premium-Regeln ohne Löschen), `records.js`
 (Rekorde/Auszeichnungen aus dem Verlauf), `avatars.js` (Profil), `theme.js`

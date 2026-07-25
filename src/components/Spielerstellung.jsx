@@ -24,6 +24,7 @@ import EinfacheRegler from "@/components/EinfacheRegler";
 import { CHARAKTERE } from "@/lib/charaktere";
 import BalanceAmpel from "@/components/BalanceAmpel";
 import ProfiWarnungen from "@/components/ProfiWarnungen";
+import JokerVerteilung from "@/components/JokerVerteilung";
 import { band } from "@/lib/reglerWarnung";
 import { C, MONO } from "@/lib/theme";
 
@@ -609,15 +610,30 @@ export default function Spielerstellung() {
                 )}
               </div>
 
-              {/* Gemeinsame Abstimmung, an welchen Spieltagen es einen Joker gibt */}
-              <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 6, paddingTop: 10 }}>
-                <Toggle label="Spieltage gemeinsam abstimmen" on={j.abstimmung === true}
-                  onChange={(on) => patchJoker({ abstimmung: on })} />
-                <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
-                  {j.abstimmung
-                    ? "Die Runde stimmt ab: Joker gibt es nur an Spieltagen mit Mehrheit."
-                    : "Aus = Joker an jedem Spieltag. An = die Runde entscheidet per Mehrheit, welche Spieltage einen Joker bekommen."}
-                </p>
+              {/* Verteilung über die Saison — Frequenz statt 34 Klicks */}
+              <JokerVerteilung verteilung={j.verteilung}
+                onChange={(verteilung) => patchJoker({ verteilung })} />
+
+              {/* Gemeinsame Abstimmung — die ANDERE Antwort auf „an welchen
+                  Spieltagen?". Beide gleichzeitig wären zwei Instanzen für
+                  dieselbe Frage, deshalb nur bei freier Verteilung wählbar. */}
+              <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 10 }}>
+                {j.verteilung?.modus === "frei" ? (
+                  <>
+                    <Toggle label="Spieltage gemeinsam abstimmen" on={j.abstimmung === true}
+                      onChange={(on) => patchJoker({ abstimmung: on })} />
+                    <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                      {j.abstimmung
+                        ? "Die Runde stimmt ab: Joker gibt es nur an Spieltagen mit Mehrheit."
+                        : "Aus = Joker an jedem Spieltag. An = die Runde entscheidet per Mehrheit, welche Spieltage einen Joker bekommen."}
+                    </p>
+                  </>
+                ) : (
+                  <p style={{ fontSize: 11, color: C.muted, margin: 0, lineHeight: 1.4 }}>
+                    Die Abstimmung über Joker-Spieltage entfällt — du hast die Verteilung
+                    oben schon festgelegt. Für eine Abstimmung wieder auf <strong>Frei</strong> stellen.
+                  </p>
+                )}
               </div>
             </div>
           )}

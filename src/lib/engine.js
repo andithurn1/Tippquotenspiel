@@ -9,6 +9,7 @@ import { applyCatchup } from "./catchup";
 
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
 import { sanitizeSaison } from "./saisonwetten";
+import { sanitizeVerteilung, DEFAULT_VERTEILUNG } from "./jokerPlan";
 
 export function createMockOddsSource() {
   const snap = {
@@ -97,6 +98,9 @@ export const DEFAULT_RULES = {
     enabled: false, modus: "einzel", faktor: 1.5, faktoren: [2, 1.5, 1.2, 1], abstimmung: false,
     heimat: { enabled: false, faktor: 1.2 },
     mut: { enabled: false, faktor: 1.1 },
+    // verteilung — an welchen Spieltagen es einen Joker gibt (jokerPlan.js).
+    // Standard "frei": jeder setzt an jedem Spieltag selbst.
+    verteilung: { ...DEFAULT_VERTEILUNG },
   },
 
   // Team-/Derby-Modifikatoren: gelten für ALLE in der Runde (anders als der
@@ -201,6 +205,9 @@ function sanitizeJoker(jk, num, clamp) {
       enabled: jk.mut?.enabled === true,
       faktor: clamp(num(jk.mut?.faktor, D.mut.faktor), L.mutFaktor.min, L.mutFaktor.max),
     },
+    // WANN es überhaupt einen Joker gibt — delegiert an jokerPlan.js, damit
+    // der Katalog der Modi dort die eine Quelle bleibt (wie sanitizeSaison).
+    verteilung: sanitizeVerteilung(jk.verteilung),
   };
 }
 

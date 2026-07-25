@@ -277,7 +277,13 @@ Spielerstellung. Umgesetzt:
 Offen: **Balance-Ampel klebend** (aktuell scrollt sie mit); der Kasten mit den
 Warnungen sitzt direkt darunter und könnte mitkleben.
 
-### Joker-Verteilung über die Saison (Frequenz statt Handarbeit) — NEU
+### Joker-Verteilung über die Saison (Frequenz statt Handarbeit) — GEBAUT ✓
+`src/lib/jokerPlan.js` + `JokerVerteilung.jsx`. Umgesetzt wie unten beschrieben;
+verteilt wird BLOCKWEISE (je Block genau einer), weil reiner Zufall sonst vier
+Joker in fünf Spieltage bündelt — formal fair, gefühlt kaputt. Offen bleibt die
+Durchsetzung beim Tippen (Store/UI: welcher Spieltag ist für MICH ein
+Joker-Spieltag) und die Mitspieler-Übersicht als eigener Screen.
+
 Der Admin soll nicht 34 Spieltage einzeln anklicken müssen.
 
 - **Frequenz-Regler:** „etwa jeder 4. Spieltag hat einen Joker" → das System
