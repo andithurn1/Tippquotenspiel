@@ -15,6 +15,7 @@ const SCREENS = [
   { href: "/beitreten", title: "Runde beitreten", desc: "Mit Beitritts-Code einer Runde beitreten oder wechseln.", tone: C.sky },
   { href: "/einstellungen", title: "Meine Anzeige", desc: "Wie viel Mathematik & Vorschau du sehen willst.", tone: C.violet, tag: "persönlich" },
   { href: "/farben", title: "Fanfarben", desc: "Deine Vereinsfarben als Akzent — 2–3 Farben wählen.", tone: C.gold, tag: "persönlich" },
+  { href: "/benachrichtigungen", title: "Benachrichtigungen", desc: "Nur neuer Spieltag & Erinnerung vor Anpfiff — fein einstellbar.", tone: C.sky, tag: "persönlich" },
   { href: "/abrechnung", title: "Abrechnung (Demo)", desc: "Spieltag-Abrechnung mit animiertem Punkte-Zähler.", tone: C.coral },
   { href: "/explorer", title: "Auszahlungs-Explorer", desc: "Heat-Grid: was jeder mögliche Endstand zahlen würde.", tone: C.mint },
 ];

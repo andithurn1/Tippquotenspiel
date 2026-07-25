@@ -9,6 +9,7 @@ import { PRESETS } from "@/lib/presets";
 import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
 import { STAERKE_STUFEN, BETRIFFT } from "@/lib/catchup";
+import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
 import { TEAM_RATINGS } from "@/lib/bundesligaData";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
@@ -71,6 +72,7 @@ export default function Spielerstellung() {
   const patchJoker = (p) => { touched(); setRules((r) => ({ ...r, joker: { ...r.joker, ...p } })); };
   const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
+  const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
   // Faktor eines Vereins eine Stufe weiterdrehen; über dem Maximum zurück auf
   // „aus" (1 = kein Modifikator, fliegt aus der Liste, damit das Regelwerk
   // klein bleibt). Der nächste Wert wird IM Updater aus dem vorherigen Stand
@@ -180,6 +182,7 @@ export default function Spielerstellung() {
   const tmTeams = tm.teams || {};
   const tmAktiv = tm.derbyFaktor > 1 || Object.keys(tmTeams).length > 0;
   const au = rules.aufholen || DEFAULT_RULES.aufholen;
+  const ve = rules.versaeumnis || DEFAULT_RULES.versaeumnis;
   // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
   const auStufe = STAERKE_STUFEN.find((s) => s.staerke === au.staerke && s.schwelle === au.schwelle)?.key ?? "custom";
 
@@ -596,6 +599,69 @@ export default function Spielerstellung() {
                 {Object.values(BETRIFFT).find((b) => b.key === au.betrifft)?.desc}
                 {" "}Die Live-Vorschau unten zeigt, ob der Bonus zu stark wird.
               </p>
+            </div>
+          )}
+
+          {/* Versäumnis: Spieltag vergessen */}
+          <SectionTitle>Spieltag vergessen</SectionTitle>
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+            Wer mal keine Zeit hatte, steht sonst mit null Punkten da und steigt aus.
+            Mit Kulanz bekommt er einen Ersatz-Tipp — <strong>immer schlechter als
+            selbst tippen</strong>, aber besser als nichts.
+          </p>
+          <Toggle label="Ersatz-Tipp bei Versäumnis" on={ve.enabled}
+            onChange={(on) => patchVersaeumnis({ enabled: on })} />
+
+          {ve.enabled && (
+            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
+              <Field label="Woher kommt der Ersatz-Tipp?">
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {VERSAEUMNIS_STRATEGIEN.map((s) => {
+                    const on = ve.strategie === s;
+                    return (
+                      <button key={s} onClick={() => patchVersaeumnis({ strategie: s })} style={{
+                        cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
+                        borderRadius: 10, textAlign: "left",
+                        background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
+                        border: `1px solid ${on ? C.gold + "66" : C.line}`,
+                      }}>
+                        <div style={{ fontWeight: 700 }}>{VERSAEUMNIS_LABEL[s]}</div>
+                        <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>{VERSAEUMNIS_HINT[s]}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+
+              <Field label={`Abzug auf den Ersatz-Tipp: ${ve.malusProzent} %`}>
+                <input type="range"
+                  min={RULE_LIMITS.versaeumnis.malusProzent.min}
+                  max={RULE_LIMITS.versaeumnis.malusProzent.max}
+                  step={RULE_LIMITS.versaeumnis.malusProzent.step}
+                  value={ve.malusProzent}
+                  onChange={(e) => patchVersaeumnis({ malusProzent: Number(e.target.value) })}
+                  style={{ width: "100%", accentColor: C.gold }} />
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
+                  {ve.malusProzent === 0 && "Volle Wertung — sehr gnädig, macht Vergessen folgenlos."}
+                  {ve.malusProzent > 0 && ve.malusProzent < 100 && `Der Ersatz-Tipp zählt nur zu ${100 - ve.malusProzent} %.`}
+                  {ve.malusProzent === 100 && "Wertlos — wie gar nicht getippt (nur fürs Gefühl dabei)."}
+                </div>
+              </Field>
+
+              <Field label={ve.maxProSaison === 0 ? "Unbegrenzt oft" : `Höchstens ${ve.maxProSaison}× pro Saison`}>
+                <input type="range"
+                  min={RULE_LIMITS.versaeumnis.maxProSaison.min}
+                  max={RULE_LIMITS.versaeumnis.maxProSaison.max}
+                  step={RULE_LIMITS.versaeumnis.maxProSaison.step}
+                  value={ve.maxProSaison}
+                  onChange={(e) => patchVersaeumnis({ maxProSaison: Number(e.target.value) })}
+                  style={{ width: "100%", accentColor: C.gold }} />
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
+                  {ve.maxProSaison === 0
+                    ? "Die Kulanz greift immer — auch bei Dauer-Aussetzern."
+                    : "Danach zählt ein vergessener Spieltag wieder null. Verhindert dauerhaftes Aussetzen."}
+                </div>
+              </Field>
             </div>
           )}
 

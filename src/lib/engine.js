@@ -111,6 +111,13 @@ export const DEFAULT_RULES = {
   //  schwelle — ab welchem Rückstand (Anteil an der Spitze) es überhaupt greift
   //  betrifft — "letzter" | "unteres-drittel" | "unter-schnitt"
   aufholen: { enabled: false, staerke: 0.2, schwelle: 0.2, betrifft: "unteres-drittel" },
+
+  // ── Versäumnis: was passiert, wenn jemand einen Spieltag vergisst ──
+  //  strategie    — "wahrscheinlich" | "schnitt" | "zufall" (siehe autoTip.js)
+  //  malusProzent — Abzug auf die Wertung des Auto-Tipps (100 = wertlos)
+  //  maxProSaison — wie oft die Kulanz je Spieler greift (0 = unbegrenzt)
+  // Standard aus: ohne Zutun des Admins gibt es für Nichtstun nichts.
+  versaeumnis: { enabled: false, strategie: "wahrscheinlich", malusProzent: 30, maxProSaison: 3 },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -136,6 +143,7 @@ export const RULE_LIMITS = {
   teamMods: { derbyFaktor: { min: 1, max: 2, step: 0.1 }, teamFaktor: { min: 1, max: 2, step: 0.1 } },
   modCap: { min: 1, max: 4, step: 0.1 },
   aufholen: { staerke: { min: 0.05, max: 0.5, step: 0.05 }, schwelle: { min: 0, max: 0.5, step: 0.05 } },
+  versaeumnis: { malusProzent: { min: 0, max: 100, step: 5 }, maxProSaison: { min: 0, max: 10, step: 1 } },
 };
 
 // Joker-Block eigenständig säubern: Modus, Einzelfaktor und Ranking-Pool.
@@ -233,6 +241,16 @@ export function sanitizeRules(partial = {}) {
         staerke: clamp(num(a.staerke, D.aufholen.staerke), L.aufholen.staerke.min, L.aufholen.staerke.max),
         schwelle: clamp(num(a.schwelle, D.aufholen.schwelle), L.aufholen.schwelle.min, L.aufholen.schwelle.max),
         betrifft: erlaubt.includes(a.betrifft) ? a.betrifft : D.aufholen.betrifft,
+      };
+    })(),
+    versaeumnis: (() => {
+      const v = src.versaeumnis && typeof src.versaeumnis === "object" ? src.versaeumnis : {};
+      const erlaubt = ["wahrscheinlich", "schnitt", "zufall"];
+      return {
+        enabled: v.enabled === true,
+        strategie: erlaubt.includes(v.strategie) ? v.strategie : D.versaeumnis.strategie,
+        malusProzent: clamp(Math.round(num(v.malusProzent, D.versaeumnis.malusProzent)), L.versaeumnis.malusProzent.min, L.versaeumnis.malusProzent.max),
+        maxProSaison: clamp(Math.round(num(v.maxProSaison, D.versaeumnis.maxProSaison)), L.versaeumnis.maxProSaison.min, L.versaeumnis.maxProSaison.max),
       };
     })(),
   };

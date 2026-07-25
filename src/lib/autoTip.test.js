@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { createMockOddsSource, DEFAULT_RULES, scoreTip, sanitizeRules } from "@/lib/engine";
-import { buildAutoTip, missingMatches, autoTipsFor } from "@/lib/autoTip";
+import {
+  buildAutoTip, missingMatches, autoTipsFor,
+  sanitizeVersaeumnis, malusFaktor, DEFAULT_VERSAEUMNIS,
+  VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LIMITS,
+} from "@/lib/autoTip";
 import { likelyScorelines } from "@/lib/nearResults";
 
 const odds = createMockOddsSource();
@@ -86,6 +90,7 @@ describe("missingMatches / autoTipsFor", () => {
     { match_id: "m1", user_id: "u-du" },
     { match_id: "m2", user_id: "u-anders" },
   ];
+  const AN = { ...DEFAULT_VERSAEUMNIS, enabled: true };
 
   it("findet nur die Spiele ohne eigenen Tipp", () => {
     const fehlend = missingMatches(matches, tips, "u-du").map((m) => m.matchId);
@@ -93,16 +98,101 @@ describe("missingMatches / autoTipsFor", () => {
   });
 
   it("erzeugt je Versäumnis einen speicherbaren Eintrag mit eingefrorenem Snapshot", () => {
-    const autos = autoTipsFor({ matches, tips, userId: "u-du", rules: DEFAULT_RULES });
+    const autos = autoTipsFor({ matches, tips, userId: "u-du", rules: DEFAULT_RULES, versaeumnis: AN });
     expect(autos).toHaveLength(2);
     for (const a of autos) {
       expect(a.snapshot).toBe(SNAP);
       expect(a.tip.auto).toBe(true);
+      expect(a.malusFaktor).toBeCloseTo(malusFaktor(AN));
     }
   });
 
   it("wer alles getippt hat, bekommt nichts dazu", () => {
     const alle = matches.map((m) => ({ match_id: m.matchId, user_id: "u-du" }));
-    expect(autoTipsFor({ matches, tips: alle, userId: "u-du" })).toEqual([]);
+    expect(autoTipsFor({ matches, tips: alle, userId: "u-du", versaeumnis: AN })).toEqual([]);
+  });
+
+  it("ist die Kulanz ausgeschaltet, gibt es gar nichts (Standard)", () => {
+    expect(autoTipsFor({ matches, tips, userId: "u-du" })).toEqual([]);
+    expect(autoTipsFor({ matches, tips, userId: "u-du", versaeumnis: DEFAULT_VERSAEUMNIS })).toEqual([]);
+  });
+
+  it("aufgebrauchtes Kontingent beendet die Kulanz", () => {
+    const v = { ...AN, maxProSaison: 2 };
+    expect(autoTipsFor({ matches, tips, userId: "u-du", versaeumnis: v, bisherGenutzt: 1 })).toHaveLength(2);
+    expect(autoTipsFor({ matches, tips, userId: "u-du", versaeumnis: v, bisherGenutzt: 2 })).toEqual([]);
+  });
+
+  it("maxProSaison = 0 heißt unbegrenzt", () => {
+    const v = { ...AN, maxProSaison: 0 };
+    expect(autoTipsFor({ matches, tips, userId: "u-du", versaeumnis: v, bisherGenutzt: 99 })).toHaveLength(2);
+  });
+});
+
+describe("Admin-Einstellung: sanitizeVersaeumnis / Malus", () => {
+  it("Standard ist AUS — Nichtstun wird nie automatisch belohnt", () => {
+    expect(DEFAULT_VERSAEUMNIS.enabled).toBe(false);
+  });
+
+  it("beschneidet Unfug auf gültige Werte", () => {
+    const v = sanitizeVersaeumnis({ enabled: "ja", strategie: "hack", malusProzent: 999, maxProSaison: -5 });
+    expect(v.enabled).toBe(false);            // nur echtes true zählt
+    expect(VERSAEUMNIS_STRATEGIEN).toContain(v.strategie);
+    expect(v.malusProzent).toBe(VERSAEUMNIS_LIMITS.malusProzent.max);
+    expect(v.maxProSaison).toBe(VERSAEUMNIS_LIMITS.maxProSaison.min);
+  });
+
+  it("übernimmt gültige Werte unverändert", () => {
+    const v = sanitizeVersaeumnis({ enabled: true, strategie: "zufall", malusProzent: 40, maxProSaison: 5 });
+    expect(v).toEqual({ enabled: true, strategie: "zufall", malusProzent: 40, maxProSaison: 5 });
+  });
+
+  it("Malus 100 % entwertet den Auto-Tipp komplett, 0 % lässt ihn voll", () => {
+    expect(malusFaktor({ malusProzent: 100 })).toBe(0);
+    expect(malusFaktor({ malusProzent: 0 })).toBe(1);
+  });
+});
+
+describe("Strategien", () => {
+  const AN = { ...DEFAULT_VERSAEUMNIS, enabled: true };
+
+  it("Schnitt mittelt die Tipps der Mitspieler", () => {
+    const fremde = [{ home: 2, away: 0 }, { home: 4, away: 2 }]; // Schnitt 3:1
+    const tip = buildAutoTip(SNAP, DEFAULT_RULES, { strategie: "schnitt", fremdeTipps: fremde });
+    expect(tip.home).toBe(3);
+    expect(tip.away).toBe(1);
+  });
+
+  it("Schnitt ohne fremde Tipps fällt aufs wahrscheinlichste Ergebnis zurück", () => {
+    const schnitt = buildAutoTip(SNAP, DEFAULT_RULES, { strategie: "schnitt", fremdeTipps: [] });
+    const standard = buildAutoTip(SNAP, DEFAULT_RULES);
+    expect(schnitt.home).toBe(standard.home);
+    expect(schnitt.away).toBe(standard.away);
+  });
+
+  it("Zufall ist reproduzierbar (gleicher Seed → gleicher Tipp)", () => {
+    const a = buildAutoTip(SNAP, DEFAULT_RULES, { strategie: "zufall", seed: "m1-u-du" });
+    const b = buildAutoTip(SNAP, DEFAULT_RULES, { strategie: "zufall", seed: "m1-u-du" });
+    expect(a).toEqual(b);
+  });
+
+  it("Zufall bleibt im plausiblen Bereich (kein Freilos)", () => {
+    for (const seed of ["a", "b", "c", "d", "e", "f"]) {
+      const tip = buildAutoTip(SNAP, DEFAULT_RULES, { strategie: "zufall", seed });
+      const punkte = scoreTip(tip, { home: tip.home, away: tip.away, playerGoals: null }, SNAP, DEFAULT_RULES).total;
+      const mutig = scoreTip({ home: 5, away: 1, goals: { home: [], away: [] } }, { home: 5, away: 1, playerGoals: null }, SNAP, DEFAULT_RULES).total;
+      expect(punkte).toBeLessThan(mutig); // nie besser als ein mutiger eigener Treffer
+    }
+  });
+
+  it("die Strategie kommt aus dem Regelwerk der Runde", () => {
+    const matches = [{ matchId: "m1", snapshot: SNAP }];
+    const tips = [{ match_id: "m1", user_id: "u-anders", tip: { home: 4, away: 2 } }];
+    const autos = autoTipsFor({
+      matches, tips, userId: "u-du", rules: DEFAULT_RULES,
+      versaeumnis: { ...AN, strategie: "schnitt" },
+    });
+    expect(autos[0].tip.home).toBe(4);
+    expect(autos[0].tip.away).toBe(2);
   });
 });

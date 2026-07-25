@@ -20,7 +20,50 @@
 // ============================================================
 
 import { likelyScorelines } from "./nearResults";
-import { DEFAULT_RULES } from "./engine";
+import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules } from "./engine";
+
+// ── Was passiert bei einem Versäumnis? Der ADMIN entscheidet ──
+// Drei Strategien, bewusst mit unterschiedlichem Charakter:
+//  • "wahrscheinlich" — der zahmste Tipp laut Quoten. Fair, langweilig, sicher.
+//  • "schnitt"        — der Durchschnitt der Mitspieler-Tipps. „Du hättest
+//                       mitgemacht wie alle" — sozial, braucht fremde Tipps.
+//  • "zufall"         — ein zufälliger plausibler Endstand aus den Top-Quoten.
+//                       Mehr Drama, aber nie ein Freifahrtschein.
+// Dazu ein MALUS in Prozent: der Auto-Tipp darf sich nicht wie ein eigener
+// anfühlen. 0 % = reine Kulanz, 100 % = wie gar nicht getippt.
+export const VERSAEUMNIS_STRATEGIEN = ["wahrscheinlich", "schnitt", "zufall"];
+
+export const VERSAEUMNIS_LABEL = {
+  wahrscheinlich: "Wahrscheinlichstes Ergebnis",
+  schnitt: "Schnitt der Mitspieler",
+  zufall: "Zufällig aus den plausiblen",
+};
+
+export const VERSAEUMNIS_HINT = {
+  wahrscheinlich: "Der zahmste Tipp laut Quoten — sicher, aber zahlt wenig.",
+  schnitt: "Was die anderen im Mittel getippt haben. Fällt zurück auf das wahrscheinlichste Ergebnis, wenn niemand sonst getippt hat.",
+  zufall: "Ein zufälliger plausibler Endstand — mehr Drama, gleiche Fairness.",
+};
+
+// Die Regel selbst lebt im Regelwerk (engine.js: DEFAULT_RULES.versaeumnis,
+// RULE_LIMITS.versaeumnis, sanitizeRules) — hier nur bequeme Namen darauf,
+// damit es keine zweite Wahrheit gibt.
+export const DEFAULT_VERSAEUMNIS = DEFAULT_RULES.versaeumnis;
+export const VERSAEUMNIS_LIMITS = RULE_LIMITS.versaeumnis;
+
+// Macht aus einer (evtl. importierten) Teil-Einstellung eine gültige —
+// über dieselbe Prüfung wie das gesamte Regelwerk.
+export function sanitizeVersaeumnis(partial = {}) {
+  return sanitizeRules({ versaeumnis: partial }).versaeumnis;
+}
+
+// Faktor, mit dem die Wertung eines Auto-Tipps multipliziert wird.
+// Greift GANZ ZULETZT auf das fertige Spiel-Ergebnis — wie der Joker, damit
+// sich nichts multiplikativ aufschaukelt.
+export function malusFaktor(versaeumnis = DEFAULT_VERSAEUMNIS) {
+  const v = sanitizeVersaeumnis(versaeumnis);
+  return 1 - v.malusProzent / 100;
+}
 
 // Die n wahrscheinlichsten Torschützen einer Seite (kleinste anytime-Quote).
 function likelyScorers(snap, side, n) {
@@ -33,12 +76,51 @@ function likelyScorers(snap, side, n) {
     .map(([name]) => name);
 }
 
-// Der Standard-Tipp für ein Spiel: wahrscheinlichster Endstand + die
-// wahrscheinlichsten Schützen (jeder höchstens EINMAL → kein Doppelpack).
-// Gibt null zurück, wenn der Snapshot keine Quoten hergibt.
-export function buildAutoTip(snap, rules = DEFAULT_RULES) {
-  if (!snap) return null;
+// Deterministischer Zufall aus einem Text — gleiche Eingabe, gleicher Wert.
+// Wichtig, damit ein Auto-Tipp reproduzierbar ist und nicht bei jedem Aufruf
+// anders aussieht (sonst wäre er nicht überprüfbar).
+function seeded(text) {
+  let h = 2166136261;
+  for (let i = 0; i < String(text).length; i++) {
+    h ^= String(text).charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+// Endstand nach gewählter Strategie.
+function pickScoreline(snap, rules, strategie, { fremdeTipps = [], seed = "" } = {}) {
+  if (strategie === "schnitt" && fremdeTipps.length > 0) {
+    // Mittelwert der Mitspieler-Tipps, kaufmännisch gerundet.
+    const n = fremdeTipps.length;
+    const home = Math.round(fremdeTipps.reduce((s, t) => s + (Number(t?.home) || 0), 0) / n);
+    const away = Math.round(fremdeTipps.reduce((s, t) => s + (Number(t?.away) || 0), 0) / n);
+    return { home, away };
+  }
+  if (strategie === "zufall") {
+    // Aus den fünf plausibelsten Endständen einen ziehen — nie ein Freilos,
+    // aber mehr Abwechslung als immer derselbe Standard.
+    const kandidaten = likelyScorelines(snap, rules, 5);
+    if (kandidaten.length) return kandidaten[Math.floor(seeded(seed) * kandidaten.length)];
+  }
+  // Fallback für alle Fälle (auch „schnitt" ohne fremde Tipps): das
+  // wahrscheinlichste Ergebnis.
   const [best] = likelyScorelines(snap, rules, 1);
+  return best ?? null;
+}
+
+// Der Standard-Tipp für ein Spiel. `strategie` bestimmt den Endstand (siehe
+// VERSAEUMNIS_STRATEGIEN), die Schützen sind immer die wahrscheinlichsten
+// (jeder höchstens EINMAL → kein Doppelpack).
+// Gibt null zurück, wenn der Snapshot keine Quoten hergibt.
+export function buildAutoTip(snap, rules = DEFAULT_RULES, opts = {}) {
+  if (!snap) return null;
+  const strategie = VERSAEUMNIS_STRATEGIEN.includes(opts.strategie)
+    ? opts.strategie : "wahrscheinlich";
+  const best = pickScoreline(snap, rules, strategie, {
+    fremdeTipps: opts.fremdeTipps ?? [],
+    seed: opts.seed ?? snap.matchId ?? "",
+  });
   if (!best) return null;
 
   const goalsMarkt = rules?.markets?.goals;
@@ -72,15 +154,39 @@ export function missingMatches(matches = [], tips = [], userId) {
   return matches.filter((m) => !tipped.has(getMatchId(m)));
 }
 
-// Auto-Tipps für alle Versäumnisse eines Nutzers.
-// Rückgabe: [{ matchId, tip, snapshot }] — direkt speicherbar (Store/UI
-// entscheiden, ob und wann; der Snapshot friert die Quote wie üblich ein).
-export function autoTipsFor({ matches = [], tips = [], userId, rules = DEFAULT_RULES }) {
+// Auto-Tipps für alle Versäumnisse eines Nutzers — nach dem REGELWERK der
+// Runde (der Admin bestimmt Strategie, Malus und Kontingent).
+//
+// `bisherGenutzt` = wie oft die Kulanz für diesen Spieler in der Saison schon
+// gegriffen hat (Store/UI zählen mit). Ist das Kontingent aufgebraucht, gibt es
+// KEINE Auto-Tipps mehr — sonst könnte man dauerhaft aussetzen.
+//
+// Rückgabe: [{ matchId, tip, snapshot, malusFaktor }] — direkt speicherbar.
+// Ob und wann gespeichert wird, entscheiden Store/UI (wie beim Quoten-Snapshot);
+// der `malusFaktor` gehört an die Wertung dieses Tipps.
+export function autoTipsFor({
+  matches = [], tips = [], userId, rules = DEFAULT_RULES,
+  versaeumnis = DEFAULT_VERSAEUMNIS, bisherGenutzt = 0,
+}) {
+  const v = sanitizeVersaeumnis(versaeumnis);
+  if (!v.enabled) return [];
+  if (v.maxProSaison > 0 && bisherGenutzt >= v.maxProSaison) return [];
+
+  const faktor = malusFaktor(v);
   const out = [];
   for (const m of missingMatches(matches, tips, userId)) {
+    const matchId = m.matchId ?? m.id;
     const snap = m.snapshot ?? m.snap;
-    const tip = buildAutoTip(snap, rules);
-    if (tip) out.push({ matchId: m.matchId ?? m.id, tip, snapshot: snap });
+    // Für „schnitt": die Tipps der ANDEREN auf genau dieses Spiel.
+    const fremdeTipps = tips
+      .filter((t) => (t.match_id ?? t.matchId) === matchId && (t.user_id ?? t.userId) !== userId)
+      .map((t) => t.tip ?? t);
+    const tip = buildAutoTip(snap, rules, {
+      strategie: v.strategie,
+      fremdeTipps,
+      seed: `${matchId}-${userId}`,
+    });
+    if (tip) out.push({ matchId, tip, snapshot: snap, malusFaktor: faktor });
   }
   return out;
 }
