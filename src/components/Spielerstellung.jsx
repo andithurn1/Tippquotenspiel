@@ -19,6 +19,8 @@ import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
 import SaisonWetten from "@/components/SaisonWetten";
+import RundenCharaktere from "@/components/RundenCharaktere";
+import { CHARAKTERE } from "@/lib/charaktere";
 import BalanceAmpel from "@/components/BalanceAmpel";
 import { C, MONO } from "@/lib/theme";
 
@@ -46,6 +48,12 @@ export default function Spielerstellung() {
   // Admin wäre das eine unausgewogene Runde.
   const [rules, setRules] = useState(() => sanitizeRules(PRESETS[0].rules));
   const [presetKey, setPresetKey] = useState("standard");
+  // Komplexitaets-Stufe: dieselbe Runde, nur unterschiedlich viel sichtbar.
+  // „einfach" = ein Klick auf einen Charakter · „anpassen" = wenige grosse
+  // Regler · „profi" = alles. Beim Wechsel geht NICHTS verloren, weil alle
+  // Stufen auf demselben `rules`-Objekt arbeiten.
+  const [stufe, setStufe] = useState("einfach");
+  const [charakterKey, setCharakterKey] = useState(null);
   const [mischenOffen, setMischenOffen] = useState(false);
   const [teamFilterOn, setTeamFilterOn] = useState(false);
   const [selectedTeams, setSelectedTeams] = useState([]);
@@ -222,14 +230,53 @@ export default function Spielerstellung() {
               background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 10px",
             }}>zurücksetzen</button>
           </div>
-          <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>Regelwerk einstellen</div>
+          <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>
+            {stufe === "einfach" ? "Wie soll eure Runde sein?" : "Regelwerk einstellen"}
+          </div>
           <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
-            Du als Admin legst fest, wie mutig belohnt wird. Teile das fertige Regelwerk
-            per Creator-Code — alle Mitspieler bekommen exakt dieselben Regeln.
+            {stufe === "einfach"
+              ? "Ein Klick genügt — den Rest stellen wir stimmig ein. Wer mag, geht danach ins Detail."
+              : "Du als Admin legst fest, wie mutig belohnt wird. Teile das fertige Regelwerk per Creator-Code — alle Mitspieler bekommen exakt dieselben Regeln."}
           </p>
 
+          {/* Stufen-Umschalter: dieselbe Runde, nur mehr oder weniger sichtbar */}
+          <div style={{ display: "flex", gap: 6, marginTop: 14, marginBottom: 4 }}>
+            {[
+              ["einfach", "Einfach", "Ein Klick"],
+              ["anpassen", "Anpassen", "Wenige Regler"],
+              ["profi", "Profi", "Alles"],
+            ].map(([key, label, unter]) => {
+              const an = stufe === key;
+              return (
+                <button key={key} onClick={() => setStufe(key)} style={{
+                  flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 4px",
+                  borderRadius: 11, textAlign: "center",
+                  background: an ? C.gold : C.surface, color: an ? C.ink : C.muted,
+                  border: `1px solid ${an ? C.gold : C.line}`,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{label}</div>
+                  <div style={{ fontSize: 9.5, opacity: 0.75, marginTop: 1 }}>{unter}</div>
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 11, color: C.muted, marginTop: 2, marginBottom: 14, lineHeight: 1.4 }}>
+            Die Stufe ändert nur die ANSICHT — deine Einstellungen bleiben beim Wechsel erhalten.
+          </p>
+
+          {/* ── Stufe 1: ganze Runden-Ideen statt Einzelregler ── */}
+          {stufe === "einfach" && (
+            <RundenCharaktere
+              gewaehlt={charakterKey}
+              onWaehlen={(ch) => { setCharakterKey(ch.key); setPresetKey(null); setShortCode(null); setRules(ch.rules); }}
+              onCodeLaden={(c) => { setImp(c); load(); }}
+              codeFehler={impErr}
+            />
+          )}
+
           {/* Presets: Startpunkt, danach bleibt alles frei einstellbar */}
-          <SectionTitle>Presets</SectionTitle>
+          {stufe !== "einfach" && <SectionTitle>Presets</SectionTitle>}
+          {stufe !== "einfach" && (<>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 4 }}>
             {PRESETS.map((p) => {
               const active = presetKey === p.key;
@@ -312,6 +359,7 @@ export default function Spielerstellung() {
             hint="Steilheit der siegerunabhängigen Team-Tore-Nähe." />
 
           {/* Underdog-Boost & Favoriten-Malus (teilen sich die Quoten-Ramp) */}
+          {stufe === "profi" && (<>
           <SectionTitle>Underdog-Boost & Favoriten-Malus</SectionTitle>
           <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Belohne das Vorhersagen von Überraschungen — und/oder bestrafe, wer stur auf den
@@ -336,6 +384,8 @@ export default function Spielerstellung() {
           )}
 
           {/* Kombi-Multiplikatoren */}
+          </>)}
+
           <SectionTitle>Kombi-Multiplikatoren (Tore × Ebene)</SectionTitle>
           <Slider label="bei richtiger Tendenz" value={rules.combo.tendenz} {...L.combo.tendenz}
             onChange={(v) => patchCombo({ tendenz: v })} fmt={(x) => "×" + x.toFixed(2)} />
@@ -380,6 +430,7 @@ export default function Spielerstellung() {
           )}
 
           {/* Strafe */}
+          {stufe === "profi" && (<>
           <SectionTitle>Sieger-Boden & Strafe</SectionTitle>
           <Toggle label="Sieger-Boden (richtiger Sieger zahlt mind. Quote−1)"
             on={rules.winnerFloor} onChange={(on) => patch({ winnerFloor: on })} />
@@ -675,6 +726,8 @@ export default function Spielerstellung() {
           )}
 
           {/* Saison-Wetten (Langzeit-Ebene) */}
+          </>)}
+
           <SectionTitle>Saison-Wetten</SectionTitle>
           <SaisonWetten
             saison={rules.saison || DEFAULT_RULES.saison}
@@ -683,6 +736,7 @@ export default function Spielerstellung() {
           />
 
           {/* Versäumnis: Spieltag vergessen */}
+          {stufe === "profi" && (<>
           <SectionTitle>Spieltag vergessen</SectionTitle>
           <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Wer mal keine Zeit hatte, steht sonst mit null Punkten da und steigt aus.
@@ -777,6 +831,9 @@ export default function Spielerstellung() {
           )}
 
           {/* Runde erstellen */}
+          </>)}
+          </>)}
+
           <SectionTitle>Runde erstellen</SectionTitle>
           {!created ? (
             <>
