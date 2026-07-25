@@ -68,6 +68,45 @@ geht nichts verloren.
 Offene Entwurfsfragen: Warnung beim Zurückschalten, wenn Profi-Werte nicht mehr
 zu einem Paket passen. Nicht mehr als 3 Stufen — jede kostet Pflege.
 
+### Ereignisse: Joker ERSPIELEN statt nur zugeteilt bekommen — NEU (Nutzerwunsch)
+Bisher kommt ein Joker nur vom Admin (Frequenz/Verteilung). Zusätzlich soll man
+sich welche **verdienen** können — durch Herausforderungen oder weil einem in
+der Runde etwas widerfährt.
+
+**Zwei Töpfe, klar getrennt:** `zugeteilt` (vom Regelwerk) + `erspielt` (aus
+Ereignissen). Beide fließen in dasselbe Joker-Kontingent, aber der erspielte
+Topf ist **gedeckelt** — sonst gewinnt das Tippspiel, wer im Minispiel gut ist.
+Das wäre eine zweite Leistungsachse und damit ein Fairness-Bruch.
+
+**Drei Kategorien (nach Aufwand und Risiko sortiert):**
+
+1. **Meilensteine — passiv, aus dem Tippen selbst.** „Drei Spieltage in Folge
+   getippt", „erster exakter Treffer", „Außenseiter-Sieg vorhergesagt".
+   ⭐ **Bester Startpunkt:** braucht KEINE neuen Daten und kein Minispiel —
+   `records.js` berechnet solche Dinge bereits. Belohnt Dranbleiben statt
+   Geschicklichkeit, ist also automatisch balance-freundlich.
+2. **Widerfahrnisse — passiv, sozialer Ausgleich.** „Letzter am Spieltag →
+   Trost-Joker", „dein Verein hat verletzungsbedingt verloren". Verwandt mit dem
+   Aufhol-Mechanismus (`catchup.js`) — ⚠️ **darf sich nicht mit ihm doppeln**,
+   sonst wird Zurückliegen doppelt belohnt.
+3. **Herausforderungen — aktiv, Minispiel.** Fußball-Tic-Tac-Toe, Quiz,
+   Elfmeterschießen-Duell. Größter Aufwand, größtes Balance-Risiko.
+   ⚠️ **Muss ASYNCHRON funktionieren** — ein Freundeskreis spielt nie gleichzeitig.
+   ⚠️ **Tic-Tac-Toe („Spieler, der für beide Vereine spielte") ist mit unseren
+   Daten NICHT möglich** — unsere Kader sind generiert und fiktiv. Ginge erst
+   mit einer echten Spieler-Datenquelle. Ein Quiz über TIPP-Statistiken der
+   eigenen Runde ginge dagegen sofort.
+
+**Architektur (wie bei den Saison-Wetten):** `ereignisse.js` mit einem Katalog
+aus TYP + Parameter, jeder Typ deklariert seine benötigten Daten (`braucht`).
+Der Admin schaltet einzelne Ereignisse frei und legt die Belohnung fest.
+Ergebnis ist immer dasselbe: eine **Joker-Gutschrift** — kein neuer
+Punkte-Kanal, damit die bestehende Deckelung weiter greift.
+
+**Anschluss:** Das geparkte **Elfmeterschießen-Duell** wäre genau so eine
+Herausforderung. Es könnte als „Joker-Duell" zurückkommen, statt als eigenes
+Feature ohne Zweck.
+
 ### Joker-TYPEN statt neuer Ebenen — NEU (Architektur-Entscheidung des Nutzers)
 Das eigene Top-Team ist **keine neue Modifikator-Ebene, sondern eine Spielart
 des Jokers**. Damit bleibt es bei drei Ebenen (Joker · Abstimmung · Team-Mods),
