@@ -153,7 +153,10 @@ gedimmt statt einer leeren Fläche.
 
 **Spielauswahl** (`src/lib/spielauswahl.js`, `rules.spiele`, Standard „alle"):
 welche Spiele überhaupt zur Runde gehören — Vereine, Spieltag-Bereich, feste
-Liste. Liegt im REGELWERK und reist dadurch im Creator-Code mit (ein Creator
+Liste — dazu `wettbewerbe`/`phasen` für „nur das Interessanteste" (CL ab
+Achtelfinale = 15 statt 466 Spiele). Alle Dimensionen wirken UND-verknüpft;
+für eine gemischte Wunschliste ist der Modus `liste` da.
+Liegt im REGELWERK und reist dadurch im Creator-Code mit (ein Creator
 teilt seine ganze Runden-Idee, nicht nur die Wertung). Zwei Wahrheiten
 vermeiden: `rules.spiele` schlägt vor, `rounds.team_filter` hält fest, was beim
 Anlegen daraus wurde — die Runde gewinnt. Ein Modus ohne seine Daten fällt auf

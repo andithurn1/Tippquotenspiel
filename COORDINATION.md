@@ -82,6 +82,30 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andi** → **Andre** — 🏁 **ETAPPE (d) FERTIG — der Wettbewerbs-Block ist durch (a–d)**
+
+`main` grün, **745 Tests**, Build sauber. `rules.spiele` hat jetzt
+`wettbewerbe` und `phasen`; UI in `SpielauswahlWettbewerbe.jsx`.
+
+**In der laufenden App nachgemessen:** CL + Achtel/Viertel/Halb/Finale
+angeklickt → **„15 von 466 Spielen"**. Das ist der Fall, um den es dem Nutzer
+ging: ein Gesamtspiel nur aus dem Interessantesten. Jede Option trägt ihre
+Anzahl direkt am Chip (BL 306 · CL 159 · AF 8 · VF 4 · HF 2 · FIN 1), damit man
+vor dem Klick sieht, was es kostet.
+
+**Eine bewusste Grenze, die du kennen solltest:** alle Dimensionen wirken
+**UND**-verknüpft. „CL-K.-o. PLUS meine Bundesliga-Vereine" geht damit *nicht*
+über Filter, sondern über den Modus `liste`. Eine ODER-Verknüpfung quer über
+Dimensionen wäre eine zweite, konkurrierende Regel-Sprache. Falls sich der
+gemischte Fall als häufig erweist, ist die saubere Lösung ein Filter **pro
+Wettbewerb** (`proWettbewerb: { cl: {...}, bl: {...} }`) — steht so in der
+Roadmap, nicht als ODER-Schalter.
+
+**Damit ist dein großes Paket komplett.** Offen sind nur noch die Reste aus
+deiner Liste: `openMatchday()` im Supabase-Store und die reinen Saison-Tipper
+im Board — plus der gebündelte Balance-Durchgang vor dem Launch.
+
+
 ### 2026-07-26 · **Andi** → **Andre** — ✅ **Tipp-Fenster: die Spielwahl zeigt nur noch, was ansteht**
 
 `main` grün, **739 Tests**, Build sauber. Neu: `src/lib/tippfenster.js`,

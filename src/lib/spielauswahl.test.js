@@ -134,6 +134,56 @@ describe("Spiele je Spieltag — die Spanne statt einer erfundenen Zahl", () => 
   });
 });
 
+describe("Quer über Wettbewerbe (Etappe d)", () => {
+  const plan = [
+    { matchId: "bl1", home: "A", away: "B", matchday: 1, wettbewerb: "bl", phase: "liga" },
+    { matchId: "cl1", home: "A", away: "C", matchday: 1, wettbewerb: "cl", phase: "liga" },
+    { matchId: "cl2", home: "A", away: "D", matchday: 2, wettbewerb: "cl", phase: "achtelfinale" },
+    { matchId: "cl3", home: "B", away: "C", matchday: 3, wettbewerb: "cl", phase: "finale" },
+  ];
+
+  it("„nur Champions League“", () => {
+    expect(filterSpiele(plan, { wettbewerbe: ["cl"] }).map((m) => m.matchId))
+      .toEqual(["cl1", "cl2", "cl3"]);
+  });
+
+  it("„nur das Interessanteste“: CL ab dem Achtelfinale", () => {
+    // Der Fall, um den es dem Nutzer ging — ein Gesamtspiel nur aus den
+    // wirklich spannenden Partien.
+    const gewaehlt = filterSpiele(plan, {
+      wettbewerbe: ["cl"], phasen: ["achtelfinale", "finale"],
+    });
+    expect(gewaehlt.map((m) => m.matchId)).toEqual(["cl2", "cl3"]);
+  });
+
+  it("leere Listen schränken nicht ein", () => {
+    expect(filterSpiele(plan, { wettbewerbe: [], phasen: [] })).toHaveLength(4);
+  });
+
+  it("alle Dimensionen wirken UND-verknüpft", () => {
+    // Vereine + Wettbewerb gleichzeitig: nur CL-Spiele mit Verein B.
+    const gewaehlt = filterSpiele(plan, {
+      modus: "teams", teams: ["B", "Z"], wettbewerbe: ["cl"],
+    });
+    expect(gewaehlt.map((m) => m.matchId)).toEqual(["cl3"]);
+  });
+
+  it("Spiele ohne die Felder fallen NICHT still heraus", () => {
+    // Altdaten ohne `wettbewerb`/`phase` müssen gültig bleiben.
+    const alt = [{ matchId: "alt", home: "A", away: "B", matchday: 1 }];
+    expect(filterSpiele(alt, { wettbewerbe: ["cl"], phasen: ["finale"] })).toHaveLength(1);
+  });
+
+  it("reist im Creator-Code mit", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      spiele: { wettbewerbe: ["cl"], phasen: ["halbfinale", "finale"] },
+    });
+    expect(rules.spiele.wettbewerbe).toEqual(["cl"]);
+    expect(sanitizeRules(decodePreset(encodePreset(rules)))).toEqual(rules);
+  });
+});
+
 describe("Beschreibung", () => {
   it("nennt Modus und Zeitraum", () => {
     expect(beschreibeAuswahl({ modus: "teams", teams: ["A", "B"], spieltagVon: 5, spieltagBis: 12 }))

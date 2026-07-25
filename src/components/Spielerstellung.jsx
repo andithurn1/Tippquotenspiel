@@ -31,6 +31,7 @@ import { band } from "@/lib/reglerWarnung";
 import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } from "@/lib/spielauswahl";
 import { VORLAUF_STUFEN, beschreibeTippfenster } from "@/lib/tippfenster";
+import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
 import { C, MONO } from "@/lib/theme";
 
 const ALL_TEAMS = Object.keys(TEAM_RATINGS);
@@ -940,6 +941,11 @@ export default function Spielerstellung() {
               })()}
             </div>
           )}
+
+          {/* Quer über Wettbewerbe (Etappe d): „nur das Interessanteste".
+              Steht direkt bei den Teams, weil es dieselbe Frage beantwortet —
+              welche Spiele gehören überhaupt zur Runde. */}
+          <SpielauswahlWettbewerbe spiele={sp} onChange={(neu) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...neu } })); }} />
 
           {/* Tipp-Fenster: wie früh vor Anpfiff getippt wird. Gehört hierher,
               weil es dieselbe Frage beantwortet wie die Spielauswahl — WAS

@@ -53,7 +53,21 @@ export const DEFAULT_SPIELE = {
   matchIds: [],
   spieltagVon: null,
   spieltagBis: null,
+  // Quer über Wettbewerbe (Etappe d): welche Wettbewerbe und welche Phasen
+  // überhaupt dazugehören. Leer = alle. Das ist der „nur das Beste"-Fall:
+  // „nur Champions League ab dem Achtelfinale".
+  wettbewerbe: [],
+  phasen: [],
 };
+
+// ⚠️ Alle Dimensionen wirken UND-verknüpft: Vereine, Zeitraum, Wettbewerbe,
+// Phasen müssen gemeinsam zutreffen. Für eine gemischte Wunschliste („CL-K.-o.
+// PLUS meine Bundesliga-Vereine") ist der Modus `liste` der richtige Weg —
+// dort zählt genau, was drinsteht. Eine ODER-Verknüpfung über Dimensionen
+// hinweg wäre eine zweite, konkurrierende Regel-Sprache; das ist es nicht wert.
+export const VERKNUEPFUNG_HINWEIS =
+  "Alle Einschränkungen gelten gleichzeitig. Für eine gemischte Auswahl aus "
+  + "verschiedenen Wettbewerben nimm die feste Begegnungs-Liste.";
 
 const text = (v, max = 60) =>
   typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
@@ -85,12 +99,17 @@ export function sanitizeSpiele(partial = {}) {
   // verwerfen — also drehen statt wegwerfen.
   if (von !== null && bis !== null && von > bis) [von, bis] = [bis, von];
 
+  const liste = (arr, max) => [...new Set((Array.isArray(arr) ? arr : [])
+    .map((t) => text(t, 20)).filter(Boolean))].slice(0, max);
+
   return {
     // Ein Modus ohne die dazugehörigen Daten wäre eine Auswahl, die alles
     // wegfiltert — das ist nie gewollt, also fällt er auf „alle" zurück.
     modus: (modus === "teams" && teams.length < 2) || (modus === "liste" && !matchIds.length)
       ? "alle" : modus,
     teams, matchIds, spieltagVon: von, spieltagBis: bis,
+    wettbewerbe: liste(p.wettbewerbe, 10),
+    phasen: liste(p.phasen, 10),
   };
 }
 
@@ -103,6 +122,12 @@ export function passtSpiel(match, spiele = DEFAULT_SPIELE) {
   const md = Number(match.matchday ?? match.spieltag);
   if (s.spieltagVon !== null && Number.isFinite(md) && md < s.spieltagVon) return false;
   if (s.spieltagBis !== null && Number.isFinite(md) && md > s.spieltagBis) return false;
+
+  // Wettbewerb und Phase gelten in JEDEM Modus zusätzlich — genau wie der
+  // Zeitraum. Ein Spiel ohne die Felder gilt als zugehörig, sonst fielen
+  // Altdaten still aus der Runde.
+  if (s.wettbewerbe.length && match.wettbewerb && !s.wettbewerbe.includes(match.wettbewerb)) return false;
+  if (s.phasen.length && match.phase && !s.phasen.includes(match.phase)) return false;
 
   if (s.modus === "teams") {
     return s.teams.includes(match.home) || s.teams.includes(match.away);
@@ -155,6 +180,8 @@ export function beschreibeAuswahl(spiele = DEFAULT_SPIELE) {
   else if (s.modus === "liste") teile.push(`${s.matchIds.length} ausgewählte Begegnungen`);
   else teile.push("alle Spiele");
 
+  if (s.wettbewerbe.length) teile.push(`nur ${s.wettbewerbe.length} Wettbewerb${s.wettbewerbe.length === 1 ? "" : "e"}`);
+  if (s.phasen.length) teile.push(`nur ${s.phasen.length} Phase${s.phasen.length === 1 ? "" : "n"}`);
   if (s.spieltagVon !== null || s.spieltagBis !== null) {
     const von = s.spieltagVon ?? 1;
     const bis = s.spieltagBis ?? "Saisonende";

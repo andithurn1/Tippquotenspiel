@@ -157,8 +157,19 @@ Wettbewerbs, sonst oeffnete eine CL-Wette, waehrend die Ligaphase laeuft
 bleibt die Wette ZU: eine versehentlich offene Wette laesst sich nicht
 zurueckziehen, eine versehentlich gesperrte schon.
 
-Offen: Etappe (d) Auswahl quer ueber Wettbewerbe (`rules.spiele` kann das Feld
-schon).
+(d) GEBAUT: `rules.spiele` hat jetzt `wettbewerbe` und `phasen`
+(`SpielauswahlWettbewerbe.jsx`). „Nur Champions League ab dem Achtelfinale"
+sind damit 15 statt 466 Spiele — nachgemessen in der laufenden App.
+
+⚠️ Alle Dimensionen wirken UND-verknuepft (Vereine, Zeitraum, Wettbewerbe,
+Phasen). Fuer eine GEMISCHTE Wunschliste („CL-K.-o. PLUS meine
+Bundesliga-Vereine") ist der Modus `liste` gedacht. Eine ODER-Verknuepfung
+ueber Dimensionen hinweg waere eine zweite, konkurrierende Regel-Sprache — das
+waere es nicht wert. Falls sich der gemischte Fall doch als haeufig erweist,
+ist die saubere Loesung ein Filter PRO WETTBEWERB (`proWettbewerb: { cl: {...},
+bl: {...} }`), nicht ein ODER-Schalter.
+
+**Der ganze Wettbewerbs-Block ist damit durch (a-d).**
 
 Bundesliga + Premier League + Champions League zusammen, mit eigenen Regeln je
 Wettbewerb und fairer Gewichtung untereinander. Ziel des Nutzers: ein
