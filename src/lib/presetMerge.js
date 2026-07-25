@@ -53,6 +53,12 @@ export const ASPEKTE = [
     keys: ["aufholen", "versaeumnis"],
   },
   {
+    key: "saison",
+    label: "Saison-Wetten",
+    hint: "Die nebenbei laufenden Langzeit-Tipps (Meister, Torschützenkönig …) samt Gewichtung.",
+    keys: ["saison"],
+  },
+  {
     key: "maerkte",
     label: "Märkte",
     hint: "Worauf überhaupt getippt wird (Ergebnis, Torschützen, Anzahl der Tipps).",

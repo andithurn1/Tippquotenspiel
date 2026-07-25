@@ -18,6 +18,7 @@ import BackLink from "@/components/BackLink";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
+import SaisonWetten from "@/components/SaisonWetten";
 import BalanceAmpel from "@/components/BalanceAmpel";
 import { C, MONO } from "@/lib/theme";
 
@@ -75,6 +76,7 @@ export default function Spielerstellung() {
   const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
   const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
+  const setSaison = (saison) => { touched(); setRules((r) => ({ ...r, saison })); };
   // Faktor eines Vereins eine Stufe weiterdrehen; über dem Maximum zurück auf
   // „aus" (1 = kein Modifikator, fliegt aus der Liste, damit das Regelwerk
   // klein bleibt). Der nächste Wert wird IM Updater aus dem vorherigen Stand
@@ -623,6 +625,14 @@ export default function Spielerstellung() {
               </p>
             </div>
           )}
+
+          {/* Saison-Wetten (Langzeit-Ebene) */}
+          <SectionTitle>Saison-Wetten</SectionTitle>
+          <SaisonWetten
+            saison={rules.saison || DEFAULT_RULES.saison}
+            onChange={setSaison}
+            teams={ALL_TEAMS}
+          />
 
           {/* Versäumnis: Spieltag vergessen */}
           <SectionTitle>Spieltag vergessen</SectionTitle>

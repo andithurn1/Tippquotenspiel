@@ -8,6 +8,8 @@ import { applyCatchup } from "./catchup";
 
 
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
+import { sanitizeSaison } from "./saisonwetten";
+
 export function createMockOddsSource() {
   const snap = {
     matchId: "JOR-ESP", home: "Jordanien", away: "Spanien",
@@ -118,6 +120,13 @@ export const DEFAULT_RULES = {
   //  maxProSaison — wie oft die Kulanz je Spieler greift (0 = unbegrenzt)
   // Standard aus: ohne Zutun des Admins gibt es für Nichtstun nichts.
   versaeumnis: { enabled: false, strategie: "wahrscheinlich", malusProzent: 30, maxProSaison: 3 },
+
+  // ── Saison-Wetten: die nebenbei laufende Langzeit-Ebene ──
+  //  gewicht — wie stark die Saison-Ebene gegenueber den Spieltagen zaehlt
+  //  wetten  — [{ key, punkte, ausser? }]; Katalog + Auswertung in saisonwetten.js
+  // Standard aus. Wird beim Bereinigen an sanitizeSaison delegiert, damit
+  // Katalog und Regelwerk nicht auseinanderlaufen.
+  saison: { enabled: false, gewicht: 1, wetten: [] },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -253,6 +262,9 @@ export function sanitizeRules(partial = {}) {
         maxProSaison: clamp(Math.round(num(v.maxProSaison, D.versaeumnis.maxProSaison)), L.versaeumnis.maxProSaison.min, L.versaeumnis.maxProSaison.max),
       };
     })(),
+    // Saison-Wetten pruefen sich selbst (Katalog liegt in saisonwetten.js) —
+    // so bleibt der Wett-Katalog die eine Quelle, auch fuer Creator-Codes.
+    saison: sanitizeSaison(src.saison),
   };
 }
 

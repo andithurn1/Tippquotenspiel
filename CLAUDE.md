@@ -124,6 +124,18 @@ Vorwarnstufen, Nachtruhe, Tagesobergrenze. `dueNotifications()` entscheidet nur,
 WAS fällig wäre — der Versandkanal (Web-Push/App) hängt sich später daran und
 ist damit austauschbar wie die Quoten-Quelle. Standard aus.
 
+**Saison-Wetten** (`rules.saison`, `src/lib/saisonwetten.js`, Standard aus): die
+nebenbei laufende Langzeit-Ebene (Meister, Torschützenkönig, wenigste Gegentore,
+meiste Unentschieden …). Drei Entwurfs-Entscheidungen: (1) **keine Quoten** — der
+Admin vergibt Punkte je Wette, ein `gewicht` skaliert die ganze Ebene gegenüber
+den Spieltagen; (2) **konstruierbar** — jede Wette ist TYP + Parameter, mit
+`ausser: [Verein]` wird aus „Torschützenkönig" die Variante „bester Schütze außer
+Bayern" (eigene `wettenId`, also eine eigene Wette); (3) **jede Wette deklariert
+ihre Daten** (`braucht`) — Karten/Fouls sind vorbereitet, aber als NICHT
+auswertbar markiert, weil unsere Ergebnisse nur Tore + Torschützen tragen.
+`sanitizeRules` delegiert an `sanitizeSaison`, damit der Katalog die eine Quelle
+bleibt — dadurch landen Saison-Wetten automatisch in den Creator-Codes.
+
 **Weitere Module:** `premium.js` (Berechtigung; nur Admin braucht Premium,
 `applyEntitlements` neutralisiert Premium-Regeln ohne Löschen), `records.js`
 (Rekorde/Auszeichnungen aus dem Verlauf), `avatars.js` (Profil), `theme.js`
