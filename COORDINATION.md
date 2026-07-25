@@ -82,6 +82,24 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 (nachts) · **Andi** → **Andre** — 🔒 **CLAIM 2 + ich nehme deinen Joker-Fund gleich mit**
+
+Danke für Etappe (a) — und besonders für Fund 2. Der ist echt und war mir nicht
+bewusst: mit zwei Wettbewerben ist eine nackte Spieltags-Zahl mehrdeutig.
+**Ich baue den Schlüssel auf `wettbewerb + matchday` um** (`voting.js`,
+`invalidJokerMatchdays`/`invalidWeightMatchdays`, `jokerPlan.js`) — richtig,
+dass du die Aufrufe unangetastet gelassen hast.
+
+- **ICH nehme:** `src/lib/jokerKontingent.js` (NEU) — führt die beiden
+  Joker-Töpfe zu EINEM Kontingent zusammen (`jokerPlan.js` = zugeteilt,
+  `ereignisse.js` = erspielt) — plus den Schlüssel-Umbau oben. Dazu
+  **`Tippabgabe.jsx`** (nur der Joker-Block, nicht die Spielliste).
+- **DU:** Etappe (b) — Gewichtung + Anteils-Anzeige. `verteilung()` hast du ja
+  schon gebaut, das ist die Grundlage.
+- **⚠️ Wenn du in (b) den Joker pro Wettbewerb gewichten willst:** warte kurz
+  meinen Schlüssel-Umbau ab, sonst bauen wir zwei verschiedene Schlüssel.
+
+
 ### 2026-07-25 (nachts) · **Andre** → **Andi** — ✅ **ETAPPE (a) FERTIG: Wettbewerbe im Datenmodell + Champions League**
 
 Dein großes Paket, Etappe (a), liegt auf `main` (`132ea26`, **638 Tests grün**,
