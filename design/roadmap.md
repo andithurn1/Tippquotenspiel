@@ -68,6 +68,29 @@ geht nichts verloren.
 Offene Entwurfsfragen: Warnung beim Zurückschalten, wenn Profi-Werte nicht mehr
 zu einem Paket passen. Nicht mehr als 3 Stufen — jede kostet Pflege.
 
+### Spiel-Auswahl gehört in den Code — NEU (Nutzerwunsch)
+Ein geteilter Creator-Code trägt heute nur das REGELWERK. Welche Spiele die
+Runde umfasst (`team_filter`) hängt an der Runde, nicht am Code — wer einen
+Code lädt, bekommt also die Regeln, aber nicht die Spielauswahl. Das soll mit
+rein, und danach **anpassbar bleiben**.
+
+- **`rules.spiele`** ins Regelwerk aufnehmen (wandert damit automatisch in
+  `encodePreset` und in die Kurzcodes): welche Vereine, welche Spieltage,
+  ggf. nur bestimmte Begegnungen.
+- **Nach dem Laden editierbar:** der Code ist ein VORSCHLAG, kein Vertrag.
+  Wer „Kenner-Runde" lädt, soll die Spielauswahl noch auf seine Liga/seinen
+  Zeitraum ändern können, ohne den Rest zu verlieren.
+- ⚠️ **`team_filter` gibt es schon** — auf der Runde (`rounds.team_filter`,
+  gesetzt beim Anlegen). Beim Umbau muss klar sein, was gewinnt: das
+  Regelwerk ist die Vorlage, die Runde der konkrete Stand. Sonst hat man
+  zwei Wahrheiten. Vorschlag: `rules.spiele` = Vorschlag aus dem Code,
+  `rounds.team_filter` = das, was beim Anlegen tatsächlich gewählt wurde.
+- **Passt zum Preset-Mischen:** „Spiele" würde ein achter ASPEKT
+  (`presetMerge.js`) — Regeln von A, Spielauswahl von B.
+- **Nutzen:** genau der „populäre Seeds holen"-Fall. Ein Creator teilt nicht
+  nur seine Regeln, sondern seine ganze Runden-Idee („Nur die Top 6, 10
+  Spieltage, Hardcore-Wertung") — und man kann sie trotzdem anpassen.
+
 ### Ereignisse: Joker ERSPIELEN statt nur zugeteilt bekommen — NEU (Nutzerwunsch)
 Bisher kommt ein Joker nur vom Admin (Frequenz/Verteilung). Zusätzlich soll man
 sich welche **verdienen** können — durch Herausforderungen oder weil einem in
