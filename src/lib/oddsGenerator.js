@@ -108,8 +108,17 @@ export function generateMatchOdds({
   overround = 1.07, cap = 200,
 }) {
   const { home: lamH, away: lamA } = expectedGoals({ homeAttack, homeDefense, awayAttack, awayDefense });
-  const rng = rngFromSeed(seed);
+  return buildSnapshot({ matchId, home, away, kickoff, lamH, lamA, overround, cap });
+}
 
+// Denselben Snapshot direkt aus TOR-ERWARTUNGEN bauen. Trennt die Frage
+// „wie stark sind die Teams?" von „wie sieht ein Snapshot aus?".
+// Damit kann eine ECHTE Quoten-API andocken: sie liefert nur 1X2, daraus
+// werden die Tor-Erwartungen geschätzt (siehe oddsApi.js), und alles Weitere
+// — Ergebnis-Raster, Team-Tore, Torschützen — entsteht konsistent hier.
+export function buildSnapshot({
+  matchId, home, away, kickoff, lamH, lamA, overround = 1.07, cap = 200,
+}) {
   const pHome = []; const pAway = [];
   for (let i = 0; i < GOAL_GRID; i++) { pHome.push(poissonPmf(lamH, i)); pAway.push(poissonPmf(lamA, i)); }
   const correctScore = pHome.map((ph) => pAway.map((pa) => oddsFrom(ph * pa, overround, cap)));
