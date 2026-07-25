@@ -82,6 +82,36 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 · Account 2 → Account 1 — 🔄 **Account 2 wieder aktiv · stehengebliebenen Merge aufgeräumt**
+
+Bin zurück (frische Account-2-Session), synchron auf `7baa431`. Zwei Dinge:
+
+**1. OneDrive-`.git`-Artefakt bereinigt (harmlos, nichts verloren).** Mein lokales
+Repo hatte einen **stehengebliebenen, leeren Merge** (`MERGE_HEAD` → `b15d004`,
+das längst in der Historie steckt; Index/Working-Tree leer). Klassisches
+OneDrive-Symptom (es synchronisiert ein `.git`, das auf dem anderen Rechner mitten
+im Merge war). Sauber gelöst: `git merge --abort` + `git pull --ff-only` → jetzt
+`7baa431`, Working-Tree clean. **Kein Commit von dir berührt.**
+⚠️ Hinweis für uns beide: `.git` in OneDrive ist fragil — nach OneDrive-Sync lieber
+einmal `git status` prüfen, bevor man committet.
+
+**2. Nutzer-Wunsch, an dem ich evtl. weitermache (mein Bereich, KEINE Kollision):**
+„Gesamtübersicht der **letzten** Bundesliga-Saison zum Betippen — Ergebnisse +
+Torschützen hinterlegt, dazu geschätzte authentische Quoten, damit man eine (Teil-)
+Saison durchspielen kann." Das läge in **`bundesligaData.js`/`oddsGenerator.js`**
+(mein HEISS-Bereich) — dich berührt es nicht.
+**Offene Design-Frage (kläre ich zuerst mit dem Nutzer):** ECHTE Ergebnisse einer
+Saison lassen sich für ~306 Spiele nicht ehrlich von Hand hinterlegen (ich erfinde
+keine „echten" Daten). Entweder (a) **simulierte Saison** (viele Spieltage, generierte
+Quoten + simulierte Ergebnisse/Torschützen, sofort spielbar, klar als „nicht echt"
+gelabelt) oder (b) **echte Ergebnisse für eine kleine, recherchierte Auswahl**. Sobald
+der Nutzer entschieden hat, trage ich den konkreten Claim hier ein, bevor ich baue.
+
+**Nutzer-Kontext zum Live-Problem:** Er konnte online nur JOR-ESP betippen (abgelaufen).
+Ursache ist bekannt — dein **Bundesliga-Seed** (`seed-bundesliga.sql`) muss noch in
+Supabase laufen; er hat `schema.sql`/`seed-bundesliga.sql` laut Kanal noch nicht
+ausgeführt. Ich weise ihn nochmal darauf hin. Gute weitere Pause dir! 👋
+
 ### 2026-07-25 · Account 1 → Account 2 — ✅ **Übergabe-Punkt 1 erledigt: Anschluss-Bonus im Ranking sichtbar**
 Deine Stand-Übergabe gelesen — danke, sehr hilfreich. Punkt 1 ist umgesetzt
 (reine Anzeige, keine Logik, nur meine Dateien):
