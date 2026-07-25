@@ -22,6 +22,7 @@
 import { scoreTip, maxTotalModifier } from "./engine";
 import { archetypeSnapshots } from "./rulePreview";
 import { ARCHETYPE_FREQ } from "./bundesligaStats";
+import { applyCatchup } from "./catchup";
 
 // Kleiner, schneller Zufallsgenerator mit Seed (mulberry32) — reproduzierbar.
 function rng(seed) {
@@ -167,9 +168,15 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
   // Überraschungen) — genau die Frage „jedes 4.–5. Mal dabei".
   let ueberraschungen = 0;
   const dabei = new Array(n).fill(0);
+  // Aufhol-Mechanismus: nur messen, wenn er aktiv ist (spart Verlaufsführung).
+  const aufholenAktiv = rules?.aufholen?.enabled === true;
+  let aufholFlips = 0;   // Saisons, in denen der Bonus den Sieger geändert hat
 
   for (let s = 0; s < seasons; s++) {
     const saison = new Array(n).fill(0);
+    // Kumulativer Stand je Spieltag — Grundlage, um den Aufhol-Bonus zu prüfen
+    // (er hängt am Stand VOR dem jeweiligen Spieltag).
+    const verlauf = aufholenAktiv ? [] : null;
     for (let md = 0; md < matchdays; md++) {
       const arten = [];
       for (let m = 0; m < perMatchday; m++) arten.push(pickArt(rand()));
@@ -211,12 +218,29 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
           summeOhne += scoreTip(tipp, actual, sp.snap, ohneMod).total;
         }
       });
+      // Zwischenstand nach diesem Spieltag festhalten (für den Aufhol-Test).
+      if (verlauf) {
+        verlauf.push({
+          matchday: md + 1,
+          board: PROFILE.map((p, pi) => ({ userId: p.key, name: p.label, total: saison[pi] })),
+        });
+      }
     }
-    // Saisonsieger bestimmen
+    // Saisonsieger OHNE Aufholen (nach reinen Punkten).
     let best = 0;
     for (let pi = 1; pi < n; pi++) if (saison[pi] > saison[best]) best = pi;
     siege[best] += 1;
     for (let pi = 0; pi < n; pi++) punkteGesamt[pi] += saison[pi];
+
+    // Sieger MIT Aufholen: kippt der Bonus den Sieg weg vom stärksten Tipper?
+    // Jeder Wechsel bedeutet, dass ein SCHWÄCHERER Tipper durch die Hilfe
+    // gewinnt — genau die Grenze, an der gutes Tippen entwertet würde.
+    if (verlauf) {
+      const mitBonus = applyCatchup(verlauf, rules);
+      const board = mitBonus[mitBonus.length - 1].board;
+      const siegerKey = board[0].userId;
+      if (siegerKey !== PROFILE[best].key) aufholFlips += 1;
+    }
   }
 
   const idxOf = (key) => PROFILE.findIndex((p) => p.key === key);
@@ -251,6 +275,11 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
     }
   }
 
+  // Aufhol-Effekt: Anteil der Saisons, in denen der Bonus den Sieg vom
+  // stärksten Tipper wegnahm. 0 = Aufholen ändert die Rangspitze nie (nur
+  // Kosmetik im Mittelfeld), hoch = gutes Tippen wird entwertet.
+  const aufholFlipQuote = aufholenAktiv ? +(aufholFlips / seasons).toFixed(3) : 0;
+
   return {
     profile,
     gewinner: gewinner.key,
@@ -258,6 +287,7 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
     zockerQuote: +zockerQuote.toFixed(3),
     punkteVerhaeltnis: +punkteVerhaeltnis.toFixed(2),
     modifikatorAnteil: +modifikatorAnteil.toFixed(3),
+    aufholFlipQuote,
     maximalfall,
     ampel: bewerten({
       gewinner: gewinner.key,
@@ -265,6 +295,7 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
       zockerQuote,
       favoritQuote: profile[iFavorit].siegquote,
       modifikatorAnteil,
+      aufholFlipQuote,
     }),
   };
 }
@@ -276,7 +307,13 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
 // Zielbild: der KENNER — jemand, der gezielt wagt und dabei etwa jede vierte
 // Überraschung erwischt. Gewinnt stattdessen der Dauerzocker, entscheidet
 // Glück; gewinnt der reine Favoriten-Tipper, lohnt Mut überhaupt nicht.
-export function bewerten({ gewinner, kennerQuote, zockerQuote, favoritQuote, modifikatorAnteil }) {
+export function bewerten({ gewinner, kennerQuote, zockerQuote, favoritQuote, modifikatorAnteil, aufholFlipQuote = 0 }) {
+  // Aufhol-Mechanismus zuerst: kippt er zu oft den Sieg vom stärksten Tipper
+  // weg, ist die Rangliste beliebig — das wiegt schwerer als jede Prämie.
+  if (aufholFlipQuote >= 0.35) {
+    return { stufe: "rot", titel: "Aufholen entwertet gutes Tippen",
+      text: "Der Anschluss-Bonus dreht zu oft den Sieg weg vom besten Tipper. Stärke senken oder erst bei größerem Abstand greifen lassen." };
+  }
   if (modifikatorAnteil >= 0.35) {
     return { stufe: "rot", titel: "Modifikatoren dominieren",
       text: "Über ein Drittel aller Punkte kommt aus Jokern/Gewichten statt aus guten Tipps. Faktor senken oder seltener vergeben." };
@@ -284,6 +321,10 @@ export function bewerten({ gewinner, kennerQuote, zockerQuote, favoritQuote, mod
   if (gewinner === "zocker" || zockerQuote >= 0.4) {
     return { stufe: "rot", titel: "Glück schlägt Können",
       text: "Wer stur auf Außenseiter setzt, gewinnt hier am häufigsten. Nähe-Cutoff anheben, Sieger-Boden abschalten oder Strafe für Fehltipps einführen." };
+  }
+  if (aufholFlipQuote >= 0.2) {
+    return { stufe: "gelb", titel: "Aufholen wirkt kräftig",
+      text: "Der Anschluss-Bonus dreht ab und zu den Sieg. Spannend fürs Feld — aber wenn Können klar vorn liegen soll, etwas zurücknehmen." };
   }
   if (gewinner === "favorit" || favoritQuote >= 0.5) {
     return { stufe: "gelb", titel: "Mut lohnt sich nicht",

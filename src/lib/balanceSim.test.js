@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { simulateBalance, bewerten } from "./balanceSim";
 import { DEFAULT_RULES, sanitizeRules } from "./engine";
+import { PRESETS } from "./presets";
 
 // Klein halten, damit die Tests flott bleiben — die Aussagen sind dieselben.
 const KLEIN = { seasons: 25, matchdays: 9, perMatchday: 9, seed: 7 };
@@ -35,6 +36,32 @@ describe("simulateBalance — Grundverhalten", () => {
   it("ohne aktiven Joker ist der Modifikator-Anteil 0", () => {
     expect(DEFAULT_RULES.joker.enabled).toBe(false);
     expect(simulateBalance(DEFAULT_RULES, KLEIN).modifikatorAnteil).toBe(0);
+  });
+
+  it("ohne aktives Aufholen ist die Kipp-Quote 0", () => {
+    expect(simulateBalance(DEFAULT_RULES, KLEIN).aufholFlipQuote).toBe(0);
+  });
+});
+
+describe("simulateBalance — Aufhol-Mechanismus", () => {
+  const mitAufholen = (patch) => simulateBalance(
+    sanitizeRules({ ...DEFAULT_RULES, aufholen: { enabled: true, ...patch } }), KLEIN);
+
+  it("stärkeres Aufholen kippt öfter den Sieger", () => {
+    const sanft = mitAufholen({ staerke: 0.1, schwelle: 0.3, betrifft: "letzter" });
+    const stark = mitAufholen({ staerke: 0.45, schwelle: 0, betrifft: "unter-schnitt" });
+    expect(stark.aufholFlipQuote).toBeGreaterThan(sanft.aufholFlipQuote);
+  });
+
+  it("ein extremer Ausgleich wird von der Ampel als rot erkannt", () => {
+    // Auf dem Standard-Preset (mit Dämpfung): die Punkte streuen realistischer,
+    // dadurch baut sich über eine volle Saison genug Abstand auf, den ein
+    // maximaler Bonus regelmäßig umdreht.
+    const extrem = simulateBalance(sanitizeRules({
+      ...PRESETS[0].rules, aufholen: { enabled: true, staerke: 0.5, schwelle: 0, betrifft: "unter-schnitt" },
+    }), { seasons: 60, matchdays: 17, perMatchday: 9, seed: 4242 });
+    expect(extrem.aufholFlipQuote).toBeGreaterThan(0.35);
+    expect(extrem.ampel.stufe).toBe("rot");
   });
 });
 
@@ -84,6 +111,18 @@ describe("bewerten — Ampel danach, WER gewinnt", () => {
 
   it("grün, wenn der Kenner die Runde gewinnt", () => {
     expect(lage({}).stufe).toBe("gruen");
+  });
+
+  it("gelb, wenn der Aufhol-Bonus spürbar Sieger kippt", () => {
+    const r = lage({ aufholFlipQuote: 0.25 });
+    expect(r.stufe).toBe("gelb");
+    expect(r.titel).toMatch(/Aufholen/);
+  });
+
+  it("rot, wenn der Aufhol-Bonus zu oft den besten Tipper entthront", () => {
+    const r = lage({ aufholFlipQuote: 0.4 });
+    expect(r.stufe).toBe("rot");
+    expect(r.titel).toMatch(/entwertet/);
   });
 
   it("grün auch, wenn der solide Tipper vorn liegt", () => {

@@ -41,6 +41,11 @@ export default function BalanceAmpel({ rules }) {
             wert={`${Math.round(sim.modifikatorAnteil * 100)} %`}
             hint="Anteil der Punkte, der aus Jokern/Gewichten statt aus guten Tipps kommt." />
         )}
+        {sim.aufholFlipQuote > 0 && (
+          <Kennzahl label="Aufholen dreht Sieg"
+            wert={`${Math.round(sim.aufholFlipQuote * 100)} %`}
+            hint="Anteil der Saisons, in denen der Anschluss-Bonus den Sieg vom besten Tipper wegnimmt. Etwas Bewegung ist gewollt, zu viel entwertet gutes Tippen." />
+        )}
         <Kennzahl label="bestes Einzelspiel"
           wert={String(sim.maximalfall)}
           hint="Höchste realistisch erreichbare Punktzahl in einem Spiel, mit vollem Modifikator." />
