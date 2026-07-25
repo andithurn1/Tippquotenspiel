@@ -43,27 +43,43 @@ geht nichts verloren.
 Offene Entwurfsfragen: Warnung beim Zurückschalten, wenn Profi-Werte nicht mehr
 zu einem Paket passen. Nicht mehr als 3 Stufen — jede kostet Pflege.
 
-### Eigenes Top-Team je Spieler — NEU (Nutzerwunsch)
-Jeder Mitspieler benennt SEINEN Verein; Tipps auf dessen Spiele zählen leicht
-mehr. Nutzer-Empfehlung als Obergrenze: **×1,2**.
+### Joker-TYPEN statt neuer Ebenen — NEU (Architektur-Entscheidung des Nutzers)
+Das eigene Top-Team ist **keine neue Modifikator-Ebene, sondern eine Spielart
+des Jokers**. Damit bleibt es bei drei Ebenen (Joker · Abstimmung · Team-Mods),
+und neue Ideen wachsen INNERHALB der Joker-Ebene statt daneben.
 
-- **Abgrenzung zu `teamMods`:** das bestehende `teamMods` setzt der ADMIN für
-  ALLE. Das hier ist pro NUTZER — gehört also zur selben Familie wie der Joker.
-- **Muss durch `totalModifier` laufen** (additiv) und von `modCap` gedeckelt
-  werden. Sonst stapeln sich vier Ebenen: Joker · Abstimmung · Team-Mods ·
-  Top-Team.
-- **Symmetrisch wirken** (auch auf Minuspunkte), wie der Joker — sonst ist es
-  ein Gratis-Aufschlag statt einer Wette.
-- **Selbst-balancierend:** Fans tippen ihren eigenen Verein notorisch zu
-  optimistisch. Der Faktor verstärkt also auch die Fanbrille — das ist
-  thematisch schön und dämpft den Vorteil von allein.
-- ⚠️ **Rest-Risiko:** Wer seinen Verein wirklich gut kennt, verstärkt seinen
-  Wissensvorsprung. Deshalb Deckel bei ×1,2 und vor dem Merge mit
-  `balanceSim.js` gegenprüfen (Kenner darf gewinnen, aber nicht davonziehen).
-- **Kopplung:** dieselbe Vereinsauswahl kann die Fanfarben speisen
-  (`theme.js`) — eine Angabe, zwei Wirkungen.
-- **Gegen Überladung:** in Stufe 1/2 nur EIN Schalter („Heimatbonus an/aus",
-  Faktor aus unserer Empfehlung). Der Faktor selbst nur in der Pro-Variante.
+- **Datenmodell:** `rules.joker.typen = { einzel: {...}, heimat: {...}, … }` —
+  der Admin schaltet einzelne Typen frei. Jeder Typ liefert einen AUFSCHLAG;
+  alle Aufschläge eines Spiels werden **additiv** zum Joker-Beitrag summiert und
+  wie bisher von `modCap` gedeckelt. Kein Stapeln, keine neue Deckelung nötig.
+- **Kandidaten (bewusst WENIGE, der Admin wählt aus):**
+  * `einzel` — ein Spiel je Spieltag markieren (heutiges Verhalten)
+  * `ranking` — Gewichte über den Spieltag verteilen (heutiges Verhalten)
+  * `heimat` — die Spiele des eigenen Vereins, passiv, Empfehlung ×1,2
+  * `mut` — greift NUR, wenn gegen den Favoriten getippt wurde („Mut zahlt sich
+    aus" als eigene Mechanik statt nur als Motto)
+- **Regel gegen Wildwuchs:** höchstens 4–5 Typen insgesamt; jeder muss einen
+  eigenen SPIELERISCHEN Grund haben, nicht nur einen anderen Zahlenwert.
+- **Symmetrisch** (auch auf Minus) und über `totalModifier`, wie der Joker heute.
+- **Kopplung:** die Vereinsauswahl für `heimat` kann zugleich die Fanfarben
+  speisen (`theme.js`) — eine Angabe, zwei Wirkungen.
+- ⚠️ Vor dem Merge mit `balanceSim.js` prüfen: der Kenner darf gewinnen, aber
+  nicht davonziehen.
+
+### Ertragsquellen in der Abrechnung sichtbar machen — NEU (Nutzerwunsch)
+**Nicht bloß Anzeige, sondern ein Bindungs-Element.** Eine aufgeschlüsselte
+Liste „woher kamen meine Punkte" liest sich wie eine Abrechnung und hakt
+nachweislich besser als eine nackte Endzahl.
+
+- Die Engine RECHNET die Bestandteile bereits (`scoreTip` liefert
+  `parts.tendBoden`, `parts.ergNaehe`, `parts.teamTore`, `goals.net`, `combo`,
+  `modifier`) — es fehlt nur die Darstellung als benannte Posten.
+- **Jeder aktive Joker-Typ bekommt eine EIGENE Zeile** („Heimatbonus ×1,2 →
+  +45"). Genau deshalb sind mehrere Typen interessant: sie machen die
+  Aufschlüsselung reichhaltiger, ohne die Balance anzufassen.
+- Format wie ein Kassenbon: Posten, Betrag, unten die Summe. Negatives
+  (Favoriten-Malus) gehört genauso hinein — Ehrlichkeit macht es glaubwürdig.
+- Hängt an `prefs.abrechnung` (voll/dezent/aus), damit niemand zugeschüttet wird.
 
 ### Profi-Variante: aktiv vor Unwucht warnen — NEU (Nutzerwunsch)
 Die Pro-Ebene lädt dazu ein, Regelwerke kaputtzudrehen. Deshalb:
