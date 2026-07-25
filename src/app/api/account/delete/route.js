@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseClient";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, getServiceKey } from "@/lib/supabaseClient";
 
 // ── Konto-Löschung (Recht auf Löschung, Art. 17 DSGVO) ──────
 // Läuft SERVERSEITIG, weil das Entfernen eines auth.users-Eintrags den
@@ -8,7 +8,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseClient";
 // dieses Konto. Das DB-Schema (ON DELETE CASCADE) räumt Profil, Tipps und
 // Mitgliedschaften automatisch mit ab.
 export async function POST(request) {
-  const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const service = getServiceKey();
   if (!SUPABASE_URL || !service) {
     return Response.json({ error: "Server nicht konfiguriert." }, { status: 500 });
   }
