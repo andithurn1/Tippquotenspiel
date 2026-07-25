@@ -48,7 +48,7 @@ export const ASPEKTE = [
     // Derby und Team-Faktoren — wer die Modifikatoren übernimmt, will es mit.
     // ereignisse gehört hierher, weil es denselben Joker-Topf speist —
     // Modifikatoren übernimmt man als Ganzes oder gar nicht.
-    keys: ["joker", "teamMods", "modCap", "bigGame", "ereignisse"],
+    keys: ["joker", "teamMods", "modCap", "bigGame", "ereignisse", "wettbewerbe"],
   },
   {
     key: "spiele",

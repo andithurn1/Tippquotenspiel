@@ -156,6 +156,14 @@ als die Ausgeglichenheit der Quoten, sonst gewinnt immer das belanglose
 Daten-Schicht beim Öffnen des Spieltags — eingefroren wie der Quoten-Snapshot,
 sonst änderte sich der Wert eines Tipps rückwirkend.
 
+**Wettbewerbs-Gewichte** (`src/lib/wettbewerbGewicht.js`, `rules.wettbewerbe`,
+Standard aus): ein CL-Halbfinale zählt mehr als ein Ligaspiel. Der Aufschlag
+fällt in DENSELBEN additiven Topf wie Derby und Big Game — kein vierter
+Multiplikator. K.-o.-Runden über EINE Stufe mal `PHASE[...].rang`, nicht vier
+Regler. Wichtigster Punkt für die UI: **Gewicht pro Spiel ≠ Anteil an der
+Wertung** (306 BL- gegen 144 CL-Spiele) — `anteile()` rechnet den
+resultierenden Anteil, `anteilHinweis()` benennt die Falle.
+
 **Ereignisse** (`src/lib/ereignisse.js`, `rules.ereignisse`, Standard aus): der
 ZWEITE Joker-Topf — Joker, die man sich verdient, statt sie zugeteilt zu
 bekommen. Belohnung ist immer eine Joker-Gutschrift, nie ein neuer Punkte-Kanal,

@@ -13,6 +13,7 @@ import { sanitizeVerteilung, DEFAULT_VERTEILUNG } from "./jokerPlan";
 import { sanitizeBigGame, DEFAULT_BIGGAME, bigGameAufschlag } from "./bigGame";
 import { sanitizeSpiele, DEFAULT_SPIELE } from "./spielauswahl";
 import { sanitizeEreignisse, DEFAULT_EREIGNISSE } from "./ereignisse";
+import { sanitizeWettbewerbe, DEFAULT_WETTBEWERBE, wettbewerbAufschlag, maxWettbewerbAufschlag } from "./wettbewerbGewicht";
 
 export function createMockOddsSource() {
   const snap = {
@@ -162,6 +163,12 @@ export const DEFAULT_RULES = {
   // Zweiter Joker-Topf neben `joker.verteilung`, mit eigener Obergrenze.
   // Katalog + Auswertung in ereignisse.js. Standard aus.
   ereignisse: { ...DEFAULT_EREIGNISSE },
+
+  // ── Wettbewerbs-Gewichte: ein CL-Halbfinale zählt mehr als ein Ligaspiel ──
+  // Fällt in DENSELBEN additiven Topf wie Derby und Big Game — „dieses Spiel
+  // ist wichtiger, für alle gleich". Katalog + Anteils-Rechnung in
+  // wettbewerbGewicht.js. Standard aus.
+  wettbewerbe: { ...DEFAULT_WETTBEWERBE },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -325,6 +332,7 @@ export function sanitizeRules(partial = {}) {
     bigGame: sanitizeBigGame(src.bigGame),
     spiele: sanitizeSpiele(src.spiele),
     ereignisse: sanitizeEreignisse(src.ereignisse),
+    wettbewerbe: sanitizeWettbewerbe(src.wettbewerbe),
   };
 }
 
@@ -559,6 +567,9 @@ export function teamModFactor(snap, rules = DEFAULT_RULES) {
   // Das Big Game sagt dasselbe wie ein Derby („dieses Spiel zählt mehr, für
   // alle gleich") und gehört deshalb in denselben Aufschlag — nicht daneben.
   aufschlag += bigGameAufschlag(snap, rules);
+  // Wettbewerb und K.-o.-Runde sagen wieder dasselbe — also derselbe Topf.
+  // Ein vierter Multiplikator daneben würde sich mit den übrigen aufschaukeln.
+  aufschlag += wettbewerbAufschlag(snap, rules);
   return 1 + aufschlag;
 }
 
@@ -606,6 +617,7 @@ export function maxTotalModifier(rules = DEFAULT_RULES) {
     .sort((a, b) => b - a).slice(0, 2);
   let aufschlag = Math.max(0, joker - 1);
   if (rules?.bigGame?.enabled) aufschlag += sanitizeBigGame(rules.bigGame).aufschlag;
+  aufschlag += maxWettbewerbAufschlag(rules);
   if (tm.derbyFaktor > 1) aufschlag += tm.derbyFaktor - 1;
   for (const f of teamWerte) aufschlag += f - 1;
   const cap = Number.isFinite(rules?.modCap) ? rules.modCap : Infinity;

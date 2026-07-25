@@ -129,7 +129,26 @@ aber die Varianz steigt — im Abschluss-Durchgang mitmessen.
 eigene Zeile in der Ertragsquellen-Aufschluesselung · als Ereignis-Ausloeser
 verwendbar (Joker fuers richtige Tippen des Big Game).
 
-### Mehrere Wettbewerbe in EINEM Tippspiel — NEU (Nutzerwunsch, groesster Brocken)
+### Mehrere Wettbewerbe in EINEM Tippspiel — Etappen (a) + (b) GEBAUT ✓
+(a) `wettbewerbe.js` + `championsLeagueData.js` (Datenmodell, CL mit Ligaphase
+und K.-o.-Baum). (b) `wettbewerbGewicht.js` + `WettbewerbGewichte.jsx`.
+
+Zwei Punkte aus (b), die man nicht brechen sollte:
+- **Der Aufschlag faellt in DENSELBEN additiven Topf** wie Derby und Big Game
+  (`teamModFactor`) — kein vierter Multiplikator daneben. Ein Test rechnet den
+  Fall mit allen dreien nach: additiv 2,7x statt multiplikativ 3,83x.
+- **Gewicht pro Spiel ist nicht Anteil an der Wertung.** 306 BL-Spiele gegen
+  144 CL-Spiele: „CL x1,5" fuehlt sich nach doppelt so wichtig an und bleibt
+  trotzdem die kleinere Haelfte. `anteile()` rechnet den resultierenden Anteil
+  aus, die Oberflaeche zeigt ihn unter jedem Regler samt „ohne Gewichte waeren
+  es X %", und `anteilHinweis()` nennt die Falle beim Namen. Ohne diese
+  Rueckmeldung stellt ein Admin etwas ein und bekommt etwas anderes.
+- K.-o.-Runden brauchen keinen eigenen Regler: EINE Stufe steigt ueber
+  `PHASE[...].rang` (AF x1, VF x2, HF x3, Finale x4).
+
+Offen: Etappen (c) Freischalt-Zeitpunkte fuer Saison-Wetten und (d) Auswahl
+quer ueber Wettbewerbe (`rules.spiele` kann das Feld schon).
+
 Bundesliga + Premier League + Champions League zusammen, mit eigenen Regeln je
 Wettbewerb und fairer Gewichtung untereinander. Ziel des Nutzers: ein
 **Gesamt-Tippspiel nur aus dem Besten und Interessantesten**.

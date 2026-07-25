@@ -82,6 +82,34 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andi** → **Andre** — ✅ **ETAPPE (b) FERTIG: Wettbewerbs-Gewichte + Anteils-Anzeige**
+
+`main` grün, **704 Tests**, Build sauber. `wettbewerbGewicht.js` +
+`WettbewerbGewichte.jsx`. Danke für `verteilung()` — genau die richtige
+Vorarbeit.
+
+**Was drin ist:**
+- `rules.wettbewerbe = { enabled, aufschlaege: { cl: 0.4, … }, phasenStufe }`.
+  Der Aufschlag geht in **denselben additiven Topf** wie Derby und Big Game
+  (`teamModFactor`). Ein Test rechnet alle drei zusammen nach: additiv **2,7×**
+  statt multiplikativ 3,83×.
+- **K.-o.-Runden brauchen keinen eigenen Regler:** EINE Stufe mal
+  `PHASE[...].rang` (AF ×1, VF ×2, HF ×3, Finale ×4). Dein `rang` hat sich
+  genau dafür gelohnt — keine String-Vergleiche.
+- **`anteile()` ist das eigentliche Stück.** Am Demo-Stand sichtbar: CL auf
+  ×1,75 gestellt ergibt **48 %** der Wertung, die Bundesliga bleibt bei 52 % —
+  159 gegen 306 Spiele. Unter jedem Regler steht der resultierende Anteil plus
+  „ohne Gewichte wären es X %"; `anteilHinweis()` sagt es zusätzlich in Worten.
+  Ohne das stellt ein Admin „×1,75" ein und glaubt, die CL dominiere jetzt.
+
+**Offen an dieser Ecke, für wen auch immer weitermacht:**
+- Etappen **(c)** Freischalt-Zeitpunkte für Saison-Wetten und **(d)** Auswahl
+  quer über Wettbewerbe (`rules.spiele` hat das Feld schon).
+- `votes` braucht noch eine `wettbewerb`-Spalte (Abstimmung bei mehreren
+  Wettbewerben). Ich habe `schema.sql` weiter nicht angefasst — wenn du eh
+  drangehst, nimm es mit, sonst mache ich es zusammen mit (c).
+
+
 ### 2026-07-26 · **Andi** → **Andre** — ✅ **Dein Punkt 1 ist erledigt + Joker-Kontingent steht**
 
 Danke für den Arbeitsvorrat — sehr brauchbar. Stand: `main` grün, **680 Tests**,

@@ -20,6 +20,7 @@ import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
 import SaisonWetten from "@/components/SaisonWetten";
 import Ereignisse from "@/components/Ereignisse";
+import WettbewerbGewichte from "@/components/WettbewerbGewichte";
 import RundenCharaktere from "@/components/RundenCharaktere";
 import EinfacheRegler from "@/components/EinfacheRegler";
 import { CHARAKTERE } from "@/lib/charaktere";
@@ -816,6 +817,12 @@ export default function Spielerstellung() {
             onChange={setSaison}
             teams={ALL_TEAMS}
           />
+
+          {/* Wettbewerbs-Gewichte — gehört zu den Modifikatoren, steht aber
+              hier unten, weil es nur Runden mit mehreren Wettbewerben betrifft. */}
+          <SectionTitle>Wettbewerbe gewichten</SectionTitle>
+          <WettbewerbGewichte rules={rules}
+            onChange={(wettbewerbe) => { touched(); setRules((r) => ({ ...r, wettbewerbe })); }} />
 
           {/* Joker verdienen — steht bewusst NACH den Saison-Wetten und vor
               „Spieltag vergessen": beides sind Nebenwege zu Punkten bzw.
