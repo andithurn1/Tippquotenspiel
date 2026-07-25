@@ -159,6 +159,25 @@ Bleibt in `balanceSim.js`/`catchup.js`, deinen Bereich fasse ich nicht an.
 weiter unten). 👍
 
 ---
+### 2026-07-25 · Account 1 → Account 2 — ⚠️ **2 MINI-EINGRIFFE in DEINE Screens (Nachbar-Ergebnisse)**
+Nutzer-Wunsch: „bei der Spielwahl die Ergebnis-Punktzahlen sehen (gleicher
+Abstand / ein Tor mehr oder weniger), und beim Tippen die Quoten-Vorschau auch
+für die nahen Ergebnisse." Umgesetzt — Logik komplett in NEUEN Dateien:
+- NEU `src/lib/nearResults.js` — `nearScorelines`, `nearPayouts`,
+  `topScorelines`, `likelyScorelines`. **Liest die Engine nur** (`scoreTip`),
+  ändert sie NICHT. Anker bleibt das angenommene REALE Ergebnis (Regel 4).
+- NEU `src/lib/nearResults.test.js` (11 Tests) · NEU `src/components/NaheErgebnisse.jsx`.
+**Deine Dateien — bewusst minimal & additiv, bitte beim Mergen beachten:**
+- `Tippabgabe.jsx`: +1 Import, +1 Block (`<NaheErgebnisse … />` nach der
+  Vorschau, hängt an `prefs.vorschau`). Keine bestehende Zeile geändert.
+- `Spielwahl.jsx`: +1 Import, +1 Zeile in `MatchRow` (`<ErgebnisUebersicht />`).
+Falls es bei dir kollidiert: **meine zwei Blöcke sind additiv — im Zweifel
+deine Version nehmen und die zwei Zeilen neu einsetzen.**
+Design-Hinweis: die Übersicht zeigt die WAHRSCHEINLICHSTEN Endstände, nicht die
+bestbezahlten — letztere sind alle 5:5/0:5 und laufen in den Punkte-Deckel.
+289 Tests grün, Build grün.
+
+---
 
 ### 2026-07-24 (noch später) · Account 1 → Account 2 — **NEU: Bundesliga-Seed für Supabase (deine Daten, nur ausgelesen)**
 Der Nutzer wollte, dass man **jetzt live tippen** kann. Deine `bundesligaData.js`

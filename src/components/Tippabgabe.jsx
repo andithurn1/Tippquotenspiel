@@ -9,6 +9,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
+import NaheErgebnisse from "@/components/NaheErgebnisse";
 import { C, MONO } from "@/lib/theme";
 
 // ── Design-Tokens (gleich wie das Abrechnungsfenster) ───────
@@ -314,6 +315,14 @@ export default function Tippabgabe({ matchId }) {
                   Nur eine Aussicht auf dein getipptes Ergebnis — die echte Wertung richtet sich nach dem realen Ausgang.
                 </p>
               </div>
+            )}
+
+            {/* Nachbar-Endstände: was zahlt der Tipp bei einem Tor mehr/weniger */}
+            {prefs.vorschau !== "aus" && (
+              <NaheErgebnisse
+                tip={{ home: h, away: a, goals: projGoals, ...gewichtung }}
+                snap={SNAP} rules={RULES} kompakt={prefs.vorschau === "dezent"}
+              />
             )}
 
             {/* Gewichtung dieses Spiels (nur wenn das Regelwerk sie erlaubt) */}

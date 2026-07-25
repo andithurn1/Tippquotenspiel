@@ -6,6 +6,7 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
+import { ErgebnisUebersicht } from "@/components/NaheErgebnisse";
 import { filterMatchesByTeams } from "@/lib/roundStatus";
 import { DEFAULT_RULES, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
@@ -145,6 +146,8 @@ function MatchRow({ match, open, tipped, gewicht }) {
       <div>
         <div style={{ fontSize: 14, fontWeight: 700 }}>{match.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {match.away}</div>
         <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginTop: 3 }}>{timeFmt.format(new Date(match.kickoff))}</div>
+        {/* Orientierung: die lohnendsten Endstände dieses Spiels */}
+        {open && <ErgebnisUebersicht snap={match.snapshot} />}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         {gewichtet && <Tag tone={C.gold}>×{gewicht.toFixed(1)}</Tag>}
