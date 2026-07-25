@@ -68,6 +68,44 @@ geht nichts verloren.
 Offene Entwurfsfragen: Warnung beim Zurückschalten, wenn Profi-Werte nicht mehr
 zu einem Paket passen. Nicht mehr als 3 Stufen — jede kostet Pflege.
 
+### Big Game: das Spiel des Spieltags dynamisch bestimmen — NEU (Nutzerwunsch)
+Beim Anlegen der Runde weiss niemand, welche Begegnungen spannend werden. Ein
+DERBY ist vorher bekannt — „Erster gegen Zweiter am 28. Spieltag" nicht. Ein
+Algorithmus soll waehrend der Saison das jeweils interessanteste Spiel finden
+und hervorheben (Quotenboost oder Zusatzregel).
+
+**Was ein Spiel gross macht — Signale, die wir HABEN:**
+- **Ausgeglichenheit** steckt schon im Snapshot (`winner.home ≈ winner.away`).
+  ⚠️ Aber: ausgeglichen ≠ wichtig. Zehnter gegen Elfter ist ausgeglichen und
+  trotzdem belanglos. Quoten allein reichen also nicht.
+- **Tabellen-Relevanz** aus `saisonwetten.tabelle()`: Naehe der Kontrahenten
+  UND Hoehe in der Tabelle (1. gegen 2. schlaegt 15. gegen 16.).
+- **Zeitpunkt**: spaet in der Saison zaehlt mehr — Titel/Abstieg entscheiden sich.
+- **Derby** (`findDerby`) als Zuschlag, nicht als alleiniges Kriterium.
+→ `spannungsWert(match, tabelle, snapshot, spieltag) → 0..1`, daraus je
+Spieltag das Top-Spiel.
+
+**⚠️ Die entscheidende Fairness-Regel: VORHER feststehen.**
+Das Big Game muss bekannt sein, BEVOR getippt wird — sonst aendert sich der
+Wert eines Tipps rueckwirkend. Gleiches Prinzip wie beim Quoten-Snapshot:
+einmal festgelegt, gilt es. Bestimmt wird es also beim Oeffnen des Spieltags
+aus dem DANN gueltigen Tabellenstand.
+
+**Transparenz:** Deterministisch und begruendet anzeigen („Platz 2 gegen Platz 3,
+punktgleich, 28. Spieltag") — sonst wirkt die Auswahl willkuerlich und der
+Verdacht der Bevorzugung entsteht.
+
+**Belohnung = derselbe Modifikator-Typ wie Derby und Wettbewerbs-Gewicht.**
+„Dieses Spiel ist wichtiger, fuer alle gleich" — also in denselben additiven
+Topf unter `modCap`. Kein neuer Multiplikator.
+⚠️ Zusammenspiel mit dem Joker bedenken: Wer seinen Joker aufs ohnehin
+geboostete Big Game legt, stapelt zwei Aufschlaege. Additiv ist das gedeckelt,
+aber die Varianz steigt — im Abschluss-Durchgang mitmessen.
+
+**Anschluesse:** Benachrichtigung („Diese Woche Big Game: X gegen Y") ·
+eigene Zeile in der Ertragsquellen-Aufschluesselung · als Ereignis-Ausloeser
+verwendbar (Joker fuers richtige Tippen des Big Game).
+
 ### Mehrere Wettbewerbe in EINEM Tippspiel — NEU (Nutzerwunsch, groesster Brocken)
 Bundesliga + Premier League + Champions League zusammen, mit eigenen Regeln je
 Wettbewerb und fairer Gewichtung untereinander. Ziel des Nutzers: ein
