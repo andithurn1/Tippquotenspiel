@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { DEFAULT_RULES, projectTip, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
+import { jokerPlan } from "@/lib/jokerPlan";
+import { darfJokerSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -53,6 +55,9 @@ export default function Tippabgabe({ matchId }) {
   // Andere Tipps des Nutzers in dieser Runde — für „welche Gewichte am selben
   // Spieltag sind schon vergeben" (Ranking-Modus).
   const [meineTips, setMeineTips] = useState([]);
+  // Eigene Roh-Einträge der Runde — Grundlage für die ERSPIELTEN Joker
+  // (ereignisse.js rechnet aus Tipps + Ergebnissen).
+  const [meineEintraege, setMeineEintraege] = useState([]);
   const [votes, setVotes] = useState([]);   // Joker-Abstimmung der Runde
 
   useEffect(() => {
@@ -99,6 +104,9 @@ export default function Tippabgabe({ matchId }) {
           gewicht: t.tip?.gewicht,
         }));
       setMeineTips(eigene);
+      getStore().getRoundEntries(roundId)
+        .then((alle) => { if (live) setMeineEintraege(alle.filter((x) => x.userId === user.id)); })
+        .catch(() => {});
       const dieser = tips.find((t) => t.user_id === user.id && t.match_id === matchId);
       if (dieser?.tip?.joker === true) setJoker(true);
       if (Number.isFinite(dieser?.tip?.gewicht)) setGewicht(dieser.tip.gewicht);
@@ -148,6 +156,22 @@ export default function Tippabgabe({ matchId }) {
   const spieltag = { wettbewerb: wettbewerbVon(match), matchday: match.matchday ?? null };
   const jokerAktiv = jokerGiltFuerSpieltag(RULES, spieltag, votes);
   const rankingModus = RULES.joker?.modus === "ranking";
+  // Kontingent aus BEIDEN Töpfen: zugeteilt (Plan) + erspielt (Ereignisse).
+  // Ohne diese Zusammenführung wäre ein erspielter Joker eine Zahl ohne Wirkung.
+  const plan = useMemo(() => jokerPlan({
+    verteilung: RULES.joker?.verteilung, seed: roundId ?? "", userIds: user ? [user.id] : [],
+  }), [RULES.joker?.verteilung, roundId, user]);
+  const gutschriften = useMemo(
+    () => erspielteJoker({ eintraege: meineEintraege, rules: RULES }),
+    [meineEintraege, RULES]);
+  const jokerErlaubnis = darfJokerSetzen({
+    plan, gutschriften, tipps: meineTips, userId: user?.id, spieltag,
+    wettbewerb: spieltag.wettbewerb,
+  });
+  const jokerStand = kontingent({
+    plan, gutschriften, tipps: meineTips, userId: user?.id,
+    bisSpieltag: spieltag.matchday, wettbewerb: spieltag.wettbewerb,
+  });
   // Ranking: welche Gewichte hat der Nutzer an DIESEM Spieltag schon vergeben?
   // Der eigene Tipp ist ausgenommen (man stellt ihn ja gerade ein).
   const belegung = rankingModus
@@ -373,18 +397,30 @@ export default function Tippabgabe({ matchId }) {
                   </>
                 ) : (
                   <>
-                    <button disabled={gesperrt} onClick={() => setJoker((v) => !v)} style={{
-                      marginTop: 10, width: "100%", cursor: gesperrt ? "default" : "pointer",
-                      fontFamily: "inherit", fontSize: 13.5, fontWeight: 700,
-                      background: joker ? `${C.gold}22` : C.surface,
-                      color: joker ? C.gold : C.muted,
-                      border: `1px solid ${joker ? C.gold + "77" : C.line}`,
-                      borderRadius: 12, padding: "11px 0",
-                    }}>
+                    <button disabled={gesperrt || (!joker && !jokerErlaubnis.erlaubt)}
+                      onClick={() => setJoker((v) => !v)} style={{
+                        marginTop: 10, width: "100%",
+                        cursor: gesperrt || (!joker && !jokerErlaubnis.erlaubt) ? "default" : "pointer",
+                        fontFamily: "inherit", fontSize: 13.5, fontWeight: 700,
+                        background: joker ? `${C.gold}22` : C.surface,
+                        color: joker ? C.gold : (!jokerErlaubnis.erlaubt ? "rgba(138,144,180,0.45)" : C.muted),
+                        border: `1px solid ${joker ? C.gold + "77" : C.line}`,
+                        borderRadius: 12, padding: "11px 0",
+                      }}>
                       {joker ? `✓ Joker gesetzt · ×${RULES.joker.faktor.toFixed(1)}` : `Joker setzen · ×${RULES.joker.faktor.toFixed(1)}`}
                     </button>
-                    <p style={{ fontSize: 10.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
-                      Nur ein Spiel pro Spieltag. Zählt in beide Richtungen — auch ein Reinfall wiegt schwerer.
+                    {/* Die HERKUNFT nennen: „du setzt einen erspielten ein" ist
+                        eine andere Aussage als „heute ist dein Joker-Spieltag". */}
+                    <p style={{
+                      fontSize: 10.5, marginTop: 9, lineHeight: 1.45,
+                      color: jokerErlaubnis.quelle === "erspielt" ? C.mint
+                        : jokerErlaubnis.erlaubt ? C.muted : C.coral,
+                    }}>
+                      {jokerErlaubnis.grund}
+                    </p>
+                    <p style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+                      Zählt in beide Richtungen — auch ein Reinfall wiegt schwerer.
+                      {jokerStand.zugeteilt.gesamt !== null && ` · ${standText(jokerStand)}`}
                     </p>
                   </>
                 )}
