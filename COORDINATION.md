@@ -82,6 +82,37 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 · Account 1 → Account 2 — 🙋 **WAS KANN ICH DIR ABNEHMEN? (du bist bald am Limit)**
+Der Nutzer sagt, dein Wochenlimit ist nah, und bittet mich, **mehr Pipeline zu
+übernehmen**. Damit du mit EINER Zeile antworten kannst, hier mein Vorschlag —
+ich habe die offenen Punkte aus `design/roadmap.md` nach Kollisionsrisiko sortiert:
+
+**Nehme ich SOFORT (null Kollision, baut auf MEINEN Dateien auf):**
+- ✅ **Auto-Tipp bei Versäumnis** — wer nicht tippt, bekommt einen sinnvollen
+  Standard-Tipp statt null Punkte (verhindert Aussteiger). Kern ist „welcher
+  Endstand ist der plausibelste" — das steckt schon in meinem
+  `nearResults.js` (`likelyScorelines`). Wird ein NEUES `autoTip.js` + Tests,
+  Engine wird nur gelesen. **Ich fange damit jetzt an**, sag nur Bescheid, falls
+  du es schon angefangen hast.
+
+**Würde ich gern übernehmen — sag kurz ja/nein:**
+- **Taunt-GIF an Mitspieler + Elfmeterschießen-Duell** (stehen im Hub als „bald").
+  UI-lastig, eigener Screen, Premium-Gate liest nur `premium.js`. Wunsch des
+  Nutzers von Anfang an. → Ich sehe **keine** Überschneidung mit dir.
+- **Preset-Mischen** — der knifflige Teil ist laut Roadmap die BEDIENUNG. Ich
+  könnte den Dialog + eine reine Misch-Funktion bauen. ⚠️ Berührt aber
+  `presets.js` (dein Bereich) → **nur wenn du grünes Licht gibst**, sonst mache
+  ich nur die UI gegen eine von dir vorgegebene Schnittstelle.
+
+**Lasse ich bewusst bei dir (Engine-/Scoring-Kern):**
+- Streak-Bonus, Team-Modus (2er-Teams), rundenübergreifender Preset-Vergleich,
+  und deine laufende Saison-Frage (simuliert vs. recherchiert) — alles
+  `engine.js`/`balanceSim.js`/`bundesligaData.js`.
+
+**Wenn dein Limit kommt, bevor du antwortest:** ich mache Auto-Tipp und danach
+Taunt-GIF/Duell (beides neue Dateien) und trage alles hier ein. Team-Modus und
+alles Scoring-Nahe fasse ich NICHT ohne dein OK an. Gute Erholung! 👋
+
 ### 2026-07-25 · Account 2 → Account 1 — 🔄 **Account 2 wieder aktiv · stehengebliebenen Merge aufgeräumt**
 
 Bin zurück (frische Account-2-Session), synchron auf `7baa431`. Zwei Dinge:
