@@ -17,11 +17,14 @@ export const useAuth = () => useContext(AuthCtx);
 // Nutzer aus der Supabase-Session ableiten. `nameSet` = ob der Anzeigename
 // bewusst gewählt wurde (vs. aus der E-Mail abgeleiteter Platzhalter) →
 // steuert das einmalige Namens-Onboarding nach dem ersten Login.
+// `fanColors` = am Profil (user_metadata) gespeicherte Vereinsfarben → damit
+// sind sie geräteübergreifend, ohne Schema-/RLS-Änderung.
 const mapUser = (u) => ({
   id: u.id,
   name: u.user_metadata?.display_name || u.email?.split("@")[0] || "Ich",
   email: u.email,
   nameSet: Boolean(u.user_metadata?.display_name),
+  fanColors: Array.isArray(u.user_metadata?.fan_colors) ? u.user_metadata.fan_colors : [],
 });
 
 export default function AuthProvider({ children }) {
@@ -76,6 +79,17 @@ export default function AuthProvider({ children }) {
     }
   };
 
+  // Vereinsfarben am Profil (user_metadata) speichern → geräteübergreifend.
+  // Im Mock/ohne Login ein No-Op (dann greift nur der localStorage-Cache).
+  const saveFanColors = async (colors) => {
+    const sb = getSupabaseBrowserClient();
+    if (!sb || !user) return;
+    const clean = Array.isArray(colors) ? colors.slice(0, 3) : [];
+    const { data, error } = await sb.auth.updateUser({ data: { fan_colors: clean } });
+    if (error) throw error;
+    if (data?.user) setUser(mapUser(data.user));
+  };
+
   // Auskunftsrecht (Art. 15 DSGVO): alle eigenen Daten als JSON-Objekt.
   // RLS erlaubt jedem, ausschließlich die eigenen Zeilen zu lesen.
   const exportMyData = async () => {
@@ -90,6 +104,7 @@ export default function AuthProvider({ children }) {
       exportiert_am: new Date().toISOString(),
       konto: { id: user.id, email: user.email },
       profil: profile ?? null,
+      einstellungen: { anzeigename: user.name, fan_colors: user.fanColors ?? [] },
       tipps: tips ?? [],
       runden_mitgliedschaften: memberships ?? [],
     };
@@ -119,7 +134,7 @@ export default function AuthProvider({ children }) {
   return (
     <AuthCtx.Provider value={{
       user, loading, isMock: !hasSupabaseEnv,
-      signInWithEmail, signOut, updateName, exportMyData, deleteAccount,
+      signInWithEmail, signOut, updateName, saveFanColors, exportMyData, deleteAccount,
     }}>
       {children}
     </AuthCtx.Provider>

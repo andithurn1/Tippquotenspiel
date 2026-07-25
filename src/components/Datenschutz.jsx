@@ -3,12 +3,7 @@
 import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import { LEGAL, DATA_POINTS } from "@/lib/legal";
-
-const C = {
-  ink: "#0B0E1F", ink2: "#12172E", surface: "#1A2040",
-  line: "rgba(255,255,255,0.09)", text: "#EDEEF6", muted: "#8A90B4", gold: "#F5C451",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+import { C, MONO } from "@/lib/theme";
 
 // Datenschutzerklärung (Art. 13/14 DSGVO). Bewusst schlank gehalten, weil die
 // App bewusst wenig verarbeitet. Kontakt-/Betreiberangaben kommen aus legal.js.

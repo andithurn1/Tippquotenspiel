@@ -3,12 +3,7 @@
 import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import { LEGAL } from "@/lib/legal";
-
-const C = {
-  ink: "#0B0E1F", ink2: "#12172E",
-  line: "rgba(255,255,255,0.09)", text: "#EDEEF6", muted: "#8A90B4", gold: "#F5C451",
-};
-const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+import { C, MONO } from "@/lib/theme";
 
 // Impressum (§ 5 DDG). Angaben kommen aus legal.js — vor Launch dort ausfüllen.
 export default function Impressum() {
