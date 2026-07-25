@@ -82,6 +82,62 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 · **Andi** → **Andre** — 📦 **NEUE AUFGABE: Saison-Tipps abgeben (gut für ~110k Kontext)**
+
+Hi Andre — der Nutzer sagt, du hast ~110k Kontextfenster frei. Hier eine
+Aufgabe, die genau da hineinpasst, **unblockiert** ist und **nicht** mit dem
+kollidiert, was ich gerade baue.
+
+**⚠️ Deine alte Aufgabe (Quoten-API) ist BLOCKIERT** — der Nutzer hat noch
+keinen API-Key von the-odds-api.com. Der Adapter (`oddsApi.js`, 17 Tests) und
+die Route (`/api/odds`) liegen fertig auf `main`; sobald der Key da ist, ist es
+nur noch die Store-Anbindung. **Bitte NICHT jetzt anfangen.**
+
+#### Die Aufgabe: die fehlende Hälfte der Saison-Wetten
+
+Ich habe die **Saison-Wetten** gebaut (`src/lib/saisonwetten.js`, 26 Tests,
+Admin-UI in der Spielerstellung). Der Admin kann Wetten zusammenstellen —
+**aber die Spieler können sie noch nicht ABGEBEN.** Genau das fehlt:
+
+1. **Schema** (`supabase/schema.sql`, dein Bereich): neue Tabelle
+   `season_tips (round_id, user_id, wetten_id, wert, created_at)`,
+   Primärschlüssel `(round_id, user_id, wetten_id)`, RLS analog zu `tips`.
+   ⚠️ Saison-Tipps hängen an KEINEM Match — deshalb eine eigene Tabelle,
+   nicht `tips` missbrauchen. **Nutzer muss sie danach ausführen → im Kanal
+   vermerken.**
+2. **Store** (`store.mock.js` + `store.supabase.js`): `saveSeasonTip({roundId,
+   userId, wettenId, wert})` und `listSeasonTips({roundId, userId?})`.
+   Gleiche Schnittstelle in beiden Stores, wie überall.
+3. **Screen** `/saison` (neue Datei, z. B. `SaisonTipps.jsx`): zeigt die Wetten
+   des Regelwerks (`rules.saison.wetten`), je Wette ein Auswahlfeld —
+   `typ.antwort === "team"` → Vereinsliste, `"spieler"` → Torschützen-Liste
+   aus den Snapshots. Nach Saisonstart gesperrt (wie der Quoten-Snapshot).
+4. **Wertung einhängen:** `scoreSaison({matches, tipps, saison})` aus
+   `saisonwetten.js` liefert `{gesamt, treffer, zeilen}` — im Leaderboard auf
+   die Spieltags-Punkte addieren. Als **eigene Zeile** ausweisen, nicht
+   stillschweigend einrechnen.
+
+**Fertig gebaut ist schon (nur benutzen, nicht neu bauen):** Katalog, Auswertung,
+`wettenId()`, `wettenLabel()`, `sanitizeSaison()`, `SAISON_PRESETS`,
+Tabellen-/Torschützen-Berechnung. Alles rein funktional und getestet.
+
+#### Was ICH parallel mache — bitte nicht anfassen
+- `engine.js` → `rules.joker` (ich baue Joker-**Typen**: einzel/ranking/heimat/mut)
+- `Spielerstellung.jsx`, `presets.js` (danach: Runden-Charaktere / Stufe 1)
+- `breakdown.js` + `Ertragsquellen.jsx` (gerade fertig geworden)
+
+Deine Dateien wären also: `schema.sql`, `store.*`, neuer Screen, ggf. Leaderboard-
+Anzeige. **Überschneidung praktisch null.**
+
+#### Stand auf `main` (`9aa6b24`, 440 Tests grün)
+Seit deiner Pause dazugekommen: Saison-Wetten · Ertragsquellen-Aufschlüsselung
+(hat zwei echte Anzeige-Bugs behoben: Sieger-Boden und Nähe ADDIEREN sich nicht,
+sie konkurrieren) · Preset-Mischen · Versäumnis-Regeln · Benachrichtigungen ·
+Spott · stabile Kader über die Saison.
+
+**Nutzer-Aufgaben weiterhin offen:** `seed-bundesliga.sql` NEU ausführen
+(306 Spiele, stabile Kader) · `seed.sql` · `legal.js` ausfüllen.
+
 ### 2026-07-25 · **Andi** (vorher Account 1) → **Andre** (vorher Account 2) — 🎁 **ÜBERGABE: Quoten-API zu 70 % fertig**
 
 Neue Namen auf Wunsch des Nutzers: ich bin **Andi**, du bist **Andre**.
