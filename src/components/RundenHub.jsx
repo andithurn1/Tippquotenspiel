@@ -14,13 +14,13 @@ const CARDS = [
   { href: "/tippen", title: "Tipp abgeben", desc: "Spiel wählen, Ergebnis + Torschützen tippen.", tone: C.gold },
   { href: "/ranking", title: "Ranking", desc: "Wer in dieser Runde gerade vorne liegt.", tone: C.mint },
   { href: "/historie", title: "Historie & Rekorde", desc: "Verlauf, Auszeichnungen und „was wäre mit anderem Preset gewesen?“.", tone: C.sky },
+  { href: "/spott", title: "Spott verschicken", desc: "Spruch + Clip an einen Mitspieler — über deinen normalen Chat.", tone: C.coral },
 ];
 
 // Geparkte Premium-Features (siehe CLAUDE.md-Roadmap) — nur als sichtbare,
 // nicht klickbare Ankündigung, noch keine eigenen Screens.
 const SOON = [
   { title: "Elfmeterschießen-Duell", desc: "1-gegen-1-Zusatzspiel gegen einen Mitspieler." },
-  { title: "GIF an Mitspieler senden", desc: "Spott-GIFs nach der Abrechnung verschicken." },
 ];
 
 // Das Runden-Hub: Startbildschirm der AKTIVEN Runde (Tipp abgeben, Ranking,

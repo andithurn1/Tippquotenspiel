@@ -12,6 +12,7 @@ import { MONO } from "@/lib/theme";
 // Datei da ist, zeigt dieselbe Komponente automatisch das Video.
 export default function ReactionGif({ reaction, size = 120 }) {
   const [failed, setFailed] = useState(false);
+  const [ready, setReady] = useState(false);
   if (!reaction) return null;
 
   return (
@@ -21,15 +22,23 @@ export default function ReactionGif({ reaction, size = 120 }) {
       background: `${reaction.tone}14`, border: `1px solid ${reaction.tone}44`,
       position: "relative",
     }}>
+      {/* Der Clip liegt ÜBER dem Platzhalter und wird erst sichtbar, wenn er
+          wirklich abspielbar ist. So bleibt der Kasten nie leer — weder wenn
+          die Datei fehlt (kein Fehler-Ereignis im Dev-Server) noch während
+          sie lädt. */}
       {!failed && (
         <video
           src={reactionSrc(reaction.key)}
           autoPlay muted loop playsInline
           onError={() => setFailed(true)}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          onCanPlay={() => setReady(true)}
+          style={{
+            position: "absolute", inset: 0, width: "100%", height: "100%",
+            objectFit: "cover", opacity: ready ? 1 : 0,
+          }}
         />
       )}
-      {failed && (
+      {!ready && (
         <>
           <div style={{ fontSize: size * 0.42, lineHeight: 1 }}>{reaction.emoji}</div>
           <div style={{
