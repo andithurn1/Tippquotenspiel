@@ -616,14 +616,34 @@ export function maxTotalModifier(rules = DEFAULT_RULES) {
 // Nutzer mehr als einen Joker gesetzt hat (leeres Array = gültig). Reine
 // Prüfung — das Durchsetzen (Speichern verweigern) und vor allem das EINFRIEREN
 // ab Anpfiff sind Sache von Store/UI, analog zur Snapshot-Quote.
+// Ein SPIELTAG ist erst mit dem Wettbewerb eindeutig: Bundesliga-Spieltag 1
+// und Champions-League-Spieltag 1 sind zwei verschiedene Spieltage. Ohne
+// diesen zusammengesetzten Schlüssel würde ein Tipper sein „×2" über beide
+// Wettbewerbe hinweg nur EINMAL vergeben dürfen — oder es doppelt bekommen.
+// Die Engine kennt dabei KEINE Wettbewerbsnamen (Regel 3), sie setzt nur zwei
+// Felder zusammen; was „bl" bedeutet, weiß allein die Daten-Schicht.
+export function spieltagKey(x) {
+  return `${x?.wettbewerb ?? ""}#${x?.matchday ?? ""}`;
+}
+
+// Zwei Tipps am selben Spieltag DESSELBEN Wettbewerbs?
+export function gleicherSpieltag(a, b) {
+  return spieltagKey(a) === spieltagKey(b);
+}
+
+// Prüfregel „ein Joker pro Spieltag". Gibt die beanstandeten Spieltage als
+// { wettbewerb, matchday } zurück — eine nackte Zahl wäre mit mehreren
+// Wettbewerben nicht mehr eindeutig.
 export function invalidJokerMatchdays(tips = []) {
   const counts = new Map();
   for (const t of tips) {
     if (t?.joker !== true) continue;
-    const md = t.matchday ?? null;
-    counts.set(md, (counts.get(md) || 0) + 1);
+    const key = spieltagKey(t);
+    const eintrag = counts.get(key) || { wettbewerb: t.wettbewerb ?? null, matchday: t.matchday ?? null, n: 0 };
+    eintrag.n++;
+    counts.set(key, eintrag);
   }
-  return [...counts.entries()].filter(([, n]) => n > 1).map(([md]) => md);
+  return [...counts.values()].filter((e) => e.n > 1).map(({ wettbewerb, matchday }) => ({ wettbewerb, matchday }));
 }
 
 // Prüfregel für den Ranking-Modus: jeder Pool-Faktor darf pro Spieltag nur
@@ -632,19 +652,20 @@ export function invalidJokerMatchdays(tips = []) {
 // Gibt die beanstandeten Spieltage zurück (leeres Array = gültig).
 export function invalidWeightMatchdays(tips = [], rules = DEFAULT_RULES) {
   const pool = rules?.joker?.faktoren || [];
-  const belegt = new Map();      // matchday → Set vergebener Faktoren
-  const fehler = new Set();
+  const belegt = new Map();      // Spieltag-Schlüssel → Set vergebener Faktoren
+  const fehler = new Map();      // Spieltag-Schlüssel → { wettbewerb, matchday }
   for (const t of tips) {
     const w = t?.gewicht;
     if (!Number.isFinite(w) || w === 1) continue;
-    const md = t.matchday ?? null;
-    if (!pool.includes(w)) { fehler.add(md); continue; }
-    const used = belegt.get(md) || new Set();
-    if (used.has(w)) fehler.add(md);
+    const key = spieltagKey(t);
+    const bezeichnung = { wettbewerb: t.wettbewerb ?? null, matchday: t.matchday ?? null };
+    if (!pool.includes(w)) { fehler.set(key, bezeichnung); continue; }
+    const used = belegt.get(key) || new Set();
+    if (used.has(w)) fehler.set(key, bezeichnung);
     used.add(w);
-    belegt.set(md, used);
+    belegt.set(key, used);
   }
-  return [...fehler];
+  return [...fehler.values()];
 }
 
 // Belegung der Ranking-Gewichte für EINEN Spieltag — speist direkt die UI.
@@ -652,11 +673,18 @@ export function invalidWeightMatchdays(tips = [], rules = DEFAULT_RULES) {
 // Rückgabe: pro Pool-Gewicht, ob und auf welchem Match es liegt, plus die noch
 // freien Gewichte. `exceptMatchId` blendet den gerade bearbeiteten Tipp aus,
 // damit sein eigenes Gewicht beim Umstellen nicht als „belegt" gilt.
-export function weightUsageForMatchday(tips = [], matchday, rules = DEFAULT_RULES, exceptMatchId = null) {
+// `spieltag` ist entweder ein Objekt { wettbewerb, matchday } oder — für
+// Altaufrufe — eine nackte Zahl. Die Zahl allein bleibt erlaubt, solange eine
+// Runde nur EINEN Wettbewerb hat; sobald mehrere im Spiel sind, muss der
+// Aufrufer das Objekt reichen, sonst zählt er über Wettbewerbe hinweg.
+export function weightUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RULES, exceptMatchId = null) {
+  const ziel = (spieltag && typeof spieltag === "object")
+    ? spieltagKey(spieltag)
+    : spieltagKey({ matchday: spieltag });
   const pool = rules?.joker?.faktoren || [];
   const belegtVon = new Map();   // gewicht → matchId
   for (const t of tips) {
-    if ((t.matchday ?? null) !== matchday) continue;
+    if (spieltagKey(t) !== ziel) continue;
     if (t.match_id === exceptMatchId || t.matchId === exceptMatchId) continue;
     const w = t?.gewicht;
     if (Number.isFinite(w) && w !== 1 && pool.includes(w) && !belegtVon.has(w)) {

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { DEFAULT_RULES, projectTip, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
+import { wettbewerbVon } from "@/lib/wettbewerbe";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -87,10 +88,16 @@ export default function Tippabgabe({ matchId }) {
     Promise.all([getStore().listTips({ roundId }), getStore().listMatches(), getStore().listVotes({ roundId })]).then(([tips, ms, vs]) => {
       if (!live) return;
       setVotes(vs);
-      const mdOf = new Map(ms.map((m) => [m.id, m.matchday ?? null]));
+      // Wettbewerb mit anreichern — der Gewichte-Schlüssel ist wettbewerb+matchday.
+      const infoOf = new Map(ms.map((m) => [m.id, { matchday: m.matchday ?? null, wettbewerb: wettbewerbVon(m) }]));
       const eigene = tips
         .filter((t) => t.user_id === user.id)
-        .map((t) => ({ match_id: t.match_id, matchday: mdOf.get(t.match_id) ?? null, gewicht: t.tip?.gewicht }));
+        .map((t) => ({
+          match_id: t.match_id,
+          matchday: infoOf.get(t.match_id)?.matchday ?? null,
+          wettbewerb: infoOf.get(t.match_id)?.wettbewerb ?? null,
+          gewicht: t.tip?.gewicht,
+        }));
       setMeineTips(eigene);
       const dieser = tips.find((t) => t.user_id === user.id && t.match_id === matchId);
       if (dieser?.tip?.joker === true) setJoker(true);
@@ -136,12 +143,15 @@ export default function Tippabgabe({ matchId }) {
   const gesperrt = Date.now() >= new Date(SNAP.kickoff).getTime();
   // Joker ist aktiv, wenn das Regelwerk ihn erlaubt UND (falls per Abstimmung
   // geregelt) dieser Spieltag beschlossen wurde.
-  const jokerAktiv = jokerGiltFuerSpieltag(RULES, match.matchday ?? null, votes);
+  // Spieltag IMMER mit Wettbewerb — sonst zählen BL-Spieltag 1 und
+  // CL-Spieltag 1 als derselbe Spieltag.
+  const spieltag = { wettbewerb: wettbewerbVon(match), matchday: match.matchday ?? null };
+  const jokerAktiv = jokerGiltFuerSpieltag(RULES, spieltag, votes);
   const rankingModus = RULES.joker?.modus === "ranking";
   // Ranking: welche Gewichte hat der Nutzer an DIESEM Spieltag schon vergeben?
   // Der eigene Tipp ist ausgenommen (man stellt ihn ja gerade ein).
   const belegung = rankingModus
-    ? weightUsageForMatchday(meineTips, match.matchday ?? null, RULES, matchId)
+    ? weightUsageForMatchday(meineTips, spieltag, RULES, matchId)
     : null;
   const gewichtBelegtVon = (g) => belegung?.belegt.find((b) => b.gewicht === g)?.matchId ?? null;
   // Gewichtung fließt in die Vorschau ein, damit man sofort sieht, was sie bringt.

@@ -22,9 +22,9 @@ describe("tallyVotes", () => {
   it("zählt ja/nein je Spieltag, aufsteigend sortiert", () => {
     const t = tallyVotes(VOTES);
     expect(t.map((d) => d.matchday)).toEqual([1, 2, 3]);
-    expect(t[0]).toEqual({ matchday: 1, ja: 2, nein: 1, total: 3, beschlossen: true });
-    expect(t[1]).toEqual({ matchday: 2, ja: 1, nein: 1, total: 2, beschlossen: false });
-    expect(t[2]).toEqual({ matchday: 3, ja: 0, nein: 1, total: 1, beschlossen: false });
+    expect(t[0]).toEqual({ wettbewerb: null, matchday: 1, ja: 2, nein: 1, total: 3, beschlossen: true });
+    expect(t[1]).toEqual({ wettbewerb: null, matchday: 2, ja: 1, nein: 1, total: 2, beschlossen: false });
+    expect(t[2]).toEqual({ wettbewerb: null, matchday: 3, ja: 0, nein: 1, total: 1, beschlossen: false });
   });
 
   it("Gleichstand gilt als nicht beschlossen", () => {
@@ -39,9 +39,24 @@ describe("tallyVotes", () => {
 });
 
 describe("jokerMatchdaysFromVotes", () => {
-  it("liefert nur die beschlossenen Spieltage", () => {
+  it("liefert nur die beschlossenen Spieltage — als Schlüssel", () => {
+    // Schlüssel statt Zahl, weil ein Spieltag erst mit dem Wettbewerb
+    // eindeutig ist (BL-Spieltag 1 ≠ CL-Spieltag 1).
     const set = jokerMatchdaysFromVotes(VOTES);
-    expect([...set]).toEqual([1]);
+    expect(set.size).toBe(1);
+    expect(set.has("#1")).toBe(true);
+  });
+
+  it("trennt gleiche Spieltags-Zahlen verschiedener Wettbewerbe", () => {
+    const votes = [
+      { wettbewerb: "bl", matchday: 1, user_id: "a", ja: true },
+      { wettbewerb: "bl", matchday: 1, user_id: "b", ja: true },
+      { wettbewerb: "cl", matchday: 1, user_id: "a", ja: false },
+      { wettbewerb: "cl", matchday: 1, user_id: "b", ja: false },
+    ];
+    const rules = { joker: { enabled: true, abstimmung: true } };
+    expect(jokerGiltFuerSpieltag(rules, { wettbewerb: "bl", matchday: 1 }, votes)).toBe(true);
+    expect(jokerGiltFuerSpieltag(rules, { wettbewerb: "cl", matchday: 1 }, votes)).toBe(false);
   });
 });
 

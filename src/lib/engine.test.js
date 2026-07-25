@@ -438,8 +438,35 @@ describe("Joker — Gewichtung einzelner Spiele", () => {
     ])).toEqual([]);
     expect(invalidJokerMatchdays([
       { matchday: 1, joker: true }, { matchday: 1, joker: true },
-    ])).toEqual([1]);
+    ])).toEqual([{ wettbewerb: null, matchday: 1 }]);
     expect(invalidJokerMatchdays([])).toEqual([]);
+  });
+
+  it("derselbe Spieltag in ZWEI Wettbewerben ist NICHT derselbe Spieltag", () => {
+    // Der Fund aus der Wettbewerbs-Etappe: eine nackte Spieltags-Zahl ist
+    // mehrdeutig, sobald Bundesliga und Champions League zusammenlaufen.
+    expect(invalidJokerMatchdays([
+      { wettbewerb: "bl", matchday: 1, joker: true },
+      { wettbewerb: "cl", matchday: 1, joker: true },
+    ])).toEqual([]);
+    expect(invalidJokerMatchdays([
+      { wettbewerb: "cl", matchday: 1, joker: true },
+      { wettbewerb: "cl", matchday: 1, joker: true },
+    ])).toEqual([{ wettbewerb: "cl", matchday: 1 }]);
+  });
+
+  it("weightUsageForMatchday trennt die Wettbewerbe ebenfalls", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1] } });
+    const tips = [
+      { wettbewerb: "bl", matchday: 1, gewicht: 2, matchId: "bl1" },
+      { wettbewerb: "cl", matchday: 1, gewicht: 2, matchId: "cl1" },
+    ];
+    // In der CL ist die 2 vergeben, in der Bundesliga ebenfalls — aber jeweils
+    // durch das EIGENE Spiel, nicht durch das des anderen Wettbewerbs.
+    expect(weightUsageForMatchday(tips, { wettbewerb: "cl", matchday: 1 }, rules)
+      .belegt.find((b) => b.gewicht === 2).matchId).toBe("cl1");
+    expect(weightUsageForMatchday(tips, { wettbewerb: "bl", matchday: 1 }, rules)
+      .belegt.find((b) => b.gewicht === 2).matchId).toBe("bl1");
   });
 
   it("maxJokerFactor: 1 wenn aus, sonst Einzelfaktor bzw. größter Pool-Wert", () => {
@@ -480,10 +507,13 @@ describe("Joker — Gewichtung einzelner Spiele", () => {
     expect(invalidWeightMatchdays([
       { matchday: 1, gewicht: 2 }, { matchday: 1, gewicht: 1.5 }, { matchday: 1, gewicht: 1 }, { matchday: 1, gewicht: 1 },
     ], rules)).toEqual([]);
+    // Beanstandet wird jetzt { wettbewerb, matchday } statt einer nackten Zahl:
+    // BL-Spieltag 1 und CL-Spieltag 1 sind zwei verschiedene Spieltage.
     expect(invalidWeightMatchdays([
       { matchday: 1, gewicht: 2 }, { matchday: 1, gewicht: 2 },
-    ], rules)).toEqual([1]);
-    expect(invalidWeightMatchdays([{ matchday: 2, gewicht: 1.7 }], rules)).toEqual([2]); // nicht im Pool
+    ], rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+    expect(invalidWeightMatchdays([{ matchday: 2, gewicht: 1.7 }], rules))
+      .toEqual([{ wettbewerb: null, matchday: 2 }]); // nicht im Pool
     expect(invalidWeightMatchdays([], rules)).toEqual([]);
   });
 

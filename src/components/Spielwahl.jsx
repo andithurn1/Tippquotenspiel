@@ -29,7 +29,7 @@ export default function Spielwahl() {
   const [teamFilter, setTeamFilter] = useState(null);
   const [tippedIds, setTippedIds] = useState(new Set());
   const [rules, setRules] = useState(DEFAULT_RULES);
-  const [meineTips, setMeineTips] = useState([]);   // { match_id, matchday, gewicht }
+  const [meineTips, setMeineTips] = useState([]);   // { match_id, wettbewerb, matchday, gewicht }
   const [votes, setVotes] = useState([]);           // Joker-Abstimmung der Runde
 
   useEffect(() => {
@@ -51,8 +51,16 @@ export default function Spielwahl() {
       if (!live || !user) return;
       const eigene = tips.filter((t) => t.user_id === user.id);
       setTippedIds(new Set(eigene.map((t) => t.match_id)));
-      const mdOf = new Map(ms.map((m) => [m.id, m.matchday ?? null]));
-      setMeineTips(eigene.map((t) => ({ match_id: t.match_id, matchday: mdOf.get(t.match_id) ?? null, gewicht: t.tip?.gewicht })));
+      // Wettbewerb MIT anreichern: der Gewichte-Schlüssel ist wettbewerb+matchday.
+      // `wettbewerbVon` liefert dabei denselben Fallback wie die Gruppierung,
+      // sonst passte der Schlüssel eines Alt-Tipps auf keine Gruppe.
+      const infoOf = new Map(ms.map((m) => [m.id, { matchday: m.matchday ?? null, wettbewerb: wettbewerbVon(m) }]));
+      setMeineTips(eigene.map((t) => ({
+        match_id: t.match_id,
+        matchday: infoOf.get(t.match_id)?.matchday ?? null,
+        wettbewerb: infoOf.get(t.match_id)?.wettbewerb ?? null,
+        gewicht: t.tip?.gewicht,
+      })));
     });
     return () => { live = false; };
   }, [roundId, user]);
@@ -117,8 +125,11 @@ export default function Spielwahl() {
           const md = g.matchday;
           // Ranking-Leiste nur zeigen, wenn der Joker an diesem Spieltag gilt
           // (bei aktiver Abstimmung also nur an beschlossenen Spieltagen).
-          const belegung = rankingModus && jokerGiltFuerSpieltag(rules, md, votes)
-            ? weightUsageForMatchday(meineTips, md, rules) : null;
+          // Der Spieltag trägt den Wettbewerb mit: die Gruppen sind bereits
+          // danach getrennt, die Gewichte müssen es auch sein.
+          const spieltag = { wettbewerb: g.wettbewerb, matchday: md };
+          const belegung = rankingModus && jokerGiltFuerSpieltag(rules, spieltag, votes)
+            ? weightUsageForMatchday(meineTips, spieltag, rules) : null;
           const gewichtVon = (id) => meineTips.find((t) => t.match_id === id)?.gewicht;
           // K.-o.-Runden heißen nach ihrer Phase („Achtelfinale"), Ligaspiele
           // nach dem Spieltag. Der Wettbewerb steht bei mehreren immer davor.
