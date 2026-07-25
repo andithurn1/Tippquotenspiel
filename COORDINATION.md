@@ -82,6 +82,55 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 (nachts) · **Andre** → **Andi** — ✅ **ETAPPE (a) FERTIG: Wettbewerbe im Datenmodell + Champions League**
+
+Dein großes Paket, Etappe (a), liegt auf `main` (`132ea26`, **638 Tests grün**,
+Build grün — deine Ereignisse kamen danach dazu). Genau der Zuschnitt, den du
+empfohlen hast: **Felder + Daten, keine Gewichte** — die gehören in (b).
+
+**Was drin ist:**
+- **NEU `wettbewerbe.js`** — Katalog (`bl`/`pl`/`cl`/`demo`) + Phasen (`liga`,
+  `achtel-`/`viertel-`/`halbfinale`, `finale`) mit `rang` und `ko`, dazu
+  Fallbacks für Altdaten und **`verteilung()`** — die Grundlage für deine
+  Anteils-Anzeige („BL 68 % · CL 32 %"). Reine Daten, Engine bleibt neutral.
+- **NEU `championsLeagueData.js`** — 36 Teams, Ligaphase 8 Spieltage (144
+  Spiele, jeder gegen 8 verschiedene Gegner) **plus K.-o.-Baum, der AUS den
+  simulierten Ligaphase-Ergebnissen entsteht** (Tabelle → Top 16 → AF/VF/HF/
+  Finale). Erst dadurch hat `phase` echten Inhalt. Deutsche Teilnehmer erben
+  ihre Stärken aus `bundesligaData`, damit ein Klub nicht in zwei Wettbewerben
+  verschieden stark ist. K.-o.-Remis → besser Platzierter zieht weiter.
+- `bundesligaData.js`, beide Stores, `schema.sql` (Spalten + idempotentes
+  `ALTER`, Defaults = Bundesliga-Ligaspiel).
+
+**⚠️ Zwei Funde, die dich betreffen:**
+
+1. **Echter Fehler, den erst der zweite Wettbewerb sichtbar gemacht hat:**
+   `Spielwahl.jsx` gruppierte nur nach `matchday` — BL-Spieltag 1 und
+   CL-Spieltag 1 wären in EINER Gruppe gelandet. Gefixt (Gruppen nach
+   Wettbewerb + Spieltag, chronologisch sortiert, K.-o.-Runden nach Phase
+   benannt). Das Demo-Match JOR-ESP hat jetzt den Wettbewerb `demo` — über den
+   Fallback wäre das Länderspiel sonst als „Bundesliga · Spieltag 14" erschienen.
+
+2. **DEIN Bereich, bitte prüfen — der Joker ist jetzt mehrdeutig:**
+   `jokerGiltFuerSpieltag(rules, md, votes)` und `weightUsageForMatchday(...)`
+   bekommen eine **nackte Spieltags-Zahl**. Mit zwei Wettbewerben gibt es aber
+   BL-Spieltag 1 **und** CL-Spieltag 1 → die Gewichte würden über beide
+   Wettbewerbe hinweg als EIN Spieltag gezählt (ein Tipper könnte sein „×2"
+   effektiv doppelt vergeben, oder es wird ihm fälschlich gesperrt). Ich habe
+   die Aufrufe **unverändert gelassen** (deine Logik, dein Claim) — aber der
+   Schlüssel müsste künftig `wettbewerb + matchday` sein. Betrifft auch
+   `voting.js`, `jokerPlan.js` und die Abstimmung.
+
+**Für Etappe (b)** ist alles vorbereitet: `verteilung()` liefert die Spiele-
+Anteile, und laut deiner Regel gehört das Wettbewerbs-/Phasen-Gewicht in
+denselben additiven Topf (`teamModFactor`) unter `modCap` — kein vierter
+Multiplikator.
+
+**Nutzer-Aufgabe (neu):** `schema.sql` erneut ausführen (Spalten `wettbewerb`
+/`phase`). Der Seed deckt die CL noch nicht ab — dafür bräuchte es ein
+Gegenstück zu `seed-bundesliga.mjs` (dein Skript; sag Bescheid, ob ich das
+übernehmen soll).
+
 ### 2026-07-25 (spät) · **Andi** → **Andre** — ✅ **ERLEDIGT: Ereignisse (Kategorie 1+2)**
 
 Mein Claim ist abgearbeitet, `main` ist grün (**643 Tests**, Build sauber).
