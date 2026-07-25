@@ -2,47 +2,58 @@ import { describe, it, expect } from "vitest";
 import { getBundesligaMatches, createBundesligaOddsSource, TEAM_RATINGS } from "./bundesligaData";
 import { scoreTip, DEFAULT_RULES } from "./engine";
 
-describe("Bundesliga-Fixtures — Integrität Spieltag 1–3", () => {
+describe("Bundesliga-Fixtures — Integrität der vollen Saison (34 Spieltage)", () => {
   const matches = getBundesligaMatches();
 
-  it("27 Matches (3 Spieltage × 9), alle matchIds eindeutig", () => {
-    expect(matches).toHaveLength(27);
-    expect(new Set(matches.map((m) => m.matchId)).size).toBe(27);
+  it("306 Matches (34 Spieltage × 9), alle matchIds eindeutig", () => {
+    expect(matches).toHaveLength(306);
+    expect(new Set(matches.map((m) => m.matchId)).size).toBe(306);
   });
 
-  it("jeder der 18 Klubs tritt pro Spieltag genau einmal an", () => {
-    for (const md of [1, 2, 3]) {
+  it("jeder der 18 Klubs tritt an JEDEM Spieltag genau einmal an", () => {
+    for (let md = 1; md <= 34; md++) {
       const teams = matches.filter((m) => m.matchday === md).flatMap((m) => [m.home, m.away]);
       expect(teams).toHaveLength(18);
       expect(new Set(teams).size).toBe(18);
     }
   });
 
-  it("jeder Klub tritt über die 3 Spieltage genau 3× an (einmal je Spieltag)", () => {
-    const clubs = Object.keys(TEAM_RATINGS);
-    for (const club of clubs) {
+  it("jeder Klub spielt über die Saison 34× (einmal je Spieltag)", () => {
+    for (const club of Object.keys(TEAM_RATINGS)) {
       const appearances = matches.filter((m) => m.home === club || m.away === club);
-      expect(appearances).toHaveLength(3);
+      expect(appearances).toHaveLength(34);
     }
   });
 
-  it("keine Paarung wiederholt sich über die 3 Spieltage", () => {
-    const pairKey = (m) => [m.home, m.away].sort().join(" vs ");
-    const keys = matches.map(pairKey);
-    expect(new Set(keys).size).toBe(keys.length);
-  });
-
-  it("Anpfiff-Zeiten liegen im jeweils richtigen Spieltag-Fenster", () => {
-    const windows = {
-      1: ["2026-08-28", "2026-08-31"],
-      2: ["2026-09-04", "2026-09-07"],
-      3: ["2026-09-11", "2026-09-14"],
-    };
+  it("volle Hin-/Rückrunde: jede Paarung genau 2× (einmal je Heimrecht)", () => {
+    // ungeordnetes Paar: über die Saison genau 2×
+    const pairCount = {};
     for (const m of matches) {
-      const [from, to] = windows[m.matchday];
-      expect(m.kickoff >= from).toBe(true);
-      expect(m.kickoff < to).toBe(true);
+      const key = [m.home, m.away].sort().join(" vs ");
+      pairCount[key] = (pairCount[key] || 0) + 1;
     }
+    const counts = Object.values(pairCount);
+    expect(counts).toHaveLength((18 * 17) / 2); // 153 Paarungen
+    expect(counts.every((c) => c === 2)).toBe(true);
+    // geordnetes Paar (Heim→Gast) genau 1× — jeder spielt gegen jeden einmal daheim
+    const dirCount = {};
+    for (const m of matches) dirCount[`${m.home}→${m.away}`] = (dirCount[`${m.home}→${m.away}`] || 0) + 1;
+    expect(Object.values(dirCount).every((c) => c === 1)).toBe(true);
+  });
+
+  it("innerhalb einer Halbserie wiederholt sich keine Paarung", () => {
+    for (const [von, bis] of [[1, 17], [18, 34]]) {
+      const half = matches.filter((m) => m.matchday >= von && m.matchday <= bis);
+      const keys = half.map((m) => [m.home, m.away].sort().join(" vs "));
+      expect(new Set(keys).size).toBe(keys.length);
+    }
+  });
+
+  it("alle Anpfiffe liegen in der Zukunft (Saison ab 28.08.2026) und steigen mit dem Spieltag", () => {
+    expect(matches.every((m) => m.kickoff >= "2026-08-28")).toBe(true);
+    const md1 = matches.filter((m) => m.matchday === 1).map((m) => m.kickoff).sort();
+    const md34 = matches.filter((m) => m.matchday === 34).map((m) => m.kickoff).sort();
+    expect(md1[0] < md34[0]).toBe(true);
   });
 
   it("nur reale Klubnamen aus TEAM_RATINGS werden verwendet", () => {

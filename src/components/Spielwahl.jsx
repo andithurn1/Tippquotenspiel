@@ -85,6 +85,11 @@ export default function Spielwahl() {
           </div>
         )}
 
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+          Simulierte Saison 2026/27 (34 Spieltage) — echte Klubs, aber generierte
+          Quoten & Ergebnisse zum Durchspielen. Kein echter Spielausgang.
+        </div>
+
         {matches == null && (
           <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>Spiele laden …</div>
         )}

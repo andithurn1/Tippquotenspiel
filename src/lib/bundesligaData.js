@@ -1,16 +1,16 @@
 // ============================================================
-//  BUNDESLIGA-DEMODATEN — Spieltage 1–3, Saison 2026/27.
-//  Echte Klubs, fiktive Quoten (siehe CLAUDE.md-Roadmap: "glaubwürdige
-//  Bundesliga-Quoten für 3 Spieltage"). Die Quoten selbst entstehen aus
-//  oddsGenerator.js (Poisson-Modell), nicht aus Handeingaben — Team-
-//  Stärken hier sind grobe, plausible Einschätzungen, kein echtes Rating.
+//  BUNDESLIGA-DEMODATEN — komplette SIMULIERTE Saison 2026/27.
+//  Echte Klubs (18), aber generierter Spielplan (volle Hin-/Rückrunde,
+//  34 Spieltage) und FIKTIVE, aus einem Poisson-Modell (oddsGenerator.js)
+//  erzeugte Quoten, Ergebnisse und Torschützen. KEINE echten Resultate —
+//  bewusst simuliert, damit man sofort eine ganze Saison durchspielen kann.
+//  Team-Stärken sind grobe, plausible Einschätzungen, kein echtes Rating.
 //
-//  Paarungen Spieltag 1 (komplett) sowie die zwei mit * markierten
-//  Spiele in Spieltag 2 stammen aus dem echten DFL-Rahmenterminkalender
-//  (Stand Juli 2026). Alle übrigen Paarungen sind ein plausibler
-//  Round-Robin-Füller — kein Anspruch auf exakte Übereinstimmung mit dem
-//  echten Spielplan, aber jedes Team tritt pro Spieltag genau einmal an
-//  und trifft über die drei Spieltage hinweg nie zweimal auf denselben Gegner.
+//  Spielplan per Circle-Methode: jeder Klub spielt gegen jeden zweimal
+//  (Heim + Auswärts), pro Spieltag genau einmal, keine Paarung doppelt
+//  innerhalb einer Halbserie. Anstöße im Wochentakt ab dem echten
+//  Saisonstart (28.08.2026), Fr/Sa/So gestaffelt — alle in der Zukunft,
+//  also die ganze Saison ab jetzt betippbar.
 // ============================================================
 
 import { generateMatchOdds, simulateResult } from "./oddsGenerator";
@@ -62,55 +62,50 @@ export function findDerby(home, away) {
   return DERBYS.find((d) => (d.a === home && d.b === away) || (d.a === away && d.b === home)) ?? null;
 }
 
-// [heim, gast, datum, anstoß (MESZ, UTC+2)]
-const FIXTURES = {
-  1: [
-    ["FC Bayern München", "VfB Stuttgart", "2026-08-28", "20:30"],
-    ["SV Elversberg", "Bayer 04 Leverkusen", "2026-08-29", "15:30"],
-    ["RB Leipzig", "Borussia Mönchengladbach", "2026-08-29", "15:30"],
-    ["1. FSV Mainz 05", "SC Paderborn 07", "2026-08-29", "15:30"],
-    ["1. FC Union Berlin", "Eintracht Frankfurt", "2026-08-29", "15:30"],
-    ["1. FC Köln", "TSG Hoffenheim", "2026-08-29", "15:30"],
-    ["Borussia Dortmund", "Hamburger SV", "2026-08-29", "18:30"],
-    ["SC Freiburg", "SV Werder Bremen", "2026-08-30", "15:30"],
-    ["FC Augsburg", "FC Schalke 04", "2026-08-30", "17:30"],
-  ],
-  2: [
-    ["VfB Stuttgart", "1. FC Köln", "2026-09-04", "20:30"],           // *
-    ["Borussia Dortmund", "1. FC Union Berlin", "2026-09-05", "15:30"],
-    ["RB Leipzig", "SV Elversberg", "2026-09-05", "15:30"],
-    ["Bayer 04 Leverkusen", "SC Paderborn 07", "2026-09-05", "15:30"],
-    ["Eintracht Frankfurt", "FC Augsburg", "2026-09-05", "15:30"],
-    ["TSG Hoffenheim", "Borussia Mönchengladbach", "2026-09-05", "15:30"],
-    ["FC Schalke 04", "FC Bayern München", "2026-09-05", "18:30"],    // *
-    ["SC Freiburg", "1. FSV Mainz 05", "2026-09-06", "15:30"],
-    ["SV Werder Bremen", "Hamburger SV", "2026-09-06", "17:30"],
-  ],
-  3: [
-    ["FC Bayern München", "Borussia Mönchengladbach", "2026-09-11", "20:30"],
-    ["VfB Stuttgart", "SV Elversberg", "2026-09-12", "15:30"],
-    ["Borussia Dortmund", "SC Paderborn 07", "2026-09-12", "15:30"],
-    ["RB Leipzig", "1. FC Köln", "2026-09-12", "15:30"],
-    ["Bayer 04 Leverkusen", "1. FSV Mainz 05", "2026-09-12", "15:30"],
-    ["TSG Hoffenheim", "FC Schalke 04", "2026-09-12", "15:30"],
-    ["Eintracht Frankfurt", "Hamburger SV", "2026-09-12", "18:30"],
-    ["SC Freiburg", "1. FC Union Berlin", "2026-09-13", "15:30"],
-    ["SV Werder Bremen", "FC Augsburg", "2026-09-13", "17:30"],
-  ],
-};
+const TEAMS = Object.keys(TEAM_RATINGS); // 18 Klubs, feste Reihenfolge → deterministisch
 
-function kickoffIso(date, hhmmCEST) {
-  const [hh, mm] = hhmmCEST.split(":").map(Number);
-  const d = new Date(`${date}T00:00:00Z`);
-  d.setUTCHours(hh - 2, mm); // Aug/Sep: MESZ = UTC+2, fest gerechnet reicht für Testdaten
-  return d.toISOString();
+// Vollständiger Spielplan (34 Spieltage) per Circle-Methode: ein Team bleibt
+// fest, die übrigen rotieren im Kreis. Ergibt eine gültige Hinrunde (17
+// Spieltage), die Rückrunde ist dieselbe mit getauschtem Heimrecht.
+function buildSchedule() {
+  const n = TEAMS.length;                    // 18
+  let arr = TEAMS.slice();
+  const hinrunde = [];
+  for (let r = 0; r < n - 1; r++) {          // 17 Spieltage
+    const round = [];
+    for (let i = 0; i < n / 2; i++) {        // 9 Paarungen
+      let home = arr[i], away = arr[n - 1 - i];
+      if ((r + i) % 2 === 1) [home, away] = [away, home]; // Heim/Auswärts ausbalancieren
+      round.push([home, away]);
+    }
+    hinrunde.push(round);
+    arr = [arr[0], arr[n - 1], ...arr.slice(1, n - 1)];   // Circle-Rotation
+  }
+  const rueckrunde = hinrunde.map((round) => round.map(([h, a]) => [a, h])); // Heimrecht getauscht
+  return [...hinrunde, ...rueckrunde];       // 34 Spieltage × 9 Spiele = 306
+}
+
+// Anstoß: Spieltag 1 am 28.08.2026, danach im Wochentakt; innerhalb eines
+// Spieltags Fr/Sa/So gestaffelt. Alles in der Zukunft → ganze Saison betippbar.
+const SEASON_START = Date.UTC(2026, 7, 28); // 28.08.2026 (MESZ = UTC+2)
+const WEEK = 7 * 24 * 3600 * 1000;
+function kickoffFor(matchday, i) {
+  let dayOffset, hh, mm;
+  if (i === 0)      { dayOffset = 0; hh = 20; mm = 30; }  // Fr 20:30
+  else if (i <= 6)  { dayOffset = 1; hh = 15; mm = 30; }  // Sa 15:30
+  else if (i === 7) { dayOffset = 1; hh = 18; mm = 30; }  // Sa 18:30
+  else              { dayOffset = 2; hh = 17; mm = 30; }  // So 17:30
+  const ms = SEASON_START + (matchday - 1) * WEEK + dayOffset * 24 * 3600 * 1000
+           + (hh - 2) * 3600 * 1000 + mm * 60 * 1000;
+  return new Date(ms).toISOString();
 }
 
 function buildMatches() {
   const matches = [];
-  for (const [matchday, list] of Object.entries(FIXTURES)) {
-    for (const [home, away, date, time] of list) {
-      const kickoff = kickoffIso(date, time);
+  buildSchedule().forEach((round, ri) => {
+    const matchday = ri + 1;
+    round.forEach(([home, away], i) => {
+      const kickoff = kickoffFor(matchday, i);
       const matchId = `bl26-md${matchday}-${TEAM_RATINGS[home].code}-${TEAM_RATINGS[away].code}`.toLowerCase();
       const hr = TEAM_RATINGS[home]; const ar = TEAM_RATINGS[away];
       const strengths = { homeAttack: hr.attack, homeDefense: hr.defense, awayAttack: ar.attack, awayDefense: ar.defense };
@@ -120,9 +115,9 @@ function buildMatches() {
       const derby = findDerby(home, away);
       if (derby) snapshot.derby = derby.label;
       const result = simulateResult(snapshot, strengths, `${matchId}-result`);
-      matches.push({ matchId, matchday: Number(matchday), home, away, kickoff, snapshot, result });
-    }
-  }
+      matches.push({ matchId, matchday, home, away, kickoff, snapshot, result });
+    });
+  });
   return matches;
 }
 
@@ -135,7 +130,7 @@ export function getBundesligaMatches() {
 }
 
 // Gleiche Schnittstelle wie createMockOddsSource() (engine.js) — austauschbare
-// Quoten-Quelle, nur mit 27 statt einem Match.
+// Quoten-Quelle, nur mit der ganzen simulierten Saison statt einem Match.
 export function createBundesligaOddsSource() {
   const byId = new Map(getBundesligaMatches().map((m) => [m.matchId, m]));
   return {
