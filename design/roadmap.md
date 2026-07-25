@@ -25,6 +25,31 @@ Test-Stand: 283 grün, Build sauber.
 
 ## Offen
 
+### Balance: EIN Durchgang am Ende statt Feinjustierung nebenbei — ENTSCHIEDEN (Nutzer)
+**Arbeitsweise ab jetzt.** Beim Bauen einer neuen Mechanik gibt es nur einen
+SCHNELLTEST: „gewinnt der Kenner strukturell noch?" — ja/nein, keine Zahlen-
+Suche. Findet er einen ENTWURFSFEHLER (Mechanik belohnt das Falsche), wird
+sofort korrigiert. Findet er nur eine Unwucht in den WERTEN, bleibt es beim
+konservativen Standard und wandert hierher.
+
+**Grund:** Jede neue Mechanik verschiebt die Balance aller anderen. Wer
+zwischendrin auf die zweite Nachkommastelle tunt, macht dieselbe Arbeit
+mehrfach — und tunt gegen ein Regelwerk, das es am Ende gar nicht mehr gibt.
+
+**Der Abschluss-Durchgang (eigene Aufgabe, vor dem Launch):**
+- Alle Presets × alle üblichen Joker-Varianten × Modifikator-Werte in EINEM
+  Lauf durchmessen (`balanceSim.js`), nicht einzeln.
+- Daraus die **Leitplanken** ableiten: je Regler ein empfohlener Bereich, der
+  in der Pro-Ebene als „Empfehlungsband" angezeigt wird.
+- Presets neu ausbalancieren, `presets.balance.test.js` nachziehen.
+- ⚠️ **Bekannte Lücke:** Der Simulator modelliert keine Vereins-Zugehörigkeit,
+  deshalb feuert der **Heimat-Joker in der Simulation nie** — sein Faktor ist
+  bisher UNGEMESSEN (Standard 1,2 stammt aus der Nutzer-Einschätzung). Im
+  Abschluss-Durchgang muss die Tipper-Population Vereine bekommen.
+- Vorläufige Messung (3 Seeds × 60 Saisons), die bis dahin gilt: Mut-Bonus ab
+  ×1,3 kippt zum Zocker → Obergrenze steht bei 1,2, Standard bei 1,1.
+
+
 ### Spielerstellung in 3 Komplexitätsstufen — NEU (Nutzerwunsch)
 Ein Admin soll wählen, wie tief er einsteigt. **Wichtig: die Stufe ist eine
 ANSICHT auf dasselbe `rules`-Objekt, kein zweites Datenmodell** — beim Wechsel

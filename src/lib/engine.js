@@ -87,7 +87,17 @@ export const DEFAULT_RULES = {
   // abstimmung: die Runde stimmt gemeinsam ab, an WELCHEN Spieltagen es einen
   // Joker gibt (statt an jedem). Premium-Funktion; die Auszählung liegt in
   // voting.js, die Durchsetzung greift in Tippabgabe/Spielwahl.
-  joker: { enabled: false, modus: "einzel", faktor: 1.5, faktoren: [2, 1.5, 1.2, 1], abstimmung: false },
+  // Der AKTIVE Joker (modus/faktor/faktoren) verlangt eine Entscheidung des
+  // Tippers. Daneben gibt es PASSIVE Joker-TYPEN, die von allein greifen:
+  //  heimat — die Spiele des eigenen Vereins (`tip.verein`) zaehlen mehr
+  //  mut    — greift NUR, wenn gegen den Favoriten getippt wurde
+  // Alle Typen liefern einen AUFSCHLAG; die Aufschlaege werden addiert und
+  // von `modCap` gedeckelt (siehe totalModifier) — nie multipliziert.
+  joker: {
+    enabled: false, modus: "einzel", faktor: 1.5, faktoren: [2, 1.5, 1.2, 1], abstimmung: false,
+    heimat: { enabled: false, faktor: 1.2 },
+    mut: { enabled: false, faktor: 1.1 },
+  },
 
   // Team-/Derby-Modifikatoren: gelten für ALLE in der Runde (anders als der
   // Joker, den jeder Tipper selbst setzt). Der Admin vereinbart sie einmal.
@@ -148,7 +158,15 @@ export const RULE_LIMITS = {
   underdogRampStart: { min: 1.2, max: 15, step: 0.1 },
   underdogRampEnd:   { min: 2,   max: 30, step: 0.5 },
   favFlopPenalty:    { min: 0,   max: 20, step: 1   },
-  joker: { faktor: { min: 1, max: 2, step: 0.1 }, anzahlFaktoren: { min: 2, max: 6, step: 1 } },
+  // mutFaktor hat eine EIGENE, engere Grenze als der gesetzte Joker: der
+  // Mut-Bonus verstaerkt genau die hoechsten Auszahlungen (Aussenseiter-Siege).
+  // Im Balance-Simulator (3 Seeds x 60 Saisons) gewinnt ab 1.3 der ZOCKER
+  // statt des Kenners — 1.2 ist die letzte Stufe, die traegt.
+  joker: {
+    faktor: { min: 1, max: 2, step: 0.1 },
+    mutFaktor: { min: 1, max: 1.2, step: 0.05 },
+    anzahlFaktoren: { min: 2, max: 6, step: 1 },
+  },
   teamMods: { derbyFaktor: { min: 1, max: 2, step: 0.1 }, teamFaktor: { min: 1, max: 2, step: 0.1 } },
   modCap: { min: 1, max: 4, step: 0.1 },
   aufholen: { staerke: { min: 0.05, max: 0.5, step: 0.05 }, schwelle: { min: 0, max: 0.5, step: 0.05 } },
@@ -173,6 +191,16 @@ function sanitizeJoker(jk, num, clamp) {
     faktor: clamp(num(jk.faktor, D.faktor), L.faktor.min, L.faktor.max),
     faktoren: faktoren.length >= L.anzahlFaktoren.min ? faktoren : [...D.faktoren],
     abstimmung: jk.abstimmung === true,
+    // Passive Typen — gleiche Grenzen wie der aktive Joker, damit kein Typ
+    // heimlich staerker sein kann als der, den man bewusst setzt.
+    heimat: {
+      enabled: jk.heimat?.enabled === true,
+      faktor: clamp(num(jk.heimat?.faktor, D.heimat.faktor), L.faktor.min, L.faktor.max),
+    },
+    mut: {
+      enabled: jk.mut?.enabled === true,
+      faktor: clamp(num(jk.mut?.faktor, D.mut.faktor), L.mutFaktor.min, L.mutFaktor.max),
+    },
   };
 }
 
@@ -389,18 +417,96 @@ export function applyCombo(resultPart, ebene, goalsNet, rules = DEFAULT_RULES) {
 // der Tipp nicht markiert wurde. Greift auf die GESAMTWERTUNG (Ergebnis + Tore
 // nach Kombi), nicht auf Einzelteile — deshalb deckt ein Joker automatisch auch
 // die Torschützen mit ab, ohne zweiten Regler.
-export function jokerFactor(tip, rules = DEFAULT_RULES) {
+// Wer ist laut Quoten der Favorit? (niedrigere Sieger-Quote). Nur aus `snap` —
+// die Engine kennt keine Vereinsnamen, nur Zahlen.
+function favoritSeite(snap) {
+  const w = snap?.winner;
+  if (!w) return 0;
+  return w.home <= w.away ? 1 : -1;
+}
+
+// ── Joker-TYPEN ──────────────────────────────────────────────
+// Jeder Typ liefert einen AUFSCHLAG (0 = greift nicht). Die Aufschläge werden
+// in `jokerFactor` addiert — nie multipliziert, sonst schaukeln sich mehrere
+// Typen auf. Neue Ideen kommen als weiterer Eintrag hierher, NICHT als neue
+// Modifikator-Ebene: der Deckel (`modCap`) gilt dann automatisch mit.
+//
+// `aufschlag(tip, snap, j)` → Zahl ≥ 0
+export const JOKER_TYPEN = [
+  {
+    key: "aktiv",
+    label: "Gesetzter Joker",
+    hint: "Du markierst selbst ein Spiel (bzw. verteilst Gewichte).",
+    aufschlag: (tip, snap, j) => {
+      if (j.modus === "ranking") {
+        // Nur Gewichte aus dem Pool zählen — alles andere ist neutral. Damit
+        // kann ein manipulierter Tipp keinen Fantasie-Faktor einschleusen.
+        const w = tip?.gewicht;
+        const gueltig = Number.isFinite(w) && (j.faktoren || []).includes(w);
+        return gueltig ? Math.max(0, w - 1) : 0;
+      }
+      if (tip?.joker !== true) return 0;
+      const f = j.faktor;
+      return Number.isFinite(f) && f > 0 ? Math.max(0, f - 1) : 0;
+    },
+  },
+  {
+    key: "heimat",
+    label: "Heimatbonus",
+    hint: "Die Spiele deines Vereins zählen mehr — passiv, ohne Entscheidung.",
+    aufschlag: (tip, snap, j) => {
+      const h = j.heimat;
+      if (!h?.enabled) return 0;
+      const verein = tip?.verein;
+      if (!verein) return 0;
+      const dabei = snap?.home === verein || snap?.away === verein;
+      if (!dabei) return 0;
+      return Number.isFinite(h.faktor) ? Math.max(0, h.faktor - 1) : 0;
+    },
+  },
+  {
+    key: "mut",
+    label: "Mut-Bonus",
+    hint: "Greift, wenn du gegen den Favoriten getippt hast — UND recht behältst.",
+    // ⚠️ Bewusst an den ERFOLG gekoppelt. Eine frühere Fassung zahlte für JEDEN
+    // Tipp gegen den Favoriten — der Balance-Simulator zeigte sofort, dass damit
+    // der Zocker gewinnt (73 % statt 7 %): wer immer gegen den Favoriten tippt,
+    // kassierte den Aufschlag garantiert. Belohnt wird also nicht das Wagnis,
+    // sondern der eingelöste Mut.
+    aufschlag: (tip, snap, j, actual) => {
+      const m = j.mut;
+      if (!m?.enabled) return 0;
+      const fav = favoritSeite(snap);
+      const getippt = sgn(tip?.home, tip?.away);
+      // Remis-Tipp ist kein Mut gegen den Favoriten, sondern eine dritte Option.
+      if (fav === 0 || getippt === 0) return 0;
+      if (getippt === fav) return 0;              // auf den Favoriten gesetzt
+      if (!actual) return 0;                      // ohne Ergebnis kein Erfolg
+      if (sgn(actual.home, actual.away) !== getippt) return 0;   // Mut ging daneben
+      return Number.isFinite(m.faktor) ? Math.max(0, m.faktor - 1) : 0;
+    },
+  },
+];
+
+// Welche Joker-Typen greifen bei DIESEM Tipp? Für die Aufschlüsselung.
+// Rückgabe: [{ key, label, aufschlag, faktor }] — nur die, die wirklich greifen.
+export function jokerAufschlaege(tip, snap, rules = DEFAULT_RULES, actual = null) {
   const j = rules?.joker;
-  if (!j?.enabled) return 1;
-  if (j.modus === "ranking") {
-    // Nur Gewichte aus dem Pool zählen — alles andere ist neutral (1). Damit
-    // kann ein manipulierter Tipp keinen Fantasie-Faktor einschleusen.
-    const w = tip?.gewicht;
-    return Number.isFinite(w) && (j.faktoren || []).includes(w) ? w : 1;
+  if (!j?.enabled) return [];
+  const out = [];
+  for (const typ of JOKER_TYPEN) {
+    const a = typ.aufschlag(tip, snap, j, actual);
+    if (a > 0) out.push({ key: typ.key, label: typ.label, aufschlag: +a.toFixed(3), faktor: +(1 + a).toFixed(3) });
   }
-  if (tip?.joker !== true) return 1;
-  const f = j.faktor;
-  return Number.isFinite(f) && f > 0 ? f : 1;
+  return out;
+}
+
+// Gesamt-Joker-Faktor: 1 + Summe aller Typ-Aufschläge (additiv, siehe oben).
+// 1 = neutrales No-op. `snap` ist optional, damit alte Aufrufer weiter laufen —
+// ohne Snapshot greifen die snapshot-abhängigen Typen einfach nicht.
+export function jokerFactor(tip, rules = DEFAULT_RULES, snap = null, actual = null) {
+  const summe = jokerAufschlaege(tip, snap, rules, actual).reduce((s, t) => s + t.aufschlag, 0);
+  return +(1 + summe).toFixed(3);
 }
 
 // Team-/Derby-Faktor einer Begegnung. Rein aus `snap` + `rules`:
@@ -430,8 +536,8 @@ export function teamModFactor(snap, rules = DEFAULT_RULES) {
 //
 // Gibt die Einzelteile mit zurück, damit die UI erklären kann, WOHER der Faktor
 // kommt („×2,3 — Joker + Revierderby") statt nur eine Zahl zu zeigen.
-export function totalModifier(tip, snap, rules = DEFAULT_RULES) {
-  const joker = jokerFactor(tip, rules);
+export function totalModifier(tip, snap, rules = DEFAULT_RULES, actual = null) {
+  const joker = jokerFactor(tip, rules, snap, actual);
   const team = teamModFactor(snap, rules);
   const aufschlag = Math.max(0, joker - 1) + Math.max(0, team - 1);
   const roh = 1 + aufschlag;
@@ -536,7 +642,7 @@ export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   const favFlop = favoriteFlopPenalty(tip, actual, snap, rules);
   const afterFlop = favFlop > 0 ? Math.max(0, combined - favFlop) : combined;
   // Modifikatoren ganz zuletzt: skalieren das fertige Ergebnis dieses Spiels.
-  const mod = totalModifier(tip, snap, rules);
+  const mod = totalModifier(tip, snap, rules, actual);
   const raw = afterFlop * mod.faktor;
   return {
     total: toDisplay(raw, rules), raw: +raw.toFixed(1), favFlop: +favFlop.toFixed(1),
