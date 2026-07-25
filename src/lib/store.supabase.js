@@ -14,6 +14,7 @@ import { scoreSaison } from "./saisonwetten";
 const mapMatch = (m) => m && ({
   id: m.id, home: m.home, away: m.away, kickoff: m.kickoff,
   matchday: m.matchday, snapshot: m.snapshot, result: m.result,
+  wettbewerb: m.wettbewerb, phase: m.phase,
 });
 
 // Saison-Wetten-Punkte additiv aufs Board (eigene `saison`-Zeile, in `total`

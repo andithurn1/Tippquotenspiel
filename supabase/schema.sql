@@ -43,8 +43,18 @@ create table if not exists public.matches (
   matchday   int,
   snapshot   jsonb not null,
   result     jsonb,
+  wettbewerb text not null default 'bl',   -- "bl" | "pl" | "cl" (wettbewerbe.js)
+  phase      text not null default 'liga', -- "liga" | "achtelfinale" | … | "finale"
   created_at timestamptz not null default now()
 );
+
+-- Mehrere Wettbewerbe: Spalten nachrüsten, falls die Tabelle aus einer
+-- früheren Schema-Version stammt. Defaults sorgen dafür, dass Altdaten als
+-- Ligaspiele der Bundesliga gelten (wie der Fallback in wettbewerbe.js).
+alter table public.matches add column if not exists wettbewerb text not null default 'bl';
+alter table public.matches add column if not exists phase      text not null default 'liga';
+
+create index if not exists matches_wettbewerb_idx on public.matches (wettbewerb, matchday);
 
 -- ── Runden (eine Freundes-Runde mit eigenem Regelwerk) ──────
 -- rules = per sanitizeRules() gültiges Regelwerk (JSON).

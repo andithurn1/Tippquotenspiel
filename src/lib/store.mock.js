@@ -7,6 +7,7 @@ import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboard
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { generateJoinCode } from "./joinCode";
 import { getBundesligaMatches } from "./bundesligaData";
+import { getChampionsLeagueMatches } from "./championsLeagueData";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { spieltagOeffnen } from "./spieltagOeffnen";
@@ -51,10 +52,15 @@ export function createMockStore() {
     [SNAP.matchId, {
       id: SNAP.matchId, home: SNAP.home, away: SNAP.away,
       kickoff: SNAP.kickoff, matchday: 14, snapshot: SNAP, result: RESULT,
+      // Länderspiel — gehört in keine Liga, sonst stünde es unter „Bundesliga".
+      wettbewerb: "demo", phase: "liga",
     }],
-    ...getBundesligaMatches().map((m) => [m.matchId, {
+    // Mehrere Wettbewerbe: Bundesliga + Champions League liegen im selben
+    // Match-Katalog und unterscheiden sich nur über `wettbewerb`/`phase`.
+    ...[...getBundesligaMatches(), ...getChampionsLeagueMatches()].map((m) => [m.matchId, {
       id: m.matchId, home: m.home, away: m.away,
       kickoff: m.kickoff, matchday: m.matchday, snapshot: m.snapshot, result: m.result,
+      wettbewerb: m.wettbewerb, phase: m.phase,
     }]),
   ]);
   const rounds = new Map([[ROUND_ID, {

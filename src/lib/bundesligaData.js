@@ -115,7 +115,9 @@ function buildMatches() {
       const derby = findDerby(home, away);
       if (derby) snapshot.derby = derby.label;
       const result = simulateResult(snapshot, strengths, `${matchId}-result`);
-      matches.push({ matchId, matchday, home, away, kickoff, snapshot, result });
+      // wettbewerb/phase: Datenmodell für mehrere Wettbewerbe (wettbewerbe.js).
+      // Die Engine kennt keine Ligennamen — sie liest nur diese Felder.
+      matches.push({ matchId, matchday, home, away, kickoff, snapshot, result, wettbewerb: "bl", phase: "liga" });
     });
   });
   return matches;

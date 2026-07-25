@@ -10,6 +10,7 @@ import { ErgebnisUebersicht } from "@/components/NaheErgebnisse";
 import { filterMatchesByTeams } from "@/lib/roundStatus";
 import { DEFAULT_RULES, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
+import { wettbewerbVon, phaseVon, wettbewerbLabel, phasenLabel, istKo, wettbewerbeIn } from "@/lib/wettbewerbe";
 import { C, MONO } from "@/lib/theme";
 
 
@@ -59,13 +60,29 @@ export default function Spielwahl() {
   const rankingModus = rules.joker?.enabled === true && rules.joker?.modus === "ranking";
 
   const now = Date.now();
+  // Wettbewerbs-Namen nur zeigen, wenn die Runde wirklich mehrere umfasst —
+  // bei einer reinen Bundesliga-Runde wäre „Bundesliga ·" vor jedem Spieltag Lärm.
+  const mehrereWettbewerbe = wettbewerbeIn(matches ?? []).length > 1;
+  // Gruppiert wird nach WETTBEWERB + Spieltag — sonst fielen z. B. Bundesliga-
+  // Spieltag 1 und Champions-League-Spieltag 1 in dieselbe Gruppe. Sortiert
+  // nach dem frühesten Anpfiff der Gruppe, damit die Wettbewerbe zeitlich
+  // ineinandergreifen (so tippt man auch: chronologisch, nicht nach Liga).
   const groups = new Map();
   for (const m of matches ?? []) {
-    const key = m.matchday ?? 0;
+    const key = `${wettbewerbVon(m)}|${m.matchday ?? 0}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(m);
   }
-  const matchdays = [...groups.keys()].sort((a, b) => a - b);
+  const gruppen = [...groups.entries()]
+    .map(([key, spiele]) => ({
+      key,
+      spiele,
+      matchday: spiele[0].matchday ?? 0,
+      wettbewerb: wettbewerbVon(spiele[0]),
+      phase: phaseVon(spiele[0]),
+      start: spiele.reduce((min, m) => (m.kickoff < min ? m.kickoff : min), spiele[0].kickoff),
+    }))
+    .sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
 
   return (
     <div style={{
@@ -86,24 +103,35 @@ export default function Spielwahl() {
         )}
 
         <div style={{ fontSize: 11, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
-          Simulierte Saison 2026/27 (34 Spieltage) — echte Klubs, aber generierte
-          Quoten & Ergebnisse zum Durchspielen. Kein echter Spielausgang.
+          Simulierte Saison 2026/27
+          {mehrereWettbewerbe && ` · ${wettbewerbeIn(matches ?? []).map((w) => w.label).join(" + ")}`}
+          {" "}— echte Klubs, aber generierte Quoten &amp; Ergebnisse zum Durchspielen.
+          Kein echter Spielausgang.
         </div>
 
         {matches == null && (
           <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>Spiele laden …</div>
         )}
 
-        {matchdays.map((md) => {
+        {gruppen.map((g) => {
+          const md = g.matchday;
           // Ranking-Leiste nur zeigen, wenn der Joker an diesem Spieltag gilt
           // (bei aktiver Abstimmung also nur an beschlossenen Spieltagen).
           const belegung = rankingModus && jokerGiltFuerSpieltag(rules, md, votes)
             ? weightUsageForMatchday(meineTips, md, rules) : null;
           const gewichtVon = (id) => meineTips.find((t) => t.match_id === id)?.gewicht;
+          // K.-o.-Runden heißen nach ihrer Phase („Achtelfinale"), Ligaspiele
+          // nach dem Spieltag. Der Wettbewerb steht bei mehreren immer davor.
+          const titel = istKo(g.phase)
+            ? phasenLabel(g.phase)
+            : (md ? `Spieltag ${md}` : "Sonstige");
           return (
-            <div key={md} style={{ marginBottom: 20 }}>
+            <div key={g.key} style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-                {md ? `Spieltag ${md}` : "Sonstige"}
+                {mehrereWettbewerbe && (
+                  <span style={{ color: C.gold }}>{wettbewerbLabel(g.wettbewerb)} · </span>
+                )}
+                {titel}
               </div>
               {belegung && (
                 <div style={{
@@ -127,7 +155,7 @@ export default function Spielwahl() {
                 </div>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {groups.get(md).map((m) => (
+                {g.spiele.map((m) => (
                   <MatchRow key={m.id} match={m} open={new Date(m.kickoff) > now}
                     tipped={tippedIds.has(m.id)} gewicht={gewichtVon(m.id)} />
                 ))}
