@@ -256,16 +256,26 @@ nachweislich besser als eine nackte Endzahl.
   (Favoriten-Malus) gehört genauso hinein — Ehrlichkeit macht es glaubwürdig.
 - Hängt an `prefs.abrechnung` (voll/dezent/aus), damit niemand zugeschüttet wird.
 
-### Profi-Variante: aktiv vor Unwucht warnen — NEU (Nutzerwunsch)
-Die Pro-Ebene lädt dazu ein, Regelwerke kaputtzudrehen. Deshalb:
+### Profi-Variante: aktiv vor Unwucht warnen — GEBAUT ✓
+`src/lib/reglerWarnung.js` + `ProfiWarnungen.jsx`, Bänder im `Slider` der
+Spielerstellung. Umgesetzt:
 
-- **Empfehlungsband am Regler:** der ausbalancierte Bereich ist am Slider selbst
-  markiert; außerhalb färbt sich der Wert und ein Satz erklärt die Folge
-  („ab hier entscheidet ein einzelnes Spiel den Spieltag").
-- **Warnung SOFORT am Regler**, nicht erst unten in der Ampel — der Zusammenhang
-  zwischen Handlung und Folge muss unmittelbar sein.
-- **Balance-Ampel dauerhaft sichtbar** (klebend), nicht wegscrollbar.
+- **Empfehlungsband am Regler:** grüner Streifen unter dem Slider, Wert und
+  Regler färben sich coral, sobald er verlassen wird. Das Band wird aus den
+  PRESETS abgeleitet, nicht getippt — was `presets.balance.test.js` durchmisst,
+  gilt als erprobt, und ändern sich die Presets, wandert das Band mit.
+- **Kasten über den Reglern**, der immer da ist (auch grün) und jede Meldung
+  mit ihrer eigenen Korrektur ausliefert — ein Hinweis ohne Auflösung wäre eine
+  Belehrung, kein Werkzeug. Ein Test löst alle Meldungen iterativ auf und
+  prüft, dass das terminiert.
+- **Kombinations-Regeln** neben den Einzelfeldern: der teuerste Fehler
+  (`wrongPenalty` ≈ 0 **und** `minPayout` ≈ 0 → Gratis-Lose) steckt in keinem
+  einzelnen Wert. Dazu: Modifikator-Turm, Deckel schneidet ab, exakt ≈ abstand,
+  Versäumnis ohne Abzug.
 - Kein Verbot: extreme Werte bleiben erlaubt, sie sind nur nie versehentlich.
+
+Offen: **Balance-Ampel klebend** (aktuell scrollt sie mit); der Kasten mit den
+Warnungen sitzt direkt darunter und könnte mitkleben.
 
 ### Joker-Verteilung über die Saison (Frequenz statt Handarbeit) — NEU
 Der Admin soll nicht 34 Spieltage einzeln anklicken müssen.

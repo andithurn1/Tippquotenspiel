@@ -23,6 +23,8 @@ import RundenCharaktere from "@/components/RundenCharaktere";
 import EinfacheRegler from "@/components/EinfacheRegler";
 import { CHARAKTERE } from "@/lib/charaktere";
 import BalanceAmpel from "@/components/BalanceAmpel";
+import ProfiWarnungen from "@/components/ProfiWarnungen";
+import { band } from "@/lib/reglerWarnung";
 import { C, MONO } from "@/lib/theme";
 
 const ALL_TEAMS = Object.keys(TEAM_RATINGS);
@@ -352,6 +354,12 @@ export default function Spielerstellung() {
           {/* Reale Verteilung + Underdog-Neigung des Regelwerks */}
           <PresetRating rules={rules} />
 
+          {/* Leitplanken: nur in der Profi-Stufe, weil nur dort einzelne Regler
+              bis an ihre harte Grenze laufen können. */}
+          {stufe === "profi" && (
+            <ProfiWarnungen rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
+          )}
+
           {/* Schärfe */}
           {/* Stufe 2: vier grosse Fragen statt der Rohregler darunter */}
           {stufe === "anpassen" && (
@@ -363,9 +371,9 @@ export default function Spielerstellung() {
 
           {stufe === "profi" && (<>
           <SectionTitle>Schärfe der Nähe-Belohnung</SectionTitle>
-          <Slider label="Ergebnis-Nähe (k)" value={rules.k} {...L.k} onChange={(v) => patch({ k: v })}
+          <Slider label="Ergebnis-Nähe (k)" value={rules.k} {...L.k} pfad="k" onChange={(v) => patch({ k: v })}
             hint="Höher = die Belohnung fällt mit jedem Tor Abstand steiler ab (Underdog-Regler)." />
-          <Slider label="Team-Tore-Nähe (m)" value={rules.m} {...L.m} onChange={(v) => patch({ m: v })}
+          <Slider label="Team-Tore-Nähe (m)" value={rules.m} {...L.m} pfad="m" onChange={(v) => patch({ m: v })}
             hint="Steilheit der siegerunabhängigen Team-Tore-Nähe." />
 
           {/* Underdog-Boost & Favoriten-Malus (teilen sich die Quoten-Ramp) */}
@@ -375,10 +383,10 @@ export default function Spielerstellung() {
             Favoriten setzt, wenn der patzt. Beide wirken nur bei echten Außenseiter-Siegen
             und werden über dieselbe Sieger-Quote skaliert.
           </p>
-          <Slider label="Underdog-Boost (×)" value={rules.underdogBoost} {...L.underdogBoost}
+          <Slider label="Underdog-Boost (×)" value={rules.underdogBoost} {...L.underdogBoost} pfad="underdogBoost"
             onChange={(v) => patch({ underdogBoost: v })} fmt={(x) => "×" + x.toFixed(1)}
             hint="1,0 = aus. Höher = korrekt getippte Außenseiter-Siege zahlen zusätzlich mehr." />
-          <Slider label="Favoriten-Reinfall-Malus" value={rules.favFlopPenalty} {...L.favFlopPenalty}
+          <Slider label="Favoriten-Reinfall-Malus" value={rules.favFlopPenalty} {...L.favFlopPenalty} pfad="favFlopPenalty"
             onChange={(v) => patch({ favFlopPenalty: v })} fmt={(x) => x === 0 ? "aus" : "−" + x}
             hint="Abzug, wenn du den Favoriten getippt hast und der real verliert. Gedeckelt bei 0 (kein tiefes Minus)." />
           {(rules.underdogBoost > 1 || rules.favFlopPenalty > 0) && (
@@ -396,9 +404,9 @@ export default function Spielerstellung() {
           <SectionTitle>Kombi-Multiplikatoren (Tore × Ebene)</SectionTitle>
           <Slider label="bei richtiger Tendenz" value={rules.combo.tendenz} {...L.combo.tendenz}
             onChange={(v) => patchCombo({ tendenz: v })} fmt={(x) => "×" + x.toFixed(2)} />
-          <Slider label="bei richtigem Abstand" value={rules.combo.abstand} {...L.combo.abstand}
+          <Slider label="bei richtigem Abstand" value={rules.combo.abstand} {...L.combo.abstand} pfad="combo.abstand"
             onChange={(v) => patchCombo({ abstand: v })} fmt={(x) => "×" + x.toFixed(2)} />
-          <Slider label="bei exaktem Ergebnis" value={rules.combo.exakt} {...L.combo.exakt}
+          <Slider label="bei exaktem Ergebnis" value={rules.combo.exakt} {...L.combo.exakt} pfad="combo.exakt"
             onChange={(v) => patchCombo({ exakt: v })} fmt={(x) => "×" + x.toFixed(1)} />
 
           {/* Skala & Cutoffs */}
@@ -425,7 +433,7 @@ export default function Spielerstellung() {
               }}>übernehmen</button>
             </div>
           )}
-          <Slider label="Mindest-Auszahlung (Cutoff)" value={rules.minPayout} {...L.minPayout}
+          <Slider label="Mindest-Auszahlung (Cutoff)" value={rules.minPayout} {...L.minPayout} pfad="minPayout"
             onChange={(v) => patch({ minPayout: v })} fmt={(x) => x.toFixed(1)}
             hint="Nähe-Boni unter diesem Wert zählen nicht." />
 
@@ -443,7 +451,7 @@ export default function Spielerstellung() {
           <SectionTitle>Sieger-Boden & Strafe</SectionTitle>
           <Toggle label="Sieger-Boden (richtiger Sieger zahlt mind. Quote−1)"
             on={rules.winnerFloor} onChange={(on) => patch({ winnerFloor: on })} />
-          <Slider label="Strafe bei komplett falsch" value={rules.wrongPenalty} {...L.wrongPenalty}
+          <Slider label="Strafe bei komplett falsch" value={rules.wrongPenalty} {...L.wrongPenalty} pfad="wrongPenalty"
             onChange={(v) => patch({ wrongPenalty: v })} fmt={(x) => x === 0 ? "aus" : x.toFixed(1)}
             hint="0 = keine Strafe. Negativ = Minuspunkte, wenn weder Sieger noch Nähe stimmen." />
 
@@ -633,7 +641,7 @@ export default function Spielerstellung() {
             </div>
           ) : (
             <>
-              <Slider label="Derby zählt" value={tm.derbyFaktor} {...L.teamMods.derbyFaktor}
+              <Slider label="Derby zählt" value={tm.derbyFaktor} {...L.teamMods.derbyFaktor} pfad="teamMods.derbyFaktor"
                 onChange={(v) => patchTeamMods({ derbyFaktor: v })}
                 fmt={(x) => x <= 1 ? "aus" : "×" + x.toFixed(1)}
                 hint="Traditionsduelle (Revierderby, Klassiker, Nordderby …) zählen mehr. 1,0 = aus." />
@@ -668,7 +676,7 @@ export default function Spielerstellung() {
               {/* Deckel — erscheint erst, wenn es überhaupt etwas zu deckeln gibt */}
               {(tmAktiv || j.enabled) && (
                 <>
-                  <Slider label="Deckel für alle Modifikatoren" value={rules.modCap} {...L.modCap}
+                  <Slider label="Deckel für alle Modifikatoren" value={rules.modCap} {...L.modCap} pfad="modCap"
                     onChange={(v) => patch({ modCap: v })} fmt={(x) => "×" + x.toFixed(1)}
                     hint="Obergrenze, wenn Joker und Team-Regeln zusammentreffen." />
                   <p style={{ fontSize: 11, color: C.muted, marginTop: -2, marginBottom: 8, lineHeight: 1.45 }}>
@@ -958,16 +966,37 @@ function Field({ label, children }) {
   );
 }
 
-function Slider({ label, hint, value, min, max, step, onChange, fmt }) {
+// `pfad` schaltet das Empfehlungsband frei: der Bereich, den die vermessenen
+// Presets belegen, wird als Streifen unter dem Regler markiert und der Wert
+// färbt sich, sobald er ihn verlässt. Bewusst direkt am Regler — der
+// Zusammenhang zwischen Handgriff und Folge muss unmittelbar sein, der Kasten
+// weiter oben erklärt dann das Warum.
+function Slider({ label, hint, value, min, max, step, onChange, fmt, pfad }) {
+  const b = pfad ? band(pfad) : null;
+  const draussen = b && (value < b.von || value > b.bis);
+  const anteil = (v) => `${Math.max(0, Math.min(100, ((v - min) / (max - min || 1)) * 100))}%`;
+
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
         <span style={{ fontSize: 13 }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: 13, color: C.gold }}>{fmt ? fmt(value) : value.toFixed(2)}</span>
+        <span style={{ fontFamily: MONO, fontSize: 13, color: draussen ? C.coral : C.gold }}>
+          {fmt ? fmt(value) : value.toFixed(2)}
+        </span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(+e.target.value)}
-        style={{ width: "100%", accentColor: C.gold, cursor: "pointer" }} />
+        style={{ width: "100%", accentColor: draussen ? C.coral : C.gold, cursor: "pointer" }} />
+      {b && (
+        <div title="erprobter Bereich" style={{
+          position: "relative", height: 3, borderRadius: 999, background: C.line, marginTop: 1,
+        }}>
+          <div style={{
+            position: "absolute", top: 0, bottom: 0, borderRadius: 999, background: `${C.mint}99`,
+            left: anteil(b.von), right: `calc(100% - ${anteil(b.bis)})`,
+          }} />
+        </div>
+      )}
       {hint && <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{hint}</div>}
     </div>
   );
