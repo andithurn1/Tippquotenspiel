@@ -66,6 +66,13 @@ export default function Ranking() {
                   {b.userId === meId && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● du</span>}
                 </span>
                 <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{b.gewertet}/{b.tips}</span>
+                {/* Anschluss-Bonus (Aufhol-Mechanismus) — nur wenn welcher anfiel */}
+                {b.bonus > 0 && (
+                  <span title="Anschluss-Bonus für Zurückliegende" style={{
+                    fontFamily: MONO, fontSize: 10, color: C.sky,
+                    border: `1px solid ${C.sky}55`, borderRadius: 999, padding: "2px 7px",
+                  }}>+{b.bonus} Anschluss</span>
+                )}
                 <span style={{
                   fontFamily: MONO, fontSize: 15, fontVariantNumeric: "tabular-nums", minWidth: 44, textAlign: "right",
                   color: b.total < 0 ? C.coral : C.text,

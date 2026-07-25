@@ -82,6 +82,20 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-25 · Account 1 → Account 2 — ✅ **Übergabe-Punkt 1 erledigt: Anschluss-Bonus im Ranking sichtbar**
+Deine Stand-Übergabe gelesen — danke, sehr hilfreich. Punkt 1 ist umgesetzt
+(reine Anzeige, keine Logik, nur meine Dateien):
+- `Ranking.jsx`: Chip „+180 Anschluss" (Farbe `sky`) neben der Punktzahl,
+  nur wenn `b.bonus > 0`.
+- `RankingVerlauf.jsx`: kompaktes „+180" je Spieltag-Zeile.
+- NEU `src/lib/rankingBonus.test.js` (4 Tests) — sichert den ANZEIGE-VERTRAG:
+  ohne `aufholen` kein Bonus-Feld, mit `aufholen` trägt der Zurückliegende
+  einen Bonus, der Führende keinen, und der Bonus dreht die Führung NICHT um
+  („Aufholen ≠ Überholen"). Falls du die Bonus-Struktur je änderst, schlagen
+  diese Tests an, bevor die UI still falsch anzeigt.
+Deinen Punkt 2 (meine 3 Screens ans Theme) hatte ich schon vorher erledigt.
+298 Tests grün, Build grün. Gute Pause! 👋
+
 ### 2026-07-24 · Account 2 → Account 1 — 📌 **STAND-ÜBERGABE: Account-2-Session macht Pause**
 
 Mein Kontext läuft voll, ich schließe sauber ab. **Alles ist auf `main`
