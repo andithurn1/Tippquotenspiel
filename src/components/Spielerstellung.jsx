@@ -27,6 +27,7 @@ import ProfiWarnungen from "@/components/ProfiWarnungen";
 import JokerVerteilung from "@/components/JokerVerteilung";
 import { band } from "@/lib/reglerWarnung";
 import { BIGGAME_LIMITS } from "@/lib/bigGame";
+import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } from "@/lib/spielauswahl";
 import { C, MONO } from "@/lib/theme";
 
 const ALL_TEAMS = Object.keys(TEAM_RATINGS);
@@ -60,8 +61,8 @@ export default function Spielerstellung() {
   const [stufe, setStufe] = useState("einfach");
   const [charakterKey, setCharakterKey] = useState(null);
   const [mischenOffen, setMischenOffen] = useState(false);
-  const [teamFilterOn, setTeamFilterOn] = useState(false);
-  const [selectedTeams, setSelectedTeams] = useState([]);
+  // Die Spielauswahl ist KEIN lokaler Zustand mehr, sondern Teil des
+  // Regelwerks — nur so reist sie im Creator-Code mit.
   const [eigeneVereine, setEigeneVereine] = useState(false);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
@@ -164,8 +165,20 @@ export default function Spielerstellung() {
     catch { /* Nutzer kann den Code markieren */ }
   };
 
-  const toggleTeam = (team) =>
-    setSelectedTeams((prev) => prev.includes(team) ? prev.filter((t) => t !== team) : [...prev, team]);
+  // Spielauswahl aus dem Regelwerk. `patchSpiele` laesst sie durch
+  // sanitizeSpiele laufen, damit ein halb gesetzter Modus („teams" mit nur
+  // einem Verein) gar nicht erst entsteht — nur der Rohzustand der Vereinsliste
+  // bleibt darunter erhalten, sonst koennte man nie den zweiten Verein waehlen.
+  const sp = rules.spiele || DEFAULT_RULES.spiele;
+  const patchSpiele = (p) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...p } })); };
+  const teamFilterOn = sp.modus === "teams" || (sp.teams?.length ?? 0) > 0;
+  const selectedTeams = sp.teams ?? [];
+  const toggleTeam = (team) => {
+    const teams = selectedTeams.includes(team)
+      ? selectedTeams.filter((t) => t !== team)
+      : [...selectedTeams, team];
+    patchSpiele({ modus: "teams", teams });
+  };
 
   const teamFilterInvalid = teamFilterOn && selectedTeams.length < 2;
 
@@ -176,7 +189,9 @@ export default function Spielerstellung() {
     try {
       const round = await getStore().createRound({
         name: rules.name, adminId: user.id, adminName: user.name, rules,
-        teamFilter: teamFilterOn ? selectedTeams : null,
+        // Das Regelwerk SCHLAEGT VOR, die Runde HAELT FEST — sonst gaebe es
+        // zwei Wahrheiten darueber, welche Spiele zaehlen.
+        teamFilter: sanitizeSpiele(sp).modus === "teams" ? selectedTeams : null,
       });
       setCreated(round);
       setRoundId(round.id);
@@ -874,7 +889,7 @@ export default function Spielerstellung() {
             ein Spiel zählt für diese Runde, sobald mindestens eine Seite dabei ist.
           </p>
           <Toggle label="Auf bestimmte Teams beschränken" on={teamFilterOn}
-            onChange={(on) => setTeamFilterOn(on)} />
+            onChange={(on) => patchSpiele(on ? { modus: "teams" } : { modus: "alle", teams: [] })} />
           {teamFilterOn && (
             <div style={{ marginTop: 8, marginBottom: 8 }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -893,8 +908,64 @@ export default function Spielerstellung() {
                 {selectedTeams.length} von mindestens 2 Teams ausgewählt
                 {teamFilterInvalid && " — bitte noch mindestens ein weiteres Team wählen"}.
               </div>
+
+              {/* Was die Auswahl konkret bedeutet. Ohne diese Rückmeldung
+                  stellt man „nur die Top 2" ein und merkt erst in Woche drei,
+                  dass pro Spieltag ein einziges Spiel übrig bleibt. */}
+              {!teamFilterInvalid && (() => {
+                const { min, max } = spieleProSpieltag(selectedTeams.length, ALL_TEAMS.length);
+                const duenn = max < 3;
+                return (
+                  <div style={{ fontSize: 11, color: duenn ? C.gold : C.mint, marginTop: 4, lineHeight: 1.45 }}>
+                    Bleiben {min === max ? min : `${min} bis ${max}`} Spiele pro Spieltag
+                    {duenn && " — das ist wenig; ein einzelner Tipp entscheidet dann fast den ganzen Spieltag"}.
+                  </div>
+                );
+              })()}
             </div>
           )}
+
+          {/* Zeitraum — gilt zusätzlich zu jeder Vereins-Auswahl */}
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Zeitraum</div>
+            <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+              Leer = ganze Saison. Für kurze Runden („nur die Rückrunde", „die letzten
+              fünf Spieltage") hier eingrenzen.
+            </p>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {[["spieltagVon", "von"], ["spieltagBis", "bis"]].map(([feld, label]) => (
+                <label key={feld} style={{ flex: 1, fontSize: 11.5, color: C.muted }}>
+                  Spieltag {label}
+                  <input type="number" inputMode="numeric"
+                    min={AUSWAHL_LIMITS.spieltag.min} max={AUSWAHL_LIMITS.spieltag.max}
+                    value={sp[feld] ?? ""}
+                    onChange={(e) => patchSpiele({ [feld]: e.target.value === "" ? null : Number(e.target.value) })}
+                    placeholder="—"
+                    style={{
+                      display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
+                      background: C.surface, color: C.text, border: `1px solid ${C.line}`,
+                      borderRadius: 10, padding: "8px 10px", fontSize: 13.5, fontFamily: MONO, outline: "none",
+                    }} />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div style={{
+            marginTop: 10, background: C.ink2, border: `1px solid ${C.line}`,
+            borderRadius: 12, padding: "10px 12px",
+          }}>
+            <div style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.2, color: C.muted, textTransform: "uppercase" }}>
+              Wandert mit dem Code
+            </div>
+            <div style={{ fontSize: 12, color: C.text, marginTop: 4, lineHeight: 1.45 }}>
+              {beschreibeAuswahl(sp)}
+            </div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+              Wer deinen Creator-Code lädt, bekommt diese Auswahl gleich mit — und
+              kann sie danach trotzdem ändern.
+            </div>
+          </div>
 
           {/* Runde erstellen */}
           </>)}

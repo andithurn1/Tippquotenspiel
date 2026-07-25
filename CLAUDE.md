@@ -136,6 +136,14 @@ auswertbar markiert, weil unsere Ergebnisse nur Tore + Torschützen tragen.
 `sanitizeRules` delegiert an `sanitizeSaison`, damit der Katalog die eine Quelle
 bleibt — dadurch landen Saison-Wetten automatisch in den Creator-Codes.
 
+**Spielauswahl** (`src/lib/spielauswahl.js`, `rules.spiele`, Standard „alle"):
+welche Spiele überhaupt zur Runde gehören — Vereine, Spieltag-Bereich, feste
+Liste. Liegt im REGELWERK und reist dadurch im Creator-Code mit (ein Creator
+teilt seine ganze Runden-Idee, nicht nur die Wertung). Zwei Wahrheiten
+vermeiden: `rules.spiele` schlägt vor, `rounds.team_filter` hält fest, was beim
+Anlegen daraus wurde — die Runde gewinnt. Ein Modus ohne seine Daten fällt auf
+„alle" zurück, sonst filterte die Auswahl still alles weg.
+
 **Big Game** (`src/lib/bigGame.js`, `rules.bigGame`, Standard aus): das je
 Spieltag DYNAMISCH bestimmte Topspiel — ein Derby steht vorher fest, „Erster
 gegen Zweiter am 31. Spieltag" nicht. Zwei Punkte nicht brechen: (1) der

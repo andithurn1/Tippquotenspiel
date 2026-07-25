@@ -49,6 +49,14 @@ export const ASPEKTE = [
     keys: ["joker", "teamMods", "modCap", "bigGame"],
   },
   {
+    key: "spiele",
+    label: "Spielauswahl",
+    hint: "Welche Vereine und welcher Zeitraum überhaupt getippt werden.",
+    // Eigener Aspekt statt bei den Regeln: „Regeln von A, Spielauswahl von B"
+    // ist genau die Mischung, die man teilen will.
+    keys: ["spiele"],
+  },
+  {
     key: "fairness",
     label: "Anschluss & Versäumnis",
     hint: "Aufhol-Bonus für Zurückliegende und was bei einem vergessenen Spieltag passiert.",

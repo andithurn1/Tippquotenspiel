@@ -172,7 +172,19 @@ b) Gewichtung + Anteils-Anzeige
 c) Freischalt-Zeitpunkte fuer Saison-Wetten
 d) wettbewerbsuebergreifende Spielauswahl
 
-### Spiel-Auswahl gehört in den Code — NEU (Nutzerwunsch)
+### Spiel-Auswahl gehört in den Code — GEBAUT ✓
+`src/lib/spielauswahl.js` + Abschnitt „Teams/Zeitraum" in der Spielerstellung.
+`rules.spiele` ist jetzt Teil des Regelwerks und reist damit in Lang- und
+Kurzcodes mit; der Team-Filter der Spielerstellung ist KEIN lokaler Zustand
+mehr, sondern liest und schreibt dieses Feld. Die Zuständigkeit bleibt getrennt:
+`rules.spiele` schlägt vor, `rounds.team_filter` hält fest, was beim Anlegen
+daraus wurde. Dazu ein achter ASPEKT „Spielauswahl" beim Preset-Mischen und
+`spieleProSpieltag()`, das ohne Spielplan ehrlich eine SPANNE nennt („bleiben
+2 bis 4 Spiele pro Spieltag") statt eine erfundene genaue Zahl.
+
+Offen: Modus `liste` (einzelne Begegnungen) hat noch keine UI — Feld und Filter
+stehen, gebraucht wird es erst mit mehreren Wettbewerben.
+
 Ein geteilter Creator-Code trägt heute nur das REGELWERK. Welche Spiele die
 Runde umfasst (`team_filter`) hängt an der Runde, nicht am Code — wer einen
 Code lädt, bekommt also die Regeln, aber nicht die Spielauswahl. Das soll mit

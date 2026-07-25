@@ -11,6 +11,7 @@ import { applyCatchup } from "./catchup";
 import { sanitizeSaison } from "./saisonwetten";
 import { sanitizeVerteilung, DEFAULT_VERTEILUNG } from "./jokerPlan";
 import { sanitizeBigGame, DEFAULT_BIGGAME, bigGameAufschlag } from "./bigGame";
+import { sanitizeSpiele, DEFAULT_SPIELE } from "./spielauswahl";
 
 export function createMockOddsSource() {
   const snap = {
@@ -149,6 +150,12 @@ export const DEFAULT_RULES = {
   // Standard aus. Wird beim Bereinigen an sanitizeSaison delegiert, damit
   // Katalog und Regelwerk nicht auseinanderlaufen.
   saison: { enabled: false, gewicht: 1, wetten: [] },
+
+  // ── Spielauswahl: welche Spiele gehören zur Runde ──
+  // Reist mit dem Creator-Code mit, damit ein Creator nicht nur seine Wertung
+  // teilt, sondern seine ganze Runden-Idee. Katalog + Filter in
+  // spielauswahl.js. Standard „alle" = neutrales No-op.
+  spiele: { ...DEFAULT_SPIELE },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -310,6 +317,7 @@ export function sanitizeRules(partial = {}) {
     saison: sanitizeSaison(src.saison),
     // Big Game ebenso — der Katalog der Signale bleibt in bigGame.js.
     bigGame: sanitizeBigGame(src.bigGame),
+    spiele: sanitizeSpiele(src.spiele),
   };
 }
 
