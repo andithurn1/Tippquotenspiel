@@ -9,7 +9,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sync": "node scripts/sync-status.mjs",
-    "seed:bundesliga": "vite-node scripts/seed-bundesliga.mjs"
+    "seed:matches": "vite-node scripts/seed-matches.mjs",
+    "seed:bundesliga": "vite-node scripts/seed-matches.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
