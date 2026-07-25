@@ -68,9 +68,37 @@ ein `tip.gewicht` aus dem Pool `faktoren`; jeder Pool-Wert nur EINMAL pro
 Spieltag — sonst setzt jeder überall das Maximum). Wirkt symmetrisch, also auch
 auf ein Minus. Prüfregeln: `invalidJokerMatchdays` / `invalidWeightMatchdays`
 — das **Einfrieren ab Anpfiff** ist Sache von Store/UI, wie beim Quoten-Snapshot.
-`maxJokerFactor` speist Vorschau und `recommendedDisplayScale` (in
+`maxTotalModifier` speist Vorschau und `recommendedDisplayScale` (in
 `rulePreview.js`): empfiehlt eine Anzeige-Skalierung, die den höchsten
-Joker-Faktor einrechnet — reine Anzeige, nie Fairness.
+Modifikator einrechnet — reine Anzeige, nie Fairness.
+
+**Drei Modifikator-Ebenen, additiv gedeckelt** (wichtig, nicht brechen): Joker
+(pro Nutzer), Team-/Derby (`rules.teamMods`, pro Begegnung, für ALLE gleich),
+Joker-Abstimmung (`voting.js`, pro Spieltag). `totalModifier` fasst Joker +
+Team-Mods **additiv** zusammen (1 + Σ Aufschläge) und deckelt bei `rules.modCap`
+— multiplikativ würde es die Balance sprengen. Derby wird an `snap.derby`
+erkannt; das Label setzt die Daten-Schicht (`DERBYS`/`findDerby` in
+`bundesligaData.js`), die Engine kennt keine Vereinsnamen (Regel 3).
+
+**Aufhol-Mechanismus** (`src/lib/catchup.js`, `rules.aufholen`, Standard aus):
+Anschluss-Bonus für Zurückliegende. Greift NICHT in `scoreTip`, sondern im
+Verlauf — der Bonus hängt am Stand VOR dem Spieltag. `applyCatchup` ist in
+`scoreLeaderboardHistory` eingehängt; `getLeaderboard` nimmt bei aktivem Bonus
+den Verlaufs-Endstand. Nur ein ANTEIL des Rückstands (Aufholen ≠ Überholen),
+erst ab einer Schwelle, drei Stufen (`STAERKE_STUFEN`).
+
+**Balance-Simulator** (`src/lib/balanceSim.js`): Monte-Carlo mit realistischer
+Tipper-Population (Favorit/Solide/Kenner/Mutig/Zocker), Ergebnisse AUS DEN
+QUOTEN gezogen. Zielbild: der KENNER gewinnt. Kennzahlen: `punkteVerhaeltnis`,
+`modifikatorAnteil`, `aufholFlipQuote` → `bewerten()` macht daraus die
+grün/gelb/rot-Ampel (`BalanceAmpel.jsx` in der Spielerstellung). Die Presets
+sind darauf ausbalanciert; `presets.balance.test.js` sichert es ab — bei
+Regelwerk-Änderungen dort prüfen.
+
+**Weitere Module:** `premium.js` (Berechtigung; nur Admin braucht Premium,
+`applyEntitlements` neutralisiert Premium-Regeln ohne Löschen), `records.js`
+(Rekorde/Auszeichnungen aus dem Verlauf), `avatars.js` (Profil), `theme.js`
+(zentrale Design-Ebene — Farben/Schrift; Account 1s Fanfarben bauen darauf).
 
 ## Arbeitsweise
 

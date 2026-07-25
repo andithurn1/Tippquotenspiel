@@ -3,14 +3,25 @@
 Offene Feature-Ideen, grob nach Aufwand. Gebaut wird in einzelnen, testbaren
 Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 
-## Erledigt (Branch `joker-gewichtung`)
+## Erledigt (alles auf `main`, Stand fb82eab)
 - QT-Design-Spec (`design/reaktions-clips.md`)
 - Joker/Gewichtung: Einzel- + Ranking-Modus, Skalierungs-Empfehlung
-- Profile: Anzeigename + vorgefertigte Avatare
+- Profile: Anzeigename + vorgefertigte Avatare (`src/lib/avatars.js`)
 - Premium-Gate (`src/lib/premium.js`) — nur Admin braucht Premium
 - Ranking-Modus: Eindeutigkeit der Gewichte je Spieltag
 - Joker-Abstimmung (`src/lib/voting.js`) — Runde entscheidet, welche Spieltage
 - Historie & Rekorde (`src/lib/records.js`) inkl. Preset-Was-wäre-wenn + Plot
+- **Balance-Simulator** (`src/lib/balanceSim.js`) — Tipper-Population, misst ob
+  der Kenner gewinnt (nicht Zocker/Favorit); Presets darauf neu ausbalanciert
+  (`presets.balance.test.js` sichert das ab)
+- **Team-/Derby-Regeln** (`teamMods` in engine, `DERBYS` in `bundesligaData.js`)
+  — additive Modifikatoren mit Deckel (`modCap`), Balance nachgemessen
+- **Aufhol-Mechanismus** (`src/lib/catchup.js`) — Anschluss-Bonus, drei Stufen,
+  Balance-Prüfung im Simulator (`aufholFlipQuote`), Admin-UI + Leaderboard-Anbindung
+- **Design-Ebene** (`src/lib/theme.js`) — eine Quelle für Farben/Schrift
+  (Account 1 hat darauf die Fanfarben-Umschaltung gebaut)
+
+Test-Stand: 283 grün, Build sauber.
 
 ## Offen
 
