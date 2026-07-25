@@ -43,6 +43,39 @@ geht nichts verloren.
 Offene Entwurfsfragen: Warnung beim Zurückschalten, wenn Profi-Werte nicht mehr
 zu einem Paket passen. Nicht mehr als 3 Stufen — jede kostet Pflege.
 
+### Eigenes Top-Team je Spieler — NEU (Nutzerwunsch)
+Jeder Mitspieler benennt SEINEN Verein; Tipps auf dessen Spiele zählen leicht
+mehr. Nutzer-Empfehlung als Obergrenze: **×1,2**.
+
+- **Abgrenzung zu `teamMods`:** das bestehende `teamMods` setzt der ADMIN für
+  ALLE. Das hier ist pro NUTZER — gehört also zur selben Familie wie der Joker.
+- **Muss durch `totalModifier` laufen** (additiv) und von `modCap` gedeckelt
+  werden. Sonst stapeln sich vier Ebenen: Joker · Abstimmung · Team-Mods ·
+  Top-Team.
+- **Symmetrisch wirken** (auch auf Minuspunkte), wie der Joker — sonst ist es
+  ein Gratis-Aufschlag statt einer Wette.
+- **Selbst-balancierend:** Fans tippen ihren eigenen Verein notorisch zu
+  optimistisch. Der Faktor verstärkt also auch die Fanbrille — das ist
+  thematisch schön und dämpft den Vorteil von allein.
+- ⚠️ **Rest-Risiko:** Wer seinen Verein wirklich gut kennt, verstärkt seinen
+  Wissensvorsprung. Deshalb Deckel bei ×1,2 und vor dem Merge mit
+  `balanceSim.js` gegenprüfen (Kenner darf gewinnen, aber nicht davonziehen).
+- **Kopplung:** dieselbe Vereinsauswahl kann die Fanfarben speisen
+  (`theme.js`) — eine Angabe, zwei Wirkungen.
+- **Gegen Überladung:** in Stufe 1/2 nur EIN Schalter („Heimatbonus an/aus",
+  Faktor aus unserer Empfehlung). Der Faktor selbst nur in der Pro-Variante.
+
+### Profi-Variante: aktiv vor Unwucht warnen — NEU (Nutzerwunsch)
+Die Pro-Ebene lädt dazu ein, Regelwerke kaputtzudrehen. Deshalb:
+
+- **Empfehlungsband am Regler:** der ausbalancierte Bereich ist am Slider selbst
+  markiert; außerhalb färbt sich der Wert und ein Satz erklärt die Folge
+  („ab hier entscheidet ein einzelnes Spiel den Spieltag").
+- **Warnung SOFORT am Regler**, nicht erst unten in der Ampel — der Zusammenhang
+  zwischen Handlung und Folge muss unmittelbar sein.
+- **Balance-Ampel dauerhaft sichtbar** (klebend), nicht wegscrollbar.
+- Kein Verbot: extreme Werte bleiben erlaubt, sie sind nur nie versehentlich.
+
 ### Joker-Verteilung über die Saison (Frequenz statt Handarbeit) — NEU
 Der Admin soll nicht 34 Spieltage einzeln anklicken müssen.
 
