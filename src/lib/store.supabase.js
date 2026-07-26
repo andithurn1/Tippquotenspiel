@@ -44,13 +44,26 @@ export function createSupabaseStore() {
       const data = orThrow(await sb.from("matches").select("*").order("kickoff"));
       return data.map(mapMatch);
     },
-    // TODO(Andre): Gegenstück zu `openMatchday` im Mock-Store. Die Rechnung
-    // steht fertig in `spieltagOeffnen.js` und ist idempotent; hier fehlt nur
-    // das Schreiben — die veränderten Snapshots per `update` auf `matches`
-    // zurückschreiben. WICHTIG: nur der Admin/Server darf das, sonst könnte
-    // sich jemand sein eigenes Big Game setzen (RLS-Policy prüfen).
-    async openMatchday() {
-      return { schonOffen: false, veraendert: false, bigGame: null, snapshots: {} };
+    // Spieltag öffnen = Big Game einfrieren. Läuft ueber eine SERVER-Route,
+    // nicht hier: `matches` ist per RLS fuer Clients nur lesbar (Schreiben
+    // braucht den service_role-Key), und wer oeffnen darf, ist eine
+    // Fairness-Frage — die Auswahl haengt am Tabellenstand ZUM ZEITPUNKT des
+    // Oeffnens, also darf nur der Admin der Runde ihn bestimmen. Die Route
+    // prueft das; hier wird nur das Token mitgereicht.
+    async openMatchday(roundId, matchday, wettbewerb = null) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) throw new Error("Nicht angemeldet.");
+      const res = await fetch("/api/matchday/open", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ roundId, matchday, wettbewerb }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "Spieltag konnte nicht geoeffnet werden.");
+      return json;
     },
 
     async getMatch(id) {
