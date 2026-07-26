@@ -12,6 +12,14 @@
 //  nachträglich veränderte Quote. Deshalb: einmal beim ÖFFNEN des Spieltags
 //  bestimmen, in die Snapshots schreiben, fertig.
 //
+//  ── Eingefroren wird der WERT, nicht das Urteil ──
+//  `matches` ist global: dieselbe Begegnung gehört zu vielen Runden. Ein
+//  Häkchen „das ist das Big Game" im Snapshot würde bedeuten, dass die Runde,
+//  die zuerst öffnet, für alle anderen mitentscheidet — auch für solche, die
+//  Big Game gar nicht aktiviert haben. Deshalb wird nur der objektive
+//  Spannungswert des Topspiels eingefroren; ob er zählt, entscheidet jede
+//  Runde mit ihrer eigenen Schwelle beim Auswerten.
+//
 //  ── Der feine Punkt: „geprüft" einfrieren, nicht nur „ist Big Game" ──
 //  Ein Spieltag kann durchaus KEIN Big Game haben (kein Spiel reißt die
 //  Schwelle). Würde man nur `bigGame: true` speichern, wäre so ein Spieltag
@@ -46,7 +54,7 @@ export function spieltagOeffnen({
   if (istGeoeffnet(matches)) {
     // Schon eingefroren — der bestehende Stand gilt, auch wenn eine neue
     // Rechnung heute ein anderes Spiel wählen würde.
-    const alter = matches.find((m) => m.snapshot?.bigGame === true);
+    const alter = matches.find((m) => Number.isFinite(m.snapshot?.bigGameWert));
     return {
       schonOffen: true, veraendert: false,
       bigGame: alter ? { matchId: alter.id ?? alter.snapshot?.matchId } : null,
@@ -55,8 +63,14 @@ export function spieltagOeffnen({
   }
 
   const tabelle = rangliste(gespielt);
+  // ⚠️ BEWUSST OHNE die Schwelle der Runde gerechnet. `matches` ist global —
+  // schriebe man hier „das ist das Big Game" hinein, entschiede die Runde, die
+  // zuerst öffnet, für alle anderen mit. Eingefroren wird deshalb nur der
+  // objektive SPANNUNGSWERT; ob er als Big Game zählt, entscheidet jede Runde
+  // später mit ihrer eigenen `minSpannung` (siehe bigGameAufschlag).
   const gewaehlt = bigGameFuer(matches.map((m) => m.snapshot), {
-    tabelle, spieltag, gesamtSpieltage, bigGame: rules?.bigGame,
+    tabelle, spieltag, gesamtSpieltage,
+    bigGame: { enabled: true, aufschlag: 0, minSpannung: 0 },
   });
 
   const snapshots = {};
@@ -66,7 +80,7 @@ export function spieltagOeffnen({
       ...m.snapshot,
       bigGameGeprueft: true,
       ...(gewaehlt && gewaehlt.matchId === id
-        ? { bigGame: true, bigGameGrund: gewaehlt.begruendung }
+        ? { bigGameWert: gewaehlt.wert, bigGameGrund: gewaehlt.begruendung }
         : {}),
     };
   }

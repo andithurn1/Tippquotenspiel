@@ -174,9 +174,14 @@ Spiele gleich, entscheidet also nur, OB es ein Big Game gibt, nie WELCHES;
 (2) die Tabellenzone (oben Titel, unten Abstieg, Mitte nichts) wiegt schwerer
 als die Ausgeglichenheit der Quoten, sonst gewinnt immer das belanglose
 9.-gegen-10. Der Aufschlag fällt in DENSELBEN additiven Topf wie Derby
-(`teamModFactor`), ist also kein neuer Multiplikator. `snap.bigGame` setzt die
-Daten-Schicht beim Öffnen des Spieltags — eingefroren wie der Quoten-Snapshot,
-sonst änderte sich der Wert eines Tipps rückwirkend.
+(`teamModFactor`), ist also kein neuer Multiplikator.
+**Eingefroren wird der WERT, nicht das Urteil:** `matches` ist global, dieselbe
+Begegnung gehört zu vielen Runden. Ein Häkchen „das ist das Big Game" hieße,
+dass die zuerst öffnende Runde für alle mitentscheidet. `spieltagOeffnen` legt
+deshalb nur `snap.bigGameWert` ab (objektiv, aus dem Tabellenstand beim
+Öffnen); ob das als Big Game zählt, entscheidet jede Runde beim Auswerten mit
+ihrer eigenen `minSpannung`. Eingefroren ist es trotzdem — die Fairness-Regel
+gilt weiter.
 
 **Wettbewerbs-Gewichte** (`src/lib/wettbewerbGewicht.js`, `rules.wettbewerbe`,
 Standard aus): ein CL-Halbfinale zählt mehr als ein Ligaspiel. Der Aufschlag

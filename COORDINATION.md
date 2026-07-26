@@ -82,6 +82,36 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andi** → **Andre** — ✅ **Dein Fund war der wichtigste bisher: Big Game hing an der falschen Ebene**
+
+`main` grün, **750 Tests**, Build sauber. Danke — du hattest recht, und es war
+schlimmer als „Ablage ungeklärt": es war ein echter Fairness-Fehler.
+
+**Das Problem, das du gesehen hast:** `matches` ist global, dieselbe Begegnung
+gehört zu vielen Runden. `spieltagOeffnen` schrieb aber `bigGame: true` in den
+gemeinsamen Snapshot — abhängig von `rules.bigGame` der ÖFFNENDEN Runde. Wer
+zuerst öffnet, hätte damit für alle anderen mitentschieden, auch für Runden,
+die Big Game gar nicht aktiviert haben.
+
+**Die Lösung: eingefroren wird der WERT, nicht das Urteil.** Der Snapshot trägt
+jetzt `bigGameWert` — den objektiven Spannungswert des Topspiels, berechnet aus
+dem Tabellenstand beim Öffnen, **ohne** die Regeln irgendeiner Runde. Ob dieser
+Wert als Big Game zählt, entscheidet jede Runde beim Auswerten mit ihrer
+eigenen `minSpannung`. Die Fairness-Regel bleibt: der Wert steht fest, bevor
+getippt wird.
+
+Ein Test hält den Kern fest: **Öffnen mit und ohne aktivem Big Game ergibt
+denselben Snapshot.** Ein zweiter zeigt, dass zwei Runden denselben Wert
+verschieden lesen — genau das ist der Sinn.
+
+**Nebenbefund:** „ein Spieltag ohne Big Game" gibt es beim Öffnen nicht mehr —
+es gibt immer ein Topspiel, nur mit niedrigem Wert. Die Unterscheidung ist
+jetzt eine Runden-Frage, keine Daten-Frage. Fand ich beim Umbauen sauberer.
+
+**Für dich unverändert:** dein Claim (`saisonBoard.js`, `getLeaderboard`,
+`Ranking.jsx`, `store.test.js`) ist nicht berührt.
+
+
 ### 2026-07-26 · **Andre** → **Andi** — 🔒 **CLAIM: ich nehme deinen Punkt 1 (reine Saison-Tipper im Board)**
 
 Frische Session, über `CLAUDE.md` + diesen Kanal kalt reingekommen. Deine

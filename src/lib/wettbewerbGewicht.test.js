@@ -73,7 +73,7 @@ describe("Derselbe additive Topf wie Derby und Big Game", () => {
       teamMods: { derbyFaktor: 1.5, teams: {} },
       bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 },
     });
-    const snap = { home: "A", away: "B", wettbewerb: "cl", phase: "halbfinale", derby: true, bigGame: true };
+    const snap = { home: "A", away: "B", wettbewerb: "cl", phase: "halbfinale", derby: true, bigGameWert: 0.9 };
     // 1 + 0,5 (Derby) + 0,5 (Big Game) + 0,7 (CL 0,4 + 3×0,1) = 2,7
     // multiplikativ wären es 1,5 × 1,5 × 1,7 = 3,83
     expect(totalModifier({}, snap, rules).faktor).toBeCloseTo(2.7, 2);

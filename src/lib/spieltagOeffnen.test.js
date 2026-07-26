@@ -36,7 +36,7 @@ describe("Öffnen bestimmt das Big Game", () => {
   it("markiert genau ein Spiel", () => {
     const r = oeffnen();
     expect(r.bigGame.matchId).toBe("T01-T02");
-    const markiert = Object.values(r.snapshots).filter((s) => s.bigGame === true);
+    const markiert = Object.values(r.snapshots).filter((s) => Number.isFinite(s.bigGameWert));
     expect(markiert).toHaveLength(1);
     expect(markiert[0].bigGameGrund).toContain("Platz 1 gegen Platz 2");
   });
@@ -65,22 +65,25 @@ describe("Einmal eingefroren, bleibt eingefroren", () => {
     expect(zweite.bigGame.matchId).toBe("T01-T02");
   });
 
-  it("auch ein Spieltag OHNE Big Game bleibt ohne", () => {
-    // Ohne das Prüf-Kennzeichen bekäme er beim nächsten Aufruf mit
-    // gewachsenem Tabellenstand nachträglich doch noch eines.
+  it("ein unspektakulaerer Spieltag wird trotzdem eingefroren", () => {
+    // Beim Oeffnen gibt es IMMER ein Topspiel — nur ist sein Wert dann
+    // niedrig, und ob er als Big Game zaehlt, entscheidet erst die Schwelle
+    // der jeweiligen Runde. Das Pruef-Kennzeichen haelt den Spieltag
+    // trotzdem fest, sonst wuerde er spaeter neu berechnet.
     const langweilig = [spiel("T08", "T11"), spiel("T09", "T12")];
     const erste = spieltagOeffnen({
       spieltag: 2, matches: langweilig, gespielt: GESPIELT, rules: RULES, gesamtSpieltage: 34,
     });
-    expect(erste.bigGame).toBeNull();
     expect(Object.values(erste.snapshots).every((s) => s.bigGameGeprueft)).toBe(true);
+    // Niedriger Wert: eine Runde mit Standard-Schwelle zaehlt ihn nicht.
+    expect(erste.bigGame.wert).toBeLessThan(0.35);
 
     const eingefroren = langweilig.map((m) => ({ ...m, snapshot: erste.snapshots[m.id] }));
     const zweite = spieltagOeffnen({
       spieltag: 2, matches: eingefroren, gespielt: GESPIELT, rules: RULES, gesamtSpieltage: 34,
     });
     expect(zweite.schonOffen).toBe(true);
-    expect(zweite.bigGame).toBeNull();
+    expect(zweite.veraendert).toBe(false);
   });
 
   it("ein späterer Tabellenstand kippt einen offenen Spieltag nicht mehr", () => {
@@ -96,10 +99,14 @@ describe("Einmal eingefroren, bleibt eingefroren", () => {
 });
 
 describe("Neutral, wenn nichts zu tun ist", () => {
-  it("ohne Big-Game-Regel wird nur geprüft markiert", () => {
-    const r = oeffnen(SPIELTAG, DEFAULT_RULES);
-    expect(r.bigGame).toBeNull();
-    expect(Object.values(r.snapshots).some((s) => s.bigGame)).toBe(false);
+  it("die Regel der oeffnenden Runde aendert den eingefrorenen Wert NICHT", () => {
+    // Der Kern der Korrektur: `matches` ist global. Oeffnen mit oder ohne
+    // aktivem Big Game muss denselben Snapshot ergeben, sonst entschiede die
+    // erste Runde fuer alle.
+    const mitRegel = oeffnen(SPIELTAG, RULES);
+    const ohneRegel = oeffnen(SPIELTAG, DEFAULT_RULES);
+    expect(ohneRegel.snapshots).toEqual(mitRegel.snapshots);
+    expect(ohneRegel.bigGame.matchId).toBe(mitRegel.bigGame.matchId);
   });
 
   it("ein leerer Spieltag ergibt nichts", () => {

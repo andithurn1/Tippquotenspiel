@@ -173,10 +173,23 @@ export function begruendung(bewertung, matches = [], tabelle = []) {
 }
 
 // Der Aufschlag fürs Big Game — dieselbe Bauart wie `teamModFactor`, damit er
-// in denselben additiven Topf fällt. `snap.bigGame === true` setzt die
-// Daten-Schicht beim Öffnen des Spieltags (eingefroren), nicht die Engine.
+// in denselben additiven Topf fällt.
+//
+// ⚠️ Warum hier ein WERT steht und kein Ja/Nein: `matches` ist GLOBAL, dieselbe
+// Begegnung gehört zu vielen Runden. Würde beim Öffnen ein Häkchen
+// „das ist das Big Game" in den Snapshot geschrieben, entschiede die Runde,
+// die zuerst öffnet, für alle anderen mit — auch für solche, die Big Game gar
+// nicht aktiviert haben oder eine andere Schwelle wollen.
+//
+// Eingefroren wird deshalb nur, was OBJEKTIV ist: der Spannungswert des
+// Spieltags-Topspiels (`snap.bigGameWert`), berechnet aus dem Tabellenstand
+// beim Öffnen. Ob dieser Wert für eine Runde als Big Game zählt, entscheidet
+// jede Runde mit ihrer eigenen Schwelle — beim Auswerten, nicht beim Öffnen.
+// Der Wert bleibt trotzdem eingefroren, die Fairness-Regel gilt also weiter.
 export function bigGameAufschlag(snap, rules) {
   const cfg = sanitizeBigGame(rules?.bigGame);
-  if (!cfg.enabled || !snap?.bigGame) return 0;
+  if (!cfg.enabled) return 0;
+  const wert = snap?.bigGameWert;
+  if (!Number.isFinite(wert) || wert < cfg.minSpannung) return 0;
   return cfg.aufschlag;
 }

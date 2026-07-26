@@ -160,11 +160,22 @@ describe("Regelwerk & Modifikator", () => {
     expect(sanitizeRules(r)).toEqual(r);
   });
 
-  it("der Aufschlag greift nur am markierten Spiel", () => {
-    const rules = sanitizeRules({ ...DEFAULT_RULES, bigGame: { enabled: true, aufschlag: 0.5 } });
-    expect(bigGameAufschlag({ bigGame: true }, rules)).toBe(0.5);
-    expect(bigGameAufschlag({ bigGame: false }, rules)).toBe(0);
-    expect(bigGameAufschlag({ bigGame: true }, DEFAULT_RULES)).toBe(0);
+  it("der Aufschlag greift nur, wenn der eingefrorene WERT die Schwelle reisst", () => {
+    // Kein Ja/Nein im Snapshot: `matches` ist global, also entschiede sonst
+    // die Runde, die zuerst oeffnet, fuer alle anderen mit.
+    const rules = sanitizeRules({ ...DEFAULT_RULES, bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 } });
+    expect(bigGameAufschlag({ bigGameWert: 0.6 }, rules)).toBe(0.5);
+    expect(bigGameAufschlag({ bigGameWert: 0.2 }, rules)).toBe(0);   // unter der Schwelle
+    expect(bigGameAufschlag({}, rules)).toBe(0);                     // kein Wert
+    expect(bigGameAufschlag({ bigGameWert: 0.6 }, DEFAULT_RULES)).toBe(0);
+  });
+
+  it("zwei Runden lesen DENSELBEN Wert verschieden — genau das ist der Sinn", () => {
+    const snap = { bigGameWert: 0.4 };
+    const streng = sanitizeRules({ ...DEFAULT_RULES, bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.5 } });
+    const locker = sanitizeRules({ ...DEFAULT_RULES, bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.3 } });
+    expect(bigGameAufschlag(snap, streng)).toBe(0);
+    expect(bigGameAufschlag(snap, locker)).toBe(0.5);
   });
 
   it("er landet im SELBEN additiven Topf wie Derby — nicht daneben", () => {
@@ -174,7 +185,7 @@ describe("Regelwerk & Modifikator", () => {
       teamMods: { derbyFaktor: 1.5, teams: {} },
       joker: { ...DEFAULT_RULES.joker, enabled: true, modus: "einzel", faktor: 2 },
     });
-    const s = { home: "A", away: "B", derby: true, bigGame: true };
+    const s = { home: "A", away: "B", derby: true, bigGameWert: 0.9 };
     // 1 + 1,0 (Joker) + 0,5 (Derby) + 0,5 (Big Game) = 3,0 — additiv,
     // multiplikativ waeren es 2 × 1,5 × 1,5 = 4,5.
     expect(totalModifier({ joker: true }, s, rules).faktor).toBeCloseTo(3, 2);
@@ -185,7 +196,7 @@ describe("Regelwerk & Modifikator", () => {
       ...DEFAULT_RULES, modCap: 1.3,
       bigGame: { enabled: true, aufschlag: 0.5 },
     });
-    const t = totalModifier({}, { home: "A", away: "B", bigGame: true }, rules);
+    const t = totalModifier({}, { home: "A", away: "B", bigGameWert: 0.9 }, rules);
     expect(t.faktor).toBeCloseTo(1.3, 2);
     expect(t.gedeckelt).toBe(true);
   });
