@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { getStore } from "@/lib/store";
 import { freigabeStatus } from "@/lib/saisonwetten";
-import { aktuellerSpieltag } from "@/lib/wettbewerbe";
+import { aktuellerSpieltag, istEchterWettbewerb, wettbewerbVon } from "@/lib/wettbewerbe";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
@@ -55,9 +55,14 @@ export default function SaisonTipps() {
     return [...s].sort((a, b) => a.localeCompare(b));
   }, [matches]);
 
-  // Saisonstart = erster Anpfiff. Wetten OHNE Freischalt-Fenster sind danach
-  // zu — sie gehören vor die Saison.
-  const gestartet = matches.length > 0 && matches.some((m) => new Date(m.kickoff) <= Date.now());
+  // Saisonstart = erster Anpfiff in einem ECHTEN Wettbewerb. Wetten OHNE
+  // Freischalt-Fenster sind danach zu — sie gehören vor die Saison.
+  // Die Einschränkung auf echte Wettbewerbe ist nicht kosmetisch: das
+  // Demo-Länderspiel JOR-ESP liegt in der Vergangenheit und steckt in JEDEM
+  // Match-Katalog, auch im Seed der Live-DB. Ohne sie wären alle fensterlosen
+  // Saison-Wetten von Anfang an eingefroren — auch in einer frischen Runde,
+  // deren Bundesliga erst in Wochen anfängt.
+  const gestartet = matches.some((m) => istEchterWettbewerb(wettbewerbVon(m)) && new Date(m.kickoff) <= Date.now());
   // Wetten MIT Fenster richten sich nach dem Spieltag ihres Wettbewerbs: „Wer
   // gewinnt die Champions League?" öffnet erst, wenn die Ligaphase weit genug
   // ist, und schließt wieder — sonst wüsste, wer später tippt, schlicht mehr.

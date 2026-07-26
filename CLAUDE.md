@@ -144,6 +144,18 @@ mehr bei gleicher Punktzahl. Der Stand kommt aus `aktuellerSpieltag()` je
 Wettbewerb; unbekannter Stand hält die Wette ZU.
 `sanitizeRules` delegiert an `sanitizeSaison`, damit der Katalog die eine Quelle
 bleibt — dadurch landen Saison-Wetten automatisch in den Creator-Codes.
+Ins **Leaderboard** kommen sie über `src/lib/saisonBoard.js` — EINE Quelle für
+beide Stores (vorher lag die Funktion zweimal da und war schon auseinander-
+gelaufen). Zwei Regeln stecken drin: (1) im Board steht, wer ETWAS abgegeben hat
+— Match-Tipp ODER Saison-Wette; das Board wird aus Match-Tipps gebaut, ein
+reiner Saison-Tipper fehlte sonst ganz (ein Mitglied ohne jeden Tipp bleibt
+draußen, es gibt nichts zu ranken). (2) Ergänzt wird NACH dem Verlauf, sonst
+bekäme ein reiner Saison-Tipper Anschluss-Boni für Spieltage, die er nie
+mitgespielt hat. Anzeige: `tips === 0` → „nur Saison" statt „0/0".
+**Saisonstart** (= Sperre der fensterlosen Wetten) zählt nur Anpfiffe in ECHTEN
+Wettbewerben (`istEchterWettbewerb` in `wettbewerbe.js`): das Demo-Länderspiel
+liegt in der Vergangenheit und steckt in jedem Match-Katalog, auch im Seed der
+Live-DB — es fror sonst ALLE Saison-Wetten von Anfang an ein.
 
 **Tipp-Fenster** (`src/lib/tippfenster.js`, `rules.tippfenster`, Standard 1
 Woche): wann ein Spiel überhaupt tippbar ist. Öffnet `vorlaufStunden` vor

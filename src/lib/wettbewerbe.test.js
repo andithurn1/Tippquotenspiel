@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   WETTBEWERBE, PHASEN, wettbewerbLabel, phasenLabel, istKo,
-  wettbewerbVon, phaseVon, wettbewerbeIn, verteilung,
+  wettbewerbVon, phaseVon, wettbewerbeIn, verteilung, istEchterWettbewerb,
 } from "./wettbewerbe";
 
 describe("Wettbewerbs-Katalog", () => {
@@ -24,6 +24,17 @@ describe("Wettbewerbs-Katalog", () => {
     expect(wettbewerbLabel("xx")).toBe("xx");
     expect(phasenLabel("finale")).toBe("Finale");
     expect(phasenLabel(undefined)).toBe("—");
+  });
+
+  // Der Saisonstart darf nicht am Demo-Länderspiel hängen: es liegt in der
+  // Vergangenheit und steckt in jedem Match-Katalog. Als Anpfiff gezählt,
+  // fror es alle fensterlosen Saison-Wetten von Anfang an ein.
+  it("nur das Demo-Spiel gehört zu keiner Saison — unbekannte Keys gelten als echt", () => {
+    expect(istEchterWettbewerb("bl")).toBe(true);
+    expect(istEchterWettbewerb("cl")).toBe(true);
+    expect(istEchterWettbewerb("demo")).toBe(false);
+    expect(istEchterWettbewerb("xx")).toBe(true);
+    expect(istEchterWettbewerb(undefined)).toBe(true);
   });
 });
 

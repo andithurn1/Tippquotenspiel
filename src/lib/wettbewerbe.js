@@ -20,7 +20,8 @@ export const WETTBEWERBE = [
   { key: "cl", label: "Champions League", kurz: "CL", land: "Europa" },
   // Das alte Demo-Match (Länderspiel JOR-ESP) ist keiner Liga zuzuordnen. Ohne
   // eigenen Eintrag würde es über den Fallback als Bundesliga-Spiel angezeigt.
-  { key: "demo", label: "Demo-Spiel",    kurz: "DEMO", land: "—" },
+  // `echt: false` heißt: es gehört zu keiner Saison — siehe istEchterWettbewerb.
+  { key: "demo", label: "Demo-Spiel",    kurz: "DEMO", land: "—", echt: false },
 ];
 
 export const WETTBEWERB = Object.fromEntries(WETTBEWERBE.map((w) => [w.key, w]));
@@ -52,6 +53,16 @@ export function phasenLabel(key) {
 // Ist diese Phase eine K.-o.-Runde? (Ligaphase = nein)
 export function istKo(phase) {
   return PHASE[phase]?.ko === true;
+}
+
+// Gehört dieser Wettbewerb zu einer SAISON — oder ist es nur das Demo-Spiel?
+// Wichtig überall, wo ein Datum einen Saisonstart bestimmt: das Demo-Länderspiel
+// liegt in der Vergangenheit und steckt in jedem Match-Katalog (auch im Seed der
+// Live-DB). Als „Anpfiff" gezählt, eröffnet es eine Saison, die noch gar nicht
+// begonnen hat. Unbekannte Keys gelten als echt — wie beim Bundesliga-Fallback
+// in `wettbewerbVon`: neue Daten sollen nicht stillschweigend wegfallen.
+export function istEchterWettbewerb(key) {
+  return WETTBEWERB[key]?.echt !== false;
 }
 
 // Ein Match ohne die neuen Felder gilt als Ligaspiel des Standard-Wettbewerbs —
