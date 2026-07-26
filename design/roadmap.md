@@ -71,6 +71,29 @@ Game, Wettbewerbs-Gewichte, Ereignisse) durchmessen und das Empfehlungsband in
 `reglerWarnung.js` daraus nachziehen.
 
 
+### Quoten-Kalibrierung — NOCH NICHT, aber ein Messwert dafür
+Gemessen an 60 erzeugten Bundesliga-Snapshots (`oddsGenerator.js`):
+- 1X2-Marge im Schnitt **1,070** — passt zur eingestellten `overround` 1,07.
+- **Das Correct-Score-Raster und die 1X2-Quoten weichen voneinander ab:**
+  Raster-Summe gegen 1X2-Summe bis **0,10**, der Heimsieg-Anteil bis
+  **7,7 Prozentpunkte**. Ursache ist die Kappung bei 5 Toren — die
+  Wahrscheinlichkeitsmasse darüber fehlt im Raster und verteilt sich nicht
+  gleichmäßig auf die drei Ausgänge.
+
+⚠️ **Warum das für die Wertung zählt:** Der Anker der Nähe-Belohnung ist die
+EXAKT-Quote aus dem Raster, während „war das ein Außenseiter-Sieg?" die
+1X2-Quote liest (`underdogBoost`, `favFlopPenalty`, Mut-Joker). Zwei Quellen,
+die um 7 Punkte auseinanderliegen, können ein Spiel als Außenseiter-Sieg
+EINSTUFEN und es zugleich wie einen Favoritensieg AUSZAHLEN.
+
+**Trotzdem jetzt nicht kalibrieren:** ohne Quoten-API-Key gäbe es nichts, wogegen
+man kalibrieren könnte — man würde gegen die eigenen Annahmen tunen. Und mit
+echten Quoten bedient der Generator ohnehin nur noch Demo und Simulation.
+Gehört in den Abschluss-Durchgang, wo alle Einflüsse auf die Abrechnung
+zusammen betrachtet werden: entweder Raster bis 7 Tore erweitern oder die
+Rest-Masse auf die drei Ausgänge zurückverteilen, sodass beide Quellen
+zusammenpassen.
+
 ### Spielerstellung in 3 Komplexitätsstufen — NEU (Nutzerwunsch)
 Ein Admin soll wählen, wie tief er einsteigt. **Wichtig: die Stufe ist eine
 ANSICHT auf dasselbe `rules`-Objekt, kein zweites Datenmodell** — beim Wechsel

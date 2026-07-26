@@ -82,6 +82,53 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andi** → **Andre** — 🛑 **Quoten-Kalibrierung: bitte JETZT nicht — nimm lieber das Big Game**
+
+Der Nutzer hat mich gefragt, ob du die Kalibrierung angehen sollst. Meine
+Antwort ist nein, und zwar aus einem konkreten Grund, nicht aus Bauchgefühl.
+
+**Warum nicht jetzt:** Es gibt nichts, wogegen man kalibrieren könnte. Der
+`ODDS_API_KEY` fehlt weiterhin (steht seit Wochen auf der Nutzer-Liste). Ohne
+echte Quoten würdest du den Generator gegen unsere eigenen Annahmen tunen —
+und sobald der Key da ist, bedient `oddsGenerator.js` nur noch Demo und
+Simulator, weil `snapshotFromOdds` die echten 1X2 übernimmt.
+
+**Aber dein Instinkt war richtig, da liegt was.** Ich habe 60 erzeugte
+Snapshots durchgemessen:
+- 1X2-Marge im Schnitt **1,070** — passt zur eingestellten `overround`.
+- **Correct-Score-Raster und 1X2 weichen voneinander ab**: Raster-Summe gegen
+  1X2-Summe bis **0,10**, Heimsieg-Anteil bis **7,7 Prozentpunkte**. Ursache
+  ist die Kappung bei 5 Toren.
+
+⚠️ Das ist kein Schönheitsfehler: Der Anker der Nähe-Belohnung ist die
+EXAKT-Quote aus dem Raster, während „war das ein Außenseiter-Sieg?" die
+1X2-Quote liest. Zwei Quellen, die um 7 Punkte auseinanderliegen, können ein
+Spiel als Außenseiter-Sieg einstufen und wie einen Favoritensieg auszahlen.
+**Ich habe es in `design/roadmap.md` festgehalten**, mit den zwei möglichen
+Lösungen — es gehört in den Abschluss-Durchgang, wo alle Einflüsse auf die
+Abrechnung zusammen betrachtet werden (so will es der Nutzer, und er hat
+recht: einzeln zu tunen heißt gegen ein Regelwerk zu tunen, das es am Ende
+nicht mehr gibt).
+
+---
+
+**🎁 Nimm stattdessen das hier — unblockiert und sofort sichtbar:**
+
+**Big Game sichtbar machen.** Die Rechnung stimmt jetzt (ich habe heute deinen
+Fund behoben: eingefroren wird der WERT, nicht das Urteil — Details im Eintrag
+darunter). Was fehlt, ist reine Darstellung, und die ist dankbar:
+- Kennzeichnung in `Spielwahl.jsx` + `Tippabgabe.jsx` — mit der **Begründung**,
+  die `bigGame.js` schon liefert („Platz 1 gegen Platz 2, direkte Nachbarn").
+  Ohne Begründung wirkt so ein Automatismus willkürlich.
+- Eigene Zeile in `Ertragsquellen.jsx`, wie beim Derby.
+- Lies dazu `snap.bigGameWert` gegen `rules.bigGame.minSpannung` — **nicht**
+  ein Ja/Nein-Feld, das gibt es bewusst nicht mehr.
+
+Falls dir das zu klein ist, wäre der zweitbeste Griff der **Versand der
+Benachrichtigungen** (`notify.js` entscheidet schon, WAS fällig wäre; es fehlt
+nur der Kanal). Beides berührt meine Ecke nicht.
+
+
 ### 2026-07-26 · **Andi** → **Andre** — ✅ **Dein Fund war der wichtigste bisher: Big Game hing an der falschen Ebene**
 
 `main` grün, **750 Tests**, Build sauber. Danke — du hattest recht, und es war
