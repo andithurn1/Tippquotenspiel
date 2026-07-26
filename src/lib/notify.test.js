@@ -46,6 +46,45 @@ describe("sanitizeNotify", () => {
   });
 });
 
+// „Spieltag 1" gibt es seit den fünf Wettbewerben fünfmal. Ohne den Wettbewerb
+// im Schlüssel fielen sie zu EINEM Spieltag zusammen — die Meldung käme nur
+// einmal, und ein getipptes Bundesligaspiel unterdrückte den Hinweis auf die
+// Premier League.
+describe("Neuer Spieltag: je Wettbewerb, nicht quer über alle", () => {
+  const prefs = { ...AN, erinnerung: false };
+  const inLiga = (id, w) => ({ ...spiel(id, 48, 1), wettbewerb: w });
+
+  it("meldet jeden Wettbewerb einzeln", () => {
+    const faellig = dueNotifications({
+      matches: [inLiga("bl1", "bl"), inLiga("pl1", "pl"), inLiga("sa1", "sa")],
+      userId: "u", prefs, jetzt: JETZT,
+    });
+    expect(faellig).toHaveLength(3);
+    expect(faellig.map((f) => f.key).sort())
+      .toEqual(["spieltag:bl:1", "spieltag:pl:1", "spieltag:sa:1"]);
+  });
+
+  it("nennt den Wettbewerb im Titel — die nackte Spieltags-Zahl wäre nicht zuzuordnen", () => {
+    const [erste] = dueNotifications({ matches: [inLiga("bl1", "bl")], userId: "u", prefs, jetzt: JETZT });
+    expect(erste.titel).toContain("Bundesliga");
+    expect(erste.titel).toContain("Spieltag 1");
+  });
+
+  it("ein getippter Bundesliga-Spieltag unterdrückt die Premier League NICHT", () => {
+    const tips = [{ match_id: "bl1", user_id: "u" }];
+    const faellig = dueNotifications({
+      matches: [inLiga("bl1", "bl"), inLiga("pl1", "pl")],
+      tips, userId: "u", prefs, jetzt: JETZT,
+    });
+    expect(faellig.map((f) => f.key)).toEqual(["spieltag:pl:1"]);
+  });
+
+  it("Matches ohne Wettbewerb bleiben gültig (Altdaten fallen auf die Bundesliga)", () => {
+    const [erste] = dueNotifications({ matches: [spiel("alt", 48, 1)], userId: "u", prefs, jetzt: JETZT });
+    expect(erste.key).toBe("spieltag:bl:1");
+  });
+});
+
 describe("Ruhezeit", () => {
   it("erkennt ein Fenster über Mitternacht", () => {
     const r = { von: 22, bis: 8 };

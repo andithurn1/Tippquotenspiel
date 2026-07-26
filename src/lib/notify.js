@@ -16,6 +16,8 @@
 //  die Zustellung austauschbar wie die Quoten-Quelle.
 // ============================================================
 
+import { wettbewerbLabel, DEFAULT_WETTBEWERB } from "./wettbewerbe";
+
 export const KANAELE = ["neuerSpieltag", "erinnerung"];
 
 export const KANAL_META = {
@@ -100,24 +102,36 @@ export function dueNotifications({
 
   // 1) Neuer Spieltag tippbar: der früheste Anpfiff eines Spieltags liegt in
   //    der Zukunft und der Spieltag ist noch komplett ungetippt.
+  //
+  //    ⚠️ Gruppiert wird nach WETTBEWERB + Spieltag, nicht nach der nackten
+  //    Zahl. „Spieltag 1" gibt es in jeder Liga einmal — ohne den Wettbewerb im
+  //    Schlüssel fielen fünf verschiedene Spieltage zu einem zusammen: die
+  //    Meldung käme nur einmal, und ein bereits getipptes Bundesligaspiel
+  //    unterdrückte den Hinweis auf die Premier League. Derselbe Fehler wie
+  //    seinerzeit beim Joker.
   if (p.neuerSpieltag) {
     const proSpieltag = new Map();
     for (const m of matches) {
       const md = m.matchday ?? 0;
-      if (!proSpieltag.has(md)) proSpieltag.set(md, []);
-      proSpieltag.get(md).push(m);
+      const w = m.wettbewerb ?? DEFAULT_WETTBEWERB;
+      const key = `${w}|${md}`;
+      if (!proSpieltag.has(key)) proSpieltag.set(key, { wettbewerb: w, matchday: md, liste: [] });
+      proSpieltag.get(key).liste.push(m);
     }
-    for (const [md, liste] of proSpieltag) {
+    for (const { wettbewerb, matchday: md, liste } of proSpieltag.values()) {
       if (!md) continue;
       const offen = liste.filter((m) => new Date(m.kickoff).getTime() > jetzt);
       if (offen.length !== liste.length) continue;      // schon angepfiffen → kein „neu"
       const getippt = liste.some((m) => meine.has(m.id ?? m.matchId));
       if (getippt) continue;                             // schon dran gewesen
-      const key = `spieltag:${md}`;
+      const key = `spieltag:${wettbewerb}:${md}`;
       if (schon.has(key)) continue;
+      // Der Wettbewerb gehört in den Titel, sobald es mehrere gibt — „Spieltag 1
+      // ist offen" allein wäre bei fünf Ligen nicht zuzuordnen.
+      const label = wettbewerbLabel(wettbewerb);
       out.push({
-        art: "neuerSpieltag", key, matchday: md,
-        titel: `Spieltag ${md} ist offen`,
+        art: "neuerSpieltag", key, matchday: md, wettbewerb,
+        titel: `${label} · Spieltag ${md} ist offen`,
         text: `${liste.length} Spiele warten auf deinen Tipp.`,
       });
     }

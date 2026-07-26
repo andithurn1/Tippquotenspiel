@@ -2,6 +2,7 @@ import AuthProvider from "@/components/AuthProvider";
 import PrefsProvider from "@/components/PrefsProvider";
 import RoundProvider from "@/components/RoundProvider";
 import ThemeProvider from "@/components/ThemeProvider";
+import NotifyRunner from "@/components/NotifyRunner";
 
 export const metadata = {
   title: "Tippquotenspiel",
@@ -36,7 +37,14 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <RoundProvider>
             <PrefsProvider>
-              <ThemeProvider>{children}</ThemeProvider>
+              <ThemeProvider>
+                {/* Rendert nichts — sieht nur regelmäßig nach, ob eine
+                    Benachrichtigung fällig ist. Gehört ins Layout, weil eine
+                    Erinnerung nicht davon abhängen darf, auf welchem Screen
+                    man gerade steht. */}
+                <NotifyRunner />
+                {children}
+              </ThemeProvider>
             </PrefsProvider>
           </RoundProvider>
         </AuthProvider>
