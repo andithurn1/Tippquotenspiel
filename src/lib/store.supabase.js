@@ -9,7 +9,7 @@ import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
-import { DEFAULT_WETTBEWERB } from "./wettbewerbe";
+import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
 
 // Match-Zeile (DB) → Store-Form
 const mapMatch = (m) => m && ({
@@ -17,6 +17,24 @@ const mapMatch = (m) => m && ({
   matchday: m.matchday, snapshot: m.snapshot, result: m.result,
   wettbewerb: m.wettbewerb, phase: m.phase,
 });
+
+// Ein Tipp → der Roh-Eintrag, aus dem die Engine rechnet. EINE Stelle, weil
+// Leaderboard, Verlauf und Rekorde exakt dieselben Felder brauchen — vorher
+// stand die Abbildung dreimal da (und einmal davon abweichend).
+// `wettbewerb` und `kickoff` gehören dazu: ohne den Wettbewerb verschmelzen im
+// Verlauf die fünf „Spieltag 1" zu einem Punkt, ohne den Anpfiff kann die
+// Engine die Spieltage mehrerer Wettbewerbe nicht chronologisch einsortieren.
+const eintragVon = (t, nameOf, matchOf) => {
+  const m = matchOf(t.match_id);
+  return {
+    userId: t.user_id, name: nameOf(t.user_id),
+    tip: t.tip, snapshot: t.snapshot,
+    result: m?.result ?? null,
+    matchday: m?.matchday ?? null,
+    wettbewerb: m ? wettbewerbVon(m) : null,
+    kickoff: m?.kickoff ?? null,
+  };
+};
 
 export function createSupabaseStore() {
   const sb = getSupabaseBrowserClient();
@@ -211,12 +229,7 @@ export function createSupabaseStore() {
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
       const rules = round?.rules ?? DEFAULT_RULES;
-      const entries = tips.map((t) => ({
-        userId: t.user_id, name: nameOf(t.user_id),
-        tip: t.tip, snapshot: t.snapshot,
-        result: matchOf(t.match_id)?.result ?? null,
-        matchday: matchOf(t.match_id)?.matchday ?? null,
-      }));
+      const entries = tips.map((t) => eintragVon(t, nameOf, matchOf));
       // Bei aktivem Aufhol-Bonus über den Verlauf (Endstand mit Bonus).
       let board;
       if (rules.aufholen?.enabled) {
@@ -238,13 +251,7 @@ export function createSupabaseStore() {
       ]);
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
-      return tips.map((t) => ({
-        userId: t.user_id, name: nameOf(t.user_id),
-        tip: t.tip, snapshot: t.snapshot,
-        result: matchOf(t.match_id)?.result ?? null,
-        matchday: matchOf(t.match_id)?.matchday ?? null,
-        matchId: t.match_id,
-      }));
+      return tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id }));
     },
 
     async getLeaderboardHistory(roundId) {
@@ -256,12 +263,7 @@ export function createSupabaseStore() {
       ]);
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
-      const entries = tips.map((t) => ({
-        userId: t.user_id, name: nameOf(t.user_id),
-        tip: t.tip, snapshot: t.snapshot,
-        result: matchOf(t.match_id)?.result ?? null,
-        matchday: matchOf(t.match_id)?.matchday ?? null,
-      }));
+      const entries = tips.map((t) => eintragVon(t, nameOf, matchOf));
       return scoreLeaderboardHistory(entries, round?.rules ?? DEFAULT_RULES);
     },
   };

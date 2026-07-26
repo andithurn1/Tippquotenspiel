@@ -72,6 +72,24 @@ export function createMockStore() {
 
   const nameOf = (userId) => members.find((m) => m.user_id === userId)?.name ?? userId;
 
+  // Ein Tipp → der Roh-Eintrag, aus dem die Engine rechnet. EINE Stelle, weil
+  // Leaderboard, Verlauf und Rekorde exakt dieselben Felder brauchen — vorher
+  // stand die Abbildung dreimal da und hätte auseinanderlaufen können.
+  // `wettbewerb` und `kickoff` gehören dazu: ohne den Wettbewerb verschmelzen
+  // im Verlauf die fünf „Spieltag 1" zu einem, ohne den Anpfiff kann die Engine
+  // die Spieltage mehrerer Wettbewerbe nicht chronologisch einsortieren.
+  const eintragVon = (t) => {
+    const m = matches.get(t.match_id);
+    return {
+      userId: t.user_id, name: nameOf(t.user_id),
+      tip: t.tip, snapshot: t.snapshot,
+      result: m?.result ?? null,
+      matchday: m?.matchday ?? null,
+      wettbewerb: m ? wettbewerbVon(m) : null,
+      kickoff: m?.kickoff ?? null,
+    };
+  };
+
   return {
     async listMatches() { return [...matches.values()]; },
     async getMatch(id) { return matches.get(id) ?? null; },
@@ -228,12 +246,7 @@ export function createMockStore() {
       const round = rounds.get(roundId);
       const rules = round?.rules ?? DEFAULT_RULES;
       const roundTips = tips.filter((t) => t.round_id === roundId);
-      const entries = roundTips.map((t) => ({
-        userId: t.user_id, name: nameOf(t.user_id),
-        tip: t.tip, snapshot: t.snapshot,
-        result: matches.get(t.match_id)?.result ?? null,
-        matchday: matches.get(t.match_id)?.matchday ?? null,
-      }));
+      const entries = roundTips.map(eintragVon);
       let board;
       if (rules.aufholen?.enabled) {
         const h = scoreLeaderboardHistory(entries, rules);
@@ -255,27 +268,16 @@ export function createMockStore() {
     // BELIEBIGEN Regelwerk neu berechnen — Grundlage fürs „was wäre mit Preset
     // X gewesen?" (die Runde selbst wechselt ihr Regelwerk nie).
     async getRoundEntries(roundId) {
-      return tips.filter((t) => t.round_id === roundId).map((t) => ({
-        userId: t.user_id, name: nameOf(t.user_id),
-        tip: t.tip, snapshot: t.snapshot,
-        result: matches.get(t.match_id)?.result ?? null,
-        matchday: matches.get(t.match_id)?.matchday ?? null,
-        matchId: t.match_id,
-      }));
+      return tips.filter((t) => t.round_id === roundId)
+        .map((t) => ({ ...eintragVon(t), matchId: t.match_id }));
     },
 
-    // Ranking-Verlauf: gleiche Rohdaten wie getLeaderboard, zusätzlich mit matchday
-    // je Tipp angereichert, damit die Engine kumulativ je Spieltag rechnen kann.
+    // Ranking-Verlauf: gleiche Rohdaten wie getLeaderboard — die Engine
+    // gruppiert daraus je Spieltag und rechnet kumulativ.
     async getLeaderboardHistory(roundId) {
       const round = rounds.get(roundId);
       const roundTips = tips.filter((t) => t.round_id === roundId);
-      const entries = roundTips.map((t) => ({
-        userId: t.user_id, name: nameOf(t.user_id),
-        tip: t.tip, snapshot: t.snapshot,
-        result: matches.get(t.match_id)?.result ?? null,
-        matchday: matches.get(t.match_id)?.matchday ?? null,
-      }));
-      return scoreLeaderboardHistory(entries, round?.rules ?? DEFAULT_RULES);
+      return scoreLeaderboardHistory(roundTips.map(eintragVon), round?.rules ?? DEFAULT_RULES);
     },
   };
 }

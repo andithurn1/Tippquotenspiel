@@ -32,6 +32,10 @@
 //  Reine Funktionen, UI-frei.
 // ============================================================
 
+// Direkt aus `spieltag.js`, NICHT aus `engine.js` — die Engine importiert aus
+// dieser Datei hier, das wäre ein Kreis.
+import { spieltagKey, spieltageChronologisch } from "./spieltag";
+
 // Welche Daten haben wir heute? Alles andere ist im Katalog vorbereitet, aber
 // nicht auswertbar — genau wie Karten/Fouls bei den Saison-Wetten.
 export const VERFUEGBARE_DATEN = ["tipps", "ergebnisse", "spieltagspunkte"];
@@ -171,9 +175,13 @@ export function sanitizeEreignisse(partial = {}) {
 
 // ── Auswertung ──────────────────────────────────────────────
 
-const spieltageVon = (eintraege) =>
-  [...new Set(eintraege.map((e) => e.matchday).filter((m) => Number.isFinite(m)))]
-    .sort((a, b) => a - b);
+// ⚠️ Ein Spieltag ist erst mit dem WETTBEWERB eindeutig. Über die nackte Zahl
+// gruppiert verschmolzen Bundesliga-, Premier-League- und CL-Spieltag 1 zu
+// EINEM Spieltag — mit zwei sichtbaren Folgen: „alle Spiele des Spieltags
+// getippt" verlangte plötzlich ~35 statt 9 Spiele und löste nie mehr aus, und
+// der Trost-Joker suchte den Letzten über fünf Wettbewerbe hinweg.
+// Geordnet wird chronologisch über `spieltageChronologisch` (eine Quelle,
+// dieselbe wie im Ranking-Verlauf).
 
 // Wie viele Spiele hatte ein Spieltag? Aus den Tipps ALLER Mitspieler
 // abgeleitet — die Einträge eines einzelnen Nutzers wissen nicht, was er
@@ -183,8 +191,9 @@ function spieleJeSpieltag(alleEintraege) {
   const map = new Map();
   for (const e of alleEintraege) {
     if (!Number.isFinite(e.matchday)) continue;
-    if (!map.has(e.matchday)) map.set(e.matchday, new Set());
-    map.get(e.matchday).add(e.matchId ?? `${e.snapshot?.matchId}`);
+    const key = spieltagKey(e);
+    if (!map.has(key)) map.set(key, { wettbewerb: e.wettbewerb ?? null, matchday: e.matchday, ids: new Set() });
+    map.get(key).ids.add(e.matchId ?? `${e.snapshot?.matchId}`);
   }
   return map;
 }
@@ -221,16 +230,23 @@ export function auswerten({
 
   // Serie: Spieltage in Folge. Zählt bei jedem Erreichen erneut, damit eine
   // lange Serie nicht nach dem ersten Mal wertlos wird.
+  // Reihenfolge und Position aller Spieltage — eine Quelle für alles unten.
+  const reihenfolge = spieltageChronologisch(alle);
+  const posVon = new Map(reihenfolge.map((s, i) => [s.key, i]));
+  const pos = (e) => posVon.get(spieltagKey(e)) ?? -1;
+
   const serie = aktiv("serie");
   if (serie) {
-    const getippt = new Set(spieltageVon(meine));
-    const alleTage = spieltageVon(alle);
+    const getippt = new Set(meine.filter((e) => Number.isFinite(e.matchday)).map(spieltagKey));
     let lauf = 0;
-    for (const md of alleTage) {
-      if (!getippt.has(md)) { lauf = 0; continue; }
+    // Chronologisch, wettbewerbsübergreifend: „dranbleiben" heißt, keinen
+    // Spieltag auszulassen, der in der Runde überhaupt anstand — auch keinen
+    // aus einem zweiten Wettbewerb.
+    for (const s of reihenfolge) {
+      if (!getippt.has(s.key)) { lauf = 0; continue; }
       lauf++;
       if (lauf % serie.anzahl === 0) {
-        roh.push({ key: "serie", matchday: md, belohnung: serie.belohnung,
+        roh.push({ key: "serie", wettbewerb: s.wettbewerb, matchday: s.matchday, belohnung: serie.belohnung,
           text: `${serie.anzahl} Spieltage in Folge getippt` });
       }
     }
@@ -239,10 +255,10 @@ export function auswerten({
   // Erster exakter Treffer — genau einmal.
   const exakt = aktiv("erster-exakter");
   if (exakt) {
-    const treffer = meine.filter(istExakt).sort((a, b) => (a.matchday ?? 0) - (b.matchday ?? 0))[0];
+    const treffer = meine.filter(istExakt).sort((a, b) => pos(a) - pos(b))[0];
     if (treffer) {
-      roh.push({ key: "erster-exakter", matchday: treffer.matchday, belohnung: exakt.belohnung,
-        text: "erster exakter Treffer" });
+      roh.push({ key: "erster-exakter", wettbewerb: treffer.wettbewerb ?? null, matchday: treffer.matchday,
+        belohnung: exakt.belohnung, text: "erster exakter Treffer" });
     }
   }
 
@@ -251,8 +267,8 @@ export function auswerten({
   if (aus) {
     for (const e of meine) {
       if (!aussenseiterTreffer(e, aus.abQuote)) continue;
-      roh.push({ key: "aussenseiter", matchday: e.matchday, belohnung: aus.belohnung,
-        text: `Außenseiter-Sieg ab Quote ${aus.abQuote} vorhergesagt` });
+      roh.push({ key: "aussenseiter", wettbewerb: e.wettbewerb ?? null, matchday: e.matchday,
+        belohnung: aus.belohnung, text: `Außenseiter-Sieg ab Quote ${aus.abQuote} vorhergesagt` });
     }
   }
 
@@ -261,11 +277,11 @@ export function auswerten({
   if (komplett) {
     const proSpieltag = spieleJeSpieltag(alle);
     const meineProSpieltag = spieleJeSpieltag(meine);
-    for (const [md, ids] of proSpieltag) {
-      const meins = meineProSpieltag.get(md);
-      if (meins && meins.size >= ids.size) {
-        roh.push({ key: "spieltag-komplett", matchday: md, belohnung: komplett.belohnung,
-          text: "alle Spiele des Spieltags getippt" });
+    for (const [key, s] of proSpieltag) {
+      const meins = meineProSpieltag.get(key);
+      if (meins && meins.ids.size >= s.ids.size) {
+        roh.push({ key: "spieltag-komplett", wettbewerb: s.wettbewerb, matchday: s.matchday,
+          belohnung: komplett.belohnung, text: "alle Spiele des Spieltags getippt" });
       }
     }
   }
@@ -277,23 +293,27 @@ export function auswerten({
     const meineId = meine[0]?.userId;
     const jeSpieltag = new Map();
     for (const p of spieltagsPunkte) {
-      if (!jeSpieltag.has(p.matchday)) jeSpieltag.set(p.matchday, []);
-      jeSpieltag.get(p.matchday).push(p);
+      const key = spieltagKey(p);
+      if (!jeSpieltag.has(key)) jeSpieltag.set(key, { wettbewerb: p.wettbewerb ?? null, matchday: p.matchday, liste: [] });
+      jeSpieltag.get(key).liste.push(p);
     }
-    for (const [md, liste] of jeSpieltag) {
-      if (liste.length < 2) continue;   // allein ist man nicht Letzter
-      const min = Math.min(...liste.map((p) => p.punkte));
-      const letzte = liste.filter((p) => p.punkte === min);
+    for (const s of jeSpieltag.values()) {
+      if (s.liste.length < 2) continue;   // allein ist man nicht Letzter
+      const min = Math.min(...s.liste.map((p) => p.punkte));
+      const letzte = s.liste.filter((p) => p.punkte === min);
       // Nur bei EINEM Letzten — bei Gleichstand ist es kein Missgeschick,
       // sondern ein gemeinsamer schwacher Spieltag.
       if (letzte.length === 1 && letzte[0].userId === meineId) {
-        roh.push({ key: "letzter-am-spieltag", matchday: md, belohnung: trost.belohnung,
-          text: "Trost-Joker für den letzten Platz am Spieltag" });
+        roh.push({ key: "letzter-am-spieltag", wettbewerb: s.wettbewerb, matchday: s.matchday,
+          belohnung: trost.belohnung, text: "Trost-Joker für den letzten Platz am Spieltag" });
       }
     }
   }
 
-  roh.sort((a, b) => (a.matchday ?? 0) - (b.matchday ?? 0) || a.key.localeCompare(b.key));
+  // Chronologisch, damit der Deckel die SPÄTEREN abschneidet. Spieltage, die in
+  // `alle` nicht vorkommen, landen über pos = -1 vorn — das betrifft nur
+  // konstruierte Fälle und bleibt deterministisch.
+  roh.sort((a, b) => pos(a) - pos(b) || a.key.localeCompare(b.key));
 
   const gutschriften = [];
   let gesamt = 0;

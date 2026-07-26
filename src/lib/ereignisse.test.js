@@ -136,6 +136,83 @@ describe("Meilensteine", () => {
   });
 });
 
+describe("Mehrere Wettbewerbe — ein Spieltag ist erst mit dem Wettbewerb eindeutig", () => {
+  // Ein Eintrag mit Wettbewerb und Anpfiff, wie ihn `getRoundEntries` liefert.
+  const ew = (userId, wettbewerb, matchday, matchId, kickoff) => ({
+    userId, name: userId, wettbewerb, matchday, matchId, kickoff,
+    tip: { home: 1, away: 0 }, result: null,
+    snapshot: { matchId, winner: { home: 2, draw: 3.4, away: 3 } },
+  });
+
+  it("„alle Spiele des Spieltags“ zählt je Wettbewerb, nicht über alle zusammen", () => {
+    // Der teuerste Fall der ganzen Fehlerklasse: über die nackte Zahl gruppiert
+    // verlangte „Spieltag 1 vollständig" die Spiele ALLER fünf Ligen — und
+    // löste damit nie wieder aus.
+    const alle = [
+      ew("u1", "bl", 1, "bl-a", "2026-08-28T18:30:00Z"),
+      ew("u1", "bl", 1, "bl-b", "2026-08-29T13:30:00Z"),
+      ew("u2", "cl", 1, "cl-a", "2026-09-15T19:00:00Z"),
+    ];
+    const meine = alle.filter((x) => x.userId === "u1");   // beide BL-Spiele
+    const r = auswerten({
+      eintraege: meine, alleEintraege: alle,
+      ereignisse: AN([{ key: "spieltag-komplett", belohnung: 1 }]),
+    });
+    expect(r.gutschriften).toHaveLength(1);
+    expect(r.gutschriften[0].wettbewerb).toBe("bl");
+    expect(r.gutschriften[0].matchday).toBe(1);
+  });
+
+  it("die Serie zählt Spieltage chronologisch über Wettbewerbe hinweg", () => {
+    // Dranbleiben heißt: keinen Spieltag auslassen, der überhaupt anstand —
+    // auch keinen aus dem zweiten Wettbewerb.
+    const alle = [
+      ew("u1", "bl", 1, "bl-1", "2026-08-28T18:30:00Z"),
+      ew("u1", "cl", 1, "cl-1", "2026-09-15T19:00:00Z"),
+      ew("u1", "bl", 2, "bl-2", "2026-09-20T15:30:00Z"),
+    ];
+    const r = auswerten({
+      eintraege: alle, alleEintraege: alle,
+      ereignisse: AN([{ key: "serie", anzahl: 3, belohnung: 1 }]),
+    });
+    expect(r.gutschriften).toHaveLength(1);
+    // Ausgelöst am zuletzt gespielten Spieltag der Serie.
+    expect(r.gutschriften[0].wettbewerb).toBe("bl");
+    expect(r.gutschriften[0].matchday).toBe(2);
+  });
+
+  it("eine Lücke in einem Wettbewerb unterbricht die Serie", () => {
+    const alle = [
+      ew("u1", "bl", 1, "bl-1", "2026-08-28T18:30:00Z"),
+      ew("u2", "cl", 1, "cl-1", "2026-09-15T19:00:00Z"),   // u1 hat nicht getippt
+      ew("u1", "bl", 2, "bl-2", "2026-09-20T15:30:00Z"),
+    ];
+    const r = auswerten({
+      eintraege: alle.filter((x) => x.userId === "u1"), alleEintraege: alle,
+      ereignisse: AN([{ key: "serie", anzahl: 2, belohnung: 1 }]),
+    });
+    expect(r.gutschriften).toHaveLength(0);
+  });
+
+  it("der Trost-Joker sucht den Letzten je Wettbewerbs-Spieltag", () => {
+    const alle = [ew("u1", "bl", 1, "bl-1", "2026-08-28T18:30:00Z")];
+    const r = auswerten({
+      eintraege: alle, alleEintraege: alle,
+      ereignisse: AN([{ key: "letzter-am-spieltag", belohnung: 1 }]),
+      spieltagsPunkte: [
+        { wettbewerb: "bl", matchday: 1, userId: "u1", punkte: 10 },
+        { wettbewerb: "bl", matchday: 1, userId: "u2", punkte: 50 },
+        // Im CL-Spieltag 1 ist u1 NICHT Letzter — über die nackte Zahl
+        // zusammengeworfen wäre der Vergleich ein anderer gewesen.
+        { wettbewerb: "cl", matchday: 1, userId: "u1", punkte: 80 },
+        { wettbewerb: "cl", matchday: 1, userId: "u2", punkte: 20 },
+      ],
+    });
+    expect(r.gutschriften).toHaveLength(1);
+    expect(r.gutschriften[0].wettbewerb).toBe("bl");
+  });
+});
+
 describe("Trost-Joker", () => {
   const punkte = [
     { matchday: 1, userId: "u1", punkte: 10 },

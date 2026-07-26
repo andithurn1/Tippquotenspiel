@@ -15,6 +15,8 @@
 //  nicht (Architektur-Regel 3).
 // ============================================================
 
+import { spieltagKey } from "./spieltag";
+
 // Konstellation zwischen Absender und Ziel — bestimmt, welche Sprüche passen.
 // "ueberholt"  : Absender steht VOR dem Ziel
 // "hinterher"  : Absender steht HINTER dem Ziel (Spott nach oben = frech)
@@ -90,7 +92,11 @@ export function tauntTargets(board = [], meId) {
 // höchstens einer — verhindert, dass jemand zugespammt wird.
 export const MAX_PRO_ZIEL_UND_SPIELTAG = 1;
 
-export function darfSenden(verlauf = [], { toId, matchday }) {
-  const schon = verlauf.filter((v) => v.toId === toId && v.matchday === matchday).length;
+// Der Spieltag zählt MIT Wettbewerb: über die nackte Zahl verglichen hätte ein
+// Spott am Bundesliga-Spieltag 1 auch den am CL-Spieltag 1 blockiert — das sind
+// zwei verschiedene Spieltage und damit zwei Anlässe.
+export function darfSenden(verlauf = [], { toId, matchday, wettbewerb = null }) {
+  const ziel = spieltagKey({ matchday, wettbewerb });
+  const schon = verlauf.filter((v) => v.toId === toId && spieltagKey(v) === ziel).length;
   return schon < MAX_PRO_ZIEL_UND_SPIELTAG;
 }

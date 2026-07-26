@@ -15,6 +15,11 @@ import { sanitizeSpiele, DEFAULT_SPIELE } from "./spielauswahl";
 import { sanitizeEreignisse, DEFAULT_EREIGNISSE } from "./ereignisse";
 import { sanitizeWettbewerbe, DEFAULT_WETTBEWERBE, wettbewerbAufschlag, maxWettbewerbAufschlag } from "./wettbewerbGewicht";
 import { sanitizeTippfenster, DEFAULT_TIPPFENSTER } from "./tippfenster";
+// Spieltags-Identität liegt in einem eigenen, importfreien Modul — sonst gäbe
+// es einen Kreis über `ereignisse.js`, das dieselben Helfer braucht. Die Engine
+// reicht sie weiter, damit bestehende Importe aus "./engine" gültig bleiben.
+import { spieltagKey, spieltageChronologisch } from "./spieltag";
+export { spieltagKey, gleicherSpieltag, spieltageChronologisch } from "./spieltag";
 
 export function createMockOddsSource() {
   const snap = {
@@ -640,20 +645,9 @@ export function maxTotalModifier(rules = DEFAULT_RULES) {
 // Nutzer mehr als einen Joker gesetzt hat (leeres Array = gültig). Reine
 // Prüfung — das Durchsetzen (Speichern verweigern) und vor allem das EINFRIEREN
 // ab Anpfiff sind Sache von Store/UI, analog zur Snapshot-Quote.
-// Ein SPIELTAG ist erst mit dem Wettbewerb eindeutig: Bundesliga-Spieltag 1
-// und Champions-League-Spieltag 1 sind zwei verschiedene Spieltage. Ohne
-// diesen zusammengesetzten Schlüssel würde ein Tipper sein „×2" über beide
-// Wettbewerbe hinweg nur EINMAL vergeben dürfen — oder es doppelt bekommen.
-// Die Engine kennt dabei KEINE Wettbewerbsnamen (Regel 3), sie setzt nur zwei
-// Felder zusammen; was „bl" bedeutet, weiß allein die Daten-Schicht.
-export function spieltagKey(x) {
-  return `${x?.wettbewerb ?? ""}#${x?.matchday ?? ""}`;
-}
-
-// Zwei Tipps am selben Spieltag DESSELBEN Wettbewerbs?
-export function gleicherSpieltag(a, b) {
-  return spieltagKey(a) === spieltagKey(b);
-}
+// Der zusammengesetzte Spieltags-Schlüssel steckt in `spieltag.js`: ohne ihn
+// dürfte ein Tipper sein „×2" über zwei Wettbewerbe hinweg nur EINMAL
+// vergeben — oder bekäme es doppelt.
 
 // Prüfregel „ein Joker pro Spieltag". Gibt die beanstandeten Spieltage als
 // { wettbewerb, matchday } zurück — eine nackte Zahl wäre mit mehreren
@@ -775,14 +769,35 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES) {
     .map((u, i) => ({ ...u, rank: i + 1 }));
 }
 
-// Ranking-Verlauf: wie scoreLeaderboard, aber je Spieltag ein kumulatives Zwischenstand-
-// Ranking (Spieltag N = alle Tipps mit matchday <= N). entries brauchen zusätzlich
-// `matchday`. Kein neuer Scoring-Code — ruft scoreLeaderboard je Cutoff wieder auf.
+// Ranking-Verlauf: wie scoreLeaderboard, aber je Spieltag ein kumulatives
+// Zwischenstand-Ranking. entries brauchen zusätzlich `matchday`, idealerweise
+// auch `wettbewerb` und `kickoff`. Kein neuer Scoring-Code — ruft
+// scoreLeaderboard je Cutoff wieder auf.
+//
+// ⚠️ Ein Spieltag ist erst mit dem WETTBEWERB eindeutig (siehe `spieltagKey`).
+// Über die nackte Zahl zu gruppieren, ließ Bundesliga-, Premier-League- und
+// CL-Spieltag 1 zu EINEM Verlaufspunkt verschmelzen — und der kumulative
+// Schnitt `matchday <= N` zählte CL-Tipps in den Bundesliga-Zwischenstand.
+// Das ist nicht nur Anzeige: `applyCatchup` hängt an diesem Verlauf, der
+// Anschluss-Bonus wäre also aus erfundenen Zwischenständen entstanden.
+//
+// Geordnet wird CHRONOLOGISCH, nicht nach der Spieltags-Zahl — siehe
+// `spieltageChronologisch`. Nach Zahl sortiert würde der Verlauf springen und
+// der Aufhol-Bonus zum falschen Zeitpunkt greifen, weil er am Stand VOR dem
+// Spieltag hängt.
 export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES) {
-  const matchdays = [...new Set(entries.map((e) => e.matchday).filter((m) => m != null))].sort((a, b) => a - b);
-  const roh = matchdays.map((matchday) => ({
-    matchday,
-    board: scoreLeaderboard(entries.filter((e) => e.matchday <= matchday), rules),
+  const geordnet = spieltageChronologisch(entries);
+
+  // Position eines Spieltags im Verlauf — der kumulative Schnitt läuft über
+  // diese Reihenfolge, nicht mehr über einen Zahlenvergleich.
+  const rang = new Map(geordnet.map((s, i) => [s.key, i]));
+  const roh = geordnet.map((s, i) => ({
+    wettbewerb: s.wettbewerb,
+    matchday: s.matchday,
+    board: scoreLeaderboard(entries.filter((e) => {
+      const r = rang.get(spieltagKey(e));
+      return r != null && r <= i;
+    }), rules),
   }));
   // Aufhol-Boni erst hier drauf: sie hängen am Stand VOR dem Spieltag, lassen
   // sich also nur über den fertigen Verlauf berechnen (siehe catchup.js).

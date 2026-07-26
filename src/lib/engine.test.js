@@ -364,6 +364,64 @@ describe("scoreLeaderboardHistory — kumulativer Rang-Verlauf je Spieltag", () 
     const history = scoreLeaderboardHistory([{ userId: "u1", name: "Du", tip: { home: 1, away: 0 }, ...base }]);
     expect(history).toEqual([]);
   });
+
+  // ── Mehrere Wettbewerbe ───────────────────────────────────
+  // „Spieltag 1" gibt es seit den fünf Ligen fünfmal. Über die nackte Zahl
+  // gruppiert fielen sie zu EINEM Verlaufspunkt zusammen — und der kumulative
+  // Schnitt zählte CL-Tipps in den Bundesliga-Zwischenstand.
+
+  it("gleicher Spieltag in zwei Wettbewerben bleibt ZWEI Verlaufspunkte", () => {
+    const history = scoreLeaderboardHistory([
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 1, wettbewerb: "bl", kickoff: "2026-08-28T18:30:00Z", ...base },
+      { userId: "u1", name: "Du", tip: { home: 4, away: 1 }, matchday: 1, wettbewerb: "cl", kickoff: "2026-09-15T19:00:00Z", ...base },
+    ]);
+    expect(history).toHaveLength(2);
+    expect(history.map((h) => h.wettbewerb)).toEqual(["bl", "cl"]);
+    expect(history.every((h) => h.matchday === 1)).toBe(true);
+  });
+
+  it("ein Wettbewerbs-Spieltag zählt erst ab seiner eigenen Position", () => {
+    const history = scoreLeaderboardHistory([
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 1, wettbewerb: "bl", kickoff: "2026-08-28T18:30:00Z", ...base },
+      { userId: "u1", name: "Du", tip: { home: 4, away: 1 }, matchday: 1, wettbewerb: "cl", kickoff: "2026-09-15T19:00:00Z", ...base },
+    ]);
+    // Nach dem BL-Spieltag ist EIN Tipp gewertet, nach dem CL-Spieltag beide.
+    expect(history[0].board[0].gewertet).toBe(1);
+    expect(history[1].board[0].gewertet).toBe(2);
+  });
+
+  it("sortiert CHRONOLOGISCH, nicht nach der Spieltags-Zahl", () => {
+    // CL-Spieltag 1 liegt zwischen den Bundesliga-Spieltagen 2 und 3. Nach der
+    // Zahl sortiert stünde er vorn — und der Aufhol-Bonus griffe zum falschen
+    // Zeitpunkt, weil er am Stand VOR dem Spieltag hängt.
+    const history = scoreLeaderboardHistory([
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 3, wettbewerb: "bl", kickoff: "2026-09-20T15:30:00Z", ...base },
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 1, wettbewerb: "cl", kickoff: "2026-09-15T19:00:00Z", ...base },
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 2, wettbewerb: "bl", kickoff: "2026-09-05T15:30:00Z", ...base },
+    ]);
+    expect(history.map((h) => `${h.wettbewerb}${h.matchday}`)).toEqual(["bl2", "cl1", "bl3"]);
+  });
+
+  it("maßgeblich ist der LETZTE Anpfiff eines Spieltags, nicht der erste", () => {
+    // Ein Spieltag ist erst durch, wenn sein letztes Spiel gelaufen ist —
+    // vorher steht der Zwischenstand nicht fest.
+    const history = scoreLeaderboardHistory([
+      // BL-Spieltag 1 beginnt früher, endet aber NACH dem CL-Spieltag.
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 1, wettbewerb: "bl", kickoff: "2026-09-10T18:30:00Z", ...base },
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 1, wettbewerb: "bl", kickoff: "2026-09-20T15:30:00Z", ...base },
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 1, wettbewerb: "cl", kickoff: "2026-09-15T19:00:00Z", ...base },
+    ]);
+    expect(history.map((h) => h.wettbewerb)).toEqual(["cl", "bl"]);
+  });
+
+  it("ohne Anstoßzeiten bleibt es bei der Spieltags-Zahl (Altdaten, ein Wettbewerb)", () => {
+    const history = scoreLeaderboardHistory([
+      { userId: "u1", name: "Du", tip: { home: 4, away: 1 }, matchday: 2, ...base },
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 1, ...base },
+    ]);
+    expect(history.map((h) => h.matchday)).toEqual([1, 2]);
+    expect(history[1].board[0].gewertet).toBe(2);
+  });
 });
 
 describe("Joker — Gewichtung einzelner Spiele", () => {

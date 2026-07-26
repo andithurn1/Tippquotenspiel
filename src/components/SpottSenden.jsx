@@ -27,8 +27,9 @@ export default function SpottSenden() {
   const [verlauf, setVerlauf] = useState([]);
   const [status, setStatus] = useState("");
 
-  // Spieltag für die Spam-Bremse: der aktuell höchste gewertete.
-  const [matchday, setMatchday] = useState(0);
+  // Spieltag für die Spam-Bremse: der zuletzt gewertete. MIT Wettbewerb — sonst
+  // blockierte ein Spott am Bundesliga-Spieltag 1 auch den am CL-Spieltag 1.
+  const [spieltag, setSpieltag] = useState({ matchday: 0, wettbewerb: null });
 
   useEffect(() => {
     try { setVerlauf(JSON.parse(localStorage.getItem(VERLAUF_KEY) || "[]")); } catch {}
@@ -41,7 +42,11 @@ export default function SpottSenden() {
       .then(([b, r]) => { if (!live) return; setBoard(b); setRoundName(r?.name ?? null); })
       .catch(() => { if (live) setBoard([]); });
     getStore().getLeaderboardHistory?.(roundId)
-      .then((h) => { if (live && h?.length) setMatchday(h[h.length - 1].matchday ?? 0); })
+      .then((h) => {
+        if (!live || !h?.length) return;
+        const letzter = h[h.length - 1];
+        setSpieltag({ matchday: letzter.matchday ?? 0, wettbewerb: letzter.wettbewerb ?? null });
+      })
       .catch(() => {});
     return () => { live = false; };
   }, [roundId]);
@@ -55,10 +60,10 @@ export default function SpottSenden() {
   const spott = ziel && spruch
     ? buildTaunt({ taunt: spruch, fromName: me?.name ?? user?.name, toName: ziel.name, roundName })
     : null;
-  const blockiert = ziel ? !darfSenden(verlauf, { toId: ziel.userId, matchday }) : false;
+  const blockiert = ziel ? !darfSenden(verlauf, { toId: ziel.userId, ...spieltag }) : false;
 
   const merken = () => {
-    const next = [...verlauf, { toId: ziel.userId, matchday, ts: Date.now() }];
+    const next = [...verlauf, { toId: ziel.userId, ...spieltag, ts: Date.now() }];
     setVerlauf(next);
     try { localStorage.setItem(VERLAUF_KEY, JSON.stringify(next)); } catch {}
   };

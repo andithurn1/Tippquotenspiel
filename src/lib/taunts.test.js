@@ -105,4 +105,12 @@ describe("Spam-Bremse", () => {
   it("Obergrenze ist bewusst klein", () => {
     expect(MAX_PRO_ZIEL_UND_SPIELTAG).toBeLessThanOrEqual(2);
   });
+
+  it("derselbe Spieltag in einem ANDEREN Wettbewerb ist ein eigener Anlass", () => {
+    // „Spieltag 1" gibt es seit den fünf Ligen fünfmal. Über die nackte Zahl
+    // verglichen hätte ein Spott in der Bundesliga den in der CL mitblockiert.
+    const verlauf = [{ toId: "u-b", matchday: 1, wettbewerb: "bl" }];
+    expect(darfSenden(verlauf, { toId: "u-b", matchday: 1, wettbewerb: "bl" })).toBe(false);
+    expect(darfSenden(verlauf, { toId: "u-b", matchday: 1, wettbewerb: "cl" })).toBe(true);
+  });
 });
