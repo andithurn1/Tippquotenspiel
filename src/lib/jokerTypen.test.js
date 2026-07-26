@@ -68,12 +68,12 @@ describe("Typ „heimat“ — passiv, ohne Entscheidung", () => {
 });
 
 describe("Typ „mut“ — nur gegen den Favoriten", () => {
-  const r = regeln({ modus: "einzel", mut: { enabled: true, faktor: 1.15 } });
+  const r = regeln({ modus: "einzel", mut: { enabled: true, faktor: 1.2 } });
   const heimSieg = { home: 5, away: 1 };      // Aussenseiter Jordanien gewinnt
   const gastSieg = { home: 0, away: 2 };      // Favorit Spanien gewinnt
 
   it("greift, wenn der Mut gegen den Favoriten AUFGEHT", () => {
-    expect(jokerFactor(tipp({ home: 2, away: 1 }), r, SNAP, heimSieg)).toBeCloseTo(1.15, 2);
+    expect(jokerFactor(tipp({ home: 2, away: 1 }), r, SNAP, heimSieg)).toBeCloseTo(1.2, 2);
   });
 
   it("greift NICHT, wenn der mutige Tipp danebengeht", () => {
@@ -90,8 +90,8 @@ describe("Typ „mut“ — nur gegen den Favoriten", () => {
   });
 
   it("hat eine eigene, engere Obergrenze als der gesetzte Joker", () => {
-    // Nachgemessen mit Vereins-Modell: bei x1,20 faellt der Abstand Kenner
-    // gegen Zocker auf 12 Punkte zusammen, bei x1,15 sind es noch 24.
+    // Die harte Grenze bleibt weit; wo es unrund wird, sagt das
+    // Empfehlungsband (reglerWarnung.js) — Messwerte stehen dort.
     expect(RULE_LIMITS.joker.mutFaktor.max).toBeLessThan(RULE_LIMITS.joker.faktor.max);
     const zuHoch = regeln({ modus: "einzel", mut: { enabled: true, faktor: 3 } });
     expect(zuHoch.joker.mut.faktor).toBeLessThanOrEqual(RULE_LIMITS.joker.mutFaktor.max);
@@ -107,10 +107,10 @@ describe("Mehrere Typen: ADDITIV, nicht multiplikativ", () => {
   const heimSieg = { home: 5, away: 1 };
 
   it("die Aufschläge addieren sich", () => {
-    // 1 + 0.5 (gesetzt) + 0.2 (Heimat) + 0.15 (Mut) = 1.85 — multiplikativ 2,07.
+    // 1 + 0.5 (gesetzt) + 0.2 (Heimat) + 0.2 (Mut) = 1.9 — multiplikativ wären es 2.16.
     const f = jokerFactor(tipp({ joker: true, verein: "Jordanien" }), r, SNAP, heimSieg);
-    expect(f).toBeCloseTo(1.85, 2);
-    expect(f).toBeLessThan(1.5 * 1.2 * 1.15);
+    expect(f).toBeCloseTo(1.9, 2);
+    expect(f).toBeLessThan(1.5 * 1.2 * 1.2);
   });
 
   it("die Aufschlüsselung nennt jeden greifenden Typ einzeln", () => {

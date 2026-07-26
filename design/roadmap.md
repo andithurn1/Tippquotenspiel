@@ -54,11 +54,17 @@ mehrfach — und tunt gegen ein Regelwerk, das es am Ende gar nicht mehr gibt.
   (Standard 47 % → 50 %, Underdog-Party 38 % → 44 %), weil der Bonus die aus
   der Fan-Brille entstehenden Fehltipps mitverstärkt. Auch bei ×2,0 bleibt der
   Kenner bei 46 %. Standard 1,2 und Obergrenze 2,0 sind damit belegt.
-- **Ergebnis Mut-Joker — die alte Grenze war ZU HOCH.** Mit Vereins-Modell
-  (4 Seeds × 60 Saisons), Kenner : Zocker —
-  ×1,05 → 51 : 16 · ×1,10 → 50 : 19 · ×1,15 → 47 : 23 · ×1,20 → 42 : 30.
-  Bei 1,20 ist der Abstand auf 12 Punkte zusammengefallen. **`mutFaktor.max`
-  von 1,2 auf 1,15 gesenkt**; Standard bleibt 1,1.
+- **Ergebnis Mut-Joker.** Mit Vereins-Modell (4 Seeds × 60 Saisons),
+  Kenner : Zocker — ×1,05 → 51:16 · ×1,10 → 50:19 · ×1,15 → 47:23 ·
+  ×1,20 → 42:30. Ab 1,15 schmilzt der Vorsprung des Könnens sichtbar ab.
+  ⚠️ **Wie so ein Befund umgesetzt wird (Nutzer-Korrektur):** Ich hatte zuerst
+  `RULE_LIMITS.joker.mutFaktor.max` gesenkt — falsch. Eine Messung darf nie
+  eine harte Grenze verengen, sonst wird aus jeder Messung ein Verbot und der
+  Admin verliert eine Freiheit, statt eine Rückmeldung zu bekommen. Richtig
+  ist: die Grenze bleibt, der Wert landet als GEMESSENES BAND in
+  `reglerWarnung.js` — mit Beispielrechnung im Warntext („bei ×1,2 gewinnt der
+  Kenner nur noch 42 %, der Zocker schon 30 %"). Felder, die in keinem Preset
+  vorkommen, tragen ihr Band jetzt direkt am Feld (`gemessen`).
 
 **Noch offen im Abschluss-Durchgang:** Presets gegen die neuen Ebenen (Big
 Game, Wettbewerbs-Gewichte, Ereignisse) durchmessen und das Empfehlungsband in

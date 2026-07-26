@@ -87,8 +87,23 @@ export const BAND_FELDER = [
     aktiv: (r) => get(r, "joker.enabled") === true,
     hoch: "Das Joker-Spiel entscheidet den Spieltag fast allein.",
     tief: "Der Joker fällt kaum auf — dann kann er auch aus bleiben." },
+  { pfad: "joker.mut.faktor", label: "Mut-Bonus", limits: RULE_LIMITS.joker.mutFaktor,
+    aktiv: (r) => get(r, "joker.enabled") === true && get(r, "joker.mut.enabled") === true,
+    // Gemessen im Simulator (4 Seeds × 60 Saisons, mit Vereins-Modell) —
+    // Siegquote Kenner : Zocker:
+    //   ×1,05 → 51:16 · ×1,10 → 50:19 · ×1,15 → 47:23 · ×1,20 → 42:30
+    // Ab 1,15 schmilzt der Vorsprung des Könnens sichtbar ab.
+    gemessen: { von: 1, bis: 1.15 },
+    hoch: "Bei ×1,2 gewinnt der Kenner in der Simulation nur noch 42 % der Saisons, "
+      + "der Dauerzocker schon 30 % — bei ×1,1 stehen 50 % gegen 19 %. Der Mut-Bonus "
+      + "verstärkt genau die höchsten Auszahlungen, deshalb wirkt er stärker, als die Zahl aussieht.",
+    tief: "" },
   { pfad: "joker.heimat.faktor", label: "Heimatbonus", limits: RULE_LIMITS.joker.faktor,
     aktiv: (r) => get(r, "joker.enabled") === true && get(r, "joker.heimat.enabled") === true,
+    // Gemessen: harmlos. Der Kenner gewinnt MIT Heimatbonus eher mehr, weil
+    // der Bonus auch die zu optimistischen Tipps auf den eigenen Verein
+    // mitverstärkt. Deshalb ein weites Band statt einer Warnung.
+    gemessen: { von: 1, bis: 2 },
     hoch: "Der Heimatbonus greift bei JEDEM Spiel des eigenen Vereins — über eine Saison summiert sich das stark.",
     tief: "" },
   { pfad: "modCap", label: "Deckel für alle Modifikatoren", limits: RULE_LIMITS.modCap,
@@ -110,10 +125,24 @@ export const BAND_FELDER = [
 
 // Das Band eines Feldes: Spektrum der Presets plus Toleranzrand, hart auf die
 // Regler-Grenzen beschnitten.
+//
+// Manche Felder kommen in KEINEM Preset vor (der Mut-Joker etwa ist überall
+// aus). Für die lässt sich nichts ableiten — sie tragen ein GEMESSENES Band
+// direkt am Feld. Das ist die einzige zulässige Art, eine Messung
+// festzuhalten: als Empfehlung, nie als engere `RULE_LIMITS`. Sonst würde aus
+// jeder Messung ein Verbot, und der Admin verlöre eine Freiheit, statt eine
+// Rückmeldung zu bekommen.
 export function band(pfad) {
   const feld = BAND_FELDER.find((f) => f.pfad === pfad);
   if (!feld) return null;
   const { min, max } = feld.limits;
+  if (feld.gemessen) {
+    return {
+      von: Math.max(min, feld.gemessen.von),
+      bis: Math.min(max, feld.gemessen.bis),
+      min, max,
+    };
+  }
   const werte = PRESETS
     .map((p) => get(p.rules, pfad))
     .filter((v) => Number.isFinite(v));
@@ -163,6 +192,10 @@ function feldWarnung(rules, feld) {
   };
 }
 
+// Ab hier entscheidet ein einzelnes Spiel zu viel. Dieselbe Schwelle gilt für
+// beide Modifikator-Regeln, damit sie sich nie widersprechen können.
+const TURM_SCHWELLE = 3;
+
 // ── Kombinationen: was einzeln harmlos aussieht ─────────────
 const KOMBINATIONEN = [
   {
@@ -181,7 +214,7 @@ const KOMBINATIONEN = [
     id: "modifikator-turm",
     stufe: "warnung",
     titel: "Ein Spiel kann alles entscheiden",
-    gilt: (r) => maxTotalModifier(r) >= 3,
+    gilt: (r) => maxTotalModifier(r) >= TURM_SCHWELLE,
     text: (r) =>
       `Im ungünstigsten Fall zählt ein einzelnes Spiel ${formatWert(maxTotalModifier(r))}-fach. ` +
       "Wer dieses eine Spiel trifft, hängt den Rest der Runde ab — unabhängig davon, wie gut alle sonst getippt haben.",
@@ -192,7 +225,13 @@ const KOMBINATIONEN = [
     id: "deckel-beisst",
     stufe: "hinweis",
     titel: "Der Deckel schneidet deine Modifikatoren ab",
-    gilt: (r) => rohModifikator(r) > (r.modCap ?? Infinity) + 0.05,
+    // Nur melden, wenn das Anheben des Deckels auch wirklich der richtige Rat
+    // ist. Liegt die Summe schon im Turm-Bereich, sagt die Warnung darüber das
+    // Gegenteil („Deckel senken") — beide zusammen würden sich gegenseitig
+    // aufheben und der Admin klickte im Kreis. Dort ist die Antwort nicht ein
+    // höherer Deckel, sondern kleinere Faktoren.
+    gilt: (r) => rohModifikator(r) > (r.modCap ?? Infinity) + 0.05
+      && rohModifikator(r) < TURM_SCHWELLE,
     text: (r) =>
       `Deine Modifikatoren summieren sich auf ×${formatWert(rohModifikator(r))}, gedeckelt wird bei ×${formatWert(r.modCap ?? 0)}. ` +
       "Die obersten Stufen wirken damit gar nicht mehr — entweder Deckel anheben oder die Faktoren senken.",

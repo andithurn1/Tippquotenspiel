@@ -210,7 +210,10 @@ sonst nach Bevorzugung aus. Empfehlung: Reihenfolge verdeckt, Kontingent offen.
 `sanitizeRules` delegiert an `sanitizeVerteilung`.
 
 **Leitplanken der Profi-Stufe** (`src/lib/reglerWarnung.js`): `RULE_LIMITS` ist
-die Grenze des ERLAUBTEN, das Empfehlungsband die des ERPROBTEN. Das Band wird
+die Grenze des ERLAUBTEN, das Empfehlungsband die des ERPROBTEN. **Eine Messung
+verengt NIE die harte Grenze** — sonst wird aus jeder Messung ein Verbot; sie
+landet als Band (`gemessen` am Feld, wenn kein Preset den Wert belegt) plus
+Beispielrechnung im Warntext. Das Band wird
 aus den PRESETS abgeleitet (was `presets.balance.test.js` durchmisst, gilt als
 erprobt) — ändern sich die Presets, wandert es mit. Dazu handgeschriebene
 KOMBINATIONS-Regeln für das, was in keinem Einzelwert steckt (kein Abzug + kein

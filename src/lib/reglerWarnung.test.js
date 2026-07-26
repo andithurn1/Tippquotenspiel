@@ -107,6 +107,53 @@ describe("Extreme Werte werden erkannt", () => {
   });
 });
 
+describe("Gemessene Bänder — Messung als Empfehlung, nicht als Verbot", () => {
+  it("der Mut-Bonus warnt ab dem gemessenen Wert, bleibt aber erlaubt", () => {
+    // Der Kern: RULE_LIMITS lässt 1,2 weiterhin zu. Die Messung landet im
+    // BAND, nicht in der Grenze — der Admin darf darüber, er soll es nur
+    // nicht versehentlich tun.
+    const r = sanitizeRules({
+      ...BASIS,
+      joker: { ...BASIS.joker, enabled: true, mut: { enabled: true, faktor: 1.2 } },
+    });
+    expect(r.joker.mut.faktor).toBe(1.2);          // NICHT beschnitten
+    const w = pruefe(r).find((x) => x.id === "joker.mut.faktor");
+    expect(w).toBeTruthy();
+    expect(w.text).toContain("42 %");               // Beispielrechnung im Text
+    expect(band("joker.mut.faktor").bis).toBe(1.15);
+  });
+
+  it("im gemessenen Band schweigt er", () => {
+    const r = sanitizeRules({
+      ...BASIS,
+      joker: { ...BASIS.joker, enabled: true, mut: { enabled: true, faktor: 1.1 } },
+    });
+    expect(pruefe(r).some((x) => x.id === "joker.mut.faktor")).toBe(false);
+  });
+
+  it("der Heimatbonus hat ein weites Band — gemessen harmlos", () => {
+    const r = sanitizeRules({
+      ...BASIS,
+      joker: { ...BASIS.joker, enabled: true, heimat: { enabled: true, faktor: 1.8 } },
+    });
+    expect(pruefe(r).some((x) => x.id === "joker.heimat.faktor")).toBe(false);
+  });
+});
+
+describe("Die beiden Modifikator-Regeln widersprechen sich nie", () => {
+  it("„Deckel anheben“ und „Deckel senken“ treten nicht gemeinsam auf", () => {
+    // Sonst klickt der Admin im Kreis: die eine Korrektur löst die andere aus.
+    const kaputt = sanitizeRules({
+      ...BASIS, modCap: 1.2,
+      joker: { ...BASIS.joker, enabled: true, modus: "einzel", faktor: 2,
+        heimat: { enabled: true, faktor: 2 } },
+      teamMods: { derbyFaktor: 2, teams: {} },
+    });
+    const ids = pruefe(kaputt).map((w) => w.id);
+    expect(ids.includes("deckel-beisst") && ids.includes("modifikator-turm")).toBe(false);
+  });
+});
+
 describe("Korrigieren", () => {
   it("jede gemeldete Warnung lässt sich auflösen", () => {
     const kaputt = sanitizeRules({
