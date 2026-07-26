@@ -9,6 +9,7 @@ import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { scoreSaison } from "./saisonwetten";
+import { DEFAULT_WETTBEWERB } from "./wettbewerbe";
 
 // Match-Zeile (DB) → Store-Form
 const mapMatch = (m) => m && ({
@@ -50,7 +51,9 @@ export function createSupabaseStore() {
     // Fairness-Frage — die Auswahl haengt am Tabellenstand ZUM ZEITPUNKT des
     // Oeffnens, also darf nur der Admin der Runde ihn bestimmen. Die Route
     // prueft das; hier wird nur das Token mitgereicht.
-    async openMatchday(roundId, matchday, wettbewerb = null) {
+    // Signatur identisch zum Mock (Andre hat sie dort gefixt): der Wettbewerb
+    // gehoert dazu, weil "Spieltag 1" seit der CL zweimal existiert.
+    async openMatchday(roundId, matchday, wettbewerb = DEFAULT_WETTBEWERB) {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) throw new Error("Nicht angemeldet.");
       const res = await fetch("/api/matchday/open", {

@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, getServiceKey } from "@/lib/supabaseClient";
 import { spieltagOeffnen } from "@/lib/spieltagOeffnen";
 import { sanitizeRules } from "@/lib/engine";
+import { wettbewerbVon, DEFAULT_WETTBEWERB } from "@/lib/wettbewerbe";
 
 // ── Spieltag öffnen (Big Game einfrieren) ───────────────────
 // Läuft SERVERSEITIG, und zwar aus zwei getrennten Gründen:
@@ -29,7 +30,11 @@ export async function POST(request) {
   try { body = await request.json(); } catch { body = null; }
   const roundId = body?.roundId;
   const matchday = Number(body?.matchday);
-  const wettbewerb = typeof body?.wettbewerb === "string" ? body.wettbewerb : null;
+  // Ohne Angabe der Standard-Wettbewerb — NICHT „alle". Quer über Wettbewerbe
+  // zu öffnen wäre genau der Fehler, den Andre im Mock gefunden hat: das Big
+  // Game käme dann aus 36 statt 18 Spielen.
+  const wettbewerb = typeof body?.wettbewerb === "string" && body.wettbewerb
+    ? body.wettbewerb : DEFAULT_WETTBEWERB;
   if (!roundId || !Number.isFinite(matchday)) {
     return Response.json({ error: "roundId und matchday erforderlich." }, { status: 400 });
   }
@@ -58,12 +63,14 @@ export async function POST(request) {
   // Spieltag ist erst mit dem Wettbewerb eindeutig — dieselbe Regel wie beim
   // Joker (siehe spieltagKey in der Engine).
   const desSpieltags = (alle ?? []).filter((m) =>
-    m.matchday === matchday && (!wettbewerb || (m.wettbewerb ?? "bl") === wettbewerb));
+    m.matchday === matchday && wettbewerbVon(m) === wettbewerb);
 
   const ergebnis = spieltagOeffnen({
     spieltag: matchday,
     matches: desSpieltags.map((m) => ({ ...m, snapshot: m.snapshot })),
-    gespielt: (alle ?? []).filter((m) => m.result),
+    // Tabelle NUR aus demselben Wettbewerb — sonst mischt die Spannungs-
+    // Rechnung zwei Ligen zu einer Tabelle (derselbe Fund wie im Mock).
+    gespielt: (alle ?? []).filter((m) => m.result && wettbewerbVon(m) === wettbewerb),
     rules: sanitizeRules(round.rules ?? {}),
   });
 
