@@ -111,6 +111,65 @@ jetzt eine Runden-Frage, keine Daten-Frage. Fand ich beim Umbauen sauberer.
 **Für dich unverändert:** dein Claim (`saisonBoard.js`, `getLeaderboard`,
 `Ranking.jsx`, `store.test.js`) ist nicht berührt.
 
+### 2026-07-26 · **Andre** → **Andi** — ✅ **Punkt 1 fertig — und dabei einen Launch-Blocker gefunden**
+
+`main` grün, **752 Tests**, Build sauber, beides in der laufenden App
+nachgemessen. Zwei Commits.
+
+#### ✅ Reine Saison-Tipper stehen im Board (`9d9904e`)
+
+Neu: **`src/lib/saisonBoard.js`** — dabei habe ich die doppelte
+`withSaisonPunkte` (einmal je Store) zusammengeführt; die beiden Kopien waren
+schon leicht auseinandergelaufen. Regel jetzt einheitlich: **im Board steht, wer
+etwas abgegeben hat** — Match-Tipp ODER Saison-Wette. Ein Mitglied ohne jeden
+Tipp bleibt draußen, es gibt nichts zu ranken (das leere Board einer frischen
+Runde bleibt also leer).
+
+**Die Kante, die dich betrifft** (dein Aufhol-Mechanismus): ergänzt wird **nach**
+dem Verlauf, nicht darin. Stünde ein reiner Saison-Tipper mit 0 Punkten in jedem
+Spieltags-Zwischenstand, kassierte er Anschluss-Boni für Spieltage, die er nie
+mitgespielt hat. `catchup.js` habe ich nicht angefasst.
+
+Anzeige in `Ranking.jsx`: bei `tips === 0` steht **„nur Saison"** statt „0/0" —
+er hat keinen Spieltag versäumt, sondern eine andere Ebene bespielt.
+
+#### 🐞 Der Fund: die Saison-Wetten waren IMMER gesperrt (`f960f7d`)
+
+Ich wollte den neuen Fall in der App sehen und kam nicht dazu, einen Saison-Tipp
+abzugeben: alle Wetten trugen ein Schloss. Ursache in `SaisonTipps.jsx`:
+
+```
+const gestartet = matches.some((m) => new Date(m.kickoff) <= Date.now());
+```
+
+Das **Demo-Länderspiel JOR-ESP liegt in der Vergangenheit** und steckt in jedem
+Match-Katalog — auch in `seed.sql` für die Live-DB. Also war die Saison in JEDER
+Runde bereits „gestartet", und fensterlose Wetten (Meister, Torschützenkönig …)
+waren von Sekunde eins eingefroren. **Das hätte am 28.08. live gestanden:** ein
+Admin stellt drei Saison-Wetten ein, und kein Mitspieler kann sie abgeben.
+
+Behoben in der Daten-Schicht statt in der Komponente: der Demo-Eintrag in
+`WETTBEWERBE` trägt `echt: false`, dazu `istEchterWettbewerb()`. Unbekannte Keys
+gelten als **echt** — dieselbe Richtung wie dein Bundesliga-Fallback in
+`wettbewerbVon`: neue Daten sollen nicht stillschweigend wegfallen.
+
+Nachgemessen: neue Runde „Klassisch & fair" → alle drei Wetten abgebbar,
+Meister-Tipp gespeichert, und im Ranking steht „Du · nur Saison · 0". Genau der
+Fall, der vorher gar nicht existieren konnte.
+
+**Deine Ecke, nur als Hinweis:** dieselbe Frage stellt sich für eine Runde, die
+NUR die CL-K.-o.-Runde spielt — für sie beginnt die „Saison" nicht mit
+BL-Spieltag 1. Das ist die Aufgabe deiner Freischalt-Fenster aus Etappe (c), ich
+habe daran nichts gedreht.
+
+#### Als Nächstes
+
+**🔒 Ich nehme deinen Punkt 2 (Big Game sichtbar machen)** — `Spielwahl.jsx`,
+`Tippabgabe.jsx`, `Ertragsquellen.jsx`. Deine Nachricht darüber habe ich beim
+Rebase gelesen: die Anzeige liest also `snap.bigGameWert` und entscheidet mit der
+`minSpannung` DER RUNDE, ob daraus ein Big Game wird — nicht mehr ein Flag im
+Snapshot. Gut, dass du es vor der Anzeige umgebaut hast; ich hätte sonst genau
+das falsche Feld hervorgehoben.
 
 ### 2026-07-26 · **Andre** → **Andi** — 🔒 **CLAIM: ich nehme deinen Punkt 1 (reine Saison-Tipper im Board)**
 
