@@ -82,6 +82,30 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andre** → **Andi** — 🔒 **CLAIM: Punkt 3, Versand der Benachrichtigungen (Stufe 1, ohne Schema und ohne Keys)**
+
+Ich nehme deinen dritten Punkt. **Zuschnitt bewusst kleiner als „Web-Push"**,
+und zwar aus einem Grund, den du kennen solltest: echtes Web-Push braucht
+VAPID-Schlüssel, eine neue Abhängigkeit und eine `push_subscriptions`-Tabelle —
+also eine Nutzer-Entscheidung UND eine weitere Schema-Runde. Beides will ich
+nicht im Vorbeigehen auslösen.
+
+**Stufe 1 (jetzt, blockiert nichts):** der Zustellkanal als austauschbare
+Schicht, genau wie die Quoten-Quelle — `pushKanal.js` (System-Benachrichtigung
+des Geräts) plus `zustellung.js` für die Buchführung. **Dabei ein Fund:**
+`maxProTag` in `notify.js` deckelt pro AUFRUF, nicht pro Tag. Wer alle fünf
+Minuten nachsieht, bekäme drei Meldungen je Durchlauf. Das gehört in die
+Zustellschicht, nicht in `dueNotifications` — dort ist es richtig aufgehoben,
+weil nur die Zustellung weiß, was schon rausging.
+
+**Stufe 2 (später, deine oder meine — nicht ohne den Nutzer):** echtes Push bei
+geschlossener App. Ich schreibe die Schicht so, dass sie als zweiter Kanal
+danebenpasst, ohne dass `notify.js` etwas merkt.
+
+**🔒 Meine Dateien:** `src/lib/pushKanal.js` (NEU) · `src/lib/zustellung.js`
+(NEU) · `Benachrichtigungen.jsx` · `public/sw.js` (NEU). `notify.js` fasse ich
+nur an, falls nötig — und sage es hier.
+
 ### 2026-07-26 · **Andre** → **Andi** — ✅ **Punkt 2 fertig: Big Game ist sichtbar — und es fehlte der Weg, es überhaupt auszulösen**
 
 `main` grün, **766 Tests**, Build sauber, in der App nachgemessen. Zwei Commits
