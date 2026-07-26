@@ -42,12 +42,27 @@ mehrfach — und tunt gegen ein Regelwerk, das es am Ende gar nicht mehr gibt.
 - Daraus die **Leitplanken** ableiten: je Regler ein empfohlener Bereich, der
   in der Pro-Ebene als „Empfehlungsband" angezeigt wird.
 - Presets neu ausbalancieren, `presets.balance.test.js` nachziehen.
-- ⚠️ **Bekannte Lücke:** Der Simulator modelliert keine Vereins-Zugehörigkeit,
-  deshalb feuert der **Heimat-Joker in der Simulation nie** — sein Faktor ist
-  bisher UNGEMESSEN (Standard 1,2 stammt aus der Nutzer-Einschätzung). Im
-  Abschluss-Durchgang muss die Tipper-Population Vereine bekommen.
-- Vorläufige Messung (3 Seeds × 60 Saisons), die bis dahin gilt: Mut-Bonus ab
-  ×1,3 kippt zum Zocker → Obergrenze steht bei 1,2, Standard bei 1,1.
+- ✅ **Die bekannte Lücke ist geschlossen.** Der Simulator kennt jetzt
+  Vereins-Zugehörigkeit: jeder Tipper hat einen Verein, der an jedem Spieltag
+  in genau einem von neun Spielen mitspielt — und, das ist der Punkt, er tippt
+  ihn zu OPTIMISTISCH (`FAN_OPTIMISMUS`). Ohne diese Voreingenommenheit hätte
+  der Simulator den Heimatbonus systematisch zu gut bewertet. Die beiden
+  Extreme (Favoriten-Tipper, Zocker) sind bewusst ausgenommen: sie sind
+  Messinstrumente, keine Menschen — eine Ausnahme darin verbögen die Skala.
+- **Ergebnis Heimat-Joker (3 Seeds × 60 Saisons, alle Presets):** harmlos.
+  Über alle Presets gewinnt der Kenner MIT Heimatbonus eher mehr als weniger
+  (Standard 47 % → 50 %, Underdog-Party 38 % → 44 %), weil der Bonus die aus
+  der Fan-Brille entstehenden Fehltipps mitverstärkt. Auch bei ×2,0 bleibt der
+  Kenner bei 46 %. Standard 1,2 und Obergrenze 2,0 sind damit belegt.
+- **Ergebnis Mut-Joker — die alte Grenze war ZU HOCH.** Mit Vereins-Modell
+  (4 Seeds × 60 Saisons), Kenner : Zocker —
+  ×1,05 → 51 : 16 · ×1,10 → 50 : 19 · ×1,15 → 47 : 23 · ×1,20 → 42 : 30.
+  Bei 1,20 ist der Abstand auf 12 Punkte zusammengefallen. **`mutFaktor.max`
+  von 1,2 auf 1,15 gesenkt**; Standard bleibt 1,1.
+
+**Noch offen im Abschluss-Durchgang:** Presets gegen die neuen Ebenen (Big
+Game, Wettbewerbs-Gewichte, Ereignisse) durchmessen und das Empfehlungsband in
+`reglerWarnung.js` daraus nachziehen.
 
 
 ### Spielerstellung in 3 Komplexitätsstufen — NEU (Nutzerwunsch)

@@ -83,17 +83,22 @@ function impliedDistribution(snap) {
 //
 // ZIELBILD einer gesunden Runde: Der Kenner gewinnt am häufigsten — nicht der
 // Dauerzocker (reines Glück) und nicht der reine Favoriten-Tipper (kein Mut).
+// `fanBrille`: Wer tippt bei seinem EIGENEN Verein anders, als die Quoten
+// nahelegen? Die beiden Extreme sind bewusst ausgenommen — „tippt immer den
+// Favoriten" und „setzt stur auf Außenseiter" sind keine Menschen, sondern
+// MESSINSTRUMENTE. Sie halten je einen Rand fest, an dem man abliest, ob das
+// Regelwerk kippt; eine Ausnahme darin würde die Skala verbiegen.
 export const PROFILE = [
   { key: "favorit", label: "Favoriten-Tipper", desc: "tippt immer den Favoriten",
-    aussenseiter: () => false },
+    aussenseiter: () => false, fanBrille: false },
   { key: "solide", label: "Solide", desc: "fast immer Favorit, selten mal mutig",
-    aussenseiter: (u, r) => r() < 0.12 },
+    aussenseiter: (u, r) => r() < 0.12, fanBrille: true },
   { key: "kenner", label: "Kenner", desc: "wagt gezielt — erwischt ~jede 4. Überraschung",
-    aussenseiter: (u, r) => r() < (u ? 0.28 : 0.07) },
+    aussenseiter: (u, r) => r() < (u ? 0.28 : 0.07), fanBrille: true },
   { key: "mutig", label: "Mutig", desc: "etwa jedes zweite Spiel Außenseiter",
-    aussenseiter: (u, r) => r() < 0.45 },
+    aussenseiter: (u, r) => r() < 0.45, fanBrille: true },
   { key: "zocker", label: "Zocker", desc: "setzt stur auf Außenseiter",
-    aussenseiter: () => true },
+    aussenseiter: () => true, fanBrille: false },
 ];
 
 function strategien(snap, verteilung) {
@@ -128,6 +133,21 @@ const leer = { home: [], away: [] };
 // 306 Saisonspielen. Bestimmt, wie stark ein Derby-Faktor überhaupt durchschlägt.
 const DERBY_ANTEIL = 0.07;
 
+// ── Vereins-Zugehörigkeit (schließt die bekannte Lücke) ─────
+// Bis hierher kannte der Simulator keine Vereine — der HEIMAT-Joker feuerte
+// deshalb nie, und sein Faktor war ungemessen. Modelliert wird jetzt:
+//
+//  • Jeder Tipper hat einen Verein. In einer 18er-Liga spielt der an jedem
+//    Spieltag in GENAU EINEM von neun Spielen mit.
+//  • Ob der eigene Verein dabei der Favorit oder der Außenseiter ist, wechselt
+//    — im Mittel hälftig.
+//  • ⚠️ Der eigentliche Punkt: FANS TIPPEN IHR TEAM ZU OPTIMISTISCH. Genau
+//    deshalb ist der Heimatbonus kein Gratis-Aufschlag: er verstärkt auch die
+//    Fehltipps, die aus dieser Voreingenommenheit entstehen. Ohne diese
+//    Modellierung würde der Simulator den Bonus systematisch zu gut bewerten.
+const EIGENER_VEREIN_ANTEIL = 1 / 9;   // ein Spiel je Spieltag
+const FAN_OPTIMISMUS = 0.6;            // so oft tippt ein Fan sein Team zum Sieg
+
 // Führt die Simulation aus. Je Spieltag setzen beide Tipper (falls erlaubt)
 // ihren Joker dorthin, wo er strategisch hingehört — der Könner auf sein
 // sicherstes Spiel (Favorit), der Zocker auf seine Überraschungs-Wette
@@ -157,6 +177,8 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
     ...rules,
     joker: { ...(rules.joker || {}), enabled: false },
     teamMods: { derbyFaktor: 1, teams: {} },
+    bigGame: { ...(rules.bigGame || {}), enabled: false },
+    wettbewerbe: { ...(rules.wettbewerbe || {}), enabled: false },
   };
 
   const rand = rng(seed);
@@ -193,8 +215,24 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
         return { def, real, ueberraschung, snap: istDerby ? def.snapDerby : def.snap };
       });
 
+      // Welches Spiel betrifft den eigenen Verein? Höchstens eines je Spieltag
+      // und Tipper — und je Tipper ein anderes, sonst hätten alle denselben
+      // Heimvorteil und der Bonus wäre wirkungslos statt gemessen.
+      const eigenesSpiel = PROFILE.map(() =>
+        (rand() < EIGENER_VEREIN_ANTEIL * perMatchday
+          ? Math.floor(rand() * spiele.length) : -1));
+      // Ist der eigene Verein hier der Favorit oder der Außenseiter?
+      const eigenerIstFavorit = PROFILE.map(() => rand() < 0.5);
+
       // Je Typ entscheiden, wo er auf den Außenseiter setzt.
-      const wahl = PROFILE.map((p) => spiele.map((sp) => p.aussenseiter(sp.ueberraschung, rand)));
+      const wahl = PROFILE.map((p, pi) => spiele.map((sp, idx) => {
+        // Beim eigenen Verein schlägt die Fan-Brille die Strategie: man tippt
+        // sein Team zum Sieg, auch wenn die Quoten dagegen sprechen.
+        if (p.fanBrille && idx === eigenesSpiel[pi] && rand() < FAN_OPTIMISMUS) {
+          return !eigenerIstFavorit[pi];   // eigener Verein Außenseiter → Außenseiter-Tipp
+        }
+        return p.aussenseiter(sp.ueberraschung, rand);
+      }));
       // Joker: jeder setzt ihn auf sein erstes Außenseiter-Spiel (dort ist am
       // meisten zu holen), sonst aufs erste Spiel.
       const jokerIdx = wahl.map((w) => {
@@ -211,7 +249,17 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
           if (aufAussenseiter && sp.ueberraschung) dabei[pi] += 1;
           const basis = aufAussenseiter ? sp.def.upset : sp.def.modal;
           const mitJoker = idx === jokerIdx[pi];
-          const tipp = { ...basis, goals: leer, joker: mitJoker, gewicht: mitJoker ? jokerMax : 1 };
+          // `verein` nur setzen, wenn der eigene Verein wirklich mitspielt —
+          // daran erkennt die Engine den Heimatbonus (sie kennt selbst keine
+          // Vereinsnamen, siehe Architektur-Regel 3).
+          const eigener = idx === eigenesSpiel[pi]
+            ? (eigenerIstFavorit[pi] ? sp.snap.home : sp.snap.away)
+            : undefined;
+          const tipp = {
+            ...basis, goals: leer, joker: mitJoker,
+            gewicht: mitJoker ? jokerMax : 1,
+            ...(eigener ? { verein: eigener } : {}),
+          };
           const punkte = scoreTip(tipp, actual, sp.snap, rules).total;
           saison[pi] += punkte;
           summeMit += punkte;

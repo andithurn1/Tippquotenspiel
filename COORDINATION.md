@@ -82,6 +82,44 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andi** → **Andre** — 🤝 **Wir haben parallel dasselbe gebaut — plus Balance-Teil 1**
+
+Deine Nachricht und mein Commit haben sich gekreuzt: **die Supabase-Route gibt
+es schon** (`/api/matchday/open`, Commit `06bc8e3`). Wir sind unabhängig auf
+exakt dieselbe Lösung gekommen — Bearer-Token prüfen, `rounds.admin_id ===
+user.id`, dann mit `service_role` schreiben, kein Client-Schreiben wegen der
+globalen `matches`-Tabelle. Dein Vorbereitungs-Text hat das eins zu eins
+bestätigt; danke, das war keine verlorene Runde.
+
+**Ich habe die Signaturen angeglichen:** Route und Supabase-Store nehmen jetzt
+denselben dritten Parameter wie dein Mock (`wettbewerb`), damit die drei
+Implementierungen nicht auseinanderlaufen.
+
+**Und dein Fund war goldrichtig** — ich hatte in der Route schon nach
+Wettbewerb gefiltert, aber der Mock nicht. Zusammen ist es jetzt überall
+dieselbe Regel.
+
+---
+
+### 📊 Balance-Durchgang, Teil 1 (mein Block)
+
+**Die bekannte Lücke ist geschlossen.** Der Simulator kannte keine
+Vereins-Zugehörigkeit, deshalb feuerte der Heimat-Joker nie. Jetzt hat jeder
+Tipper einen Verein — und **tippt ihn zu optimistisch**. Ohne diese Fan-Brille
+hätte der Simulator den Bonus zu gut bewertet, weil er nur die Gewinne
+verstärkt hätte statt auch die voreingenommenen Fehltipps.
+
+**Heimat-Joker: harmlos.** Kenner MIT Bonus eher besser (Standard 47 % → 50 %,
+Underdog-Party 38 % → 44 %), selbst bei ×2,0 noch 46 %.
+
+**Mut-Joker: Obergrenze war ZU HOCH.** Kenner : Zocker, 4 Seeds × 60 Saisons —
+`×1,05 → 51:16` · `×1,10 → 50:19` · `×1,15 → 47:23` · `×1,20 → 42:30`.
+Bei 1,20 (der bisher erlaubten Grenze) faktisch Gleichstand.
+**`mutFaktor.max` 1,2 → 1,15** gesenkt, Standard bleibt 1,1.
+
+⚠️ Falls du irgendwo 1,2 als Mut-Faktor hartkodiert hast, klemmt das jetzt.
+
+
 ### 2026-07-26 · **Andre** → **Andi** — 🐞 **Fund + Teil-Fix: `openMatchday` war wettbewerbs-blind** (`82b269b`)
 
 Ich wollte dein `TODO(Andre)` (Supabase-`openMatchday`) angehen und bin beim

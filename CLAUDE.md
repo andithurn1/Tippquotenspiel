@@ -89,7 +89,11 @@ erst ab einer Schwelle, drei Stufen (`STAERKE_STUFEN`).
 
 **Balance-Simulator** (`src/lib/balanceSim.js`): Monte-Carlo mit realistischer
 Tipper-Population (Favorit/Solide/Kenner/Mutig/Zocker), Ergebnisse AUS DEN
-QUOTEN gezogen. Zielbild: der KENNER gewinnt. Kennzahlen: `punkteVerhaeltnis`,
+QUOTEN gezogen. Jeder Tipper hat einen VEREIN (ein Spiel je Spieltag) und
+tippt ihn zu optimistisch (`FAN_OPTIMISMUS`) — ohne diese Fan-Brille würde der
+Heimat-Joker systematisch zu gut bewertet, weil er nur die Gewinne verstärkte
+statt auch die voreingenommenen Fehltipps. Favoriten-Tipper und Zocker sind
+davon ausgenommen: sie sind Messinstrumente, keine Menschen. Zielbild: der KENNER gewinnt. Kennzahlen: `punkteVerhaeltnis`,
 `modifikatorAnteil`, `aufholFlipQuote` → `bewerten()` macht daraus die
 grün/gelb/rot-Ampel (`BalanceAmpel.jsx` in der Spielerstellung). Die Presets
 sind darauf ausbalanciert; `presets.balance.test.js` sichert es ab — bei

@@ -199,11 +199,19 @@ export const RULE_LIMITS = {
   favFlopPenalty:    { min: 0,   max: 20, step: 1   },
   // mutFaktor hat eine EIGENE, engere Grenze als der gesetzte Joker: der
   // Mut-Bonus verstaerkt genau die hoechsten Auszahlungen (Aussenseiter-Siege).
-  // Im Balance-Simulator (3 Seeds x 60 Saisons) gewinnt ab 1.3 der ZOCKER
-  // statt des Kenners — 1.2 ist die letzte Stufe, die traegt.
+  //
+  // Nachgemessen im Abschluss-Durchgang (4 Seeds x 60 Saisons, MIT dem neuen
+  // Vereins-Modell im Simulator) — Siegquote Kenner gegen Zocker:
+  //   x1,05 → 51 : 16   ·   x1,10 → 50 : 19
+  //   x1,15 → 47 : 23   ·   x1,20 → 42 : 30
+  // Bei 1,20 ist der Abstand auf 12 Punkte zusammengefallen, das ist faktisch
+  // ein Gleichstand zwischen Koennen und Zocken. Die fruehere Grenze 1,2 kam
+  // aus einer Messung OHNE Vereins-Zugehoerigkeit und war damit zu optimistisch.
+  // Neue Obergrenze: 1,15 — dort bleiben 24 Punkte Abstand, und ueber dem
+  // Standard (1,1) bleibt noch Spielraum, sonst waere der Regler sinnlos.
   joker: {
     faktor: { min: 1, max: 2, step: 0.1 },
-    mutFaktor: { min: 1, max: 1.2, step: 0.05 },
+    mutFaktor: { min: 1, max: 1.15, step: 0.05 },
     anzahlFaktoren: { min: 2, max: 6, step: 1 },
   },
   teamMods: { derbyFaktor: { min: 1, max: 2, step: 0.1 }, teamFaktor: { min: 1, max: 2, step: 0.1 } },
