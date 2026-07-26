@@ -12,6 +12,7 @@ import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { spieltagOeffnen } from "./spieltagOeffnen";
 import { scoreSaison } from "./saisonwetten";
+import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
@@ -95,14 +96,19 @@ export function createMockStore() {
     // selbst steht in spieltagOeffnen.js. Idempotent: ein zweiter Aufruf lässt
     // alles, wie es ist, sonst änderte sich der Wert eines abgegebenen Tipps
     // rückwirkend (dieselbe Regel wie beim Quoten-Snapshot).
-    async openMatchday(roundId, matchday) {
+    // `wettbewerb` ist nötig, seit es mehrere gibt: „Spieltag 1" existiert in
+    // der Bundesliga UND in der Champions League. Ohne den Schlüssel würden
+    // beide als EIN Spieltag geöffnet und das Big Game aus 36 statt 18 Spielen
+    // gewählt — und die Tabelle wäre aus zwei Wettbewerben gemischt.
+    async openMatchday(roundId, matchday, wettbewerb = DEFAULT_WETTBEWERB) {
       const alle = [...matches.values()];
-      const desSpieltags = alle.filter((m) => m.matchday === matchday);
+      const imWettbewerb = (m) => wettbewerbVon(m) === wettbewerb;
+      const desSpieltags = alle.filter((m) => m.matchday === matchday && imWettbewerb(m));
       const rules = rounds.get(roundId)?.rules ?? DEFAULT_RULES;
       const ergebnis = spieltagOeffnen({
         spieltag: matchday,
         matches: desSpieltags,
-        gespielt: alle.filter((m) => m.result),
+        gespielt: alle.filter((m) => m.result && imWettbewerb(m)),
         rules,
       });
       for (const [id, snapshot] of Object.entries(ergebnis.snapshots)) {
