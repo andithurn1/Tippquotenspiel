@@ -12,6 +12,8 @@ import { DEFAULT_RULES, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon, phaseVon, wettbewerbLabel, phasenLabel, istKo, wettbewerbeIn } from "@/lib/wettbewerbe";
 import { tippStatus, uebersicht, naechsteOeffnung, beschreibeTippfenster, formatZeitpunkt } from "@/lib/tippfenster";
+import { bigGameAufschlag } from "@/lib/bigGame";
+import { istGeoeffnet } from "@/lib/spieltagOeffnen";
 import { C, MONO } from "@/lib/theme";
 
 
@@ -32,6 +34,10 @@ export default function Spielwahl() {
   const [rules, setRules] = useState(DEFAULT_RULES);
   const [meineTips, setMeineTips] = useState([]);   // { match_id, wettbewerb, matchday, gewicht }
   const [votes, setVotes] = useState([]);           // Joker-Abstimmung der Runde
+  const [adminId, setAdminId] = useState(null);     // wer darf einen Spieltag öffnen
+  const [oeffnet, setOeffnet] = useState(null);     // Gruppen-Key, der gerade öffnet
+  const [oeffnenFehler, setOeffnenFehler] = useState(null);
+  const [neuLaden, setNeuLaden] = useState(0);      // hochzählen = Spiele neu holen
 
   useEffect(() => {
     let live = true;
@@ -39,12 +45,13 @@ export default function Spielwahl() {
       if (!live) return;
       setTeamFilter(round?.team_filter ?? null);
       setRules(round?.rules ?? DEFAULT_RULES);
+      setAdminId(round?.admin_id ?? null);
       setVotes(vs);
       const relevant = filterMatchesByTeams(ms, round?.team_filter);
       setMatches([...relevant].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)));
     });
     return () => { live = false; };
-  }, [roundId]);
+  }, [roundId, neuLaden]);
 
   useEffect(() => {
     let live = true;
@@ -67,6 +74,25 @@ export default function Spielwahl() {
   }, [roundId, user]);
 
   const rankingModus = rules.joker?.enabled === true && rules.joker?.modus === "ranking";
+  const istAdmin = Boolean(user && adminId && user.id === adminId);
+
+  // Spieltag öffnen = den Spannungswert des Topspiels EINFRIEREN (siehe
+  // spieltagOeffnen.js). Bewusst eine ADMIN-Handlung und keine Automatik: der
+  // Wert hängt am Tabellenstand in dem Moment, in dem geöffnet wird — wer den
+  // Moment wählt, wählt mit. Die Server-Route prüft dieselbe Berechtigung noch
+  // einmal, die Oberfläche ist umgehbar.
+  const oeffneSpieltag = async (gruppe) => {
+    setOeffnet(gruppe.key);
+    setOeffnenFehler(null);
+    try {
+      await getStore().openMatchday(roundId, gruppe.matchday, gruppe.wettbewerb);
+      setNeuLaden((n) => n + 1);   // Snapshots haben sich geändert → neu holen
+    } catch {
+      setOeffnenFehler(gruppe.key);
+    } finally {
+      setOeffnet(null);
+    }
+  };
 
   const now = Date.now();
   // ── Nur zeigen, was ANSTEHT ─────────────────────────────
@@ -197,6 +223,37 @@ export default function Spielwahl() {
                 )}
                 {titel}
               </div>
+              {/* Der Spieltag ist noch nicht geöffnet — nur der Admin sieht das,
+                  und nur, solange nichts angepfiffen ist: danach würde ein
+                  bereits abgegebener Tipp nachträglich mehr wert werden. */}
+              {istAdmin && rules.bigGame?.enabled && !istGeoeffnet(g.spiele)
+                && g.spiele.every((m) => new Date(m.kickoff).getTime() > now) && (
+                <div style={{
+                  background: `${C.coral}0E`, border: `1px solid ${C.coral}33`,
+                  borderRadius: 10, padding: "8px 10px", marginBottom: 8,
+                }}>
+                  <div style={{ fontSize: 11.5, color: C.text, lineHeight: 1.45 }}>
+                    Spieltag noch nicht geöffnet — das Topspiel steht damit noch nicht fest.
+                  </div>
+                  <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                    Beim Öffnen wird der Spannungswert aus dem HEUTIGEN Tabellenstand
+                    berechnet und eingefroren — danach unveränderlich, für alle gleich.
+                  </div>
+                  <button onClick={() => oeffneSpieltag(g)} disabled={oeffnet === g.key} style={{
+                    marginTop: 7, cursor: oeffnet === g.key ? "default" : "pointer",
+                    fontFamily: "inherit", fontSize: 11.5, fontWeight: 700,
+                    background: "transparent", color: C.coral, border: `1px solid ${C.coral}66`,
+                    borderRadius: 999, padding: "5px 12px",
+                  }}>
+                    {oeffnet === g.key ? "öffnet …" : "Spieltag öffnen"}
+                  </button>
+                  {oeffnenFehler === g.key && (
+                    <div style={{ fontSize: 10.5, color: C.coral, marginTop: 5 }}>
+                      Öffnen fehlgeschlagen — nur der Admin der Runde darf das, und nur angemeldet.
+                    </div>
+                  )}
+                </div>
+              )}
               {belegung && (
                 <div style={{
                   display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6,
@@ -221,7 +278,7 @@ export default function Spielwahl() {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {g.spiele.map((m) => (
                   <MatchRow key={m.id} match={m} status={tippStatus(m, rules, now)}
-                    tipped={tippedIds.has(m.id)} gewicht={gewichtVon(m.id)} />
+                    tipped={tippedIds.has(m.id)} gewicht={gewichtVon(m.id)} rules={rules} />
                 ))}
               </div>
             </div>
@@ -235,22 +292,39 @@ export default function Spielwahl() {
 // `status` kommt aus tippfenster.js und ist dreiwertig: „noch nicht", „offen",
 // „vorbei". Ein Boolean würde die ersten beiden zusammenwerfen — für den
 // Spieler sind das aber zwei völlig verschiedene Nachrichten.
-function MatchRow({ match, status, tipped, gewicht }) {
+function MatchRow({ match, status, tipped, gewicht, rules }) {
   const open = status?.offen === true;
   const gewichtet = Number.isFinite(gewicht) && gewicht > 1;
+  // Big Game: NICHT am Snapshot-Häkchen ablesen, sondern über den Aufschlag
+  // dieser RUNDE. Eingefroren ist nur der objektive Spannungswert; ob er als
+  // Spiel des Spieltags zählt, entscheidet die eigene `minSpannung`. Zwei Runden
+  // lesen denselben Wert also verschieden — genau so ist es gedacht.
+  const bigGame = bigGameAufschlag(match.snapshot, rules);
   const content = (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
-      background: open ? C.surface : C.ink2, border: `1px solid ${C.line}`, borderRadius: 14,
+      background: open ? C.surface : C.ink2,
+      // Das Topspiel bekommt einen eigenen Rahmen, nicht nur ein Schildchen —
+      // es soll beim Überfliegen der Liste auffallen, darum geht es ja.
+      border: `1px solid ${bigGame > 0 ? C.coral + "88" : C.line}`, borderRadius: 14,
       padding: "12px 14px", opacity: open ? 1 : 0.55,
     }}>
       <div>
         <div style={{ fontSize: 14, fontWeight: 700 }}>{match.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {match.away}</div>
         <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginTop: 3 }}>{timeFmt.format(new Date(match.kickoff))}</div>
+        {/* Die eingefrorene Begründung mitliefern: ein Aufschlag ohne Grund
+            sieht nach Willkür aus. Sie steht so im Snapshot, wie sie beim
+            Öffnen des Spieltags berechnet wurde. */}
+        {bigGame > 0 && match.snapshot?.bigGameGrund && (
+          <div style={{ fontSize: 11, color: C.coral, marginTop: 4, lineHeight: 1.4 }}>
+            {match.snapshot.bigGameGrund}
+          </div>
+        )}
         {/* Orientierung: die lohnendsten Endstände dieses Spiels */}
         {open && <ErgebnisUebersicht snap={match.snapshot} />}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+        {bigGame > 0 && <Tag tone={C.coral}>★ Topspiel +{bigGame.toFixed(1)}</Tag>}
         {gewichtet && <Tag tone={C.gold}>×{gewicht.toFixed(1)}</Tag>}
         {open ? (
           tipped

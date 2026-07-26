@@ -29,6 +29,9 @@
 // ============================================================
 
 import { scoreTip, applyCombo, jokerAufschlaege, DEFAULT_RULES } from "./engine";
+import { bigGameAufschlag } from "./bigGame";
+import { wettbewerbAufschlag } from "./wettbewerbGewicht";
+import { wettbewerbLabel, phasenLabel, wettbewerbVon, phaseVon, istKo } from "./wettbewerbe";
 
 const r1 = (v) => Math.round(v * 10) / 10;
 
@@ -165,14 +168,51 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
         hinweis: `Aufschlag +${r1(typ.aufschlag)} (oben eingerechnet)`,
       });
     }
+    // ⚠️ Der „Team"-Topf sind in Wahrheit DREI verschiedene Aussagen: Verein/
+    // Derby, Spiel des Spieltags und Wettbewerbs-/K.-o.-Gewicht. Sie fallen in
+    // denselben additiven Aufschlag (`teamModFactor`) — in der Aufschlüsselung
+    // müssen sie aber getrennt stehen. „Team / Derby +0,5" bei einer Begegnung
+    // ohne jedes Derby erklärt nichts, es verwirrt: der Spieler sucht ein Derby,
+    // das es nicht gibt. Aufgeteilt wird über DIESELBEN Funktionen, die die
+    // Engine benutzt, damit keine zweite Rechnung entsteht.
     if (mod.team > 1) {
-      posten.push({
-        key: "mod-team",
-        label: "Team / Derby",
-        art: "info",
-        wert: r1(mod.team - 1),
-        hinweis: `Aufschlag +${r1(mod.team - 1)} (oben eingerechnet)`,
-      });
+      const bigGame = bigGameAufschlag(snap, rules);
+      const wettbewerb = wettbewerbAufschlag(snap, rules);
+      const teamRest = +(mod.team - 1 - bigGame - wettbewerb).toFixed(3);
+      if (teamRest > 0.001) {
+        posten.push({
+          key: "mod-team",
+          label: "Team / Derby",
+          art: "info",
+          wert: r1(teamRest),
+          hinweis: `Aufschlag +${r1(teamRest)} (oben eingerechnet)`,
+        });
+      }
+      if (bigGame > 0) {
+        posten.push({
+          key: "mod-biggame",
+          label: "Spiel des Spieltags",
+          art: "info",
+          wert: r1(bigGame),
+          // Der Grund wurde beim Öffnen des Spieltags mit eingefroren. Ohne ihn
+          // wirkt die Auswahl willkürlich — und genau daran stirbt das Vertrauen
+          // in einen Automatismus, der Punkte verteilt.
+          hinweis: snap?.bigGameGrund
+            ? `${snap.bigGameGrund} · Aufschlag +${r1(bigGame)} (oben eingerechnet)`
+            : `Aufschlag +${r1(bigGame)} (oben eingerechnet)`,
+        });
+      }
+      if (wettbewerb > 0) {
+        const phase = phaseVon(snap);
+        posten.push({
+          key: "mod-wettbewerb",
+          label: "Wettbewerbs-Gewicht",
+          art: "info",
+          wert: r1(wettbewerb),
+          hinweis: `${wettbewerbLabel(wettbewerbVon(snap))}${istKo(phase) ? ` · ${phasenLabel(phase)}` : ""}`
+            + ` · Aufschlag +${r1(wettbewerb)} (oben eingerechnet)`,
+        });
+      }
     }
   }
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DEFAULT_RULES, projectTip, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
+import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
 import { darfJokerSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
 import { getStore } from "@/lib/store";
@@ -139,6 +140,10 @@ export default function Tippabgabe({ matchId }) {
   const csQuote = SNAP.correctScore[h]?.[a] ?? null;
   const winner = h > a ? SNAP.home : h < a ? SNAP.away : "Unentschieden";
   const r = risk(csQuote);
+  // Zählt der eingefrorene Spannungswert für DIESE Runde als Big Game? Das
+  // entscheidet die eigene Schwelle, nicht der Snapshot — derselbe Wert kann in
+  // einer anderen Runde unter der Schwelle liegen.
+  const bigGameBonus = bigGameAufschlag(SNAP, RULES);
 
   // Tipp-Vorschau: Potenzial, wenn der Tipp exakt aufgeht (Engine rechnet).
   const projGoals = {
@@ -245,6 +250,35 @@ export default function Tippabgabe({ matchId }) {
             <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>
               {SNAP.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {SNAP.away}
             </div>
+
+            {/* Spiel des Spieltags — hier gehört es hin, weil hier die
+                Entscheidung fällt. Der Aufschlag kommt aus der Schwelle DIESER
+                Runde (`bigGameAufschlag`), die Begründung ist beim Öffnen des
+                Spieltags eingefroren worden. Beides zusammen, nie nur die Zahl:
+                ein Bonus ohne Grund sieht nach Willkür aus. */}
+            {bigGameBonus > 0 && (
+              <div style={{
+                marginTop: 10, background: `${C.coral}14`, border: `1px solid ${C.coral}44`,
+                borderRadius: 12, padding: "9px 12px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ color: C.coral, fontSize: 13 }}>★</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C.coral }}>Spiel des Spieltags</span>
+                  <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.coral, marginLeft: "auto" }}>
+                    +{bigGameBonus.toFixed(1)}
+                  </span>
+                </div>
+                {SNAP.bigGameGrund && (
+                  <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                    {SNAP.bigGameGrund}
+                  </div>
+                )}
+                <div style={{ fontSize: 10.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                  Der Aufschlag liegt im selben Topf wie Derby und Wettbewerbs-Gewicht —
+                  addiert, nicht multipliziert, und gedeckelt.
+                </div>
+              </div>
+            )}
 
             {/* Ergebnis-Eingabe */}
             {RULES.markets.result && (

@@ -146,6 +146,67 @@ describe("Modifikatoren", () => {
   });
 });
 
+// Der Team-Topf bündelt drei verschiedene Aussagen (Verein/Derby, Spiel des
+// Spieltags, Wettbewerbs-Gewicht). In der Wertung ist das richtig — additiv
+// unter demselben Deckel. In der AUFSCHLÜSSELUNG darf es nicht zusammenfallen:
+// „Team / Derby +0,5" bei einem Spiel ohne Derby schickt den Spieler auf die
+// falsche Spur.
+describe("Der Team-Topf wird aufgeschlüsselt, nicht zusammengeworfen", () => {
+  const mitBigGame = sanitizeRules({
+    ...DEFAULT_RULES, bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.3 },
+  });
+  const snapTop = { ...SNAP, bigGameWert: 0.7, bigGameGrund: "Platz 1 gegen Platz 2, direkte Nachbarn" };
+
+  it("das Spiel des Spieltags bekommt seine eigene Zeile — mit der eingefrorenen Begründung", () => {
+    const b = breakdown(tipp(5, 1), RESULT, snapTop, mitBigGame);
+    const zeile = b.posten.find((p) => p.key === "mod-biggame");
+    expect(zeile).toBeDefined();
+    expect(zeile.art).toBe("info");
+    expect(zeile.wert).toBeCloseTo(0.5, 5);
+    expect(zeile.hinweis).toContain("Platz 1 gegen Platz 2");
+    // Kein Derby im Spiel → auch keine irreführende Team-Zeile.
+    expect(b.posten.some((p) => p.key === "mod-team")).toBe(false);
+  });
+
+  it("Derby und Topspiel stehen nebeneinander, ohne sich zu verschlucken", () => {
+    const rules = sanitizeRules({
+      ...mitBigGame, teamMods: { derbyFaktor: 1.3, teams: {} },
+    });
+    const b = breakdown(tipp(5, 1), RESULT, { ...snapTop, derby: "Testderby" }, rules);
+    const derby = b.posten.find((p) => p.key === "mod-team");
+    const top = b.posten.find((p) => p.key === "mod-biggame");
+    expect(derby.wert).toBeCloseTo(0.3, 5);
+    expect(top.wert).toBeCloseTo(0.5, 5);
+  });
+
+  it("das Wettbewerbs-Gewicht wird benannt statt unter Team zu verschwinden", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      wettbewerbe: { enabled: true, aufschlaege: { cl: 0.4 }, phasenStufe: 0.2 },
+    });
+    const snapCl = { ...SNAP, wettbewerb: "cl", phase: "halbfinale" };
+    const b = breakdown(tipp(5, 1), RESULT, snapCl, rules);
+    const zeile = b.posten.find((p) => p.key === "mod-wettbewerb");
+    expect(zeile).toBeDefined();
+    expect(zeile.hinweis).toContain("Champions League");
+    expect(zeile.hinweis).toContain("Halbfinale");
+    expect(b.posten.some((p) => p.key === "mod-team")).toBe(false);
+  });
+
+  it("ohne aktives Big Game bleibt der Snapshot-Wert wirkungslos (die Runde entscheidet)", () => {
+    const b = breakdown(tipp(5, 1), RESULT, snapTop, DEFAULT_RULES);
+    expect(b.posten.some((p) => p.key === "mod-biggame")).toBe(false);
+  });
+
+  it("unter der Schwelle der Runde gibt es keine Topspiel-Zeile", () => {
+    const streng = sanitizeRules({
+      ...DEFAULT_RULES, bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.8 },
+    });
+    const b = breakdown(tipp(5, 1), RESULT, snapTop, streng);
+    expect(b.posten.some((p) => p.key === "mod-biggame")).toBe(false);
+  });
+});
+
 describe("Deckel je Spiel", () => {
   it("wird als Info gezeigt, wenn er greift", () => {
     const rules = sanitizeRules({ ...DEFAULT_RULES, perGameCap: 50 });
