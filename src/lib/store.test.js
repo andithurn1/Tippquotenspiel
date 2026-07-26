@@ -147,6 +147,53 @@ describe("Kurzcode-Presets (publishPreset / getPresetByCode)", () => {
   });
 });
 
+describe("Spieltag öffnen (openMatchday)", () => {
+  it("friert den Spieltag ein und markiert JEDES Spiel als geprüft", async () => {
+    const store = createMockStore();
+    const ergebnis = await store.openMatchday(DEMO_ROUND_ID, 1, "bl");
+    expect(ergebnis.veraendert).toBe(true);
+    const alle = await store.listMatches();
+    const spieltag = alle.filter((m) => m.matchday === 1 && m.wettbewerb === "bl");
+    expect(spieltag.length).toBeGreaterThan(0);
+    for (const m of spieltag) expect(m.snapshot.bigGameGeprueft).toBe(true);
+    // Genau EIN Spiel trägt den Spannungswert des Topspiels.
+    expect(spieltag.filter((m) => Number.isFinite(m.snapshot.bigGameWert))).toHaveLength(1);
+  });
+
+  it("ein zweiter Aufruf ändert nichts mehr (der eingefrorene Stand gilt)", async () => {
+    const store = createMockStore();
+    await store.openMatchday(DEMO_ROUND_ID, 1, "bl");
+    const vorher = (await store.listMatches()).find((m) => Number.isFinite(m.snapshot.bigGameWert));
+    const zweite = await store.openMatchday(DEMO_ROUND_ID, 1, "bl");
+    expect(zweite.veraendert).toBe(false);
+    expect(zweite.schonOffen).toBe(true);
+    const nachher = (await store.listMatches()).find((m) => Number.isFinite(m.snapshot.bigGameWert));
+    expect(nachher.id).toBe(vorher.id);
+    expect(nachher.snapshot.bigGameWert).toBe(vorher.snapshot.bigGameWert);
+  });
+
+  // Der Mock hat für die ganze simulierte Saison Ergebnisse vorab. Zählte er
+  // sie alle als „gespielt", wäre die Tabelle am 1. Spieltag die ENDTABELLE —
+  // das Topspiel würde nach Plätzen gewählt, die noch niemand kennen kann.
+  it("die Tabelle beim Öffnen kennt nur wirklich gespielte Spiele", async () => {
+    const store = createMockStore();
+    await store.openMatchday(DEMO_ROUND_ID, 1, "bl");
+    const top = (await store.listMatches()).find((m) => Number.isFinite(m.snapshot.bigGameWert));
+    // Am 1. Spieltag gibt es keine Tabelle → die Begründung darf sich nicht auf
+    // Tabellenplätze stützen.
+    expect(top.snapshot.bigGameGrund).not.toMatch(/Platz \d+/);
+  });
+
+  it("öffnet je WETTBEWERB, nicht quer über alle (Spieltag 1 gibt es zweimal)", async () => {
+    const store = createMockStore();
+    await store.openMatchday(DEMO_ROUND_ID, 1, "bl");
+    const alle = await store.listMatches();
+    const cl = alle.filter((m) => m.matchday === 1 && m.wettbewerb === "cl");
+    expect(cl.length).toBeGreaterThan(0);
+    for (const m of cl) expect(m.snapshot.bigGameGeprueft).toBeUndefined();
+  });
+});
+
 describe("Saison-Wetten (saveSeasonTip / listSeasonTips + Leaderboard)", () => {
   it("speichert einen Saison-Tipp und aktualisiert ihn beim erneuten Abgeben (kein Duplikat)", async () => {
     const store = createMockStore();

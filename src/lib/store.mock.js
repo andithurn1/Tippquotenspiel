@@ -90,7 +90,15 @@ export function createMockStore() {
       const ergebnis = spieltagOeffnen({
         spieltag: matchday,
         matches: desSpieltags,
-        gespielt: alle.filter((m) => m.result && imWettbewerb(m)),
+        // Nur WIRKLICH gespielte Spiele in die Tabelle. Der Mock hat für die
+        // ganze simulierte Saison Ergebnisse vorab (bundesligaData rechnet sie
+        // beim Erzeugen aus) — ohne den Kickoff-Vergleich wäre die Tabelle beim
+        // Öffnen des 1. Spieltags die ENDTABELLE, und das Big Game würde nach
+        // Plätzen gewählt, die noch niemand kennt. In der Live-DB ist `result`
+        // vor dem Anpfiff NULL (siehe seed-matches.sql), dort stimmt es von
+        // selbst; hier zieht die Demo dasselbe Verhalten nach.
+        gespielt: alle.filter((m) => m.result && imWettbewerb(m)
+          && new Date(m.kickoff).getTime() <= Date.now()),
         rules,
       });
       for (const [id, snapshot] of Object.entries(ergebnis.snapshots)) {
