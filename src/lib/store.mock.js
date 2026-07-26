@@ -6,8 +6,7 @@
 import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules } from "./engine";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { generateJoinCode } from "./joinCode";
-import { getBundesligaMatches } from "./bundesligaData";
-import { getChampionsLeagueMatches } from "./championsLeagueData";
+import { alleMatches } from "./ligen";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { spieltagOeffnen } from "./spieltagOeffnen";
@@ -38,9 +37,13 @@ export function createMockStore() {
       // Länderspiel — gehört in keine Liga, sonst stünde es unter „Bundesliga".
       wettbewerb: "demo", phase: "liga",
     }],
-    // Mehrere Wettbewerbe: Bundesliga + Champions League liegen im selben
+    // Mehrere Wettbewerbe: alle Ligen + Champions League liegen im SELBEN
     // Match-Katalog und unterscheiden sich nur über `wettbewerb`/`phase`.
-    ...[...getBundesligaMatches(), ...getChampionsLeagueMatches()].map((m) => [m.matchId, {
+    // Dadurch braucht die Runden-Erstellung keine Sonderfälle — sie filtert
+    // über `rules.spiele`, egal ob eine Liga gemeint ist oder fünf.
+    // Die Liste der Wettbewerbe steht in `ligen.js` — EINE Quelle für Store,
+    // Seed-Skript und Vereinsfilter (bl 306 · pl 380 · pd 380 · sa 380 · cl 159).
+    ...alleMatches().map((m) => [m.matchId, {
       id: m.matchId, home: m.home, away: m.away,
       kickoff: m.kickoff, matchday: m.matchday, snapshot: m.snapshot, result: m.result,
       wettbewerb: m.wettbewerb, phase: m.phase,

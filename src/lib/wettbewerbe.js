@@ -17,6 +17,8 @@
 export const WETTBEWERBE = [
   { key: "bl", label: "Bundesliga",      kurz: "BL", land: "Deutschland" },
   { key: "pl", label: "Premier League",  kurz: "PL", land: "England" },
+  { key: "pd", label: "La Liga",         kurz: "PD", land: "Spanien" },
+  { key: "sa", label: "Serie A",         kurz: "SA", land: "Italien" },
   { key: "cl", label: "Champions League", kurz: "CL", land: "Europa" },
   // Das alte Demo-Match (Länderspiel JOR-ESP) ist keiner Liga zuzuordnen. Ohne
   // eigenen Eintrag würde es über den Fallback als Bundesliga-Spiel angezeigt.

@@ -72,24 +72,33 @@ const SCORER_SHARES = [0.30, 0.22, 0.18, 0.12, 0.09];
 // Kleiner Cache, damit derselbe Verein nicht 34-mal neu ausgewürfelt wird.
 const squadCache = new Map();
 
-export function squadNames(teamName) {
-  if (squadCache.has(teamName)) return squadCache.get(teamName);
-  const rng = rngFromSeed(`squad:${teamName}`);
+// `pool` erlaubt der Daten-Schicht, LANDESTYPISCHE Namen mitzugeben: ein
+// „Iker Brandt" in der Premier League reißt einen sofort raus. Ohne Pool bleibt
+// es beim Standard — dadurch ändern sich bestehende Daten (Bundesliga, CL)
+// nicht. Die Namen sind ERFUNDEN, bewusst: echte Spieler-Kader wären nach
+// jedem Transferfenster falsch und würden simulierte Daten wie echte aussehen
+// lassen. Die Klubs sind echt, die Kader nicht.
+export function squadNames(teamName, pool = null) {
+  const key = pool ? `${pool.key}:${teamName}` : teamName;
+  if (squadCache.has(key)) return squadCache.get(key);
+  const vornamen = pool?.vornamen ?? FIRST_NAMES;
+  const nachnamen = pool?.nachnamen ?? LAST_NAMES;
+  const rng = rngFromSeed(`squad:${key}`);
   const used = new Set();
   const namen = [];
   for (let i = 0; i < SCORER_SHARES.length; i++) {
     let name;
-    do { name = `${pick(rng, FIRST_NAMES)} ${pick(rng, LAST_NAMES)}`; } while (used.has(name));
+    do { name = `${pick(rng, vornamen)} ${pick(rng, nachnamen)}`; } while (used.has(name));
     used.add(name);
     namen.push(name);
   }
-  squadCache.set(teamName, namen);
+  squadCache.set(key, namen);
   return namen;
 }
 
-function makeSquad(teamName, teamLambda, cap) {
+function makeSquad(teamName, teamLambda, cap, pool = null) {
   const squad = {};
-  squadNames(teamName).forEach((name, i) => {
+  squadNames(teamName, pool).forEach((name, i) => {
     const playerLambda = teamLambda * SCORER_SHARES[i];
     const pAnytime = 1 - Math.exp(-playerLambda);
     const pDouble = Math.max(1 - Math.exp(-playerLambda) - playerLambda * Math.exp(-playerLambda), 0.0005);
@@ -105,10 +114,10 @@ function makeSquad(teamName, teamLambda, cap) {
 export function generateMatchOdds({
   matchId, home, away, kickoff, seed = matchId,
   homeAttack, homeDefense, awayAttack, awayDefense,
-  overround = 1.07, cap = 200,
+  overround = 1.07, cap = 200, namensPool = null,
 }) {
   const { home: lamH, away: lamA } = expectedGoals({ homeAttack, homeDefense, awayAttack, awayDefense });
-  return buildSnapshot({ matchId, home, away, kickoff, lamH, lamA, overround, cap });
+  return buildSnapshot({ matchId, home, away, kickoff, lamH, lamA, overround, cap, namensPool });
 }
 
 // Denselben Snapshot direkt aus TOR-ERWARTUNGEN bauen. Trennt die Frage
@@ -117,7 +126,7 @@ export function generateMatchOdds({
 // werden die Tor-Erwartungen geschätzt (siehe oddsApi.js), und alles Weitere
 // — Ergebnis-Raster, Team-Tore, Torschützen — entsteht konsistent hier.
 export function buildSnapshot({
-  matchId, home, away, kickoff, lamH, lamA, overround = 1.07, cap = 200,
+  matchId, home, away, kickoff, lamH, lamA, overround = 1.07, cap = 200, namensPool = null,
 }) {
   const pHome = []; const pAway = [];
   for (let i = 0; i < GOAL_GRID; i++) { pHome.push(poissonPmf(lamH, i)); pAway.push(poissonPmf(lamA, i)); }
@@ -148,7 +157,7 @@ export function buildSnapshot({
     },
     correctScore,
     teamGoals: { home: pHome.map((p) => oddsFrom(p, overround, cap)), away: pAway.map((p) => oddsFrom(p, overround, cap)) },
-    players: { home: makeSquad(home, lamH, cap), away: makeSquad(away, lamA, cap) },
+    players: { home: makeSquad(home, lamH, cap, namensPool), away: makeSquad(away, lamA, cap, namensPool) },
   };
 }
 

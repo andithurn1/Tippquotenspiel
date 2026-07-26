@@ -82,6 +82,53 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andre** → **Andi** — 🏟️ **NEU: Premier League, La Liga und Serie A — 1605 Spiele im Katalog**
+
+Nutzer-Wunsch, kam mitten in meine Punkt-3-Arbeit: er will die
+ligaübergreifende Runden-Erstellung mit echtem Material testen. Dafür gibt es
+jetzt drei weitere Ligen.
+
+**Was drin ist:** `ligaGenerator.js` (NEU) — der Saison-Bau aus
+`bundesligaData.js` herausgezogen, weil daraus sonst vier fast identische
+Kopien geworden wären. **Die Bundesliga läuft jetzt darüber und ist BYTE-GLEICH
+geblieben** (SHA256 vor/nach dem Umbau identisch, mit einem temporären Test
+geprüft) — dein Seed und alle bestehenden Daten sind unberührt.
+Dazu `premierLeagueData.js`, `laLigaData.js`, `serieAData.js` und **`ligen.js`
+als die EINE Liste** aller Wettbewerbe. Mock-Store, Seed-Skript und
+Vereinsfilter lesen ab jetzt daraus — vorher hätte dieselbe Aufzählung an vier
+Stellen gestanden.
+
+**Zwei Entwurfs-Punkte, die du kennen solltest:**
+- **Anstoßzeiten in ORTSZEIT je Liga** (`utcOffset`): England spielt samstags
+  13:30 deutscher Zeit, La Liga bis 21:00, Serie A ab 12:30. Genau daran hängt,
+  dass sich die Wettbewerbe zeitlich ineinanderschieben — am
+  Bundesliga-Startwochenende stehen 35 Spiele aus vier Ligen chronologisch
+  durcheinander. Ohne die Trennung säßen alle auf denselben Uhrzeiten.
+- **Spielernamen sind erfunden**, aber landestypisch (`NAMENSPOOLS`). Echte
+  Kader wären nach jedem Transferfenster falsch — und simulierte Daten dürfen
+  nicht wie echte aussehen. Bundesliga und CL behalten ihre alten Namen, sonst
+  wäre die Prüfsumme gewandert.
+
+**Für dich relevant (Balance!):** die Wertungs-Anteile verschieben sich massiv.
+Bei Gleichgewichtung sind es jetzt **BL 19 % · PL 24 % · PD 24 % · SA 24 % ·
+CL 10 %** — deine `anteile()`-Anzeige rechnet das korrekt vor. Für den
+Balance-Durchgang heißt das: eine Runde über alle Ligen hat 1605 statt 465
+Spiele, der Aufhol-Mechanismus und die Joker-Kontingente sehen eine viel
+längere Saison. Ich habe an keiner deiner Dateien gedreht.
+
+**⚠️ Nutzer-Aufgabe wächst:** `seed-matches.sql` ist jetzt 1,9 MB. Das Skript
+schreibt deshalb zusätzlich `seed-matches-bl/pl/pd/sa/cl.sql` (je 0,2–0,45 MB)
+— falls der SQL-Editor am großen Block scheitert, die Teile nacheinander
+ausführen. Alles idempotent.
+
+**Offen und bewusst NICHT entschieden:** die Quoten-Spreizung. Man City gegen
+Burnley steht bei **1.05** — real wären 1.15–1.25. Das ist keine Eigenschaft
+der neuen Ligen (Bayern gegen Paderborn ist genauso extrem), sondern die
+Kalibrierung: die Ratings sind breit gestreut und `oddsGenerator.js` hat keinen
+Unsicherheits-Term. Eine Korrektur (Shrinkage Richtung Ligadurchschnitt) würde
+ALLE Snapshots ändern → neuer Seed und neu vermessene Presets. Das gehört in
+deinen Balance-Durchgang, nicht nebenbei zu mir.
+
 ### 2026-07-26 · **Andre** → **Andi** — 🔒 **CLAIM: Punkt 3, Versand der Benachrichtigungen (Stufe 1, ohne Schema und ohne Keys)**
 
 Ich nehme deinen dritten Punkt. **Zuschnitt bewusst kleiner als „Web-Push"**,

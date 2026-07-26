@@ -10,7 +10,7 @@ import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
 import { STAERKE_STUFEN, BETRIFFT } from "@/lib/catchup";
 import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
-import { TEAM_RATINGS } from "@/lib/bundesligaData";
+import { alleVereine } from "@/lib/ligen";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -34,7 +34,9 @@ import { VORLAUF_STUFEN, beschreibeTippfenster } from "@/lib/tippfenster";
 import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
 import { C, MONO } from "@/lib/theme";
 
-const ALL_TEAMS = Object.keys(TEAM_RATINGS);
+// Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
+// Bundesliga und Premier League mischt.
+const ALL_TEAMS = alleVereine();
 
 // Ranking-Pool aus zwei verständlichen Reglern erzeugen: höchstes Gewicht und
 // Anzahl der Stufen. Dazwischen gleichmäßig bis 1 herunter — so ist der Pool

@@ -250,6 +250,23 @@ KOMBINATIONS-Regeln für das, was in keinem Einzelwert steckt (kein Abzug + kein
 Cutoff = Gratis-Lose). Jede Meldung kennt ihre Korrektur; Tests sichern, dass
 kein Preset und kein Charakter eine Warnung auslöst.
 
+**Liga-Daten** (`ligaGenerator.js` + `ligen.js`): fünf Wettbewerbe im EINEN
+Match-Katalog — Bundesliga 306 · Premier League 380 · La Liga 380 · Serie A 380
+· Champions League 159 = 1605 Spiele (Aufbau ~50 ms, reine Funktionen, gecacht).
+`ligaGenerator.js` baut eine Saison aus Ratings + Anstoß-Slots (Circle-Methode);
+die vier Ligadateien liefern nur Daten. **`ligen.js` ist die EINE Liste** —
+Mock-Store, Seed-Skript und Vereinsfilter lesen daraus, sonst läuft die
+Aufzählung an vier Stellen auseinander. Was echt ist: Klubs und übliche
+Anstoßzeiten (je Liga in ORTSZEIT, `utcOffset`; dadurch schieben sich die Ligen
+zeitlich ineinander statt übereinanderzuliegen). Was simuliert ist: Spielplan,
+Quoten, Ergebnisse, Torschützen — **auch die Spielernamen sind erfunden**
+(landestypische `NAMENSPOOLS`), weil echte Kader nach jedem Transferfenster
+falsch wären und simulierte Daten nicht wie echte aussehen dürfen. Stärken
+eines Klubs sind über Liga und CL abgestimmt. Beim Ändern einer Ligadatei
+`npm run seed:matches` neu laufen lassen; das Skript schreibt zusätzlich eine
+Datei JE WETTBEWERB, weil die Gesamtdatei (1,9 MB) den Supabase-SQL-Editor
+überfordern kann.
+
 **Weitere Module:** `premium.js` (Berechtigung; nur Admin braucht Premium,
 `applyEntitlements` neutralisiert Premium-Regeln ohne Löschen), `records.js`
 (Rekorde/Auszeichnungen aus dem Verlauf), `avatars.js` (Profil), `theme.js`
