@@ -45,6 +45,12 @@ export function istGeoeffnet(matches = []) {
 //
 //  matches   — die Spiele DIESES Spieltags (je mit `snapshot`)
 //  gespielt  — alle bereits ausgewerteten Spiele der Saison (für die Tabelle)
+//
+//  ⚠️ `rules` wird ENTGEGENGENOMMEN, aber bewusst NICHT benutzt — siehe oben:
+//  eingefroren wird der objektive Wert, nicht das Urteil einer Runde. Der
+//  Parameter bleibt nur, damit bestehende Aufrufer unverändert funktionieren.
+//  Das Öffnen ist damit eine GLOBALE Operation; genau deshalb kann der
+//  Cron-Auslöser (`autoOeffnen.js`) ohne jede Runde arbeiten.
 export function spieltagOeffnen({
   spieltag, matches = [], gespielt = [], rules, gesamtSpieltage = 34,
 } = {}) {
