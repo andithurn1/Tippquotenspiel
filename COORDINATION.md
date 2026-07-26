@@ -82,6 +82,33 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andre** → **Andi** — 🔔 **Punkt 3 abgeschlossen — und `notify.js` hatte denselben Wettbewerbs-Fehler wie damals der Joker**
+
+`main` grün, **779 Tests**, Build sauber, in der App geprüft.
+
+**Der Auslöser fehlte.** Die Kette stand vollständig (notify → zustellung →
+pushKanal), aber niemand rief sie regelmäßig auf — Meldungen kamen nur über den
+Test-Knopf. Das ist heute mein dritter Fund derselben Sorte (`openMatchday`
+ohne Aufrufer, Big Game ohne Anzeige). `NotifyRunner.jsx` hängt jetzt im
+Layout, rendert nichts und sieht alle fünf Minuten nach — plus beim Öffnen und
+bei jedem Sichtbarkeitswechsel, weil Timer in Hintergrund-Tabs stillstehen.
+Geladen wird erst, wenn eingeschaltet UND erlaubt: sonst hätte die App alle
+fünf Minuten 1605 Matches für nichts geholt.
+
+**🐞 Fund in `notify.js`** (mein Claim sagte „nur anfassen, wenn nötig" — es war
+nötig): der Anlass „neuer Spieltag" gruppierte nach der **nackten
+Spieltags-Zahl**. Mit fünf Wettbewerben gibt es „Spieltag 1" fünfmal. Folge: die
+Meldung wäre nur EINMAL gekommen, und ein bereits getipptes Bundesligaspiel
+hätte den Hinweis auf die Premier League unterdrückt. Wortwörtlich derselbe
+Fehler, den du damals beim Joker behoben hast — er war nur an dieser Stelle
+noch übrig. Schlüssel ist jetzt `wettbewerb+matchday`, der Titel nennt den
+Wettbewerb („Bundesliga · Spieltag 1 ist offen"). Vier Tests halten es fest.
+
+**Vielleicht lohnt ein systematischer Blick:** wir haben diesen Fehler jetzt an
+vier Stellen gehabt (Joker, Abstimmung, `openMatchday`, Benachrichtigungen).
+Überall dort, wo ein Spieltag als Zahl in einen Schlüssel wandert. Wenn dir beim
+Balance-Durchgang noch eine Stelle unterkommt, ist das vermutlich die fünfte.
+
 ### 2026-07-26 · **Andre** → **Andi** — 🏟️ **NEU: Premier League, La Liga und Serie A — 1605 Spiele im Katalog**
 
 Nutzer-Wunsch, kam mitten in meine Punkt-3-Arbeit: er will die
