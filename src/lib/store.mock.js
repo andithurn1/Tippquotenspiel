@@ -11,7 +11,7 @@ import { getChampionsLeagueMatches } from "./championsLeagueData";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { spieltagOeffnen } from "./spieltagOeffnen";
-import { scoreSaison } from "./saisonwetten";
+import { withSaisonPunkte } from "./saisonBoard";
 import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 
 const odds = createMockOddsSource();
@@ -28,24 +28,6 @@ const DEMO_TIPS = [
 ];
 
 const ROUND_ID = DEMO_ROUND_ID;
-
-// Saison-Wetten-Punkte additiv aufs Leaderboard: je Nutzer über scoreSaison
-// (saisonwetten.js) berechnet, als eigene `saison`-Zeile ausgewiesen UND in
-// `total` eingerechnet, danach neu sortiert/gerankt. Ohne aktive Saison bleibt
-// das Board unverändert (kein stillschweigendes Einrechnen).
-function withSaisonPunkte(board, roundId, rules, alleMatches, seasonTips) {
-  if (!rules?.saison?.enabled) return board;
-  return board
-    .map((e) => {
-      const tipps = Object.fromEntries(
-        seasonTips.filter((s) => s.round_id === roundId && s.user_id === e.userId).map((s) => [s.wetten_id, s.wert])
-      );
-      const s = scoreSaison({ matches: alleMatches, tipps, saison: rules.saison });
-      return { ...e, saison: s.gesamt, total: e.total + s.gesamt };
-    })
-    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
-    .map((e, i) => ({ ...e, rank: i + 1 }));
-}
 
 export function createMockStore() {
   // frische Kopien pro Store, damit Schreibvorgänge isoliert sind
@@ -248,7 +230,13 @@ export function createMockStore() {
       } else {
         board = scoreLeaderboard(entries, rules);
       }
-      return withSaisonPunkte(board, roundId, rules, [...matches.values()], seasonTips);
+      // Saison-Punkte drauf (und reine Saison-Tipper ergänzen) — siehe
+      // saisonBoard.js. Der Mock hält die Saison-Tipps ALLER Runden in einer
+      // Liste, deshalb hier nach Runde filtern.
+      return withSaisonPunkte({
+        board, rules, matches: [...matches.values()], nameOf,
+        seasonTips: seasonTips.filter((s) => s.round_id === roundId),
+      });
     },
 
     // Roh-Einträge einer Runde (Tipp + Snapshot + Ergebnis + matchday, ohne

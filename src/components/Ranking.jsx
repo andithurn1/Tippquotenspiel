@@ -65,7 +65,17 @@ export default function Ranking() {
                   {b.name}
                   {b.userId === meId && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● du</span>}
                 </span>
-                <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{b.gewertet}/{b.tips}</span>
+                {/* gewertet/getippt — bei einem reinen Saison-Tipper wäre „0/0"
+                    irreführend: er hat keinen Spieltag versäumt, sondern eine
+                    andere Ebene bespielt. `saison !== undefined` heißt: die
+                    Saison-Wetten laufen in dieser Runde überhaupt. */}
+                {b.tips === 0 && b.saison !== undefined ? (
+                  <span title="Bisher nur Saison-Wetten, kein Spieltags-Tipp" style={{ fontFamily: MONO, fontSize: 10, color: C.muted }}>
+                    nur Saison
+                  </span>
+                ) : (
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{b.gewertet}/{b.tips}</span>
+                )}
                 {/* Anschluss-Bonus (Aufhol-Mechanismus) — nur wenn welcher anfiel */}
                 {b.bonus > 0 && (
                   <span title="Anschluss-Bonus für Zurückliegende" style={{

@@ -8,7 +8,7 @@ import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
-import { scoreSaison } from "./saisonwetten";
+import { withSaisonPunkte } from "./saisonBoard";
 import { DEFAULT_WETTBEWERB } from "./wettbewerbe";
 
 // Match-Zeile (DB) → Store-Form
@@ -17,22 +17,6 @@ const mapMatch = (m) => m && ({
   matchday: m.matchday, snapshot: m.snapshot, result: m.result,
   wettbewerb: m.wettbewerb, phase: m.phase,
 });
-
-// Saison-Wetten-Punkte additiv aufs Board (eigene `saison`-Zeile, in `total`
-// eingerechnet, danach neu sortiert/gerankt). Ohne aktive Saison unverändert.
-function withSaisonPunkte(board, rules, alleMatches, seasonTips) {
-  if (!rules?.saison?.enabled) return board;
-  return board
-    .map((e) => {
-      const tipps = Object.fromEntries(
-        seasonTips.filter((s) => s.user_id === e.userId).map((s) => [s.wetten_id, s.wert])
-      );
-      const s = scoreSaison({ matches: alleMatches, tipps, saison: rules.saison });
-      return { ...e, saison: s.gesamt, total: e.total + s.gesamt };
-    })
-    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
-    .map((e, i) => ({ ...e, rank: i + 1 }));
-}
 
 export function createSupabaseStore() {
   const sb = getSupabaseBrowserClient();
@@ -241,7 +225,9 @@ export function createSupabaseStore() {
       } else {
         board = scoreLeaderboard(entries, rules);
       }
-      return withSaisonPunkte(board, rules, matches, seasonTips);
+      // Saison-Punkte drauf, inkl. der reinen Saison-Tipper (saisonBoard.js).
+      // `seasonTips` ist hier schon auf die Runde gefiltert.
+      return withSaisonPunkte({ board, rules, matches, seasonTips, nameOf });
     },
 
     async getRoundEntries(roundId) {

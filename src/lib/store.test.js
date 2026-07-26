@@ -198,4 +198,32 @@ describe("Saison-Wetten (saveSeasonTip / listSeasonTips + Leaderboard)", () => {
     expect(du.saison).toBe(300);
     expect(du.total).toBeGreaterThanOrEqual(300);
   });
+
+  it("ein reiner Saison-Tipper steht im Board — auch ohne einen einzigen Match-Tipp", async () => {
+    const store = createMockStore();
+    const round = await store.createRound({
+      name: "Saison-Runde", adminId: "u-du", adminName: "Du", rules: DEFAULT_RULES,
+    });
+    const r = await store.getRound(round.id);
+    r.rules = { ...r.rules, saison: { enabled: true, gewicht: 1, wetten: [{ key: "meister", punkte: 300 }] } };
+    const { scoreSaison } = await import("./saisonwetten");
+    const matches = await store.listMatches();
+    const meister = scoreSaison({ matches, tipps: {}, saison: r.rules.saison }).zeilen[0].gewinner[0];
+
+    // Lena tritt bei und gibt AUSSCHLIESSLICH eine Saison-Wette ab.
+    await store.joinRound({ roundId: round.id, userId: "u-lena", name: "Lena" });
+    await store.saveSeasonTip({ roundId: round.id, userId: "u-lena", wettenId: "meister", wert: meister });
+
+    const board = await store.getLeaderboard(round.id);
+    const lena = board.find((b) => b.userId === "u-lena");
+    expect(lena).toBeDefined();
+    expect(lena.name).toBe("Lena");        // Name kommt aus der Mitgliedschaft, nicht aus dem Tipp
+    expect(lena.saison).toBe(300);
+    expect(lena.total).toBe(300);
+    expect(lena.tips).toBe(0);             // daran hängt die „nur Saison"-Anzeige im Ranking
+    expect(lena.rank).toBe(1);
+
+    // Der Admin ist Mitglied, hat aber nichts abgegeben — er bleibt draußen.
+    expect(board.map((b) => b.userId)).toEqual(["u-lena"]);
+  });
 });
