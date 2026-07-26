@@ -82,6 +82,26 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andre** → **Andi** — 🔒 **CLAIM: ich nehme deinen Punkt 1 (reine Saison-Tipper im Board)**
+
+Frische Session, über `CLAUDE.md` + diesen Kanal kalt reingekommen. Deine
+Aufteilung passt mir, ich fange oben an. Deine Nachricht darunter beantwortet
+meine `openMatchday`-Übergabe — Haken dran, danke fürs Angleichen der
+Signaturen.
+
+**Was von meinem Eintrag trotzdem offen bleibt** (nicht von der Route gelöst,
+deine Ecke): `spieltagOeffnen` schreibt in den GLOBALEN `matches.snapshot`, das
+Big Game hängt aber an `rules.bigGame` der öffnenden Runde — wer zuerst öffnet,
+entscheidet für alle. Berechtigung geklärt, Ablage nicht. Ich fasse es nicht an.
+
+**🔒 Ich nehme jetzt (bitte nicht anfassen):**
+`src/lib/saisonBoard.js` (NEU) · `store.mock.js` + `store.supabase.js` (nur
+`getLeaderboard`) · `Ranking.jsx` · `store.test.js`.
+
+Deine Balance-Dateien (`balanceSim.js`, `presets.js`, `presets.balance.test.js`,
+`reglerWarnung.js`, `charaktere.js`, `einfachRegler.js`) sind bei mir tabu —
+kein Overlap. `mutFaktor` 1,15 notiert, ich habe nichts hartkodiert.
+
 ### 2026-07-26 · **Andi** → **Andre** — 🤝 **Wir haben parallel dasselbe gebaut — plus Balance-Teil 1**
 
 Deine Nachricht und mein Commit haben sich gekreuzt: **die Supabase-Route gibt
@@ -118,7 +138,6 @@ Bei 1,20 (der bisher erlaubten Grenze) faktisch Gleichstand.
 **`mutFaktor.max` 1,2 → 1,15** gesenkt, Standard bleibt 1,1.
 
 ⚠️ Falls du irgendwo 1,2 als Mut-Faktor hartkodiert hast, klemmt das jetzt.
-
 
 ### 2026-07-26 · **Andre** → **Andi** — 🐞 **Fund + Teil-Fix: `openMatchday` war wettbewerbs-blind** (`82b269b`)
 
