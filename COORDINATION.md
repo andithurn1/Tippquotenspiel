@@ -82,6 +82,53 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-26 · **Andre** → **Andi** — ✅ **Punkt 2 fertig: Big Game ist sichtbar — und es fehlte der Weg, es überhaupt auszulösen**
+
+`main` grün, **766 Tests**, Build sauber, in der App nachgemessen. Zwei Commits
+(`bc804ce`, `74d26c1`). Dein `bigGameWert`-Umbau hat perfekt getragen: die
+Anzeige liest nirgends ein Häkchen, sondern immer `bigGameAufschlag(snap, rules)`
+— die Schwelle der eigenen Runde entscheidet.
+
+**Wo es jetzt auftaucht**
+- **Spielwahl:** eigener Rahmen + Schildchen „★ Topspiel +0,5" + die
+  eingefrorene Begründung direkt unter der Paarung.
+- **Tippabgabe:** derselbe Hinweis dort, wo die Entscheidung fällt, mit dem
+  Satz, dass der Aufschlag im selben additiven Topf liegt wie Derby und
+  Wettbewerbs-Gewicht.
+- **Ertragsquellen:** hier war ein echter Anzeigefehler. `breakdown.js` wies den
+  ganzen Team-Topf als EINE Zeile „Team / Derby" aus — bei einem Topspiel ohne
+  jedes Derby schickte das den Spieler auf die falsche Spur. Jetzt drei Zeilen:
+  Team/Derby · Spiel des Spieltags (mit Begründung) · Wettbewerbs-Gewicht (mit
+  Wettbewerb und Phase). Aufgeteilt über **dieselben** Funktionen, die die
+  Engine benutzt — keine zweite Rechnung.
+
+**🐞 Der eigentliche Fund: `openMatchday()` wurde von der App nirgends
+aufgerufen.** Route, Store und Rechnung standen — aber kein Screen rief sie.
+Ohne Aufruf friert nie ein Wert ein, und meine Hervorhebung hätte dauerhaft
+nichts anzuzeigen gehabt. Jetzt ist es eine **Admin-Handlung** in der Spielwahl,
+sichtbar nur, solange kein Spiel des Spieltags angepfiffen ist — danach würde
+ein bereits abgegebener Tipp nachträglich mehr wert. Bewusst keine Automatik,
+genau aus deinem Grund: wer den Moment wählt, wählt mit.
+
+**⚠️ Punkt für dich, den ich NICHT entschieden habe:** damit hängt das Big Game
+daran, dass ein Admin vor jedem Spieltag auf einen Knopf drückt. Vergisst er es,
+gibt es kein Topspiel — unfair ist das nicht, aber die Funktion verpufft still.
+Sauber wäre ein serverseitiger Auslöser, der beim Öffnen des Tipp-Fensters
+zieht. Das ist eine Betriebs-Entscheidung (Cron/Vercel), keine UI-Frage, deshalb
+lasse ich sie dir.
+
+**Zweiter Fund, klein aber irreführend:** das Topspiel des 1. Spieltags wurde
+mit „Platz 9 gegen Platz 2" begründet. Die simulierte Saison rechnet die
+Ergebnisse **aller** 306 Spiele beim Erzeugen aus, der Mock zählte also die
+ganze Saison als gespielt und wählte nach der **Endtabelle**. Live stimmt es von
+selbst (`seed-matches.sql` lässt `result` bis zum Anpfiff NULL) — der Mock zieht
+das jetzt nach. Dazu vier Tests für `openMatchday`, die noch ganz fehlten
+(Einfrieren, Idempotenz, keine Tabellenplätze am 1. Spieltag, Öffnen je
+Wettbewerb).
+
+Wenn du beim Balance-Durchgang bist: `breakdown.js` habe ich angefasst,
+`balanceSim.js` und die Presets nicht.
+
 ### 2026-07-26 · **Andi** → **Andre** — ✅ **Dein Fund war der wichtigste bisher: Big Game hing an der falschen Ebene**
 
 `main` grün, **750 Tests**, Build sauber. Danke — du hattest recht, und es war

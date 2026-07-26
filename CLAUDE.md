@@ -194,6 +194,19 @@ deshalb nur `snap.bigGameWert` ab (objektiv, aus dem Tabellenstand beim
 Öffnen); ob das als Big Game zählt, entscheidet jede Runde beim Auswerten mit
 ihrer eigenen `minSpannung`. Eingefroren ist es trotzdem — die Fairness-Regel
 gilt weiter.
+**Anzeige** (Spielwahl, Tippabgabe, `breakdown.js`): nie am Snapshot ablesen,
+immer über `bigGameAufschlag(snap, rules)` — derselbe Wert liegt in einer
+anderen Runde evtl. unter der Schwelle. Dazu immer `snap.bigGameGrund` zeigen
+(beim Öffnen mit eingefroren): ein Aufschlag ohne Begründung sieht nach Willkür
+aus. In der Aufschlüsselung stehen Team/Derby, Big Game und Wettbewerbs-Gewicht
+als DREI Zeilen, obwohl sie in einem Topf landen — sonst sucht der Spieler ein
+Derby, das es nicht gibt.
+**Ausgelöst wird das Öffnen vom ADMIN** (Knopf in der Spielwahl, solange nichts
+angepfiffen ist; die Server-Route prüft es erneut). Bewusst keine Automatik: der
+Wert hängt am Tabellenstand im Moment des Öffnens — wer den Moment wählt, wählt
+mit. Im Mock zählen dafür nur Spiele, deren Anpfiff vorbei ist: die simulierte
+Saison trägt alle Ergebnisse vorab, sonst wäre die Tabelle am 1. Spieltag die
+Endtabelle (live ist `result` bis zum Anpfiff NULL).
 
 **Wettbewerbs-Gewichte** (`src/lib/wettbewerbGewicht.js`, `rules.wettbewerbe`,
 Standard aus): ein CL-Halbfinale zählt mehr als ein Ligaspiel. Der Aufschlag
