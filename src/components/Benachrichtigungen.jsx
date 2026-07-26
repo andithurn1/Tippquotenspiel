@@ -7,23 +7,38 @@ import {
   DEFAULT_NOTIFY, sanitizeNotify, summarize, KANAELE, KANAL_META,
   VORLAUF_OPTIONEN, NOTIFY_LIMITS,
 } from "@/lib/notify";
+import { waehleKanal, STATUS, STATUS_TEXT } from "@/lib/pushKanal";
+import { budgetText, pruneZustellungen } from "@/lib/zustellung";
 
 // ── Benachrichtigungen einstellen ───────────────────────────
 // Bewusst als „aus, bis du zustimmst" gebaut: Erst der große Schalter, dann
 // die Feinheiten. Die Klartext-Zeile unten sagt jederzeit, was tatsächlich
 // ankommt — man soll nie überrascht werden.
 const KEY = "tqs.notify.v1";
+// Was diesem Gerät schon zugestellt wurde. Bewusst LOKAL: eine System-
+// Benachrichtigung erscheint auf genau einem Gerät, also gehört auch die
+// Buchführung dorthin. Erst echtes Web-Push (Stufe 2) bräuchte das serverseitig.
+const GESEHEN_KEY = "tqs.notify.gesehen.v1";
 
 export default function Benachrichtigungen() {
   const [prefs, setPrefs] = useState(DEFAULT_NOTIFY);
   const [systemStatus, setSystemStatus] = useState("");
+  const [kanalZustand, setKanalZustand] = useState(null);
+  const [gesehen, setGesehen] = useState([]);
+  const [testHinweis, setTestHinweis] = useState("");
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) setPrefs(sanitizeNotify(JSON.parse(raw)));
     } catch {}
+    try {
+      const roh = JSON.parse(localStorage.getItem(GESEHEN_KEY) ?? "[]");
+      setGesehen(pruneZustellungen(Array.isArray(roh) ? roh : []));
+    } catch {}
+    setKanalZustand(waehleKanal().status());
   }, []);
+
 
   const update = (patch) => {
     const next = sanitizeNotify({ ...prefs, ...patch });
@@ -32,17 +47,37 @@ export default function Benachrichtigungen() {
   };
 
   // Der Systemdialog kommt erst, wenn der Nutzer die Funktion selbst einschaltet.
+  // Erlaubnis UND Service Worker laufen über den Kanal (pushKanal.js) — die eine
+  // Stelle, die getauscht wird, wenn später echtes Web-Push dazukommt.
   const einschalten = async () => {
     if (prefs.enabled) { update({ enabled: false }); setSystemStatus(""); return; }
     update({ enabled: true });
-    try {
-      if (typeof Notification !== "undefined" && Notification.permission === "default") {
-        const res = await Notification.requestPermission();
-        setSystemStatus(res === "granted" ? "" : "Dein Gerät blockiert Benachrichtigungen noch — in den Systemeinstellungen freigeben.");
-      } else if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-        setSystemStatus("Dein Gerät blockiert Benachrichtigungen — in den Systemeinstellungen freigeben.");
-      }
-    } catch {}
+    const kanal = waehleKanal();
+    const zustand = await kanal.erlaubnisAnfragen();
+    setKanalZustand(zustand);
+    // Ohne registrierten Worker zeigen mobile Browser gar nichts an.
+    if (zustand === STATUS.erlaubt) await kanal.registriereWorker();
+    setSystemStatus(zustand === STATUS.erlaubt ? "" : STATUS_TEXT[zustand]);
+  };
+
+  // Probe aufs Exempel: zeigt dieses Gerät überhaupt etwas an? Ohne diesen
+  // Knopf merkt ein Nutzer erst am verpassten Spieltag, dass nichts ankommt.
+  const testen = async () => {
+    const kanal = waehleKanal();
+    let zustand = kanal.status();
+    if (zustand === STATUS.offen) zustand = await kanal.erlaubnisAnfragen();
+    setKanalZustand(zustand);
+    if (zustand !== STATUS.erlaubt) { setTestHinweis(STATUS_TEXT[zustand]); return; }
+    await kanal.registriereWorker();
+    const eintrag = {
+      art: "test", key: `test:${Date.now()}`,
+      titel: "Test — so sieht es aus",
+      text: "Echte Hinweise kommen nur zu den beiden Anlässen oben.",
+    };
+    const raus = await kanal.zeige(eintrag, { url: "/benachrichtigungen" });
+    // Der Test zählt bewusst NICHT aufs Tagesbudget: er ist vom Nutzer
+    // ausgelöst, nicht von der App — sonst nimmt er sich seine echten Hinweise.
+    setTestHinweis(raus ? "Rausgeschickt — schau in deine Benachrichtigungen." : "Konnte nicht angezeigt werden.");
   };
 
   const toggleVorlauf = (h) => {
@@ -94,6 +129,38 @@ export default function Benachrichtigungen() {
         {systemStatus && (
           <div style={{ fontSize: 11.5, color: C.coral, marginTop: 8, lineHeight: 1.5 }}>{systemStatus}</div>
         )}
+
+        {/* Der Zustand des GERÄTS, getrennt von der Einstellung in der App.
+            „Ich habe es eingeschaltet, es kommt aber nichts" ist sonst nicht
+            aufzulösen — die Sperre sitzt dann im System, nicht hier. */}
+        <div style={{
+          marginTop: 10, background: C.surface, border: `1px solid ${C.line}`,
+          borderRadius: 12, padding: "10px 12px",
+        }}>
+          <div style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.5 }}>
+            {kanalZustand ? STATUS_TEXT[kanalZustand] : "Gerät wird geprüft …"}
+          </div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+            {budgetText(gesehen, prefs)}
+          </div>
+          {kanalZustand !== STATUS.nichtUnterstuetzt && (
+            <button onClick={testen} style={{
+              marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, fontWeight: 700,
+              background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
+              borderRadius: 999, padding: "5px 12px",
+            }}>
+              Testbenachrichtigung senden
+            </button>
+          )}
+          {testHinweis && (
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>{testHinweis}</div>
+          )}
+          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+            Hinweise erscheinen, solange die App geöffnet ist (auch im Hintergrund).
+            Zustellung bei ganz geschlossener App kommt später — dafür braucht es
+            Push-Schlüssel auf dem Server.
+          </div>
+        </div>
 
         <div style={{ opacity: prefs.enabled ? 1 : 0.45, pointerEvents: prefs.enabled ? "auto" : "none" }}>
           {/* Kanäle */}
