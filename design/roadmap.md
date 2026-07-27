@@ -33,6 +33,34 @@ Test-Stand: **800 grün**, Build sauber (Stand 2026-07-27).
 
 ## Offen
 
+### ⏰ Echte Spielpläne vor dem Launch — HARTE FRIST, blockiert den Start
+**Der einzige Punkt mit einem Datum: 28.08.2026.**
+
+Alle 1605 Spiele im Katalog sind **simuliert**. Echt sind nur die Klubs und die
+üblichen Anstoßzeiten je Liga — Spielplan, Quoten, Ergebnisse und Torschützen
+sind generiert, die Spielernamen bewusst erfunden. Für Entwicklung und Test ist
+das genau richtig; für den Betrieb muss es getauscht werden, sonst tippen
+Spieler auf Begegnungen, die es nie gibt.
+
+**Reihenfolge und Machbarkeit:**
+- **Die vier Ligen gehen sofort** — Bundesliga, Premier League, La Liga und
+  Serie A haben ihre Termine längst veröffentlicht.
+- **Die Champions League geht NICHT vor Ende August** — die Ligaphase wird erst
+  Ende August ausgelost. Bis dahin bleibt der generierte CL-Plan stehen. Das
+  ist kein Versäumnis, sondern eine Wartezeit.
+
+**Kein Umbau, nur ein Datentausch:** die fünf Ligadateien liefern reine Daten,
+`ligaGenerator.js` baut daraus die Saison. Danach `npm run seed:matches` und die
+SQL-Runde erneut (fünf Einzeldateien, der SQL-Editor scheitert an der 1,9-MB-
+Gesamtdatei).
+
+⚠️ **Beim Tausch mitdenken:** echte Spielpläne heißen auch echte QUOTEN, sobald
+die API angebunden ist. `RATING_SHRINK` in `oddsGenerator.js` greift dann NICHT
+mehr (echte Quoten kommen über `buildSnapshot`) — die Balance ist gegen die
+simulierte Quoten-Verteilung vermessen und sollte gegen die echte einmal
+nachgeprüft werden (`npm run balance`).
+
+
 ### Balance: EIN Durchgang am Ende statt Feinjustierung nebenbei — ENTSCHIEDEN (Nutzer)
 **Arbeitsweise ab jetzt.** Beim Bauen einer neuen Mechanik gibt es nur einen
 SCHNELLTEST: „gewinnt der Kenner strukturell noch?" — ja/nein, keine Zahlen-
