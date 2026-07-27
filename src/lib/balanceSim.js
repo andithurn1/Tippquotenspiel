@@ -19,7 +19,7 @@
 //  die Aussage „Können vs. Glück" nicht verschieben, aber die Laufzeit vervielfachen.
 // ============================================================
 
-import { scoreTip, maxTotalModifier } from "./engine";
+import { scoreTip, maxTotalModifier, maxJokerFactor } from "./engine";
 import { archetypeSnapshots } from "./rulePreview";
 import { ARCHETYPE_FREQ } from "./bundesligaStats";
 import { applyCatchup } from "./catchup";
@@ -148,6 +148,22 @@ const DERBY_ANTEIL = 0.07;
 const EIGENER_VEREIN_ANTEIL = 1 / 9;   // ein Spiel je Spieltag
 const FAN_OPTIMISMUS = 0.6;            // so oft tippt ein Fan sein Team zum Sieg
 
+// ── Big Game (schließt die zweite Blindstelle) ──────────────
+// Bis hierher trug KEIN Snapshot einen `bigGameWert`. `bigGameAufschlag` gab
+// deshalb immer 0 zurück, und Big Game war für die Ampel unsichtbar: „aus" und
+// „stark" lieferten auf die Nachkommastelle dieselben Zahlen. Gleichzeitig
+// rechnete `maxTotalModifier` die Ebene in die Obergrenze ein — der Simulator
+// meldete also eine Decke, die im Spiel nie ausgezahlt wurde.
+//
+// Modelliert wird es so, wie es wirklich läuft: GENAU EIN Spiel je Spieltag ist
+// das Topspiel (`spieltagOeffnen` wählt eines), und eingefroren wird ein WERT,
+// kein Urteil — ob er zählt, entscheidet die Runde über `minSpannung`. Der Wert
+// streut, weil nicht jeder Spieltag ein gleich brisantes Topspiel hat; über der
+// Standard-Schwelle 0,35 liegt damit gut die Hälfte. Genau diese Streuung ist
+// der Punkt: ein Spieltag ohne Big Game ist ein normaler Spieltag.
+const BIGGAME_WERT_MIN = 0.25;
+const BIGGAME_WERT_MAX = 0.75;
+
 // Führt die Simulation aus. Je Spieltag setzen beide Tipper (falls erlaubt)
 // ihren Joker dorthin, wo er strategisch hingehört — der Könner auf sein
 // sicherstes Spiel (Favorit), der Zocker auf seine Überraschungs-Wette
@@ -172,6 +188,20 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
   const pickArt = buildPicker(ARCHETYPE_FREQ);
   const jokerMax = maxTotalModifier(rules);
   const hatModifikator = jokerMax > 1;
+  // ⚠️ NICHT dasselbe wie `jokerMax`. Im Ranking-Modus akzeptiert die Engine nur
+  // Gewichte AUS DEM POOL (`joker.faktoren`) — eine bewusste Sicherung, damit
+  // kein manipulierter Tipp einen Fantasie-Faktor einschleust. `jokerMax` ist
+  // aber die Obergrenze ALLER Ebenen zusammen (Joker + Big Game + Wettbewerb +
+  // Team/Derby). Sobald eine davon aktiv ist, liegt der Wert NICHT mehr im Pool,
+  // die Sicherung greift, und der Aufschlag ist still 0 — der Simulator hätte
+  // dann den Ranking-Joker gar nicht mehr gemessen, ohne dass es auffällt.
+  // Genau das war der Fall: mit aktivem Big Game fiel beim Preset „Rangliste"
+  // der Modifikator-Anteil von 9,8 % auf 0 und der Maximalfall halbierte sich.
+  const jokerGewicht = maxJokerFactor(rules);
+  // Der Gewichts-Pool, absteigend — nur im Ranglisten-Modus belegt.
+  const rankingPool = (rules?.joker?.enabled && rules.joker.modus === "ranking")
+    ? [...(rules.joker.faktoren || [])].filter((f) => Number.isFinite(f) && f > 1).sort((a, b) => b - a)
+    : null;
   // Ohne Modifikatoren gerechnet — für den Anteil, den sie ausmachen.
   const ohneMod = {
     ...rules,
@@ -215,6 +245,19 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
         return { def, real, ueberraschung, snap: istDerby ? def.snapDerby : def.snap };
       });
 
+      // Genau EIN Topspiel je Spieltag — und nur dieses trägt den Wert. Die
+      // Snapshots aus `artOf` sind gecacht und werden von allen Spieltagen
+      // geteilt, deshalb eine KOPIE statt einer Zuweisung; sonst bliebe der
+      // Wert kleben und ab dem zweiten Spieltag wäre jedes Spiel ein Big Game.
+      if (spiele.length) {
+        const topIdx = Math.floor(rand() * spiele.length);
+        const wert = +(BIGGAME_WERT_MIN + rand() * (BIGGAME_WERT_MAX - BIGGAME_WERT_MIN)).toFixed(3);
+        spiele[topIdx] = {
+          ...spiele[topIdx],
+          snap: { ...spiele[topIdx].snap, bigGameWert: wert },
+        };
+      }
+
       // Welches Spiel betrifft den eigenen Verein? Höchstens eines je Spieltag
       // und Tipper — und je Tipper ein anderes, sonst hätten alle denselben
       // Heimvorteil und der Bonus wäre wirkungslos statt gemessen.
@@ -236,9 +279,28 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
       // Joker: jeder setzt ihn auf sein erstes Außenseiter-Spiel (dort ist am
       // meisten zu holen), sonst aufs erste Spiel.
       const jokerIdx = wahl.map((w) => {
-        if (!hatModifikator) return -1;
+        if (!hatModifikator || rankingPool) return -1;
         const i = w.indexOf(true);
         return i >= 0 ? i : 0;
+      });
+
+      // ── Ranglisten-Modus: der Pool wird VERTEILT ──────────
+      // Vorher setzte der Simulator in BEIDEN Modi genau einen Joker je
+      // Spieltag. Damit war der Ranglisten-Modus nicht modelliert — sein ganzer
+      // Sinn ist, mehrere Gewichte über den Spieltag zu legen. Folge: die
+      // Presets „Joker" und „Rangliste" lieferten auf die Nachkommastelle
+      // identische Zahlen, obwohl sie verschiedene Spiele sind.
+      // Verteilt wird nach VORLIEBE: das stärkste Gewicht auf den ersten
+      // Außenseiter-Tipp (dort ist am meisten zu holen), dann absteigend; was
+      // übrig bleibt, behält das neutrale 1.
+      const gewichte = PROFILE.map((_, pi) => {
+        if (!rankingPool || !hatModifikator) return null;
+        const w = wahl[pi];
+        const idx = spiele.map((_, i) => i);
+        const reihenfolge = [...idx.filter((i) => w[i]), ...idx.filter((i) => !w[i])];
+        const m = new Map();
+        rankingPool.forEach((f, k) => { if (k < reihenfolge.length) m.set(reihenfolge[k], f); });
+        return m;
       });
 
       spiele.forEach((sp, idx) => {
@@ -248,7 +310,10 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
           const aufAussenseiter = wahl[pi][idx];
           if (aufAussenseiter && sp.ueberraschung) dabei[pi] += 1;
           const basis = aufAussenseiter ? sp.def.upset : sp.def.modal;
-          const mitJoker = idx === jokerIdx[pi];
+          // Einzel-Modus liest `tip.joker`, Ranglisten-Modus `tip.gewicht` —
+          // je Modus ist nur eines davon gesetzt, sonst zählte beides doppelt.
+          const mitJoker = !rankingPool && idx === jokerIdx[pi];
+          const gewicht = rankingPool ? (gewichte[pi]?.get(idx) ?? 1) : 1;
           // `verein` nur setzen, wenn der eigene Verein wirklich mitspielt —
           // daran erkennt die Engine den Heimatbonus (sie kennt selbst keine
           // Vereinsnamen, siehe Architektur-Regel 3).
@@ -257,7 +322,7 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
             : undefined;
           const tipp = {
             ...basis, goals: leer, joker: mitJoker,
-            gewicht: mitJoker ? jokerMax : 1,
+            gewicht,
             ...(eigener ? { verein: eigener } : {}),
           };
           const punkte = scoreTip(tipp, actual, sp.snap, rules).total;
@@ -316,7 +381,7 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
   for (const [, def] of artOf) {
     for (const [real, p] of def.verteilung) {
       if (p < 0.01) continue;
-      const exakt = { ...real, goals: leer, joker: true, gewicht: jokerMax };
+      const exakt = { ...real, goals: leer, joker: true, gewicht: jokerGewicht };
       // Gegen die Derby-Fassung gerechnet: der Maximalfall ist der teuerste
       // denkbare Ausgang, und dazu gehört ein aktiver Derby-Faktor.
       maximalfall = Math.max(maximalfall, scoreTip(exakt, { ...real, playerGoals: null }, def.snapDerby, rules).total);

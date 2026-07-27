@@ -9,6 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sync": "node scripts/sync-status.mjs",
+    "balance": "vite-node scripts/balance-durchgang.mjs",
     "seed:matches": "vite-node scripts/seed-matches.mjs",
     "seed:bundesliga": "vite-node scripts/seed-matches.mjs"
   },

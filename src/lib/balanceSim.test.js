@@ -6,6 +6,33 @@ import { PRESETS } from "./presets";
 // Klein halten, damit die Tests flott bleiben — die Aussagen sind dieselben.
 const KLEIN = { seasons: 25, matchdays: 9, perMatchday: 9, seed: 7 };
 
+describe("simulateBalance — der Ranking-Joker bleibt messbar", () => {
+  // Regression zu einem stillen Messfehler: der Simulator setzte als Gewicht
+  // `maxTotalModifier` — die Obergrenze ALLER Ebenen. Im Ranking-Modus nimmt die
+  // Engine aber nur Werte AUS DEM POOL (Schutz gegen eingeschleuste Faktoren).
+  // Sobald eine zweite Ebene aktiv war, lag der Wert nicht mehr im Pool, der
+  // Aufschlag war still 0, und der Joker wurde gar nicht mehr gemessen.
+  const ranking = sanitizeRules({
+    ...DEFAULT_RULES,
+    joker: { ...DEFAULT_RULES.joker, enabled: true, modus: "ranking", faktoren: [2, 1.5, 1.2, 1] },
+  });
+
+  it("misst einen Modifikator-Anteil, wenn der Ranking-Joker an ist", () => {
+    expect(simulateBalance(ranking, KLEIN).modifikatorAnteil).toBeGreaterThan(0);
+  });
+
+  it("verliert ihn NICHT, sobald eine zweite Modifikator-Ebene dazukommt", () => {
+    const mitBigGame = sanitizeRules({
+      ...ranking,
+      bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.3 },
+    });
+    const r = simulateBalance(mitBigGame, KLEIN);
+    expect(r.modifikatorAnteil).toBeGreaterThan(0);
+    // Und der Maximalfall darf nicht auf den Wert OHNE Joker zurückfallen.
+    expect(r.maximalfall).toBeGreaterThan(simulateBalance(DEFAULT_RULES, KLEIN).maximalfall);
+  });
+});
+
 describe("simulateBalance — Grundverhalten", () => {
   it("liefert plausible Kennzahlen im gültigen Bereich", () => {
     const r = simulateBalance(DEFAULT_RULES, KLEIN);
