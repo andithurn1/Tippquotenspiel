@@ -32,6 +32,7 @@ import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } from "@/lib/spielauswahl";
 import { VORLAUF_STUFEN, beschreibeTippfenster } from "@/lib/tippfenster";
 import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
+import SpielauswahlListe from "@/components/SpielauswahlListe";
 import { C, MONO } from "@/lib/theme";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
@@ -177,7 +178,11 @@ export default function Spielerstellung() {
   // bleibt darunter erhalten, sonst koennte man nie den zweiten Verein waehlen.
   const sp = rules.spiele || DEFAULT_RULES.spiele;
   const patchSpiele = (p) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...p } })); };
-  const teamFilterOn = sp.modus === "teams" || (sp.teams?.length ?? 0) > 0;
+  // `modus` kann nur EINES sein. Ohne die Sperre wirkte der Team-Filter noch
+  // aufgeklappt, während die Liste schon zählt — zwei sichtbare Wahrheiten
+  // über dieselbe Frage.
+  const listeOn = sp.modus === "liste";
+  const teamFilterOn = !listeOn && (sp.modus === "teams" || (sp.teams?.length ?? 0) > 0);
   const selectedTeams = sp.teams ?? [];
   const toggleTeam = (team) => {
     const teams = selectedTeams.includes(team)
@@ -237,7 +242,12 @@ export default function Spielerstellung() {
       <BackLink href="/menu" label="Menü" />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
-        borderRadius: 26, overflow: "hidden",
+        // `clip` statt `hidden`: beides schneidet den Inhalt an den runden Ecken
+        // ab, aber `hidden` macht den Rahmen zum SCROLL-Container — und damit
+        // klebt `position: sticky` daran fest, statt am Fenster. Die Ampel
+        // weiter unten scrollte deshalb stumm mit, ohne dass etwas kaputt
+        // aussah. `clip` erzeugt keinen Scroll-Container und behebt es.
+        borderRadius: 26, overflow: "clip",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
@@ -373,17 +383,33 @@ export default function Spielerstellung() {
           {/* Live-Vorschau über typische Spielarten */}
           <RegelVorschau rules={rules} />
 
-          {/* Balance-Ampel: eine Aussage, ob die Runde noch ein Tippspiel bleibt */}
-          <BalanceAmpel rules={rules} />
-
-          {/* Reale Verteilung + Underdog-Neigung des Regelwerks */}
+          {/* Reale Verteilung + Underdog-Neigung des Regelwerks. Steht jetzt
+              VOR der Ampel, damit Ampel und Warnungen direkt aneinander
+              grenzen und gemeinsam kleben können. */}
           <PresetRating rules={rules} />
 
-          {/* Leitplanken: nur in der Profi-Stufe, weil nur dort einzelne Regler
-              bis an ihre harte Grenze laufen können. */}
-          {stufe === "profi" && (
-            <ProfiWarnungen rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
-          )}
+          {/* ── Klebt beim Scrollen ────────────────────────────
+              Ampel und Warnungen sind die RÜCKMELDUNG auf die Regler darunter.
+              Scrollten sie weg, schöbe man einen Regler und sähe die Wirkung
+              nicht — man müsste nach jedem Schritt hoch und wieder runter.
+              Gedeckelt auf 42 % der Höhe (mit eigenem Scroll), sonst frisst
+              der Kasten auf dem Handy die ganze Fläche. */}
+          <div style={{
+            position: "sticky", top: 0, zIndex: 5,
+            maxHeight: "42vh", overflowY: "auto",
+            // Muss DECKEND sein, sonst scrollt der Inhalt sichtbar dahinter
+            // durch. `C.ink` ist der Grundton des Rahmens an dieser Stelle.
+            background: C.ink, paddingBottom: 8, marginBottom: 2,
+          }}>
+            {/* Balance-Ampel: eine Aussage, ob die Runde noch ein Tippspiel bleibt */}
+            <BalanceAmpel rules={rules} />
+
+            {/* Leitplanken: nur in der Profi-Stufe, weil nur dort einzelne Regler
+                bis an ihre harte Grenze laufen können. */}
+            {stufe === "profi" && (
+              <ProfiWarnungen rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
+            )}
+          </div>
 
           {/* Schärfe */}
           {/* Stufe 2: vier grosse Fragen statt der Rohregler darunter */}
@@ -948,6 +974,11 @@ export default function Spielerstellung() {
               Steht direkt bei den Teams, weil es dieselbe Frage beantwortet —
               welche Spiele gehören überhaupt zur Runde. */}
           <SpielauswahlWettbewerbe spiele={sp} onChange={(neu) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...neu } })); }} />
+
+          {/* Die feste Liste — der Ausweg aus der UND-Verknüpfung aller
+              anderen Dimensionen. Steht bewusst hinter ihnen: erst probiert
+              man die Regel, dann zählt man einzeln auf. */}
+          <SpielauswahlListe spiele={sp} onChange={patchSpiele} />
 
           {/* Tipp-Fenster: wie früh vor Anpfiff getippt wird. Gehört hierher,
               weil es dieselbe Frage beantwortet wie die Spielauswahl — WAS
