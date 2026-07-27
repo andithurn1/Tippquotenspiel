@@ -10,7 +10,8 @@ import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
 import { STAERKE_STUFEN, BETRIFFT } from "@/lib/catchup";
 import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
-import { alleVereine } from "@/lib/ligen";
+import { alleVereine, vereineVon, LIGEN } from "@/lib/ligen";
+import { wettbewerbLabel } from "@/lib/wettbewerbe";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -192,6 +193,35 @@ export default function Spielerstellung() {
   };
 
   const teamFilterInvalid = teamFilterOn && selectedTeams.length < 2;
+
+  // ── Vereine je Wettbewerb ─────────────────────────────────
+  // Leere Wettbewerbs-Auswahl heißt „alle" (siehe spielauswahl.js) — dann
+  // werden auch alle Gruppen gezeigt. Sonst nur die gewählten: wer Bundesliga
+  // und CL spielt, soll Serie A gar nicht erst sehen.
+  const teamGruppen = useMemo(() => {
+    const gewaehlt = sp.wettbewerbe ?? [];
+    return LIGEN
+      .filter((l) => gewaehlt.length === 0 || gewaehlt.includes(l.key))
+      .map((l) => ({ key: l.key, label: wettbewerbLabel(l.key), vereine: vereineVon(l.key) }))
+      .filter((g) => g.vereine.length > 0);
+  }, [sp.wettbewerbe]);
+
+  // Eine ganze Liga an- oder abwählen — 18-mal klicken ist keine Bedienung.
+  const toggleLiga = (vereine) => {
+    const alleDrin = vereine.every((v) => selectedTeams.includes(v));
+    const teams = alleDrin
+      ? selectedTeams.filter((t) => !vereine.includes(t))
+      : [...new Set([...selectedTeams, ...vereine])];
+    patchSpiele({ modus: "teams", teams });
+  };
+
+  // Gewählte Vereine, die in keiner sichtbaren Gruppe mehr vorkommen — etwa
+  // weil ihr Wettbewerb nachträglich abgewählt wurde. Sie blieben sonst still
+  // im Filter stehen und niemand sähe, warum die Runde leer wirkt.
+  const verwaisteTeams = useMemo(() => {
+    const sichtbar = new Set(teamGruppen.flatMap((g) => g.vereine));
+    return selectedTeams.filter((t) => !sichtbar.has(t));
+  }, [teamGruppen, selectedTeams]);
 
   const createRound = async () => {
     if (!user) { setCreateErr("Bitte zuerst einloggen (Startseite)."); return; }
@@ -925,40 +955,76 @@ export default function Spielerstellung() {
             </div>
           )}
 
-          {/* Teams */}
+          {/* ⚠️ REIHENFOLGE: erst die Wettbewerbe, dann die Vereine.
+              Vorher stand die Vereins-Auswahl davor und zeigte ALLE Klubs aus
+              fünf Ligen in einer einzigen Wolke — über 90 Knöpfe, Bayern neben
+              Burnley neben Bologna. Das ist die grobe Entscheidung, also gehört
+              sie nach vorn; die Vereinsliste hängt dann davon ab. */}
+          <SectionTitle>Wettbewerbe</SectionTitle>
+          <SpielauswahlWettbewerbe spiele={sp} onChange={(neu) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...neu } })); }} />
+
+          {/* Teams — je Wettbewerb gruppiert, und nur aus den gewählten. */}
           <SectionTitle>Teams</SectionTitle>
           <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Standardmäßig zählen alle Bundesliga-Spiele. Willst du dich auf bestimmte Teams
-            beschränken (z. B. weniger Aufwand mit Torschützen, oder ihr wollt nur eure
-            Lieblingsklubs plus Nachbarschaftsduelle), wählt hier mindestens 2 Teams —
-            ein Spiel zählt für diese Runde, sobald mindestens eine Seite dabei ist.
+            Standardmäßig zählen alle Spiele der oben gewählten Wettbewerbe. Willst du
+            dich auf bestimmte Vereine beschränken (z. B. weniger Aufwand mit
+            Torschützen, oder ihr wollt nur eure Lieblingsklubs), wählt hier
+            mindestens 2 — ein Spiel zählt, sobald mindestens eine Seite dabei ist.
           </p>
           <Toggle label="Auf bestimmte Teams beschränken" on={teamFilterOn}
             onChange={(on) => patchSpiele(on ? { modus: "teams" } : { modus: "alle", teams: [] })} />
           {teamFilterOn && (
             <div style={{ marginTop: 8, marginBottom: 8 }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {ALL_TEAMS.map((team) => {
-                  const on = selectedTeams.includes(team);
-                  return (
-                    <button key={team} onClick={() => toggleTeam(team)} style={{
-                      cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
-                      background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
-                      border: `1px solid ${on ? C.mint + "66" : C.line}`,
-                    }}>{team}</button>
-                  );
-                })}
-              </div>
+              {teamGruppen.map((g) => (
+                <div key={g.key} style={{ marginBottom: 10 }}>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                    marginBottom: 5,
+                  }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{g.label}</span>
+                    {/* Alle einer Liga auf einmal — sonst klickt man 18-mal. */}
+                    <button onClick={() => toggleLiga(g.vereine)} style={{
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 10.5, padding: "3px 8px",
+                      borderRadius: 999, background: "transparent", color: C.mint,
+                      border: `1px solid ${C.line}`,
+                    }}>{g.vereine.every((v) => selectedTeams.includes(v)) ? "keine" : "alle"}</button>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {g.vereine.map((team) => {
+                      const on = selectedTeams.includes(team);
+                      return (
+                        <button key={team} onClick={() => toggleTeam(team)} style={{
+                          cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
+                          background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
+                          border: `1px solid ${on ? C.mint + "66" : C.line}`,
+                        }}>{team}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
               <div style={{ fontSize: 11, color: teamFilterInvalid ? C.coral : C.muted, marginTop: 8 }}>
                 {selectedTeams.length} von mindestens 2 Teams ausgewählt
                 {teamFilterInvalid && " — bitte noch mindestens ein weiteres Team wählen"}.
               </div>
 
+              {/* ⚠️ Gewählte Vereine, die in KEINEM gewählten Wettbewerb mehr
+                  vorkommen. Ohne diesen Hinweis filtert die Runde still gegen
+                  Vereine, die gar nicht mehr auftauchen. */}
+              {verwaisteTeams.length > 0 && (
+                <div style={{ fontSize: 11, color: C.gold, marginTop: 4, lineHeight: 1.45 }}>
+                  {verwaisteTeams.length} gewählte{verwaisteTeams.length === 1 ? "r Verein spielt" : " Vereine spielen"} in
+                  keinem der gewählten Wettbewerbe ({verwaisteTeams.join(", ")}) — {verwaisteTeams.length === 1 ? "er zählt" : "sie zählen"} nicht mit.
+                </div>
+              )}
+
               {/* Was die Auswahl konkret bedeutet. Ohne diese Rückmeldung
                   stellt man „nur die Top 2" ein und merkt erst in Woche drei,
                   dass pro Spieltag ein einziges Spiel übrig bleibt. */}
               {!teamFilterInvalid && (() => {
-                const { min, max } = spieleProSpieltag(selectedTeams.length, ALL_TEAMS.length);
+                const gesamt = teamGruppen.reduce((s, g) => s + g.vereine.length, 0) || ALL_TEAMS.length;
+                const { min, max } = spieleProSpieltag(selectedTeams.length, gesamt);
                 const duenn = max < 3;
                 return (
                   <div style={{ fontSize: 11, color: duenn ? C.gold : C.mint, marginTop: 4, lineHeight: 1.45 }}>
@@ -969,11 +1035,6 @@ export default function Spielerstellung() {
               })()}
             </div>
           )}
-
-          {/* Quer über Wettbewerbe (Etappe d): „nur das Interessanteste".
-              Steht direkt bei den Teams, weil es dieselbe Frage beantwortet —
-              welche Spiele gehören überhaupt zur Runde. */}
-          <SpielauswahlWettbewerbe spiele={sp} onChange={(neu) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...neu } })); }} />
 
           {/* Die feste Liste — der Ausweg aus der UND-Verknüpfung aller
               anderen Dimensionen. Steht bewusst hinter ihnen: erst probiert
