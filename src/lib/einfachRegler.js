@@ -117,6 +117,36 @@ export const REGLER = [
     ],
   },
   {
+    // Stufe 2 fürs Big Game. In der Profi-Ansicht sind das ZWEI Zahlenregler
+    // (Aufschlag und Schwelle), und die Schwelle ist die unintuitivere von
+    // beiden — sie entscheidet, wie OFT es überhaupt ein Topspiel gibt. Hier
+    // wandern beide gemeinsam, damit keine unvermessene Kombination entsteht.
+    // Die Stufen folgen dem Balance-Durchgang (`npm run balance`): über die
+    // ganze Spanne bleibt der Kenner vorn, aber eine Schwelle von 0 macht aus
+    // der Auszeichnung eine Dauer-Zugabe. Deshalb geht die stärkste Stufe hier
+    // NICHT auf 0 — die Freiheit dazu bleibt der Profi-Ansicht.
+    key: "topspiel",
+    label: "Gibt es ein Spiel des Spieltags?",
+    hint: "Das jeweils brisanteste Spiel zählt mehr — wer es ist, steht vor dem Tippen fest.",
+    stufen: [
+      {
+        key: "aus", label: "Nein",
+        beschreibung: "Alle Spiele sind gleich viel wert.",
+        werte: { bigGame: { enabled: false } },
+      },
+      {
+        key: "selten", label: "Nur die echten Kracher",
+        beschreibung: "Ein paar Mal pro Saison — dafür fällt es dann auf.",
+        werte: { bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.5 } },
+      },
+      {
+        key: "normal", label: "Fast jeden Spieltag",
+        beschreibung: "Meistens gibt es ein Topspiel, das anderthalbfach zählt.",
+        werte: { bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 } },
+      },
+    ],
+  },
+  {
     key: "saison",
     label: "Laufen Saison-Wetten nebenbei?",
     hint: "Langzeit-Tipps wie Meister oder Torschützenkönig, einmal vor der Saison.",
