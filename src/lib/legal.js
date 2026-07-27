@@ -1,14 +1,14 @@
 // ── Rechtliche Eckdaten an EINER Stelle ─────────────────────
 // Impressum (§ 5 DDG/TMG) und Datenschutzerklärung (Art. 13 DSGVO) ziehen
 // ihre Betreiber-/Kontaktangaben aus diesem Objekt, damit sie konsistent
-// bleiben und du sie NUR HIER pflegen musst. Vor dem öffentlichen Launch
-// die Platzhalter (TODO) durch echte Angaben ersetzen.
+// bleiben und du sie NUR HIER pflegen musst.
+// Ausgefüllt am 27.07.2026 — diese Angaben sind gesetzlich verpflichtend und
+// erscheinen öffentlich in Impressum und Datenschutzerklärung.
 export const LEGAL = {
   appName: "Tippquotenspiel",
-  // TODO vor Launch: echte Angaben eintragen (rechtlich verpflichtend in DE).
-  betreiber: "TODO: Vor- und Nachname",
-  anschrift: "TODO: Straße Nr., PLZ Ort",
-  email: "TODO: kontakt@deine-domain.de",
+  betreiber: "Andreas Thurn",
+  anschrift: "Regina-Ullmann-Straße 10, 85622 Feldkirchen",
+  email: "andi.thurn@yahoo.de",
   // Auftragsverarbeiter (Hosting / Auth / DB). Anpassen, falls du wechselst.
   hoster: "Vercel Inc. (Frontend-Hosting)",
   datenbank: "Supabase (Auth + Datenbank, EU-Region)",
