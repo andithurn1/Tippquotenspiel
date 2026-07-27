@@ -342,6 +342,92 @@ export default function Spielerstellung() {
             />
           )}
 
+          {/* ⚠️ REIHENFOLGE: erst die Wettbewerbe, dann die Vereine.
+              Vorher stand die Vereins-Auswahl davor und zeigte ALLE Klubs aus
+              fünf Ligen in einer einzigen Wolke — über 90 Knöpfe, Bayern neben
+              Burnley neben Bologna. Das ist die grobe Entscheidung, also gehört
+              sie nach vorn; die Vereinsliste hängt dann davon ab. */}
+          <SectionTitle>Wettbewerbe</SectionTitle>
+          <SpielauswahlWettbewerbe spiele={sp} onChange={(neu) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...neu } })); }} />
+
+          {/* Teams — je Wettbewerb gruppiert, und nur aus den gewählten. */}
+          <SectionTitle>Teams</SectionTitle>
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+            Standardmäßig zählen alle Spiele der oben gewählten Wettbewerbe. Willst du
+            dich auf bestimmte Vereine beschränken (z. B. weniger Aufwand mit
+            Torschützen, oder ihr wollt nur eure Lieblingsklubs), wählt hier
+            mindestens 2 — ein Spiel zählt, sobald mindestens eine Seite dabei ist.
+          </p>
+          <Toggle label="Auf bestimmte Teams beschränken" on={teamFilterOn}
+            onChange={(on) => patchSpiele(on ? { modus: "teams" } : { modus: "alle", teams: [] })} />
+          {teamFilterOn && (
+            <div style={{ marginTop: 8, marginBottom: 8 }}>
+              {teamGruppen.map((g) => (
+                <div key={g.key} style={{ marginBottom: 10 }}>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                    marginBottom: 5,
+                  }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{g.label}</span>
+                    {/* Alle einer Liga auf einmal — sonst klickt man 18-mal. */}
+                    <button onClick={() => toggleLiga(g.vereine)} style={{
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 10.5, padding: "3px 8px",
+                      borderRadius: 999, background: "transparent", color: C.mint,
+                      border: `1px solid ${C.line}`,
+                    }}>{g.vereine.every((v) => selectedTeams.includes(v)) ? "keine" : "alle"}</button>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {g.vereine.map((team) => {
+                      const on = selectedTeams.includes(team);
+                      return (
+                        <button key={team} onClick={() => toggleTeam(team)} style={{
+                          cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
+                          background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
+                          border: `1px solid ${on ? C.mint + "66" : C.line}`,
+                        }}>{team}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ fontSize: 11, color: teamFilterInvalid ? C.coral : C.muted, marginTop: 8 }}>
+                {selectedTeams.length} von mindestens 2 Teams ausgewählt
+                {teamFilterInvalid && " — bitte noch mindestens ein weiteres Team wählen"}.
+              </div>
+
+              {/* ⚠️ Gewählte Vereine, die in KEINEM gewählten Wettbewerb mehr
+                  vorkommen. Ohne diesen Hinweis filtert die Runde still gegen
+                  Vereine, die gar nicht mehr auftauchen. */}
+              {verwaisteTeams.length > 0 && (
+                <div style={{ fontSize: 11, color: C.gold, marginTop: 4, lineHeight: 1.45 }}>
+                  {verwaisteTeams.length} gewählte{verwaisteTeams.length === 1 ? "r Verein spielt" : " Vereine spielen"} in
+                  keinem der gewählten Wettbewerbe ({verwaisteTeams.join(", ")}) — {verwaisteTeams.length === 1 ? "er zählt" : "sie zählen"} nicht mit.
+                </div>
+              )}
+
+              {/* Was die Auswahl konkret bedeutet. Ohne diese Rückmeldung
+                  stellt man „nur die Top 2" ein und merkt erst in Woche drei,
+                  dass pro Spieltag ein einziges Spiel übrig bleibt. */}
+              {!teamFilterInvalid && (() => {
+                const gesamt = teamGruppen.reduce((s, g) => s + g.vereine.length, 0) || ALL_TEAMS.length;
+                const { min, max } = spieleProSpieltag(selectedTeams.length, gesamt);
+                const duenn = max < 3;
+                return (
+                  <div style={{ fontSize: 11, color: duenn ? C.gold : C.mint, marginTop: 4, lineHeight: 1.45 }}>
+                    Bleiben {min === max ? min : `${min} bis ${max}`} Spiele pro Spieltag
+                    {duenn && " — das ist wenig; ein einzelner Tipp entscheidet dann fast den ganzen Spieltag"}.
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Die feste Liste — der Ausweg aus der UND-Verknüpfung aller
+              anderen Dimensionen. Steht bewusst hinter ihnen: erst probiert
+              man die Regel, dann zählt man einzeln auf. */}
+          <SpielauswahlListe spiele={sp} onChange={patchSpiele} />
+
           {/* Presets: Startpunkt, danach bleibt alles frei einstellbar */}
           {stufe !== "einfach" && <SectionTitle>Presets</SectionTitle>}
           {stufe !== "einfach" && (<>
@@ -955,91 +1041,6 @@ export default function Spielerstellung() {
             </div>
           )}
 
-          {/* ⚠️ REIHENFOLGE: erst die Wettbewerbe, dann die Vereine.
-              Vorher stand die Vereins-Auswahl davor und zeigte ALLE Klubs aus
-              fünf Ligen in einer einzigen Wolke — über 90 Knöpfe, Bayern neben
-              Burnley neben Bologna. Das ist die grobe Entscheidung, also gehört
-              sie nach vorn; die Vereinsliste hängt dann davon ab. */}
-          <SectionTitle>Wettbewerbe</SectionTitle>
-          <SpielauswahlWettbewerbe spiele={sp} onChange={(neu) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...neu } })); }} />
-
-          {/* Teams — je Wettbewerb gruppiert, und nur aus den gewählten. */}
-          <SectionTitle>Teams</SectionTitle>
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Standardmäßig zählen alle Spiele der oben gewählten Wettbewerbe. Willst du
-            dich auf bestimmte Vereine beschränken (z. B. weniger Aufwand mit
-            Torschützen, oder ihr wollt nur eure Lieblingsklubs), wählt hier
-            mindestens 2 — ein Spiel zählt, sobald mindestens eine Seite dabei ist.
-          </p>
-          <Toggle label="Auf bestimmte Teams beschränken" on={teamFilterOn}
-            onChange={(on) => patchSpiele(on ? { modus: "teams" } : { modus: "alle", teams: [] })} />
-          {teamFilterOn && (
-            <div style={{ marginTop: 8, marginBottom: 8 }}>
-              {teamGruppen.map((g) => (
-                <div key={g.key} style={{ marginBottom: 10 }}>
-                  <div style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                    marginBottom: 5,
-                  }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{g.label}</span>
-                    {/* Alle einer Liga auf einmal — sonst klickt man 18-mal. */}
-                    <button onClick={() => toggleLiga(g.vereine)} style={{
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 10.5, padding: "3px 8px",
-                      borderRadius: 999, background: "transparent", color: C.mint,
-                      border: `1px solid ${C.line}`,
-                    }}>{g.vereine.every((v) => selectedTeams.includes(v)) ? "keine" : "alle"}</button>
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {g.vereine.map((team) => {
-                      const on = selectedTeams.includes(team);
-                      return (
-                        <button key={team} onClick={() => toggleTeam(team)} style={{
-                          cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
-                          background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
-                          border: `1px solid ${on ? C.mint + "66" : C.line}`,
-                        }}>{team}</button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-
-              <div style={{ fontSize: 11, color: teamFilterInvalid ? C.coral : C.muted, marginTop: 8 }}>
-                {selectedTeams.length} von mindestens 2 Teams ausgewählt
-                {teamFilterInvalid && " — bitte noch mindestens ein weiteres Team wählen"}.
-              </div>
-
-              {/* ⚠️ Gewählte Vereine, die in KEINEM gewählten Wettbewerb mehr
-                  vorkommen. Ohne diesen Hinweis filtert die Runde still gegen
-                  Vereine, die gar nicht mehr auftauchen. */}
-              {verwaisteTeams.length > 0 && (
-                <div style={{ fontSize: 11, color: C.gold, marginTop: 4, lineHeight: 1.45 }}>
-                  {verwaisteTeams.length} gewählte{verwaisteTeams.length === 1 ? "r Verein spielt" : " Vereine spielen"} in
-                  keinem der gewählten Wettbewerbe ({verwaisteTeams.join(", ")}) — {verwaisteTeams.length === 1 ? "er zählt" : "sie zählen"} nicht mit.
-                </div>
-              )}
-
-              {/* Was die Auswahl konkret bedeutet. Ohne diese Rückmeldung
-                  stellt man „nur die Top 2" ein und merkt erst in Woche drei,
-                  dass pro Spieltag ein einziges Spiel übrig bleibt. */}
-              {!teamFilterInvalid && (() => {
-                const gesamt = teamGruppen.reduce((s, g) => s + g.vereine.length, 0) || ALL_TEAMS.length;
-                const { min, max } = spieleProSpieltag(selectedTeams.length, gesamt);
-                const duenn = max < 3;
-                return (
-                  <div style={{ fontSize: 11, color: duenn ? C.gold : C.mint, marginTop: 4, lineHeight: 1.45 }}>
-                    Bleiben {min === max ? min : `${min} bis ${max}`} Spiele pro Spieltag
-                    {duenn && " — das ist wenig; ein einzelner Tipp entscheidet dann fast den ganzen Spieltag"}.
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-
-          {/* Die feste Liste — der Ausweg aus der UND-Verknüpfung aller
-              anderen Dimensionen. Steht bewusst hinter ihnen: erst probiert
-              man die Regel, dann zählt man einzeln auf. */}
-          <SpielauswahlListe spiele={sp} onChange={patchSpiele} />
 
           {/* Tipp-Fenster: wie früh vor Anpfiff getippt wird. Gehört hierher,
               weil es dieselbe Frage beantwortet wie die Spielauswahl — WAS
