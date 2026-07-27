@@ -12,6 +12,7 @@ import { STAERKE_STUFEN, BETRIFFT } from "@/lib/catchup";
 import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
 import { alleVereine, vereineVon, LIGEN } from "@/lib/ligen";
 import { wettbewerbLabel } from "@/lib/wettbewerbe";
+import { beschreibeVerteilung } from "@/lib/jokerPlan";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -193,6 +194,33 @@ export default function Spielerstellung() {
   };
 
   const teamFilterInvalid = teamFilterOn && selectedTeams.length < 2;
+
+  // ── „Was kommt am Ende dabei heraus?" ─────────────────────
+  // Verteilung, Stärke und Ereignisse werden an drei Stellen eingestellt; der
+  // Admin sah nirgends das Ergebnis. Diese eine Zeile fasst die drei Antworten
+  // zusammen — wie viele, wie stark, und wie viele davon verdienbar.
+  const jokerZusammenfassung = useMemo(() => {
+    const j = rules.joker;
+    if (!j?.enabled) return null;
+    const teile = [];
+
+    // Wie viele und wann — jokerPlan formuliert das schon in Klartext, endet
+    // dort aber als eigener Satz. Der Punkt muss weg, sonst steht mitten in
+    // der Zeile „… Joker. · jeder ×1,5."
+    teile.push(beschreibeVerteilung(j.verteilung, 34).replace(/\.$/, ""));
+
+    // Wie stark.
+    teile.push(j.modus === "ranking"
+      ? `Gewichte bis ×${Math.max(...(j.faktoren || [1])).toFixed(1)}`
+      : `jeder ×${(j.faktor ?? 1.5).toFixed(1)}`);
+
+    // Woher zusätzlich — nur wenn Ereignisse überhaupt etwas beisteuern.
+    const er = rules.ereignisse;
+    if (er?.enabled && (er.aktive?.length ?? 0) > 0 && er.maxErspielt > 0) {
+      teile.push(`dazu bis zu ${er.maxErspielt} verdienbar`);
+    }
+    return teile.filter(Boolean).join(" · ") + ".";
+  }, [rules.joker, rules.ereignisse]);
 
   // ── Vereine je Wettbewerb ─────────────────────────────────
   // Leere Wettbewerbs-Auswahl heißt „alle" (siehe spielauswahl.js) — dann
@@ -649,6 +677,20 @@ export default function Spielerstellung() {
             fertige Wertung — Ergebnis <em>und</em> Torschützen zusammen — und wirkt in
             beide Richtungen: ein gewichtetes Spiel, das danebengeht, tut auch mehr weh.
           </p>
+
+          {/* ⚠️ Die Zeile, die bisher gefehlt hat. Man stellt Verteilung,
+              Stärke und Ereignisse an drei Stellen ein und sah nirgends, was
+              dabei herauskommt. Sie steht GANZ OBEN, weil sie die Antwort auf
+              die eigentliche Frage ist — „wie viele Joker hat man am Ende?" */}
+          {jokerZusammenfassung && (
+            <div style={{
+              background: `${C.mint}12`, border: `1px solid ${C.mint}33`,
+              borderRadius: 12, padding: "10px 13px", marginBottom: 10,
+              fontSize: 12, color: C.mint, lineHeight: 1.5,
+            }}>
+              {jokerZusammenfassung}
+            </div>
+          )}
           {!premium ? (
             <div style={{
               background: `${C.gold}12`, border: `1px solid ${C.gold}44`,
@@ -803,6 +845,15 @@ export default function Spielerstellung() {
               </div>
             </div>
           )}
+
+          {/* Joker verdienen — steht direkt beim Joker-Block, nicht mehr 300
+              Zeilen weiter unten hinter den Saison-Wetten. Es ist dieselbe
+              Frage wie darüber (WOHER kommen Joker), nur die zweite Antwort:
+              zugeteilt vom Admin oder verdient durch Ereignisse. Getrennt
+              wirkte es, als gäbe es nur den Verdien-Weg. */}
+          <SectionTitle>Joker verdienen</SectionTitle>
+          <Ereignisse rules={rules}
+            onChange={(ereignisse) => { touched(); setRules((r) => ({ ...r, ereignisse })); }} />
 
           {/* Team- & Derby-Regeln */}
           <SectionTitle>Team- &amp; Derby-Regeln</SectionTitle>
@@ -970,12 +1021,6 @@ export default function Spielerstellung() {
           <WettbewerbGewichte rules={rules}
             onChange={(wettbewerbe) => { touched(); setRules((r) => ({ ...r, wettbewerbe })); }} />
 
-          {/* Joker verdienen — steht bewusst NACH den Saison-Wetten und vor
-              „Spieltag vergessen": beides sind Nebenwege zu Punkten bzw.
-              Jokern, die man zusammen betrachten will. */}
-          <SectionTitle>Joker verdienen</SectionTitle>
-          <Ereignisse rules={rules}
-            onChange={(ereignisse) => { touched(); setRules((r) => ({ ...r, ereignisse })); }} />
 
           {/* Versäumnis: Spieltag vergessen */}
           {stufe === "profi" && (<>
