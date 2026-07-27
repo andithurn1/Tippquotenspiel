@@ -4,7 +4,7 @@
 //  Abrechnung und Auszahlungs-Explorer.
 // ============================================================
 
-import { applyCatchup } from "./catchup";
+import { applyCatchup, BETRIFFT, betrifftWert } from "./catchup";
 
 
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
@@ -328,12 +328,18 @@ export function sanitizeRules(partial = {}) {
     modCap: clamp(num(src.modCap, D.modCap), L.modCap.min, L.modCap.max),
     aufholen: (() => {
       const a = src.aufholen && typeof src.aufholen === "object" ? src.aufholen : {};
-      const erlaubt = ["letzter", "unteres-drittel", "unter-schnitt"];
+      // Der Katalog ist die EINE Quelle — sonst müsste eine neue Stufe an zwei
+      // Stellen eingetragen werden und fiele hier still durch.
+      const betrifft = BETRIFFT[a.betrifft] ? a.betrifft : D.aufholen.betrifft;
       return {
         enabled: a.enabled === true,
         staerke: clamp(num(a.staerke, D.aufholen.staerke), L.aufholen.staerke.min, L.aufholen.staerke.max),
         schwelle: clamp(num(a.schwelle, D.aufholen.schwelle), L.aufholen.schwelle.min, L.aufholen.schwelle.max),
-        betrifft: erlaubt.includes(a.betrifft) ? a.betrifft : D.aufholen.betrifft,
+        betrifft,
+        // Nur die parametrierten Stufen tragen eine Zahl; sonst bleibt sie weg,
+        // damit im Creator-Code kein toter Wert mitreist.
+        ...(BETRIFFT[betrifft].parameter
+          ? { betrifftWert: betrifftWert(betrifft, a.betrifftWert) } : {}),
       };
     })(),
     versaeumnis: (() => {

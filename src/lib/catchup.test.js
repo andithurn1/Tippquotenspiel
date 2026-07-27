@@ -96,6 +96,51 @@ describe("applyCatchup — wen es betrifft", () => {
     return Object.fromEntries(r[1].board.map((e) => [e.userId, e.bonus]));
   };
 
+  // ── Parametrierte Stufen ────────────────────────────────
+  const bonusMitWert = (betrifft, betrifftWert) => {
+    const r = applyCatchup(vier, regeln({ staerke: 0.2, schwelle: 0, betrifft, betrifftWert }));
+    return Object.fromEntries(r[1].board.map((e) => [e.userId, e.bonus]));
+  };
+
+  it("„die letzten X“ trifft genau X Mitspieler", () => {
+    const b = bonusMitWert("letzte-n", 2);
+    expect(b.a).toBe(0);
+    expect(b.b).toBe(0);
+    expect(b.c).toBeGreaterThan(0);
+    expect(b.d).toBeGreaterThan(0);
+  });
+
+  it("„die letzten X“ verschont IMMER mindestens den Ersten", () => {
+    // Bekämen alle den Bonus, wäre es keine Aufholhilfe mehr, sondern eine
+    // Schenkung an jeden — der Abstand bliebe exakt gleich.
+    const b = bonusMitWert("letzte-n", 99);
+    expect(b.a).toBe(0);
+    expect(b.d).toBeGreaterThan(0);
+  });
+
+  it("„die letzten X“ fällt ohne Zahl auf den Standard zurück", () => {
+    const b = bonusMitWert("letzte-n", undefined);   // Standard 3
+    expect(b.a).toBe(0);
+    expect(b.b).toBeGreaterThan(0);
+  });
+
+  it("„wer deutlich abfällt“ trifft nur weit genug Zurückliegende", () => {
+    // Schnitt bei Spieltag 1 = 625. Grenze bei 20 % darunter = 500.
+    // C liegt bei genau 500 (nicht darunter), D bei 200.
+    const b = bonusMitWert("abweichung", 20);
+    expect(b.a).toBe(0);
+    expect(b.b).toBe(0);
+    expect(b.c).toBe(0);
+    expect(b.d).toBeGreaterThan(0);
+  });
+
+  it("eine kleinere Abweichung erfasst mehr Mitspieler", () => {
+    const eng = bonusMitWert("abweichung", 50);
+    const weit = bonusMitWert("abweichung", 10);
+    const betroffen = (b) => Object.values(b).filter((x) => x > 0).length;
+    expect(betroffen(weit)).toBeGreaterThan(betroffen(eng));
+  });
+
   it("Stufe letzter trifft nur den Letzten", () => {
     const b = bonusVon("letzter");
     expect(b.d).toBeGreaterThan(0);

@@ -17,12 +17,46 @@
 //  nachmessbar.
 // ============================================================
 
-// Wen betrifft es? Bewusst drei verständliche Stufen statt freier Formeln.
+// Wen betrifft es?
+//
+// Die festen Stufen decken den Normalfall ab, treffen aber nie genau: „nur der
+// Letzte" ist in einer 12er-Runde etwas anderes als in einer 4er, und „unteres
+// Drittel" lässt sich nicht auf drei Leute einstellen. Deshalb zwei zusätzliche
+// Stufen mit EINER Zahl — Genauigkeit, ohne eine Formel-Sprache aufzumachen.
+// `parameter` sagt der Oberfläche, welches Eingabefeld dazugehört; fehlt der
+// Wert, gilt `standard`, damit eine halb gesetzte Stufe nie leerläuft.
 export const BETRIFFT = {
   letzter: { key: "letzter", label: "Nur der Letzte", desc: "Nur wer ganz hinten liegt." },
+  "letzte-n": {
+    key: "letzte-n", label: "Die letzten …", desc: "Eine feste Anzahl vom Tabellenende.",
+    parameter: "anzahl", einheit: "Mitspieler", standard: 3, min: 1, max: 20,
+    satz: (n) => `Die letzten ${n} Mitspieler bekommen Anschluss-Hilfe.`,
+  },
   "unteres-drittel": { key: "unteres-drittel", label: "Unteres Drittel", desc: "Das schwächste Drittel der Runde." },
   "unter-schnitt": { key: "unter-schnitt", label: "Alle unter dem Schnitt", desc: "Jeder unter dem Durchschnitt." },
+  abweichung: {
+    key: "abweichung", label: "Wer deutlich abfällt", desc: "Alle, die weit genug unter dem Durchschnitt liegen.",
+    parameter: "prozent", einheit: "% unter dem Schnitt", standard: 20, min: 5, max: 60,
+    satz: (p) => `Wer mehr als ${p} % unter dem Durchschnitt liegt, bekommt Anschluss-Hilfe.`,
+  },
 };
+
+// Die Zahl zu einer Stufe — beschnitten, mit Rückfall auf den Standard.
+export function betrifftWert(betrifft, wert) {
+  const def = BETRIFFT[betrifft];
+  if (!def?.parameter) return null;
+  const n = Number(wert);
+  return Number.isFinite(n)
+    ? Math.min(def.max, Math.max(def.min, Math.round(n)))
+    : def.standard;
+}
+
+// Klartext für die Oberfläche — nie eine nackte Zahl zeigen.
+export function beschreibeBetrifft(betrifft, wert) {
+  const def = BETRIFFT[betrifft];
+  if (!def) return "";
+  return def.parameter ? def.satz(betrifftWert(betrifft, wert)) : def.desc;
+}
 
 // Voreinstellungen für den einfachen Regler — der Nutzer muss keine Zahlen
 // verstehen, kann sie aber aufklappen.
@@ -33,12 +67,25 @@ export const STAERKE_STUFEN = [
 ];
 
 // Welche Einträge eines Standes sind berechtigt? board ist absteigend sortiert.
-function berechtigte(board, betrifft) {
+// `wert` ist die Zahl der parametrierten Stufen (siehe BETRIFFT).
+function berechtigte(board, betrifft, wert) {
   if (!board.length) return [];
   if (betrifft === "letzter") return board.slice(-1);
+  if (betrifft === "letzte-n") {
+    // Nie die ganze Runde: bekämen ALLE den Bonus, wäre es keine Aufholhilfe
+    // mehr, sondern eine Punkteschenkung an jeden — der Abstand bliebe gleich.
+    const n = Math.min(betrifftWert("letzte-n", wert), Math.max(1, board.length - 1));
+    return board.slice(-n);
+  }
   if (betrifft === "unter-schnitt") {
     const schnitt = board.reduce((s, b) => s + b.total, 0) / board.length;
     return board.filter((b) => b.total < schnitt);
+  }
+  if (betrifft === "abweichung") {
+    const schnitt = board.reduce((s, b) => s + b.total, 0) / board.length;
+    if (!(schnitt > 0)) return [];
+    const grenze = schnitt * (1 - betrifftWert("abweichung", wert) / 100);
+    return board.filter((b) => b.total < grenze);
   }
   // unteres Drittel (mindestens einer)
   const n = Math.max(1, Math.floor(board.length / 3));
@@ -67,7 +114,7 @@ export function applyCatchup(history = [], rules) {
     if (letzterStand && letzterStand.length > 1) {
       const spitze = letzterStand[0].total;
       if (spitze > 0) {
-        for (const e of berechtigte(letzterStand, a.betrifft)) {
+        for (const e of berechtigte(letzterStand, a.betrifft, a.betrifftWert)) {
           const rueckstand = spitze - e.total;
           // Erst ab der Schwelle (Anteil an der Spitze) greift die Hilfe.
           if (rueckstand <= spitze * schwelle) continue;
