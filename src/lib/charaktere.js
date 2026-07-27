@@ -44,7 +44,7 @@ export const CHARAKTERE = [
     key: "mutig",
     label: "Mutig & wild",
     tagline: "Außenseiter-Tipps sollen sich richtig lohnen.",
-    desc: "Überraschungen zahlen zusätzlich, der Mut-Bonus belohnt eingelöste Wagnisse, und ein Heimatbonus für den eigenen Verein. Große Ausschläge, viel Drama.",
+    desc: "Überraschungen zahlen zusätzlich, der Mut-Bonus belohnt eingelöste Wagnisse, ein Heimatbonus für den eigenen Verein — und das Spiel des Spieltags zählt extra. Große Ausschläge, viel Drama.",
     emoji: "🎲",
     fuer: "Runden, die lieber zocken als rechnen",
     rules: sanitizeRules({
@@ -55,6 +55,13 @@ export const CHARAKTERE = [
         heimat: { enabled: true, faktor: 1.2 },
         mut: { enabled: true, faktor: 1.1 },
       },
+      // Das Topspiel gehört zum Drama — und ist hier belegbar unbedenklich:
+      // im Balance-Durchgang (`npm run balance`) hält gerade dieses Paket die
+      // Ebene am besten aus, der Kenner gewinnt mit Big Game sogar minimal
+      // MEHR (50,0 → 51,7 %). Grund: der Aufschlag verstärkt auch die
+      // Fehlgriffe des Zockers, nicht nur seine Treffer — dieselbe Mechanik
+      // wie beim Heimatbonus. Bewusst die mittlere Schwelle, nicht 0.
+      bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 },
       saison: saison("ohne-favorit"),
     }),
   },
