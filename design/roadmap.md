@@ -74,9 +74,46 @@ mehrfach — und tunt gegen ein Regelwerk, das es am Ende gar nicht mehr gibt.
   Kenner nur noch 42 %, der Zocker schon 30 %"). Felder, die in keinem Preset
   vorkommen, tragen ihr Band jetzt direkt am Feld (`gemessen`).
 
-**Noch offen im Abschluss-Durchgang:** Presets gegen die neuen Ebenen (Big
-Game, Wettbewerbs-Gewichte, Ereignisse) durchmessen und das Empfehlungsband in
-`reglerWarnung.js` daraus nachziehen.
+### ✅ Abschluss-Durchgang DURCHGEFÜHRT (2026-07-27) — `npm run balance`
+
+Der eine Lauf, den dieser Abschnitt fordert, ist jetzt ein festes Kommando:
+`npm run balance` (3 Saatzahlen × 40 Saisons × alle Presets × Big Game
+aus/Standard/Maximum). **Ergebnis: kein Preset kippt.**
+
+**⚠️ Wichtiger als das Ergebnis war der Weg dorthin — der Simulator hat drei
+Ebenen gar nicht gemessen.** Alle drei Fehler waren STILL (Ampel grün, Zahlen
+plausibel, gemessen wurde nichts):
+
+1. **Der Ranglisten-Joker fiel aus, sobald eine ZWEITE Ebene aktiv war.** Der
+   Simulator setzte als Gewicht `maxTotalModifier` (Obergrenze aller Ebenen);
+   die Engine nimmt im Ranking-Modus aber nur Werte AUS DEM POOL. Mit Big Game,
+   Wettbewerbs-Gewichten **oder Team-Mods** lag der Wert außerhalb → Aufschlag
+   0. Heißt rückblickend: jede Runde mit Ranglisten-Joker UND Derby-Regeln war
+   schon vorher falsch vermessen.
+2. **Big Game war unsichtbar** — kein Snapshot trug einen `bigGameWert`.
+3. **Der Ranglisten-Modus war nicht modelliert** (ein Joker statt verteilter
+   Gewichte) — „Joker" und „Rangliste" lieferten identische Zahlen.
+
+**Lehre fürs nächste Mal:** bevor eine neue Ebene gemessen wird, erst prüfen, ob
+der Simulator sie überhaupt SIEHT. Ein Test in `presets.balance.test.js` hält
+das jetzt fest — der Modifikator-Anteil MUSS steigen, wenn die Ebene aktiv ist.
+
+**Befund Big Game:** über die ganze Spanne unbedenklich, der Kenner bleibt
+überall vorn. Die Stellschraube ist nicht der Aufschlag, sondern die SCHWELLE:
+bei 0 bekommt jeder Spieltag ein Topspiel, aus der Auszeichnung wird eine
+Dauer-Zugabe (Kenner 61 → 57 %, Zocker 9 → 11 %). Bei „Underdog-Party" gewinnt
+der Kenner MIT Big Game sogar minimal mehr — der Aufschlag verstärkt auch die
+Fehlgriffe des Zockers, dieselbe Mechanik wie beim Heimatbonus.
+
+**Über alle drei Komplexitätsstufen umgesetzt:** Charakter-Paket „Mutig & wild"
+(Stufe 1) · Klartext-Stufe „Gibt es ein Spiel des Spieltags?" (Stufe 2) ·
+gemessenes Band an beiden Reglern (Stufe 3). Die harten `RULE_LIMITS` blieben
+unberührt — eine Messung verengt nie eine Grenze.
+
+**Noch offen:** Wettbewerbs-Gewichte und Ereignisse sind weiterhin ungemessen.
+Für die Wettbewerbs-Gewichte braucht der Simulator eine GEMISCHTE Runde — bei
+nur einem Wettbewerb wirkt das Gewicht auf alle Spiele gleich und kann die
+relative Rangfolge gar nicht verschieben. Das ist der nächste Ausbauschritt.
 
 
 ### Spielerstellung in 3 Komplexitätsstufen — GEBAUT ✓
