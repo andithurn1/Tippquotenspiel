@@ -3,6 +3,7 @@ import {
   DEFAULT_TIPPFENSTER, TIPPFENSTER_LIMITS, VORLAUF_STUFEN,
   sanitizeTippfenster, tippStatus, istTippbar, tippbareSpiele,
   naechsteOeffnung, uebersicht, oeffnetAm, formatDauer, beschreibeTippfenster,
+  ANKER, spieltagStarts, erklaereTippfenster, dauerText,
 } from "@/lib/tippfenster";
 import { DEFAULT_RULES, sanitizeRules, encodePreset, decodePreset } from "@/lib/engine";
 
@@ -14,6 +15,86 @@ const spiel = (id, stundenBisAnpfiff) => ({
 
 // 48-Stunden-Vorlauf macht die Rechnung im Test lesbar.
 const RULES = sanitizeRules({ ...DEFAULT_RULES, tippfenster: { vorlaufStunden: 48 } });
+
+describe("Anker: wovon der Vorlauf gerechnet wird", () => {
+  // Ein Spieltag über drei Tage: Freitag, Samstag, Sonntag.
+  const spieltag = [
+    { id: "fr", matchId: "fr", wettbewerb: "bl", matchday: 1, kickoff: new Date(JETZT + 10 * STD).toISOString() },
+    { id: "sa", matchId: "sa", wettbewerb: "bl", matchday: 1, kickoff: new Date(JETZT + 34 * STD).toISOString() },
+    { id: "so", matchId: "so", wettbewerb: "bl", matchday: 1, kickoff: new Date(JETZT + 58 * STD).toISOString() },
+  ];
+  // 12 Stunden Vorlauf: nur das Freitagsspiel ist nah genug.
+  const proSpiel = sanitizeRules({ ...DEFAULT_RULES, tippfenster: { vorlaufStunden: 12, anker: "spiel" } });
+  const proSpieltag = sanitizeRules({ ...DEFAULT_RULES, tippfenster: { vorlaufStunden: 12, anker: "spieltag" } });
+
+  it("Anker „spiel“: das Sonntagsspiel ist noch zu weit weg", () => {
+    const offen = tippbareSpiele(spieltag, proSpiel, JETZT).map((m) => m.id);
+    expect(offen).toEqual(["fr"]);
+  });
+
+  it("Anker „spieltag“: der ganze Spieltag geht als Block auf", () => {
+    // Genau der Fall, für den es den Anker gibt — das Sonntagsspiel ist
+    // tippbar, obwohl sein eigener Anpfiff noch 58 Stunden entfernt ist.
+    const offen = tippbareSpiele(spieltag, proSpieltag, JETZT).map((m) => m.id);
+    expect(offen).toEqual(["fr", "sa", "so"]);
+  });
+
+  it("geschlossen wird IMMER beim eigenen Anpfiff, auch als Block", () => {
+    // Sonst ließe sich ein bereits laufendes Spiel noch tippen, solange der
+    // Spieltag insgesamt noch läuft.
+    const spaeter = JETZT + 11 * STD;   // Freitagsspiel hat angepfiffen
+    const st = tippStatus(spieltag[0], proSpieltag, spaeter, spieltagStarts(spieltag));
+    expect(st.zustand).toBe("vorbei");
+    expect(istTippbar(spieltag[2], proSpieltag, spaeter, spieltagStarts(spieltag))).toBe(true);
+  });
+
+  it("der Block gilt je Wettbewerb, nicht über alle hinweg", () => {
+    // „Spieltag 1" gibt es fünfmal — ein früher CL-Spieltag darf nicht die
+    // Bundesliga mit aufmachen.
+    const gemischt = [
+      ...spieltag,
+      { id: "cl", matchId: "cl", wettbewerb: "cl", matchday: 1, kickoff: new Date(JETZT + 300 * STD).toISOString() },
+    ];
+    const offen = tippbareSpiele(gemischt, proSpieltag, JETZT).map((m) => m.id);
+    expect(offen).not.toContain("cl");
+  });
+
+  it("ohne Spieltag-Kontext fällt es auf „je Spiel“ zurück, statt zu raten", () => {
+    expect(oeffnetAm(spieltag[2], proSpieltag)).toBe(oeffnetAm(spieltag[2], proSpiel));
+  });
+
+  it("ein unbekannter Anker fällt auf das engere Verhalten zurück", () => {
+    expect(sanitizeTippfenster({ anker: "erfunden" }).anker).toBe("spiel");
+  });
+});
+
+describe("Erklärung in Klartext", () => {
+  it("nennt drei Fragen mit je einer Antwort", () => {
+    const z = erklaereTippfenster(RULES);
+    expect(z).toHaveLength(3);
+    for (const e of z) expect(e.frage && e.antwort).toBeTruthy();
+  });
+
+  it("die Antwort auf „ab wann“ unterscheidet sich je Anker", () => {
+    const a = erklaereTippfenster(sanitizeRules({ ...DEFAULT_RULES, tippfenster: { vorlaufStunden: 48, anker: "spiel" } }));
+    const b = erklaereTippfenster(sanitizeRules({ ...DEFAULT_RULES, tippfenster: { vorlaufStunden: 48, anker: "spieltag" } }));
+    expect(a[0].antwort).not.toBe(b[0].antwort);
+    expect(b[0].antwort).toMatch(/ersten/i);
+  });
+
+  it("„bis wann“ nennt immer den eigenen Anpfiff", () => {
+    for (const anker of ANKER.map((a) => a.key)) {
+      const z = erklaereTippfenster(sanitizeRules({ ...DEFAULT_RULES, tippfenster: { vorlaufStunden: 48, anker } }));
+      expect(z[1].antwort).toMatch(/jeweiligen Spiels/);
+    }
+  });
+
+  it("eine freie Stundenzahl wird als Tage gelesen, wenn sie aufgeht", () => {
+    expect(dauerText(72)).toBe("3 Tage");
+    expect(dauerText(1)).toBe("1 Stunde");
+    expect(dauerText(5)).toBe("5 Stunden");
+  });
+});
 
 describe("Bereinigung", () => {
   it("Unsinn wird auf den Standard zurückgeholt", () => {
