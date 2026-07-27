@@ -21,7 +21,15 @@ Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 - **Design-Ebene** (`src/lib/theme.js`) — eine Quelle für Farben/Schrift
   (Account 1 hat darauf die Fanfarben-Umschaltung gebaut)
 
-Test-Stand: 283 grün, Build sauber.
+Test-Stand: **800 grün**, Build sauber (Stand 2026-07-27).
+
+> ⚠️ **Diese Datei war am 27.07. deutlich veraltet.** Mehrere Abschnitte standen
+> als „NEU" oder „offen" da, obwohl der Code längst lag — wer sie als
+> Arbeitsliste liest, baut Dinge ein zweites Mal. Nachgezogen: die drei
+> Komplexitätsstufen, die Ertragsquellen, die Joker-Typen, das zusammengeführte
+> Joker-Kontingent, die Listen-UI der Spielauswahl, die klebende Balance-Ampel
+> und der automatische Big-Game-Auslöser.
+> **Wer etwas fertig macht, trägt es bitte sofort hier ein.**
 
 ## Offen
 
@@ -71,7 +79,17 @@ Game, Wettbewerbs-Gewichte, Ereignisse) durchmessen und das Empfehlungsband in
 `reglerWarnung.js` daraus nachziehen.
 
 
-### Spielerstellung in 3 Komplexitätsstufen — NEU (Nutzerwunsch)
+### Spielerstellung in 3 Komplexitätsstufen — GEBAUT ✓
+`src/lib/charaktere.js` + `RundenCharaktere.jsx` (Stufe 1) ·
+`src/lib/einfachRegler.js` + `EinfacheRegler.jsx` (Stufe 2) · die Profi-Ansicht
+war schon da. Der Stufenwähler sitzt oben in der Spielerstellung und ändert
+nur die ANSICHT auf dasselbe `rules`-Objekt — beim Wechsel geht nichts
+verloren, wie unten entworfen.
+
+Offen geblieben ist nur die Warnung beim ZURÜCKschalten, wenn Profi-Werte zu
+keinem Paket mehr passen.
+
+Ursprünglicher Entwurf:
 Ein Admin soll wählen, wie tief er einsteigt. **Wichtig: die Stufe ist eine
 ANSICHT auf dasselbe `rules`-Objekt, kein zweites Datenmodell** — beim Wechsel
 geht nichts verloren.
@@ -109,9 +127,26 @@ auf dem Gewinner — sonst waere ein Spieltag OHNE Big Game von einem
 ungeoeffneten nicht zu unterscheiden und bekaeme spaeter, mit gewachsenem
 Tabellenstand, nachtraeglich doch noch eines.
 
-Offen: dasselbe im Supabase-Store (Snapshots zurueckschreiben; nur Admin/Server
-darf das, RLS pruefen), Hervorhebung in Spielwahl/Tippabgabe, eigene Zeile in
-den Ertragsquellen, Benachrichtigung.
+✅ **Alles davon ist gebaut.** Supabase-Store + Route (`/api/matchday/open`),
+Hervorhebung in Spielwahl und Tippabgabe, eigene Zeile in den Ertragsquellen
+(Account 1) — und seit 27.07. friert sich der Spieltag SELBST ein:
+`src/lib/autoOeffnen.js` + `/api/matchday/auto`, stündlich per Vercel-Cron
+(`vercel.json`).
+
+Der Punkt dabei, der nicht nach Bequemlichkeit aussieht, es aber ist: der
+Zeitpunkt des Öffnens IST die Fairness-Frage. Der Spannungswert hängt am
+Tabellenstand in diesem Moment — wer den Moment wählt, wählt das Topspiel mit.
+Ein fester, für alle gleicher Auslöser nimmt diese Wahl aus dem Spiel. Geöffnet
+wird, sobald für die FRÜHESTE Runde das Tipp-Fenster aufgeht (größter
+tatsächlich eingestellter Vorlauf, nicht die theoretische Obergrenze von 720 h
+— sonst fröre man 30 Tage im Voraus mit altem Tabellenstand ein). Hat das erste
+Spiel angepfiffen, wird NICHT mehr geöffnet: nachträglich einzufrieren wäre
+schlimmer als gar nicht.
+
+⚠️ **Nutzer-Aufgabe:** `CRON_SECRET` in Vercel setzen, sonst antwortet die
+Route mit 500 und es bleibt beim Admin-Knopf.
+
+Offen: Benachrichtigung („Diese Woche Big Game: X gegen Y").
 
 Beim Anlegen der Runde weiss niemand, welche Begegnungen spannend werden. Ein
 DERBY ist vorher bekannt — „Erster gegen Zweiter am 28. Spieltag" nicht. Ein
@@ -251,8 +286,11 @@ daraus wurde. Dazu ein achter ASPEKT „Spielauswahl" beim Preset-Mischen und
 `spieleProSpieltag()`, das ohne Spielplan ehrlich eine SPANNE nennt („bleiben
 2 bis 4 Spiele pro Spieltag") statt eine erfundene genaue Zahl.
 
-Offen: Modus `liste` (einzelne Begegnungen) hat noch keine UI — Feld und Filter
-stehen, gebraucht wird es erst mit mehreren Wettbewerben.
+✅ Modus `liste` hat seit 27.07. eine UI: `SpielauswahlListe.jsx`. Gesucht statt
+geblättert (1605 Spiele lassen sich nicht auflisten), die AUSGEWÄHLTEN stehen
+immer oben — sonst verschwindet ein angehaktes Spiel beim Weitersuchen und ist
+nicht mehr abwählbar. Team-Filter und Liste schließen sich gegenseitig aus,
+`modus` kann nur eines sein.
 
 Ein geteilter Creator-Code trägt heute nur das REGELWERK. Welche Spiele die
 Runde umfasst (`team_filter`) hängt an der Runde, nicht am Code — wer einen
@@ -294,8 +332,13 @@ Drei Dinge, die sich beim Bauen als die wichtigen erwiesen haben:
 - **Aussenseiter zaehlt nur, wenn der Tipp AUFGEHT** — sonst waere blindes
   Dagegenhalten belohnt (dieselbe Regel wie beim Mut-Joker in der Engine).
 
-Offen: die Gutschriften mit `jokerPlan.js` zusammenfuehren (ein Kontingent aus
-beiden Toepfen), Anzeige beim Tippen, und die Herausforderungen selbst.
+✅ Zusammengeführt: `src/lib/jokerKontingent.js` macht aus beiden Töpfen EINEN
+Vorrat und ist in der Tippabgabe verdrahtet. Drei Regeln stecken drin:
+zugeteilte Joker sind an ihren Spieltag gebunden, erspielte nicht (sonst
+verfielen sie sofort); erspielte wirken ab dem Spieltag, an dem sie verdient
+wurden, nie rückwirkend; verbraucht wird ZUERST der zugeteilte Topf.
+
+Offen: die Herausforderungen selbst (Kategorie 3, braucht ein Minispiel).
 
 Bisher kommt ein Joker nur vom Admin (Frequenz/Verteilung). Zusätzlich soll man
 sich welche **verdienen** können — durch Herausforderungen oder weil einem in
@@ -335,7 +378,12 @@ Punkte-Kanal, damit die bestehende Deckelung weiter greift.
 Herausforderung. Es könnte als „Joker-Duell" zurückkommen, statt als eigenes
 Feature ohne Zweck.
 
-### Joker-TYPEN statt neuer Ebenen — NEU (Architektur-Entscheidung des Nutzers)
+### Joker-TYPEN statt neuer Ebenen — GEBAUT ✓
+`rules.joker.typen` steht, `heimat` und `mut` sind gebaut und im
+Balance-Durchgang vermessen (Ergebnisse oben im Balance-Abschnitt). Der
+Mut-Faktor trägt sein gemessenes Band in `reglerWarnung.js`.
+
+Ursprünglicher Entwurf:
 Das eigene Top-Team ist **keine neue Modifikator-Ebene, sondern eine Spielart
 des Jokers**. Damit bleibt es bei drei Ebenen (Joker · Abstimmung · Team-Mods),
 und neue Ideen wachsen INNERHALB der Joker-Ebene statt daneben.
@@ -358,7 +406,12 @@ und neue Ideen wachsen INNERHALB der Joker-Ebene statt daneben.
 - ⚠️ Vor dem Merge mit `balanceSim.js` prüfen: der Kenner darf gewinnen, aber
   nicht davonziehen.
 
-### Ertragsquellen in der Abrechnung sichtbar machen — NEU (Nutzerwunsch)
+### Ertragsquellen in der Abrechnung sichtbar machen — GEBAUT ✓
+`src/lib/breakdown.js` + `Ertragsquellen.jsx`. Team/Derby, Spiel des Spieltags
+und Wettbewerbs-Gewicht stehen als DREI Zeilen, obwohl sie in einem additiven
+Topf landen — sonst sucht der Spieler ein Derby, das es nicht gibt.
+
+Ursprünglicher Entwurf:
 **Nicht bloß Anzeige, sondern ein Bindungs-Element.** Eine aufgeschlüsselte
 Liste „woher kamen meine Punkte" liest sich wie eine Abrechnung und hakt
 nachweislich besser als eine nackte Endzahl.
@@ -391,15 +444,27 @@ Spielerstellung. Umgesetzt:
   Versäumnis ohne Abzug.
 - Kein Verbot: extreme Werte bleiben erlaubt, sie sind nur nie versehentlich.
 
-Offen: **Balance-Ampel klebend** (aktuell scrollt sie mit); der Kasten mit den
-Warnungen sitzt direkt darunter und könnte mitkleben.
+✅ **Balance-Ampel klebt** (seit 27.07.), zusammen mit dem Warnungs-Kasten;
+gedeckelt auf 42 % der Fensterhöhe mit eigenem Scroll.
+
+⚠️ Beim Bauen die Falle gefunden, die so etwas STILL scheitern lässt: der
+Telefon-Rahmen jedes Screens trägt `overflow: hidden`, und das macht ihn zum
+Scroll-Container — `position: sticky` klebt dann an ihm statt am Fenster und
+scrollt einfach weiter mit, ohne dass etwas kaputt aussieht. `overflow: clip`
+schneidet die runden Ecken genauso ab, erzeugt aber keinen Scroll-Container.
+Der Rahmen steht INLINE in jedem Screen; wer anderswo etwas kleben lassen will,
+muss ihn dort ebenso umstellen.
 
 ### Joker-Verteilung über die Saison (Frequenz statt Handarbeit) — GEBAUT ✓
 `src/lib/jokerPlan.js` + `JokerVerteilung.jsx`. Umgesetzt wie unten beschrieben;
 verteilt wird BLOCKWEISE (je Block genau einer), weil reiner Zufall sonst vier
-Joker in fünf Spieltage bündelt — formal fair, gefühlt kaputt. Offen bleibt die
-Durchsetzung beim Tippen (Store/UI: welcher Spieltag ist für MICH ein
-Joker-Spieltag) und die Mitspieler-Übersicht als eigener Screen.
+Joker in fünf Spieltage bündelt — formal fair, gefühlt kaputt.
+
+✅ Die Durchsetzung beim Tippen ist gebaut: `jokerKontingent.darfJokerSetzen()`
+sagt nicht nur ob, sondern auch AUS WELCHEM TOPF — „heute ist dein
+Joker-Spieltag" ist eine andere Aussage als „du setzt einen erspielten ein".
+
+Offen: die Mitspieler-Übersicht als eigener Screen.
 
 Der Admin soll nicht 34 Spieltage einzeln anklicken müssen.
 
