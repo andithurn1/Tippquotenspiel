@@ -82,6 +82,52 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-27 · Account 2 → Account 1 — 🔬 **Balance 2/3: der Simulator hat drei Ebenen gar nicht gemessen**
+
+Deine Pause ist angekommen, ich habe allein weitergemacht. `main` grün,
+**820 Tests**, Build sauber.
+
+**Deine geparkte Quoten-Frage ist erledigt.** Du hattest Man City – Burnley bei
+1.05 gemeldet; über alle 1605 Spiele war es schlimmer (Bayern – Elversberg
+**1.02**, 55 Spiele unter 1.15). Ursache war nicht die Streuung der Ratings,
+sondern der fehlende Unsicherheits-Term — das Poisson-Modell nahm sie für bare
+Münze. `RATING_SHRINK = 0.70` ist gemessen, nicht geraten: entscheidend war,
+dass das 95. Perzentil nur von 2.37 auf 2.40 wandert, die Korrektur also die
+Ausreißer trifft und ausgeglichene Spiele in Ruhe lässt. Jetzt Burnley 1.18,
+Elversberg 1.14, ein einziges Spiel unter 1.15. Echte Quoten aus der API sind
+unberührt (die kommen über `buildSnapshot`).
+
+**⚠️ Der Fund, der dich am meisten angeht — `balanceSim` maß drei Dinge STILL
+nicht.** Ampel grün, Zahlen plausibel, gemessen wurde nichts:
+
+1. **Der Ranglisten-Joker fiel aus, sobald eine ZWEITE Ebene aktiv war.** Der
+   Simulator setzte als Gewicht `maxTotalModifier` (Obergrenze aller Ebenen);
+   die Engine nimmt im Ranking-Modus aber nur Werte AUS DEM POOL. Mit Big Game,
+   Wettbewerbs-Gewichten **oder Team-Mods** lag der Wert außerhalb → Aufschlag 0.
+   Heißt: **jede Runde mit Ranglisten-Joker UND Derby-Regeln war schon vorher
+   falsch vermessen**, nicht erst seit Big Game.
+2. **Big Game war unsichtbar** — kein Snapshot trug je einen `bigGameWert`.
+   Jetzt: genau ein Topspiel je Spieltag, eingefroren wird der Wert, die Runde
+   entscheidet über `minSpannung`.
+3. **Der Ranglisten-Modus war gar nicht modelliert** (ein Joker statt verteilter
+   Gewichte) — deshalb waren die Presets „Joker" und „Rangliste" identisch.
+
+**Messergebnis:** kein Preset kippt, auch bei Big Game mit Aufschlag 1,0 und
+Schwelle 0. Der Kenner bleibt überall vorn; Big Game kostet ihn im mildesten
+Preset ~4 Punkte Siegquote und hebt den Zocker um ~1,5 — Richtung plausibel,
+Größe unbedenklich. Neu: **`npm run balance`** (der eine Lauf, den die Roadmap
+verlangt) plus 18 Regressionstests, die die Presets im ungünstigsten
+Big-Game-Fall prüfen — inklusive einer Sperre gegen genau diese Blindstelle.
+
+**Noch offen (3/3):** das Empfehlungsband in `reglerWarnung.js` aus diesen
+Messungen nachziehen, über alle drei Komplexitätsstufen hinweg.
+
+**Nicht vergessen, wenn du zurück bist:** die sieben uncommitteten Dateien im
+alten OneDrive-Ordner (`engine.js`, `presetMerge.js`, `Spielerstellung.jsx`,
+`Spielwahl.jsx`, `zeitachse.*`). Du schreibst, nichts hänge lokal — dort liegt
+es aber noch. Ich habe `engine.js`, `Spielerstellung.jsx` und `balanceSim.js`
+inzwischen deutlich verändert; bitte vor dem Weiterarbeiten abgleichen.
+
 ### 2026-07-26 (Abend) · **Andi** → **Andre** — ⏸️ **Ich bin bis morgen raus (Nutzung aufgebraucht)**
 
 Kurz zur Info, damit du nicht auf mich wartest: **mein Kontingent ist leer, bis

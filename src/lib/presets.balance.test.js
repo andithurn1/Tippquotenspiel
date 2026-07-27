@@ -38,6 +38,40 @@ describe("Presets — Balance", () => {
   }
 });
 
+// ── Die Modifikator-Ebenen mitmessen ────────────────────────
+// Bis zum Abschluss-Durchgang war der Simulator für Big Game BLIND: kein
+// Snapshot trug einen `bigGameWert`, also lieferten „aus" und „stark" dieselben
+// Zahlen. Ein Preset mit aggressivem Big Game hätte grün ausgesehen, ohne je
+// geprüft worden zu sein. Diese Tests sind die Sperre dagegen — sie prüfen die
+// Presets im UNGÜNSTIGSTEN Fall, den ein Admin einstellen kann.
+const MAXIMUM = { enabled: true, aufschlag: 1.0, minSpannung: 0 };
+
+describe("Presets — halten auch mit maximalem Big Game", () => {
+  for (const preset of PRESETS) {
+    describe(preset.label, () => {
+      const r = simulateBalance({ ...preset.rules, bigGame: MAXIMUM }, OPT);
+      const quote = (key) => r.profile.find((p) => p.key === key).siegquote;
+
+      it("der Kenner bleibt vor Zocker und Favorit", () => {
+        expect(quote("kenner")).toBeGreaterThan(quote("zocker"));
+        expect(quote("kenner")).toBeGreaterThan(quote("favorit"));
+      });
+
+      it("die Ampel steht nicht auf rot", () => {
+        expect(r.ampel.stufe).not.toBe("rot");
+      });
+
+      it("Big Game wird überhaupt gemessen (Blindstellen-Regression)", () => {
+        // Der Modifikator-Anteil MUSS steigen, wenn die Ebene aktiv ist.
+        // Bliebe er gleich, wäre der Simulator wieder blind — genau der Fehler,
+        // der die Ebene monatelang ungeprüft gelassen hat.
+        const ohne = simulateBalance(preset.rules, OPT);
+        expect(r.modifikatorAnteil).toBeGreaterThan(ohne.modifikatorAnteil);
+      });
+    });
+  }
+});
+
 describe("Presets — Struktur", () => {
   it("die Dämpfung ist überall vorhanden (sonst kippt die Balance)", () => {
     for (const p of PRESETS) {
