@@ -30,6 +30,7 @@
 import { RULE_LIMITS, sanitizeRules, maxTotalModifier } from "./engine";
 import { PRESETS } from "./presets";
 import { SAISON_LIMITS } from "./saisonwetten";
+import { BIGGAME_LIMITS } from "./bigGame";
 
 // Wie weit über das Preset-Spektrum hinaus noch als normal gilt — als Anteil
 // der gesamten Regler-Spanne. Ohne diesen Rand wäre jede Feinjustierung sofort
@@ -113,6 +114,28 @@ export const BAND_FELDER = [
     aktiv: (r) => get(r, "teamMods.derbyFaktor") > 1,
     hoch: "Derbys zählen so viel mehr, dass die übrigen Spiele nebensächlich werden.",
     tief: "" },
+  // ── Big Game ──────────────────────────────────────────────
+  // In KEINEM Preset aktiv, deshalb ein gemessenes Band direkt am Feld.
+  // Messung: `npm run balance`, 3 Saatzahlen × 40 Saisons, alle sechs Presets.
+  // Befund: die Ebene ist über ihre GANZE Spanne unbedenklich — selbst bei
+  // Aufschlag 1,0 bleibt der Kenner überall vorn. Deshalb kein enges Band auf
+  // dem Aufschlag; die Rückmeldung gehört an die SCHWELLE (siehe unten).
+  { pfad: "bigGame.aufschlag", label: "Aufschlag fürs Topspiel", limits: BIGGAME_LIMITS.aufschlag,
+    aktiv: (r) => get(r, "bigGame.enabled") === true,
+    gemessen: { von: 0.2, bis: 1 },
+    hoch: "",
+    tief: "So klein fällt der Aufschlag niemandem auf — dann kann das Topspiel auch aus bleiben." },
+  { pfad: "bigGame.minSpannung", label: "Schwelle fürs Topspiel", limits: BIGGAME_LIMITS.minSpannung,
+    aktiv: (r) => get(r, "bigGame.enabled") === true,
+    // Die eigentliche Stellschraube. Bei 0 hat JEDER Spieltag ein Topspiel —
+    // aus der Auszeichnung wird eine Dauer-Zugabe, und der Aufschlag wirkt nur
+    // noch als allgemeine Varianz. Genau das hilft dem Zocker.
+    gemessen: { von: 0.25, bis: 0.8 },
+    hoch: "Die Schwelle ist so hoch, dass es fast nie ein Topspiel gibt — die Einstellung läuft dann meistens leer.",
+    tief: "Bei Schwelle 0 bekommt JEDER Spieltag ein Topspiel, auch ein belangloses. "
+      + "Gemessen (Aufschlag 1,0, mildes Regelwerk): der Kenner gewinnt dann noch 57 % der "
+      + "Saisons statt 61 %, der Dauerzocker steigt von 9 % auf 11 %. Kein Beinbruch — aber "
+      + "der Aufschlag ist dann keine Auszeichnung mehr, sondern nur noch mehr Zufall." },
   { pfad: "aufholen.staerke", label: "Stärke des Anschluss-Bonus", limits: RULE_LIMITS.aufholen.staerke,
     aktiv: (r) => get(r, "aufholen.enabled") === true,
     hoch: "Ein großer Teil des Rückstands wird geschenkt — gutes Tippen zählt dann weniger als Zurückliegen.",
