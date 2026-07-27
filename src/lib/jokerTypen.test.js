@@ -89,12 +89,19 @@ describe("Typ „mut“ — nur gegen den Favoriten", () => {
     expect(jokerFactor(tipp({ home: 1, away: 1 }), r, SNAP, heimSieg)).toBe(1);
   });
 
-  it("hat eine eigene, engere Obergrenze als der gesetzte Joker", () => {
-    // Die harte Grenze bleibt weit; wo es unrund wird, sagt das
-    // Empfehlungsband (reglerWarnung.js) — Messwerte stehen dort.
-    expect(RULE_LIMITS.joker.mutFaktor.max).toBeLessThan(RULE_LIMITS.joker.faktor.max);
-    const zuHoch = regeln({ modus: "einzel", mut: { enabled: true, faktor: 3 } });
-    expect(zuHoch.joker.mut.faktor).toBeLessThanOrEqual(RULE_LIMITS.joker.mutFaktor.max);
+  it("wird NICHT enger begrenzt als der gesetzte Joker", () => {
+    // Regressionstest zu einer alten Verwechslung: die Messung („ab ×1,15
+    // schmilzt der Vorsprung des Könners") war einmal als engere HARTE Grenze
+    // gelandet. Damit endete der Regler kurz hinter der Empfehlung, und ein
+    // Admin konnte gar nicht ausprobieren, wie sich ein wilder Wert anfühlt.
+    // Eine Messung gehört ins Empfehlungsband (reglerWarnung.js), nie in
+    // RULE_LIMITS — sonst wird aus jeder Messung ein Verbot.
+    expect(RULE_LIMITS.joker.mutFaktor.max).toBeGreaterThanOrEqual(RULE_LIMITS.joker.faktor.max);
+  });
+
+  it("beschneidet trotzdem auf die harte Grenze", () => {
+    const zuHoch = regeln({ modus: "einzel", mut: { enabled: true, faktor: 9 } });
+    expect(zuHoch.joker.mut.faktor).toBe(RULE_LIMITS.joker.mutFaktor.max);
   });
 });
 

@@ -202,17 +202,22 @@ export const RULE_LIMITS = {
   underdogRampStart: { min: 1.2, max: 15, step: 0.1 },
   underdogRampEnd:   { min: 2,   max: 30, step: 0.5 },
   favFlopPenalty:    { min: 0,   max: 20, step: 1   },
-  // mutFaktor hat eine EIGENE, engere Grenze als der gesetzte Joker: der
-  // Mut-Bonus verstaerkt genau die hoechsten Auszahlungen (Aussenseiter-Siege).
-  //
   // ⚠️ Was hier steht, ist die Grenze des ERLAUBTEN — nicht die des Erprobten.
   // Wo es unrund wird, sagt das Empfehlungsband in reglerWarnung.js, samt
   // Messwerten und Beispielrechnung. Ein Admin darf darueber hinaus, er soll
   // es nur nie VERSEHENTLICH tun. Deshalb wird hier nicht nachgezogen, wenn
   // eine Messung eine Unwucht zeigt — sonst waere jede Messung ein Verbot.
+  //
+  // Genau das war beim `mutFaktor` passiert: die Messung („ab ×1,15 schmilzt
+  // der Vorsprung des Koenners") war als engere Grenze 1.2 hier gelandet und
+  // stehen geblieben, obwohl das Band in reglerWarnung.js laengst existiert.
+  // Der Regler endete damit kurz hinter der Empfehlung — man konnte gar nicht
+  // ausprobieren, wie sich ein wilder Wert anfuehlt. Jetzt dieselbe Spanne wie
+  // der gesetzte Joker; die feinere Schrittweite bleibt, weil der Mut-Bonus
+  // genau die hoechsten Auszahlungen verstaerkt und deshalb sensibler reagiert.
   joker: {
     faktor: { min: 1, max: 2, step: 0.1 },
-    mutFaktor: { min: 1, max: 1.2, step: 0.05 },
+    mutFaktor: { min: 1, max: 2, step: 0.05 },
     anzahlFaktoren: { min: 2, max: 6, step: 1 },
   },
   teamMods: { derbyFaktor: { min: 1, max: 2, step: 0.1 }, teamFaktor: { min: 1, max: 2, step: 0.1 } },
