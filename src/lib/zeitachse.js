@@ -18,7 +18,12 @@
 //  angepfiffen wird, gehört dazu — egal aus welcher Liga. Das ist in EINEM Satz
 //  erklärbar, und genau daran hängt, ob ein Spieler dem Ding traut.
 //
-//  Zwei Kanten, die der naive Entwurf verliert:
+//  Zugeordnet wird immer ein GANZER Liga-Spieltag, nie ein einzelnes Spiel —
+//  ein Bundesliga-Spieltag läuft Freitag bis Sonntag und läge sonst links und
+//  rechts eines Ankerpunkts. Ein halber Spieltag ist der Punkt, an dem aus
+//  einer Anzeige-Frage eine Fairness-Frage wird.
+//
+//  Drei Kanten, die der naive Entwurf verliert:
 //   • **Vor dem ersten Ankerpunkt.** Startet der Anker später als die anderen,
 //     hängen deren erste Spieltage in der Luft. Sie fallen hier in Runden-
 //     Spieltag 1 — lieber ein voller erster Spieltag als verschwundene Spiele.
@@ -26,6 +31,9 @@
 //     drei Wochen, während andere Ligen weiterspielen, wird ein Runden-Spieltag
 //     riesig. Das ist nicht falsch, aber überraschend — `warnungen()` benennt
 //     es, und der Modus `woche` ist die Alternative.
+//   • **Der Wochen-Modus fasst trotzdem Spieltage zusammen.** Er teilt nach
+//     festen Fenstern, aber die Einheit bleibt der Liga-Spieltag: ein Fenster
+//     von drei Tagen zerschneidet sonst jedes Wochenende.
 //
 //  ── Skalierung ──
 //  `buendeln: N` fasst N Ankerspieltage zu EINEM Runden-Spieltag zusammen —
@@ -36,6 +44,7 @@
 // ============================================================
 
 import { wettbewerbVon, wettbewerbLabel, istEchterWettbewerb, WETTBEWERBE } from "./wettbewerbe";
+import { spieltagKey } from "./spieltag";
 
 export const ZEITACHSE_MODI = ["anker", "woche"];
 
@@ -59,7 +68,13 @@ export const ZEITACHSE_LIMITS = {
   buendeln: { min: 1, max: 5 },     // wie viele Ankerspieltage ein Runden-Spieltag umfasst
   tage: { min: 3, max: 21 },        // Fensterlänge im Wochen-Modus
   pauseAbTagen: { min: 8, max: 28 }, // ab welcher Lücke im Taktgeber von „Pause" die Rede ist
-  warnAbSpielen: 40,                // ab so vielen Spielen je Runden-Spieltag wird gewarnt
+  // ⚠️ Überfüllung wird RELATIV gemessen, nicht an einer festen Zahl. Eine feste
+  // Schwelle hängt an der Zahl der Wettbewerbe: über vier Ligen sind 39 Spiele
+  // eine ganz normale Woche, mit Champions League 57. Eine Schwelle von 40
+  // hätte dort JEDE CL-Woche als Pause im Taktgeber gemeldet — ein Fehlalarm
+  // auf der Standard-Einstellung, und noch dazu mit falscher Begründung.
+  ueberfuellungsFaktor: 2,          // ab dem Wievielfachen des üblichen Spieltags
+  warnAbSpielen: 12,                // Untergrenze: darunter ist „doppelt so viel" belanglos
 };
 
 export const DEFAULT_ZEITACHSE = {
@@ -144,9 +159,14 @@ export function zeitachse(matches = [], cfg = DEFAULT_ZEITACHSE) {
   const gueltig = matches.filter((m) => Number.isFinite(zeit(m)) && istEchterWettbewerb(wettbewerbVon(m)));
   if (!gueltig.length) return [];
 
+  // Der Taktgeber wandert MIT in die Achse. Sonst müsste jeder Aufrufer, der
+  // ihn braucht (`warnungen`), ihn aus `cfg` neu bestimmen — und bei
+  // `anker: null` raten, welche Liga die Automatik genommen hat.
+  const taktgeber = c.modus === "anker" ? ankerWettbewerb(gueltig, c.anker) : null;
+
   const grenzen = c.modus === "woche"
     ? wochenGrenzen(gueltig, c.tage)
-    : mitPausen(ankerPunkte(gueltig, ankerWettbewerb(gueltig, c.anker), c.buendeln), c);
+    : mitPausen(ankerPunkte(gueltig, taktgeber, c.buendeln), c);
 
   if (!grenzen.length) return [];
 
@@ -159,21 +179,50 @@ export function zeitachse(matches = [], cfg = DEFAULT_ZEITACHSE) {
     spiele: [],
   }));
 
-  for (const m of gueltig) {
-    const t = zeit(m);
-    // Rückwärts suchen: der letzte Ankerpunkt, der nicht nach dem Anpfiff liegt.
+  // ⚠️ Zugeordnet wird der LIGA-SPIELTAG, nicht das einzelne Spiel. Ein
+  // Bundesliga-Spieltag läuft von Freitag bis Sonntag und kann links und rechts
+  // eines Ankerpunkts liegen — spielweise zugeordnet zerfiele er auf zwei
+  // Runden-Spieltage. Solange die Achse nur anzeigt, wäre das kosmetisch;
+  // sobald etwas daran hängt, ist es ein Fairness-Bruch: ein Joker auf einem
+  // halben Spieltag ist etwas anderes als auf einem ganzen, und „alle Spiele
+  // des Spieltags getippt" (`ereignisse.js`) ginge nie wieder auf.
+  //
+  // Maßgeblich ist das ERSTE Spiel des Liga-Spieltags. Dadurch fällt jeder
+  // Spieltag des Taktgebers exakt auf seinen eigenen Ankerpunkt — die Grenzen
+  // sind ja genau aus diesen frühesten Anpfiffen gebaut.
+  for (const gruppe of ligaSpieltagGruppen(gueltig)) {
+    const start = Math.min(...gruppe.map(zeit));
     let idx = 0;
+    // Rückwärts suchen: der letzte Ankerpunkt, der nicht nach dem Start liegt.
     for (let i = eintraege.length - 1; i >= 0; i--) {
-      if (t >= eintraege[i].von) { idx = i; break; }
+      if (start >= eintraege[i].von) { idx = i; break; }
     }
-    eintraege[idx].spiele.push(m);
+    for (const m of gruppe) eintraege[idx].spiele.push(m);
   }
 
   return eintraege.map((e) => ({
     ...e,
+    taktgeber,
     spiele: e.spiele.sort((a, b) => zeit(a) - zeit(b)),
     ligen: ligaSpieltage(e.spiele),
   }));
+}
+
+// Die Spiele nach ihrem Liga-Spieltag bündeln — die Einheit, die nicht
+// zerrissen werden darf. `spieltagKey` ist dafür die eine Quelle im Projekt
+// (Wettbewerb + Zahl, nie die Zahl allein). Ein Spiel OHNE `matchday` gehört zu
+// keinem Spieltag und bleibt für sich: sonst klumpten alle solchen Spiele eines
+// Wettbewerbs zu einer Gruppe über die halbe Saison zusammen.
+function ligaSpieltagGruppen(matches = []) {
+  const gruppen = new Map();
+  for (const m of matches) {
+    const key = m.matchday == null
+      ? `einzeln#${m.id ?? gruppen.size}`
+      : spieltagKey({ wettbewerb: wettbewerbVon(m), matchday: m.matchday });
+    if (!gruppen.has(key)) gruppen.set(key, []);
+    gruppen.get(key).push(m);
+  }
+  return [...gruppen.values()];
 }
 
 // Pausen im Taktgeber. Spielt er drei Wochen nicht, während die anderen Ligen
@@ -233,9 +282,25 @@ function ligaSpieltage(spiele = []) {
 
 // In welchen Runden-Spieltag fällt dieses Spiel? `null` für alles, was nicht
 // zur Achse gehört (Demo-Spiel) — der Aufrufer zeigt dann einfach nichts an.
+//
+// Nachgeschlagen wird in der fertigen Achse, NICHT über die Anstoßzeit neu
+// gerechnet: seit ein Liga-Spieltag als Ganzes einsortiert wird, kann ein
+// einzelnes Spiel zeitlich hinter dem nächsten Ankerpunkt liegen und trotzdem
+// zum vorigen Runden-Spieltag gehören. Eine zweite Rechnung wäre eine zweite
+// Wahrheit — genau die Sorte Abweichung, die niemand bemerkt.
 export function rundenSpieltagVon(achse = [], match) {
   const t = zeit(match);
   if (!Number.isFinite(t) || !istEchterWettbewerb(wettbewerbVon(match))) return null;
+  const key = match.matchday == null
+    ? null
+    : spieltagKey({ wettbewerb: wettbewerbVon(match), matchday: match.matchday });
+  for (const e of achse) {
+    if (e.spiele.some((m) => (match.id != null && m.id === match.id)
+      || (key != null && spieltagKey({ wettbewerb: wettbewerbVon(m), matchday: m.matchday }) === key))) {
+      return e.nummer;
+    }
+  }
+  // Nicht in dieser Achse enthalten (fremdes Spiel): auf die Zeit zurückfallen.
   for (let i = achse.length - 1; i >= 0; i--) if (t >= achse[i].von) return achse[i].nummer;
   return achse.length ? achse[0].nummer : null;
 }
@@ -251,6 +316,25 @@ export function achsenLabel(eintrag, { kurz = false } = {}) {
   return `Spieltag ${eintrag.nummer}${teile.length ? " · " + teile.join(" · ") : ""}`;
 }
 
+// Wie viele Tage umfasst dieser Runden-Spieltag? Der erste beginnt im
+// Unendlichen und der letzte endet dort — beide Ränder fallen dann auf den
+// frühesten bzw. spätesten Anpfiff zurück, sonst käme Unendlich heraus.
+function fensterTage(e) {
+  const t = (e.spiele ?? []).map(zeit).filter(Number.isFinite);
+  const von = Number.isFinite(e.von) ? e.von : (t.length ? Math.min(...t) : 0);
+  const bis = Number.isFinite(e.bis) ? e.bis : (t.length ? Math.max(...t) : von);
+  return Math.max(0, (bis - von) / TAG);
+}
+
+// Median statt Mittelwert: ein paar sehr dicke Spieltage sind genau das, wonach
+// gesucht wird — sie dürfen den Vergleichswert nicht selbst hochziehen.
+function median(zahlen = []) {
+  if (!zahlen.length) return 0;
+  const s = [...zahlen].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+}
+
 // Was an dieser Achse unangenehm werden könnte — VOR dem Anlegen der Runde.
 // Eine Zeitachse, die man erst im Dezember als unpassend erkennt, ist wertlos:
 // der Spielplan steht dann längst.
@@ -259,16 +343,34 @@ export function warnungen(achse = [], cfg = DEFAULT_ZEITACHSE) {
   const out = [];
   if (!achse.length) return out;
 
-  const dick = achse.filter((e) => e.spiele.length >= ZEITACHSE_LIMITS.warnAbSpielen);
+  // Gemessen wird gegen den ÜBLICHEN Spieltag dieser Achse (Median), nicht
+  // gegen eine feste Zahl — siehe `ueberfuellungsFaktor`. Der Vergleichswert
+  // lässt den ERSTEN Eintrag außen vor: dass der den Vorlauf der früheren Ligen
+  // aufsammelt, ist gewollt und würde den Maßstab verschieben. Geprüft wird er
+  // trotzdem — eine Pause kann auch gleich am Anfang liegen.
+  const ueblich = median((achse.length > 1 ? achse.slice(1) : achse).map((e) => e.spiele.length));
+  const grenze = Math.max(ueblich * ZEITACHSE_LIMITS.ueberfuellungsFaktor, ZEITACHSE_LIMITS.warnAbSpielen);
+  const dick = achse.filter((e) => e.spiele.length >= grenze);
   if (dick.length) {
+    // Die Ursache steht in den Daten, sie muss nicht geraten werden — und die
+    // beiden möglichen Ursachen brauchen verschiedene Ratschläge. Unterscheiden
+    // lassen sie sich am ZEITFENSTER: pausiert der Taktgeber, zieht sich der
+    // Spieltag über Wochen. Fallen dagegen nur mehrere Wettbewerbe in dieselbe
+    // Woche (Champions League neben vier Ligen), bleibt das Fenster normal —
+    // dort wäre „Pause im Taktgeber" eine falsche Fährte.
+    const anker = c.modus === "anker" ? (achse[0]?.taktgeber ?? null) : null;
+    const ueblichesFenster = median(achse.map(fensterTage));
+    const pausiert = anker != null && dick.every((e) => fensterTage(e) > ueblichesFenster * 1.5);
     out.push({
       art: "ueberfuellt",
       text: `${dick.length} Runden-Spieltag${dick.length > 1 ? "e umfassen" : " umfasst"} `
-        + `${Math.max(...dick.map((e) => e.spiele.length))} Spiele oder mehr — meist eine Pause im Taktgeber, `
-        + `während die anderen Ligen weiterspielen.`,
+        + `${Math.max(...dick.map((e) => e.spiele.length))} Spiele — üblich sind ${ueblich}. `
+        + (pausiert
+          ? `Der Taktgeber pausiert dort, während die anderen Ligen weiterspielen.`
+          : `Dort fallen mehrere Wettbewerbe zusammen.`),
       hilfe: c.modus !== "anker"
         ? "Ein kürzeres Fenster verteilt das gleichmäßiger."
-        : c.pause === "anhaengen"
+        : pausiert && c.pause === "anhaengen"
           ? "Der Pausen-Modus Auffüllen macht daraus mehrere normale Spieltage."
           : "Ein anderer Taktgeber oder der Wochen-Modus verteilt das gleichmäßiger.",
     });

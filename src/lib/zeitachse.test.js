@@ -89,6 +89,63 @@ describe("Die Kante, die der naive Entwurf verliert", () => {
   });
 });
 
+// Der Fall aus dem Browser: ein Bundesliga-Spieltag läuft Freitag bis Sonntag,
+// der La-Liga-Ankerpunkt liegt am Samstag dazwischen. Spielweise zugeordnet
+// zerfiele der Spieltag auf zwei Runden-Spieltage.
+describe("Ein Liga-Spieltag bleibt ganz", () => {
+  const FR = Date.UTC(2026, 7, 28, 18);      // BL 1, Freitagabend
+  const SA = Date.UTC(2026, 7, 29, 13);      // Ankerpunkt der La Liga
+  const SO = Date.UTC(2026, 7, 30, 15);      // BL 1, Sonntag — hinter dem Anker
+
+  const GETEILT = [
+    { id: "bl1-fr", wettbewerb: "bl", matchday: 1, kickoff: new Date(FR).toISOString() },
+    { id: "bl1-so", wettbewerb: "bl", matchday: 1, kickoff: new Date(SO).toISOString() },
+    { id: "pd1", wettbewerb: "pd", matchday: 1, kickoff: new Date(Date.UTC(2026, 7, 21)).toISOString() },
+    { id: "pd2", wettbewerb: "pd", matchday: 2, kickoff: new Date(SA).toISOString() },
+  ];
+
+  it("beide Spiele des Spieltags landen im selben Runden-Spieltag", () => {
+    const achse = zeitachse(GETEILT, { modus: "anker", anker: "pd" });
+    const nummern = ["bl1-fr", "bl1-so"].map((id) =>
+      achse.find((e) => e.spiele.some((m) => m.id === id))?.nummer);
+    expect(nummern[0]).toBe(nummern[1]);
+  });
+
+  it("er fällt dorthin, wo sein ERSTES Spiel liegt — nicht in den späteren", () => {
+    const achse = zeitachse(GETEILT, { modus: "anker", anker: "pd" });
+    expect(achse[0].ligen).toEqual({ bl: [1], pd: [1] });   // Freitag zieht den Sonntag mit
+    expect(achse[1].ligen).toEqual({ pd: [2] });
+  });
+
+  it("kein Liga-Spieltag steht in zwei Runden-Spieltagen", () => {
+    const achse = zeitachse(MATCHES, { modus: "anker", anker: "pd" });
+    const gesehen = new Map();
+    for (const e of achse) {
+      for (const key of Object.keys(e.ligen)) {
+        for (const md of e.ligen[key]) {
+          const k = `${key}#${md}`;
+          expect(gesehen.has(k)).toBe(false);
+          gesehen.set(k, e.nummer);
+        }
+      }
+    }
+  });
+
+  it("rundenSpieltagVon sagt für BEIDE Spiele dieselbe Nummer", () => {
+    const achse = zeitachse(GETEILT, { modus: "anker", anker: "pd" });
+    const [fr, so] = ["bl1-fr", "bl1-so"].map((id) => GETEILT.find((m) => m.id === id));
+    expect(rundenSpieltagVon(achse, so)).toBe(rundenSpieltagVon(achse, fr));
+    expect(rundenSpieltagVon(achse, so)).toBe(1);
+  });
+
+  it("auch der Wochen-Modus zerschneidet kein Wochenende", () => {
+    const achse = zeitachse(GETEILT, { modus: "woche", tage: 3 });
+    const nummern = ["bl1-fr", "bl1-so"].map((id) =>
+      achse.find((e) => e.spiele.some((m) => m.id === id))?.nummer);
+    expect(nummern[0]).toBe(nummern[1]);
+  });
+});
+
 describe("Skalierung: mehrere Anker-Spieltage bündeln", () => {
   it("bündeln: 2 halbiert die Zahl der Runden-Spieltage", () => {
     const achse = zeitachse(MATCHES, { modus: "anker", anker: "pd", buendeln: 2 });
@@ -126,6 +183,26 @@ describe("Warnungen vor dem Anlegen", () => {
     const achse = zeitachse(MATCHES, { modus: "anker", anker: "bl" });
     const w = warnungen(achse, { modus: "anker", anker: "bl" });
     expect(w.some((x) => x.art === "vorlauf")).toBe(true);
+  });
+
+  // Der Fehlalarm, den eine FESTE Schwelle erzeugte: über vier Ligen sind 39
+  // Spiele eine normale Woche, mit Champions League 57. Eine Schwelle von 40
+  // hätte jede CL-Woche als „Pause im Taktgeber" gemeldet — auf der
+  // Standard-Einstellung, und mit falscher Begründung.
+  it("viele Ligen in einer Woche sind kein überfüllter Spieltag", () => {
+    const woche = (nr, tage) => [
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => spiel("bl", nr, BL_START + tage * TAG, `bl${nr}-${i}`)),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => spiel("pd", nr, BL_START + tage * TAG, `pd${nr}-${i}`)),
+    ];
+    // Vier normale Wochen, in der dritten kommt die Champions League dazu.
+    const viele = [
+      ...woche(1, 0), ...woche(2, 7), ...woche(3, 14), ...woche(4, 21),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map((i) =>
+        spiel("cl", 1, BL_START + 15 * TAG, `cl1-${i}`)),
+    ];
+    const cfg = { modus: "anker", anker: "bl" };
+    const w = warnungen(zeitachse(viele, cfg), cfg);
+    expect(w.some((x) => x.art === "ueberfuellt")).toBe(false);
   });
 
   it("bei passendem Taktgeber gibt es nichts zu warnen", () => {
