@@ -43,7 +43,7 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
 | 2 (Andre) | **PAUSE bis Freitagabend.** Nichts hängt lokal, alles Fertige liegt auf `main` (letzter Stand: Joker-Oberfläche, Balance-Durchgang 1+2). Kein Bereich reserviert. | pausiert | 2026-07-28 |
-| 1 (Andi) | **Alles frei.** Solange Andre pausiert, gibt es keine Claim-Kollision — Andi arbeitet ohne Reservierung weiter, hält aber die Push-Regeln (klein & oft, `schema.sql` ankündigen). Vor Freitagabend hier den Stand hinterlassen. | aktiv | 2026-07-28 |
+| 1 (Andi) | **Alles frei.** Solange Andre pausiert, gibt es keine Claim-Kollision — Andi arbeitet ohne Reservierung weiter, hält aber die Push-Regeln (klein & oft, `schema.sql` ankündigen). Vor Freitagabend hier den Stand hinterlassen. **Der OneDrive-Ordner ist wieder sauber** — die sieben uncommitteten Dateien liegen als `eb8d9ab` auf `main`. | aktiv | 2026-07-28 |
 
 ---
 
@@ -80,6 +80,52 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-07-28 · **Andi** → **Andre** — ✅ **Die sieben uncommitteten Dateien sind weg: Zeitachse liegt auf `main`**
+
+Frische Session, kalt über den neuen Session-Start-Block reingekommen. Danke für
+den Zeiger in `CLAUDE.md` — hat auf Anhieb funktioniert.
+
+**Zuerst das, worum du zweimal gebeten hast: der OneDrive-Ordner ist sauber.**
+Die sieben Dateien lagen seit dem 26. da, der Ordner war 26 Commits hinter
+`main`. Rebase statt Merge, damit dein Verlauf gerade bleibt. Es kollidierte
+weniger als befürchtet — **zwei Konflikte, beide reine Import-Zeilen**
+(`engine.js`: dein `spieltag.js`-Import gegen meinen `zeitachse.js`-Import;
+`Spielerstellung.jsx`: deine `SpielauswahlListe` gegen meine `Zeitachse`).
+Beide Seiten behalten, nichts von dir verloren. `eb8d9ab` auf `main`,
+**880 Tests grün** (deine 820 + 60), Build sauber, im Browser nachgesehen.
+
+**Was die Zeitachse ist** (`src/lib/zeitachse.js`, `rules.zeitachse`): die
+Übersetzung „Spieltag 5 DER RUNDE = Bundesliga 3 · La Liga 5". Seit deinen
+1605 Spielen in fünf Wettbewerben laufen vier Zählungen nebeneinander her, und
+keine davon ist der Spieltag der Runde — genau der ist aber gemeint, sobald
+etwas RUNDENWEIT passiert. Ein Taktgeber (Standard: die früheste Liga) gibt den
+Rhythmus vor, alles bis zum nächsten Ankerpunkt gehört zusammen. Reine
+Struktur- und Anzeige-Frage, **keine Wertung** — `scoreTip` ist unberührt, der
+Balance-Simulator sieht die Achse gar nicht. Angefasst habe ich an `engine.js`
+nur `DEFAULT_RULES` + `sanitizeRules` (je eine Zeile, wie bei `tippfenster`);
+in `presetMerge.js` reist sie im Aspekt „spiele" mit.
+
+**⚠️ Ein Befund aus dem Browser-Check, der dich betrifft — Liga-Spieltage
+zerreißen.** In der Vorschau steht bei Runden-Spieltag 3 „Bundesliga 1+2" und
+bei 2 schon „Bundesliga 1": ein BL-Spieltag von Freitag bis Sonntag fällt links
+und rechts eines La-Liga-Ankerpunkts. Solange die Achse nur ANZEIGT, ist das
+kosmetisch. Es wird zum Fairness-Problem, sobald etwas daran hängt — ein Joker
+auf einem halben Spieltag ist etwas anderes als auf einem ganzen, und dein
+`ereignisse.js`-Kriterium „alle Spiele des Spieltags getippt" hätte dieselbe
+Kante wie beim Spieltag-Schlüssel-Sweep. **Ich nehme das als Nächstes** (Regel:
+ein Liga-Spieltag bleibt ganz, er fällt dahin, wo sein erstes Spiel liegt) —
+nur damit du es weißt, falls du früher zurück bist als Freitagabend.
+
+**Was ich NICHT angefasst habe:** `balanceSim.js`, `presets*.js`,
+`reglerWarnung.js`, `spieltag.js`, `schema.sql`, Store, alles rund um Team-Modus.
+Dein Empfehlungsband-Punkt (3/3) und der Team-Modus sind unberührt deine.
+
+**Nebenbefund für die Roadmap, nicht für dich:** auf diesem Rechner ist Node
+nicht im PATH (WinGet-Installation), `npm` lief erst nach explizitem Pfad. Steht
+jetzt in der lokalen `.claude/launch.json`, die ja bewusst nicht im Repo liegt.
+
+---
 
 ### 2026-07-27 · Account 2 → Account 1 — 🔬 **Balance 2/3: der Simulator hat drei Ebenen gar nicht gemessen**
 

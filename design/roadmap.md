@@ -21,7 +21,7 @@ Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 - **Design-Ebene** (`src/lib/theme.js`) — eine Quelle für Farben/Schrift
   (Account 1 hat darauf die Fanfarben-Umschaltung gebaut)
 
-Test-Stand: **800 grün**, Build sauber (Stand 2026-07-27).
+Test-Stand: **880 grün**, Build sauber (Stand 2026-07-28).
 
 > ⚠️ **Diese Datei war am 27.07. deutlich veraltet.** Mehrere Abschnitte standen
 > als „NEU" oder „offen" da, obwohl der Code längst lag — wer sie als
@@ -340,6 +340,42 @@ a) `wettbewerb`/`phase` ins Datenmodell + Daten erzeugen
 b) Gewichtung + Anteils-Anzeige
 c) Freischalt-Zeitpunkte fuer Saison-Wetten
 d) wettbewerbsuebergreifende Spielauswahl
+
+### Zeitachse: was „Spieltag 5" in einer Runde über mehrere Ligen heißt — GEBAUT ✓
+`src/lib/zeitachse.js` + `Zeitachse.jsx` (Spielerstellung) + Übersetzungszeile in
+der Spielwahl. `rules.zeitachse`, im Aspekt „spiele" von `presetMerge.js`.
+
+Die Lücke, die (a-d) offen gelassen haben: seit fünf Wettbewerben im einen
+Katalog liegen laufen **vier Zählungen nebeneinander her**, und keine davon ist
+der Spieltag DER RUNDE. Gemeint ist aber genau der, sobald etwas rundenweit
+passiert — ein Joker je Spieltag, der Anschluss-Bonus, ein Zwischenstand.
+
+**Der Entwurf:** ein TAKTGEBER (Standard: die früheste Liga) gibt den Rhythmus
+vor, jeder seiner Spieltage eröffnet einen Runden-Spieltag, alles bis zum
+nächsten Ankerpunkt gehört dazu. In einem Satz erklärbar — daran hängt, ob ein
+Spieler dem Ding traut. Alternative: fester Wochen-Modus.
+
+Drei Dinge, die der naive Entwurf verliert:
+- **Vor dem ersten Ankerpunkt.** Startet der Taktgeber später als andere Ligen,
+  hingen deren erste Spieltage in der Luft. Sie fallen in Runden-Spieltag 1 —
+  lieber ein voller erster Spieltag als verschwundene Spiele.
+- **Pausen im Taktgeber** (Winterpause). Ein Runden-Spieltag über drei Wochen
+  ist nicht falsch, aber ein Joker darin wäre etwas völlig anderes wert.
+  Wählbar: auffüllen (Rhythmus bleibt) oder anhängen.
+- **Die Vorschau ist der eigentliche Wert des Blocks.** Eine Zeitachse, die man
+  erst im Dezember als unpassend erkennt, lässt sich nicht mehr ändern.
+
+**Wichtig: das ist reine Struktur und Anzeige, KEINE Wertung.** `scoreTip` ist
+unberührt, der Balance-Simulator sieht die Achse nicht.
+
+⚠️ **Offener Punkt — Liga-Spieltage zerreißen.** Ein BL-Spieltag von Freitag bis
+Sonntag kann links und rechts eines Ankerpunkts liegen; in der Vorschau steht
+dann „Bundesliga 1" im einen und „Bundesliga 1+2" im nächsten Runden-Spieltag.
+Solange die Achse nur anzeigt, ist das kosmetisch. Es wird zum FAIRNESS-Problem,
+sobald etwas daran hängt: ein Joker auf einem halben Spieltag ist etwas anderes
+als auf einem ganzen, und „alle Spiele des Spieltags getippt" (`ereignisse.js`)
+hätte dieselbe Kante wie beim Spieltag-Schlüssel-Sweep. Nächster Schritt: ein
+Liga-Spieltag bleibt ganz und fällt dorthin, wo sein erstes Spiel liegt.
 
 ### Spiel-Auswahl gehört in den Code — GEBAUT ✓
 `src/lib/spielauswahl.js` + Abschnitt „Teams/Zeitraum" in der Spielerstellung.
