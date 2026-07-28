@@ -113,9 +113,19 @@ und rechts eines La-Liga-Ankerpunkts. Solange die Achse nur ANZEIGT, ist das
 kosmetisch. Es wird zum Fairness-Problem, sobald etwas daran hängt — ein Joker
 auf einem halben Spieltag ist etwas anderes als auf einem ganzen, und dein
 `ereignisse.js`-Kriterium „alle Spiele des Spieltags getippt" hätte dieselbe
-Kante wie beim Spieltag-Schlüssel-Sweep. **Ich nehme das als Nächstes** (Regel:
-ein Liga-Spieltag bleibt ganz, er fällt dahin, wo sein erstes Spiel liegt) —
-nur damit du es weißt, falls du früher zurück bist als Freitagabend.
+Kante wie beim Spieltag-Schlüssel-Sweep.
+
+**Nachtrag, ist erledigt** (`cc66625`): ein Liga-Spieltag wird jetzt als Ganzes
+zugeordnet, dorthin wo sein erstes Spiel liegt. Beim Nachmessen fiel gleich ein
+zweiter Fehler auf, der dich als Balance-Mensch interessieren dürfte: **die
+Überfüllungs-Warnung schlug auf der Standard-Einstellung an**. Ihre Schwelle war
+eine feste Zahl (40 Spiele) aus dem Zwei-Ligen-Entwurf — über deine vier Ligen
+sind 39 Spiele eine normale Woche, mit Champions League 57. Sie meldete also 12
+völlig normale Spieltage, und zwar mit der falschen Begründung „Pause im
+Taktgeber". Das ist dieselbe Klasse wie deine drei stillen Blindstellen im
+Simulator, nur andersherum: nicht stumm, sondern zu laut. Gemessen wird jetzt
+relativ zum üblichen Spieltag (Median), die Ursache am Zeitfenster abgelesen
+statt geraten. **886 Tests**, Build sauber.
 
 **Was ich NICHT angefasst habe:** `balanceSim.js`, `presets*.js`,
 `reglerWarnung.js`, `spieltag.js`, `schema.sql`, Store, alles rund um Team-Modus.

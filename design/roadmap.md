@@ -21,7 +21,7 @@ Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 - **Design-Ebene** (`src/lib/theme.js`) — eine Quelle für Farben/Schrift
   (Account 1 hat darauf die Fanfarben-Umschaltung gebaut)
 
-Test-Stand: **880 grün**, Build sauber (Stand 2026-07-28).
+Test-Stand: **886 grün**, Build sauber (Stand 2026-07-28).
 
 > ⚠️ **Diese Datei war am 27.07. deutlich veraltet.** Mehrere Abschnitte standen
 > als „NEU" oder „offen" da, obwohl der Code längst lag — wer sie als
@@ -368,14 +368,24 @@ Drei Dinge, die der naive Entwurf verliert:
 **Wichtig: das ist reine Struktur und Anzeige, KEINE Wertung.** `scoreTip` ist
 unberührt, der Balance-Simulator sieht die Achse nicht.
 
-⚠️ **Offener Punkt — Liga-Spieltage zerreißen.** Ein BL-Spieltag von Freitag bis
-Sonntag kann links und rechts eines Ankerpunkts liegen; in der Vorschau steht
-dann „Bundesliga 1" im einen und „Bundesliga 1+2" im nächsten Runden-Spieltag.
-Solange die Achse nur anzeigt, ist das kosmetisch. Es wird zum FAIRNESS-Problem,
-sobald etwas daran hängt: ein Joker auf einem halben Spieltag ist etwas anderes
-als auf einem ganzen, und „alle Spiele des Spieltags getippt" (`ereignisse.js`)
-hätte dieselbe Kante wie beim Spieltag-Schlüssel-Sweep. Nächster Schritt: ein
-Liga-Spieltag bleibt ganz und fällt dorthin, wo sein erstes Spiel liegt.
+✅ **Zwei Funde aus dem Browser-Check nachgezogen** (2026-07-28) — beide waren am
+Zwei-Ligen-Testfall nicht sichtbar und traten erst gegen den echten
+1605-Spiele-Katalog auf:
+
+- **Liga-Spieltage zerrissen.** Ein BL-Spieltag von Freitag bis Sonntag lag
+  links und rechts eines Ankerpunkts; in der Vorschau stand „Bundesliga 1" im
+  einen und „Bundesliga 1+2" im nächsten Runden-Spieltag. Zugeordnet wird jetzt
+  der ganze Liga-Spieltag (`spieltagKey`), dorthin wo sein ERSTES Spiel liegt.
+  `rundenSpieltagVon` schlägt seither in der fertigen Achse nach statt neu zu
+  rechnen — eine zweite Rechnung wäre eine zweite Wahrheit.
+- **Die Überfüllungs-Warnung war ein Fehlalarm auf der Standard-Einstellung.**
+  Die feste Schwelle von 40 Spielen stammte aus dem Zwei-Ligen-Entwurf; über
+  vier Ligen sind 39 Spiele eine normale Woche, mit Champions League 57.
+  Gemeldet wurden 12 völlig normale Spieltage, und zwar mit der FALSCHEN
+  Begründung „Pause im Taktgeber". **Lehre:** eine Schwelle, die an der Zahl der
+  Wettbewerbe hängt, gehört nicht als Konstante ins Modul. Gemessen wird jetzt
+  relativ zum üblichen Spieltag dieser Achse (Median), und die Ursache wird am
+  ZEITFENSTER unterschieden statt geraten.
 
 ### Spiel-Auswahl gehört in den Code — GEBAUT ✓
 `src/lib/spielauswahl.js` + Abschnitt „Teams/Zeitraum" in der Spielerstellung.

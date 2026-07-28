@@ -189,6 +189,25 @@ Die Spielwahl zeigt nur Anstehendes (sonst 465 Spiele), nennt aber immer die
 Zahlen der ausgeblendeten; ist gerade nichts offen, zeigt sie die nächsten
 gedimmt statt einer leeren Fläche.
 
+**Zeitachse** (`src/lib/zeitachse.js`, `rules.zeitachse`): was „Spieltag 5" in
+einer Runde über MEHRERE Ligen heißt. Die Ligen starten versetzt und zählen
+jede für sich — gemeint ist aber der Spieltag DER RUNDE, sobald etwas rundenweit
+passiert (Joker, Anschluss-Bonus, Zwischenstand). Ein TAKTGEBER (Standard: die
+früheste Liga) gibt den Rhythmus vor, alles bis zum nächsten Ankerpunkt gehört
+dazu; Alternative ist ein fester Wochen-Modus. Reine Struktur und Anzeige,
+**keine Wertung** — `scoreTip` ist unberührt, der Balance-Simulator sieht die
+Achse nicht. Vier Punkte, die nicht brechen dürfen: (1) zugeordnet wird immer
+ein GANZER Liga-Spieltag (`spieltagKey`), dorthin wo sein erstes Spiel liegt —
+ein BL-Spieltag läuft Fr–So und läge sonst links und rechts eines Ankerpunkts;
+ein halber Spieltag ist der Punkt, an dem aus einer Anzeige- eine Fairness-Frage
+wird. (2) `rundenSpieltagVon` schlägt in der fertigen Achse NACH und rechnet
+nicht neu — sonst zwei Wahrheiten. (3) Spiele VOR dem ersten Ankerpunkt fallen
+in Runden-Spieltag 1 statt zu verschwinden. (4) Die Überfüllungs-Warnung misst
+RELATIV zum üblichen Spieltag (Median), nie an einer festen Zahl: über vier
+Ligen sind 39 Spiele eine normale Woche, mit CL 57 — eine feste Schwelle meldet
+den Normalfall. Ihre Ursache liest sie am Zeitfenster ab (lange Fenster = Pause
+im Taktgeber, normale = mehrere Wettbewerbe fallen zusammen).
+
 **Spielauswahl** (`src/lib/spielauswahl.js`, `rules.spiele`, Standard „alle"):
 welche Spiele überhaupt zur Runde gehören — Vereine, Spieltag-Bereich, feste
 Liste — dazu `wettbewerbe`/`phasen` für „nur das Interessanteste" (CL ab
