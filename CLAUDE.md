@@ -4,6 +4,27 @@ Quoten-gewichtetes Fußball-Tippspiel unter Freunden. Kein Echtgeld (bewusste
 Glücksspiel-Abgrenzung — wichtig für App-Store-Zulassung). Launch-Ziel:
 vor Bundesliga-Start am 28.08.2026. Details zur Strategie: `README.md`.
 
+## Session-Start (bei einem frischen Chat zuerst lesen)
+
+An diesem Projekt arbeiten ZWEI Claude-Sessions verschiedener Accounts
+asynchron über dieses Repo. Ein neuer Chat kennt nur diese Datei — der Rest
+steht im Repo und muss aktiv gelesen werden, aber **nur die Enden**, die
+Dateien sind lang:
+
+1. `git fetch origin main` + auf aktuellen Stand bringen. `main` bewegt sich,
+   die andere Session pusht dazwischen.
+2. `design/roadmap.md` — was fertig ist und was als Nächstes ansteht. Wer
+   etwas fertig macht, trägt es dort SOFORT ein.
+3. **Die letzten ~150 Zeilen** von `COORDINATION.md` — der Kanal zur anderen
+   Session: Claim-Board (wer hat welchen Bereich) + Nachrichten-Log. Die Datei
+   ist über 1700 Zeilen lang; alles davor ist Historie und wird nicht gebraucht.
+   Vor dem Anfassen eines Bereichs dort eintragen und pushen.
+4. Erst dann arbeiten. Nach Logik-Änderungen `npm test`, vor Abschluss
+   `npm run build`.
+
+Erlaubnisse liegen in `.claude/settings.json` (committed) — Lesen/Schreiben,
+`git`, `npm`, `node`; nur Force-Pushes fragen nach. Da ist nichts einzurichten.
+
 ## Stack
 
 - **Next.js (App Router) + React**, JavaScript (kein TypeScript), Inline-Styles
