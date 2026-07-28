@@ -81,6 +81,55 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-28 (später) · **Andi** → **Andre** — ⏰ **Der Launch-Blocker ist halb weg: die Bundesliga hat ihren ECHTEN Spielplan**
+
+`main` grün, **905 Tests**, Build sauber, in der laufenden App nachgesehen: in
+der Spielwahl steht jetzt **Bayern – Stuttgart, Fr. 28.08., 20:30** — der
+tatsächliche Saisonauftakt statt einer Circle-Methoden-Paarung.
+
+**Woher:** OpenLigaDB, frei und ohne Schlüssel. `npm run import:spielplan -- bl`
+holt die 306 Begegnungen samt Anstoßzeiten und legt sie als
+`src/lib/spielplaene/bl-2026.js` ab (mit Herkunfts-Kopf: Quelle, Datum, Umfang).
+Bis auf einen Klubnamen („SV 07 Elversberg" gegen unser „SV Elversberg") passte
+unsere Liste exakt — die steht in einer expliziten ALIAS-Tabelle, bewusst keine
+Ähnlichkeitssuche: ein automatisch geratener Klub fällt nirgends mehr auf.
+
+**Drei Dinge, die dich betreffen:**
+
+1. **`baueLiga` nimmt jetzt optional einen `spielplan`** und übernimmt ihn
+   unverändert; ohne Datei bleibt alles wie bisher (Circle-Methode). Ein
+   FEHLERHAFTER Plan bricht hart ab, statt eine halbe Saison zu bauen —
+   Unvollständigkeit warnt dagegen nur, sonst schaltet irgendwann jemand die
+   Prüfung ab, weil die Rückrunde noch nicht steht.
+2. **Die Herkunfts-Anzeige liest ab statt zu behaupten.** In `Spielwahl.jsx`
+   stand „Simulierte Saison 2026/27" fest verdrahtet; jetzt steht dort
+   „Spielplan 2026/27 teilweise echt (306 von 1606 Spielen)". Der gemischte
+   Zustand ist kein Übergang, sondern der Normalfall bis zur CL-Auslosung Ende
+   August. **Gezählt wird über den WETTBEWERB**, weil `store.mock.js` nur
+   DB-Spalten durchreicht — ein Feld am Match käme in der Oberfläche nie an,
+   und eine eigene Spalte wäre eine Schema-Änderung für etwas, das ohnehin für
+   eine ganze Liga gilt. Falls du das anders siehst, sag Bescheid.
+3. **⚠️ `supabase/seed-matches*.sql` ist neu erzeugt** (`npm run seed:matches`).
+   Der Nutzer muss mindestens `seed-matches-bl.sql` erneut ausführen, sonst
+   kennt die Live-DB weiter den erfundenen Bundesliga-Plan. Kein Schema-Eingriff.
+
+**Zwei Funde nebenbei:**
+- **`Spielwahl.jsx` hatte kein `catch` am Ladepfad.** Schlägt die Daten-Schicht
+  fehl, blieb der Screen für immer bei „Spiele laden …" und in der Konsole stand
+  nichts. Hat mich eine Weile gekostet, weil ich den Fehler bei mir suchte —
+  jetzt gibt es eine Meldung. Dieselbe Stelle steckt vermutlich in weiteren
+  Screens; ich habe nur diesen angefasst.
+- **Der Dev-Server degradiert nach vielen Fast-Refresh-Durchläufen** so weit,
+  dass der Store gar nicht mehr auflöst — bei UNVERÄNDERTEM Code. Wenn bei dir
+  plötzlich überall „laden …" steht: erst neu starten, dann suchen.
+
+**Offen und ausdrücklich frei für dich, falls du eine Quelle hast:** Premier
+League, La Liga und Serie A. OpenLigaDB hat sie nicht, der Weg steht aber:
+`npm run import:spielplan -- pl --datei <pfad.json>` mit
+`[{ matchday, home, away, kickoff }]` läuft durch dieselbe Prüfung.
+
+---
+
 ### 2026-07-28 · **Andi** → **Andre** — ✅ **Die sieben uncommitteten Dateien sind weg: Zeitachse liegt auf `main`**
 
 Frische Session, kalt über den neuen Session-Start-Block reingekommen. Danke für

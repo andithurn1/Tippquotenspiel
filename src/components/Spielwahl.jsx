@@ -15,6 +15,8 @@ import { tippStatus, uebersicht, naechsteOeffnung, beschreibeTippfenster, format
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { istGeoeffnet } from "@/lib/spieltagOeffnen";
 import { zeitachse, rundenSpieltagVon, achsenLabel } from "@/lib/zeitachse";
+import { herkunftLabel } from "@/lib/spielplan";
+import { echteSpielplaene } from "@/lib/ligen";
 import { C, MONO } from "@/lib/theme";
 
 
@@ -39,6 +41,7 @@ export default function Spielwahl() {
   const [oeffnet, setOeffnet] = useState(null);     // Gruppen-Key, der gerade öffnet
   const [oeffnenFehler, setOeffnenFehler] = useState(null);
   const [neuLaden, setNeuLaden] = useState(0);      // hochzählen = Spiele neu holen
+  const [ladeFehler, setLadeFehler] = useState(null);
 
   useEffect(() => {
     let live = true;
@@ -50,6 +53,15 @@ export default function Spielwahl() {
       setVotes(vs);
       const relevant = filterMatchesByTeams(ms, round?.team_filter);
       setMatches([...relevant].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)));
+    }).catch((e) => {
+      // Ohne diesen Zweig bleibt der Screen für immer bei „Spiele laden …" und
+      // in der Konsole steht nichts Verwertbares — die Ursache liegt dann in der
+      // Daten-Schicht (der Spielplan-Import bricht z. B. absichtlich hart ab),
+      // ist aber von außen nicht zu sehen. Lieber eine leere Liste plus Meldung.
+      if (!live) return;
+      console.error("Spiele konnten nicht geladen werden:", e);
+      setLadeFehler(e?.message ?? String(e));
+      setMatches([]);
     });
     return () => { live = false; };
   }, [roundId, neuLaden]);
@@ -209,15 +221,29 @@ export default function Spielwahl() {
           </div>
         )}
 
+        {/* Die Herkunft wird ABGELESEN, nicht behauptet: sobald die echten
+            Kalender liegen, stimmte ein fest verdrahtetes „Simulierte Saison"
+            nicht mehr — und im August ist der Katalog eine Weile gemischt, weil
+            die Champions League erst Ende des Monats ausgelost wird. */}
         <div style={{ fontSize: 11, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
-          Simulierte Saison 2026/27
+          {herkunftLabel(matches ?? [], echteSpielplaene())}
           {mehrereWettbewerbe && ` · ${wettbewerbeIn(matches ?? []).map((w) => w.label).join(" + ")}`}
           {" "}— echte Klubs, aber generierte Quoten &amp; Ergebnisse zum Durchspielen.
           Kein echter Spielausgang.
         </div>
 
-        {matches == null && (
+        {matches == null && !ladeFehler && (
           <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>Spiele laden …</div>
+        )}
+
+        {ladeFehler && (
+          <div style={{
+            background: `${C.gold}0E`, border: `1px solid ${C.gold}33`, borderRadius: 10,
+            padding: "10px 12px", fontSize: 11.5, color: C.text, lineHeight: 1.45,
+          }}>
+            Die Spiele konnten nicht geladen werden.
+            <div style={{ fontFamily: MONO, color: C.muted, marginTop: 4 }}>{ladeFehler}</div>
+          </div>
         )}
 
         {gruppen.map((g) => {

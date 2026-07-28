@@ -21,7 +21,7 @@ Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 - **Design-Ebene** (`src/lib/theme.js`) — eine Quelle für Farben/Schrift
   (Account 1 hat darauf die Fanfarben-Umschaltung gebaut)
 
-Test-Stand: **886 grün**, Build sauber (Stand 2026-07-28).
+Test-Stand: **905 grün**, Build sauber (Stand 2026-07-28).
 
 > ⚠️ **Diese Datei war am 27.07. deutlich veraltet.** Mehrere Abschnitte standen
 > als „NEU" oder „offen" da, obwohl der Code längst lag — wer sie als
@@ -33,8 +33,39 @@ Test-Stand: **886 grün**, Build sauber (Stand 2026-07-28).
 
 ## Offen
 
-### ⏰ Echte Spielpläne vor dem Launch — HARTE FRIST, blockiert den Start
+### ⏰ Echte Spielpläne vor dem Launch — HARTE FRIST, Bundesliga ✅ erledigt
 **Der einzige Punkt mit einem Datum: 28.08.2026.**
+
+> ✅ **Stand 2026-07-28: der Weg steht, die Bundesliga ist getauscht.**
+> `npm run import:spielplan -- bl` holt die 306 echten Begegnungen samt
+> Anstoßzeiten von OpenLigaDB (frei, ohne Schlüssel) und legt sie als
+> `src/lib/spielplaene/bl-2026.js` ab; `baueLiga` übernimmt sie unverändert.
+> In der App steht jetzt Bayern – Stuttgart am 28.08. 20:30, der echte Auftakt.
+>
+> **Drei Entwurfs-Entscheidungen, die nicht gebrochen werden sollten:**
+> 1. **Ein fehlerhafter Plan bricht den Import HART ab** (`pruefeSpielplan`).
+>    Ein Klubname mit anderer Schreibweise erzeugte sonst still eine halbe
+>    Saison — sichtbar erst, wenn jemand auf ein Spiel tippt, das es nicht gibt.
+>    Unvollständigkeit WARNT dagegen nur: die Rückrunde steht oft noch nicht,
+>    und eine Warnung, die den Import verhindert, führt dazu, dass jemand die
+>    Prüfung abschaltet.
+> 2. **Die Herkunft wird abgelesen, nicht behauptet** (`herkunftLabel`). Der
+>    Katalog ist ab jetzt GEMISCHT, und das bleibt er bis zur CL-Auslosung Ende
+>    August — die Oberfläche sagt „teilweise echt (306 von 1606)". Gezählt wird
+>    über den Wettbewerb, weil der Store nur DB-Spalten durchreicht.
+> 3. **Der Index `spielplaene/index.js` löst eine Henne-Ei-Kette auf:** der
+>    Importer braucht die Klublisten aus den Ligadateien; importierten die
+>    ihrerseits direkt eine Plan-Datei, ließe sich der erste Lauf nie starten.
+>
+> **Offen bleiben PL, La Liga und Serie A** — OpenLigaDB hat sie nicht. Der Weg
+> steht: `npm run import:spielplan -- pl --datei <pfad.json>` nimmt eine
+> Liste `[{ matchday, home, away, kickoff }]` und läuft durch dieselbe Prüfung.
+> Es fehlt nur die Quelle. **Die Champions League bleibt bis zur Auslosung
+> erzeugt** — das ist Wartezeit, kein Versäumnis.
+>
+> ⚠️ **Nutzer-Aufgabe:** `supabase/seed-matches-bl.sql` ist neu erzeugt und muss
+> im SQL-Editor erneut ausgeführt werden, sonst kennt die Live-DB weiter den
+> alten, erfundenen Bundesliga-Spielplan.
 
 Alle 1605 Spiele im Katalog sind **simuliert**. Echt sind nur die Klubs und die
 üblichen Anstoßzeiten je Liga — Spielplan, Quoten, Ergebnisse und Torschützen

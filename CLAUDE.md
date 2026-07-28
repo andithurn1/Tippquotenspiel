@@ -291,9 +291,29 @@ KOMBINATIONS-Regeln für das, was in keinem Einzelwert steckt (kein Abzug + kein
 Cutoff = Gratis-Lose). Jede Meldung kennt ihre Korrektur; Tests sichern, dass
 kein Preset und kein Charakter eine Warnung auslöst.
 
+**Echte Spielpläne** (`src/lib/spielplan.js`, `scripts/import-spielplan.mjs`,
+`src/lib/spielplaene/`): der Launch-Blocker. `npm run import:spielplan -- bl`
+holt die echten Bundesliga-Termine von OpenLigaDB (frei, ohne Schlüssel) und
+legt sie als JS-Modul mit Herkunfts-Kopf ab; `baueLiga` übernimmt sie
+UNVERÄNDERT statt die Circle-Methode zu benutzen. Fehlt die Datei, fällt die
+Liga auf die erzeugte Saison zurück. Vier Punkte: (1) `pruefeSpielplan` trennt
+FEHLER (unbekannter Klubname, Verein doppelt am Spieltag, unlesbarer Anpfiff →
+harter Abbruch) von WARNUNGEN (unvollständig, überlappende Spieltage → nur
+melden); ein Import, der still eine halbe Saison baut, fällt erst auf, wenn
+jemand auf ein Spiel tippt, das es nicht gibt. (2) Echt ist NUR der Kalender —
+Quoten, Ergebnisse und Torschützen bleiben erzeugt. (3) Die Herkunft wird
+abgelesen (`herkunftLabel` über `echteSpielplaene()` aus `ligen.js`), nie
+behauptet: der Katalog ist gemischt, solange die CL-Auslosung aussteht, und der
+Store reicht kein `echterSpielplan` durch — deshalb zählt das Label über den
+WETTBEWERB. (4) `spielplaene/index.js` ist erzeugt und löst eine Henne-Ei-Kette:
+der Importer braucht die Klublisten aus den Ligadateien, die deshalb keine
+Plan-Datei direkt importieren dürfen. Nach einem Import `npm run seed:matches`.
+
 **Liga-Daten** (`ligaGenerator.js` + `ligen.js`): fünf Wettbewerbe im EINEN
 Match-Katalog — Bundesliga 306 · Premier League 380 · La Liga 380 · Serie A 380
 · Champions League 159 = 1605 Spiele (Aufbau ~50 ms, reine Funktionen, gecacht).
+**Der Bundesliga-Spielplan ist seit 28.07.2026 ECHT** (siehe oben), die übrigen
+vier Wettbewerbe sind weiter erzeugt.
 `ligaGenerator.js` baut eine Saison aus Ratings + Anstoß-Slots (Circle-Methode);
 die vier Ligadateien liefern nur Daten. **`ligen.js` ist die EINE Liste** —
 Mock-Store, Seed-Skript und Vereinsfilter lesen daraus, sonst läuft die

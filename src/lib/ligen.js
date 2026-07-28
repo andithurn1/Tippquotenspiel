@@ -31,6 +31,22 @@ export function alleMatches() {
   return LIGEN.flatMap((l) => l.matches());
 }
 
+// Welche Wettbewerbe laufen nach einem ECHTEN Spielplan? ABGELEITET, nicht
+// gepflegt: eine zweite Liste liefe auseinander, sobald eine Spielplan-Datei
+// fehlt und die Liga still auf die Circle-Methode zurückfällt. Der Store reicht
+// `echterSpielplan` nicht durch (er kennt nur DB-Spalten), deshalb fragt die
+// Oberfläche hier nach dem Wettbewerb statt am Spiel.
+let _echte = null;
+export function echteSpielplaene() {
+  // Gemerkt, weil die Oberfläche das bei jedem Rendern fragt und die Antwort
+  // sich innerhalb eines Prozesses nicht ändert — die Ligen sind selbst gecacht.
+  if (!_echte) {
+    _echte = new Set();
+    for (const l of LIGEN) if (l.matches().some((m) => m.echterSpielplan)) _echte.add(l.key);
+  }
+  return _echte;
+}
+
 // Alle Vereine, alphabetisch und ohne Dubletten (ein Klub kann in Liga UND
 // Champions League antreten). Speist den Vereins-Filter der Spielerstellung:
 // nur so lässt sich eine Runde „meine Lieblingsklubs quer durch Europa" bauen.

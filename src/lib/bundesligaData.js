@@ -1,19 +1,24 @@
 // ============================================================
-//  BUNDESLIGA-DEMODATEN — komplette SIMULIERTE Saison 2026/27.
-//  Echte Klubs (18), aber generierter Spielplan (volle Hin-/Rückrunde,
-//  34 Spieltage) und FIKTIVE, aus einem Poisson-Modell (oddsGenerator.js)
-//  erzeugte Quoten, Ergebnisse und Torschützen. KEINE echten Resultate —
-//  bewusst simuliert, damit man sofort eine ganze Saison durchspielen kann.
-//  Team-Stärken sind grobe, plausible Einschätzungen, kein echtes Rating.
+//  BUNDESLIGA — Saison 2026/27, ECHTER Spielplan, simulierte Ergebnisse.
 //
-//  Spielplan per Circle-Methode: jeder Klub spielt gegen jeden zweimal
-//  (Heim + Auswärts), pro Spieltag genau einmal, keine Paarung doppelt
-//  innerhalb einer Halbserie. Anstöße im Wochentakt ab dem echten
-//  Saisonstart (28.08.2026), Fr/Sa/So gestaffelt — alle in der Zukunft,
-//  also die ganze Saison ab jetzt betippbar.
+//  Echt sind: die 18 Klubs, alle 306 Begegnungen und ihre Anstoßzeiten
+//  (`spielplaene/bl-2026.json`, importiert von OpenLigaDB — neu holen mit
+//  `npm run import:spielplan -- bl`).
+//
+//  Weiterhin SIMULIERT sind: Quoten, Ergebnisse und Torschützen (Poisson-Modell
+//  in `oddsGenerator.js`), dazu die Team-Stärken — grobe, plausible
+//  Einschätzungen, kein echtes Rating. Auch die SPIELERNAMEN sind erfunden:
+//  Kader ändern sich mit jedem Transferfenster, und erfundene Daten dürfen nicht
+//  wie echte aussehen. Genau diese Trennung hält `echterSpielplan` am Match
+//  fest, damit die Oberfläche nicht mehr behauptet, als stimmt.
+//
+//  Fehlt die Spielplan-Datei, fällt die Liga auf die Circle-Methode zurück
+//  (`saisonStart`/`slotFuer` weiter unten) — lieber eine erzeugte Saison als
+//  gar keine.
 // ============================================================
 
 import { baueLiga, findeDerby, alsQuotenQuelle } from "./ligaGenerator";
+import { SPIELPLAENE } from "./spielplaene";
 
 // attack/defense: 1.0 = Liga-Durchschnitt. attack hoch = torgefährlich,
 // defense hoch = anfällig (wirkt als Faktor auf die gegnerische Tor-Erwartung).
@@ -77,11 +82,19 @@ function slotFuer(i) {
 let _cache = null;
 // Einmalig aufgebaut (Poisson-Berechnung ist reine Funktion, kein I/O) und
 // für die Dauer des Prozesses gecacht.
+//
+// Der SPIELPLAN ist echt (`spielplaene/bl-2026.json`, importiert von OpenLigaDB
+// über `npm run import:spielplan`). `saisonStart`/`slotFuer` stehen weiter da,
+// greifen aber nur, wenn die Datei fehlt — dann fällt die Liga auf die
+// Circle-Methode zurück, statt ohne Spiele dazustehen. Quoten, Ergebnisse und
+// Torschützen bleiben erzeugt; `echterSpielplan` am Match hält die Trennung
+// fest, damit die Oberfläche nichts Falsches behauptet.
 export function getBundesligaMatches() {
   if (!_cache) {
     _cache = baueLiga({
       wettbewerb: "bl", idPrefix: "bl26", ratings: TEAM_RATINGS, derbys: DERBYS,
       saisonStart: SEASON_START, utcOffset: 2, slotFuer,
+      spielplan: SPIELPLAENE.bl ?? null,
     });
   }
   return _cache;
