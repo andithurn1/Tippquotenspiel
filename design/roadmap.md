@@ -30,6 +30,15 @@ Test-Stand: **905 grün**, Build sauber (Stand 2026-07-28).
 > Joker-Kontingent, die Listen-UI der Spielauswahl, die klebende Balance-Ampel
 > und der automatische Big-Game-Auslöser.
 > **Wer etwas fertig macht, trägt es bitte sofort hier ein.**
+>
+> **Zweiter Durchgang am 28.07.** — wieder standen fertige Dinge als offen da:
+> Per-Team-/Derby-Regeln, der Aufhol-Mechanismus (beide sogar doppelt: oben als
+> erledigt, unten als „NEU") und der Versand der Benachrichtigungen
+> (`zustellung.js`). **Die Ursache ist strukturell:** ein Abschnitt beschreibt
+> zuerst den ENTWURF und wird beim Bauen nicht umgeschrieben. Deshalb steht die
+> Erledigung jetzt jeweils als kurzer Block GANZ OBEN im Abschnitt, und der
+> Entwurf bleibt darunter als Begründung stehen — statt ihn zu löschen, denn
+> das WARUM ist das eigentlich Wertvolle daran.
 
 ## Offen
 
@@ -639,7 +648,13 @@ Der Admin soll nicht 34 Spieltage einzeln anklicken müssen.
   vor dem Merge mit `balanceSim.js` gegenprüfen.
 
 
-### Per-Team-/Derby-Regeln (Admin-Ebene) — NEU
+### Per-Team-/Derby-Regeln (Admin-Ebene) — GEBAUT ✓
+`rules.teamMods` in der Engine, `DERBYS`/`findDerby` in `bundesligaData.js`.
+Der Aufschlag fällt in denselben ADDITIVEN Topf wie Big Game und
+Wettbewerbs-Gewicht (`totalModifier`, gedeckelt durch `rules.modCap`) — kein
+eigener Multiplikator. Balance nachgemessen. Der Entwurf darunter ist die
+ursprüngliche Überlegung und steht nur noch als Begründung da.
+
 Admins vereinbaren für **ausgewählte Begegnungen** eigene Modifikatoren, die für
 ALLE in der Runde gelten (anders als der Joker, den jeder Tipper selbst setzt).
 
@@ -656,7 +671,14 @@ ALLE in der Runde gelten (anders als der Joker, den jeder Tipper selbst setzt).
   Abstimmung pro Spieltag, Team-Mods pro Begegnung). Reihenfolge + Deckelung
   bewusst festlegen, damit sie sich nicht unkontrolliert aufschaukeln. Premium.
 
-### Aufhol-Mechanismus (Anschluss halten) — NEU
+### Aufhol-Mechanismus (Anschluss halten) — GEBAUT ✓
+`src/lib/catchup.js`, `rules.aufholen`, Admin-UI und Leaderboard-Anbindung.
+Der Bonus greift NICHT in `scoreTip`, sondern im Verlauf (`applyCatchup` in
+`scoreLeaderboardHistory`) — er hängt am Stand VOR dem Spieltag. Nur ein ANTEIL
+des Rückstands, erst ab einer Schwelle, drei Stufen. Im Simulator über
+`aufholFlipQuote` abgesichert. Der Entwurf darunter ist die ursprüngliche
+Überlegung und steht nur noch als Begründung da.
+
 Einstellbar bei der Rundenerstellung: Wenn der Abstand zur Spitze zu groß wird,
 bekommen Zurückliegende je Spieltag Punkte dazu, damit Mitspielen weiter lohnt.
 
@@ -693,4 +715,9 @@ haben alle dasselbe Regelwerk → lohnt erst über mehrere Runden hinweg.
 - Elfmeterschießen-Duell (steht im Hub noch als „bald")
 - **Benachrichtigungen** ✅ ERLEDIGT — `notify.js` + `/benachrichtigungen`:
   nur „neuer Spieltag" und „ungetipptes Spiel beginnt in X h", mit Nachtruhe
-  und Tagesobergrenze. Offen bleibt der echte VERSAND (Web-Push/App).
+  und Tagesobergrenze. **Der Versand ist inzwischen gebaut** (`zustellung.js`,
+  Stufe 1): `notify.js` sagt, was fällig WÄRE, `zustellung.js` führt Buch, was
+  wirklich rausging — nötig, weil `maxProTag` sonst pro AUFRUF deckelte und
+  häufiges Nachsehen zu Dauerfeuer trotz Obergrenze führte. Gemessen wird in
+  einem rollenden 24-h-Fenster, nicht am Kalendertag.
+  **Wirklich offen:** Web-Push/App als zweiter Kanal — die Naht dafür steht.

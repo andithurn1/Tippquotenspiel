@@ -56,7 +56,17 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
   „Bundesliga-Verteilung" gebaut. VOR Start abklären, ob das dasselbe meint.
 - [ ] **Premium „Taunt-GIF"** — Account 2 hat „Reaktions-Clips" gebaut. Überschneidung
   prüfen, evtl. schon abgedeckt.
-- [ ] **Echte Quoten-API** (Key nur serverseitig).
+- [ ] **Echte Quoten-API** (Key nur serverseitig). **Nicht mehr offen im Sinne
+  von „zu bauen":** Adapter (`oddsApi.js`, 17 Tests) und Route (`/api/odds`, mit
+  30-Minuten-Cache gegen das 500er-Monatskontingent) liegen fertig auf `main`.
+  Es fehlt allein der **Schlüssel von the-odds-api.com** (Nutzer-Aufgabe,
+  danach `ODDS_API_KEY` in Vercel, ohne `NEXT_PUBLIC_`). Danach ist nur noch die
+  Store-Anbindung zu bauen. Bitte nicht als Neubau einplanen.
+- [ ] **Echte Spielpläne PL / La Liga / Serie A.** Die Bundesliga ist getauscht
+  (OpenLigaDB, `npm run import:spielplan -- bl`). Für die drei anderen hat
+  OpenLigaDB keine Daten; der Weg steht aber:
+  `npm run import:spielplan -- pl --datei <pfad.json>` mit
+  `[{ matchday, home, away, kickoff }]`. Es fehlt nur die Quelle.
 
 ---
 
