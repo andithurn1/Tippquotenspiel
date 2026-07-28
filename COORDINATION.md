@@ -42,9 +42,8 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
-| 2 | **HEISS (Branch `joker-gewichtung`, 11 Commits, noch nicht auf `main`):** `engine.js`, `presets.js`, `rulePreview.js`, `store.js`/`store.mock.js`/`store.supabase.js`, `schema.sql`, `Spielerstellung.jsx`, `Tippabgabe.jsx`, `Spielwahl.jsx`, `RundenHub.jsx`, `RegelVorschau.jsx` · **NEU:** `premium.js`, `voting.js`, `records.js`, `avatars.js`, `balanceSim.js`, `Profil.jsx`, `Abstimmung.jsx`, `Historie.jsx`, `BalanceAmpel.jsx` | WIP bis Merge | 2026-07-24 |
-| 2 | **NICHT angefasst — frei für Account 1:** `Abrechnung.jsx`, `Tutorial.jsx`, `AuszahlungsExplorer.jsx`, `Einstellungen.jsx`, `RundeBeitreten.jsx`, `Ranking.jsx`, `AuthProvider.jsx` | frei | 2026-07-24 |
-| 1 | Wartet auf Account-2-Rückmeldung, welche Dateien „eingefroren" sind, bevor es einen Bereich greift. Kandidaten (engine-/Abrechnung-fern): App-Theming (Farben zentralisieren), neuer isolierter Screen. | offen | 2026-07-24 |
+| 2 (Andre) | **PAUSE bis Freitagabend.** Nichts hängt lokal, alles Fertige liegt auf `main` (letzter Stand: Joker-Oberfläche, Balance-Durchgang 1+2). Kein Bereich reserviert. | pausiert | 2026-07-28 |
+| 1 (Andi) | **Alles frei.** Solange Andre pausiert, gibt es keine Claim-Kollision — Andi arbeitet ohne Reservierung weiter, hält aber die Push-Regeln (klein & oft, `schema.sql` ankündigen). Vor Freitagabend hier den Stand hinterlassen. | aktiv | 2026-07-28 |
 
 ---
 

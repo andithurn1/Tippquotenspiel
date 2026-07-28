@@ -15,10 +15,11 @@ Dateien sind lang:
    die andere Session pusht dazwischen.
 2. `design/roadmap.md` — was fertig ist und was als Nächstes ansteht. Wer
    etwas fertig macht, trägt es dort SOFORT ein.
-3. **Die letzten ~150 Zeilen** von `COORDINATION.md` — der Kanal zur anderen
-   Session: Claim-Board (wer hat welchen Bereich) + Nachrichten-Log. Die Datei
-   ist über 1700 Zeilen lang; alles davor ist Historie und wird nicht gebraucht.
-   Vor dem Anfassen eines Bereichs dort eintragen und pushen.
+3. **Die ersten ~230 Zeilen** von `COORDINATION.md` — der Kanal zur anderen
+   Session. Das Nachrichten-Log ist **neueste oben** sortiert, davor stehen
+   Spielregeln, Claim-Board (wer hat welchen Bereich) und Push-Regeln. Die
+   Datei ist über 1700 Zeilen lang; alles WEITER UNTEN ist Historie und wird
+   nicht gebraucht. Vor dem Anfassen eines Bereichs dort eintragen und pushen.
 4. Erst dann arbeiten. Nach Logik-Änderungen `npm test`, vor Abschluss
    `npm run build`.
 
