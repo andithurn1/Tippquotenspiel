@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   zeitachse, sanitizeZeitachse, ankerWettbewerb, achsenLabel, rundenSpieltagVon,
-  warnungen, DEFAULT_ZEITACHSE, ZEITACHSE_LIMITS,
+  rundenSchluessel, warnungen, DEFAULT_ZEITACHSE, ZEITACHSE_LIMITS,
 } from "./zeitachse";
+import { invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday } from "./engine";
 
 const TAG = 24 * 3600 * 1000;
 const WOCHE = 7 * TAG;
@@ -246,6 +247,92 @@ describe("Pause im Taktgeber", () => {
   it("ein normaler Wochenrhythmus löst die Pausen-Regel nie aus", () => {
     const achse = zeitachse(MATCHES, { modus: "anker", anker: "pd", pause: "auffuellen" });
     expect(achse).toHaveLength(5);                 // exakt die fünf Anker-Spieltage
+  });
+});
+
+// Hier wird aus der Anzeige eine Fairness-Frage: „einmal pro Spieltag" muss den
+// Spieltag DER RUNDE meinen, sonst gibt es ihn einmal pro LIGA.
+describe("rundenSchluessel — der Schlüssel für „einmal pro Spieltag\"", () => {
+  const achse = zeitachse(MATCHES, { modus: "anker", anker: "pd" });
+
+  it("Spiele verschiedener Ligen im selben Runden-Spieltag teilen den Schlüssel", () => {
+    const s = rundenSchluessel(achse);
+    // La Liga 3 und Bundesliga 1 fallen zusammen (siehe Achsen-Test oben).
+    expect(s({ wettbewerb: "pd", matchday: 3 })).toBe(s({ wettbewerb: "bl", matchday: 1 }));
+  });
+
+  it("verschiedene Runden-Spieltage bekommen verschiedene Schlüssel", () => {
+    const s = rundenSchluessel(achse);
+    expect(s({ wettbewerb: "pd", matchday: 3 })).not.toBe(s({ wettbewerb: "pd", matchday: 4 }));
+  });
+
+  // Ein Tipp trägt Wettbewerb und Spieltag, aber keinen Anpfiff — genau der
+  // Fall, den die Joker-Prüfung braucht.
+  it("funktioniert für einen TIPP ohne Anstoßzeit", () => {
+    const s = rundenSchluessel(achse);
+    expect(s({ match_id: "x", wettbewerb: "bl", matchday: 1, gewicht: 2 })).toBe("runde#3");
+  });
+
+  it("was nicht zur Achse gehört, behält seinen eigenen Schlüssel", () => {
+    const s = rundenSchluessel(achse);
+    // Das Demo-Spiel darf nicht mit irgendeinem Runden-Spieltag verschmelzen.
+    expect(s({ wettbewerb: "demo", matchday: 14 })).toBe("demo#14");
+  });
+
+  it("ohne Achse gibt es null — der Aufrufer bleibt beim Liga-Spieltag", () => {
+    expect(rundenSchluessel([])).toBe(null);
+  });
+
+  // Bei einem einzigen Wettbewerb ist der Runden-Spieltag der Liga-Spieltag.
+  // Die Umstellung darf dort nichts verändern.
+  it("bei nur einer Liga bleibt die Zuordnung eins zu eins", () => {
+    const nurPd = MATCHES.filter((m) => m.wettbewerb === "pd");
+    const s = rundenSchluessel(zeitachse(nurPd, { modus: "anker", anker: "pd" }));
+    const keys = [1, 2, 3, 4, 5].map((md) => s({ wettbewerb: "pd", matchday: md }));
+    expect(new Set(keys).size).toBe(5);
+  });
+});
+
+// Der eigentliche Zweck: die Engine-Prüfungen zählen jetzt richtig.
+describe("Wirkung auf die Joker-Regeln", () => {
+  const achse = zeitachse(MATCHES, { modus: "anker", anker: "pd" });
+  const s = rundenSchluessel(achse);
+  const RULES = { joker: { faktoren: [2, 1.5, 1.2, 1] } };
+
+  // Zwei Joker in derselben Woche, nur in verschiedenen Ligen.
+  const zweiJoker = [
+    { match_id: "a", wettbewerb: "pd", matchday: 3, joker: true },
+    { match_id: "b", wettbewerb: "bl", matchday: 1, joker: true },
+  ];
+
+  it("ohne Achse gilt weiter der Liga-Spieltag — zwei Joker sind erlaubt", () => {
+    expect(invalidJokerMatchdays(zweiJoker)).toEqual([]);
+  });
+
+  it("mit der Achse ist es EIN Runden-Spieltag und damit ein Joker zu viel", () => {
+    expect(invalidJokerMatchdays(zweiJoker, s)).toHaveLength(1);
+  });
+
+  it("dasselbe für den Ranglisten-Pool: ein Faktor nur einmal pro Runden-Spieltag", () => {
+    const zweimalZwei = [
+      { match_id: "a", wettbewerb: "pd", matchday: 3, gewicht: 2 },
+      { match_id: "b", wettbewerb: "bl", matchday: 1, gewicht: 2 },
+    ];
+    expect(invalidWeightMatchdays(zweimalZwei, RULES)).toEqual([]);
+    expect(invalidWeightMatchdays(zweimalZwei, RULES, s)).toHaveLength(1);
+  });
+
+  it("die Belegungs-Anzeige sieht das Gewicht der anderen Liga als vergeben", () => {
+    const tips = [{ match_id: "b", wettbewerb: "bl", matchday: 1, gewicht: 2 }];
+    const ziel = { wettbewerb: "pd", matchday: 3 };
+    expect(weightUsageForMatchday(tips, ziel, RULES).frei).toContain(2);
+    expect(weightUsageForMatchday(tips, ziel, RULES, null, s).frei).not.toContain(2);
+  });
+
+  it("verschiedene Runden-Spieltage bleiben unabhängig", () => {
+    const tips = [{ match_id: "b", wettbewerb: "pd", matchday: 5, gewicht: 2 }];
+    expect(weightUsageForMatchday(tips, { wettbewerb: "pd", matchday: 3 }, RULES, null, s).frei)
+      .toContain(2);
   });
 });
 

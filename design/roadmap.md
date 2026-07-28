@@ -21,7 +21,7 @@ Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 - **Design-Ebene** (`src/lib/theme.js`) — eine Quelle für Farben/Schrift
   (Account 1 hat darauf die Fanfarben-Umschaltung gebaut)
 
-Test-Stand: **905 grün**, Build sauber (Stand 2026-07-28).
+Test-Stand: **916 grün**, Build sauber (Stand 2026-07-28).
 
 > ⚠️ **Diese Datei war am 27.07. deutlich veraltet.** Mehrere Abschnitte standen
 > als „NEU" oder „offen" da, obwohl der Code längst lag — wer sie als
@@ -407,6 +407,19 @@ Drei Dinge, die der naive Entwurf verliert:
 
 **Wichtig: das ist reine Struktur und Anzeige, KEINE Wertung.** `scoreTip` ist
 unberührt, der Balance-Simulator sieht die Achse nicht.
+
+✅ **Eingehängt (2026-07-28):** `rundenSchluessel(achse)` ersetzt `spieltagKey`
+dort, wo „einmal pro Spieltag" gemeint ist. `invalidJokerMatchdays`,
+`invalidWeightMatchdays` und `weightUsageForMatchday` nehmen ihn als letzten,
+OPTIONALEN Parameter — ohne ihn bleibt alles beim Liga-Spieltag, es gibt keinen
+stillen Regelwechsel. Vorher bekam ein Tipper in einer Runde über fünf
+Wettbewerbe fünf Joker pro Woche statt einem, und der Ranglisten-Pool ließ sich
+fünfmal ausgeben. Bei nur einem Wettbewerb sind beide Schlüssel deckungsgleich.
+
+⏳ **Noch nicht eingehängt, bewusst:** der Anschluss-Bonus (`applyCatchup` hängt
+am Verlauf, `scoreLeaderboardHistory` gruppiert über `spieltageChronologisch`)
+und `ereignisse.js` („alle Spiele des Spieltags getippt"). Beides geht an die
+BALANCE und gehört mit einem Simulator-Lauf zusammen gemacht, nicht nebenbei.
 
 ✅ **Zwei Funde aus dem Browser-Check nachgezogen** (2026-07-28) — beide waren am
 Zwei-Ligen-Testfall nicht sichtbar und traten erst gegen den echten

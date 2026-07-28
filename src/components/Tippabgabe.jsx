@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DEFAULT_RULES, projectTip, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
+import { zeitachse, rundenSchluessel } from "@/lib/zeitachse";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
 import { darfJokerSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
@@ -60,6 +61,7 @@ export default function Tippabgabe({ matchId }) {
   // (ereignisse.js rechnet aus Tipps + Ergebnissen).
   const [meineEintraege, setMeineEintraege] = useState([]);
   const [votes, setVotes] = useState([]);   // Joker-Abstimmung der Runde
+  const [alleMatches, setAlleMatches] = useState([]);  // für die Zeitachse der Runde
 
   useEffect(() => {
     let live = true;
@@ -105,6 +107,7 @@ export default function Tippabgabe({ matchId }) {
           gewicht: t.tip?.gewicht,
         }));
       setMeineTips(eigene);
+      setAlleMatches(ms);
       getStore().getRoundEntries(roundId)
         .then((alle) => { if (live) setMeineEintraege(alle.filter((x) => x.userId === user.id)); })
         .catch(() => {});
@@ -114,6 +117,26 @@ export default function Tippabgabe({ matchId }) {
     }).catch(() => {});
     return () => { live = false; };
   }, [roundId, user, matchId]);
+
+  // ⚠️ Alle Hooks stehen VOR dem frühen Return. React verlangt in jedem Render
+  // dieselbe Reihenfolge; standen sie unten, wurden sie im Lade-Render
+  // übersprungen und der Screen stürzte beim ersten Datensatz mit „change in
+  // the order of Hooks" ab. Sie brauchen deshalb Fallbacks für den Zustand
+  // „noch nichts geladen".
+  const plan = useMemo(() => jokerPlan({
+    verteilung: RULES.joker?.verteilung, seed: roundId ?? "", userIds: user ? [user.id] : [],
+  }), [RULES.joker?.verteilung, roundId, user]);
+  const gutschriften = useMemo(
+    () => erspielteJoker({ eintraege: meineEintraege, rules: RULES }),
+    [meineEintraege, RULES]);
+  // Der Ranglisten-Pool wird einmal je RUNDEN-Spieltag vergeben, nicht einmal je
+  // Liga — sonst ließe er sich in einer Runde über fünf Wettbewerbe fünfmal pro
+  // Woche ausgeben. Dieselbe Quelle wie in der Spielwahl, damit beide Screens
+  // dieselben Gewichte als belegt sehen.
+  const schluessel = useMemo(
+    () => rundenSchluessel(zeitachse(alleMatches, RULES.zeitachse)) ?? undefined,
+    [alleMatches, RULES.zeitachse],
+  );
 
   if (!match || !picks) {
     return (
@@ -163,12 +186,7 @@ export default function Tippabgabe({ matchId }) {
   const rankingModus = RULES.joker?.modus === "ranking";
   // Kontingent aus BEIDEN Töpfen: zugeteilt (Plan) + erspielt (Ereignisse).
   // Ohne diese Zusammenführung wäre ein erspielter Joker eine Zahl ohne Wirkung.
-  const plan = useMemo(() => jokerPlan({
-    verteilung: RULES.joker?.verteilung, seed: roundId ?? "", userIds: user ? [user.id] : [],
-  }), [RULES.joker?.verteilung, roundId, user]);
-  const gutschriften = useMemo(
-    () => erspielteJoker({ eintraege: meineEintraege, rules: RULES }),
-    [meineEintraege, RULES]);
+  // `plan` und `gutschriften` sind oben berechnet (Hook-Regel, siehe dort).
   const jokerErlaubnis = darfJokerSetzen({
     plan, gutschriften, tipps: meineTips, userId: user?.id, spieltag,
     wettbewerb: spieltag.wettbewerb,
@@ -180,7 +198,7 @@ export default function Tippabgabe({ matchId }) {
   // Ranking: welche Gewichte hat der Nutzer an DIESEM Spieltag schon vergeben?
   // Der eigene Tipp ist ausgenommen (man stellt ihn ja gerade ein).
   const belegung = rankingModus
-    ? weightUsageForMatchday(meineTips, spieltag, RULES, matchId)
+    ? weightUsageForMatchday(meineTips, spieltag, RULES, matchId, schluessel)
     : null;
   const gewichtBelegtVon = (g) => belegung?.belegt.find((b) => b.gewicht === g)?.matchId ?? null;
   // Gewichtung fließt in die Vorschau ein, damit man sofort sieht, was sie bringt.

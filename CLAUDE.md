@@ -196,7 +196,14 @@ passiert (Joker, Anschluss-Bonus, Zwischenstand). Ein TAKTGEBER (Standard: die
 früheste Liga) gibt den Rhythmus vor, alles bis zum nächsten Ankerpunkt gehört
 dazu; Alternative ist ein fester Wochen-Modus. Reine Struktur und Anzeige,
 **keine Wertung** — `scoreTip` ist unberührt, der Balance-Simulator sieht die
-Achse nicht. Vier Punkte, die nicht brechen dürfen: (1) zugeordnet wird immer
+Achse nicht — mit EINER Ausnahme: `rundenSchluessel(achse)` ist der Ersatz für
+`spieltagKey` überall dort, wo „einmal pro Spieltag" gemeint ist (Joker,
+Ranglisten-Pool). `invalidJokerMatchdays`, `invalidWeightMatchdays` und
+`weightUsageForMatchday` nehmen ihn als letzten, optionalen Parameter; ohne ihn
+bleibt es beim Liga-Spieltag, es gibt also keinen stillen Regelwechsel. Über
+den Liga-Spieltag geschlüsselt bekäme ein Tipper in einer Runde mit fünf
+Wettbewerben fünf Joker pro Woche statt einem. Bei nur einem Wettbewerb sind
+beide Schlüssel deckungsgleich. Vier Punkte, die nicht brechen dürfen: (1) zugeordnet wird immer
 ein GANZER Liga-Spieltag (`spieltagKey`), dorthin wo sein erstes Spiel liegt —
 ein BL-Spieltag läuft Fr–So und läge sonst links und rechts eines Ankerpunkts;
 ein halber Spieltag ist der Punkt, an dem aus einer Anzeige- eine Fairness-Frage
@@ -336,6 +343,15 @@ Datei JE WETTBEWERB, weil die Gesamtdatei (1,9 MB) den Supabase-SQL-Editor
 ## Arbeitsweise
 
 - Nach Logik-Änderungen: `npm test`. Vor Abschluss: `npm run build`.
+- ⚠️ **`npm run build` NICHT bei laufendem `next dev`.** Der Build überschreibt
+  `.next`, und der Dev-Server läuft danach in „Cannot find module
+  ./vendor-chunks/…" oder — tückischer — lädt einfach nichts mehr, ohne
+  Fehlermeldung. Wer dann den Fehler im eigenen Code sucht, sucht lange.
+  Erst den Dev-Server stoppen, oder ihn nach dem Build neu starten.
+- **Hooks stehen VOR jedem frühen `return`.** Die Screens haben fast alle einen
+  Lade-Zweig (`if (!match) return <Lade/>`); ein `useMemo` darunter wird im
+  ersten Render übersprungen und der Screen stürzt beim zweiten mit „change in
+  the order of Hooks" ab — genau so lag `Tippabgabe.jsx` eine Weile still kaputt.
 - Demo-Daten: Match „JOR-ESP" (Jordanien vs Spanien, real 5:1). Mock-Werte in
   Screens (Leaderboard, Spieltag, Rang) sind als solche kommentiert — sie
   verschwinden, sobald das Backend steht.

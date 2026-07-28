@@ -671,11 +671,17 @@ export function maxTotalModifier(rules = DEFAULT_RULES) {
 // Prüfregel „ein Joker pro Spieltag". Gibt die beanstandeten Spieltage als
 // { wettbewerb, matchday } zurück — eine nackte Zahl wäre mit mehreren
 // Wettbewerben nicht mehr eindeutig.
-export function invalidJokerMatchdays(tips = []) {
+// `schluessel` entscheidet, was „ein Spieltag" ist. Vorgabe bleibt der
+// LIGA-Spieltag (`spieltagKey`) — damit ändert sich ohne Zutun nichts. Eine
+// Runde über mehrere Wettbewerbe reicht stattdessen `rundenSchluessel(achse)`
+// aus `zeitachse.js` herein: sonst gäbe es fünf Joker pro Woche statt einem.
+// Die Engine kennt dabei weiterhin keine Ligennamen — sie bekommt eine
+// Funktion, keine Wettbewerbs-Liste (Architektur-Regel 3).
+export function invalidJokerMatchdays(tips = [], schluessel = spieltagKey) {
   const counts = new Map();
   for (const t of tips) {
     if (t?.joker !== true) continue;
-    const key = spieltagKey(t);
+    const key = schluessel(t);
     const eintrag = counts.get(key) || { wettbewerb: t.wettbewerb ?? null, matchday: t.matchday ?? null, n: 0 };
     eintrag.n++;
     counts.set(key, eintrag);
@@ -687,14 +693,14 @@ export function invalidJokerMatchdays(tips = []) {
 // EINMAL vergeben werden, und nur Werte aus dem Pool sind zulässig. Das neutrale
 // Gewicht 1 ist ausgenommen — es ist der Rest für alle übrigen Spiele.
 // Gibt die beanstandeten Spieltage zurück (leeres Array = gültig).
-export function invalidWeightMatchdays(tips = [], rules = DEFAULT_RULES) {
+export function invalidWeightMatchdays(tips = [], rules = DEFAULT_RULES, schluessel = spieltagKey) {
   const pool = rules?.joker?.faktoren || [];
   const belegt = new Map();      // Spieltag-Schlüssel → Set vergebener Faktoren
   const fehler = new Map();      // Spieltag-Schlüssel → { wettbewerb, matchday }
   for (const t of tips) {
     const w = t?.gewicht;
     if (!Number.isFinite(w) || w === 1) continue;
-    const key = spieltagKey(t);
+    const key = schluessel(t);
     const bezeichnung = { wettbewerb: t.wettbewerb ?? null, matchday: t.matchday ?? null };
     if (!pool.includes(w)) { fehler.set(key, bezeichnung); continue; }
     const used = belegt.get(key) || new Set();
@@ -714,14 +720,14 @@ export function invalidWeightMatchdays(tips = [], rules = DEFAULT_RULES) {
 // Altaufrufe — eine nackte Zahl. Die Zahl allein bleibt erlaubt, solange eine
 // Runde nur EINEN Wettbewerb hat; sobald mehrere im Spiel sind, muss der
 // Aufrufer das Objekt reichen, sonst zählt er über Wettbewerbe hinweg.
-export function weightUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RULES, exceptMatchId = null) {
+export function weightUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RULES, exceptMatchId = null, schluessel = spieltagKey) {
   const ziel = (spieltag && typeof spieltag === "object")
-    ? spieltagKey(spieltag)
-    : spieltagKey({ matchday: spieltag });
+    ? schluessel(spieltag)
+    : schluessel({ matchday: spieltag });
   const pool = rules?.joker?.faktoren || [];
   const belegtVon = new Map();   // gewicht → matchId
   for (const t of tips) {
-    if (spieltagKey(t) !== ziel) continue;
+    if (schluessel(t) !== ziel) continue;
     if (t.match_id === exceptMatchId || t.matchId === exceptMatchId) continue;
     const w = t?.gewicht;
     if (Number.isFinite(w) && w !== 1 && pool.includes(w) && !belegtVon.has(w)) {

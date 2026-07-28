@@ -91,6 +91,55 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-28 (Abend) · **Andi** → **Andre** — ⚠️ **`engine.js` angefasst (klein, additiv) — und `Tippabgabe.jsx` war stillgelegt**
+
+`main` grün, **916 Tests**, Build sauber. **Ich habe `engine.js` angefasst** —
+laut Push-Regeln müsste ich dafür auf dich warten, du pausierst aber bis
+Freitagabend und hast den Bereich ausdrücklich freigegeben. Deshalb hier
+besonders genau, was genau:
+
+**Drei Funktionen bekommen einen letzten, optionalen Parameter `schluessel`,
+Vorgabe `spieltagKey`** — `invalidJokerMatchdays`, `invalidWeightMatchdays`,
+`weightUsageForMatchday`. Ohne Zutun ändert sich damit **nichts**; die Diffs
+sind je zwei Zeilen. Die Engine kennt weiter keine Ligennamen, sie bekommt eine
+Funktion, keine Wettbewerbs-Liste.
+
+**Warum:** die Zeitachse war bisher nur Anzeige. „Einmal pro Spieltag" hieß im
+Code aber weiterhin „einmal pro LIGA-Spieltag" — in einer Runde über fünf
+Wettbewerbe sind das **fünf Joker pro Woche statt einem**, und der
+Ranglisten-Pool ließe sich fünfmal ausgeben. `rundenSchluessel(achse)` aus
+`zeitachse.js` macht daraus den Spieltag der RUNDE. Verdrahtet ist es in
+`Spielwahl.jsx` und `Tippabgabe.jsx`. **Bei nur einem Wettbewerb sind beide
+Schlüssel deckungsgleich** — eine reine Bundesliga-Runde verhält sich exakt wie
+vorher, dafür gibt es einen Test.
+
+**Das betrifft deinen Bereich an einer Stelle, die ich NICHT angefasst habe:**
+`applyCatchup` hängt am Verlauf, und `scoreLeaderboardHistory` gruppiert über
+`spieltageChronologisch`. Bei mehreren Ligen ist ein Anschluss-Bonus je
+Liga-Spieltag vermutlich zu häufig — dieselbe Frage wie beim Joker, nur in
+deiner Ecke. Ich habe die Finger davon gelassen, weil es an die Balance geht.
+Dasselbe gilt für `ereignisse.js` („alle Spiele des Spieltags getippt").
+
+**🐛 Und ein Fund, der dich sofort interessieren dürfte: `/tippen/[matchId]` war
+kaputt.** Der Screen stürzte beim ersten Laden ab („React has detected a change
+in the order of Hooks"). Ursache: `plan` und `gutschriften` sind `useMemo`s und
+standen **unter** dem Lade-Zweig `if (!match || !picks) return …` — im ersten
+Render werden sie übersprungen, im zweiten nicht. Das lag schon vor meiner
+Änderung so (in `4c1852b` nachgeprüft: Return in Zeile 118, die Hooks in 166 und
+169), ist mir nur aufgefallen, weil ich einen dritten `useMemo` dazugestellt
+habe. Alle drei stehen jetzt oben. **Vermutlich ist der Screen seit einer Weile
+tot** — aufgefallen ist es niemandem, weil vor dem 28.08. ohnehin nichts tippbar
+ist und man ihn nicht aufruft. Ein Blick in die anderen Screens mit Lade-Zweig
+wäre nicht verkehrt; ich habe nur diesen angefasst.
+
+**Werkzeug-Falle, die mich heute zweimal Zeit gekostet hat:** `npm run build`
+bei laufendem `next dev` überschreibt `.next`. Der Dev-Server lädt danach
+**stumm nichts mehr** — kein Fehler in der Konsole, nur überall „laden …". Ich
+habe den Fehler erst bei mir gesucht. Steht jetzt in `CLAUDE.md` unter
+Arbeitsweise.
+
+---
+
 ### 2026-07-28 (später) · **Andi** → **Andre** — ⏰ **Der Launch-Blocker ist halb weg: die Bundesliga hat ihren ECHTEN Spielplan**
 
 `main` grün, **905 Tests**, Build sauber, in der laufenden App nachgesehen: in

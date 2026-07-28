@@ -14,7 +14,7 @@ import { wettbewerbVon, phaseVon, wettbewerbLabel, phasenLabel, istKo, wettbewer
 import { tippStatus, uebersicht, naechsteOeffnung, beschreibeTippfenster, formatZeitpunkt } from "@/lib/tippfenster";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { istGeoeffnet } from "@/lib/spieltagOeffnen";
-import { zeitachse, rundenSpieltagVon, achsenLabel } from "@/lib/zeitachse";
+import { zeitachse, rundenSpieltagVon, achsenLabel, rundenSchluessel } from "@/lib/zeitachse";
 import { herkunftLabel } from "@/lib/spielplan";
 import { echteSpielplaene } from "@/lib/ligen";
 import { C, MONO } from "@/lib/theme";
@@ -99,6 +99,13 @@ export default function Spielwahl() {
   // Label einer Spieltags-GRUPPE: Gruppen sind nach Wettbewerb+Spieltag
   // getrennt, ein Runden-Spieltag fasst mehrere davon zusammen. Gezeigt wird
   // deshalb der Runden-Spieltag, in den das erste Spiel der Gruppe fällt.
+  // Derselbe Schlüssel, den die Anzeige benutzt, gilt auch für die REGEL: der
+  // Ranglisten-Pool wird einmal je Runden-Spieltag vergeben, nicht einmal je
+  // Liga. Ohne das könnte man ihn in einer Runde über fünf Wettbewerbe fünfmal
+  // pro Woche ausgeben. `null` = keine Achse → die Engine bleibt beim
+  // Liga-Spieltag, es gibt keinen stillen Regelwechsel.
+  const schluessel = useMemo(() => rundenSchluessel(achse) ?? undefined, [achse]);
+
   const rundenSpieltagFuer = (gruppe) => {
     if (!mehrereWettbewerbe || !achse.length) return null;
     const nummer = rundenSpieltagVon(achse, gruppe.spiele[0]);
@@ -254,7 +261,7 @@ export default function Spielwahl() {
           // danach getrennt, die Gewichte müssen es auch sein.
           const spieltag = { wettbewerb: g.wettbewerb, matchday: md };
           const belegung = rankingModus && jokerGiltFuerSpieltag(rules, spieltag, votes)
-            ? weightUsageForMatchday(meineTips, spieltag, rules) : null;
+            ? weightUsageForMatchday(meineTips, spieltag, rules, null, schluessel) : null;
           const gewichtVon = (id) => meineTips.find((t) => t.match_id === id)?.gewicht;
           // K.-o.-Runden heißen nach ihrer Phase („Achtelfinale"), Ligaspiele
           // nach dem Spieltag. Der Wettbewerb steht bei mehreren immer davor.

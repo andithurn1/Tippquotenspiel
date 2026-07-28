@@ -289,20 +289,54 @@ function ligaSpieltage(spiele = []) {
 // zum vorigen Runden-Spieltag gehören. Eine zweite Rechnung wäre eine zweite
 // Wahrheit — genau die Sorte Abweichung, die niemand bemerkt.
 export function rundenSpieltagVon(achse = [], match) {
-  const t = zeit(match);
-  if (!Number.isFinite(t) || !istEchterWettbewerb(wettbewerbVon(match))) return null;
+  if (!match) return null;
+  // Zuerst über den LIGA-SPIELTAG nachschlagen und nicht über die Anstoßzeit.
+  // Damit funktioniert die Frage auch für einen TIPP — der trägt Wettbewerb und
+  // Spieltag, aber keinen Anpfiff. Genau das braucht die Joker-Prüfung.
   const key = match.matchday == null
     ? null
     : spieltagKey({ wettbewerb: wettbewerbVon(match), matchday: match.matchday });
+  const id = match.id ?? match.matchId ?? match.match_id ?? null;
   for (const e of achse) {
-    if (e.spiele.some((m) => (match.id != null && m.id === match.id)
+    if (e.spiele.some((m) => (id != null && (m.id ?? m.matchId) === id)
       || (key != null && spieltagKey({ wettbewerb: wettbewerbVon(m), matchday: m.matchday }) === key))) {
       return e.nummer;
     }
   }
-  // Nicht in dieser Achse enthalten (fremdes Spiel): auf die Zeit zurückfallen.
+  // Nicht in dieser Achse enthalten (fremdes oder Demo-Spiel): auf die Zeit
+  // zurückfallen, soweit es überhaupt eine gibt.
+  const t = zeit(match);
+  if (!Number.isFinite(t) || !istEchterWettbewerb(wettbewerbVon(match))) return null;
   for (let i = achse.length - 1; i >= 0; i--) if (t >= achse[i].von) return achse[i].nummer;
   return achse.length ? achse[0].nummer : null;
+}
+
+// Der Spieltags-SCHLÜSSEL der Runde — als Ersatz für `spieltagKey` überall dort,
+// wo „einmal pro Spieltag" gemeint ist: ein Joker, ein Gewicht aus dem Pool.
+//
+// ⚠️ Das ist der Punkt, an dem die Zeitachse von einer Anzeige zu einer
+// FAIRNESS-Frage wird. Über den Liga-Spieltag geschlüsselt bekommt ein Tipper in
+// einer Runde mit fünf Wettbewerben fünf Joker pro Woche statt einem, und der
+// Ranglisten-Pool ließe sich fünfmal ausgeben. Über den Runden-Spieltag ist es
+// einer — was die Regel immer gemeint hat.
+//
+// Bei nur EINEM Wettbewerb ist der Runden-Spieltag derselbe wie der
+// Liga-Spieltag; die Umstellung ändert dort also nichts. Ohne Achse gibt es
+// `null` zurück, und der Aufrufer bleibt bei `spieltagKey` — kein stiller
+// Wechsel der Regel, wenn die Daten fehlen.
+export function rundenSchluessel(achse = []) {
+  if (!achse.length) return null;
+  const gemerkt = new Map();
+  return (x) => {
+    const key = spieltagKey({ wettbewerb: wettbewerbVon(x), matchday: x?.matchday ?? null });
+    if (gemerkt.has(key)) return gemerkt.get(key);
+    const nummer = rundenSpieltagVon(achse, x);
+    // Was nicht zur Achse gehört (Demo-Spiel), behält seinen eigenen Schlüssel —
+    // sonst fielen alle solchen Spiele in einen gemeinsamen Topf.
+    const wert = nummer == null ? key : `runde#${nummer}`;
+    gemerkt.set(key, wert);
+    return wert;
+  };
 }
 
 // Die Übersetzung in Worten: „Spieltag 5 · Bundesliga 3 · Premier League 5".
