@@ -35,6 +35,7 @@ import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } 
 import { VORLAUF_STUFEN, beschreibeTippfenster } from "@/lib/tippfenster";
 import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
 import SpielauswahlListe from "@/components/SpielauswahlListe";
+import Zeitachse from "@/components/Zeitachse";
 import { C, MONO } from "@/lib/theme";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
@@ -1116,6 +1117,13 @@ export default function Spielerstellung() {
               {beschreibeTippfenster(rules)}
             </p>
           </div>
+
+          {/* Zeitachse — was ein Spieltag DER RUNDE umfasst, wenn mehrere Ligen
+              versetzt laufen. Zeigt sich selbst nur bei mehreren Wettbewerben. */}
+          <Zeitachse
+            zeitachse={rules.zeitachse}
+            onChange={(neu) => { touched(); setRules((r) => ({ ...r, zeitachse: neu })); }}
+          />
 
           {/* Zeitraum — gilt zusätzlich zu jeder Vereins-Auswahl */}
           <div style={{ marginTop: 10 }}>

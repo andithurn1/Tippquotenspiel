@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
@@ -14,6 +14,7 @@ import { wettbewerbVon, phaseVon, wettbewerbLabel, phasenLabel, istKo, wettbewer
 import { tippStatus, uebersicht, naechsteOeffnung, beschreibeTippfenster, formatZeitpunkt } from "@/lib/tippfenster";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { istGeoeffnet } from "@/lib/spieltagOeffnen";
+import { zeitachse, rundenSpieltagVon, achsenLabel } from "@/lib/zeitachse";
 import { C, MONO } from "@/lib/theme";
 
 
@@ -75,6 +76,25 @@ export default function Spielwahl() {
 
   const rankingModus = rules.joker?.enabled === true && rules.joker?.modus === "ranking";
   const istAdmin = Boolean(user && adminId && user.id === adminId);
+
+  // Zeitachse: der Spieltag DER RUNDE quer über alle Ligen. Nur sinnvoll, wenn
+  // die Runde wirklich mehrere Wettbewerbe umfasst — bei einer reinen
+  // Bundesliga-Runde wäre „Spieltag 3 · Bundesliga 3" nur Lärm.
+  const achse = useMemo(
+    () => (matches ? zeitachse(matches, rules.zeitachse) : []),
+    [matches, rules.zeitachse],
+  );
+  // Label einer Spieltags-GRUPPE: Gruppen sind nach Wettbewerb+Spieltag
+  // getrennt, ein Runden-Spieltag fasst mehrere davon zusammen. Gezeigt wird
+  // deshalb der Runden-Spieltag, in den das erste Spiel der Gruppe fällt.
+  const rundenSpieltagFuer = (gruppe) => {
+    if (!mehrereWettbewerbe || !achse.length) return null;
+    const nummer = rundenSpieltagVon(achse, gruppe.spiele[0]);
+    const eintrag = nummer == null ? null : achse.find((e) => e.nummer === nummer);
+    // „Runden-Spieltag 3 · BL 1 · PD 3" — die Zahl der Runde zuerst, dann die
+    // Übersetzung. Umgekehrt liest man erst die Liga und muss zurückspringen.
+    return eintrag ? "Runden-" + achsenLabel(eintrag, { kurz: true }) : null;
+  };
 
   // Spieltag öffnen = den Spannungswert des Topspiels EINFRIEREN (siehe
   // spieltagOeffnen.js). Bewusst eine ADMIN-Handlung und keine Automatik: der
@@ -223,6 +243,14 @@ export default function Spielwahl() {
                 )}
                 {titel}
               </div>
+              {/* Die Übersetzung in den Spieltag DER RUNDE. Bei mehreren Ligen
+                  ist „Spieltag 1" allein wertlos — jede Liga zählt anders, und
+                  ohne diese Zeile weiß niemand, wo in der Runde er gerade ist. */}
+              {rundenSpieltagFuer(g) && (
+                <div style={{ fontSize: 11, color: C.sky, marginTop: -4, marginBottom: 8 }}>
+                  {rundenSpieltagFuer(g)}
+                </div>
+              )}
               {/* Der Spieltag ist noch nicht geöffnet — nur der Admin sieht das,
                   und nur, solange nichts angepfiffen ist: danach würde ein
                   bereits abgegebener Tipp nachträglich mehr wert werden. */}

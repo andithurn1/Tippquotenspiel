@@ -15,6 +15,7 @@ import { sanitizeSpiele, DEFAULT_SPIELE } from "./spielauswahl";
 import { sanitizeEreignisse, DEFAULT_EREIGNISSE } from "./ereignisse";
 import { sanitizeWettbewerbe, DEFAULT_WETTBEWERBE, wettbewerbAufschlag, maxWettbewerbAufschlag } from "./wettbewerbGewicht";
 import { sanitizeTippfenster, DEFAULT_TIPPFENSTER } from "./tippfenster";
+import { sanitizeZeitachse, DEFAULT_ZEITACHSE } from "./zeitachse";
 // Spieltags-Identität liegt in einem eigenen, importfreien Modul — sonst gäbe
 // es einen Kreis über `ereignisse.js`, das dieselben Helfer braucht. Die Engine
 // reicht sie weiter, damit bestehende Importe aus "./engine" gültig bleiben.
@@ -181,6 +182,12 @@ export const DEFAULT_RULES = {
   // eine Admin-Entscheidung. Das Fenster schliesst beim Anpfiff (dieselbe
   // Kante wie der eingefrorene Quoten-Snapshot). Details in tippfenster.js.
   tippfenster: { ...DEFAULT_TIPPFENSTER },
+
+  // ── Zeitachse: was „Spieltag 5" in einer Runde über MEHRERE Ligen heißt ──
+  // Die Ligen starten versetzt und haben eigene Zählungen. Ein Taktgeber gibt
+  // den Rhythmus vor, alles andere ordnet sich ein. Reine Struktur- und
+  // Anzeige-Frage, keine Wertung — Details in zeitachse.js.
+  zeitachse: { ...DEFAULT_ZEITACHSE },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -361,6 +368,7 @@ export function sanitizeRules(partial = {}) {
     ereignisse: sanitizeEreignisse(src.ereignisse),
     wettbewerbe: sanitizeWettbewerbe(src.wettbewerbe),
     tippfenster: sanitizeTippfenster(src.tippfenster),
+    zeitachse: sanitizeZeitachse(src.zeitachse),
   };
 }
 
