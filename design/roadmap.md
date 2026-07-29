@@ -286,10 +286,23 @@ nicht: für die Schnittmenge zählt nur der eigene Verein.
 3. **Nach jedem Transferfenster** ist eine kurze Delle normal; sie schließt
    sich nach zwei Spieltagen von selbst.
 
-⚠️ **Offen:** die abgeleiteten Kader stecken noch NICHT in `snapshot.players` —
-die echten Torschützen-Quoten kommen also noch nicht in der Wertung an. Das ist
-der nächste Schritt und der letzte, der zwischen uns und echten Torschützen
-steht.
+✅ **Eingehängt (2026-07-29).** `spielerAusMarkt` in `oddsApi.js` setzt die
+echten Torschützen in `snapshot.players`, sobald die Zuordnung greift; jedes
+Match trägt `snapshot.spielerQuelle` (`markt` / `erfunden`). Zwei Punkte:
+
+- **Die ANYTIME-Quote ist exakt die des Marktes.** Die Marge wird herausgerechnet
+  und unverändert wieder aufgeschlagen — die Annahme über ihre Höhe wirkt sich
+  ausschließlich auf den DOPPELPACK aus, nie auf den Preis, den der Spieler
+  sieht. Nachgemessen: Talles Magno 2,78 rein, 2,78 raus.
+- **Den Markt „2 oder mehr Tore" gibt es nicht** (geprüft, 0 Buchmacher). Der
+  Doppelpack wird über dieselbe Poisson-Annahme abgeleitet wie bei den
+  erzeugten Kadern: aus P(≥1) folgt λ = −ln(1−p), daraus P(≥2).
+- **Sicherheitsschwelle:** hat eine Mannschaft weniger als zwei zugeordnete
+  Schützen, bleibt der GANZE erfundene Kader stehen. Eine halb echte Liste wäre
+  im Tipp-Screen eine leere Fläche auf einer Seite.
+
+Solange die MLS-Zuordnung noch leer ist, greift genau diese Schwelle — der
+Katalog zeigt weiter erfundene Namen, und das ist richtig so.
 
 ### Balance: EIN Durchgang am Ende statt Feinjustierung nebenbei — ENTSCHIEDEN (Nutzer)
 **Arbeitsweise ab jetzt.** Beim Bauen einer neuen Mechanik gibt es nur einen

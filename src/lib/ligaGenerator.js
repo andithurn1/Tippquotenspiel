@@ -112,7 +112,7 @@ export function anstoss({ saisonStart, matchday, slot, utcOffset }) {
 //                genau das, was hier nicht nachgerechnet werden darf.
 export function baueLiga({
   wettbewerb, idPrefix, ratings, derbys = [], saisonStart, utcOffset = 2, slotFuer,
-  namensPool = null, spielplan = null, quoten = null,
+  namensPool = null, spielplan = null, quoten = null, kaderZuordnung = null,
 }) {
   const teams = Object.keys(ratings);
 
@@ -143,6 +143,7 @@ export function baueLiga({
     const snapshot = (markt && snapshotFromOdds({
       matchId, home, away, kickoff, odds: markt.odds,
       correctScore: markt.correctScore ?? null, namensPool,
+      torschuetzen: markt.torschuetzen ?? null, kaderZuordnung,
     })) || generateMatchOdds({ matchId, home, away, kickoff, seed: matchId, ...strengths, namensPool });
     // Derby-Label auf den Snapshot: die Engine kennt keine Vereins-Paarungen
     // und bleibt so sportart-neutral — sie liest nur `snap.derby`.

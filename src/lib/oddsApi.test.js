@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   impliedProbabilities, outcomeProbs, fitLambdas, snapshotFromOdds,
-  parseTheOddsApiEvent, snapshotsFromTheOddsApi, RHO, rasterAusMarkt,
+  parseTheOddsApiEvent, snapshotsFromTheOddsApi, RHO, rasterAusMarkt, spielerAusMarkt,
 } from "@/lib/oddsApi";
 import { dixonColes } from "@/lib/oddsGenerator";
 import { scoreTip, DEFAULT_RULES } from "@/lib/engine";
@@ -236,5 +236,63 @@ describe("rasterAusMarkt", () => {
     expect(mit.correctScore).not.toEqual(ohne.correctScore);
     // Die 1X2-Quoten bleiben in jedem Fall die echten.
     expect(mit.winner).toEqual({ home: 1.4, draw: 5.0, away: 7.0 });
+  });
+});
+
+// ── Echte Torschützen ───────────────────────────────────────
+describe("spielerAusMarkt", () => {
+  const torschuetzen = { Magno: 2.15, Wolf: 3.2, Osorio: 6.25, Kerr: 4.2 };
+  const zuordnung = { Magno: "NYC", Wolf: "NYC", Osorio: "TOR", Kerr: "TOR" };
+  const args = { torschuetzen, home: "NYC", away: "TOR", zuordnung };
+
+  it("trennt die Spieler nach Mannschaft", () => {
+    const s = spielerAusMarkt(args);
+    expect(Object.keys(s.home).sort()).toEqual(["Magno", "Wolf"]);
+    expect(Object.keys(s.away).sort()).toEqual(["Kerr", "Osorio"]);
+  });
+
+  // Der Punkt, auf den es ankommt: die Anytime-Quote ist der Marktpreis,
+  // unverändert. Die Marge-Annahme wirkt sich NUR auf den Doppelpack aus.
+  it("übernimmt die Anytime-Quote exakt vom Markt", () => {
+    const s = spielerAusMarkt(args);
+    expect(s.home.Magno.anytime).toBe(2.15);
+    expect(s.away.Osorio.anytime).toBe(6.25);
+  });
+
+  it("leitet den Doppelpack ab — immer teurer als ein Tor", () => {
+    const s = spielerAusMarkt(args);
+    for (const seite of ["home", "away"]) {
+      for (const p of Object.values(s[seite])) expect(p.double).toBeGreaterThan(p.anytime);
+    }
+  });
+
+  it("der wahrscheinlichere Schütze ist auch beim Doppelpack billiger", () => {
+    const s = spielerAusMarkt(args);
+    expect(s.home.Magno.double).toBeLessThan(s.home.Wolf.double);
+  });
+
+  // Eine Mannschaft ohne wählbare Schützen wäre im Tipp-Screen eine leere
+  // Fläche — dann lieber der ganze erfundene Kader.
+  it("gibt null zurück, wenn eine Seite zu wenige zugeordnete Spieler hat", () => {
+    expect(spielerAusMarkt({ ...args, zuordnung: { Magno: "NYC", Wolf: "NYC" } })).toBeNull();
+    expect(spielerAusMarkt({ ...args, zuordnung: {} })).toBeNull();
+    expect(spielerAusMarkt({ ...args, torschuetzen: null })).toBeNull();
+  });
+
+  it("zählt die noch nicht zugeordneten Spieler mit", () => {
+    const s = spielerAusMarkt({ ...args, torschuetzen: { ...torschuetzen, Neuer: 5.0 } });
+    expect(s.unbekannt).toEqual(["Neuer"]);
+  });
+
+  it("snapshotFromOdds setzt sie ein und nennt die Herkunft", () => {
+    const basis = {
+      matchId: "x", home: "NYC", away: "TOR",
+      kickoff: "2026-08-01T01:30:00Z", odds: FAVORIT,
+    };
+    const ohne = snapshotFromOdds(basis);
+    expect(ohne.spielerQuelle).toBe("erfunden");
+    const mit = snapshotFromOdds({ ...basis, torschuetzen, kaderZuordnung: zuordnung });
+    expect(mit.spielerQuelle).toBe("markt");
+    expect(Object.keys(mit.players.home).sort()).toEqual(["Magno", "Wolf"]);
   });
 });

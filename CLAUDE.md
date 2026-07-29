@@ -348,6 +348,14 @@ SAMMELT über Läufe (`--schuetzen`), weil ein einzelner Lauf jeden Verein meist
 nur einmal zeigt — gemessen: 15 MLS-Spiele = 30 Klub-Auftritte bei 30 Vereinen,
 also null Schnittmengen. Erst die nächste Spielrunde löst auf.
 
+Eingesetzt werden die echten Schützen von `spielerAusMarkt` (`oddsApi.js`) in
+`snapshot.players`; `snapshot.spielerQuelle` sagt `markt` oder `erfunden`. Die
+ANYTIME-Quote ist dabei EXAKT die des Marktes — die Marge wird heraus- und
+unverändert wieder aufgerechnet, die Annahme über ihre Höhe trifft also nur den
+DOPPELPACK (den Markt „2+ Tore" gibt es nicht, geprüft). Hat eine Mannschaft
+weniger als zwei zugeordnete Schützen, bleibt der GANZE erfundene Kader stehen:
+eine halb echte Liste wäre auf einer Seite eine leere Fläche.
+
 **Torschützen-Modus** (`rules.markets.goals.modus`): `proTeam` (Vorgabe, je
 Mannschaft `picksPerTeam`) oder `proSpiel` (`picksProSpiel` Namen aus einem
 Topf). Der zweite Modus ist nicht nur Geschmack — er kommt OHNE Vereins-

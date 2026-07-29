@@ -21,6 +21,7 @@
 // ============================================================
 
 import { buildSnapshot, dixonColes } from "./oddsGenerator";
+import { teileAuf } from "./kader";
 
 // ── Niedrig-Ergebnis-Korrektur für ECHTE Quoten ─────────────
 // Warum sie hier eingeschaltet ist und im Generator nicht: hereinkommende
@@ -162,8 +163,62 @@ export function rasterAusMarkt(markt, { overround = 1.07, cap = 200, grid = 6 } 
   return getroffen >= grid * grid * 0.8 ? raster : null;
 }
 
+// ── Echte Torschützen einsetzen ─────────────────────────────
+// `torschuetzen` = { "Talles Magno": 2.15, … }, die ANYTIME-Quoten des Marktes.
+//
+// Zwei Dinge fehlen dort, und beide werden hier ergänzt:
+//
+// 1. **Der Verein.** Der Markt nennt ihn nicht; `kader.js` leitet ihn aus
+//    mehreren Spielen ab und reicht ihn als `zuordnung` herein. Wer noch nicht
+//    zugeordnet ist, fällt raus — lieber ein Spieler zu wenig als einer bei der
+//    falschen Mannschaft.
+//
+// 2. **Der Doppelpack.** Den Markt „2 oder mehr Tore" gibt es nicht (geprüft).
+//    Abgeleitet wird er über dieselbe Poisson-Annahme wie bei den erzeugten
+//    Kadern: aus P(≥1) folgt λ = −ln(1−p), daraus P(≥2) = 1 − e^−λ(1+λ).
+//
+// ⚠️ Die ANYTIME-Quote bleibt dabei EXAKT die des Marktes. Die Marge wird
+// herausgerechnet und danach unverändert wieder aufgeschlagen — die Annahme
+// über ihre Höhe wirkt sich also ausschließlich auf den Doppelpack aus, nie auf
+// den Preis, den der Spieler tatsächlich sieht. (Die Gegenseite „No" liefert
+// der Anbieter nicht, sonst wäre die Marge exakt bestimmbar.)
+const SCHUETZEN_MARGE = 1.15;   // dieselbe wie bei den erzeugten Kadern
+
+export function spielerAusMarkt({ torschuetzen, home, away, zuordnung = {}, cap = 200, minProTeam = 2 }) {
+  if (!torschuetzen || typeof torschuetzen !== "object") return null;
+  const namen = Object.keys(torschuetzen);
+  const geteilt = teileAuf({ home, away, spieler: namen, zuordnung });
+
+  const seite = (liste) => {
+    const out = {};
+    for (const name of liste) {
+      const preis = Number(torschuetzen[name]);
+      if (!(preis > 1)) continue;
+      const pRoh = 1 / preis;
+      const p = Math.min(0.95, pRoh / SCHUETZEN_MARGE);     // Marge raus
+      const lam = -Math.log(1 - p);
+      const pDoppel = Math.max(1 - Math.exp(-lam) - lam * Math.exp(-lam), 0.0005);
+      out[name] = {
+        // Zurück auf denselben Preis, mit dem er hereinkam.
+        anytime: +preis.toFixed(2),
+        double: Math.min(cap, Math.max(1.01, +(1 / (pDoppel * SCHUETZEN_MARGE)).toFixed(2))),
+      };
+    }
+    return out;
+  };
+
+  const heim = seite(geteilt.home);
+  const gast = seite(geteilt.away);
+  // Eine Mannschaft ohne wählbare Schützen wäre im Tipp-Screen eine leere
+  // Fläche. Solange die Zuordnung noch nicht weit genug ist, bleibt lieber der
+  // ganze erzeugte Kader stehen als eine halb echte Liste.
+  if (Object.keys(heim).length < minProTeam || Object.keys(gast).length < minProTeam) return null;
+  return { home: heim, away: gast, unbekannt: geteilt.unbekannt };
+}
+
 export function snapshotFromOdds({
   matchId, home, away, kickoff, odds, cap = 200, correctScore = null, namensPool = null,
+  torschuetzen = null, kaderZuordnung = null,
 }) {
   const probs = impliedProbabilities(odds || {});
   if (!probs) return null;
@@ -195,8 +250,22 @@ export function snapshotFromOdds({
   });
   if (echtesRaster) snap.correctScore = echtesRaster;
 
+  // Und dasselbe für die Torschützen. Erst hier werden aus erfundenen Namen
+  // echte — der letzte Markt, der noch simuliert war.
+  const echteSpieler = spielerAusMarkt({
+    torschuetzen, home, away, zuordnung: kaderZuordnung ?? {}, cap,
+  });
+  if (echteSpieler) {
+    snap.players = { home: echteSpieler.home, away: echteSpieler.away };
+    // Wer im Markt stand, aber noch keinem Verein zugeordnet ist. Sichtbar
+    // festgehalten, damit der Abstand zur vollständigen Zuordnung messbar
+    // bleibt statt still zu verschwinden.
+    if (echteSpieler.unbekannt.length) snap.spielerOffen = echteSpieler.unbekannt.length;
+  }
+
   snap.quelle = "api";
   snap.rasterQuelle = echtesRaster ? "markt" : "abgeleitet";
+  snap.spielerQuelle = echteSpieler ? "markt" : "erfunden";
   snap.marge = +probs.overround.toFixed(4);
   return snap;
 }

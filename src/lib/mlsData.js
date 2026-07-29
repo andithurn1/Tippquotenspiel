@@ -31,6 +31,7 @@
 import { baueLiga, alsQuotenQuelle } from "./ligaGenerator";
 import { SPIELPLAENE } from "./spielplaene";
 import { QUOTEN } from "./quoten";
+import { KADER } from "./kader/index";
 
 // 30 Klubs, aus der Quoten-API übernommen — dieselbe Schreibweise, die auch die
 // Quoten tragen. Dadurch braucht die MLS keine Einträge in `KLUB_ALIASE`.
@@ -93,6 +94,10 @@ export function getMlsMatches() {
         wettbewerb: "mls", idPrefix: "mls26", ratings: MLS_TEAM_RATINGS,
         derbys: MLS_DERBYS, namensPool: null,
         spielplan: plan, quoten: QUOTEN.mls ?? null,
+        // Die abgeleitete Vereinszuordnung. Erst mit ihr werden aus den
+        // Torschützen-Quoten echte, nach Mannschaften getrennte Kader; ohne sie
+        // bleiben die erfundenen Namen stehen.
+        kaderZuordnung: KADER.mls ?? null,
       })
       : [];
   }
