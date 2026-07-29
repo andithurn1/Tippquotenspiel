@@ -20,6 +20,7 @@
 // ============================================================
 
 import { likelyScorelines } from "./nearResults";
+import { seeded } from "./seeded";
 import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules } from "./engine";
 
 // ── Was passiert bei einem Versäumnis? Der ADMIN entscheidet ──
@@ -79,14 +80,8 @@ function likelyScorers(snap, side, n) {
 // Deterministischer Zufall aus einem Text — gleiche Eingabe, gleicher Wert.
 // Wichtig, damit ein Auto-Tipp reproduzierbar ist und nicht bei jedem Aufruf
 // anders aussieht (sonst wäre er nicht überprüfbar).
-function seeded(text) {
-  let h = 2166136261;
-  for (let i = 0; i < String(text).length; i++) {
-    h ^= String(text).charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return ((h >>> 0) % 100000) / 100000;
-}
+// (Deterministischer Zufall liegt jetzt in `seeded.js` — eine Quelle für
+//  jokerPlan, autoTip und auswahl.)
 
 // Endstand nach gewählter Strategie.
 function pickScoreline(snap, rules, strategie, { fremdeTipps = [], seed = "" } = {}) {

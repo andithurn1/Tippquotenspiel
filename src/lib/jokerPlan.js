@@ -60,6 +60,8 @@ export const SICHTBARKEIT = [
   },
 ];
 
+import { seeded } from "./seeded";
+
 export const VERTEILUNG_LIMITS = {
   frequenz: { min: 1, max: 8, step: 1 },   // „jeder N-te Spieltag"
 };
@@ -88,17 +90,9 @@ export function sanitizeVerteilung(partial = {}) {
   };
 }
 
-// Deterministischer Zufall aus einem Text — gleiche Eingabe, gleicher Wert.
-// Bewusst dieselbe Bauart wie in autoTip.js: nachrechenbar von Hand.
-function seeded(text) {
-  let h = 2166136261;
-  const s = String(text);
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return ((h >>> 0) % 100000) / 100000;
-}
+// Deterministischer Zufall: liegt in `seeded.js`, weil dieselbe Funktion auch
+// `autoTip.js` und `auswahl.js` tragen — und an ihr hängt, dass eine Runde auf
+// jedem Gerät dieselben Joker-Spieltage sieht.
 
 // Wie viele Joker gibt es über die Saison? Mindestens einer, sobald der Modus
 // überhaupt verteilt — eine Saison ganz ohne Joker wäre eine stumme Regel.
