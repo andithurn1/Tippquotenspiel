@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  normalisiereSpielplan, pruefeSpielplan, spielplanHerkunft, herkunftLabel,
+  normalisiereSpielplan, pruefeSpielplan, spielplanHerkunft, herkunftLabel, quotenHerkunft,
 } from "./spielplan";
 import { baueLiga } from "./ligaGenerator";
 
@@ -161,8 +161,24 @@ describe("Herkunft — simulierte Daten dürfen nie wie echte aussehen", () => {
     expect(herkunftLabel([...echt(1446), ...erzeugt(159)])).toContain("teilweise echt");
   });
 
-  it("ohne echte Spiele bleibt es beim bisherigen Satz", () => {
-    expect(herkunftLabel(erzeugt(10))).toBe("Simulierte Saison 2026/27");
+  it("ohne echte Spiele wird nichts behauptet", () => {
+    const l = herkunftLabel(erzeugt(10));
+    expect(l).toContain("Simulierter Spielplan");
+    expect(l).toContain("simuliert");
+  });
+
+  // Spielplan und Quoten sind zwei getrennte Wahrheiten: ein Katalog kann echte
+  // Termine und erfundene Quoten tragen (die europäischen Ligen) oder beides
+  // echt (MLS). Für die Wertung ist die zweite Hälfte die wichtigere.
+  it("nennt echte Marktquoten getrennt vom Spielplan", () => {
+    const mitQuoten = [
+      ...Array.from({ length: 3 }, () => ({
+        echterSpielplan: true, snapshot: { quelle: "api", rasterQuelle: "markt" },
+      })),
+      ...erzeugt(7),
+    ];
+    expect(quotenHerkunft(mitQuoten)).toMatchObject({ echt: 3, mitRaster: 3 });
+    expect(herkunftLabel(mitQuoten)).toContain("echte Marktquoten für 3 Spiele");
   });
 
   it("bei vollständig echtem Plan bleiben Quoten und Ergebnisse als simuliert benannt", () => {
@@ -178,6 +194,6 @@ describe("Herkunft — simulierte Daten dürfen nie wie echte aussehen", () => {
     ];
     expect(spielplanHerkunft(ausStore, new Set(["bl"]))).toMatchObject({ echt: 306, erzeugt: 159 });
     expect(herkunftLabel(ausStore, new Set(["bl"]))).toContain("306 von 465");
-    expect(herkunftLabel(ausStore, new Set())).toBe("Simulierte Saison 2026/27");
+    expect(herkunftLabel(ausStore, new Set())).toContain("Simulierter Spielplan");
   });
 });

@@ -15,6 +15,7 @@ import { getPremierLeagueMatches, PL_TEAM_RATINGS } from "./premierLeagueData";
 import { getLaLigaMatches, PD_TEAM_RATINGS } from "./laLigaData";
 import { getSerieAMatches, SA_TEAM_RATINGS } from "./serieAData";
 import { getChampionsLeagueMatches, CL_TEAM_RATINGS } from "./championsLeagueData";
+import { getMlsMatches, MLS_TEAM_RATINGS } from "./mlsData";
 
 // Reihenfolge = Anzeigereihenfolge. Die Champions League steht hinten, weil sie
 // keine eigene Klub-Heimat ist, sondern Teams aus den Ligen zusammenzieht.
@@ -24,6 +25,10 @@ export const LIGEN = [
   { key: "pd", matches: getLaLigaMatches,         ratings: PD_TEAM_RATINGS },
   { key: "sa", matches: getSerieAMatches,         ratings: SA_TEAM_RATINGS },
   { key: "cl", matches: getChampionsLeagueMatches, ratings: CL_TEAM_RATINGS },
+  // Steht hinten, weil sie kein europäischer Wettbewerb ist — und weil ihr
+  // Spielplan nur zwei bis drei Wochen weit reicht (die Quoten-API listet nicht
+  // weiter). Sie ist die Liga, an der sich echte Daten prüfen lassen.
+  { key: "mls", matches: getMlsMatches, ratings: MLS_TEAM_RATINGS },
 ];
 
 // Alle Spiele aller Wettbewerbe in EINEM Katalog — so, wie der Store sie hält.

@@ -206,6 +206,10 @@ export function buildSnapshot({
 
   return {
     matchId, home, away, kickoff,
+    // Die Tor-Erwartungen wandern MIT. Sie sind die Grundlage des ganzen
+    // Rasters, und `simulateResult` braucht genau sie — bei echten Quoten sind
+    // es die des Marktes, bei erzeugten die aus den Team-Stärken.
+    lamH, lamA,
     frozenAt: new Date(new Date(kickoff).getTime() - 45 * 60 * 1000).toISOString(),
     winner: { home: oddsFrom(pH, overround, cap), draw: oddsFrom(pD, overround, cap), away: oddsFrom(pA, overround, cap) },
     margin: {
@@ -221,8 +225,16 @@ export function buildSnapshot({
 // Ergebnis-Simulation: zieht einen plausiblen Endstand aus demselben Poisson-
 // Modell (für Demo-/Testzwecke — nie fairness-relevant, das bleibt Anker am
 // realen Ergebnis in der Engine).
-export function simulateResult(snap, { homeAttack, homeDefense, awayAttack, awayDefense }, seed = `${snap.matchId}-result`) {
-  const { home: lamH, away: lamA } = expectedGoals({ homeAttack, homeDefense, awayAttack, awayDefense });
+export function simulateResult(snap, { homeAttack, homeDefense, awayAttack, awayDefense } = {}, seed = `${snap.matchId}-result`) {
+  // ⚠️ Der Snapshot hat Vorrang vor den Team-Stärken. Sobald ECHTE Marktquoten
+  // im Spiel sind, stehen dort die Tor-Erwartungen des Marktes — aus den
+  // Ratings gezogen bekäme ein klarer Favorit reihenweise Ergebnisse, die
+  // seinen eigenen Quoten widersprechen. Für erzeugte Spiele ändert sich
+  // nichts: dort stammen `snap.lamH/lamA` aus genau diesen Stärken.
+  const ausSnap = Number.isFinite(snap?.lamH) && Number.isFinite(snap?.lamA);
+  const { home: lamH, away: lamA } = ausSnap
+    ? { home: snap.lamH, away: snap.lamA }
+    : expectedGoals({ homeAttack, homeDefense, awayAttack, awayDefense });
   const rng = rngFromSeed(seed);
   const drawPoisson = (lambda) => {
     const u = rng(); let cum = 0;

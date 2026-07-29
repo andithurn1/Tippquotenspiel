@@ -43,7 +43,7 @@ describe("unbekannteKlubs", () => {
 // Ein Alias, das ins Leere zeigt, ist schlimmer als keines: der Name sieht
 // übersetzt aus und passt trotzdem auf kein Match.
 describe("Die Alias-Tabellen zeigen auf echte Klubs", () => {
-  for (const liga of ["bl", "pl", "pd", "sa"]) {
+  for (const liga of ["bl", "pl", "pd", "sa", "mls"]) {
     it(`${liga}: jedes Ziel steht wirklich im Katalog`, () => {
       const unsere = new Set(vereineVon(liga));
       for (const ziel of Object.values(KLUB_ALIASE[liga])) {
@@ -69,7 +69,7 @@ describe("Liga-Besetzungen", () => {
   });
 
   it("kein Klub steht doppelt in derselben Liga", () => {
-    for (const liga of ["bl", "pl", "pd", "sa"]) {
+    for (const liga of ["bl", "pl", "pd", "sa", "mls"]) {
       const v = vereineVon(liga);
       expect(new Set(v).size, `Dublette in ${liga}`).toBe(v.length);
     }

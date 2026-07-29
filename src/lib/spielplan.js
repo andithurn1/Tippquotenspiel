@@ -143,12 +143,35 @@ export function spielplanHerkunft(matches = [], echteWettbewerbe = new Set()) {
   };
 }
 
+// Wie viele Spiele tragen ECHTE Marktquoten? Anders als beim Spielplan lässt
+// sich das direkt am Spiel ablesen: der Snapshot ist eine DB-Spalte und kommt
+// durch den Store durch, `snapshot.quelle` also auch.
+export function quotenHerkunft(matches = []) {
+  let echt = 0, mitRaster = 0;
+  for (const m of matches) {
+    if (m?.snapshot?.quelle !== "api") continue;
+    echt++;
+    if (m.snapshot.rasterQuelle === "markt") mitRaster++;
+  }
+  return { echt, mitRaster, alles: matches.length > 0 && echt === matches.length };
+}
+
 // Der Satz, den die Oberfläche zeigt. Er steht hier und nicht im Screen, damit
 // alle Stellen dasselbe sagen — beim Spielplan ist eine zweite Formulierung
 // schnell eine zweite Wahrheit.
+//
+// ⚠️ Spielplan und QUOTEN sind zwei getrennte Wahrheiten und werden auch
+// getrennt genannt. Ein Katalog kann echte Termine und erfundene Quoten tragen
+// (die europäischen Ligen) oder beides echt (MLS) — und für die Wertung ist
+// die zweite Hälfte die wichtigere.
 export function herkunftLabel(matches = [], echteWettbewerbe = new Set(), saison = "2026/27") {
   const h = spielplanHerkunft(matches, echteWettbewerbe);
-  if (h.nichts) return `Simulierte Saison ${saison}`;
-  if (h.alles) return `Spielplan ${saison} — Quoten und Ergebnisse simuliert`;
-  return `Spielplan ${saison} teilweise echt (${h.echt} von ${matches.length} Spielen)`;
+  const q = quotenHerkunft(matches);
+  const plan = h.nichts ? `Simulierter Spielplan ${saison}`
+    : h.alles ? `Spielplan ${saison}`
+      : `Spielplan ${saison} teilweise echt (${h.echt} von ${matches.length})`;
+  const quoten = q.echt === 0 ? "Quoten und Ergebnisse simuliert"
+    : q.alles ? "echte Marktquoten"
+      : `echte Marktquoten für ${q.echt} Spiele`;
+  return `${plan} · ${quoten}`;
 }

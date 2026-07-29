@@ -83,6 +83,10 @@ export const KLUB_ALIASE = {
     "Udinese": "Udinese Calcio",
     "Venezia": "Venezia FC",
   },
+  // MLS braucht keine Aliase: ihre Klubliste stammt direkt aus derselben API,
+  // die auch die Quoten liefert. Eine Quelle, eine Schreibweise — genau der
+  // Zustand, den die Tabellen oben mühsam wiederherstellen müssen.
+  mls: {},
 };
 
 // Einen API-Namen in unseren Katalog übersetzen. Unbekannte Namen kommen

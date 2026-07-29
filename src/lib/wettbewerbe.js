@@ -20,6 +20,10 @@ export const WETTBEWERBE = [
   { key: "pd", label: "La Liga",         kurz: "PD", land: "Spanien" },
   { key: "sa", label: "Serie A",         kurz: "SA", land: "Italien" },
   { key: "cl", label: "Champions League", kurz: "CL", land: "Europa" },
+  // Läuft, während Europa Sommerpause hat — und ist dadurch die einzige Liga,
+  // an der sich echte Quoten inklusive Torschützen schon vor dem Launch prüfen
+  // lassen. Spielplan UND Quoten sind hier echt, nichts ist simuliert.
+  { key: "mls", label: "MLS", kurz: "MLS", land: "USA/Kanada" },
   // Das alte Demo-Match (Länderspiel JOR-ESP) ist keiner Liga zuzuordnen. Ohne
   // eigenen Eintrag würde es über den Fallback als Bundesliga-Spiel angezeigt.
   // `echt: false` heißt: es gehört zu keiner Saison — siehe istEchterWettbewerb.

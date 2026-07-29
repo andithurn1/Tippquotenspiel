@@ -38,6 +38,7 @@ const LIGEN = {
   pl: { label: "Premier League", sport: "soccer_epl" },
   pd: { label: "La Liga", sport: "soccer_spain_la_liga" },
   sa: { label: "Serie A", sport: "soccer_italy_serie_a" },
+  mls: { label: "MLS", sport: "soccer_usa_mls" },
 };
 
 // Der Schlüssel steht in `.env.local` (nicht im Repo) oder in der Umgebung.

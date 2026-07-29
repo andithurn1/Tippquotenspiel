@@ -13,5 +13,6 @@
 // ============================================================
 
 import bl from "./bl";
+import mls from "./mls";
 
-export const QUOTEN = { bl };
+export const QUOTEN = { bl, mls };

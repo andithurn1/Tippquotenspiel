@@ -35,9 +35,11 @@ import { TEAM_RATINGS } from "../src/lib/bundesligaData.js";
 import { PL_TEAM_RATINGS } from "../src/lib/premierLeagueData.js";
 import { PD_TEAM_RATINGS } from "../src/lib/laLigaData.js";
 import { SA_TEAM_RATINGS } from "../src/lib/serieAData.js";
+import { MLS_TEAM_RATINGS } from "../src/lib/mlsData.js";
 
 const HIER = dirname(fileURLToPath(import.meta.url));
-const ZIEL = resolve(HIER, "../src/lib/spielplaene");
+const WURZEL = resolve(HIER, "..");
+const ZIEL = resolve(WURZEL, "src/lib/spielplaene");
 const SAISON = 2026;
 
 // Abweichende Schreibweisen zwischen Quelle und Klubliste. Bewusst eine
@@ -50,6 +52,9 @@ const ALIASE = {
   pl: {},
   pd: {},
   sa: {},
+  // MLS braucht keine: ihre Klubliste ist direkt aus der Quoten-API übernommen,
+  // die auch den Spielplan liefert. Eine Quelle, eine Schreibweise.
+  mls: {},
 };
 
 const LIGEN = {
@@ -57,6 +62,11 @@ const LIGEN = {
   pl: { label: "Premier League", ratings: PL_TEAM_RATINGS, openliga: null },
   pd: { label: "La Liga", ratings: PD_TEAM_RATINGS, openliga: null },
   sa: { label: "Serie A", ratings: SA_TEAM_RATINGS, openliga: null },
+  // MLS läuft, während die europäischen Ligen Sommerpause haben — und ist
+  // dadurch die einzige Liga, an der sich die ganze Kette JETZT mit echten
+  // Daten prüfen lässt, Torschützen eingeschlossen. Ihr Spielplan kommt aus
+  // dem `/events`-Endpunkt der Quoten-API (kostenlos), nicht von OpenLigaDB.
+  mls: { label: "MLS", ratings: MLS_TEAM_RATINGS, openliga: null, oddsSport: "soccer_usa_mls" },
 };
 
 const alias = (key, name) => ALIASE[key]?.[name] ?? name;
@@ -72,6 +82,36 @@ async function ausOpenLigaDB(key, liga) {
     home: alias(key, m.team1?.teamName),
     away: alias(key, m.team2?.teamName),
     kickoff: m.matchDateTimeUTC,
+  }));
+}
+
+// Dritter Weg: die anstehenden Begegnungen aus der Quoten-API. Der
+// `/events`-Endpunkt ist KOSTENLOS und liefert für eine laufende Liga den
+// kompletten nächsten Spielplan-Ausschnitt.
+//
+// ⚠️ Er liefert keine SPIELTAGE, nur Anstoßzeiten. Gruppiert wird deshalb nach
+// Kalenderwoche — bei einer Liga, die von Mittwoch bis Sonntag spielt, ist das
+// der Spieltag im Sinne der Runde. Ohne diese Zuordnung stünde jedes Spiel für
+// sich, und alles, was „je Spieltag" arbeitet (Joker, Zwischenstand), hätte
+// keinen Anker.
+async function ausOddsApi(key, liga) {
+  const datei = resolve(WURZEL, ".env.local");
+  const apiKey = process.env.ODDS_API_KEY
+    ?? (existsSync(datei) ? (readFileSync(datei, "utf8").match(/^ODDS_API_KEY=(.+)$/m) ?? [])[1]?.trim() : null);
+  if (!apiKey) throw new Error("ODDS_API_KEY fehlt (.env.local)");
+
+  const res = await fetch(`https://api.the-odds-api.com/v4/sports/${liga.oddsSport}/events?apiKey=${apiKey}`);
+  if (!res.ok) throw new Error(`Quoten-API antwortete mit ${res.status}`);
+  const roh = await res.json();
+  if (!Array.isArray(roh) || !roh.length) throw new Error("Quoten-API lieferte keine Spiele");
+
+  const sortiert = [...roh].sort((a, b) => new Date(a.commence_time) - new Date(b.commence_time));
+  const ersteWoche = new Date(sortiert[0].commence_time).getTime();
+  return sortiert.map((e) => ({
+    matchday: Math.floor((new Date(e.commence_time).getTime() - ersteWoche) / (7 * 24 * 3600 * 1000)) + 1,
+    home: alias("mls", e.home_team),
+    away: alias("mls", e.away_team),
+    kickoff: e.commence_time,
   }));
 }
 
@@ -92,7 +132,9 @@ async function importiere(key, { datei = null, nurPruefen = false } = {}) {
     ? ausDatei(key, datei)
     : liga.openliga
       ? await ausOpenLigaDB(key, liga)
-      : null;
+      : liga.oddsSport
+        ? await ausOddsApi(key, liga)
+        : null;
 
   if (!roh) {
     console.log(`⏭  ${liga.label}: keine Quelle konfiguriert — mit --datei <pfad> einlesen.`);

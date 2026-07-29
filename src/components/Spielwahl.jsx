@@ -235,8 +235,8 @@ export default function Spielwahl() {
         <div style={{ fontSize: 11, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
           {herkunftLabel(matches ?? [], echteSpielplaene())}
           {mehrereWettbewerbe && ` · ${wettbewerbeIn(matches ?? []).map((w) => w.label).join(" + ")}`}
-          {" "}— echte Klubs, aber generierte Quoten &amp; Ergebnisse zum Durchspielen.
-          Kein echter Spielausgang.
+          {" "}— echte Klubs. Wo keine Marktquote vorliegt, sind Quoten und
+          Ergebnisse erzeugt; Torschützen sind es immer. Kein echter Spielausgang.
         </div>
 
         {matches == null && !ladeFehler && (
