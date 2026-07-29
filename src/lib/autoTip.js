@@ -124,12 +124,23 @@ export function buildAutoTip(snap, rules = DEFAULT_RULES, opts = {}) {
   if (!best) return null;
 
   const goalsMarkt = rules?.markets?.goals;
-  const picks = goalsMarkt?.enabled ? (goalsMarkt.picksPerTeam ?? 0) : 0;
+  // Im Modus `proSpiel` gilt eine Anzahl fürs GANZE Spiel, nicht je Mannschaft.
+  // Ohne diese Unterscheidung benennte der Ersatz-Tipp doppelt so viele
+  // Schützen wie erlaubt — und der Versäumnis-Tipp soll der zahmste sein, nicht
+  // der großzügigste.
+  const proSpiel = goalsMarkt?.modus === "proSpiel";
+  const picks = !goalsMarkt?.enabled ? 0
+    : proSpiel ? (goalsMarkt.picksProSpiel ?? 0)
+      : (goalsMarkt.picksPerTeam ?? 0);
 
   // Nur so viele Schützen benennen, wie das getippte Ergebnis Tore hergibt —
   // ein Schütze für ein Team ohne Tor wäre erkennbar unsinnig.
+  // Im Spiel-Modus teilt sich das Kontingent auf beide Mannschaften auf; die
+  // Heimseite bekommt zuerst, was ihre Tore hergeben, der Rest geht an den Gast.
   const homeN = Math.min(picks, best.home);
-  const awayN = Math.min(picks, best.away);
+  const awayN = proSpiel
+    ? Math.min(Math.max(0, picks - homeN), best.away)
+    : Math.min(picks, best.away);
 
   return {
     home: best.home,

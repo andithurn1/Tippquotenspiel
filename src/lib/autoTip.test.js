@@ -196,3 +196,33 @@ describe("Strategien", () => {
     expect(autos[0].tip.away).toBe(2);
   });
 });
+
+// ── Modus proSpiel ──────────────────────────────────────────
+// Ohne Unterscheidung benennte der Ersatz-Tipp doppelt so viele Schützen wie
+// erlaubt — und er soll der zahmste sein, nicht der großzügigste.
+describe("autoTip im Torschützen-Modus proSpiel", () => {
+  const snap = createMockOddsSource().getSnapshot("JOR-ESP");
+
+  const regeln = (goals) => sanitizeRules({ markets: { result: true, goals } });
+
+  it("hält sich an picksProSpiel statt an picksPerTeam", () => {
+    const r = regeln({ enabled: true, modus: "proSpiel", picksProSpiel: 2, picksPerTeam: 3 });
+    const t = buildAutoTip(snap, r, { strategie: "wahrscheinlich" });
+    const gesamt = t.goals.home.length + t.goals.away.length;
+    expect(gesamt).toBeLessThanOrEqual(2);
+  });
+
+  it("benennt weiterhin nie mehr Schützen als das Ergebnis Tore hergibt", () => {
+    const r = regeln({ enabled: true, modus: "proSpiel", picksProSpiel: 6 });
+    const t = buildAutoTip(snap, r, { strategie: "wahrscheinlich" });
+    expect(t.goals.home.length).toBeLessThanOrEqual(t.home);
+    expect(t.goals.away.length).toBeLessThanOrEqual(t.away);
+  });
+
+  it("proTeam bleibt unverändert — zwei je Mannschaft sind vier im Spiel", () => {
+    const r = regeln({ enabled: true, modus: "proTeam", picksPerTeam: 2 });
+    const t = buildAutoTip(snap, r, { strategie: "wahrscheinlich" });
+    expect(t.goals.home.length).toBeLessThanOrEqual(2);
+    expect(t.goals.away.length).toBeLessThanOrEqual(2);
+  });
+});

@@ -32,11 +32,44 @@ const risk = (q) =>
   : q < 100 ? { label: "Zocker", col: C.coral }
   : { label: "Wahnsinn", col: C.coral };
 
-// Löst den Anfangs-Pick je Torschützen-Slot: erster Spieler des Teams.
-const initialPicks = (snap, scorer, teams) =>
-  teams.map((t) => Array.from({ length: scorer.picksPerTeam }, () => ({
+// Alle Spieler beider Mannschaften in EINER Liste — für den Modus `proSpiel`,
+// in dem nicht nach Heim und Gast getrennt wird. Die Reihenfolge bleibt
+// Heim-vor-Gast, damit die Auswahl nicht bei jedem Rendern springt.
+const alleSpieler = (snap) => ({ ...snap.players.home, ...snap.players.away });
+
+// Löst den Anfangs-Pick je Torschützen-Slot.
+//
+// Zwei Formen, je nach Regelwerk:
+//   proTeam  — ein Block je Mannschaft mit `picksPerTeam` Slots (bisher)
+//   proSpiel — EIN Block mit `picksProSpiel` Slots aus allen Spielern
+// Beide liefern dieselbe Struktur (Array von Slot-Listen), damit der Rest des
+// Screens sich nicht um den Modus kümmern muss.
+const initialPicks = (snap, scorer, teams) => {
+  if (scorer.modus === "proSpiel") {
+    const namen = Object.keys(alleSpieler(snap));
+    return [Array.from({ length: scorer.picksProSpiel }, (_, i) => ({
+      // Verschiedene Vorbelegungen: zweimal derselbe Name wäre sonst als
+      // Doppelpack gewertet, ohne dass der Spieler das wollte.
+      main: namen[i % Math.max(1, namen.length)], backup: "",
+    }))];
+  }
+  return teams.map((t) => Array.from({ length: scorer.picksPerTeam }, () => ({
     main: Object.keys(snap.players[t.side])[0], backup: "",
   })));
+};
+
+// Aus den Slot-Listen den Tipp bauen — die EINE Stelle, die beide Modi kennt.
+//
+// ⚠️ Die gespeicherte Form bleibt in beiden Fällen `{ home, away }`. Im Modus
+// `proSpiel` landen alle Namen unter `home`, weil es dort keine Trennung gibt;
+// `scoreGoals` führt beide Seiten ohnehin zusammen und schlägt jeden Namen auf
+// beiden Mannschaften nach. Dadurch bleiben abgegebene Tipps über einen
+// Moduswechsel hinweg gültig — und die Datenbank muss sich nicht ändern.
+const goalsAusPicks = (picks, scorer) => {
+  const namen = (liste) => (liste ?? []).map((p) => p.main).filter(Boolean);
+  if (scorer.modus === "proSpiel") return { home: namen(picks[0]), away: [] };
+  return { home: namen(picks[0]), away: namen(picks[1]) };
+};
 
 export default function Tippabgabe({ matchId }) {
   const { user } = useAuth();
@@ -75,7 +108,7 @@ export default function Tippabgabe({ matchId }) {
     // Picks hängen an der Pick-Anzahl des Regelwerks — kommt es später aus der
     // Runde nach, werden sie einmal neu aufgebaut.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId, scorer.picksPerTeam]);
+  }, [matchId, scorer.picksPerTeam, scorer.picksProSpiel, scorer.modus]);
 
   useEffect(() => {
     let live = true;
@@ -169,10 +202,7 @@ export default function Tippabgabe({ matchId }) {
   const bigGameBonus = bigGameAufschlag(SNAP, RULES);
 
   // Tipp-Vorschau: Potenzial, wenn der Tipp exakt aufgeht (Engine rechnet).
-  const projGoals = {
-    home: picks[0].map((p) => p.main).filter(Boolean),
-    away: picks[1].map((p) => p.main).filter(Boolean),
-  };
+  const projGoals = goalsAusPicks(picks, scorer);
   // Ab Anpfiff ist die Gewichtung eingefroren — sonst könnte man den Joker
   // nachträglich auf ein bereits gutes Spiel legen. Gleiche Logik wie beim
   // Quoten-Snapshot.
@@ -217,10 +247,7 @@ export default function Tippabgabe({ matchId }) {
     setSaveState("saving");
     try {
       if (!user) { setSaveState("guest"); return; }
-      const goals = {
-        home: picks[0].map((p) => p.main).filter(Boolean),
-        away: picks[1].map((p) => p.main).filter(Boolean),
-      };
+      const goals = goalsAusPicks(picks, scorer);
       // Absicherung gegen veralteten Zustand: ein Ranking-Gewicht, das
       // inzwischen anderweitig belegt ist, wird auf neutral zurückgesetzt.
       let gewichtungSicher = gewichtung;
@@ -328,7 +355,41 @@ export default function Tippabgabe({ matchId }) {
             )}
 
             {/* Torschützen aus dem Regelwerk */}
-            {scorer.enabled && (
+            {/* Modus `proSpiel`: EIN Topf für beide Mannschaften. Gebaut, weil
+                die echten Torschützen-Quoten ohne Vereinszuordnung kommen —
+                dieser Modus funktioniert auch dann, wenn der Kader noch offen
+                ist (siehe kader.js). */}
+            {scorer.enabled && scorer.modus === "proSpiel" && (
+              <Section title={`Torschützen — ${scorer.picksProSpiel} im Spiel`}>
+                <div style={{ fontSize: 12, color: C.muted, marginBottom: 8, fontFamily: MONO, letterSpacing: 1 }}>
+                  {SNAP.home.toUpperCase()} + {SNAP.away.toUpperCase()}
+                </div>
+                {picks[0].map((p, pi) => (
+                  <div key={pi} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                    <PlayerSelect
+                      flex={1.4} label={`Wahl ${pi + 1}`} value={p.main}
+                      quote={alleSpieler(SNAP)[p.main]?.anytime}
+                      players={alleSpieler(SNAP)}
+                      onChange={(v) => setPick(0, pi, "main", v)}
+                    />
+                    {scorer.allowBackups && (
+                      <PlayerSelect
+                        flex={1} label="Backup" value={p.backup} dim
+                        quote={p.backup ? alleSpieler(SNAP)[p.backup]?.anytime : null}
+                        players={alleSpieler(SNAP)} allowEmpty
+                        onChange={(v) => setPick(0, pi, "backup", v)}
+                      />
+                    )}
+                  </div>
+                ))}
+                <p style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+                  Wie du sie auf die Mannschaften verteilst, ist dir überlassen — auch alle auf eine.
+                  Steht deine Erstwahl ~1 h vor Anpfiff nicht in der Aufstellung, rückt der Backup nach.
+                </p>
+              </Section>
+            )}
+
+            {scorer.enabled && scorer.modus !== "proSpiel" && (
               <Section title={`Torschützen — je ${scorer.picksPerTeam} pro Team`}>
                 {teams.map((team, ti) => (
                   <div key={team.side} style={{ marginBottom: ti === 0 ? 14 : 0 }}>
