@@ -211,18 +211,40 @@ Regionen über neun Bundesliga-Spiele um **0,47 Prozentpunkte im Mittel** ab
 `h2h`/`totals` aus **eu** (mehr Büros → robusterer Median), `correct_score`
 und Torschützen aus **us** (die einzige Region, die sie führt).
 
-**Torschützen:** laut Anbieter-Doku für genau unsere fünf Ligen unterstützt,
-aber „coverage is currently limited to US bookmakers". Abgefragt liefern sie
-einen Monat vor Anpfiff **0 Büros** — auch bei einem Spiel in 10 Stunden in
-einer anderen Liga. Da `correct_score` bei denselben US-Büchern schon jetzt
-Daten hat, ist die wahrscheinlichste Erklärung, dass Spieler-Wetten erst wenige
-Tage vor Anpfiff gestellt werden (sie hängen an der Aufstellung).
-**Nachprüfbar Ende August** — bis dahin bleiben Torschützen abgeleitet.
+### ✅ Torschützen: kein API-Problem, ein ZEIT-Problem — bewiesen
 
-⚠️ **Und selbst wenn sie kommen:** echte Torschützen-Quoten verlangen echte
-KADER. Die sind bewusst erfunden (`NAMENSPOOLS`), weil sie sich mit jedem
-Transferfenster ändern. Der Schritt ist also größer als ein Markt mehr im
-Abruf — das ist eine eigene Entscheidung, keine Fleißarbeit.
+Für die Bundesliga liefern alle `player_*`-Märkte einen Monat vor Anpfiff
+**0 Buchmacher**, in jeder Region. Das sah nach einer Lücke des Anbieters aus.
+Ist es nicht — die Gegenprobe an einem **MLS-Spiel in 64 Stunden** (MLS ist eine
+der unterstützten Ligen und spielt gerade):
+
+```
+player_goal_scorer_anytime   3 Büros, 67 Ausgänge
+   Talles Magno 2.15 · Hannes Wolf 3.20 · Malachi Jones 3.20 · Agustín Ojeda 3.75
+player_first_goal_scorer     2 Büros, 47 Ausgänge
+player_shots_on_target       2 Büros, 82 Ausgänge
+```
+
+Echte Spieler, echte Quoten. Die Doku sagt dasselbe: *„As an event's commence
+time approaches, this endpoint will return more market keys as bookmakers open
+more markets."* **Ein Anbieterwechsel würde daran nichts ändern** — im Juli
+bepreist kein Buchmacher der Welt Bundesliga-Torschützen. Erwartbar sind sie
+1–7 Tage vor Anpfiff, sobald die Aufstellungen absehbar sind.
+
+**💡 Die Folge ist größer als „ein Markt mehr":** mit den Torschützen-Quoten
+kommen **echte Spielernamen frei Haus**. Unsere Kader sind bewusst erfunden
+(`NAMENSPOOLS`), weil echte nach jedem Transferfenster falsch wären — aber genau
+dieses Problem hat der Buchmacher schon gelöst: er stellt nur Spieler, die auch
+spielen. Er liefert grob 20 je Partie, wir brauchen 5 je Team. Das passt.
+
+⚠️ **Es hängt aber an einem Faden, und der berührt eine Fairness-Regel:** die
+Quoten kommen 1–7 Tage vor Anpfiff, unser Tipp-Fenster öffnet standardmäßig
+**eine Woche** vorher. Wer früh tippt, sähe erfundene Namen, wer spät tippt,
+echte — das geht nicht. Entweder wandert das Tipp-Fenster für den
+Torschützen-Markt nach hinten, oder der Snapshot wird nachgezogen, sobald die
+Quoten da sind. Letzteres kollidiert mit „ab Anpfiff ist eingefroren" bzw. mit
+dem Grundsatz, dass ein abgegebener Tipp seinen Wert nicht mehr ändert.
+**Entwurfsentscheidung, keine Fleißarbeit.**
 
 ### Balance: EIN Durchgang am Ende statt Feinjustierung nebenbei — ENTSCHIEDEN (Nutzer)
 **Arbeitsweise ab jetzt.** Beim Bauen einer neuen Mechanik gibt es nur einen
