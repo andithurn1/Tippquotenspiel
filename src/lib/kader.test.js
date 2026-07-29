@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { zuordne, verschmelze, teileAuf, fortschritt, MAX_BEOBACHTUNGEN } from "./kader";
+import { zuordne, verschmelze, teileAuf, fortschritt, MAX_BEOBACHTUNGEN, UEBERSTEUERT } from "./kader";
 
 const b = (home, away, spieler, kickoff = null) => ({ home, away, spieler, kickoff });
 
@@ -124,5 +124,89 @@ describe("fortschritt", () => {
 
   it("kein Sturz bei leerer Zuordnung", () => {
     expect(fortschritt({}).anteil).toBe(0);
+  });
+});
+
+// ── Das Gedächtnis ──────────────────────────────────────────
+// Der Fall, der sonst erst nach Markteintritt auffliegt: ein Spieler ist zwei
+// Monate verletzt, verschwindet aus den Quoten — und wäre nach dem Comeback
+// wieder unbekannt. Ausgerechnet der zurückkehrende Stürmer nicht tippbar.
+describe("zuordne mit Gedächtnis", () => {
+  const bekannt = { Magno: "NYC" };
+
+  it("ein gerade nicht gelisteter Spieler behält seinen Verein", () => {
+    // Verletzt: kommt in keiner Beobachtung vor.
+    const { zuordnung } = zuordne([b("NYC", "TOR", ["Wolf"])], bekannt);
+    expect(zuordnung.Magno).toBe("NYC");
+  });
+
+  it("am ersten Tag zurück ist er SOFORT wieder eindeutig", () => {
+    // Comeback: eine einzige Beobachtung, für sich genommen mehrdeutig …
+    const ohne = zuordne([b("NYC", "TOR", ["Magno"])]);
+    expect(ohne.zuordnung.Magno).toBeUndefined();
+    // … mit Gedächtnis aber sofort aufgelöst, weil NYC unter den Kandidaten ist.
+    const mit = zuordne([b("NYC", "TOR", ["Magno"])], bekannt);
+    expect(mit.zuordnung.Magno).toBe("NYC");
+    expect(mit.offen).toEqual([]);
+  });
+
+  // Sicherheit vor Komfort: passt die alte Antwort nicht mehr zu dem, was wir
+  // sehen, ist er gewechselt — dann lieber unentschieden als falsch.
+  it("nach einem Transfer wird die alte Zuordnung VERWORFEN", () => {
+    const { zuordnung, offen } = zuordne([b("LAG", "SEA", ["Magno"])], bekannt);
+    expect(zuordnung.Magno).toBeUndefined();
+    expect(offen[0].moeglich).toEqual(["LAG", "SEA"]);
+  });
+
+  it("und der neue Verein löst sich nach dem zweiten Spiel auf", () => {
+    const { zuordnung } = zuordne(
+      [b("LAG", "SEA", ["Magno"]), b("LAG", "POR", ["Magno"])], bekannt);
+    expect(zuordnung.Magno).toBe("LAG");
+  });
+
+  it("eine eindeutige Beobachtung schlägt das Gedächtnis", () => {
+    const { zuordnung } = zuordne(
+      [b("LAG", "SEA", ["Magno"]), b("LAG", "POR", ["Magno"])], { Magno: "NYC" });
+    expect(zuordnung.Magno).toBe("LAG");
+  });
+});
+
+// Die einzige Konstellation, die das Verfahren NICHT lösen kann: zwei Spieler
+// mit identischem Namen in verschiedenen Vereinen.
+describe("UEBERSTEUERT — die Notbremse", () => {
+  it("ist im Auslieferungszustand leer", () => {
+    expect(Object.keys(UEBERSTEUERT)).toEqual([]);
+  });
+
+  it("schlägt Beobachtung UND Gedächtnis", () => {
+    UEBERSTEUERT["Doppel Name"] = "TOR";
+    try {
+      const { zuordnung, offen } = zuordne(
+        [b("NYC", "MTL", ["Doppel Name"]), b("NYC", "LAG", ["Doppel Name"])],
+        { "Doppel Name": "NYC" });
+      expect(zuordnung["Doppel Name"]).toBe("TOR");
+      expect(offen.some((o) => o.spieler === "Doppel Name")).toBe(false);
+    } finally {
+      delete UEBERSTEUERT["Doppel Name"];
+    }
+  });
+});
+
+// Die Eigenschaft, auf der alles ruht — hier als Test festgehalten, damit sie
+// beim nächsten Umbau nicht verlorengeht.
+describe("Sicherheits-Eigenschaft: nie falsch, höchstens unentschieden", () => {
+  it("die Schnittmenge enthält IMMER den wahren Verein", () => {
+    // Magno spielt für NYC. Egal welche Gegner, NYC ist in jedem Paar.
+    const spiele = [
+      b("NYC", "TOR", ["Magno"]), b("MTL", "NYC", ["Magno"]),
+      b("NYC", "LAG", ["Magno"]), b("SEA", "NYC", ["Magno"]),
+    ];
+    for (let n = 1; n <= spiele.length; n++) {
+      const { zuordnung, offen } = zuordne(spiele.slice(0, n));
+      const antwort = zuordnung.Magno ?? null;
+      // Entweder die richtige Antwort — oder gar keine. Nie eine falsche.
+      if (antwort !== null) expect(antwort).toBe("NYC");
+      else expect(offen[0].moeglich).toContain("NYC");
+    }
   });
 });

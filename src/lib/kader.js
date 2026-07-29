@@ -38,13 +38,38 @@
 // Eine BEOBACHTUNG ist ein Spiel mit den Spielern, die der Markt dafür geführt
 // hat: { home, away, spieler: ["Talles Magno", …] }.
 
+// ── Die Sicherheits-Eigenschaft, auf der alles ruht ─────────
+// Ein Spieler taucht NUR in Spielen seines eigenen Vereins auf. Sein Verein
+// steht deshalb in JEDEM beobachteten Paar — und damit immer auch in der
+// Schnittmenge. Bleibt am Ende genau einer übrig, ist es zwangsläufig der
+// richtige. **Das Verfahren kann sich nicht vertun, es kann nur unentschieden
+// bleiben.** Ein falsch zugeordneter Spieler wäre der teure Fehler (auffallen
+// würde er erst bei der Abrechnung); ein unentschiedener kostet nur Komfort.
+//
+// Die eine Ausnahme sind NAMENSGLEICHE Spieler in zwei Vereinen. Dann leert
+// sich die Schnittmenge, und die Regel „die neuere Beobachtung gewinnt" (die
+// für Transfers da ist) würde hin- und herspringen. Dafür gibt es `UEBERSTEUERT`
+// unten — die einzige Stelle, an der von Hand eingegriffen wird.
+
 // Aus Beobachtungen eine Zuordnung bauen.
+//
+// `vorher` sind die BISHER bekannten Zuordnungen. Sie einzubeziehen ist kein
+// Beiwerk, sondern behebt den Fall, der sonst erst nach Markteintritt auffliegt:
+//
+//   Ein Spieler ist zwei Monate verletzt. Der Buchmacher führt ihn nicht, also
+//   verschwindet er aus den Beobachtungen. Ohne Gedächtnis wäre er nach seinem
+//   Comeback wieder unbekannt und müsste ZWEI Spieltage lang neu aufgelöst
+//   werden — ausgerechnet der zurückkehrende Star ist dann nicht tippbar.
+//
+// Mit Gedächtnis behält er seine Zuordnung über die ganze Verletzung und ist am
+// ersten Tag zurück wieder wählbar. Widerspricht eine neue Beobachtung (er ist
+// gewechselt), wird die alte Zuordnung verworfen — Sicherheit geht vor Komfort.
 //
 // Rückgabe:
 //   zuordnung — { Spieler: Verein } für alles Eindeutige
 //   offen     — [{ spieler, moeglich: [Verein, …] }] für den Rest, damit
 //               sichtbar ist, WORAN es noch fehlt (meist: nur ein Spiel gesehen)
-export function zuordne(beobachtungen = []) {
+export function zuordne(beobachtungen = [], vorher = {}) {
   const kandidaten = new Map();   // Spieler → Set möglicher Vereine
   for (const b of beobachtungen) {
     if (!b?.home || !b?.away) continue;
@@ -65,11 +90,37 @@ export function zuordne(beobachtungen = []) {
   const zuordnung = {};
   const offen = [];
   for (const [spieler, vereine] of [...kandidaten].sort((a, b) => a[0].localeCompare(b[0]))) {
-    if (vereine.size === 1) zuordnung[spieler] = [...vereine][0];
+    if (vereine.size === 1) { zuordnung[spieler] = [...vereine][0]; continue; }
+    // Noch nicht eindeutig — aber vielleicht wissen wir es schon von früher.
+    // Übernommen wird die alte Zuordnung nur, wenn sie zu dem passt, was wir
+    // GERADE sehen. Ist sie nicht mehr unter den Kandidaten, ist der Spieler
+    // gewechselt und die alte Antwort wäre falsch.
+    const alt = vorher[spieler];
+    if (alt && vereine.has(alt)) zuordnung[spieler] = alt;
     else offen.push({ spieler, moeglich: [...vereine].sort() });
   }
-  return { zuordnung, offen };
+
+  // Wer gerade GAR NICHT beobachtet wurde (verletzt, gesperrt, nicht im Kader),
+  // behält seine Zuordnung. Genau das macht das Comeback nahtlos.
+  for (const [spieler, verein] of Object.entries(vorher)) {
+    if (!kandidaten.has(spieler)) zuordnung[spieler] = verein;
+  }
+
+  // Handarbeit schlägt alles — aber nur hier, an einer benannten Stelle.
+  for (const [spieler, verein] of Object.entries(UEBERSTEUERT)) {
+    zuordnung[spieler] = verein;
+  }
+  return { zuordnung, offen: offen.filter((o) => !(o.spieler in UEBERSTEUERT)) };
 }
+
+// ── Die Notbremse ───────────────────────────────────────────
+// Für die Fälle, die das Verfahren nicht lösen KANN: zwei Spieler mit
+// identischem Namen in verschiedenen Vereinen. Bewusst eine winzige, von Hand
+// gepflegte Liste — wächst sie über eine Handvoll Einträge, stimmt etwas
+// anderes nicht, und dann gehört das untersucht statt zugepflastert.
+export const UEBERSTEUERT = {
+  // "Vorname Nachname": "Vereinsname aus unserem Katalog",
+};
 
 // Beobachtungen zusammenführen und dabei alte begrenzen. Ohne Obergrenze
 // wüchse die Datei über eine Saison ins Unbrauchbare; mit ihr bleibt die

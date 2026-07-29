@@ -4,9 +4,9 @@
 //  ERZEUGTE DATEI — nicht von Hand bearbeiten.
 //  Wächst mit:  npm run odds:holen -- mls --schuetzen
 //
-//  Stand:       2026-07-29T08:08:57.258Z
-//  Beobachtete Spiele: 15
-//  Zugeordnet:  0 von 491 Spielern (0 %)
+//  Stand:       2026-07-29T13:09:07.881Z
+//  Beobachtete Spiele: 16
+//  Zugeordnet:  0 von 494 Spielern (0 %)
 //
 //  Es gibt KEINE Kaderquelle. Die Quoten sind der Kader: ein Buchmacher
 //  bepreist keinen Verletzten. Der Verein steckt in der Schnittmenge —
@@ -19,6 +19,50 @@
 export const ZUORDNUNG = {};
 
 export const BEOBACHTUNGEN = [
+ {
+  "home": "Portland Timbers",
+  "away": "Seattle Sounders FC",
+  "kickoff": "2026-08-02T02:30:00Z",
+  "spieler": [
+   "Kevin Kelsy",
+   "Felipe Mora",
+   "Danny Musovski",
+   "Osaze De Rosario",
+   "Kristoffer Velde",
+   "Albert Rusnák",
+   "Ariel Lassiter",
+   "Paul Rothrock",
+   "Jesús Ferreira",
+   "David Costa",
+   "Antony Alves Santos",
+   "Paul Arriola",
+   "Snyder Brunell",
+   "Jimer Fory",
+   "Hassani Dotson",
+   "Brandon Bye",
+   "Kalani Kossarienzi",
+   "Diego Chará",
+   "Jackson Ragen",
+   "Kamal Miller",
+   "Finn Surman",
+   "Nouhou Tolo",
+   "Stuart Hawkins",
+   "Alex Bonetig",
+   "Antino Lopez",
+   "Zac McGraw",
+   "Sawyer Jura",
+   "Ian Smith",
+   "Sebastian Gomez",
+   "Eric Miller",
+   "Joao Ortiz",
+   "Yéimar Gómez",
+   "Gage Guerra",
+   "Alex Roldan",
+   "Juan Mosquera",
+   "Cristian Roldan",
+   "Pedro de la Vega"
+  ]
+ },
  {
   "home": "New York City FC",
   "away": "Toronto FC",
@@ -37,11 +81,11 @@ export const BEOBACHTUNGEN = [
    "Jonathan Osorio",
    "Tayvon Gray",
    "Kai Trewin",
-   "Alonso Coello",
    "Richie Laryea",
+   "Alonso Coello",
    "Walker Zimmerman",
-   "James Sands",
    "Thiago Martins",
+   "James Sands",
    "Kobe Franklin",
    "Nico Cavallo",
    "Zane Monlouis",
@@ -53,7 +97,9 @@ export const BEOBACHTUNGEN = [
    "Kevin O'Toole",
    "Alonso Martínez",
    "Nicolás Fernández",
-   "Raul Gustavo"
+   "Raul Gustavo",
+   "Jules-Anthony Vilsaint",
+   "No Scorer"
   ]
  },
  {
@@ -64,8 +110,8 @@ export const BEOBACHTUNGEN = [
    "Milan Iloski",
    "Bruno Damiani",
    "Emmanuel Latte Lath",
-   "Quinn Sullivan",
    "Cavan Sullivan",
+   "Quinn Sullivan",
    "Indiana Vassilev",
    "Aleksei Miranchuk",
    "Miguel Almirón",
@@ -94,7 +140,8 @@ export const BEOBACHTUNGEN = [
    "Finn Sundstrom",
    "Adrian Gill",
    "Alejandro Bedoya",
-   "Cayman Togashi"
+   "Cayman Togashi",
+   "No Scorer"
   ]
  },
  {
@@ -109,8 +156,8 @@ export const BEOBACHTUNGEN = [
    "Griffin Yow",
    "Noah Streit",
    "Peyton Miller",
-   "Alhassan Yusuf",
    "Fabian Herbers",
+   "Alhassan Yusuf",
    "Victor Loturi",
    "Jackson Yueill",
    "Brayan Vera",
@@ -130,7 +177,8 @@ export const BEOBACHTUNGEN = [
    "Allan Oyirwoth",
    "Damario Mcintosh",
    "Eric Klein",
-   "Prince Osei Owusu"
+   "Prince Osei Owusu",
+   "No Scorer"
   ]
  },
  {
@@ -174,7 +222,8 @@ export const BEOBACHTUNGEN = [
    "Maximiliano Falcón",
    "Tadeo Allende",
    "David Ayala",
-   "André Gomes"
+   "André Gomes",
+   "No Scorer"
   ]
  },
  {
@@ -191,8 +240,8 @@ export const BEOBACHTUNGEN = [
    "Ahmed Qasem",
    "Jared Stroud",
    "Jordan Knight",
-   "Hosei Kijima",
    "Alex Muyl",
+   "Hosei Kijima",
    "Bryan Acosta",
    "Matti Peltola",
    "Matthew Corcoran",
@@ -215,7 +264,8 @@ export const BEOBACHTUNGEN = [
    "Charles-Emile Brunet",
    "Warren Madrigal",
    "Cristian Espinoza",
-   "Conner Antley"
+   "Conner Antley",
+   "No Scorer"
   ]
  },
  {
@@ -255,7 +305,8 @@ export const BEOBACHTUNGEN = [
    "Max Floriani",
    "Vítor Costa de Brito",
    "Andrei Chirila",
-   "Edwyn Mendoza"
+   "Edwyn Mendoza",
+   "No Scorer"
   ]
  },
  {
@@ -288,7 +339,8 @@ export const BEOBACHTUNGEN = [
    "Kenny Nielsen",
    "Johnny Selemani",
    "Sam Adekugbe",
-   "Sergi Palencia"
+   "Sergi Palencia",
+   "No Scorer"
   ]
  },
  {
@@ -328,7 +380,8 @@ export const BEOBACHTUNGEN = [
    "Wilder Cartagena",
    "Tim Parker",
    "Dennis Gjengaar",
-   "Joran Gerbet"
+   "Joran Gerbet",
+   "No Scorer"
   ]
  },
  {
@@ -364,7 +417,8 @@ export const BEOBACHTUNGEN = [
    "Andrew Privett",
    "Nathan Byrne",
    "Kerwin Vargas",
-   "Mbekezeli Mbokazi"
+   "Mbekezeli Mbokazi",
+   "No Scorer"
   ]
  },
  {
@@ -401,7 +455,8 @@ export const BEOBACHTUNGEN = [
    "Franco Negri",
    "Justin Reynolds",
    "Nelson Quiñones",
-   "Antônio Carlos"
+   "Antônio Carlos",
+   "No Scorer"
   ]
  },
  {
@@ -442,7 +497,8 @@ export const BEOBACHTUNGEN = [
    "Michael Boxall",
    "Anders Dreyer",
    "Christopher McVey",
-   "Nicolás Romero"
+   "Nicolás Romero",
+   "No Scorer"
   ]
  },
  {
@@ -460,8 +516,8 @@ export const BEOBACHTUNGEN = [
    "Zach Booth",
    "Conrad Wallem",
    "Stijn Spierings",
-   "Daniel Edelman",
    "Chris Durkin",
+   "Daniel Edelman",
    "Tomas Totland",
    "Juan Manuel Sanabria",
    "Noel Caliskan",
@@ -477,8 +533,8 @@ export const BEOBACHTUNGEN = [
    "MyKhi Joyner",
    "Miguel Perez",
    "Dominik Marczuk",
-   "Mamadou Fall",
    "Pablo Ruiz",
+   "Mamadou Fall",
    "Alexandros Katranis",
    "Griffin Dillon",
    "Kyle Hiebert",
@@ -489,7 +545,8 @@ export const BEOBACHTUNGEN = [
    "Luca Moisa",
    "Brendan McSorley",
    "Omar Marquez",
-   "Chukwuemeka Eneli"
+   "Chukwuemeka Eneli",
+   "No Scorer"
   ]
  },
  {
@@ -526,7 +583,8 @@ export const BEOBACHTUNGEN = [
    "Zan Kolmanic",
    "CJ Fodrey",
    "Jackson Travis",
-   "Micah Burton"
+   "Micah Burton",
+   "No Scorer"
   ]
  },
  {
@@ -536,8 +594,8 @@ export const BEOBACHTUNGEN = [
   "spieler": [
    "Petar Musa",
    "Joseph Paintsil",
-   "Logan Farrington",
    "Marco Reus",
+   "Logan Farrington",
    "Anderson Julio",
    "Patrickson Delgado",
    "Bernard Kamungo",
@@ -550,8 +608,8 @@ export const BEOBACHTUNGEN = [
    "Shaq Moore",
    "Nolan Norris",
    "Jakob Glesnes",
-   "Carlos Garcés",
    "Miki Yamane",
+   "Carlos Garcés",
    "Osaze Urhoghide",
    "John Nelson",
    "Sebastien Ibeagha",
@@ -568,13 +626,14 @@ export const BEOBACHTUNGEN = [
    "Joshua Torquato",
    "Isaiah Parente",
    "Ramiro",
-   "Erik Thommy"
+   "Erik Thommy",
+   "No Scorer"
   ]
  },
  {
   "home": "Portland Timbers",
   "away": "Seattle Sounders FC",
-  "kickoff": "2026-08-02T02:30:00Z",
+  "kickoff": "2026-08-02T02:45:00Z",
   "spieler": [
    "Kevin Kelsy",
    "Felipe Mora",
@@ -612,7 +671,9 @@ export const BEOBACHTUNGEN = [
    "Alex Roldan",
    "Juan Mosquera",
    "Cristian Roldan",
-   "Pedro de la Vega"
+   "Pedro de la Vega",
+   "No Scorer",
+   "Kim Kee-Hee"
   ]
  }
 ];

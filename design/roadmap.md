@@ -246,6 +246,51 @@ Quoten da sind. Letzteres kollidiert mit „ab Anpfiff ist eingefroren" bzw. mit
 dem Grundsatz, dass ein abgegebener Tipp seinen Wert nicht mehr ändert.
 **Entwurfsentscheidung, keine Fleißarbeit.**
 
+### 🧩 VORGEHEN: Torschützen-Kader ohne Kaderquelle — was wann schiefgehen kann
+
+Festgehalten, BEVOR es im Betrieb auffällt. Die Vereinszuordnung entsteht aus
+der Schnittmenge mehrerer Spiele (`kader.js`); hier steht, wo das an Grenzen
+stößt und was jeweils zu tun ist.
+
+**Die Eigenschaft, auf der alles ruht:** ein Spieler taucht nur in Spielen
+SEINES Vereins auf, der Verein steht also in jedem beobachteten Paar und damit
+immer in der Schnittmenge. **Bleibt einer übrig, ist es zwangsläufig der
+richtige — das Verfahren kann sich nicht vertun, nur unentschieden bleiben.**
+Ein falsch zugeordneter Spieler wäre der teure Fehler (auffallen würde er erst
+bei der Abrechnung, und dann hat jemand auf ihn getippt); ein unentschiedener
+kostet nur Komfort. Ein Test hält die Eigenschaft fest.
+
+| Fall | Was passiert | Vorgehen |
+|---|---|---|
+| **Verletzt, Comeback in 2 Monaten** | Der Buchmacher führt ihn nicht, er fällt aus den Beobachtungen | ✅ **Gelöst.** Die Zuordnung hat ein GEDÄCHTNIS: wer gerade nicht gelistet ist, behält seinen Verein und ist am ersten Tag zurück sofort wieder tippbar |
+| **Transfer** | Die Schnittmenge widerspricht dem Gedächtnis | ✅ Alte Zuordnung wird VERWORFEN, nach dem 2. Spiel beim neuen Klub steht sie wieder. Kurz unentschieden statt dauerhaft falsch |
+| **Neuzugang / Debütant** | Nie zuvor gesehen | Braucht zwei Spiele. Nicht abkürzbar ohne externe Quelle — in `proSpiel` trotzdem tippbar |
+| **Zwei Spieler, gleicher Name** | Schnittmenge leert sich, Zuordnung springt | ⚠️ Die EINZIGE Konstellation, die das Verfahren nicht lösen kann → Eintrag in `UEBERSTEUERT` (`kader.js`). Wächst die Liste über eine Handvoll, stimmt etwas anderes nicht |
+| **1. Spieltag der Saison** | Jeder Klub hat genau EIN Spiel → null Schnittmengen | ✅ **Gelöst** über Beobachtungs-Wettbewerbe (siehe unten) |
+
+**⚠️ Das Startproblem und seine Lösung.** Am 1. Spieltag hätte jeder Klub genau
+eine Beobachtung — es wäre also **kein einziger Spieler zugeordnet**, und
+ausgerechnet zum Launch ginge der Torschützen-Tipp je Mannschaft nicht. Deshalb
+zieht der Abruf zusätzlich aus Wettbewerben, die wir gar nicht anbieten:
+**der DFB-Pokal läuft ab dem 21.08., die Bundesliga startet am 28.08.** Die
+Pokal-Runde liefert die erste Beobachtung, der 1. Spieltag die zweite — zum
+Launch steht die Zuordnung. Dass die Pokal-Gegner Drittligisten sind, stört
+nicht: für die Schnittmenge zählt nur der eigene Verein.
+
+**Was zu tun ist (Betrieb):**
+1. **Ab sofort wöchentlich** `npm run odds:holen -- <liga> --schuetzen` laufen
+   lassen. Die Datei `src/lib/kader/<liga>.js` wächst mit; der Lauf sagt im
+   Klartext, wie viele Spieler zugeordnet sind.
+2. **Vor dem Launch prüfen**, dass die Quote hoch genug ist. Ist sie es nicht,
+   ist das kein Blocker — der Modus `proSpiel` braucht die Zuordnung nicht.
+3. **Nach jedem Transferfenster** ist eine kurze Delle normal; sie schließt
+   sich nach zwei Spieltagen von selbst.
+
+⚠️ **Offen:** die abgeleiteten Kader stecken noch NICHT in `snapshot.players` —
+die echten Torschützen-Quoten kommen also noch nicht in der Wertung an. Das ist
+der nächste Schritt und der letzte, der zwischen uns und echten Torschützen
+steht.
+
 ### Balance: EIN Durchgang am Ende statt Feinjustierung nebenbei — ENTSCHIEDEN (Nutzer)
 **Arbeitsweise ab jetzt.** Beim Bauen einer neuen Mechanik gibt es nur einen
 SCHNELLTEST: „gewinnt der Kenner strukturell noch?" — ja/nein, keine Zahlen-

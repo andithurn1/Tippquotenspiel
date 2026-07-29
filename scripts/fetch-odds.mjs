@@ -35,12 +35,25 @@ const WURZEL = resolve(HIER, "..");
 const ZIEL = resolve(WURZEL, "src/lib/quoten");
 const KADER = resolve(WURZEL, "src/lib/kader");
 
+// `beobachtung` sind Wettbewerbe, die wir NICHT anbieten, aus denen wir aber
+// Kader-Beobachtungen ziehen. Der Grund ist ein Startproblem, das sonst genau
+// zum Launch aufflöge:
+//
+//   Die Vereinszuordnung braucht ZWEI Spiele je Klub. Am 1. Spieltag hat jeder
+//   Klub genau eines — es wäre also kein einziger Spieler zugeordnet, und
+//   ausgerechnet zum Start ginge der Torschützen-Tipp je Mannschaft nicht.
+//
+// Der DFB-Pokal läuft ab dem 21.08., die Bundesliga startet am 28.08. Die erste
+// Runde liefert damit die erste Beobachtung, der 1. Spieltag die zweite — und
+// zum Launch steht die Zuordnung. Dass die Pokal-Gegner Drittligisten sind,
+// stört nicht: für die Schnittmenge zählt nur, dass der eigene Verein in beiden
+// Paaren vorkommt.
 const LIGEN = {
-  bl: { label: "Bundesliga", sport: "soccer_germany_bundesliga" },
-  pl: { label: "Premier League", sport: "soccer_epl" },
-  pd: { label: "La Liga", sport: "soccer_spain_la_liga" },
-  sa: { label: "Serie A", sport: "soccer_italy_serie_a" },
-  mls: { label: "MLS", sport: "soccer_usa_mls" },
+  bl: { label: "Bundesliga", sport: "soccer_germany_bundesliga", beobachtung: ["soccer_germany_dfb_pokal"] },
+  pl: { label: "Premier League", sport: "soccer_epl", beobachtung: ["soccer_england_efl_cup", "soccer_fa_cup"] },
+  pd: { label: "La Liga", sport: "soccer_spain_la_liga", beobachtung: [] },
+  sa: { label: "Serie A", sport: "soccer_italy_serie_a", beobachtung: [] },
+  mls: { label: "MLS", sport: "soccer_usa_mls", beobachtung: ["soccer_concacaf_leagues_cup"] },
 };
 
 // Der Schlüssel steht in `.env.local` (nicht im Repo) oder in der Umgebung.
@@ -257,7 +270,7 @@ async function holeQuoten(key, kurz, liga, { raster = false, schuetzen = false }
     "export default ",
   ].join("\n");
   writeFileSync(pfad, kopf + JSON.stringify(spiele, null, 1) + ";\n", "utf8");
-  await schreibeKader(kurz, liga, spiele);
+  await schreibeKader(kurz, liga, spiele, key, schuetzen);
   console.log(`\n── ${liga.label} (${kurz}) ── ${spiele.length} Spiele → ${pfad}`);
   console.log(`   ${rest} Credits übrig`);
   return { kurz, ok: true, anzahl: spiele.length };
@@ -269,24 +282,55 @@ async function holeQuoten(key, kurz, liga, { raster = false, schuetzen = false }
 // werden, denn ein einzelner Abruf zeigt jeden Verein meist nur einmal.
 // (Gemessen: 15 MLS-Spiele = 30 Klub-Auftritte bei 30 Vereinen, also null
 // Schnittmengen. Erst der Abruf der nächsten Runde löst auf.)
-async function schreibeKader(kurz, liga, spiele) {
+async function schreibeKader(kurz, liga, spiele, key, mitBeobachtung = false) {
   const neu = spiele.filter((s) => s.torschuetzen).map((s) => ({
     home: s.home, away: s.away, kickoff: s.kickoff,
     spieler: Object.keys(s.torschuetzen),
   }));
+
+  // Zusätzliche Beobachtungen aus Wettbewerben, die wir nicht anbieten
+  // (Pokal). Sie landen NUR im Kader, nie in den Quoten-Dateien — getippt wird
+  // darauf nicht.
+  if (mitBeobachtung) {
+    for (const sport of liga.beobachtung ?? []) {
+      try {
+        const { daten } = await hole(`https://api.the-odds-api.com/v4/sports/${sport}/events?apiKey=${key}`);
+        if (!Array.isArray(daten)) continue;
+        let gefunden = 0;
+        for (const e of daten) {
+          const s = await holeTorschuetzen(key, { sport }, e.id);
+          if (!s) continue;
+          neu.push({
+            home: ausApiName(kurz, e.home_team), away: ausApiName(kurz, e.away_team),
+            kickoff: e.commence_time, spieler: Object.keys(s),
+          });
+          gefunden++;
+        }
+        if (gefunden) console.log(`   + ${gefunden} Beobachtungen aus ${sport}`);
+      } catch { /* ein fehlender Nebenwettbewerb ist kein Grund abzubrechen */ }
+    }
+  }
+
   if (!neu.length) return;
 
   const pfad = resolve(KADER, `${kurz}.js`);
-  let alt = [];
+  let alt = []; let vorher = {};
   if (existsSync(pfad)) {
     try {
       const m = await import(pathToFileURL(pfad).href + `?t=${Date.now()}`);
       alt = m.BEOBACHTUNGEN ?? [];
+      // ⚠️ Die bisherige Zuordnung MUSS mit hinein. Beobachtungen werden
+      // gedeckelt; ein zwei Monate verletzter Spieler fiele sonst aus den Daten
+      // und wäre nach seinem Comeback wieder unbekannt — ausgerechnet der
+      // zurückkehrende Stürmer nicht tippbar.
+      vorher = m.ZUORDNUNG ?? {};
     } catch { /* kaputte Altdatei: dann eben von vorn */ }
   }
   const alle = verschmelze(alt, neu);
-  const erg = zuordne(alle);
+  const erg = zuordne(alle, vorher);
   const f = fortschritt(erg);
+  const behalten = Object.keys(erg.zuordnung).filter((s) => vorher[s] && !alle.some(
+    (b) => (b.spieler ?? []).includes(s))).length;
 
   mkdirSync(KADER, { recursive: true });
   const kopf = [
@@ -315,6 +359,10 @@ async function schreibeKader(kurz, liga, spiele) {
   ].join("\n");
   writeFileSync(pfad, kopf, "utf8");
   console.log(`   Kader: ${f.zugeordnet}/${f.gesamt} Spieler zugeordnet (${Math.round(f.anteil * 100)} %) aus ${alle.length} Spielen`);
+  if (behalten) {
+    console.log(`      davon ${behalten} aus dem Gedächtnis — gerade nicht im Markt`);
+    console.log("        (verletzt, gesperrt, nicht im Kader). Sie bleiben tippbar.");
+  }
   if (f.zugeordnet === 0 && alle.length) {
     console.log("      → Noch keine Schnittmenge. Jeder Verein kam bisher nur einmal vor;");
     console.log("        der Abruf der NÄCHSTEN Spielrunde löst das auf.");
