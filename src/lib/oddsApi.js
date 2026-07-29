@@ -20,7 +20,45 @@
 //  API-Schlüssel nie ins Frontend gerät.
 // ============================================================
 
-import { buildSnapshot } from "./oddsGenerator";
+import { buildSnapshot, dixonColes } from "./oddsGenerator";
+
+// ── Niedrig-Ergebnis-Korrektur für ECHTE Quoten ─────────────
+// Warum sie hier eingeschaltet ist und im Generator nicht: hereinkommende
+// Marktquoten sind eine harte Vorgabe, die das Modell treffen MUSS. Fehlen ihm
+// Remis, verschafft es sie sich über den Torschnitt — gemessen an elf echten
+// Bundesliga-Spielen ergab das 2,43 erwartete Tore bei ausgeglichenen und 4,14
+// bei einseitigen Partien. Beides ist unrealistisch, und beides verbiegt das
+// Exakt-Raster, von dem die Nähe-Wertung lebt.
+//
+// ⚠️ STEHT AUF 0 — und das ist eine Korrektur einer eigenen Fehlmessung.
+//
+// Der Weg dorthin, weil die Lehre mehr wert ist als der Wert: Der Fit aus 1X2
+// allein liefert Torschnitte zwischen 2,43 (ausgeglichene Spiele) und 4,14
+// (Bayern gegen Stuttgart). Das sah nach einem Modellfehler aus, und ich habe
+// ρ so kalibriert, dass der MITTELWERT den langjährigen Bundesliga-Torschnitt
+// (~3,1) trifft — bei ρ = −0,06.
+//
+// Dann kam die Gegenprobe an der ECHTEN Über/Unter-Linie des Marktes, und die
+// hat die Annahme umgeworfen: Bayern–Stuttgart hat einen Markt-Torschnitt von
+// **4,07**. Der unkorrigierte Fit lag mit 4,14 also praktisch richtig, und die
+// Kalibrierung auf 3,1 hätte ihn auf 4,44 verschlechtert. Falsch war nicht das
+// Modell, falsch war mein Anker: ein LIGA-Mittelwert sagt nichts über ein
+// EINZELNES Spiel.
+//
+// Der echte, verbleibende Fehler liegt woanders und ist kleiner: bei
+// ausgeglichenen Spielen fittet das Modell im Schnitt 0,3 Tore ZU NIEDRIG
+// (2,43 gegen 2,90 laut Markt), bei einseitigen trifft es (+0,07 / +0,04).
+//
+// **Die Lösung ist nicht, ρ besser zu raten, sondern den Torschnitt gar nicht
+// mehr zu schätzen:** die API liefert `totals` (Über/Unter) von elf
+// Buchmachern. Damit ist λ_gesamt eine MESSUNG statt einer Annahme, und ρ
+// bleibt nur noch für das Feintuning der Remis-Quote übrig. Das ist der
+// nächste Schritt, siehe `design/roadmap.md`.
+//
+// Die Mechanik unten bleibt deshalb stehen und ist getestet — sie wird
+// gebraucht, sobald der Torschnitt aus dem Markt kommt. Bis dahin ist sie AUS,
+// weil ein geratener Wert schlechter ist als keiner.
+export const RHO = 0;
 
 // ── 1) Marge herausrechnen ──────────────────────────────────
 // Buchmacher-Quoten ergeben in Summe >100 % („overround"/Vig). Für eine
@@ -40,12 +78,12 @@ function poissonPmf(lambda, k) {
 }
 
 // Welche 1X2-Wahrscheinlichkeiten ergäben sich aus diesen Tor-Erwartungen?
-export function outcomeProbs(lamH, lamA, tail = 12) {
+export function outcomeProbs(lamH, lamA, tail = 12, rho = 0) {
   let pH = 0, pD = 0, pA = 0;
   for (let h = 0; h < tail; h++) {
     const ph = poissonPmf(lamH, h);
     for (let a = 0; a < tail; a++) {
-      const p = ph * poissonPmf(lamA, a);
+      const p = ph * poissonPmf(lamA, a) * dixonColes(h, a, lamH, lamA, rho);
       if (h > a) pH += p; else if (h < a) pA += p; else pD += p;
     }
   }
@@ -55,10 +93,10 @@ export function outcomeProbs(lamH, lamA, tail = 12) {
 // Sucht das Paar (lamH, lamA), dessen 1X2-Verteilung am besten zu den
 // gemessenen Wahrscheinlichkeiten passt. Zweistufig: erst grob, dann fein um
 // den besten Treffer herum — schnell genug für Hunderte Spiele.
-export function fitLambdas(probs, { min = 0.15, max = 4.0 } = {}) {
+export function fitLambdas(probs, { min = 0.15, max = 4.0, rho = 0 } = {}) {
   if (!probs) return null;
   const fehler = (lh, la) => {
-    const p = outcomeProbs(lh, la);
+    const p = outcomeProbs(lh, la, 12, rho);
     return (p.home - probs.home) ** 2 + (p.draw - probs.draw) ** 2 + (p.away - probs.away) ** 2;
   };
   const suche = (loH, hiH, loA, hiA, schritt) => {
@@ -90,7 +128,7 @@ export function snapshotFromOdds({
 }) {
   const probs = impliedProbabilities(odds || {});
   if (!probs) return null;
-  const fit = fitLambdas(probs);
+  const fit = fitLambdas(probs, { rho: RHO });
   if (!fit) return null;
 
   const snap = buildSnapshot({
@@ -100,6 +138,10 @@ export function snapshotFromOdds({
     // Quoten im selben Preisniveau wie die echten.
     overround: Math.max(1.0, probs.overround),
     cap,
+    // Fit und Raster MÜSSEN dasselbe Modell benutzen. Mit unterschiedlichem
+    // `rho` gäbe das Raster die Marktquoten nicht mehr her, aus denen es
+    // geschätzt wurde — ein stiller Widerspruch mitten in der Wertung.
+    rho: RHO,
   });
 
   // Die ECHTEN 1X2-Quoten gewinnen — sie sind Marktpreis, keine Schätzung.

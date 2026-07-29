@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   impliedProbabilities, outcomeProbs, fitLambdas, snapshotFromOdds,
-  parseTheOddsApiEvent, snapshotsFromTheOddsApi,
+  parseTheOddsApiEvent, snapshotsFromTheOddsApi, RHO,
 } from "@/lib/oddsApi";
+import { dixonColes } from "@/lib/oddsGenerator";
 import { scoreTip, DEFAULT_RULES } from "@/lib/engine";
 
 // Typische Bundesliga-Quoten: klarer Favorit zuhause.
@@ -140,5 +141,42 @@ describe("The-Odds-API-Format", () => {
     expect(res).toHaveLength(2); // das kaputte Event fliegt raus
     expect(res[0].snapshot.quelle).toBe("api");
     expect(res[0].snapshot.players.home).toBeDefined();
+  });
+});
+
+// ── Niedrig-Ergebnis-Korrektur (Dixon–Coles) ────────────────
+// Steht bereit, ist aber AUS (RHO = 0), bis der Torschnitt aus dem
+// `totals`-Markt kommt statt aus einer Annahme. Die Tests sichern beides:
+// dass sie nichts tut, solange sie aus ist, und dass sie richtig herum wirkt.
+describe("dixonColes", () => {
+  it("ist ohne rho exakt neutral — die erzeugten Ligen bleiben unberührt", () => {
+    for (let h = 0; h < 4; h++) for (let a = 0; a < 4; a++) {
+      expect(dixonColes(h, a, 1.5, 1.2, 0)).toBe(1);
+    }
+  });
+
+  it("hebt 0:0 und 1:1, senkt 1:0 und 0:1 — und nur diese vier", () => {
+    const rho = -0.1;
+    expect(dixonColes(0, 0, 1.5, 1.2, rho)).toBeGreaterThan(1);
+    expect(dixonColes(1, 1, 1.5, 1.2, rho)).toBeGreaterThan(1);
+    expect(dixonColes(1, 0, 1.5, 1.2, rho)).toBeLessThan(1);
+    expect(dixonColes(0, 1, 1.5, 1.2, rho)).toBeLessThan(1);
+    expect(dixonColes(2, 1, 1.5, 1.2, rho)).toBe(1);
+    expect(dixonColes(3, 3, 1.5, 1.2, rho)).toBe(1);
+  });
+
+  it("mehr Remis bei negativem rho — die Richtung, um die es geht", () => {
+    const ohne = outcomeProbs(1.5, 1.3, 12, 0);
+    const mit = outcomeProbs(1.5, 1.3, 12, -0.1);
+    expect(mit.draw).toBeGreaterThan(ohne.draw);
+  });
+
+  it("RHO steht auf 0 — ein geratener Wert wäre schlechter als keiner", () => {
+    // Wird bewusst festgehalten: die Kalibrierung auf den Liga-Torschnitt war
+    // widerlegt (die Über/Unter-Linie des Marktes sagt für Bayern–Stuttgart
+    // 4,07 Tore, nicht 3,1). Wer RHO ändert, muss vorher gegen `totals` messen.
+    expect(RHO).toBe(0);
+    expect(fitLambdas(impliedProbabilities(FAVORIT), { rho: RHO }))
+      .toEqual(fitLambdas(impliedProbabilities(FAVORIT)));
   });
 });

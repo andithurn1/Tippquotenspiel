@@ -140,6 +140,90 @@ simulierte Quoten-Verteilung vermessen und sollte gegen die echte einmal
 nachgeprüft werden (`npm run balance`).
 
 
+### 🔬 Quoten-Modell gegen den echten Markt vermessen (2026-07-29)
+
+Die Frage war: **wie sauber entstehen die Quoten für „nah ans Ergebnis"?**
+Antwort in Kurzform: die Kette ist korrekt und in sich stimmig, das MODELL ist
+gut, aber nicht exakt — und es gibt einen deutlich besseren Weg, den die API
+schon hergibt.
+
+**Die Kette** (echte Quoten): 1X2 → Marge herausrechnen → Tor-Erwartungen
+schätzen (`fitLambdas`) → volles Poisson-Raster (`buildSnapshot`) →
+`scoreResult` liest `correctScore[reales Ergebnis]` × `exp(−k · Abstand)`.
+Der Fit reproduziert die Marktquoten auf **0,03–0,10 Prozentpunkte** — an der
+Stelle ist nichts faul.
+
+**⚠️ Eine eigene Fehlmessung, dokumentiert, weil die Lehre zählt.** Die
+gefitteten Torschnitte streuten von 2,43 (ausgeglichene Spiele) bis 4,14
+(Bayern–Stuttgart). Das sah nach Modellfehler aus, und ich habe eine
+Dixon–Coles-Korrektur so kalibriert, dass der MITTELWERT den langjährigen
+Bundesliga-Torschnitt (~3,1) trifft. Die Gegenprobe an der echten
+**Über/Unter-Linie** hat das umgeworfen: der Markt erwartet für Bayern–Stuttgart
+**4,07** Tore. Der unkorrigierte Fit lag richtig, meine Kalibrierung hätte ihn
+auf 4,44 verschlechtert. **Ein Liga-Mittelwert sagt nichts über ein einzelnes
+Spiel.** `RHO` steht deshalb auf 0; die Mechanik bleibt getestet stehen.
+
+**Der echte, kleinere Fehler:** bei ausgeglichenen Spielen fittet das Modell
+0,3 Tore zu niedrig (2,43 gegen 2,90 laut Markt), bei einseitigen trifft es
+(+0,07). Ursache ist die Unabhängigkeits-Annahme: bei realistischem Torschnitt
+liefert sie in ausgeglichenen Spielen 2–3,6 Prozentpunkte zu wenig Remis.
+
+**Direktvergleich mit dem echten `correct_score`-Markt** (66 Ergebnisse, US-
+Buchmacher, Overround **65 %** gegenüber 7,7 % bei 1X2 — Ergebnis-Wetten sind
+für den Buchmacher ein viel besseres Geschäft): auf dieselben 36 Zellen
+normiert weichen wir in Summe **10,9 Prozentpunkte** ab, die zehn
+wahrscheinlichsten Ergebnisse auf 0–15 %. Extremwerte 0,50 bis 1,36.
+
+**→ Nächster Schritt, klar belegt:** den Torschnitt nicht mehr schätzen,
+sondern aus `totals` lesen, und wo `correct_score` vorliegt, gleich das echte
+Raster nehmen. Details unten.
+
+### 📡 Was die Quoten-API wirklich hergibt (gemessen, nicht angenommen)
+
+Gemessen an Bayern–Stuttgart, einen Monat vor Anpfiff (Zahl = gelieferte
+Ausgänge). **Leere Antworten kosten keinen Credit**, nur gefüllte.
+
+| Markt | eu | us | **entspricht bei uns** |
+|---|---|---|---|
+| `h2h` (1X2) | 57 | 24 | `snap.winner` — schon in Benutzung |
+| `correct_score` | 0 | **66** | **`snap.correctScore`** — das Herz der Nähe-Wertung |
+| `alternate_spreads` | **102** | 8 | `snap.margin` (Tor-Abstand) |
+| `alternate_team_totals` | 0 | **40** | `snap.teamGoals` (Team-Tore-Nähe) |
+| `alternate_totals` | **133** | 37 | pinnt den Torschnitt exakt statt ihn zu schätzen |
+| `team_totals` | 0 | 8 | dito, gröber |
+| `halftime_fulltime` | 0 | 18 | — kein Markt bei uns |
+| `correct_score_h1` | 0 | 52 | — kein Markt bei uns |
+| `double_chance` / `draw_no_bet` | 6 / 0 | 6 / 6 | — in `winner` enthalten |
+| `corners_1x2` | 0 | 0 | — nicht angeboten |
+| **alle `player_*`** | **0** | **0** | ❌ Torschützen — siehe unten |
+
+**Das ist die eigentliche Nachricht: VIER unserer fünf Wertungs-Märkte gibt es
+echt.** Endstand, Sieger, Tor-Abstand und Team-Tore lassen sich direkt aus dem
+Markt füllen — das Poisson-Modell wäre dann nur noch Rückfall für das, was
+fehlt. Kosten: fünf Märkte × fünf Wettbewerbe = **25 Credits je Auffrischung**.
+
+Ecken gibt es für dieses Spiel nicht (`corners_1x2` leer, `totals_corners`
+existiert als Schlüssel nicht) — und sie hätten bei uns ohnehin keinen Markt.
+
+**US oder EU — spielt es eine Rolle? Nein.** Margenbereinigt weichen die beiden
+Regionen über neun Bundesliga-Spiele um **0,47 Prozentpunkte im Mittel** ab
+(Maximum 0,74). Das ist derselbe Markt. Sinnvoll ist trotzdem eine Mischung:
+`h2h`/`totals` aus **eu** (mehr Büros → robusterer Median), `correct_score`
+und Torschützen aus **us** (die einzige Region, die sie führt).
+
+**Torschützen:** laut Anbieter-Doku für genau unsere fünf Ligen unterstützt,
+aber „coverage is currently limited to US bookmakers". Abgefragt liefern sie
+einen Monat vor Anpfiff **0 Büros** — auch bei einem Spiel in 10 Stunden in
+einer anderen Liga. Da `correct_score` bei denselben US-Büchern schon jetzt
+Daten hat, ist die wahrscheinlichste Erklärung, dass Spieler-Wetten erst wenige
+Tage vor Anpfiff gestellt werden (sie hängen an der Aufstellung).
+**Nachprüfbar Ende August** — bis dahin bleiben Torschützen abgeleitet.
+
+⚠️ **Und selbst wenn sie kommen:** echte Torschützen-Quoten verlangen echte
+KADER. Die sind bewusst erfunden (`NAMENSPOOLS`), weil sie sich mit jedem
+Transferfenster ändern. Der Schritt ist also größer als ein Markt mehr im
+Abruf — das ist eine eigene Entscheidung, keine Fleißarbeit.
+
 ### Balance: EIN Durchgang am Ende statt Feinjustierung nebenbei — ENTSCHIEDEN (Nutzer)
 **Arbeitsweise ab jetzt.** Beim Bauen einer neuen Mechanik gibt es nur einen
 SCHNELLTEST: „gewinnt der Kenner strukturell noch?" — ja/nein, keine Zahlen-
