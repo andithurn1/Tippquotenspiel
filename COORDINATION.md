@@ -98,6 +98,83 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-30 · **Andi** → **Andre** — 🔴 **Zwei stille Lücken machten jeden Quoten-Abruf für 3 Ligen wirkungslos** + Grammatik-Ausbau
+
+`main` bei `69cf354`, **1074 Tests grün**, Build sauber, `npm run balance` ohne
+Befund — trotz echter Quoten in jetzt **fünf statt zwei** Ligen.
+
+#### Die Lücken (beide schlugen NICHT fehl, es passierte nur nichts)
+
+1. **`quoten/index.js` behauptete im Kopf, erzeugt zu werden — schrieb sie aber
+   niemand.** Wer `odds:holen -- pl` laufen ließ, bekam eine korrekte
+   `quoten/pl.js` und im Katalog trotzdem weiter erzeugte Quoten.
+2. **`premierLeagueData`, `laLigaData` und `serieAData` reichten `quoten` gar
+   nicht an `baueLiga` durch.** Nur `bundesligaData` und `mlsData` taten es.
+
+Ergebnis: **40 → 70 Spiele mit echten Marktquoten.** `quotenKatalog.test.js`
+hält jetzt für JEDE Liga fest, dass die Paarungen ankommen, die Snapshots als
+`api` markiert sind, ein geholter Torschnitt auch benutzt wird und die
+1X2-Quoten unterwegs unverändert bleiben. Ein bezahlter Abruf, der wirkungslos
+verpufft, ist die teuerste Sorte stiller Fehler.
+
+#### 🎯 Die Gegenprobe zur Raster-Korrektur ist da — und sie ist deutlich
+
+Die echte Über/Unter-Linie gab es beim Bauen von `longshotK` noch nicht. Jetzt
+schon (9 BL-Spiele, mittlerer absoluter Fehler im Torschnitt):
+
+| Verfahren | Fehler |
+|---|---|
+| naives Raster | 0,415 Tore |
+| **korrigiertes Raster** | **0,076 Tore** |
+| freier 1X2-Fit | 0,409 Tore |
+
+Bayern–Stuttgart: vorhergesagt 4,28, gemessen 4,29. Die Liga-Torschnitte sind
+für sich plausibel (BL 3,34 · PL 3,10 · La Liga 2,72 · Serie A 2,71) — die
+Rangfolge stimmt mit der Wirklichkeit überein.
+
+#### ⏱️ Eine Annahme des Nutzers stimmt nicht — und das ist entwurfsrelevant
+
+Der Nutzer ging davon aus, „die Quote gilt vor Anpfiff". **Der Code speichert
+den Snapshot MIT DEM TIPP** (`saveTip({ …, snapshot })`) — wer montags tippt,
+spielt mit Montagsquoten. Zwischen Öffnung und Anpfiff hat jeder Tipper seinen
+eigenen Preis. Das war nirgends festgehalten. Vorschlag in der Roadmap:
+`rules.quotenStand` (`oeffnung` | `abgabe` | `anpfiff`), Empfehlung `oeffnung`.
+
+⚠️ **Wirksam wird das erst mit dem Trigger aus dem RLS-Befund** — solange der
+Client den Snapshot mitschickt, ist jedes Modell nur eine Vereinbarung.
+
+#### Grammatik: fünfte Achse, Begrenzer, Elimination
+
+Steals/Blocks/Mitgewinner brauchen **zwei** Beteiligte, also
+`WANN → WER → ZIEL → WAS → WIE LANGE`. Kostet fast nichts:
+`waehleBetroffene()` wird zweimal aufgerufen.
+
+Dazu die Begrenzer (`maxProZiel`, `schutzfrist`, `aufteilung`,
+`mindestabstand`, `immunitaet`). **`aufteilung` ist der wichtigste und die
+Voreinstellung:** ohne ihn ist ein Steal quadratisch — bei fünf Angreifern
+verliert das Ziel fünffach, und der Führende hört auf zu spielen.
+**`mindestabstand` verhindert das Mobben nach unten**, damit die Mechanik immer
+nach OBEN zeigt.
+
+Elimination ist gebaut als Satz in der Grammatik. 🔴 Das entscheidende Feld ist
+`wasPassiertDanach` — in einer Community-Runde mit 5000 Leuten wirft ein
+Eliminationsmodus 4500 Nutzer raus, und die kommen nicht wieder. Empfehlung
+`trostliga`. Schließt den Aufhol-Bonus aus (gleiche Ausschluss-Gruppe).
+
+#### 💡 Zwei eigene Vorschläge, die dein Gebiet berühren
+
+Beide dienen dem Ziel „der Erste soll nicht davonziehen" und sind billig zu
+vermessen — **beide sind reine Multiplikation bzw. Auswahl auf FERTIGE
+Spieltagspunkte, `scoreTip` bleibt unberührt:**
+
+- **Spieltag-Gewichtung über die Saison** (flach · steigend · Endspurt). Der
+  eleganteste Hebel überhaupt: ein früher Vorsprung ist weniger wert, ohne dass
+  jemand einen Malus bekommt.
+- **Streichresultate** (die n schlechtesten Spieltage zählen nicht). Klassisch,
+  verzeiht Urlaub und Ausrutscher, wirkt ausgleichend ohne zu schenken.
+
+Beide gehören in `balanceSim` gemessen, bevor sie in ein Preset kommen.
+
 ### 2026-07-29 (Nacht) · **Andi** → **Andre** — 🧱 **REGEL-GRAMMATIK: Satzbau statt hundert Schalter** (Nutzer-Entwurf, groß)
 
 `main` grün, **1014 Tests**, Build sauber. Nur Doku + eine Zeile UI —

@@ -1594,6 +1594,194 @@ den Sieg entscheidet, in der Ampel genauso grün aus wie eine faire.
 6. Stufe-3-Baukasten mit Live-Vorschau, dann Stufe 2, dann Stufe 1.
 7. `wettlauf` zuletzt, wenn überhaupt.
 
+### ⏱️ WELCHE Quote gilt? — eine Annahme, die nicht stimmt (Befund, 2026-07-29)
+
+**Der Nutzer ging davon aus:** „die Quote gilt vor Anpfiff, egal was sie vorher
+jemals betragen hat." **Der Code macht etwas anderes.**
+
+`saveTip({ roundId, matchId, userId, tip, snapshot })` — der Snapshot wird MIT
+DEM TIPP gespeichert, also in dem Zustand, den er **im Moment der Abgabe**
+hatte. Wer am Montag tippt, spielt mit den Montagsquoten; wer am Freitag tippt,
+mit den Freitagsquoten. „Eingefroren ab Anpfiff" heißt nur, dass sich danach
+nichts mehr ändert — zwischen Öffnung und Anpfiff hat jeder Tipper **seinen
+eigenen Preis**.
+
+**Das ist eine Entwurfsentscheidung, keine Kleinigkeit**, und sie war bisher
+nirgends festgehalten. Drei Modelle sind vertretbar:
+
+| Modell | Wer profitiert | Kurzbeschreibung |
+|---|---|---|
+| `oeffnung` | niemand | „Ein Preis für alle, festgelegt beim Öffnen des Spieltags." |
+| **`abgabe`** (heute) | wer früh überzeugt ist | „Du sicherst dir die Quote, die du beim Tippen siehst." |
+| `anpfiff` | wer spät tippt | „Für alle gilt die letzte Quote vor Anpfiff." |
+
+- **`oeffnung`** ist das fairste im Sinne von „alle spielen dasselbe Spiel" und
+  passt zu `bigGameWert`, der genau so eingefroren wird. Zeitpunkt der Abgabe
+  ist dann völlig belanglos.
+- **`abgabe`** belohnt frühe Überzeugung wie beim echten Wetten — wer den
+  Außenseiter früh nimmt, bevor der Markt nachzieht, bekommt mehr. Reizvoll,
+  aber es belohnt auch schlicht das Zuschauen: wer wartet, weiß mehr.
+- **`anpfiff`** nimmt jeden Zeitvorteil, hat aber einen schweren Nachteil: man
+  weiß beim Tippen nicht, was der Tipp wert ist.
+
+**→ Vorschlag: `rules.quotenStand` mit `oeffnung` als Empfehlung**, `abgabe`
+als heutiges Verhalten erhalten. ⚠️ Das berührt die Torschützen-Frage weiter
+oben (echte Namen kommen erst 1–7 Tage vor Anpfiff): mit `oeffnung` löst sich
+die auf, weil alle denselben Stand sehen.
+
+⚠️ **Und es hängt an einem Sicherheitsbefund:** solange der Client den Snapshot
+selbst mitschickt (siehe „RLS-Durchgang", Punkt 1), ist JEDES dieser Modelle
+nur eine Vereinbarung, keine Regel. Erst ein Trigger, der den Snapshot
+serverseitig stempelt, macht die Einstellung wirksam.
+
+**Die Idee dahinter, die der Nutzer separat genannt hat — „in kleineren
+privaten Runden die Beeinflussung durch die Tippabgabe":** das wäre ein
+VIERTES Modell und ein echtes Feature, kein Schalter — ein Totalisator. Die
+Quote entsteht dann nicht (nur) aus dem Markt, sondern aus dem Tippverhalten
+der Runde: tippen alle den Favoriten, sinkt seine Auszahlung.
+- **Reizvoll**, weil es Herdenverhalten von selbst bestraft und damit genau das
+  Ziel „der Erste soll nicht davonziehen" bedient, ohne einen Modifikator.
+- ⚠️ **Bricht aber Architektur-Regel 4** („Anker immer auf der Quote des REALEN
+  Ergebnisses"): der Anker wäre nicht mehr der Markt, sondern die Gruppe. In
+  einer Runde mit sechs Leuten ist das extrem volatil — einer tippt anders und
+  die Quoten springen.
+- **Deshalb wirklich nur für kleine, private Runden** und mit einer MISCHUNG
+  (`markt × (1−a) + gruppe × a`), damit ein einzelner Tipp nicht alles kippt.
+  Eigener Entwurf, nicht nebenbei.
+
+### 🥷 Steals, Blocks und Mitgewinner — und warum sie eine fünfte Achse brauchen
+
+**Nutzer-Wunsch:** ein Admin soll Ereignisse einstellen können, bei denen
+Spieler einander etwas wegnehmen, blockieren oder mitgewinnen — mit Grenzen,
+wie oft man einen Einzelnen treffen darf, und mit Abschwächung, wenn mehrere
+denselben treffen.
+
+**Das sprengt die bisherige Grammatik an genau einer Stelle:** bisher gab es
+WEN es trifft. Ein Steal hat aber **zwei** Beteiligte — wer nimmt, und wem wird
+genommen. Die Grammatik bekommt deshalb eine fünfte Stelle:
+
+```
+WANN → WER (Akteur) → ZIEL (Betroffener) → WAS → WIE LANGE
+```
+
+**Gute Nachricht: das kostet fast nichts.** `waehleBetroffene()` wird schlicht
+ZWEIMAL aufgerufen, mit unterschiedlicher Konfiguration. Akteur `perzentil
+unten 20 %`, Ziel `koenig` ergibt „das untere Fünftel darf dem Führenden etwas
+abnehmen" — ohne eine Zeile neuer Auswahl-Logik.
+
+**Die Wirkungen:**
+
+| Wirkung | Kurzbeschreibung |
+|---|---|
+| `steal(was, menge)` | „Nimm dem Ziel etwas weg — es bekommt es abgezogen, du bekommst es gutgeschrieben." |
+| `block(was)` | „Das Ziel kann diesen Spieltag seinen Joker nicht setzen." |
+| `mitgewinner(anteil)` | „Du bekommst einen Anteil dessen, was das Ziel gewinnt — ohne dass es ihm fehlt." |
+
+**`mitgewinner` ist der freundlichste Eintrag der ganzen Grammatik** und
+verdient Vorrang vor `steal`: er erzeugt eine Verbindung zwischen zwei Spielern,
+ohne dass einer verliert. „Du hast diese Woche auf Anna gesetzt — sie hat gut
+getippt, du bekommst 20 % davon." Das ist sozialer Kitt statt Konflikt und
+lässt sich außerdem ohne Deckel-Diskussion einführen, weil es niemandem etwas
+wegnimmt (die Gesamtsumme steigt allerdings — also doch unters Budget).
+
+#### ⚙️ Die Begrenzer — das eigentliche Werkzeug
+
+Genau das, was der Nutzer meint mit „zu der Option noch einen zweiten Wert mit
+Änderung geben". **Jede Ziel-gerichtete Wirkung bekommt Begrenzer**, und ohne
+sie sollte keine davon aktivierbar sein:
+
+| Begrenzer | Kurzbeschreibung |
+|---|---|
+| `maxProSaison(n)` | „So oft geht das überhaupt." |
+| `maxProZiel(n)` | „So oft darf es DENSELBEN treffen." |
+| `schutzfrist(n)` | „Wer getroffen wurde, ist n Spieltage sicher." |
+| **`aufteilung`** | **„Treffen mehrere denselben, wird der Abzug geteilt statt vervielfacht."** |
+| `mindestabstand(n)` | „Nur gegen jemanden, der mindestens n Plätze vor dir liegt." |
+| `immunitaet` | „Neulinge und der Letzte sind nie Ziel." |
+
+⚠️ **`aufteilung` ist der wichtigste Eintrag und die Voreinstellung.** Ohne ihn
+ist ein Steal quadratisch: bei fünf Angreifern verliert das Ziel fünffach. In
+einer Zwölfer-Runde ist das ein Ärgernis, in einer Runde mit tausend
+Teilnehmern hört der Führende sofort auf zu spielen. **Geteilt statt
+vervielfacht** hält die Wirkung planbar — und macht sie nebenbei
+budgetierbar, weil die Gesamtsumme feststeht.
+
+⚠️ **`mindestabstand` verhindert das Mobben nach unten.** Ohne ihn richtet sich
+ein Steal gegen den Schwächsten, weil der sich am wenigsten wehrt. Mit ihm
+zeigt die Mechanik immer nach OBEN — und dient damit dem erklärten Ziel.
+
+**Unsere Empfehlung dazu: SELTENHEIT.** Steals und Blocks gehören in die
+Bibliothek mit niedriger Frequenz und am besten an einzelne Wetten oder
+Ereignisse gekoppelt, nicht als Dauerzustand. Ein Spiel, in dem jede Woche
+geklaut wird, ist kein Tippspiel mehr. Das ist eine Empfehlung, kein Verbot.
+
+### 🪓 Eliminationsmodus — und die Falle, die ihn meistens ruiniert
+
+**Nutzer-Wunsch:** „immer X werden nach XX rausgeworfen, und ab … dann nur noch
+xxx". Als Satz in der Grammatik:
+
+```
+Auslöser rhythmus(n) → Auswahl perzentil/rang unten(k) → Wirkung ausscheiden
+```
+
+Einstellbar: `abSpieltag` · `alleNSpieltage` · `wieViele` (Anzahl oder Anteil) ·
+`bisNochUebrig` · `wasPassiertDanach`.
+
+🔴 **Die Falle: Elimination und Bindung sind Gegenspieler.** Wer raus ist, hört
+auf. In einer Zwölfer-Runde verlierst du am Ende zwei gelangweilte Freunde; in
+einer Community-Runde mit 5000 Leuten wirfst du 4500 Nutzer raus, und die
+kommen nicht wieder. **Deshalb ist `wasPassiertDanach` das eigentliche Feld:**
+
+| danach | Kurzbeschreibung |
+|---|---|
+| `zuschauer` | „Du siehst weiter zu, tippst aber nicht mehr." — schlechteste Wahl |
+| **`trostliga`** | **„Du spielst unter den Ausgeschiedenen weiter."** — Empfehlung |
+| `wiedereinstieg` | „Ein Ausgeschiedener kann sich zurückkämpfen." |
+| `raus` | „Endgültig." — nur für kleine, private Runden |
+
+⚠️ **Elimination schließt den Aufhol-Bonus aus** — das eine entfernt die
+Nachzügler, das andere hilft ihnen. Beides gleichzeitig ist widersprüchlich und
+gehört in dieselbe Ausschluss-Gruppe (`maxGleichzeitig: 1`).
+
+⚠️ **Und es verträgt sich schlecht mit `neu`:** wer spät beitritt, fliegt beim
+nächsten Schnitt sofort raus. Entweder Schonfrist für Neulinge oder
+Eliminationsmodus nur für geschlossene Runden.
+
+### 💡 Wo ich noch Individualisierungsbedarf sehe (eigener Vorschlag)
+
+Beim Durchgehen des Bestands sind mir vier Stellen aufgefallen, an denen heute
+ein FESTER Wert steht, wo eine Einstellung Spielsinn hätte — zwei davon dienen
+direkt dem Ziel „der Erste soll nicht davonziehen" und sind billig:
+
+**1. ⭐ Spieltag-Gewichtung über die Saison** (`spieltagGewicht`). Heute zählt
+jeder Spieltag gleich. Klassisch und stark: eine KURVE — flach · steigend ·
+Endspurt (letztes Drittel zählt mehr). **Das ist der eleganteste Hebel gegen
+einen davonziehenden Führenden**, den es gibt: ein früher Vorsprung ist einfach
+weniger wert, ohne dass irgendjemand einen Malus bekommt oder ein Modifikator
+greift. Reine Multiplikation auf fertige Spieltagspunkte, also leicht zu
+vermessen. ⚠️ Gegenwarnung: zu steil und die ersten 20 Spieltage sind
+bedeutungslos — dann steigt man vorne aus statt hinten.
+
+**2. ⭐ Streichresultate** (`streichergebnisse: n`). Die n schlechtesten
+Spieltage zählen nicht. In Tippspielen seit jeher üblich, weil es einen
+verpatzten Spieltag oder einen Urlaub verzeiht — und es wirkt ausgleichend,
+ohne jemandem etwas zu schenken. Verträgt sich außerdem mit dem
+Versäumnis-Modul, statt mit ihm zu konkurrieren. ⚠️ Ab wann greifen sie? Erst
+am Saisonende zu streichen macht den Zwischenstand unlesbar; laufend zu
+streichen macht ihn springend. Vorschlag: laufend, aber sichtbar als „vorläufig".
+
+**3. Sichtbarkeit fremder Tipps** (`tippSicht`). Heute hart verdrahtet: fremde
+Tipps erst, wenn das Spiel ein Ergebnis hat. Sinnvolle Varianten: *nach
+Anpfiff* · *sobald ich selbst getippt habe* (der beste Kompromiss — belohnt
+frühes Tippen mit Information, ohne Abschreiben zu erlauben) · *nie*. Kostet
+keine Balance und verändert das soziale Gefühl der Runde stark.
+
+**4. Kappung je Spieltag** (`maxProSpieltag`). Ein einzelner Volltreffer auf
+einen 5:5-Außenseiter kann einen Spieltag entscheiden. Eine Obergrenze macht
+Ausreißer planbar. ⚠️ Aber vorsichtig: eine Kappung entwertet genau den
+mutigen Tipp, den das Spiel eigentlich belohnen will — deshalb hoch ansetzen
+und als „nur gegen Extremfälle" beschreiben, nicht als Regler zum Drehen.
+
 ### 📊 Modifikator-BUDGET: wie viel Prozent bringt was — und wie oft? (NEU, Nutzer)
 
 Gehört an den **Abschluss-Durchgang** (siehe Balance-Abschnitt oben), nicht
