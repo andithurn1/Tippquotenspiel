@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   normalisiereSpielplan, pruefeSpielplan, spielplanHerkunft, herkunftLabel, quotenHerkunft,
+  quotenAlter,
 } from "./spielplan";
 import { baueLiga } from "./ligaGenerator";
 
@@ -195,5 +196,30 @@ describe("Herkunft — simulierte Daten dürfen nie wie echte aussehen", () => {
     expect(spielplanHerkunft(ausStore, new Set(["bl"]))).toMatchObject({ echt: 306, erzeugt: 159 });
     expect(herkunftLabel(ausStore, new Set(["bl"]))).toContain("306 von 465");
     expect(herkunftLabel(ausStore, new Set())).toContain("Simulierter Spielplan");
+  });
+});
+
+// Eine abgelegte Quoten-Datei altert lautlos — eine Woche alte Zahlen sehen
+// genauso echt aus wie frische.
+describe("quotenAlter", () => {
+  const jetzt = Date.UTC(2026, 6, 29, 12, 0, 0);
+
+  it("frisch geholte Quoten gelten als frisch", () => {
+    const a = quotenAlter(new Date(jetzt - 2 * 3600e3).toISOString(), jetzt);
+    expect(a).toMatchObject({ bekannt: true, stunden: 2, frisch: true });
+  });
+
+  it("nach der Frist nicht mehr", () => {
+    const a = quotenAlter(new Date(jetzt - 50 * 3600e3).toISOString(), jetzt);
+    expect(a.frisch).toBe(false);
+    expect(a.stunden).toBe(50);
+  });
+
+  // Unbekannt ist NICHT dasselbe wie frisch: ohne Zeitstempel darf nichts
+  // behauptet werden.
+  it("ohne Zeitstempel wird nichts behauptet", () => {
+    for (const v of [null, undefined, "keine Ahnung"]) {
+      expect(quotenAlter(v, jetzt)).toMatchObject({ bekannt: false, frisch: false });
+    }
   });
 });

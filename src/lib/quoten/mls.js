@@ -5,7 +5,7 @@
 //  Neu holen:  npm run odds:holen -- mls   (kostet 1 Credit)
 //
 //  Quelle:   the-odds-api.com, Median über die EU-Buchmacher
-//  Geholt:   2026-07-29T07:41:39.816Z
+//  Geholt:   2026-07-29T07:51:18.912Z
 //  Umfang:   31 Spiele (nur ANSTEHENDE — die API liefert keine
 //            ganze Saison im Voraus)
 //
@@ -15,6 +15,11 @@
 //   oddsApi.snapshotFromOdds() das Raster wie bisher aus 1X2 ab.)
 // ============================================================
 
+// Der Zeitstempel steht auch als DATEN da, nicht nur im Kopf: nur so kann
+// die App merken, dass ihre Quoten alt sind (siehe quotenAlter in spielplan.js).
+
+export const GEHOLT = "2026-07-29T07:51:18.914Z";
+
 export default [
  {
   "home": "New York City FC",
@@ -22,7 +27,7 @@ export default [
   "kickoff": "2026-07-31T23:30:00Z",
   "odds": {
    "home": 1.62,
-   "draw": 4.05,
+   "draw": 3.98,
    "away": 4.95
   },
   "correctScore": {

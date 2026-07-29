@@ -5,15 +5,20 @@
 //  Neu holen:  npm run odds:holen -- bl   (kostet 1 Credit)
 //
 //  Quelle:   the-odds-api.com, Median über die EU-Buchmacher
-//  Geholt:   2026-07-29T07:31:22.829Z
-//  Umfang:   11 Spiele (nur ANSTEHENDE — die API liefert keine
+//  Geholt:   2026-07-29T07:52:34.375Z
+//  Umfang:   9 Spiele (nur ANSTEHENDE — die API liefert keine
 //            ganze Saison im Voraus)
 //
 //  Klubnamen sind bereits auf unseren Katalog übersetzt (klubnamen.js).
-//  Ergebnis-Raster: 11 von 11 Spielen
+//  Ergebnis-Raster: 9 von 9 Spielen
 //  (`correctScore` = ECHTE Marktpreise je Endstand. Wo es fehlt, leitet
 //   oddsApi.snapshotFromOdds() das Raster wie bisher aus 1X2 ab.)
 // ============================================================
+
+// Der Zeitstempel steht auch als DATEN da, nicht nur im Kopf: nur so kann
+// die App merken, dass ihre Quoten alt sind (siehe quotenAlter in spielplan.js).
+
+export const GEHOLT = "2026-07-29T07:52:34.377Z";
 
 export default [
  {
@@ -99,7 +104,7 @@ export default [
   "away": "TSG Hoffenheim",
   "kickoff": "2026-08-29T13:30:00Z",
   "odds": {
-   "home": 2.885,
+   "home": 2.88,
    "draw": 3.6,
    "away": 2.29
   },
@@ -282,7 +287,7 @@ export default [
   "kickoff": "2026-08-29T13:30:00Z",
   "odds": {
    "home": 1.51,
-   "draw": 4.425000000000001,
+   "draw": 4.43,
    "away": 5.4
   },
   "correctScore": {
@@ -351,7 +356,7 @@ export default [
   "kickoff": "2026-08-29T13:30:00Z",
   "odds": {
    "home": 2.34,
-   "draw": 3.495,
+   "draw": 3.5,
    "away": 2.8
   },
   "correctScore": {
@@ -583,138 +588,6 @@ export default [
    "3:5": 251,
    "0:6": 301,
    "4:6": 301
-  }
- },
- {
-  "home": "SC Freiburg",
-  "away": "SV Werder Bremen",
-  "kickoff": "2026-08-30T13:30:00Z",
-  "odds": {
-   "home": 2.03,
-   "draw": 3.55,
-   "away": 3.5
-  },
-  "correctScore": {
-   "0:0": 14,
-   "1:0": 8.75,
-   "2:0": 10.5,
-   "3:0": 16.5,
-   "4:0": 31,
-   "5:0": 56,
-   "6:0": 101,
-   "7:0": 176,
-   "8:0": 301,
-   "0:1": 11.5,
-   "1:1": 6.75,
-   "2:1": 8.5,
-   "3:1": 14,
-   "4:1": 26,
-   "5:1": 51,
-   "6:1": 91,
-   "7:1": 151,
-   "0:2": 16.5,
-   "1:2": 11.5,
-   "2:2": 12,
-   "3:2": 21,
-   "4:2": 41,
-   "5:2": 67,
-   "6:2": 126,
-   "7:2": 226,
-   "8:2": 301,
-   "0:3": 31,
-   "1:3": 23,
-   "2:3": 26,
-   "3:3": 36,
-   "4:3": 67,
-   "5:3": 126,
-   "6:3": 176,
-   "8:3": 276,
-   "0:4": 56,
-   "1:4": 46,
-   "2:4": 61,
-   "3:4": 81,
-   "4:4": 126,
-   "5:4": 176,
-   "0:5": 101,
-   "1:5": 101,
-   "2:5": 101,
-   "3:5": 151,
-   "4:5": 226,
-   "5:5": 276,
-   "0:6": 201,
-   "1:6": 176,
-   "2:6": 176,
-   "3:6": 251,
-   "4:6": 276,
-   "1:7": 301
-  }
- },
- {
-  "home": "FC Augsburg",
-  "away": "FC Schalke 04",
-  "kickoff": "2026-08-30T15:30:00Z",
-  "odds": {
-   "home": 2.0949999999999998,
-   "draw": 3.7,
-   "away": 3.115
-  },
-  "correctScore": {
-   "0:0": 16.5,
-   "1:0": 10,
-   "2:0": 12,
-   "3:0": 18,
-   "4:0": 34,
-   "5:0": 61,
-   "6:0": 101,
-   "7:0": 176,
-   "8:0": 276,
-   "0:1": 12.5,
-   "1:1": 7,
-   "2:1": 8.75,
-   "3:1": 14,
-   "4:1": 26,
-   "5:1": 51,
-   "6:1": 101,
-   "7:1": 151,
-   "0:2": 17,
-   "1:2": 11,
-   "2:2": 10.5,
-   "3:2": 19.5,
-   "4:2": 34,
-   "5:2": 67,
-   "6:2": 126,
-   "7:2": 201,
-   "8:2": 276,
-   "0:3": 29,
-   "1:3": 20,
-   "2:3": 21,
-   "3:3": 31,
-   "4:3": 56,
-   "5:3": 101,
-   "6:3": 151,
-   "8:3": 301,
-   "0:4": 51,
-   "1:4": 41,
-   "2:4": 46,
-   "3:4": 67,
-   "4:4": 101,
-   "5:4": 151,
-   "6:4": 251,
-   "0:5": 91,
-   "1:5": 91,
-   "2:5": 91,
-   "3:5": 126,
-   "4:5": 201,
-   "5:5": 226,
-   "0:6": 176,
-   "1:6": 151,
-   "2:6": 151,
-   "3:6": 201,
-   "4:6": 301,
-   "0:7": 276,
-   "1:7": 226,
-   "2:7": 301,
-   "3:7": 251
   }
  }
 ];

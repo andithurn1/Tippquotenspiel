@@ -24,7 +24,7 @@
 // ============================================================
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseTheOddsApiEvent } from "../src/lib/oddsApi.js";
 import { ausApiName, unbekannteKlubs } from "../src/lib/klubnamen.js";
 import { vereineVon } from "../src/lib/ligen.js";
@@ -133,34 +133,58 @@ async function holeQuoten(key, kurz, liga, { raster = false } = {}) {
     + `?regions=eu&markets=h2h&oddsFormat=decimal&apiKey=${key}`;
   const { daten, rest } = await hole(url);
 
+  // ⚠️ Ein Auffrischen der 1X2-Quoten darf die teuer geholten Ergebnis-Raster
+  // nicht wegwerfen. Sie kosten 1 Credit JE SPIEL — bei der MLS also 31 für
+  // einen Lauf, den man aus Versehen mit `odds:holen -- mls` überschreibt.
+  // (Genau das ist mir beim Bauen passiert.) Ohne `--raster` werden vorhandene
+  // Raster deshalb übernommen und ihr Alter genannt, statt still zu
+  // verschwinden.
+  const altePfad = resolve(ZIEL, `${kurz}.js`);
+  let alteRaster = new Map(); let alteZeit = null;
+  if (!raster && existsSync(altePfad)) {
+    try {
+      const alt = await import(pathToFileURL(altePfad).href + `?t=${Date.now()}`);
+      alteZeit = alt.GEHOLT ?? null;
+      alteRaster = new Map((alt.default ?? [])
+        .filter((s) => s.correctScore)
+        .map((s) => [`${s.home}|${s.away}`, s.correctScore]));
+    } catch { /* kaputte Altdatei: dann eben ohne */ }
+  }
+
   const spiele = [];
   const gesehen = new Set();
   for (const e of daten) {
     const p = parseTheOddsApiEvent(e, { idPrefix: kurz });
     if (!p) continue;
+    // ⚠️ ZUERST übersetzen, dann erst als Schlüssel benutzen. Die Datei
+    // speichert unsere Namen; wer mit den API-Namen nachschlägt, findet nur die
+    // Klubs, die zufällig gleich heißen — bei der Bundesliga waren das 2 von 9,
+    // und die übrigen sieben Raster gingen beim Auffrischen verloren.
+    const home = ausApiName(kurz, p.home);
+    const away = ausApiName(kurz, p.away);
     // Die API listet dieselbe Begegnung gelegentlich zweimal mit
     // verschiedenen Event-Ids. Ungefiltert holten wir für den Zwilling ein
     // zweites Ergebnis-Raster — ein bezahlter Credit für nichts.
-    const paar = `${p.home}|${p.away}`;
+    const paar = `${home}|${away}`;
     if (gesehen.has(paar)) continue;
     gesehen.add(paar);
-    // Auf UNSERE Namen übersetzen, damit die Datei ohne weitere Übersetzung
-    // gegen den Katalog passt.
-    const eintrag = {
-      home: ausApiName(kurz, p.home),
-      away: ausApiName(kurz, p.away),
-      kickoff: p.kickoff,
-      odds: p.odds,
-    };
+    const eintrag = { home, away, kickoff: p.kickoff, odds: p.odds };
     if (raster) {
       const r = await holeRaster(key, liga, e.id);
       if (r) eintrag.correctScore = r;
+    } else {
+      const alt = alteRaster.get(paar);
+      if (alt) eintrag.correctScore = alt;
     }
     spiele.push(eintrag);
   }
+  const mit = spiele.filter((s) => s.correctScore).length;
   if (raster) {
-    const mit = spiele.filter((s) => s.correctScore).length;
     console.log(`   Ergebnis-Raster: ${mit} von ${spiele.length} Spielen`);
+  } else if (mit) {
+    console.log(`   Ergebnis-Raster: ${mit} übernommen aus dem vorigen Lauf`
+      + (alteZeit ? ` (${alteZeit.slice(0, 16).replace("T", " ")} UTC)` : "")
+      + " — mit --raster neu holen.");
   }
 
   mkdirSync(ZIEL, { recursive: true });
@@ -182,6 +206,11 @@ async function holeQuoten(key, kurz, liga, { raster = false } = {}) {
     "//  (`correctScore` = ECHTE Marktpreise je Endstand. Wo es fehlt, leitet",
     "//   oddsApi.snapshotFromOdds() das Raster wie bisher aus 1X2 ab.)",
     "// ============================================================",
+    "",
+    "// Der Zeitstempel steht auch als DATEN da, nicht nur im Kopf: nur so kann",
+    "// die App merken, dass ihre Quoten alt sind (siehe quotenAlter in spielplan.js).",
+    "",
+    `export const GEHOLT = "${new Date().toISOString()}";`,
     "",
     "export default ",
   ].join("\n");

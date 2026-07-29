@@ -156,6 +156,29 @@ export function quotenHerkunft(matches = []) {
   return { echt, mitRaster, alles: matches.length > 0 && echt === matches.length };
 }
 
+// ── Wie alt sind die Quoten? ────────────────────────────────
+// Eine abgelegte Quoten-Datei altert lautlos. Quoten bewegen sich mit
+// Verletzungen und Aufstellungen; eine Woche alte Zahlen sehen genauso echt aus
+// wie frische, sind aber falsch — und wer darauf tippt, tippt gegen ein Bild,
+// das es nicht mehr gibt. Für uns ist das kein Geldproblem, aber ein
+// Fairness-Problem: der Snapshot friert beim Öffnen ein, und was einfriert,
+// sollte wenigstens aktuell gewesen sein.
+//
+// Kein automatischer Neu-Abruf: der kostet Credits und gehört in eine bewusste
+// Entscheidung, nicht in einen Seiteneffekt beim Rendern.
+export const QUOTEN_FRISCH_STUNDEN = 24;
+
+export function quotenAlter(geholt, jetzt = Date.now()) {
+  const t = new Date(geholt ?? "").getTime();
+  if (!Number.isFinite(t)) return { bekannt: false, stunden: null, frisch: false };
+  const stunden = (jetzt - t) / 3600000;
+  return {
+    bekannt: true,
+    stunden: Math.max(0, Math.round(stunden)),
+    frisch: stunden <= QUOTEN_FRISCH_STUNDEN,
+  };
+}
+
 // Der Satz, den die Oberfläche zeigt. Er steht hier und nicht im Screen, damit
 // alle Stellen dasselbe sagen — beim Spielplan ist eine zweite Formulierung
 // schnell eine zweite Wahrheit.
