@@ -14,6 +14,7 @@
 // ============================================================
 
 import { baueLiga, findeDerby, alsQuotenQuelle, NAMENSPOOLS } from "./ligaGenerator";
+import { QUOTEN } from "./quoten";
 
 export const SA_TEAM_RATINGS = {
   "Inter Mailand":     { code: "INT", attack: 1.55, defense: 0.62 },
@@ -76,6 +77,7 @@ export function getSerieAMatches() {
     _cache = baueLiga({
       wettbewerb: "sa", idPrefix: "sa26", ratings: SA_TEAM_RATINGS, derbys: SA_DERBYS,
       saisonStart: SEASON_START, utcOffset: 2, slotFuer, namensPool: NAMENSPOOLS.it,
+      quoten: QUOTEN.sa ?? null,
     });
   }
   return _cache;

@@ -22,7 +22,7 @@
 //  und dann holt, verbrennt keinen Credit an einer Liga, deren Namen ohnehin
 //  nicht passen.
 // ============================================================
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseTheOddsApiEvent, totalsAusEvent, torschnittAusTotals } from "../src/lib/oddsApi.js";
@@ -54,6 +54,12 @@ const LIGEN = {
   pd: { label: "La Liga", sport: "soccer_spain_la_liga", beobachtung: [] },
   sa: { label: "Serie A", sport: "soccer_italy_serie_a", beobachtung: [] },
   mls: { label: "MLS", sport: "soccer_usa_mls", beobachtung: ["soccer_concacaf_leagues_cup"] },
+  // Die CL fehlte hier, obwohl sie im Match-Katalog steht — `odds:holen -- cl`
+  // brach mit „Unbekannte Liga" ab. Aufgefallen beim Durchmessen am 29.07.
+  // ⚠️ Bis zur Auslosung Ende August liefert der Endpunkt NULL Spiele, und das
+  // ist richtig so: eine leere Antwort kostet keinen Credit. Der Eintrag muss
+  // trotzdem hier stehen, sonst merkt niemand, wann die Auslosung durch ist.
+  cl: { label: "Champions League", sport: "soccer_uefa_champs_league", beobachtung: [] },
 };
 
 // Der Schlüssel steht in `.env.local` (nicht im Repo) oder in der Umgebung.
@@ -386,6 +392,40 @@ async function schreibeKader(kurz, liga, spiele, key, mitBeobachtung = false) {
   }
 }
 
+// Der Index über alle vorhandenen Quoten-Dateien. Liest das Verzeichnis, statt
+// dem laufenden Aufruf zu glauben — nur so bleibt er vollständig, wenn jemand
+// eine einzelne Liga auffrischt.
+function schreibeQuotenIndex() {
+  const keys = readdirSync(ZIEL)
+    .filter((f) => f.endsWith(".js") && f !== "index.js")
+    .map((f) => f.replace(/\.js$/, ""))
+    .filter((k) => LIGEN[k])          // was keiner Liga entspricht, gehört nicht hinein
+    .sort();
+  const inhalt = [
+    "// ============================================================",
+    "//  QUOTEN — die eine Einstiegsstelle für echte Marktquoten",
+    "//",
+    "//  ERZEUGTE DATEI — wird von `npm run odds:holen` neu geschrieben.",
+    "//  Abgelesen aus dem Verzeichnis: hier steht, was WIRKLICH da liegt.",
+    "//",
+    "//  Dieselbe Auflösung wie bei `spielplaene/index.js`: die Ligadateien dürfen",
+    "//  die Quoten-Dateien nicht direkt importieren, weil der Abruf seinerseits die",
+    "//  Klublisten AUS den Ligadateien braucht.",
+    "//",
+    "//  Fehlt ein Wettbewerb, bleiben seine Quoten erzeugt (Poisson-Modell in",
+    "//  `oddsGenerator.js`). Das ist der Normalfall für alles, was weiter als ein",
+    "//  paar Tage in der Zukunft liegt — kein Buchmacher bepreist eine ganze Saison.",
+    "// ============================================================",
+    "",
+    ...keys.map((k) => `import ${k} from "./${k}";`),
+    "",
+    `export const QUOTEN = { ${keys.join(", ")} };`,
+    "",
+  ].join("\n");
+  writeFileSync(resolve(ZIEL, "index.js"), inhalt, "utf8");
+  console.log(`\n   Quoten-Index: ${keys.length} Ligen (${keys.join(", ") || "keine"})`);
+}
+
 const args = process.argv.slice(2);
 const nurPruefen = args.includes("--pruefen");
 const mitRaster = args.includes("--raster");
@@ -411,6 +451,17 @@ if (!key) {
       out.push({ kurz, ok: false });
     }
   }
+  // ⚠️ Ohne diesen Schritt war der ganze Abruf WIRKUNGSLOS für neue Ligen.
+  // `quoten/index.js` behauptete in seinem Kopf, erzeugt zu werden — nur schrieb
+  // sie niemand. Wer `odds:holen -- pl` laufen ließ, bekam eine korrekte
+  // `quoten/pl.js` und im Katalog trotzdem weiter erzeugte Quoten, ohne
+  // Fehlermeldung. Aufgefallen am 29.07. beim Durchmessen aller Ligen.
+  //
+  // Der Index wird ABGELESEN (welche Dateien liegen wirklich da), nicht aus dem
+  // aktuellen Lauf abgeleitet — sonst verlöre ein Lauf für eine einzelne Liga
+  // die Quoten aller anderen.
+  if (!nurPruefen) schreibeQuotenIndex();
+
   const schlecht = out.filter((r) => !r.ok);
   console.log(`\n${schlecht.length ? "❌" : "✅"} ${out.length - schlecht.length} von ${zuTun.length} Ligen in Ordnung.`);
   if (nurPruefen) console.log("   (Prüflauf — keine Credits verbraucht, nichts geschrieben.)");

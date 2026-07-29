@@ -16,6 +16,7 @@
 // ============================================================
 
 import { baueLiga, findeDerby, alsQuotenQuelle, NAMENSPOOLS } from "./ligaGenerator";
+import { QUOTEN } from "./quoten";
 
 export const PL_TEAM_RATINGS = {
   "Manchester City":          { code: "MCI", attack: 1.88, defense: 0.60 },
@@ -78,6 +79,9 @@ export function getPremierLeagueMatches() {
     _cache = baueLiga({
       wettbewerb: "pl", idPrefix: "pl26", ratings: PL_TEAM_RATINGS, derbys: PL_DERBYS,
       saisonStart: SEASON_START, utcOffset: 1, slotFuer, namensPool: NAMENSPOOLS.en,
+      // Echte Marktquoten, wo es sie gibt. Ohne diese Zeile wurden sie zwar
+      // geholt und abgelegt, kamen aber nie im Katalog an — still, ohne Fehler.
+      quoten: QUOTEN.pl ?? null,
     });
   }
   return _cache;

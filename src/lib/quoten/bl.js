@@ -2,10 +2,10 @@
 //  BUNDESLIGA — ECHTE 1X2-QUOTEN
 //
 //  ERZEUGTE DATEI — nicht von Hand bearbeiten.
-//  Neu holen:  npm run odds:holen -- bl   (kostet 1 Credit)
+//  Neu holen:  npm run odds:holen -- bl   (kostet 2 Credits)
 //
 //  Quelle:   the-odds-api.com, Median über die EU-Buchmacher
-//  Geholt:   2026-07-29T07:52:34.375Z
+//  Geholt:   2026-07-29T23:31:33.423Z
 //  Umfang:   9 Spiele (nur ANSTEHENDE — die API liefert keine
 //            ganze Saison im Voraus)
 //
@@ -13,12 +13,15 @@
 //  Ergebnis-Raster: 9 von 9 Spielen
 //  (`correctScore` = ECHTE Marktpreise je Endstand. Wo es fehlt, leitet
 //   oddsApi.snapshotFromOdds() das Raster wie bisher aus 1X2 ab.)
+//  Torschnitt:      9 von 9 Spielen
+//  (`total` = erwartete Gesamt-Tore aus der echten Über/Unter-Linie. Damit
+//   ist der Torschnitt gemessen statt geschätzt — und ρ mit ihm.)
 // ============================================================
 
 // Der Zeitstempel steht auch als DATEN da, nicht nur im Kopf: nur so kann
 // die App merken, dass ihre Quoten alt sind (siehe quotenAlter in spielplan.js).
 
-export const GEHOLT = "2026-07-29T07:52:34.377Z";
+export const GEHOLT = "2026-07-29T23:31:33.424Z";
 
 export default [
  {
@@ -30,6 +33,7 @@ export default [
    "draw": 6.4,
    "away": 7.5
   },
+  "total": 4.285,
   "correctScore": {
    "0:0": 38.5,
    "1:0": 15.25,
@@ -106,8 +110,9 @@ export default [
   "odds": {
    "home": 2.88,
    "draw": 3.6,
-   "away": 2.29
+   "away": 2.3
   },
+  "total": 3.355,
   "correctScore": {
    "0:0": 16.5,
    "1:0": 12.5,
@@ -174,6 +179,7 @@ export default [
    "draw": 3.65,
    "away": 3.25
   },
+  "total": 3.195,
   "correctScore": {
    "1:0": 10.5,
    "2:0": 12,
@@ -222,6 +228,7 @@ export default [
    "draw": 4.5,
    "away": 1.56
   },
+  "total": 3.545,
   "correctScore": {
    "0:0": 19.75,
    "1:0": 17.75,
@@ -290,6 +297,7 @@ export default [
    "draw": 4.43,
    "away": 5.4
   },
+  "total": 3.59,
   "correctScore": {
    "0:0": 20,
    "1:0": 10,
@@ -359,6 +367,7 @@ export default [
    "draw": 3.5,
    "away": 2.8
   },
+  "total": 2.785,
   "correctScore": {
    "0:0": 12.5,
    "1:0": 9.25,
@@ -423,6 +432,7 @@ export default [
    "draw": 4,
    "away": 4.7
   },
+  "total": 3.02,
   "correctScore": {
    "0:0": 14,
    "1:0": 8.13,
@@ -488,6 +498,7 @@ export default [
    "draw": 3.5,
    "away": 3.65
   },
+  "total": 2.895,
   "correctScore": {
    "1:0": 8.5,
    "2:0": 10,
@@ -534,6 +545,7 @@ export default [
    "draw": 5.5,
    "away": 7.85
   },
+  "total": 3.41,
   "correctScore": {
    "0:0": 19.25,
    "1:0": 8.25,

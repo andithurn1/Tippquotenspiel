@@ -14,6 +14,7 @@
 // ============================================================
 
 import { baueLiga, findeDerby, alsQuotenQuelle, NAMENSPOOLS } from "./ligaGenerator";
+import { QUOTEN } from "./quoten";
 
 export const PD_TEAM_RATINGS = {
   "Real Madrid":         { code: "RMA", attack: 1.90, defense: 0.62 },
@@ -79,6 +80,7 @@ export function getLaLigaMatches() {
     _cache = baueLiga({
       wettbewerb: "pd", idPrefix: "pd26", ratings: PD_TEAM_RATINGS, derbys: PD_DERBYS,
       saisonStart: SEASON_START, utcOffset: 2, slotFuer, namensPool: NAMENSPOOLS.es,
+      quoten: QUOTEN.pd ?? null,
     });
   }
   return _cache;

@@ -4,7 +4,7 @@
 //  ERZEUGTE DATEI — nicht von Hand bearbeiten.
 //  Wächst mit:  npm run odds:holen -- mls --schuetzen
 //
-//  Stand:       2026-07-29T13:09:07.881Z
+//  Stand:       2026-07-29T23:28:38.870Z
 //  Beobachtete Spiele: 16
 //  Zugeordnet:  0 von 494 Spielern (0 %)
 //

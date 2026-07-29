@@ -2,10 +2,10 @@
 //  MLS — ECHTE 1X2-QUOTEN
 //
 //  ERZEUGTE DATEI — nicht von Hand bearbeiten.
-//  Neu holen:  npm run odds:holen -- mls   (kostet 1 Credit)
+//  Neu holen:  npm run odds:holen -- mls   (kostet 2 Credits)
 //
 //  Quelle:   the-odds-api.com, Median über die EU-Buchmacher
-//  Geholt:   2026-07-29T13:09:07.672Z
+//  Geholt:   2026-07-29T23:28:38.858Z
 //  Umfang:   31 Spiele (nur ANSTEHENDE — die API liefert keine
 //            ganze Saison im Voraus)
 //
@@ -13,12 +13,15 @@
 //  Ergebnis-Raster: 15 von 31 Spielen
 //  (`correctScore` = ECHTE Marktpreise je Endstand. Wo es fehlt, leitet
 //   oddsApi.snapshotFromOdds() das Raster wie bisher aus 1X2 ab.)
+//  Torschnitt:      31 von 31 Spielen
+//  (`total` = erwartete Gesamt-Tore aus der echten Über/Unter-Linie. Damit
+//   ist der Torschnitt gemessen statt geschätzt — und ρ mit ihm.)
 // ============================================================
 
 // Der Zeitstempel steht auch als DATEN da, nicht nur im Kopf: nur so kann
 // die App merken, dass ihre Quoten alt sind (siehe quotenAlter in spielplan.js).
 
-export const GEHOLT = "2026-07-29T13:09:07.674Z";
+export const GEHOLT = "2026-07-29T23:28:38.858Z";
 
 export default [
  {
@@ -30,6 +33,7 @@ export default [
    "draw": 3.98,
    "away": 4.95
   },
+  "total": 2.745,
   "correctScore": {
    "0:0": 11.75,
    "1:0": 7.13,
@@ -121,10 +125,11 @@ export default [
   "away": "Atlanta United FC",
   "kickoff": "2026-08-01T23:30:00Z",
   "odds": {
-   "home": 1.67,
-   "draw": 3.95,
+   "home": 1.68,
+   "draw": 3.96,
    "away": 4.46
   },
+  "total": 3.305,
   "correctScore": {
    "0:0": 13.75,
    "1:0": 7.88,
@@ -228,6 +233,7 @@ export default [
    "draw": 3.55,
    "away": 3
   },
+  "total": 2.775,
   "correctScore": {
    "0:0": 12.25,
    "1:0": 8.25,
@@ -322,9 +328,10 @@ export default [
   "kickoff": "2026-08-01T23:30:00Z",
   "odds": {
    "home": 1.7,
-   "draw": 4.1,
-   "away": 4.18
+   "draw": 4.03,
+   "away": 4.25
   },
+  "total": 3.65,
   "correctScore": {
    "0:0": 20.5,
    "1:0": 11.25,
@@ -442,6 +449,7 @@ export default [
    "draw": 3.4,
    "away": 2.32
   },
+  "total": 2.71,
   "correctScore": {
    "0:0": 10.25,
    "1:0": 8.5,
@@ -537,8 +545,9 @@ export default [
   "odds": {
    "home": 1.93,
    "draw": 4.1,
-   "away": 3.2
+   "away": 3.25
   },
+  "total": 3.73,
   "correctScore": {
    "0:0": 23,
    "1:0": 13,
@@ -653,6 +662,7 @@ export default [
    "draw": 4,
    "away": 3.96
   },
+  "total": 3.38,
   "correctScore": {
    "0:0": 14.5,
    "1:0": 8.75,
@@ -750,6 +760,7 @@ export default [
    "draw": 4.1,
    "away": 3.05
   },
+  "total": 3.71,
   "correctScore": {
    "0:0": 23.5,
    "1:0": 13,
@@ -863,6 +874,7 @@ export default [
    "draw": 4.57,
    "away": 5.19
   },
+  "total": 3.385,
   "correctScore": {
    "0:0": 17.5,
    "1:0": 9.25,
@@ -964,8 +976,9 @@ export default [
   "odds": {
    "home": 3.18,
    "draw": 3.4,
-   "away": 2.13
+   "away": 2.15
   },
+  "total": 3.395,
   "correctScore": {
    "0:0": 13.5,
    "1:0": 11.25,
@@ -1061,10 +1074,11 @@ export default [
   "away": "San Diego FC",
   "kickoff": "2026-08-02T00:30:00Z",
   "odds": {
-   "home": 1.97,
+   "home": 1.98,
    "draw": 3.7,
-   "away": 3.32
+   "away": 3.31
   },
+  "total": 3.465,
   "correctScore": {
    "0:0": 15.75,
    "1:0": 10,
@@ -1172,6 +1186,7 @@ export default [
    "draw": 3.7,
    "away": 3.04
   },
+  "total": 3.4,
   "correctScore": {
    "0:0": 15.25,
    "1:0": 9.75,
@@ -1282,9 +1297,10 @@ export default [
   "kickoff": "2026-08-02T01:30:00Z",
   "odds": {
    "home": 1.71,
-   "draw": 3.95,
-   "away": 4.25
+   "draw": 3.98,
+   "away": 4.2
   },
+  "total": 3.275,
   "correctScore": {
    "0:0": 13.75,
    "1:0": 8.38,
@@ -1381,6 +1397,7 @@ export default [
    "draw": 3.8,
    "away": 2.97
   },
+  "total": 3.385,
   "correctScore": {
    "0:0": 15.25,
    "1:0": 10,
@@ -1485,10 +1502,11 @@ export default [
   "away": "Seattle Sounders FC",
   "kickoff": "2026-08-02T02:45:00Z",
   "odds": {
-   "home": 2.14,
-   "draw": 3.8,
+   "home": 2.12,
+   "draw": 3.85,
    "away": 3
   },
+  "total": 3.57,
   "correctScore": {
    "0:0": 16.25,
    "1:0": 10.25,
@@ -1601,7 +1619,8 @@ export default [
    "home": 2.31,
    "draw": 3.5,
    "away": 2.73
-  }
+  },
+  "total": 2.82
  },
  {
   "home": "Atlanta United FC",
@@ -1609,9 +1628,10 @@ export default [
   "kickoff": "2026-08-15T23:30:00Z",
   "odds": {
    "home": 1.81,
-   "draw": 4,
+   "draw": 3.96,
    "away": 3.55
-  }
+  },
+  "total": 3.405
  },
  {
   "home": "CF Montreal",
@@ -1619,29 +1639,32 @@ export default [
   "kickoff": "2026-08-15T23:30:00Z",
   "odds": {
    "home": 2.23,
-   "draw": 3.55,
-   "away": 2.94
-  }
+   "draw": 3.6,
+   "away": 2.92
+  },
+  "total": 2.905
  },
  {
   "home": "Charlotte FC",
   "away": "Columbus Crew SC",
   "kickoff": "2026-08-15T23:30:00Z",
   "odds": {
-   "home": 2.12,
+   "home": 2.11,
    "draw": 3.7,
    "away": 2.95
-  }
+  },
+  "total": 3.21
  },
  {
   "home": "Orlando City SC",
   "away": "FC Cincinnati",
   "kickoff": "2026-08-15T23:30:00Z",
   "odds": {
-   "home": 2.27,
-   "draw": 4,
+   "home": 2.26,
+   "draw": 4.03,
    "away": 2.51
-  }
+  },
+  "total": 3.74
  },
  {
   "home": "Toronto FC",
@@ -1649,9 +1672,10 @@ export default [
   "kickoff": "2026-08-15T23:30:00Z",
   "odds": {
    "home": 2.3,
-   "draw": 3.58,
+   "draw": 3.6,
    "away": 2.62
-  }
+  },
+  "total": 2.945
  },
  {
   "home": "Houston Dynamo",
@@ -1661,7 +1685,8 @@ export default [
    "home": 1.65,
    "draw": 3.97,
    "away": 4.33
-  }
+  },
+  "total": 3.275
  },
  {
   "home": "Nashville SC",
@@ -1669,19 +1694,21 @@ export default [
   "kickoff": "2026-08-16T00:30:00Z",
   "odds": {
    "home": 2.05,
-   "draw": 3.85,
+   "draw": 3.9,
    "away": 2.9
-  }
+  },
+  "total": 3.38
  },
  {
   "home": "Colorado Rapids",
   "away": "Sporting Kansas City",
   "kickoff": "2026-08-16T01:30:00Z",
   "odds": {
-   "home": 1.35,
-   "draw": 4.92,
+   "home": 1.36,
+   "draw": 4.95,
    "away": 6.5
-  }
+  },
+  "total": 3.48
  },
  {
   "home": "Real Salt Lake",
@@ -1689,9 +1716,10 @@ export default [
   "kickoff": "2026-08-16T01:30:00Z",
   "odds": {
    "home": 1.67,
-   "draw": 3.97,
-   "away": 4.03
-  }
+   "draw": 3.95,
+   "away": 4.05
+  },
+  "total": 3.33
  },
  {
   "home": "Los Angeles FC",
@@ -1701,7 +1729,8 @@ export default [
    "home": 1.44,
    "draw": 4.7,
    "away": 5
-  }
+  },
+  "total": 3.53
  },
  {
   "home": "San Jose Earthquakes",
@@ -1711,7 +1740,8 @@ export default [
    "home": 1.67,
    "draw": 4.08,
    "away": 4
-  }
+  },
+  "total": 3.49
  },
  {
   "home": "Chicago Fire",
@@ -1721,7 +1751,8 @@ export default [
    "home": 1.6,
    "draw": 4.42,
    "away": 4.2
-  }
+  },
+  "total": 3.62
  },
  {
   "home": "New York City FC",
@@ -1729,9 +1760,10 @@ export default [
   "kickoff": "2026-08-16T22:00:00Z",
   "odds": {
    "home": 1.67,
-   "draw": 3.95,
+   "draw": 3.96,
    "away": 4
-  }
+  },
+  "total": 3.26
  },
  {
   "home": "Austin FC",
@@ -1741,7 +1773,8 @@ export default [
    "home": 2.7,
    "draw": 3.67,
    "away": 2.2
-  }
+  },
+  "total": 3.385
  },
  {
   "home": "Seattle Sounders FC",
@@ -1751,6 +1784,7 @@ export default [
    "home": 2.75,
    "draw": 3.7,
    "away": 2.15
-  }
+  },
+  "total": 3.39
  }
 ];
