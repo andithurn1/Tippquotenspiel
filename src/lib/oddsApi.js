@@ -139,25 +139,86 @@ export function fitLambdas(probs, { min = 0.15, max = 4.0, rho = 0 } = {}) {
 // bleibt, ist die echte Wahrscheinlichkeitsverteilung des Marktes auf unserem
 // Preisniveau — der eigentliche Gewinn, denn genau daran hängt die
 // Nähe-Wertung.
-export function rasterAusMarkt(markt, { overround = 1.07, cap = 200, grid = 6 } = {}) {
-  if (!markt || typeof markt !== "object") return null;
-  const roh = Object.entries(markt)
+//
+// ⚠️ **Die Höhe der Marge herauszurechnen genügt nicht — ihre SCHIEFE muss
+// mit.** (Gemessen 2026-07-29, an den neun gespeicherten Bundesliga-Spielen.)
+// Ein Buchmacher verteilt 65 % Overround nicht gleichmäßig: er lädt sie auf die
+// Außenseiter. Wer stumpf durch die Summe teilt, übernimmt diese Schieflage
+// unverändert und hält sie für eine Wahrscheinlichkeitsverteilung.
+//
+// Nachweisbar ist das ohne jede zusätzliche Abfrage, weil wir einen zweiten,
+// viel saubereren Markt für DASSELBE Spiel schon in der Hand halten: die
+// 1X2-Quoten (7,7 % statt 65 % Marge). Rechnet man das naiv normierte Raster zu
+// Heimsieg / Remis / Auswärtssieg zusammen, MUSS dieselbe Verteilung
+// herauskommen. Tut es nicht — die Abweichung lag bei **2,4 bis 5,7
+// Prozentpunkten**, in allen neun Spielen mit demselben Vorzeichen.
+//
+// Korrigiert wird mit dem Potenz-Verfahren (`p ~ (1/o)^k`), dem üblichen Weg
+// gegen den Favourite-Longshot-Bias. Entscheidend ist, WOHER k kommt: es wird
+// für JEDES SPIEL EINZELN an dessen eigenem 1X2-Markt geeicht, nie als
+// Liga-Mittel gesetzt. Das ist genau die Lehre aus der ρ-Fehlmessung weiter
+// oben — ein Mittelwert sagt nichts über ein einzelnes Spiel. Gemessen: k
+// zwischen 1,18 und 1,34, Restfehler danach 0,0 bis 1,9 pp.
+//
+// Was das in Preisen heißt (Bayern–Stuttgart, k = 1,32): die naive Normierung
+// zahlte für die WAHRSCHEINLICHEN Ergebnisse 11–30 % zu viel (2:1 zu 14,57
+// statt 11,17) und für die unwahrscheinlichen zu wenig. Da reale Endstände
+// meistens die wahrscheinlichen sind, war das ein stiller Aufschlag auf jedes
+// Spiel mit echtem Raster — gegenüber jedem Spiel ohne.
+export function longshotK(markt, ziel, { min = 0.5, max = 2.0 } = {}) {
+  if (!markt || !ziel) return 1;
+  const roh = markteintraege(markt);
+  if (roh.length < 10) return 1;
+
+  const fehlerBei = (k) => {
+    let pH = 0, pD = 0, pA = 0, summe = 0;
+    const q = roh.map((z) => Math.pow(z.p, k));
+    for (const x of q) summe += x;
+    roh.forEach((z, i) => {
+      const p = q[i] / summe;
+      if (z.h > z.a) pH += p; else if (z.h < z.a) pA += p; else pD += p;
+    });
+    return (pH - ziel.home) ** 2 + (pD - ziel.draw) ** 2 + (pA - ziel.away) ** 2;
+  };
+  const suche = (lo, hi, schritt) => {
+    let best = { k: lo, err: Infinity };
+    for (let k = lo; k <= hi + 1e-9; k += schritt) {
+      const err = fehlerBei(k);
+      if (err < best.err) best = { k: +k.toFixed(3), err };
+    }
+    return best;
+  };
+  const grob = suche(min, max, 0.01);
+  const fein = suche(Math.max(min, grob.k - 0.01), Math.min(max, grob.k + 0.01), 0.001);
+  return fein.k;
+}
+
+function markteintraege(markt) {
+  return Object.entries(markt)
     .map(([k, preis]) => {
       const t = String(k).match(/^(\d+):(\d+)$/);
       return t && Number(preis) > 1 ? { h: +t[1], a: +t[2], p: 1 / Number(preis) } : null;
     })
     .filter(Boolean);
+}
+
+export function rasterAusMarkt(markt, { overround = 1.07, cap = 200, grid = 6, k = 1 } = {}) {
+  if (!markt || typeof markt !== "object") return null;
+  const roh = markteintraege(markt);
   if (roh.length < 10) return null;   // ein halbes Buch ist keine Verteilung
 
-  const summe = roh.reduce((s, z) => s + z.p, 0);
+  // k = 1 ist exakt die frühere, naive Normierung — ohne Eichung ändert sich
+  // also nichts, und ein fehlendes 1X2 verschlechtert nie etwas.
+  const gew = roh.map((z) => (k === 1 ? z.p : Math.pow(z.p, k)));
+  const summe = gew.reduce((s, x) => s + x, 0);
   const raster = Array.from({ length: grid }, () => Array(grid).fill(cap));
   let getroffen = 0;
-  for (const z of roh) {
-    if (z.h >= grid || z.a >= grid) continue;   // 6+ Tore: außerhalb des Rasters
-    const p = z.p / summe;
+  roh.forEach((z, i) => {
+    if (z.h >= grid || z.a >= grid) return;   // 6+ Tore: außerhalb des Rasters
+    const p = gew[i] / summe;
     raster[z.h][z.a] = Math.min(cap, Math.max(1.01, +(1 / (p * overround)).toFixed(2)));
     getroffen++;
-  }
+  });
   // Lücken im Buch würden als Höchstquote stehenbleiben und wären dann die
   // bestbezahlte Wette überhaupt. Lieber gar kein echtes Raster.
   return getroffen >= grid * grid * 0.8 ? raster : null;
@@ -245,8 +306,11 @@ export function snapshotFromOdds({
   // Dasselbe für das Ergebnis-Raster, wo der Markt es hergibt. Es ist die
   // Grundlage der Nähe-Wertung — eine Messung ist dort mehr wert als die beste
   // Schätzung. Fehlt es, bleibt das abgeleitete Raster stehen.
+  // Geeicht am 1X2-Markt DIESES Spiels (siehe `longshotK`) — der zweite,
+  // sauberere Markt, den wir für dieselbe Begegnung ohnehin schon haben.
+  const rasterK = longshotK(correctScore, probs);
   const echtesRaster = rasterAusMarkt(correctScore, {
-    overround: Math.max(1.0, probs.overround), cap,
+    overround: Math.max(1.0, probs.overround), cap, k: rasterK,
   });
   if (echtesRaster) snap.correctScore = echtesRaster;
 
@@ -265,6 +329,9 @@ export function snapshotFromOdds({
 
   snap.quelle = "api";
   snap.rasterQuelle = echtesRaster ? "markt" : "abgeleitet";
+  // Sichtbar festhalten, wie stark das Buch schiefgezogen war. Eine Korrektur,
+  // die man später nicht mehr nachvollziehen kann, ist eine Behauptung.
+  if (echtesRaster) snap.rasterK = rasterK;
   snap.spielerQuelle = echteSpieler ? "markt" : "erfunden";
   snap.marge = +probs.overround.toFixed(4);
   return snap;

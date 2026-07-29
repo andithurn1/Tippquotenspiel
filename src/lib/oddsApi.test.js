@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   impliedProbabilities, outcomeProbs, fitLambdas, snapshotFromOdds,
-  parseTheOddsApiEvent, snapshotsFromTheOddsApi, RHO, rasterAusMarkt, spielerAusMarkt,
+  parseTheOddsApiEvent, snapshotsFromTheOddsApi, RHO, rasterAusMarkt, longshotK, spielerAusMarkt,
 } from "@/lib/oddsApi";
 import { dixonColes } from "@/lib/oddsGenerator";
 import { scoreTip, DEFAULT_RULES } from "@/lib/engine";
@@ -223,6 +223,99 @@ describe("rasterAusMarkt", () => {
     expect(rasterAusMarkt(halb)).toBeNull();
     expect(rasterAusMarkt(null)).toBeNull();
     expect(rasterAusMarkt({})).toBeNull();
+  });
+
+  // ── Longshot-Bias ─────────────────────────────────────────
+  // Der teuerste Fehler an dieser Stelle ist nicht die HÖHE der Marge (die wird
+  // oben herausgerechnet), sondern ihre SCHIEFE: 65 % Overround liegen nicht
+  // gleichmäßig auf allen 66 Ausgängen, sondern auf den Außenseitern.
+  describe("longshotK — die Schieflage des Buches messen", () => {
+    // Ein Buch, dessen Marge bewusst auf den Außenseitern liegt: die wahren
+    // Wahrscheinlichkeiten werden mit (1/o)^k erzeugt, k = 1/1.3.
+    const schiefesBuch = (wahr, aufschlag = 1.3) => {
+      const m = {};
+      for (const [s, p] of Object.entries(wahr)) {
+        m[s] = 1 / Math.pow(p, 1 / aufschlag);
+      }
+      return m;
+    };
+    // Eine plausible, vollständige Verteilung über 0..5 Tore je Seite.
+    const wahreVerteilung = (lamH, lamA) => {
+      const pois = (l, k) => { let p = Math.exp(-l); for (let i = 1; i <= k; i++) p *= l / i; return p; };
+      const w = {}; let summe = 0;
+      for (let h = 0; h < 6; h++) for (let a = 0; a < 6; a++) { w[`${h}:${a}`] = pois(lamH, h) * pois(lamA, a); summe += w[`${h}:${a}`]; }
+      for (const s of Object.keys(w)) w[s] /= summe;
+      return w;
+    };
+    const zu1x2 = (w) => {
+      let home = 0, draw = 0, away = 0;
+      for (const [s, p] of Object.entries(w)) {
+        const [h, a] = s.split(":").map(Number);
+        if (h > a) home += p; else if (h < a) away += p; else draw += p;
+      }
+      return { home, draw, away };
+    };
+
+    it("findet die Schieflage zurück, mit der das Buch gebaut wurde", () => {
+      const wahr = wahreVerteilung(1.7, 1.2);
+      const k = longshotK(schiefesBuch(wahr, 1.3), zu1x2(wahr));
+      expect(k).toBeGreaterThan(1.2);
+      expect(k).toBeLessThan(1.4);
+    });
+
+    it("ein faires Buch braucht keine Korrektur", () => {
+      const wahr = wahreVerteilung(1.5, 1.3);
+      // Gleichmäßige Marge auf allen Ausgängen — k muss bei 1 landen.
+      const fair = {};
+      for (const [s, p] of Object.entries(wahr)) fair[s] = 1 / (p / 1.2);
+      expect(longshotK(fair, zu1x2(wahr))).toBeCloseTo(1, 1);
+    });
+
+    it("ohne 1X2-Anker wird NICHT geraten", () => {
+      // Lieber unkorrigiert als mit einem erfundenen Wert korrigiert.
+      expect(longshotK(buch(), null)).toBe(1);
+      expect(longshotK(null, { home: 0.4, draw: 0.3, away: 0.3 })).toBe(1);
+    });
+
+    it("das korrigierte Raster trifft die 1X2 des Marktes besser als das naive", () => {
+      const wahr = wahreVerteilung(1.9, 1.1);
+      const ziel = zu1x2(wahr);
+      const markt = schiefesBuch(wahr, 1.3);
+      const abstand = (r) => {
+        let home = 0, draw = 0, away = 0, summe = 0;
+        for (let h = 0; h < 6; h++) for (let a = 0; a < 6; a++) {
+          const p = 1 / r[h][a]; summe += p;
+          if (h > a) home += p; else if (h < a) away += p; else draw += p;
+        }
+        return Math.abs(home / summe - ziel.home) + Math.abs(draw / summe - ziel.draw) + Math.abs(away / summe - ziel.away);
+      };
+      const naiv = rasterAusMarkt(markt, { k: 1 });
+      const korr = rasterAusMarkt(markt, { k: longshotK(markt, ziel) });
+      expect(abstand(korr)).toBeLessThan(abstand(naiv));
+    });
+
+    // Die Richtung ist der eigentliche Befund: die naive Normierung zahlte für
+    // die WAHRSCHEINLICHEN Ergebnisse zu viel — und genau die treten ein.
+    it("korrigiert nach unten, wo es wahrscheinlich ist", () => {
+      const wahr = wahreVerteilung(1.8, 1.1);
+      const markt = schiefesBuch(wahr, 1.3);
+      const naiv = rasterAusMarkt(markt, { k: 1 });
+      const korr = rasterAusMarkt(markt, { k: longshotK(markt, zu1x2(wahr)) });
+      expect(korr[2][1]).toBeLessThan(naiv[2][1]);   // wahrscheinlich → billiger
+      // Bewusst NICHT 5:5 — das steht in beiden Rastern am Deckel (200) und
+      // wäre als Messpunkt untauglich, nicht als Gegenbeweis.
+      expect(korr[3][3]).toBeGreaterThan(naiv[3][3]); // unwahrscheinlich → teurer
+      expect(naiv[3][3]).toBeLessThan(200);
+    });
+
+    it("snapshotFromOdds hält den Korrekturwert fest", () => {
+      const snap = snapshotFromOdds({
+        matchId: "x", home: "A", away: "B", kickoff: "2026-08-28T18:30:00Z",
+        odds: FAVORIT, correctScore: buch(),
+      });
+      expect(snap.rasterK).toBeGreaterThan(0.5);
+      expect(snap.rasterK).toBeLessThan(2.0);
+    });
   });
 
   it("snapshotFromOdds nimmt es und sagt, woher das Raster kommt", () => {
