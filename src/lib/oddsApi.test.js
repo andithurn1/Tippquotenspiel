@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   impliedProbabilities, outcomeProbs, fitLambdas, snapshotFromOdds,
   parseTheOddsApiEvent, snapshotsFromTheOddsApi, RHO, rasterAusMarkt, longshotK, spielerAusMarkt,
+  fitLambdasMitTotal, torschnittAusRaster,
 } from "@/lib/oddsApi";
 import { dixonColes } from "@/lib/oddsGenerator";
 import { scoreTip, DEFAULT_RULES } from "@/lib/engine";
@@ -178,6 +179,120 @@ describe("dixonColes", () => {
     expect(RHO).toBe(0);
     expect(fitLambdas(impliedProbabilities(FAVORIT), { rho: RHO }))
       .toEqual(fitLambdas(impliedProbabilities(FAVORIT)));
+  });
+});
+
+// ── Gebundener Fit: Torschnitt aus dem Markt ────────────────
+// Der freie Fit hat zwei Freiheiten für zwei Vorgaben und trifft die 1X2
+// deshalb fast exakt — der Torschnitt fällt dabei ungeprüft mit ab. Wird er
+// vorgegeben, bleibt ρ als einzige Unbekannte übrig und ist damit gemessen
+// statt geraten.
+describe("fitLambdasMitTotal", () => {
+  const AUSGEGLICHEN = { home: 2.6, draw: 3.3, away: 2.7 };
+  const EINSEITIG = { home: 1.27, draw: 6.4, away: 7.5 };
+
+  it("hält den vorgegebenen Torschnitt exakt ein", () => {
+    const p = impliedProbabilities(AUSGEGLICHEN);
+    const fit = fitLambdasMitTotal(p, 2.9);
+    expect(fit.lamH + fit.lamA).toBeCloseTo(2.9, 2);
+  });
+
+  it("trifft die 1X2 des Marktes trotzdem", () => {
+    const p = impliedProbabilities(AUSGEGLICHEN);
+    const fit = fitLambdasMitTotal(p, 2.9);
+    const nach = outcomeProbs(fit.lamH, fit.lamA, 12, fit.rho);
+    // Der freie Fit liegt bei ~0,1 pp; die Bindung kostet gemessen 0,05 pp mehr.
+    expect(Math.abs(nach.home - p.home)).toBeLessThan(0.005);
+    expect(Math.abs(nach.draw - p.draw)).toBeLessThan(0.005);
+    expect(Math.abs(nach.away - p.away)).toBeLessThan(0.005);
+  });
+
+  // Der eigentliche Befund: die Unabhängigkeits-Annahme liefert in
+  // AUSGEGLICHENEN Spielen zu wenig Remis. Genau dort muss ρ deutlich negativ
+  // werden, in einseitigen dagegen kaum. Gemessen an den neun echten
+  // Bundesliga-Spielen: -0,158 bis -0,013.
+  it("misst ρ — negativ, und in ausgeglichenen Spielen stärker", () => {
+    const aus = fitLambdasMitTotal(impliedProbabilities(AUSGEGLICHEN), 2.9);
+    const ein = fitLambdasMitTotal(impliedProbabilities(EINSEITIG), 4.07);
+    expect(aus.rho).toBeLessThan(0);
+    expect(Math.abs(aus.rho)).toBeGreaterThan(Math.abs(ein.rho));
+  });
+
+  // Negative Dixon-Coles-Faktoren wären negative Wahrscheinlichkeiten.
+  it("bleibt in den Schranken, in denen ρ überhaupt zulässig ist", () => {
+    for (const total of [1.5, 2.5, 3.5, 5.0]) {
+      const fit = fitLambdasMitTotal(impliedProbabilities(AUSGEGLICHEN), total);
+      expect(1 - fit.lamH * fit.lamA * fit.rho).toBeGreaterThan(0);
+      expect(1 + fit.lamH * fit.rho).toBeGreaterThan(0);
+      expect(1 + fit.lamA * fit.rho).toBeGreaterThan(0);
+      expect(1 - fit.rho).toBeGreaterThan(0);
+    }
+  });
+
+  it("ohne brauchbaren Torschnitt gibt es keinen gebundenen Fit", () => {
+    expect(fitLambdasMitTotal(impliedProbabilities(AUSGEGLICHEN), 0)).toBeNull();
+    expect(fitLambdasMitTotal(null, 3)).toBeNull();
+  });
+
+  describe("torschnittAusRaster", () => {
+    const buchMit = (lamH, lamA) => {
+      const pois = (l, k) => { let p = Math.exp(-l); for (let i = 1; i <= k; i++) p *= l / i; return p; };
+      const m = {};
+      for (let h = 0; h < 8; h++) for (let a = 0; a < 8; a++) m[`${h}:${a}`] = 1 / (pois(lamH, h) * pois(lamA, a));
+      return m;
+    };
+
+    it("liest den Torschnitt aus einem sauberen Buch zurück", () => {
+      expect(torschnittAusRaster(buchMit(1.7, 1.3), 1)).toBeCloseTo(3.0, 1);
+    });
+
+    // Ohne Eichung ist die Zahl zu hoch, weil die Marge auf den torreichen
+    // Außenseitern liegt: gemessen 4,74 statt 4,28 für Bayern–Stuttgart.
+    it("die Longshot-Eichung senkt den Torschnitt", () => {
+      const b = buchMit(1.7, 1.3);
+      expect(torschnittAusRaster(b, 1.3)).toBeLessThan(torschnittAusRaster(b, 1));
+    });
+
+    it("ein halbes Buch ist kein Torschnitt", () => {
+      expect(torschnittAusRaster({ "0:0": 12, "1:1": 8 }, 1)).toBeNull();
+    });
+  });
+
+  describe("snapshotFromOdds nennt die Herkunft des Torschnitts", () => {
+    const basis = { matchId: "x", home: "A", away: "B", kickoff: "2026-08-28T18:30:00Z", odds: FAVORIT };
+    const vollesBuch = () => {
+      const m = {};
+      for (let h = 0; h < 6; h++) for (let a = 0; a < 6; a++) m[`${h}:${a}`] = 10 + h * 3 + a * 4;
+      return m;
+    };
+
+    it("ohne alles: geschätzt", () => {
+      expect(snapshotFromOdds(basis).torschnittQuelle).toBe("geschaetzt");
+    });
+
+    it("mit echtem Raster: aus dem Raster", () => {
+      const snap = snapshotFromOdds({ ...basis, correctScore: vollesBuch() });
+      expect(snap.torschnittQuelle).toBe("raster");
+      expect(snap.torschnitt).toBeGreaterThan(0);
+    });
+
+    // Eine echte Über/Unter-Linie ist die direktere Messung und schlägt das
+    // Ergebnis-Buch, das dafür erst geeicht werden muss.
+    it("eine echte Über/Unter-Linie schlägt das Raster", () => {
+      const snap = snapshotFromOdds({ ...basis, correctScore: vollesBuch(), total: 3.4 });
+      expect(snap.torschnittQuelle).toBe("totals");
+      expect(snap.torschnitt).toBeCloseTo(3.4, 1);
+    });
+
+    // Der Punkt, an dem es sonst still auseinanderliefe: das echte Raster
+    // ersetzt `correctScore`, während `margin`/`teamGoals` aus dem Fit kommen.
+    // Mit unterschiedlichem Torschnitt trüge dasselbe Spiel zwei Tor-
+    // Erwartungen — ein Widerspruch mitten in der Wertung.
+    it("Raster und abgeleitete Märkte teilen denselben Torschnitt", () => {
+      const snap = snapshotFromOdds({ ...basis, correctScore: vollesBuch() });
+      const k = longshotK(vollesBuch(), impliedProbabilities(FAVORIT));
+      expect(snap.torschnitt).toBeCloseTo(torschnittAusRaster(vollesBuch(), k), 1);
+    });
   });
 });
 

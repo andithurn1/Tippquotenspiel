@@ -78,13 +78,25 @@ function poissonPmf(lambda, k) {
   return p;
 }
 
+// Die ganze Poisson-Reihe auf einmal — einmal rechnen statt für jede Zelle neu.
+// Rein eine Beschleunigung: dieselben Zahlen wie `poissonPmf` je Element. Sie
+// wird gebraucht, weil der gebundene Fit unten zwei Parameter absucht statt
+// einem und dabei ein Vielfaches an Auswertungen kostet.
+function pmfReihe(lambda, n) {
+  const v = new Array(n);
+  v[0] = Math.exp(-lambda);
+  for (let k = 1; k < n; k++) v[k] = v[k - 1] * lambda / k;
+  return v;
+}
+
 // Welche 1X2-Wahrscheinlichkeiten ergäben sich aus diesen Tor-Erwartungen?
 export function outcomeProbs(lamH, lamA, tail = 12, rho = 0) {
+  const ph = pmfReihe(lamH, tail);
+  const pa = pmfReihe(lamA, tail);
   let pH = 0, pD = 0, pA = 0;
   for (let h = 0; h < tail; h++) {
-    const ph = poissonPmf(lamH, h);
     for (let a = 0; a < tail; a++) {
-      const p = ph * poissonPmf(lamA, a) * dixonColes(h, a, lamH, lamA, rho);
+      const p = ph[h] * pa[a] * dixonColes(h, a, lamH, lamA, rho);
       if (h > a) pH += p; else if (h < a) pA += p; else pD += p;
     }
   }
@@ -116,7 +128,77 @@ export function fitLambdas(probs, { min = 0.15, max = 4.0, rho = 0 } = {}) {
     Math.max(min, grob.lamA - 0.1), Math.min(max, grob.lamA + 0.1),
     0.01
   );
-  return { lamH: fein.lamH, lamA: fein.lamA, fehler: fein.err };
+  return { lamH: fein.lamH, lamA: fein.lamA, rho, fehler: fein.err };
+}
+
+// ── Gebundener Fit: der Torschnitt kommt aus dem Markt ───────
+// Der Fit oben hat zwei Freiheiten (λ_H, λ_A) und zwei Vorgaben (die 1X2 sind
+// nach Abzug der Marge zwei unabhängige Zahlen). Er trifft sie dadurch fast
+// exakt — und der Torschnitt fällt nebenbei mit ab, ohne dass ihn irgendetwas
+// prüfen würde. Genau dort sitzt der verbleibende Fehler: gemessen liegt er bei
+// AUSGEGLICHENEN Spielen rund 0,5 Tore zu niedrig (Freiburg–Bremen 2,43 gegen
+// 2,96 laut Markt), bei einseitigen trifft er (Bayern–Stuttgart 4,14 gegen
+// 4,07). Ursache ist die Unabhängigkeits-Annahme: sie liefert in
+// ausgeglichenen Spielen zu wenig Remis, und das Modell verschafft sie sich
+// über einen zu kleinen Torschnitt.
+//
+// Ist der Torschnitt dagegen VORGEGEBEN (aus dem Markt), bleiben genau zwei
+// Freiheiten übrig: wie er sich auf beide Mannschaften aufteilt, und ρ. Damit
+// ist ρ nicht mehr geraten, sondern **die einzige Größe, die übrig bleibt, wenn
+// 1X2 UND Torschnitt gleichzeitig stimmen sollen** — eine Messung je Spiel
+// statt einer Konstante für alle. Das ist die Auflösung der ρ-Fehlmessung ganz
+// oben: falsch war nie die Mechanik, falsch war der Anker.
+//
+// `total` = erwartete Gesamt-Tore. Woher sie kommt, ist dieser Funktion egal
+// (echtes Ergebnis-Raster oder der `totals`-Markt) — sie ist eine Vorgabe.
+export function fitLambdasMitTotal(probs, total, { rhoMax = 0.45 } = {}) {
+  if (!probs || !(total > 0.3)) return null;
+
+  // ρ darf die Dixon-Coles-Faktoren nicht negativ machen, sonst entstehen
+  // negative Wahrscheinlichkeiten. Die Schranken hängen an den λ selbst.
+  const grenzen = (lamH, lamA) => ({
+    lo: Math.max(-1 / lamH, -1 / lamA, -rhoMax) + 1e-6,
+    hi: Math.min(1 / (lamH * lamA), 1, rhoMax) - 1e-6,
+  });
+  const fehler = (anteil, rho) => {
+    const lamH = anteil * total, lamA = (1 - anteil) * total;
+    const p = outcomeProbs(lamH, lamA, 12, rho);
+    return (p.home - probs.home) ** 2 + (p.draw - probs.draw) ** 2 + (p.away - probs.away) ** 2;
+  };
+  const suche = (aLo, aHi, rLo, rHi, schritt, rSchritt) => {
+    let best = { anteil: aLo, rho: 0, err: Infinity };
+    for (let a = aLo; a <= aHi + 1e-9; a += schritt) {
+      const g = grenzen(a * total, (1 - a) * total);
+      for (let r = Math.max(rLo, g.lo); r <= Math.min(rHi, g.hi) + 1e-9; r += rSchritt) {
+        const err = fehler(a, r);
+        if (err < best.err) best = { anteil: +a.toFixed(4), rho: +r.toFixed(4), err };
+      }
+    }
+    return best;
+  };
+  const grob = suche(0.1, 0.9, -rhoMax, rhoMax, 0.02, 0.02);
+  const fein = suche(
+    Math.max(0.05, grob.anteil - 0.02), Math.min(0.95, grob.anteil + 0.02),
+    grob.rho - 0.02, grob.rho + 0.02, 0.002, 0.002
+  );
+  return {
+    lamH: +(fein.anteil * total).toFixed(3),
+    lamA: +((1 - fein.anteil) * total).toFixed(3),
+    rho: fein.rho,
+    fehler: fein.err,
+  };
+}
+
+// Erwartete Gesamt-Tore aus einem echten Ergebnis-Buch. `k` ist die Eichung
+// gegen den Longshot-Bias (siehe `longshotK`) — OHNE sie ist die Zahl deutlich
+// zu hoch, weil die Marge auf den torreichen Außenseitern liegt: naiv 4,74 für
+// Bayern–Stuttgart, korrigiert 4,28, echte Über/Unter-Linie 4,07.
+export function torschnittAusRaster(markt, k = 1) {
+  const roh = markteintraege(markt);
+  if (roh.length < 10) return null;
+  const gew = roh.map((z) => (k === 1 ? z.p : Math.pow(z.p, k)));
+  const summe = gew.reduce((s, x) => s + x, 0);
+  return +roh.reduce((s, z, i) => s + (z.h + z.a) * gew[i] / summe, 0).toFixed(3);
 }
 
 // ── 3) Kompletter Snapshot aus echten 1X2-Quoten ────────────
@@ -279,11 +361,23 @@ export function spielerAusMarkt({ torschuetzen, home, away, zuordnung = {}, cap 
 
 export function snapshotFromOdds({
   matchId, home, away, kickoff, odds, cap = 200, correctScore = null, namensPool = null,
-  torschuetzen = null, kaderZuordnung = null,
+  torschuetzen = null, kaderZuordnung = null, total = null,
 }) {
   const probs = impliedProbabilities(odds || {});
   if (!probs) return null;
-  const fit = fitLambdas(probs, { rho: RHO });
+
+  // Der Torschnitt zuerst — er entscheidet, welcher Fit läuft.
+  // Reihenfolge: eine echte Über/Unter-Linie schlägt das Ergebnis-Buch, beide
+  // schlagen die Schätzung. `total` darf von außen kommen (`totals`-Markt),
+  // sonst wird es aus dem echten Raster gelesen, wo eines vorliegt.
+  const rasterK = longshotK(correctScore, probs);
+  const torschnitt = Number(total) > 0.3
+    ? Number(total)
+    : (correctScore ? torschnittAusRaster(correctScore, rasterK) : null);
+
+  const fit = torschnitt
+    ? fitLambdasMitTotal(probs, torschnitt)
+    : fitLambdas(probs, { rho: RHO });
   if (!fit) return null;
 
   const snap = buildSnapshot({
@@ -296,7 +390,9 @@ export function snapshotFromOdds({
     // Fit und Raster MÜSSEN dasselbe Modell benutzen. Mit unterschiedlichem
     // `rho` gäbe das Raster die Marktquoten nicht mehr her, aus denen es
     // geschätzt wurde — ein stiller Widerspruch mitten in der Wertung.
-    rho: RHO,
+    // Beim gebundenen Fit ist `rho` gemessen statt gesetzt; es MUSS deshalb
+    // von dort kommen und nicht mehr aus der Konstanten.
+    rho: fit.rho ?? RHO,
   });
 
   // Die ECHTEN 1X2-Quoten gewinnen — sie sind Marktpreis, keine Schätzung.
@@ -308,7 +404,6 @@ export function snapshotFromOdds({
   // Schätzung. Fehlt es, bleibt das abgeleitete Raster stehen.
   // Geeicht am 1X2-Markt DIESES Spiels (siehe `longshotK`) — der zweite,
   // sauberere Markt, den wir für dieselbe Begegnung ohnehin schon haben.
-  const rasterK = longshotK(correctScore, probs);
   const echtesRaster = rasterAusMarkt(correctScore, {
     overround: Math.max(1.0, probs.overround), cap, k: rasterK,
   });
@@ -332,6 +427,12 @@ export function snapshotFromOdds({
   // Sichtbar festhalten, wie stark das Buch schiefgezogen war. Eine Korrektur,
   // die man später nicht mehr nachvollziehen kann, ist eine Behauptung.
   if (echtesRaster) snap.rasterK = rasterK;
+  // Dasselbe für den Torschnitt: gemessen oder geschätzt ist ein Unterschied,
+  // den man später sehen können muss.
+  snap.torschnitt = +(fit.lamH + fit.lamA).toFixed(3);
+  snap.torschnittQuelle = Number(total) > 0.3 ? "totals"
+    : (torschnitt ? "raster" : "geschaetzt");
+  if (fit.rho) snap.rho = fit.rho;
   snap.spielerQuelle = echteSpieler ? "markt" : "erfunden";
   snap.marge = +probs.overround.toFixed(4);
   return snap;
