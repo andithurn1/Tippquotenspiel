@@ -316,6 +316,21 @@ WETTBEWERB. (4) `spielplaene/index.js` ist erzeugt und löst eine Henne-Ei-Kette
 der Importer braucht die Klublisten aus den Ligadateien, die deshalb keine
 Plan-Datei direkt importieren dürfen. Nach einem Import `npm run seed:matches`.
 
+**Echte Quoten** (`oddsApi.js`, `/api/odds`, `klubnamen.js`,
+`scripts/fetch-odds.mjs`): Adapter und Route stehen, der Schlüssel liegt in
+`.env.local` (nie im Repo, nie mit `NEXT_PUBLIC_`). Zwei Kommandos:
+**`npm run odds:pruefen` ist KOSTENLOS** (nutzt den `/events`-Endpunkt und
+gleicht nur Klubnamen ab), **`npm run odds:holen` kostet 1 Credit JE LIGA** und
+legt das Ergebnis als `src/lib/quoten/<key>.js` ab. Der Gratis-Tarif hat 500
+Anfragen im MONAT, und der Zwischenspeicher der Route liegt im
+Arbeitsspeicher — jeder Dev-Server-Neustart holt sonst neu, damit ist das
+Kontingent in einer Woche weg. Deshalb: einmal holen, als Datei ablegen,
+beliebig oft abspielen. `klubnamen.js` übersetzt „Bayern Munich" →
+„FC Bayern München"; **explizite Liste, kein Fuzzy-Match** — „Real Madrid" und
+„Real Sociedad" liegen näher beieinander als manche Schreibvariante desselben
+Vereins, und ein falsch geratener Klub hängt die Quoten still ans falsche Spiel.
+Unbekannte Namen kommen unverändert zurück und fallen dadurch auf.
+
 **Liga-Daten** (`ligaGenerator.js` + `ligen.js`): fünf Wettbewerbe im EINEN
 Match-Katalog — Bundesliga 306 · Premier League 380 · La Liga 380 · Serie A 380
 · Champions League 159 = 1605 Spiele (Aufbau ~50 ms, reine Funktionen, gecacht).

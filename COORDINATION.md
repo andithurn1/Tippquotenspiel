@@ -91,6 +91,60 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-28 (spät) · **Andi** → **Andre** — 🚨 **Quoten-API läuft — und dabei fiel auf: drei Liga-Besetzungen stimmen nicht**
+
+`main` grün, **924 Tests**, Build sauber. Der Nutzer hat einen Test-Schlüssel für
+the-odds-api besorgt. Er liegt in `.env.local` (nicht im Repo). **Die Kette
+trägt end-to-end:** echter Abruf → unser Adapter → Snapshot. Bayern – Stuttgart
+am 28.08. mit 1.27 / 6.40 / 7.50.
+
+**🚨 Der Fund, der alles andere schlägt: bei Premier League, La Liga und Serie A
+sind je DREI Vereine falsch.** Auf- und Absteiger, die wir beim Schätzen nicht
+treffen konnten:
+
+| Liga | bei uns, gibt es nicht mehr | fehlt bei uns |
+|------|------------------------------|----------------|
+| PL | FC Burnley · West Ham · Wolverhampton | Coventry City · Hull City · Ipswich Town |
+| La Liga | Girona · RCD Mallorca · Real Oviedo | Málaga · Racing Santander · Deportivo La Coruña |
+| Serie A | AC Pisa · Hellas Verona · Cremonese | Frosinone · Monza · Venezia |
+
+Ein falscher Spielplan ist ärgerlich; eine falsche Liga-Besetzung macht ganze
+Vereine untippbar und erfindet welche, die es dort nicht gibt. **Die Bundesliga
+ist sauber** (18 von 18, unabhängig von OpenLigaDB bestätigt).
+
+**⚠️ Das geht an deine Balance, deshalb fasse ich es nicht an:** jeder neue Klub
+braucht `attack`/`defense`, und die Ratings sind über Liga UND Champions League
+abgestimmt. Ein Aufsteiger mit Mittelfeld-Rating verschiebt die
+Quoten-Verteilung, gegen die die Presets vermessen sind. Reihenfolge wäre also:
+Listen korrigieren → Ratings setzen → `npm run balance`. Sag, ob du das nimmst
+oder ob ich soll.
+
+**Zwei Kommandos, die du kennen solltest:**
+- **`npm run odds:pruefen` kostet NICHTS.** Der `/events`-Endpunkt ist gratis;
+  der Lauf gleicht nur Klubnamen ab. Genau so ist der Fund oben entstanden.
+- **`npm run odds:holen` kostet 1 Credit JE LIGA** und legt das Ergebnis als
+  `src/lib/quoten/<key>.js` ab.
+
+**Warum die Datei und nicht einfach die Route:** der Zwischenspeicher in
+`/api/odds` liegt im Arbeitsspeicher. Beim Entwickeln startet man den Server
+zwanzigmal am Tag, und 500 Anfragen im MONAT sind so in einer Woche weg. Einmal
+holen, ablegen, beliebig oft abspielen — die ganze heutige Sitzung hat **2
+Credits** gekostet, 498 sind übrig.
+
+**Noch NICHT verdrahtet:** die echten Quoten fließen noch nicht in
+`baueLiga`/den Katalog. Das ist der nächste Schritt und berührt die Balance
+(echte Quoten sind anders verteilt als unsere erzeugten, siehe `RATING_SHRINK`),
+deshalb wollte ich es nicht nebenbei machen.
+
+**Eine Selbstkorrektur, weil sie zu deinen Blindstellen-Funden passt:** ich hatte
+im Prüflauf zuerst eine Heuristik „gleich viele Abweichungen auf beiden Seiten =
+Auf-/Absteiger". Klingt plausibel, ist falsch — bei der Serie A sind 17 der 20
+Abweichungen bloß deutsche Namen (AC Mailand ↔ AC Milan) und trotzdem stehen
+beide Seiten gleich. Eine Diagnose, die meistens danebenliegt, ist schlechter
+als keine, weil sie nach Messung aussieht. Jetzt stehen nur noch beide Listen da.
+
+---
+
 ### 2026-07-28 (Abend) · **Andi** → **Andre** — ⚠️ **`engine.js` angefasst (klein, additiv) — und `Tippabgabe.jsx` war stillgelegt**
 
 `main` grün, **916 Tests**, Build sauber. **Ich habe `engine.js` angefasst** —

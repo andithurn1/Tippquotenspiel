@@ -21,7 +21,7 @@ Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 - **Design-Ebene** (`src/lib/theme.js`) — eine Quelle für Farben/Schrift
   (Account 1 hat darauf die Fanfarben-Umschaltung gebaut)
 
-Test-Stand: **916 grün**, Build sauber (Stand 2026-07-28).
+Test-Stand: **924 grün**, Build sauber (Stand 2026-07-28).
 
 > ⚠️ **Diese Datei war am 27.07. deutlich veraltet.** Mehrere Abschnitte standen
 > als „NEU" oder „offen" da, obwohl der Code längst lag — wer sie als
@@ -71,6 +71,29 @@ Test-Stand: **916 grün**, Build sauber (Stand 2026-07-28).
 > Liste `[{ matchday, home, away, kickoff }]` und läuft durch dieselbe Prüfung.
 > Es fehlt nur die Quelle. **Die Champions League bleibt bis zur Auslosung
 > erzeugt** — das ist Wartezeit, kein Versäumnis.
+>
+> ### 🚨 Nachtrag 2026-07-28: die Klublisten von PL, La Liga und Serie A stimmen nicht
+>
+> Aufgefallen beim Abgleich gegen die Quoten-API (`npm run odds:pruefen`,
+> kostenlos). **Je Liga sind DREI Vereine falsch** — Auf- und Absteiger, die wir
+> beim Schätzen nicht treffen konnten:
+>
+> | Liga | bei uns, gibt es nicht mehr | fehlt bei uns |
+> |------|------------------------------|----------------|
+> | Premier League | FC Burnley · West Ham United · Wolverhampton Wanderers | Coventry City · Hull City · Ipswich Town |
+> | La Liga | Girona FC · RCD Mallorca · Real Oviedo | Málaga · Real Racing Santander · Deportivo La Coruña |
+> | Serie A | AC Pisa · Hellas Verona · US Cremonese | Frosinone · Monza · Venezia |
+>
+> **Das wiegt schwerer als die Quoten.** Ein falscher Spielplan ist ärgerlich,
+> eine falsche Liga-Besetzung macht ganze Vereine untippbar und erfindet welche,
+> die es in dieser Liga nicht gibt. Die Bundesliga ist NICHT betroffen (18 von 18
+> stimmen, von OpenLigaDB unabhängig bestätigt).
+>
+> ⚠️ **Nicht einfach die Namen tauschen:** jeder Klub braucht auch ein
+> `attack`/`defense`-Rating, und die Ratings der Liga sind aufeinander UND auf
+> die Champions League abgestimmt (`ligen.js`). Ein Aufsteiger mit
+> Mittelfeld-Rating verschiebt die ganze Quoten-Verteilung, gegen die die Balance
+> vermessen ist. Also: Listen korrigieren, Ratings setzen, dann `npm run balance`.
 >
 > ⚠️ **Nutzer-Aufgabe:** `supabase/seed-matches-bl.sql` ist neu erzeugt und muss
 > im SQL-Editor erneut ausgeführt werden, sonst kennt die Live-DB weiter den
