@@ -123,8 +123,47 @@ export function fitLambdas(probs, { min = 0.15, max = 4.0, rho = 0 } = {}) {
 // Der zurückgegebene Snapshot hat exakt die Form der Mock-Quelle, trägt aber
 // zusätzlich `quelle` und `marge` — damit in der Abrechnung nachvollziehbar
 // bleibt, woher die Zahlen kamen.
+// ── Echtes Ergebnis-Raster einsetzen ────────────────────────
+// `markt` = { "2:1": 9.5, … } echte Marktpreise je Endstand.
+//
+// ⚠️ Die Preise dürfen NICHT roh übernommen werden. Ergebnis-Wetten tragen eine
+// viel größere Buchmacher-Marge als 1X2: gemessen **65 %** gegenüber 7,7 %.
+// Roh eingesetzt zahlte ein echtes Raster also rund die Hälfte eines
+// abgeleiteten — zwei Spiele derselben Runde wären unterschiedlich viel wert,
+// je nachdem ob ein US-Buchmacher den Markt gestellt hat. Das wäre ein
+// Fairness-Bruch, und zwar ein unsichtbarer.
+//
+// Deshalb: Marge herausrechnen (über ALLE Ergebnisse, die das Buch führt, auch
+// die jenseits unseres 0–5-Rasters), dann UNSERE Marge wieder aufschlagen. Was
+// bleibt, ist die echte Wahrscheinlichkeitsverteilung des Marktes auf unserem
+// Preisniveau — der eigentliche Gewinn, denn genau daran hängt die
+// Nähe-Wertung.
+export function rasterAusMarkt(markt, { overround = 1.07, cap = 200, grid = 6 } = {}) {
+  if (!markt || typeof markt !== "object") return null;
+  const roh = Object.entries(markt)
+    .map(([k, preis]) => {
+      const t = String(k).match(/^(\d+):(\d+)$/);
+      return t && Number(preis) > 1 ? { h: +t[1], a: +t[2], p: 1 / Number(preis) } : null;
+    })
+    .filter(Boolean);
+  if (roh.length < 10) return null;   // ein halbes Buch ist keine Verteilung
+
+  const summe = roh.reduce((s, z) => s + z.p, 0);
+  const raster = Array.from({ length: grid }, () => Array(grid).fill(cap));
+  let getroffen = 0;
+  for (const z of roh) {
+    if (z.h >= grid || z.a >= grid) continue;   // 6+ Tore: außerhalb des Rasters
+    const p = z.p / summe;
+    raster[z.h][z.a] = Math.min(cap, Math.max(1.01, +(1 / (p * overround)).toFixed(2)));
+    getroffen++;
+  }
+  // Lücken im Buch würden als Höchstquote stehenbleiben und wären dann die
+  // bestbezahlte Wette überhaupt. Lieber gar kein echtes Raster.
+  return getroffen >= grid * grid * 0.8 ? raster : null;
+}
+
 export function snapshotFromOdds({
-  matchId, home, away, kickoff, odds, cap = 200,
+  matchId, home, away, kickoff, odds, cap = 200, correctScore = null, namensPool = null,
 }) {
   const probs = impliedProbabilities(odds || {});
   if (!probs) return null;
@@ -137,7 +176,7 @@ export function snapshotFromOdds({
     // Die Marge des Anbieters übernehmen: so bleiben unsere abgeleiteten
     // Quoten im selben Preisniveau wie die echten.
     overround: Math.max(1.0, probs.overround),
-    cap,
+    cap, namensPool,
     // Fit und Raster MÜSSEN dasselbe Modell benutzen. Mit unterschiedlichem
     // `rho` gäbe das Raster die Marktquoten nicht mehr her, aus denen es
     // geschätzt wurde — ein stiller Widerspruch mitten in der Wertung.
@@ -148,7 +187,16 @@ export function snapshotFromOdds({
   snap.winner = {
     home: Number(odds.home), draw: Number(odds.draw), away: Number(odds.away),
   };
+  // Dasselbe für das Ergebnis-Raster, wo der Markt es hergibt. Es ist die
+  // Grundlage der Nähe-Wertung — eine Messung ist dort mehr wert als die beste
+  // Schätzung. Fehlt es, bleibt das abgeleitete Raster stehen.
+  const echtesRaster = rasterAusMarkt(correctScore, {
+    overround: Math.max(1.0, probs.overround), cap,
+  });
+  if (echtesRaster) snap.correctScore = echtesRaster;
+
   snap.quelle = "api";
+  snap.rasterQuelle = echtesRaster ? "markt" : "abgeleitet";
   snap.marge = +probs.overround.toFixed(4);
   return snap;
 }
@@ -160,7 +208,9 @@ function median(werte) {
   const s = werte.filter((v) => Number(v) > 1).sort((a, b) => a - b);
   if (!s.length) return null;
   const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  // Auf zwei Stellen runden: bei gerader Anzahl entsteht sonst aus 4,35 und
+  // 4,50 die Quote 4,425000000000001, und die steht so in der Oberfläche.
+  return s.length % 2 ? s[m] : +((s[m - 1] + s[m]) / 2).toFixed(2);
 }
 
 // Ein Spiel im Format von The Odds API → { matchId, home, away, kickoff, odds }.

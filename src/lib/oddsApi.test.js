@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   impliedProbabilities, outcomeProbs, fitLambdas, snapshotFromOdds,
-  parseTheOddsApiEvent, snapshotsFromTheOddsApi, RHO,
+  parseTheOddsApiEvent, snapshotsFromTheOddsApi, RHO, rasterAusMarkt,
 } from "@/lib/oddsApi";
 import { dixonColes } from "@/lib/oddsGenerator";
 import { scoreTip, DEFAULT_RULES } from "@/lib/engine";
@@ -178,5 +178,63 @@ describe("dixonColes", () => {
     expect(RHO).toBe(0);
     expect(fitLambdas(impliedProbabilities(FAVORIT), { rho: RHO }))
       .toEqual(fitLambdas(impliedProbabilities(FAVORIT)));
+  });
+});
+
+// ── Echtes Ergebnis-Raster aus dem Markt ────────────────────
+describe("rasterAusMarkt", () => {
+  // Ein vollständiges Buch über 0..5 plus ein paar hohe Ergebnisse, wie es der
+  // echte Markt liefert (dort sind es 66 Ausgänge).
+  const buch = () => {
+    const m = {};
+    for (let h = 0; h < 6; h++) for (let a = 0; a < 6; a++) m[`${h}:${a}`] = 10 + h * 3 + a * 4;
+    m["6:0"] = 90; m["6:1"] = 110; m["0:6"] = 260;   // außerhalb unseres Rasters
+    return m;
+  };
+
+  it("liefert ein 6×6-Raster", () => {
+    const r = rasterAusMarkt(buch());
+    expect(r).toHaveLength(6);
+    expect(r[0]).toHaveLength(6);
+  });
+
+  // Der Kern: die Marge des Ergebnis-Marktes (gemessen 65 %) darf nicht
+  // durchschlagen, sonst zahlte ein echtes Raster halb so viel wie ein
+  // abgeleitetes — zwei Spiele derselben Runde wären ungleich viel wert.
+  it("rechnet die Marge des Buches heraus und legt UNSERE an", () => {
+    const r = rasterAusMarkt(buch(), { overround: 1.07 });
+    const summe = r.flat().reduce((s, q) => s + 1 / q, 0);
+    // Die 36 Zellen tragen nicht die volle Masse (6+ Tore fehlen), aber die
+    // Marge muss bei ~7 % liegen und nicht bei den 65 % des Buches.
+    expect(summe).toBeGreaterThan(0.9);
+    expect(summe).toBeLessThan(1.08);
+  });
+
+  it("die Reihenfolge des Marktes bleibt erhalten", () => {
+    const r = rasterAusMarkt(buch());
+    // Im Testbuch ist 0:0 am billigsten, also am wahrscheinlichsten.
+    expect(r[0][0]).toBeLessThan(r[5][5]);
+  });
+
+  it("ein lückenhaftes Buch wird verworfen statt halb übernommen", () => {
+    // Lücken blieben sonst als Höchstquote stehen und wären die
+    // bestbezahlte Wette überhaupt.
+    const halb = { "0:0": 12, "1:0": 9, "1:1": 8, "2:1": 10 };
+    expect(rasterAusMarkt(halb)).toBeNull();
+    expect(rasterAusMarkt(null)).toBeNull();
+    expect(rasterAusMarkt({})).toBeNull();
+  });
+
+  it("snapshotFromOdds nimmt es und sagt, woher das Raster kommt", () => {
+    const ohne = snapshotFromOdds({ matchId: "x", home: "A", away: "B", kickoff: "2026-08-28T18:30:00Z", odds: FAVORIT });
+    expect(ohne.rasterQuelle).toBe("abgeleitet");
+    const mit = snapshotFromOdds({
+      matchId: "x", home: "A", away: "B", kickoff: "2026-08-28T18:30:00Z",
+      odds: FAVORIT, correctScore: buch(),
+    });
+    expect(mit.rasterQuelle).toBe("markt");
+    expect(mit.correctScore).not.toEqual(ohne.correctScore);
+    // Die 1X2-Quoten bleiben in jedem Fall die echten.
+    expect(mit.winner).toEqual({ home: 1.4, draw: 5.0, away: 7.0 });
   });
 });

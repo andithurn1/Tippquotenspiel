@@ -19,6 +19,7 @@
 
 import { baueLiga, findeDerby, alsQuotenQuelle } from "./ligaGenerator";
 import { SPIELPLAENE } from "./spielplaene";
+import { QUOTEN } from "./quoten";
 
 // attack/defense: 1.0 = Liga-Durchschnitt. attack hoch = torgefährlich,
 // defense hoch = anfällig (wirkt als Faktor auf die gegnerische Tor-Erwartung).
@@ -95,6 +96,7 @@ export function getBundesligaMatches() {
       wettbewerb: "bl", idPrefix: "bl26", ratings: TEAM_RATINGS, derbys: DERBYS,
       saisonStart: SEASON_START, utcOffset: 2, slotFuer,
       spielplan: SPIELPLAENE.bl ?? null,
+      quoten: QUOTEN.bl ?? null,
     });
   }
   return _cache;

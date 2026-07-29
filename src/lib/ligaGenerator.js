@@ -28,6 +28,7 @@
 
 import { generateMatchOdds, simulateResult } from "./oddsGenerator";
 import { normalisiereSpielplan, pruefeSpielplan } from "./spielplan";
+import { snapshotFromOdds } from "./oddsApi";
 
 const WOCHE = 7 * 24 * 3600 * 1000;
 
@@ -111,13 +112,21 @@ export function anstoss({ saisonStart, matchday, slot, utcOffset }) {
 //                genau das, was hier nicht nachgerechnet werden darf.
 export function baueLiga({
   wettbewerb, idPrefix, ratings, derbys = [], saisonStart, utcOffset = 2, slotFuer,
-  namensPool = null, spielplan = null,
+  namensPool = null, spielplan = null, quoten = null,
 }) {
   const teams = Object.keys(ratings);
 
   // ── Ein Spiel fertig bauen. Für beide Wege identisch: an den Quoten,
   //    Ergebnissen und Torschützen ändert ein echter Kalender nichts, die
   //    bleiben erzeugt, solange keine Quoten-API angebunden ist.
+  // Echte Marktquoten, nachschlagbar über die Begegnung. Sie decken immer nur
+  // die NÄCHSTEN Spiele ab — kein Buchmacher bepreist eine ganze Saison im
+  // Voraus. Der Rest bleibt erzeugt, und das ist kein Mangel, sondern der
+  // Normalfall.
+  const marktQuoten = new Map(
+    (quoten ?? []).map((q) => [`${q.home}|${q.away}`, q]),
+  );
+
   const baue = ({ matchday, home, away, kickoff, echterSpielplan }) => {
     const matchId = `${idPrefix}-md${matchday}-${ratings[home].code}-${ratings[away].code}`.toLowerCase();
     const hr = ratings[home], ar = ratings[away];
@@ -125,13 +134,28 @@ export function baueLiga({
       homeAttack: hr.attack, homeDefense: hr.defense,
       awayAttack: ar.attack, awayDefense: ar.defense,
     };
-    const snapshot = generateMatchOdds({ matchId, home, away, kickoff, seed: matchId, ...strengths, namensPool });
+    const markt = marktQuoten.get(`${home}|${away}`);
+    // Echte Quoten schlagen erzeugte — an jeder Stelle, an der es sie gibt.
+    // `snapshotFromOdds` übernimmt 1X2 unverändert, setzt das echte
+    // Ergebnis-Raster ein, wo der Markt es hergibt, und leitet den Rest
+    // konsistent daraus ab. Schlägt das fehl (unbrauchbare Quoten), fällt es
+    // still auf den Generator zurück — eine Runde ohne Spiele wäre schlimmer.
+    const snapshot = (markt && snapshotFromOdds({
+      matchId, home, away, kickoff, odds: markt.odds,
+      correctScore: markt.correctScore ?? null, namensPool,
+    })) || generateMatchOdds({ matchId, home, away, kickoff, seed: matchId, ...strengths, namensPool });
     // Derby-Label auf den Snapshot: die Engine kennt keine Vereins-Paarungen
     // und bleibt so sportart-neutral — sie liest nur `snap.derby`.
     const derby = findeDerby(derbys, home, away);
     if (derby) snapshot.derby = derby.label;
     const result = simulateResult(snapshot, strengths, `${matchId}-result`);
-    return { matchId, matchday, home, away, kickoff, snapshot, result, wettbewerb, phase: "liga", echterSpielplan };
+    return {
+      matchId, matchday, home, away, kickoff, snapshot, result,
+      wettbewerb, phase: "liga", echterSpielplan,
+      // Getrennt festgehalten, weil es getrennte Wahrheiten sind: der KALENDER
+      // kann echt sein und die Quoten erzeugt, und umgekehrt.
+      echteQuoten: snapshot.quelle === "api",
+    };
   };
 
   if (spielplan) {
