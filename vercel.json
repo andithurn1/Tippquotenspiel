@@ -1,8 +1,20 @@
 {
+  "_hinweis": [
+    "Der Gratis-Tarif (Hobby) erlaubt nur EINEN Cron-Lauf pro Tag. Ein",
+    "stuendlicher Plan ('0 * * * *') laesst das Deployment mit einem Fehler",
+    "abbrechen - nicht erst den Job, sondern den ganzen Build.",
+    "Deshalb taeglich um 03:00 UTC.",
+    "",
+    "Folge: ein Spieltag oeffnet sich bis zu 24 h spaeter als moeglich. Der",
+    "Big-Game-Wert wird also spaeter eingefroren. Verkraftbar, weil das",
+    "Tipp-Fenster ohnehin eine Woche vor Anpfiff aufgeht - aber der Admin-Knopf",
+    "in der Spielwahl bleibt der schnellere Weg, wenn es genau sein soll.",
+    "Mit einem Pro-Tarif kann hier wieder '0 * * * *' stehen."
+  ],
   "crons": [
     {
       "path": "/api/matchday/auto",
-      "schedule": "0 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
