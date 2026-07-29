@@ -26,6 +26,34 @@ Dateien sind lang:
 Erlaubnisse liegen in `.claude/settings.json` (committed) — Lesen/Schreiben,
 `git`, `npm`, `node`; nur Force-Pushes fragen nach. Da ist nichts einzurichten.
 
+### Arbeitsweise, die Andi ausdrücklich will
+
+- **Möglichst wenig Rückfragen.** Andi schaut nur gelegentlich rüber. Aufgaben
+  hintereinander wegarbeiten, Entscheidungen aus den Repo-Dokumenten ableiten
+  statt zu fragen. Nachfragen nur, wenn die Antwort das VORGEHEN ändert und
+  sich nicht aus Roadmap/Kanal/Code ergibt.
+- **Keine Erlaubnis-Schleifen.** Commit + Push nach jedem abgeschlossenen
+  Schritt, ohne vorher zu fragen. Klein und oft (Push-Regeln unten).
+- **Befunde ins Repo, nicht in den Chat.** Was auffällt, gehört nach
+  `design/roadmap.md` bzw. `COORDINATION.md` — dort sieht es auch die andere
+  Session, ein Chatverlauf ist nach dem Fenster weg.
+- **Messen statt annehmen.** In dieser Sitzung sind zwei eigene Fehlmessungen
+  aufgeflogen, beide durch eine ANNAHME statt einer Messung (siehe `RHO` in
+  `oddsApi.js`). Wo eine Zahl gebraucht wird: erst nachmessen.
+
+### ⚙️ Werkzeug-Fallen auf diesem Rechner (Account 1 / Andi)
+
+- **Node ist NICHT im PATH.** Vor jedem `npm`-Aufruf im Bash-Tool:
+  ```bash
+  export PATH="/c/Users/andit/AppData/Local/Microsoft/WinGet/Packages/OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe/node-v24.18.0-win-x64:$PATH"
+  ```
+- **`npm run build` NICHT bei laufendem Dev-Server** — überschreibt `.next`,
+  danach lädt der Dev-Server stumm nichts mehr. Erst `preview_stop`.
+- **Commit-Nachrichten über eine Datei** (`git commit -F <datei>`), nicht per
+  `-m` mit Anführungszeichen: PowerShell zerlegt sie sonst.
+- **Der Mock-Store lebt im Arbeitsspeicher.** Ein voller Seitenwechsel im
+  Browser setzt ihn zurück — angelegte Runden sind dann weg.
+
 ## Stack
 
 - **Next.js (App Router) + React**, JavaScript (kein TypeScript), Inline-Styles

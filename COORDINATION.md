@@ -43,7 +43,13 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
 | 2 (Andre) | **PAUSE bis Freitagabend.** Nichts hängt lokal, alles Fertige liegt auf `main` (letzter Stand: Joker-Oberfläche, Balance-Durchgang 1+2). Kein Bereich reserviert. | pausiert | 2026-07-28 |
-| 1 (Andi) | **Alles frei.** Solange Andre pausiert, gibt es keine Claim-Kollision — Andi arbeitet ohne Reservierung weiter, hält aber die Push-Regeln (klein & oft, `schema.sql` ankündigen). Vor Freitagabend hier den Stand hinterlassen. **Der OneDrive-Ordner ist wieder sauber** — die sieben uncommitteten Dateien liegen als `eb8d9ab` auf `main`. | aktiv | 2026-07-28 |
+| 1 (Andi) | **Alles frei, arbeitet durch bis das Wochenlimit aufgebraucht ist.** Kein Bereich reserviert; Andre pausiert. Zuletzt angefasst: Quoten-/Spielplan-/Kader-Kette (`oddsApi`, `ligaGenerator`, `kader`, `spielplan`, `mlsData`), `engine.js` (nur additiv, siehe Log), `Tippabgabe`, `Spielwahl`, `Spielerstellung`. | aktiv | 2026-07-29 |
+
+> **⚠️ Kontingent-Lage (Stand 2026-07-29):** Account 1 (Andi) fährt sein
+> Wochenlimit bis Freitag bewusst aus — bis dahin passiert hier viel und in
+> kurzen Abständen. **Account 2 (Andre) bekommt Freitag sein volles
+> Wochenlimit zurück** und übernimmt dann. Wer Freitag als Andre startet:
+> `git pull` und diesen Kanal von oben lesen, es hat sich viel bewegt.
 
 ---
 
@@ -154,6 +160,57 @@ Auf-/Absteiger". Klingt plausibel, ist falsch — bei der Serie A sind 17 der 20
 Abweichungen bloß deutsche Namen (AC Mailand ↔ AC Milan) und trotzdem stehen
 beide Seiten gleich. Eine Diagnose, die meistens danebenliegt, ist schlechter
 als keine, weil sie nach Messung aussieht. Jetzt stehen nur noch beide Listen da.
+
+---
+
+### 2026-07-29 · **ÜBERGABE** — Stand nach dem großen Quoten-Tag
+
+Für ein frisches Fenster und für Andre am Freitag. `main` bei `9f7c0a4`,
+**987 Tests grün**, Build sauber, Balance-Durchgang ohne Befund.
+
+#### Was seit gestern dazugekommen ist (grob 25 Commits)
+
+| Thema | Stand | Dateien |
+|---|---|---|
+| **Zeitachse** | fertig, eingehängt | `zeitachse.js`, `Zeitachse.jsx` |
+| **Echte Spielpläne** | BL echt (306 Spiele, OpenLigaDB) | `spielplan.js`, `spielplaene/`, `scripts/import-spielplan.mjs` |
+| **Klublisten PL/PD/SA** | korrigiert, 9 Vereine getauscht | `premierLeagueData.js` u. a. |
+| **Echte Marktquoten** | 40 Spiele, inkl. echtem Ergebnis-Raster | `oddsApi.js`, `quoten/`, `scripts/fetch-odds.mjs` |
+| **MLS** | neue Liga, komplett ohne Simulation | `mlsData.js` |
+| **Kader aus Quoten** | gebaut, wartet auf 2. Spielrunde | `kader.js`, `kader/` |
+| **Torschützen-Modus** | Admin wählt je Team / je Spiel | `engine.js`, `Tippabgabe.jsx` |
+
+#### Wo was zu finden ist
+
+- **Was als Nächstes ansteht:** `design/roadmap.md`, Abschnitt „Offen". Dort
+  stehen auch die drei VORGEHEN-Blöcke (Spielpläne, Quoten-Modell, Kader) mit
+  Fallunterscheidungen — die sind beim Weiterarbeiten die wichtigsten Seiten.
+- **Werkzeuge:** `npm run odds:pruefen` (kostenlos, gleicht Klubnamen ab),
+  `npm run odds:holen -- <liga> [--raster] [--schuetzen]`,
+  `npm run import:spielplan -- <liga>`, `npm run balance`, `npm run seed:matches`.
+- **Quoten-Credits:** ~365 von 500 übrig (Gratis-Tarif, Monatskontingent).
+  `--raster` und `--schuetzen` kosten **1 Credit JE SPIEL** — sparsam einsetzen.
+  Der Schlüssel steht in `.env.local` (nicht im Repo).
+- **Modul-Erklärungen:** `CLAUDE.md`, ein Absatz je Modul mit dem WARUM.
+
+#### ⚠️ Offene Nutzer-Aufgaben (nicht von Claude erledigbar)
+
+1. **Vercel deployt nicht.** Live läuft `021f5fd` vom 26.07., `main` ist 26
+   Commits weiter. In Vercel → Settings → Git prüfen, ob Production Branch
+   `main` ist und die GitHub-Verbindung steht. Bis dahin ist nichts von der
+   ganzen Quoten-Arbeit live.
+2. **`ODDS_API_KEY` fehlt in Vercel** (lokal vorhanden). Ohne ihn bleibt die
+   Live-App auf erzeugten Quoten.
+
+Erledigt ist dagegen: Schema + alle sechs Seed-Dateien in Supabase ausgeführt
+(1637 Spiele), Env-Variablen gesetzt, Auth-Redirect konfiguriert. Der Login
+per Magic-Link steht. **Spiele sind ohne Login unsichtbar** — das ist die
+RLS-Regel `matches_read ... to authenticated`, kein Fehler.
+
+#### Was ich NICHT angefasst habe
+
+`balanceSim.js`, `presets*.js`, `reglerWarnung.js`, `spieltag.js`,
+`schema.sql`, Store-Dateien, alles rund um den Team-Modus. Das bleibt Andre.
 
 ---
 
