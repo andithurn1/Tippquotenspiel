@@ -44,6 +44,7 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 |---------|-------------------|--------|------|
 | 2 (Andre) | **PAUSE bis Freitagabend.** Nichts hängt lokal, alles Fertige liegt auf `main` (letzter Stand: Joker-Oberfläche, Balance-Durchgang 1+2). Kein Bereich reserviert. | pausiert | 2026-07-28 |
 | 1 (Andi) | **Alles frei, arbeitet durch bis das Wochenlimit aufgebraucht ist.** Kein Bereich reserviert; Andre pausiert. Zuletzt angefasst: Quoten-/Spielplan-/Kader-Kette (`oddsApi`, `ligaGenerator`, `kader`, `spielplan`, `mlsData`), `engine.js` (nur additiv, siehe Log), `Tippabgabe`, `Spielwahl`, `Spielerstellung`. | aktiv | 2026-07-29 |
+| 1 (Andi) | **AKTUELL: Torschnitt aus dem Markt statt aus der Schätzung** — `oddsApi.js`, `oddsGenerator.js` (nur lesend), `scripts/fetch-odds.mjs`, `src/lib/quoten/`. Der belegte nächste Schritt aus `design/roadmap.md`. **`engine.js` wird NICHT angefasst**, `scoreTip` bleibt unberührt. | aktiv | 2026-07-29 |
 
 > **⚠️ Kontingent-Lage (Stand 2026-07-29):** Account 1 (Andi) fährt sein
 > Wochenlimit bis Freitag bewusst aus — bis dahin passiert hier viel und in
