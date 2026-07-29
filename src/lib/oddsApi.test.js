@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   impliedProbabilities, outcomeProbs, fitLambdas, snapshotFromOdds,
   parseTheOddsApiEvent, snapshotsFromTheOddsApi, RHO, rasterAusMarkt, longshotK, spielerAusMarkt,
-  fitLambdasMitTotal, torschnittAusRaster,
+  fitLambdasMitTotal, torschnittAusRaster, torschnittAusTotals, totalsAusEvent,
 } from "@/lib/oddsApi";
 import { dixonColes } from "@/lib/oddsGenerator";
 import { scoreTip, DEFAULT_RULES } from "@/lib/engine";
@@ -255,6 +255,99 @@ describe("fitLambdasMitTotal", () => {
 
     it("ein halbes Buch ist kein Torschnitt", () => {
       expect(torschnittAusRaster({ "0:0": 12, "1:1": 8 }, 1)).toBeNull();
+    });
+  });
+
+  // Die billigste und direkteste Messung: `totals` kommt in derselben
+  // Liga-Anfrage wie 1X2 (1 Credit für die ganze Liga), das Ergebnis-Buch
+  // kostet 1 Credit JE SPIEL.
+  describe("torschnittAusTotals", () => {
+    // Ein Buch, das exakt zu einem bekannten λ passt — dann muss die Funktion
+    // genau dieses λ zurückliefern.
+    const linienFuer = (lam, punkte = [2.5, 3.5], marge = 1.05) => {
+      const pUeber = (l, linie) => {
+        let kum = 0, term = Math.exp(-l);
+        for (let k = 0; k <= Math.floor(linie); k++) { kum += term; term *= l / (k + 1); }
+        return 1 - kum;
+      };
+      return punkte.map((linie) => {
+        const p = pUeber(lam, linie);
+        return { linie, ueber: 1 / (p * marge), unter: 1 / ((1 - p) * marge) };
+      });
+    };
+
+    it("liest den Torschnitt zurück, mit dem das Buch gebaut wurde", () => {
+      expect(torschnittAusTotals(linienFuer(3.1))).toBeCloseTo(3.1, 1);
+      expect(torschnittAusTotals(linienFuer(2.4))).toBeCloseTo(2.4, 1);
+      expect(torschnittAusTotals(linienFuer(4.07))).toBeCloseTo(4.07, 1);
+    });
+
+    it("eine einzelne Linie genügt", () => {
+      expect(torschnittAusTotals(linienFuer(3.0, [2.5]))).toBeCloseTo(3.0, 1);
+    });
+
+    it("die Marge fällt heraus — sie darf den Torschnitt nicht verschieben", () => {
+      const schmal = torschnittAusTotals(linienFuer(3.2, [2.5, 3.5], 1.02));
+      const breit = torschnittAusTotals(linienFuer(3.2, [2.5, 3.5], 1.15));
+      expect(schmal).toBeCloseTo(breit, 1);
+    });
+
+    it("unbrauchbare Linien liefern nichts statt einer erfundenen Zahl", () => {
+      expect(torschnittAusTotals([])).toBeNull();
+      expect(torschnittAusTotals(null)).toBeNull();
+      // Nur eine Seite bepreist: ohne Gegenseite ist die Marge nicht bestimmbar.
+      expect(torschnittAusTotals([{ linie: 2.5, ueber: 1.9 }])).toBeNull();
+    });
+
+    it("passt zum gebundenen Fit", () => {
+      const lam = torschnittAusTotals(linienFuer(3.3));
+      const fit = fitLambdasMitTotal(impliedProbabilities({ home: 2.1, draw: 3.5, away: 3.4 }), lam);
+      expect(fit.lamH + fit.lamA).toBeCloseTo(3.3, 1);
+    });
+  });
+
+  describe("totalsAusEvent", () => {
+    const event = (bookmakers) => ({ bookmakers });
+    const buch = (ueber, unter, linie = 2.5) => ({
+      markets: [{
+        key: "totals",
+        outcomes: [
+          { name: "Over", point: linie, price: ueber },
+          { name: "Under", point: linie, price: unter },
+        ],
+      }],
+    });
+
+    it("nimmt den Median je Linie über alle Buchmacher", () => {
+      const l = totalsAusEvent(event([buch(1.8, 2.0), buch(1.9, 1.95), buch(2.0, 1.9)]));
+      expect(l).toHaveLength(1);
+      expect(l[0].linie).toBe(2.5);
+      expect(l[0].ueber).toBe(1.9);
+    });
+
+    it("hält mehrere Linien auseinander und sortiert sie", () => {
+      const l = totalsAusEvent(event([
+        { markets: [{ key: "totals", outcomes: [
+          { name: "Over", point: 3.5, price: 2.6 }, { name: "Under", point: 3.5, price: 1.5 },
+          { name: "Over", point: 2.5, price: 1.8 }, { name: "Under", point: 2.5, price: 2.0 },
+        ] }] },
+      ]));
+      expect(l.map((x) => x.linie)).toEqual([2.5, 3.5]);
+    });
+
+    it("verwirft einseitig bepreiste Linien", () => {
+      const l = totalsAusEvent(event([
+        { markets: [{ key: "totals", outcomes: [{ name: "Over", point: 2.5, price: 1.8 }] }] },
+      ]));
+      expect(l).toEqual([]);
+    });
+
+    it("ignoriert fremde Märkte", () => {
+      const l = totalsAusEvent(event([
+        { markets: [{ key: "h2h", outcomes: [{ name: "A", price: 1.8 }] }] },
+      ]));
+      expect(l).toEqual([]);
+      expect(totalsAusEvent(null)).toEqual([]);
     });
   });
 

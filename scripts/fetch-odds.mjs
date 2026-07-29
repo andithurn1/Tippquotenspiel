@@ -25,7 +25,7 @@
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { parseTheOddsApiEvent } from "../src/lib/oddsApi.js";
+import { parseTheOddsApiEvent, totalsAusEvent, torschnittAusTotals } from "../src/lib/oddsApi.js";
 import { ausApiName, unbekannteKlubs } from "../src/lib/klubnamen.js";
 import { vereineVon } from "../src/lib/ligen.js";
 import { zuordne, verschmelze, fortschritt } from "../src/lib/kader.js";
@@ -172,11 +172,17 @@ const median = (a) => {
   return s.length % 2 ? s[m] : +((s[m - 1] + s[m]) / 2).toFixed(2);
 };
 
-// KOSTET CREDITS: 1 für die 1X2-Quoten der ganzen Liga, plus 1 je Spiel für
+// KOSTET CREDITS: 2 für die ganze Liga (1X2 + Über/Unter), plus 1 je Spiel für
 // das Ergebnis-Raster (nur mit `--raster`).
+//
+// Die Über/Unter-Linie kommt bewusst in DERSELBEN Anfrage mit: der Anbieter
+// rechnet Märkte × Regionen, ein zweiter Markt kostet also 1 Credit für die
+// ganze Liga — das Ergebnis-Buch kostet 1 Credit JE SPIEL. Sie ist damit die
+// mit Abstand billigste Torschnitt-Messung, und sie ist Wochen vor Anpfiff
+// schon da, während `correct_score` erst kurz davor auftaucht.
 async function holeQuoten(key, kurz, liga, { raster = false, schuetzen = false } = {}) {
   const url = `https://api.the-odds-api.com/v4/sports/${liga.sport}/odds`
-    + `?regions=eu&markets=h2h&oddsFormat=decimal&apiKey=${key}`;
+    + `?regions=eu&markets=h2h,totals&oddsFormat=decimal&apiKey=${key}`;
   const { daten, rest } = await hole(url);
 
   // ⚠️ Ein Auffrischen der 1X2-Quoten darf die teuer geholten Ergebnis-Raster
@@ -217,6 +223,11 @@ async function holeQuoten(key, kurz, liga, { raster = false, schuetzen = false }
     if (gesehen.has(paar)) continue;
     gesehen.add(paar);
     const eintrag = { home, away, kickoff: p.kickoff, odds: p.odds };
+    // Der gemessene Torschnitt. Kommt gratis in derselben Antwort mit; fehlt
+    // er, liest ihn `snapshotFromOdds` aus dem Ergebnis-Buch oder schätzt ihn
+    // wie bisher.
+    const total = torschnittAusTotals(totalsAusEvent(e));
+    if (total) eintrag.total = total;
     if (raster) {
       const r = await holeRaster(key, liga, e.id);
       if (r) eintrag.correctScore = r;
@@ -234,6 +245,9 @@ async function holeQuoten(key, kurz, liga, { raster = false, schuetzen = false }
     spiele.push(eintrag);
   }
   const mit = spiele.filter((s) => s.correctScore).length;
+  const mitTotal = spiele.filter((s) => s.total).length;
+  console.log(`   Torschnitt gemessen: ${mitTotal} von ${spiele.length} Spielen`
+    + (mitTotal ? ` (Ø ${(spiele.reduce((s, x) => s + (x.total || 0), 0) / mitTotal).toFixed(2)} Tore)` : ""));
   if (raster) {
     console.log(`   Ergebnis-Raster: ${mit} von ${spiele.length} Spielen`);
   } else if (mit) {
@@ -249,7 +263,7 @@ async function holeQuoten(key, kurz, liga, { raster = false, schuetzen = false }
     `//  ${liga.label.toUpperCase()} — ECHTE 1X2-QUOTEN`,
     "//",
     "//  ERZEUGTE DATEI — nicht von Hand bearbeiten.",
-    `//  Neu holen:  npm run odds:holen -- ${kurz}   (kostet 1 Credit)`,
+    `//  Neu holen:  npm run odds:holen -- ${kurz}   (kostet 2 Credits)`,
     "//",
     "//  Quelle:   the-odds-api.com, Median über die EU-Buchmacher",
     `//  Geholt:   ${new Date().toISOString()}`,
@@ -260,6 +274,9 @@ async function holeQuoten(key, kurz, liga, { raster = false, schuetzen = false }
     `//  Ergebnis-Raster: ${spiele.filter((s) => s.correctScore).length} von ${spiele.length} Spielen`,
     "//  (`correctScore` = ECHTE Marktpreise je Endstand. Wo es fehlt, leitet",
     "//   oddsApi.snapshotFromOdds() das Raster wie bisher aus 1X2 ab.)",
+    `//  Torschnitt:      ${spiele.filter((s) => s.total).length} von ${spiele.length} Spielen`,
+    "//  (`total` = erwartete Gesamt-Tore aus der echten Über/Unter-Linie. Damit",
+    "//   ist der Torschnitt gemessen statt geschätzt — und ρ mit ihm.)",
     "// ============================================================",
     "",
     "// Der Zeitstempel steht auch als DATEN da, nicht nur im Kopf: nur so kann",

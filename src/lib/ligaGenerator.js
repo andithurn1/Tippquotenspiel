@@ -143,6 +143,10 @@ export function baueLiga({
     const snapshot = (markt && snapshotFromOdds({
       matchId, home, away, kickoff, odds: markt.odds,
       correctScore: markt.correctScore ?? null, namensPool,
+      // Der gemessene Torschnitt, wo der Markt eine Über/Unter-Linie hergibt.
+      // Fehlt er, liest ihn `snapshotFromOdds` aus dem Ergebnis-Buch; fehlt
+      // auch das, wird er wie bisher geschätzt.
+      total: markt.total ?? null,
       torschuetzen: markt.torschuetzen ?? null, kaderZuordnung,
     })) || generateMatchOdds({ matchId, home, away, kickoff, seed: matchId, ...strengths, namensPool });
     // Derby-Label auf den Snapshot: die Engine kennt keine Vereins-Paarungen

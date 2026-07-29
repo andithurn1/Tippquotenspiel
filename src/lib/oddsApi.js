@@ -189,6 +189,88 @@ export function fitLambdasMitTotal(probs, total, { rhoMax = 0.45 } = {}) {
   };
 }
 
+// ── Torschnitt aus der Über/Unter-Linie ─────────────────────
+// Die direkteste Messung, die der Markt hergibt, und die billigste: `totals`
+// kommt in DERSELBEN Liga-Anfrage wie 1X2 (1 Credit mehr für die ganze Liga),
+// während das Ergebnis-Buch 1 Credit JE SPIEL kostet. Sie ist außerdem für
+// Bundesliga-Spiele Wochen vor Anpfiff da, das Ergebnis-Buch nicht.
+//
+// `linien` = [{ linie: 2.5, ueber: 1.85, unter: 1.95 }, …]. Je Linie wird die
+// Marge herausgerechnet (zwei Ausgänge, also sauber bestimmbar — anders als
+// beim Ergebnis-Buch, siehe `longshotK`), dann wird das λ gesucht, das alle
+// Linien zusammen am besten erklärt.
+//
+// Die Summe zweier unabhängiger Poisson-Größen ist wieder Poisson — der
+// Torschnitt lässt sich deshalb direkt bestimmen, ohne die Aufteilung auf
+// beide Mannschaften zu kennen. Die Dixon-Coles-Korrektur verschiebt die
+// Gesamtmasse nicht (die vier Faktoren heben sich exakt auf), sie darf hier
+// also außen vor bleiben.
+export function torschnittAusTotals(linien, { min = 0.5, max = 8.0 } = {}) {
+  const gueltig = (linien || [])
+    .map((l) => ({ linie: Number(l.linie), ueber: Number(l.ueber), unter: Number(l.unter) }))
+    .filter((l) => l.linie > 0 && l.ueber > 1 && l.unter > 1);
+  if (!gueltig.length) return null;
+
+  // P(Gesamt > linie) unter Poisson(lambda). Die Linien sind halbzahlig
+  // (2.5, 3.5 …), ein Gleichstand ist also ausgeschlossen.
+  const pUeber = (lambda, linie) => {
+    const bis = Math.floor(linie);
+    let kum = 0, term = Math.exp(-lambda);
+    for (let k = 0; k <= bis; k++) {
+      kum += term;
+      term *= lambda / (k + 1);
+    }
+    return 1 - kum;
+  };
+  const ziele = gueltig.map((l) => {
+    const qU = 1 / l.ueber, qA = 1 / l.unter;
+    return { linie: l.linie, p: qU / (qU + qA) };   // Marge raus
+  });
+  const fehler = (lambda) =>
+    ziele.reduce((s, z) => s + (pUeber(lambda, z.linie) - z.p) ** 2, 0);
+
+  const suche = (lo, hi, schritt) => {
+    let best = { lam: lo, err: Infinity };
+    for (let l = lo; l <= hi + 1e-9; l += schritt) {
+      const err = fehler(l);
+      if (err < best.err) best = { lam: +l.toFixed(3), err };
+    }
+    return best;
+  };
+  const grob = suche(min, max, 0.05);
+  const fein = suche(Math.max(min, grob.lam - 0.05), Math.min(max, grob.lam + 0.05), 0.005);
+  return +fein.lam.toFixed(3);
+}
+
+// Die `totals`-Ausgänge eines Anbieter-Events zu Linien zusammenfassen.
+// Wie bei 1X2 der MEDIAN je Linie über alle Buchmacher — robuster gegen einen
+// einzelnen Ausreißer als der erste Beste.
+export function totalsAusEvent(event) {
+  const proLinie = new Map();
+  for (const b of event?.bookmakers || []) {
+    for (const m of b.markets || []) {
+      if (m.key !== "totals" && m.key !== "alternate_totals") continue;
+      for (const o of m.outcomes || []) {
+        const linie = Number(o.point);
+        const preis = Number(o.price);
+        if (!(linie > 0) || !(preis > 1)) continue;
+        if (!proLinie.has(linie)) proLinie.set(linie, { ueber: [], unter: [] });
+        const seite = String(o.name || "").toLowerCase();
+        if (seite === "over") proLinie.get(linie).ueber.push(preis);
+        else if (seite === "under") proLinie.get(linie).unter.push(preis);
+      }
+    }
+  }
+  const linien = [];
+  for (const [linie, s] of proLinie) {
+    const ueber = median(s.ueber), unter = median(s.unter);
+    // Nur beidseitig bepreiste Linien: aus einer einzelnen Seite lässt sich
+    // die Marge nicht herausrechnen, und ohne das ist die Zahl wertlos.
+    if (ueber && unter) linien.push({ linie, ueber, unter });
+  }
+  return linien.sort((a, b) => a.linie - b.linie);
+}
+
 // Erwartete Gesamt-Tore aus einem echten Ergebnis-Buch. `k` ist die Eichung
 // gegen den Longshot-Bias (siehe `longshotK`) — OHNE sie ist die Zahl deutlich
 // zu hoch, weil die Marge auf den torreichen Außenseitern liegt: naiv 4,74 für
