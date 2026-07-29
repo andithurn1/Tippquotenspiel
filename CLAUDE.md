@@ -344,12 +344,37 @@ WETTBEWERB. (4) `spielplaene/index.js` ist erzeugt und löst eine Henne-Ei-Kette
 der Importer braucht die Klublisten aus den Ligadateien, die deshalb keine
 Plan-Datei direkt importieren dürfen. Nach einem Import `npm run seed:matches`.
 
+**Marge ist nicht gleich Marge** (`longshotK`, `fitLambdasMitTotal`,
+`torschnittAusTotals` in `oddsApi.js`): drei Messungen, die zusammengehören.
+(1) **Die Schiefe der Marge zählt, nicht nur ihre Höhe.** Das
+`correct_score`-Buch trägt 65 % Overround, und die liegt auf den Außenseitern.
+Wer stumpf durch die Summe teilt, hält diese Schieflage für eine
+Wahrscheinlichkeitsverteilung — gemessen 2,4–5,7 pp daneben, und in Preisen
+11–30 % zu viel für die WAHRSCHEINLICHEN Ergebnisse, also für die, die
+eintreten. Geeicht wird mit dem Potenz-Verfahren am 1X2-Markt **desselben
+Spiels** (7,7 % Marge), nie an einem Liga-Mittel. (2) **Der Torschnitt ist eine
+Vorgabe, keine Nebenwirkung.** Rangfolge: echte Über/Unter-Linie >
+Ergebnis-Buch > Schätzung (`snapshot.torschnittQuelle`). (3) **Dadurch ist ρ
+gemessen:** bei vorgegebenem Torschnitt ist es die einzige Größe, die übrig
+bleibt, wenn 1X2 und Torschnitt gleichzeitig stimmen sollen — gemessen −0,013
+bis −0,158, am stärksten in ausgeglichenen Spielen, wo die
+Unabhängigkeits-Annahme zu wenig Remis liefert. Die Konstante `RHO` bleibt 0
+und gilt nur noch für den ungebundenen Fall. Fit und Raster benutzen weiterhin
+DASSELBE ρ — sonst gäbe das Raster die Quoten nicht mehr her, aus denen es
+geschätzt wurde.
+⚠️ **Wer hier etwas ändert, prüft beides zusammen:** `margin`/`teamGoals`
+kommen aus dem Fit, `correctScore` aus dem Markt. Laufen die Torschnitte
+auseinander, trägt dasselbe Spiel zwei Tor-Erwartungen — das lag eine Weile
+still so da. Ein Test hält es jetzt fest.
+
 **Echte Quoten** (`oddsApi.js`, `/api/odds`, `klubnamen.js`,
 `scripts/fetch-odds.mjs`): Adapter und Route stehen, der Schlüssel liegt in
 `.env.local` (nie im Repo, nie mit `NEXT_PUBLIC_`). Zwei Kommandos:
 **`npm run odds:pruefen` ist KOSTENLOS** (nutzt den `/events`-Endpunkt und
-gleicht nur Klubnamen ab), **`npm run odds:holen` kostet 1 Credit JE LIGA** und
-legt das Ergebnis als `src/lib/quoten/<key>.js` ab. Der Gratis-Tarif hat 500
+gleicht nur Klubnamen ab), **`npm run odds:holen` kostet 2 Credits JE LIGA**
+(1X2 + Über/Unter; der Anbieter rechnet Märkte × Regionen, ein zweiter Markt
+kostet also für die ganze Liga einen Credit — `correct_score` dagegen einen JE
+SPIEL) und legt das Ergebnis als `src/lib/quoten/<key>.js` ab. Der Gratis-Tarif hat 500
 Anfragen im MONAT, und der Zwischenspeicher der Route liegt im
 Arbeitsspeicher — jeder Dev-Server-Neustart holt sonst neu, damit ist das
 Kontingent in einer Woche weg. Deshalb: einmal holen, als Datei ablegen,

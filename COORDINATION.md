@@ -44,7 +44,7 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 |---------|-------------------|--------|------|
 | 2 (Andre) | **PAUSE bis Freitagabend.** Nichts hängt lokal, alles Fertige liegt auf `main` (letzter Stand: Joker-Oberfläche, Balance-Durchgang 1+2). Kein Bereich reserviert. | pausiert | 2026-07-28 |
 | 1 (Andi) | **Alles frei, arbeitet durch bis das Wochenlimit aufgebraucht ist.** Kein Bereich reserviert; Andre pausiert. Zuletzt angefasst: Quoten-/Spielplan-/Kader-Kette (`oddsApi`, `ligaGenerator`, `kader`, `spielplan`, `mlsData`), `engine.js` (nur additiv, siehe Log), `Tippabgabe`, `Spielwahl`, `Spielerstellung`. | aktiv | 2026-07-29 |
-| 1 (Andi) | **AKTUELL: Torschnitt aus dem Markt statt aus der Schätzung** — `oddsApi.js`, `oddsGenerator.js` (nur lesend), `scripts/fetch-odds.mjs`, `src/lib/quoten/`. Der belegte nächste Schritt aus `design/roadmap.md`. **`engine.js` wird NICHT angefasst**, `scoreTip` bleibt unberührt. | aktiv | 2026-07-29 |
+| 1 (Andi) | ~~Torschnitt aus dem Markt statt aus der Schätzung~~ — `oddsApi.js`, `scripts/fetch-odds.mjs`, `ligaGenerator.js`. Erledigt, plus ein Fund daneben: das echte Ergebnis-Raster zahlte zu viel (siehe Log oben). `engine.js` unberührt. | fertig | 2026-07-29 |
 
 > **⚠️ Kontingent-Lage (Stand 2026-07-29):** Account 1 (Andi) fährt sein
 > Wochenlimit bis Freitag bewusst aus — bis dahin passiert hier viel und in
@@ -97,6 +97,72 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-07-29 (spät) · **Andi** → **Andre** — 🔴 **Das echte Ergebnis-Raster hat zu viel gezahlt. Gefunden, behoben, ohne einen Credit.**
+
+`main` bei `77ba6e0`, **1014 Tests grün**, Build sauber, `npm run balance` ohne
+Befund. Ich war auf dem geplanten Roadmap-Punkt „Torschnitt aus `totals`" — der
+ist erledigt, aber der wichtigere Fund lag daneben.
+
+**Der Fehler.** `rasterAusMarkt` hat die HÖHE der Buchmacher-Marge
+herausgerechnet, aber nicht ihre SCHIEFE. Ein Buchmacher verteilt 65 %
+Overround nicht gleichmäßig — er lädt sie auf die Außenseiter. Wir haben diese
+Schieflage übernommen und für eine Wahrscheinlichkeitsverteilung gehalten.
+
+**Was das gekostet hat:** für Bayern–Stuttgart zahlte ein 2:1 **14,57 statt
+11,17** — 30 % zu viel. Und zwar für die WAHRSCHEINLICHEN Ergebnisse, also
+genau die, die eintreten. Ein Spiel mit echtem Raster war damit systematisch
+mehr wert als eines ohne. Das ist exakt der unsichtbare Fairness-Bruch, gegen
+den das Herausrechnen der Marge ursprünglich eingebaut wurde — die Korrektur
+war nur halb.
+
+**Wie es aufgefallen ist, ohne einen Credit auszugeben:** wir halten für
+dasselbe Spiel einen zweiten, viel saubereren Markt schon in der Hand. Rechnet
+man das normierte Ergebnis-Raster zu Heim/Remis/Auswärts zusammen, MUSS die
+1X2-Verteilung herauskommen (7,7 % statt 65 % Marge). Tat es nicht: **2,4 bis
+5,7 Prozentpunkte daneben, in allen neun gespeicherten Spielen mit demselben
+Vorzeichen.** Ein systematisches Vorzeichen ist der Unterschied zwischen
+Rauschen und Fehler.
+
+**Behoben** über `longshotK` — Potenz-Verfahren, geeicht **je Spiel** am
+eigenen 1X2-Markt, nie an einem Liga-Mittel. Ohne 1X2-Anker bleibt k = 1, also
+exakt das bisherige Verhalten: eine fehlende Eichung verschlechtert nie etwas.
+
+**Und dabei ist ρ gefallen.** Du erinnerst dich an die dokumentierte
+Fehlmessung im Kopf von `oddsApi.js` (ρ auf den Liga-Torschnitt kalibriert,
+durch die echte Über/Unter-Linie umgeworfen). Die Auflösung: gibt man den
+Torschnitt VOR, bleibt ρ als einzige Unbekannte übrig — eine Messung je Spiel
+statt einer Konstante. Gemessen **−0,013 bis −0,158**, am stärksten in den
+ausgeglichenen Spielen. Das trifft nicht nur den Literaturwert (≈ −0,13),
+sondern reproduziert den Mechanismus: die Unabhängigkeits-Annahme liefert
+genau dort zu wenig Remis. **Falsch war nie die Mechanik, falsch war der
+Anker.** `RHO` bleibt auf 0 für den ungebundenen Fall.
+
+**Nebenbei geschlossen:** bei einem echten Raster wurde `correctScore` ersetzt,
+während `margin`/`teamGoals` weiter aus dem ungebundenen Fit kamen — dasselbe
+Spiel trug zwei verschiedene Tor-Erwartungen. Jetzt teilen sie eine, ein Test
+hält es fest.
+
+**Was das für dich heißt:** `engine.js` ist **unberührt**, `scoreTip` auch —
+der Eingriff sitzt komplett in der Quoten-Schicht. Deine Ecke
+(`balanceSim.js`, `presets*.js`, `reglerWarnung.js`, Store, Team-Modus) habe
+ich nicht angefasst. `npm run balance` habe ich nach der Änderung laufen
+lassen, weil sich die Quoten der echten Spiele verschoben haben: **kein Preset
+kippt, null gelb, null rot.**
+
+⚠️ **Eine Sache wartet auf einen Lauf:** die gespeicherten Quotendateien tragen
+noch kein `total`, weil ich bewusst keinen Credit ausgegeben habe — die ganze
+Messkette oben lief gegen bereits gespeicherte Daten. Es füllt sich beim
+nächsten `npm run odds:holen -- <liga>`, der ab jetzt **2 statt 1 Credit** je
+Liga kostet (1X2 + Über/Unter in einer Anfrage). Bis dahin greift unverändert
+das Ergebnis-Buch bzw. die Schätzung.
+
+**Die Lehre, weil sie über diesen Fall hinausgeht:** eine Größe, die aus einem
+Markt kommt, ist damit noch keine Messung. Die Marge herauszurechnen behandelt
+den Mittelwert — ihre Verteilung über die Ausgänge bleibt drin und ist genau
+dort am größten, wo das Buch am längsten ist. Wo wir künftig einen zweiten
+Markt für dieselbe Sache haben, sollten wir ihn als Gegenprobe benutzen,
+statt ihn nur als weitere Datenquelle einzusammeln.
 
 ### 2026-07-28 (spät) · **Andi** → **Andre** — 🚨 **Quoten-API läuft — und dabei fiel auf: drei Liga-Besetzungen stimmen nicht**
 

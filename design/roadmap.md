@@ -140,7 +140,56 @@ simulierte Quoten-Verteilung vermessen und sollte gegen die echte einmal
 nachgeprüft werden (`npm run balance`).
 
 
-### 🔬 Quoten-Modell gegen den echten Markt vermessen (2026-07-29)
+### 🔬 Quoten-Modell gegen den echten Markt vermessen (2026-07-29) — ✅ ERLEDIGT
+
+> ✅ **Abgeschlossen am 29.07. — und der größere Fund war nicht der geplante.**
+>
+> **1) Das echte Ergebnis-Raster war schief.** `rasterAusMarkt` hat die HÖHE der
+> Buchmacher-Marge herausgerechnet, aber nicht ihre SCHIEFE — und ein Buchmacher
+> verteilt 65 % Overround nicht gleichmäßig, er lädt sie auf die Außenseiter.
+> Nachweisbar **ohne jede zusätzliche Abfrage**, weil wir für dasselbe Spiel
+> einen zweiten, viel saubereren Markt schon in der Hand halten: rechnet man das
+> normierte Raster zu Heim/Remis/Auswärts zusammen, MUSS die 1X2-Verteilung
+> herauskommen (7,7 % statt 65 % Marge). Tat es nicht — **2,4 bis 5,7
+> Prozentpunkte daneben, in allen neun Spielen mit demselben Vorzeichen.**
+> In Preisen: die naive Normierung zahlte für die WAHRSCHEINLICHEN Ergebnisse
+> 11–30 % zu viel (Bayern–Stuttgart 2:1 zu 14,57 statt 11,17). Da reale
+> Endstände meistens die wahrscheinlichen sind, war das ein stiller Aufschlag
+> auf jedes Spiel mit echtem Raster — gegenüber jedem Spiel ohne. Also genau der
+> unsichtbare Fairness-Bruch, gegen den das Herausrechnen der Marge einmal
+> eingebaut wurde. `longshotK` eicht das jetzt **je Spiel** am eigenen
+> 1X2-Markt (gemessen k = 1,18–1,34, Restfehler danach 0,0–1,9 pp).
+>
+> **2) ρ ist jetzt gemessen — die Auflösung der Fehlmessung unten.** Der freie
+> Fit hat zwei Freiheiten für zwei Vorgaben und trifft die 1X2 deshalb fast
+> exakt; der Torschnitt fällt dabei ungeprüft mit ab. Ist er VORGEGEBEN, bleibt
+> ρ als einzige Unbekannte übrig — eine Messung je Spiel statt einer Konstante
+> für alle. Gemessen: **ρ = −0,013 bis −0,158**, am stärksten in den
+> AUSGEGLICHENEN Spielen. Das reproduziert nicht nur den Literaturwert (≈ −0,13),
+> sondern den dokumentierten Mechanismus: die Unabhängigkeits-Annahme liefert
+> genau dort zu wenig Remis. **Falsch war nie die Mechanik, falsch war der
+> Anker.** `RHO` bleibt auf 0 und gilt weiter für den ungebundenen Fall.
+> Preis der Bindung: größter 1X2-Fehler 0,10 → 0,15 pp, dafür stimmt der
+> Torschnitt exakt statt um bis zu 0,5 Tore daneben.
+>
+> **3) Eine stille Inkonsistenz nebenbei geschlossen.** Bei einem echten Raster
+> wurde `correctScore` ersetzt, während `margin` und `teamGoals` weiter aus dem
+> ungebundenen Fit kamen — dasselbe Spiel trug **zwei verschiedene
+> Tor-Erwartungen**. Jetzt teilen sie eine.
+>
+> **4) Die Quelle des Torschnitts, nach Rangfolge:** echte Über/Unter-Linie >
+> Ergebnis-Buch > Schätzung; `snapshot.torschnittQuelle` sagt, welche es war.
+> `totals` kommt in DERSELBEN Liga-Anfrage wie 1X2 (der Anbieter rechnet Märkte
+> × Regionen) — **1 Credit für die ganze Liga**, während `correct_score` 1
+> Credit JE SPIEL kostet, und sie steht Wochen vor Anpfiff statt erst kurz
+> davor. Für die Masse der Spiele ist sie die einzige realistische Messung.
+>
+> ⚠️ **Offen (Nutzer/nächste Session): einmal `npm run odds:holen -- <liga>`
+> laufen lassen.** Die gespeicherten Quotendateien tragen noch kein `total` —
+> es kostet ab jetzt 2 statt 1 Credit je Liga. Bis dahin greift unverändert das
+> Ergebnis-Buch (bl: 9 von 9) bzw. die Schätzung. **Es wurde bewusst kein
+> Credit ausgegeben:** die ganze Messkette oben lief gegen bereits
+> gespeicherte Daten.
 
 Die Frage war: **wie sauber entstehen die Quoten für „nah ans Ergebnis"?**
 Antwort in Kurzform: die Kette ist korrekt und in sich stimmig, das MODELL ist
@@ -176,7 +225,7 @@ wahrscheinlichsten Ergebnisse auf 0–15 %. Extremwerte 0,50 bis 1,36.
 
 **→ Nächster Schritt, klar belegt:** den Torschnitt nicht mehr schätzen,
 sondern aus `totals` lesen, und wo `correct_score` vorliegt, gleich das echte
-Raster nehmen. Details unten.
+Raster nehmen. Details unten. — ✅ **beides gebaut, siehe Block oben.**
 
 ### 📡 Was die Quoten-API wirklich hergibt (gemessen, nicht angenommen)
 
