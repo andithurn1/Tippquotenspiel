@@ -963,6 +963,72 @@ bekommen Zurückliegende je Spieltag Punkte dazu, damit Mitspielen weiter lohnt.
 Gelöst über sieben benannte Aspekte statt Einzelregler; es werden nur die
 Aspekte gezeigt, in denen sich die beiden Presets unterscheiden.
 
+### 🎛️ Big Game individualisierbar + Preset-Bibliothek (NEU, Nutzer, 2026-07-29 21:30)
+
+**Die Aufgabe in einem Satz:** Die Formel, aus der sich der `bigGameWert`
+ergibt, und die Schwelle `minSpannung` sollen vom Admin einstellbar sein — mit
+einer Bibliothek benannter, beschriebener Empfehlungen und mit Betreuung, die
+unsinnige Kombinationen abfängt.
+
+**Was heute fest verdrahtet ist** (`src/lib/bigGame.js`, Zeile ~90):
+
+```js
+const GEWICHT = { zone: 0.45, naehe: 0.20, quoten: 0.25, derby: 0.10 };
+zeitFaktor = 0.6 + 0.4 × (Spieltag / Gesamtspieltage)
+```
+
+Einstellbar sind bisher nur `aufschlag` (wie viel mehr das Topspiel zählt) und
+`minSpannung` (ab wann eines gilt). Die vier Gewichte und der Zeitfaktor nicht.
+
+**Was daraus werden soll:**
+
+1. **Die vier Gewichte + der Zeitfaktor werden Teil von `rules.bigGame`** und
+   laufen durch `sanitizeBigGame` wie alles andere. `BIGGAME_LIMITS` bekommt
+   die Grenzen dazu.
+2. **Eine BIBLIOTHEK benannter Kombinationen**, jede mit einem Satz, der sagt,
+   für wen sie ist — nicht mit Zahlen, sondern mit dem Charakter der Runde.
+   Erste Kandidaten, aus den Bausteinen ableitbar:
+   - *Tabellenspitze* — `zone` hoch, `quoten` niedrig: Titel- und Abstiegskampf
+     zählen, ein ausgeglichenes Mittelfeldduell nicht.
+   - *Kopf-an-Kopf* — `naehe` + `quoten` hoch: das offene Spiel gewinnt, egal
+     auf welchem Platz.
+   - *Rivalität* — `derby` dominiert: das Big Game ist fast immer ein Derby.
+   - *Saisonfinale* — Zeitfaktor steil: früh passiert wenig, ab dem 25. viel.
+   - *Aus* — der heutige Standard.
+3. **Betreuung gegen Unsinn.** Die Maschinerie dafür EXISTIERT und darf nicht
+   neu erfunden werden:
+   - `reglerWarnung.js` — `RULE_LIMITS` ist die Grenze des ERLAUBTEN, das
+     Empfehlungsband die des ERPROBTEN, dazu handgeschriebene
+     KOMBINATIONS-Regeln für das, was in keinem Einzelwert steckt. Genau hier
+     gehören die Big-Game-Fallen hinein.
+   - `presets.balance.test.js` — was durchgemessen ist, gilt als erprobt.
+     Jede neue Bibliotheks-Kombination gehört dort hinein.
+
+**⚠️ Die Fallen, die die Betreuung abfangen muss** (das ist der eigentliche
+Inhalt der Aufgabe, nicht die Regler):
+
+- **Alle Gewichte auf 0** → jedes Spiel hat Wert 0, es gibt nie ein Big Game.
+  Der Admin denkt, er hat es an, und es passiert nichts.
+- **`minSpannung` auf 0** → JEDES Spiel ist Big Game, der Aufschlag ist kein
+  Aufschlag mehr, sondern eine Verschiebung des Nullpunkts.
+- **Nur `quoten`** → das belanglose 9.-gegen-10. gewinnt zuverlässig. Genau der
+  Fehler, den der ursprüngliche Entwurf ausdrücklich vermeiden wollte
+  (siehe Kopf von `bigGame.js`) — eine Bibliothek darf ihn nicht wieder
+  einbauen.
+- **Nur `derby`** → in Spieltagen ohne Derby gibt es nie eins; das ist zulässig,
+  muss aber DRANSTEHEN, sonst wirkt es wie ein Fehler.
+- **`zone` hoch + hoher `aufschlag` + hohe `modCap`** → die Spitzenteams
+  bekommen dauerhaft mehr Gewicht, das verschiebt die Balance systematisch.
+  Muss durch `balanceSim` und landet im Modifikator-Budget (siehe unten).
+
+**Reihenfolge:** erst die Gewichte konfigurierbar machen (klein), dann die
+Bibliothek, dann die Warnungen — die Warnungen brauchen die Bibliothek als
+Messgrundlage, nicht umgekehrt.
+
+**Berührt:** `bigGame.js`, `engine.js` (`sanitizeRules`), `reglerWarnung.js`,
+`Spielerstellung.jsx`, `presetMerge.js` (Aspekt „bigGame" prüfen — ein Test
+wacht darüber, dass die Aspekte ALLE Regel-Felder abdecken).
+
 ### 📊 Modifikator-BUDGET: wie viel Prozent bringt was — und wie oft? (NEU, Nutzer)
 
 Gehört an den **Abschluss-Durchgang** (siehe Balance-Abschnitt oben), nicht

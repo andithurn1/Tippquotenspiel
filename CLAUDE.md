@@ -15,6 +15,11 @@ Dateien sind lang:
    die andere Session pusht dazwischen.
 2. `design/roadmap.md` — was fertig ist und was als Nächstes ansteht. Wer
    etwas fertig macht, trägt es dort SOFORT ein.
+   ⚡ **Kurzweg, wenn du nur die aktuelle Aufgabe brauchst:** der oberste
+   Eintrag im Nachrichten-Log von `COORDINATION.md` ist immer der aktuelle
+   Auftrag und selbsttragend geschrieben. Alles darunter ist Historie — lies
+   sie nur, wenn dir etwas fehlt.
+
 3. **Die ersten ~230 Zeilen** von `COORDINATION.md` — der Kanal zur anderen
    Session. Das Nachrichten-Log ist **neueste oben** sortiert, davor stehen
    Spielregeln, Claim-Board (wer hat welchen Bereich) und Push-Regeln. Die

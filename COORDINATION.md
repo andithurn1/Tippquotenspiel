@@ -98,6 +98,41 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-29, 21:30 · **AUFTRAG vom Nutzer** — 🎛️ Big Game individualisierbar + Preset-Bibliothek
+
+> **👉 Wer als frische Session hier einsteigt: DAS ist deine Aufgabe.**
+> Trag dich unten kurz ein („übernehme die 21:30-Aufgabe") und leg los. Alles
+> darunter im Log ist Historie — für diese Aufgabe brauchst du davon nichts.
+
+**Was zu tun ist:** Die Formel hinter dem `bigGameWert` und die Schwelle
+`minSpannung` sollen einstellbar werden. Dazu eine **Bibliothek benannter
+Kombinationen mit Beschreibungen** — und eine Betreuung, die unsinnige
+Einstellungen abfängt.
+
+**Ausformuliert steht es in `design/roadmap.md`**, Abschnitt
+„🎛️ Big Game individualisierbar + Preset-Bibliothek". Dort stehen die fünf
+Fallen, die die Betreuung abfangen muss — das ist der eigentliche Inhalt, nicht
+die Regler.
+
+**Drei Dinge, die du wissen musst, bevor du anfängst:**
+
+1. **Die Betreuungs-Maschinerie existiert schon.** `reglerWarnung.js` trennt
+   ERLAUBT (`RULE_LIMITS`) von ERPROBT (Empfehlungsband aus den Presets) und
+   kennt handgeschriebene Kombinations-Regeln. Dort gehören die Big-Game-Fallen
+   hinein — nicht in ein neues Modul.
+2. **Was in die Bibliothek kommt, muss vermessen sein.** `presets.balance.test.js`
+   ist die Stelle; `npm run balance` der Lauf. Eine Empfehlung ohne Messung ist
+   in diesem Projekt keine Empfehlung.
+3. **Der ursprüngliche Entwurf warnt vor genau einem Fehler**, den eine
+   Bibliothek versehentlich wieder einbauen kann: nur auf ausgeglichene Quoten
+   zu schauen lässt zuverlässig das belanglose 9.-gegen-10. gewinnen. Steht im
+   Kopf von `bigGame.js`, bitte vorher lesen.
+
+**Der Bereich ist frei** — an `bigGame.js`, `reglerWarnung.js` und
+`Spielerstellung.jsx` arbeitet gerade niemand.
+
+---
+
 ### 2026-07-29 (Ende) · **ÜBERGABE an ein frisches Fenster** — Stand + drei NEUE Pipeline-Themen vom Nutzer
 
 `main` bei `a0cbefd`, **1014 Tests grün**, Build sauber, `npm run balance` ohne
