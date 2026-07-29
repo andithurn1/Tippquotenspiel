@@ -963,6 +963,159 @@ bekommen Zurückliegende je Spieltag Punkte dazu, damit Mitspielen weiter lohnt.
 Gelöst über sieben benannte Aspekte statt Einzelregler; es werden nur die
 Aspekte gezeigt, in denen sich die beiden Presets unterscheiden.
 
+### 📊 Modifikator-BUDGET: wie viel Prozent bringt was — und wie oft? (NEU, Nutzer)
+
+Gehört an den **Abschluss-Durchgang** (siehe Balance-Abschnitt oben), nicht
+nebenbei. Es ist der Schritt, der aus „kein Preset kippt" eine
+**Empfehlung mit Zahlen** macht.
+
+**Die Lücke.** Wir messen heute EINE aggregierte Zahl (`modifikatorAnteil`) und
+eine Ja/Nein-Frage („gewinnt der Kenner?"). Was fehlt, ist die Aufschlüsselung:
+für jede Ertragsquelle einzeln — Joker (je Typ), Team/Derby, Joker-Abstimmung,
+Big Game, Wettbewerbs-Gewicht, Ereignisse/erspielte Joker, Aufhol-Bonus,
+Versäumnis-Ersatztipp, Saison-Wetten — jeweils **wie oft sie feuert** und
+**wie viel sie dann bringt**, und daraus der **Anteil an den Saisonpunkten**.
+
+**⚠️ Der Denkfehler, den das verhindern muss** — und es ist derselbe, der bei
+den Wettbewerbs-Gewichten schon einmal dokumentiert ist („Gewicht pro Spiel ≠
+Anteil an der Wertung"): **`modCap` deckelt pro SPIEL, nicht pro SAISON.** Zwei
+Regelwerke mit identischem `modCap` können völlig verschiedene Saison-Budgets
+haben, je nachdem wie HÄUFIG die Quellen feuern. Ein Modifikator mit +100 %, der
+einmal pro Saison greift, ist etwas ganz anderes als +10 % an jedem Spieltag —
+in der Anzeige sehen beide nach „ein Regler" aus. Genau dort wird eine naive
+Einstellung unbemerkt unfair.
+
+**Was dabei herauskommen soll:**
+- Eine **Budget-Tabelle je Preset**: Quelle · Häufigkeit · Ø-Aufschlag wenn sie
+  feuert · resultierender Saison-Anteil · Maximalfall.
+- Daraus ein **Ziel-Korridor** je Quelle („Joker sollte 5–12 % der
+  Saisonpunkte ausmachen"), abgeleitet aus den Presets, die schon vermessen
+  sind — nicht getippt. Selbes Prinzip wie das Empfehlungsband in
+  `reglerWarnung.js`: was `presets.balance.test.js` durchmisst, gilt als erprobt.
+- **Speist drei Dinge auf einmal:** die Preset-Empfehlung, die Bänder der
+  Profi-Stufe, und die Klartext-Sätze der Stufe 2 („der Joker macht bei dir
+  etwa ein Zehntel der Saison aus").
+- ⚠️ **Eine Messung verengt nie eine harte Grenze** (`RULE_LIMITS`) — das ist
+  eine ausdrückliche Nutzer-Korrektur und gilt hier genauso.
+
+**Reihenfolge:** erst der Simulator muss jede Ebene überhaupt SEHEN. Der
+Blindstellen-Fund vom 27.07. (drei Ebenen wurden still gar nicht gemessen)
+ist die Warnung dazu — vor dem Budget-Lauf prüfen, ob jede Quelle im Simulator
+ankommt, sonst steht am Ende eine Tabelle mit Nullen, die nach Ergebnis
+aussieht. Wettbewerbs-Gewichte und Ereignisse sind heute noch ungemessen.
+
+### 📚 Preset-BIBLIOTHEK und offene Community-Spiele (NEU, Nutzer)
+
+Heute sind Presets Code (`presets.js`) und Creator-Codes eine Zeichenkette, die
+man von Hand weitergibt. Das Ziel ist größer: eine **durchsuchbare Bibliothek**
+— unsere Empfehlungen, dazu von Nutzern geteilte Regelwerke, dazu **offene
+Runden zum Beitreten**.
+
+**Zwei Objekte, die nicht vermischt werden dürfen** (dieselbe Trennung wie
+`rules.spiele` ↔ `rounds.team_filter`, die schon einmal zwei Wahrheiten
+verhindert hat):
+- **Preset = Vorlage.** Ein Regelwerk samt Spielauswahl, beliebig oft
+  instanziierbar, nach dem Laden anpassbar. Der Creator-Code trägt das heute
+  schon.
+- **Community-Spiel = laufende Runde.** Ein konkreter Beitritts-Code, konkrete
+  Mitglieder, ein konkreter Stand. Beitreten heißt hier mitspielen, nicht
+  kopieren.
+
+**⚠️ Die Ehrlichkeits-Regel, ohne die die Bibliothek wertlos wird:** unsere
+eigenen Presets sind **vermessen** (`presets.balance.test.js`,
+`npm run balance`). Ein hochgeladenes Community-Preset ist es nicht. Beides
+nebeneinander zu zeigen, ohne das zu kennzeichnen, wäre dieselbe Sorte
+Behauptung wie ein „echter Spielplan", der keiner ist — und dagegen gibt es
+schon eine Hausregel: **die Herkunft wird abgelesen, nicht behauptet**
+(`herkunftLabel`). Also: jeder Eintrag trägt sichtbar, woher er kommt.
+**Und wir können mehr als kennzeichnen:** `balanceSim.js` + `bewerten()`
+liefern die grün/gelb/rot-Ampel schon — ein eingereichtes Preset lässt sich
+automatisch durchmessen und mit seiner Ampel anzeigen. Das ist der eigentliche
+Wettbewerbsvorteil einer Bibliothek: nicht die Menge, sondern dass zu jedem
+Eintrag steht, ob er das Spiel kaputt macht.
+
+**Der Podcaster-Fall** (ausdrücklich vom Nutzer genannt): ein Creator mit
+Reichweite will eine eigene Runde für seine Community. Was er braucht:
+- **Ein eigener, sprechender Beitritts-Code** statt einer Zufallsfolge
+  (`joinCode.js` erzeugt heute zufällige) — reserviert, damit ihn niemand
+  wegschnappt.
+- **Eine Landeseite je Runde**, die man verlinken kann: Regelwerk in Klartext,
+  Ampel, Teilnehmerzahl, „jetzt beitreten".
+- **Sein Regelwerk als Preset** in der Bibliothek, damit andere es als Vorlage
+  nehmen können, ohne seiner Runde beizutreten.
+- **Rollen:** Creator ≠ Admin ≠ Moderator. Bei tausend Mitgliedern kann der
+  Creator die Runde nicht allein betreuen.
+- ⚠️ **Premium-Frage:** heute braucht nur der ADMIN Premium (`premium.js`).
+  Bei einer offenen Runde mit tausend Beitretenden ist das genau die richtige
+  Seite — aber es lohnt, es vor dem Bauen noch einmal bewusst zu bestätigen.
+
+### 👥 Große Gruppen: was bei tausenden Teilnehmern bricht (NEU, Nutzer)
+
+Der Kern in einem Satz: **fast alles, was eine große Runde braucht, ist eine
+GRUPPIERUNGS-Ebene über der bestehenden Wertung, keine neue Wertung** — genau
+wie die Zeitachse „reine Struktur und Anzeige" ist. Drei Mechaniken sind
+allerdings auf einen Freundeskreis hin gebaut und **brechen still**, wenn die
+Runde wächst. Die zuerst.
+
+**⚠️ Was konkret bricht (vor dem Bauen prüfen):**
+
+1. **Aufhol-Mechanismus** (`catchup.js`) hängt am **Rückstand zur SPITZE**. In
+   einer Runde mit 5000 Tippern ist der Erste ein statistischer Ausreißer —
+   fast jeder liegt weit zurück, der Anschluss-Bonus feuert praktisch für alle
+   und wird vom Ausgleich zum Grundeinkommen. Muss auf **Median oder Perzentil**
+   umgestellt werden, sobald die Runde groß ist. Das ist eine echte
+   Balance-Änderung, gehört also in den Simulator, nicht in die Anzeige.
+2. **Spott** (`taunts.js`) bremst „einer je Ziel und Spieltag" **pro Absender**.
+   Bei 5000 Mitgliedern kann ein Einzelner 4999 Sprüche bekommen. Es fehlt die
+   Bremse **pro EMPFÄNGER** — und die ist die wichtigere, weil die Belästigung
+   auf der Empfangsseite entsteht.
+3. **Ereignisse/Meilensteine** (`ereignisse.js`): „erster exakter Treffer",
+   „Außenseiter-Sieg vorhergesagt" sind in zwölf Leuten eine Auszeichnung und
+   in 5000 eine Selbstverständlichkeit — irgendwer schafft es immer, und zwar
+   jede Woche. `maxErspielt` deckelt zwar die Menge je Person, aber die
+   BEDEUTUNG geht verloren. Bei großen Runden müssen solche Ereignisse relativ
+   werden („unter den ersten 1 %"), nicht absolut.
+
+**Was die Anzeige braucht (und das ist der Großteil):**
+- **Eine Tabelle mit 5000 Zeilen ist keine Tabelle.** Niemand fühlt „Platz
+  3471". Gebraucht wird: die **Nachbarschaft** (±5 um den eigenen Rang), das
+  **Perzentil** („besser als 82 %"), und die **Spitze** getrennt davon.
+- **Untergruppen sind die eigentliche Antwort.** Eine große Runde zerfällt in
+  Grüppchen — selbst gebildet (Freunde) oder zugelost (Divisionen mit Auf- und
+  Abstieg). Beide teilen Regelwerk und Punkte und ranken nur lokal. **Deshalb
+  ist es billig:** die Wertung bleibt unberührt, es ist eine zweite Sicht auf
+  dieselben Zahlen. Genau das Prinzip, das bei der Zeitachse funktioniert hat.
+- **Divisionen mit Auf-/Abstieg** sind zusätzlich der natürliche Ersatz für den
+  Aufhol-Bonus in großen Runden: wer abgehängt ist, spielt gegen Gleichstarke
+  weiter, statt einen Bonus zu bekommen. Das löst Punkt 1 spielerisch statt
+  rechnerisch — die schönere Lösung, wenn sie sich vermessen lässt.
+
+**Was wir als Anbieter gut können — und was nicht:**
+- **Gut:** deterministische, nachprüfbare Verteilung (Joker-Plan ist schon so
+  gebaut: aus der Runden-Id geseedet, alle sehen dasselbe). Bei tausend
+  Teilnehmern ist Nachprüfbarkeit wichtiger als bei zwölf — der Verdacht der
+  Bevorzugung entsteht sonst automatisch, und er lässt sich nicht widerlegen.
+- **Gut:** Automatik statt Handarbeit. Der Spieltag friert sich schon selbst ein
+  (`autoOeffnen.js`, Vercel-Cron). Ein Creator mit tausend Mitgliedern kann
+  nichts von Hand auslösen.
+- **Schlecht/teuer:** Moderation. Anzeigenamen, Avatare und Spott-Sprüche sind
+  in einem Freundeskreis unproblematisch und in einer offenen Runde ein
+  Meldeweg, eine Blockliste und eine Person, die entscheidet. Das ist
+  Betriebsaufwand, kein Feature — vor der Zusage einplanen.
+- **⚠️ Rechtlich, und das ist kein Detail:** die Glücksspiel-Abgrenzung ist eine
+  bewusste Grundentscheidung des Projekts (kein Echtgeld, wegen der
+  App-Store-Zulassung). Eine offene Runde mit tausenden Teilnehmern, beworben
+  von einem Creator, der vielleicht Preise auslobt, ist eine ANDERE Lage als
+  ein Freundeskreis. **Bevor Community-Runden aufgemacht werden, muss klar
+  sein, was ein Creator ausloben darf und was nicht** — und die Oberfläche
+  sollte es gar nicht erst anbieten, wenn es nicht erlaubt ist.
+
+**Technisch mitzudenken (Andres Ecke):** `round_members` wird heute für das
+Leaderboard komplett gelesen (Self-Join-Policy in der RLS). Bei 5000
+Mitgliedern je Seitenaufruf ist das nicht haltbar — es braucht serverseitige
+Aggregation und Seitenweise-Laden. Das berührt `schema.sql` und die
+Store-Dateien und sollte NICHT nebenbei passieren.
+
 ### Team-Modus (2er-Teams)
 Zwei Tipper bilden ein Team, teilen sich Punkte oder tippen abwechselnd. Größter
 Brocken — greift tief ins Scoring- und Runden-Modell.

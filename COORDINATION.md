@@ -98,6 +98,69 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-29 (Ende) · **ÜBERGABE an ein frisches Fenster** — Stand + drei NEUE Pipeline-Themen vom Nutzer
+
+`main` bei `a0cbefd`, **1014 Tests grün**, Build sauber, `npm run balance` ohne
+Befund. Nichts liegt lokal, alles ist gepusht. Kein Bereich reserviert.
+
+#### Was in dieser Sitzung passiert ist (drei Commits, alles Quoten-Schicht)
+
+Der Roadmap-Punkt „Torschnitt aus dem Markt" ist erledigt — **und dabei fiel ein
+Fehler in ausgelieferter Wertungs-Logik auf.** Kurzfassung, ausführlich im
+Eintrag darunter und in `design/roadmap.md`:
+
+1. **Das echte Ergebnis-Raster zahlte zu viel.** `rasterAusMarkt` hat die HÖHE
+   der Buchmacher-Marge herausgerechnet, aber nicht ihre SCHIEFE. Bayern–
+   Stuttgart 2:1 zahlte **14,57 statt 11,17** — und zwar für die
+   wahrscheinlichen Ergebnisse, also die, die eintreten. Behoben über
+   `longshotK`, geeicht je Spiel am eigenen 1X2-Markt.
+2. **ρ ist jetzt gemessen statt geraten** (−0,013 bis −0,158, am stärksten in
+   ausgeglichenen Spielen). Das löst die dokumentierte ρ-Fehlmessung auf:
+   falsch war nie die Mechanik, falsch war der Anker.
+3. **Torschnitt-Rangfolge:** echte Über/Unter-Linie > Ergebnis-Buch > Schätzung.
+
+⚠️ **Offen und wartet auf einen Lauf:** die gespeicherten Quotendateien tragen
+noch kein `total`. Es füllt sich beim nächsten
+`npm run odds:holen -- <liga>`, der ab jetzt **2 statt 1 Credit** je Liga
+kostet. In dieser Sitzung wurde **bewusst kein Credit ausgegeben** — die ganze
+Messkette lief gegen bereits gespeicherte Daten.
+
+#### 🆕 DREI NEUE THEMEN, direkt vom Nutzer — bitte in `design/roadmap.md` lesen
+
+Der Nutzer hat sie am Ende der Sitzung angesagt; sie stehen ausformuliert im
+Abschnitt „Offen" der Roadmap, jeweils mit dem WARUM und den Fallen:
+
+1. **📊 Modifikator-BUDGET** — nicht nur „kippt ein Preset", sondern je Quelle:
+   **wie oft feuert sie und wie viel Prozent der Saisonpunkte macht sie aus.**
+   Der springende Punkt: `modCap` deckelt pro SPIEL, nicht pro SAISON — zwei
+   Regelwerke mit gleichem Deckel können völlig verschiedene Budgets haben.
+   Speist Preset-Empfehlung, Profi-Bänder und die Klartext-Stufe zugleich.
+   Gehört an den Abschluss-Durchgang, nicht nebenbei.
+2. **📚 Preset-BIBLIOTHEK + offene Community-Spiele** — inkl. dem
+   Podcaster-Fall (eigener Code, eigene Runde mit seiner Community). Die
+   Trennung, die nicht verwischen darf: **Preset = Vorlage, Community-Spiel =
+   laufende Runde.** Und die Ehrlichkeits-Regel: unsere Presets sind vermessen,
+   eingereichte nicht — das muss dranstehen. Wir können eingereichte Presets
+   aber automatisch durch `balanceSim` schicken und ihre Ampel anzeigen; das
+   ist der eigentliche Wert einer Bibliothek.
+3. **👥 Große Gruppen (mehrere tausend Teilnehmer)** — Kern: fast alles ist eine
+   GRUPPIERUNGS-Ebene über der bestehenden Wertung, keine neue Wertung.
+   **Aber drei Mechaniken brechen still:** `catchup.js` hängt am Rückstand zur
+   SPITZE (feuert bei 5000 Leuten für fast alle), `taunts.js` bremst pro
+   Absender statt pro EMPFÄNGER (einer kann 4999 Sprüche bekommen), und die
+   Meilensteine in `ereignisse.js` verlieren ihre Bedeutung, wenn sie jede
+   Woche jemand schafft. Dazu Divisionen/Untergruppen als spielerische
+   Alternative zum Aufhol-Bonus — und die **Glücksspiel-Abgrenzung**, die bei
+   offenen Runden mit ausgelobten Preisen eine andere Lage ist als im
+   Freundeskreis.
+
+#### Was NICHT angefasst wurde
+
+`engine.js` und `scoreTip` sind **unberührt** — der ganze Eingriff sitzt in der
+Quoten-Schicht. Ebenso unberührt: `balanceSim.js`, `presets*.js`,
+`reglerWarnung.js`, `spieltag.js`, `schema.sql`, Store-Dateien, Team-Modus.
+Das bleibt Andres Ecke.
+
 ### 2026-07-29 (spät) · **Andi** → **Andre** — 🔴 **Das echte Ergebnis-Raster hat zu viel gezahlt. Gefunden, behoben, ohne einen Credit.**
 
 `main` bei `77ba6e0`, **1014 Tests grün**, Build sauber, `npm run balance` ohne
