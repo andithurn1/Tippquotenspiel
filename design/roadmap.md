@@ -776,8 +776,13 @@ Das wäre eine zweite Leistungsachse und damit ein Fairness-Bruch.
    Trost-Joker", „dein Verein hat verletzungsbedingt verloren". Verwandt mit dem
    Aufhol-Mechanismus (`catchup.js`) — ⚠️ **darf sich nicht mit ihm doppeln**,
    sonst wird Zurückliegen doppelt belohnt.
-3. **Herausforderungen — aktiv, Minispiel.** Fußball-Tic-Tac-Toe, Quiz,
-   Elfmeterschießen-Duell. Größter Aufwand, größtes Balance-Risiko.
+3. **Herausforderungen — aktiv, Minispiel.** Fußball-Tic-Tac-Toe, Quiz.
+   Größter Aufwand, größtes Balance-Risiko.
+   ❌ **Das Elfmeterschießen-Duell ist am 29.07. aus der Planung genommen**
+   (Nutzer-Entscheidung) und auch aus dem Hub entfernt. Was daran interessant
+   war, ist ohnehin nicht das Minispiel, sondern der Adressaten-Mechanismus
+   „zwei werden gegeneinander gesetzt" — und der ist als `paarung` in der
+   Regel-Grammatik aufgehoben.
    ⚠️ **Muss ASYNCHRON funktionieren** — ein Freundeskreis spielt nie gleichzeitig.
    ⚠️ **Tic-Tac-Toe („Spieler, der für beide Vereine spielte") ist mit unseren
    Daten NICHT möglich** — unsere Kader sind generiert und fiktiv. Ginge erst
@@ -790,9 +795,9 @@ Der Admin schaltet einzelne Ereignisse frei und legt die Belohnung fest.
 Ergebnis ist immer dasselbe: eine **Joker-Gutschrift** — kein neuer
 Punkte-Kanal, damit die bestehende Deckelung weiter greift.
 
-**Anschluss:** Das geparkte **Elfmeterschießen-Duell** wäre genau so eine
-Herausforderung. Es könnte als „Joker-Duell" zurückkommen, statt als eigenes
-Feature ohne Zweck.
+**Anschluss:** Die ganze Kategorie wird von der **Regel-Grammatik** überholt
+(eigener Abschnitt) — `ereignisse.js` ist deren natürliche Heimat, weil der
+Katalog aus TYP + Parameter schon genau die richtige Form hat.
 
 ### Joker-TYPEN statt neuer Ebenen — GEBAUT ✓
 `rules.joker.typen` steht, `heimat` und `mut` sind gebaut und im
@@ -1154,8 +1159,7 @@ bricht (siehe Abschnitt „Große Gruppen"). Was komplett fehlt:
 
 - **Auslosung** — „diesen Spieltag trifft es drei Ausgeloste"
 - **Paarung / Duell** — „du gegen X diesen Spieltag". `ereignisse.js` führt
-  `duell` schon im Katalog, und das Elfmeterschießen liegt geparkt herum: der
-  Adressaten-Mechanismus dafür existiert nur nicht.
+  `duell` schon im Katalog; es fehlt allein der Adressaten-Mechanismus.
 - **Knappheit / Wettlauf** — „die ersten fünf, die zugreifen"
 - **Soziale Vergabe** — „wer letzte Woche Letzter war, bestimmt das Big Game".
   Reizvoll, weil es aus einem Trostpflaster eine Rolle macht statt eines Bonus.
@@ -1163,39 +1167,229 @@ bricht (siehe Abschnitt „Große Gruppen"). Was komplett fehlt:
   doppelt gehe": Risiko statt Geschenk, und die einzige Variante, die
   Modifikatoren interessanter macht, ohne sie stärker zu machen.
 
-**Der Vorschlag: EIN gemeinsames Auswahl-Modell statt fünf lokaler Varianten.**
-Das ist genau die Lehre aus der Zeitachse — dort lagen vier Spieltags-Zählungen
-nebeneinander, bis `rundenSchluessel()` daraus eine machte. Für die WEN-Achse
-fehlt dieses Gegenstück noch.
+### 🧱 REGEL-GRAMMATIK: ein Satzbau statt hundert Schalter (Entwurf, Nutzer, 2026-07-29)
+
+**Die Ausgangslage:** Der Nutzer will, dass ein Admin nahezu beliebige
+Regelideen einstellen kann — „die letzten 20 % bekommen einen Trost-Joker",
+„die ersten 5 dieses Spieltags bekommen einen Joker der Sorte X", „wer 3
+Spieltage nichts getroffen hat, kriegt nächsten Spieltag +20 %", „alle 3
+Spieltage bekommt der Beste eine Belohnung", „zufällig startet ein 3 Spieltage
+laufendes Miniwettspiel um Joker". Es gibt praktisch unendlich viele solcher
+Wünsche.
+
+**⚠️ Genau deshalb darf man sie nicht als Features bauen.** Hundert Wünsche als
+hundert Schalter sind hundert Balance-Fragen, hundert Warntexte und hundert
+Stellen, an denen `modCap` umgangen wird. Der Ausweg ist eine **GRAMMATIK**: der
+Admin baut SÄTZE aus vier Satzgliedern, und alle Sätze laufen durch dieselben
+Töpfe und dieselbe Vermessung.
 
 ```
-waehleBetroffene({ modus, mitglieder, stand, rundenSpieltag, rundenId })
-  → [userId]
-modi: alle · zufall(n) · rang(oben|unten|mitte, n oder Quantil)
-     · paarung · selbst · wettlauf(n)
+WANN (Auslöser)  →  WEN (Auswahl)  →  WAS (Belohnung)  →  WIE LANGE (Geltung)
 ```
 
-Vier Eigenschaften, die es haben muss:
-1. **Deterministisch aus Runden-Id + Spieltag geseedet**, wie `jokerPlan.js`.
-   Alle sehen dasselbe, es ist nachprüfbar, und der Creator-Code bleibt kurz —
-   gespeichert wird die REGEL, nicht die ausgerollte Liste. Bei tausend
-   Teilnehmern ist Nachprüfbarkeit wichtiger als bei zwölf: der Verdacht der
-   Bevorzugung entsteht sonst von selbst und lässt sich nicht widerlegen.
-2. **Keine Wertung, nur Auswahl.** Es liefert eine Personenliste, sonst nichts —
-   dieselbe Trennung, die die Zeitachse sauber gehalten hat.
-3. **Jede bestehende Mechanik wird dadurch eine Familie**, ohne neu gebaut zu
-   werden: Big Game „nur für die Verfolger", Ereignisse per Los, ein Joker als
-   Duell vergeben.
-4. ⚠️ **Und genau deshalb gehört es an den Balance-Durchgang.** Auslosung und
-   Rang-Auswahl erzeugen **ungleiche Erwartungswerte** — das ist der Unterschied
-   zu „alle gleich" und geht direkt ins Modifikator-Budget. Dieselbe Falle,
-   die bei „gleiches Kontingent, andere Reihenfolge" schon dokumentiert ist:
-   ein systembedingt ungleicher Zwischenstand sieht wie Bevorzugung aus, wenn
-   man ihn nicht als Fortschritt anzeigt.
+Alle Beispiele des Nutzers sind in dieser Grammatik ein Einzeiler:
 
-**Reihenfolge:** Modell + Tests zuerst (klein, UI-frei), dann EINE Mechanik
-darauf umstellen (Ereignisse bietet sich an — dort ist der Schaden am
-kleinsten), messen, dann die übrigen. Nicht alle auf einmal.
+| Wunsch | Auslöser | Auswahl | Belohnung | Geltung |
+|---|---|---|---|---|
+| Trostpflaster | jeder Spieltag | Perzentil unten 20 % | 1 Joker | sofort |
+| Spieltags-Krone | jeder Spieltag | Rang oben 5 **am Spieltag** | 1 Joker (Sorte wählbar) | sofort |
+| Pechvogel-Bonus | Serie: 3× kein Treffer | der Betroffene | +20 % | nächster Spieltag |
+| Scharfschütze | Serie: 4× exakt | der Betroffene | 1 Joker | sofort |
+| Dreier-Wertung | Rhythmus: jeder 3. Spieltag | Rang oben 1 **über die 3** | Belohnung | sofort |
+| Jokerjagd | Zufall (≈ alle 8 Spieltage) | alle | Sonderspiel | 3 Spieltage |
+
+**Das ist die ganze Idee.** Neue Wünsche brauchen künftig kein neues Feature,
+sondern nur einen neuen Wert in einer der vier Listen — und der wird EINMAL
+vermessen statt jedes Mal neu.
+
+#### Die vier Satzglieder
+
+**WANN — Auslöser.** Was bringt die Regel überhaupt ins Rollen.
+
+| Auslöser | Kurzbeschreibung für die Oberfläche |
+|---|---|
+| `spieltag` | „Jeden Spieltag." |
+| `rhythmus(n)` | „Alle n Spieltage — die Wertung läuft über den ganzen Block." |
+| `serie(bedingung, n)` | „Wenn dir n Spieltage hintereinander dasselbe passiert." |
+| `schwelle(größe, wert)` | „Sobald ein Wert überschritten wird, z. B. der Rückstand." |
+| `zufall(frequenz)` | „Unangekündigt, aber etwa alle n Spieltage. Wann genau, weiß niemand vorher." |
+| `termin(spieltag)` | „An einem festen Spieltag." |
+| `saisonende` | „Einmal am Ende." |
+
+**WEN — Auswahl.** Der Teil, der heute fast leer ist (siehe Befund oben).
+
+| Auswahl | Kurzbeschreibung |
+|---|---|
+| `alle` | „Trifft jeden gleich." |
+| `selbst` | „Jeder entscheidet für sich." |
+| `betroffener` | „Nur wen es erwischt hat." (bei `serie`/`schwelle`) |
+| `rang(ende, n)` | „Die besten / schlechtesten n." |
+| `perzentil(ende, %)` | „Das obere / untere Fünftel — wächst mit der Rundengröße mit." |
+| `mitte` | „Wer weder vorn noch hinten steht." |
+| `los(n)` | „n Ausgeloste. Nachprüfbar, nicht heimlich." |
+| `paarung` | „Zwei werden gegeneinander gesetzt." |
+| `wettlauf(n)` | „Die ersten n, die zugreifen." |
+
+⚠️ **Der `bezug` ist ein Pflichtfeld, kein Detail:** `gesamt` (Tabelle),
+`spieltag` (nur dieser Spieltag) oder `zeitraum(n)`. „Der Beste **des
+Spieltags**" und „der **Tabellenführer**" sind gegensätzliche Anreize — der
+erste ist ein rotierender Preis, der auch von hinten erreichbar ist, der zweite
+verstärkt einen bestehenden Vorsprung. Wer das Feld vergisst, baut versehentlich
+das Zweite und meint das Erste.
+
+⚠️ **`perzentil` statt `rang`, sobald Runden groß werden.** „Die letzten 5" ist
+in einer Zwölfer-Runde fast jeder und in einer Runde mit 5000 Teilnehmern ein
+Rundungsfehler. Bei großen Runden führt nur das Perzentil zu einer Regel, die
+sich gleich anfühlt (siehe Abschnitt „Große Gruppen").
+
+⚠️ **`wettlauf` ist die eine Ausnahme, die Infrastruktur kostet.** „Die ersten
+fünf" lässt sich nicht aus einem Startwert ableiten — es braucht eine echte
+Reihenfolge und damit Serverzustand. Alles andere ist deterministisch aus der
+Runden-Id ableitbar. Deshalb: **`wettlauf` zuletzt bauen**, und ehrlich als
+das kennzeichnen, was es ist.
+
+**WAS — Belohnung.** Hier entscheidet sich, ob das Regelwerk vermessbar bleibt.
+
+| Belohnung | Kurzbeschreibung |
+|---|---|
+| `joker(n, sorte)` | „n Joker, Sorte aus der Joker-Bibliothek." |
+| `bonus(%)` | „Ein Aufschlag auf deine Punkte." |
+| `punkte(n)` | „Eine feste Gutschrift." |
+| `rolle(welche)` | „Ein Recht statt Punkten — z. B. das Big Game bestimmen." |
+| `sonderspiel(id)` | „Startet ein Miniwettspiel über mehrere Spieltage." |
+| `nichts` | „Nur eine Auszeichnung. Kostet keine Balance." |
+
+🔴 **Die Regel, die nicht gebrochen werden darf: KEINE Belohnung darf einen
+neuen Punkte-Kanal aufmachen.** `joker` fließt in `jokerKontingent.js` und
+unterliegt `maxErspielt`; `bonus` und `punkte` fallen in denselben ADDITIVEN
+Topf wie Derby, Big Game und Wettbewerbs-Gewicht und damit unter `modCap`. Das
+ist bei `ereignisse.js` schon so entschieden worden, und der Grund gilt hier
+verstärkt: mit einer Grammatik kann ein Admin zwanzig Regeln gleichzeitig
+scharf schalten. Ohne gemeinsamen Deckel addieren die sich zu einem Spiel, das
+niemand mehr vermessen hat.
+
+**`rolle` und `nichts` sind dabei die unterschätzten Einträge.** Sie kosten
+NULL Balance und erzeugen trotzdem Bindung — „du darfst diese Woche das Big
+Game bestimmen" ist stärker als „+5 %", weil es eine Rolle ist und kein Betrag.
+Das ist der billigste Weg, eine Runde lebendig zu machen, und der einzige, der
+im Abschluss-Durchgang nichts verschiebt.
+
+**WIE LANGE — Geltung.** `sofort` · `naechsterSpieltag` · `fenster(n)`.
+Das Fenster ist der Fall Miniwettspiel: eine Regel, die den Zustand für mehrere
+Spieltage verändert.
+
+#### Bibliotheken — verschachtelt, aber mit EINER Kompositionsregel
+
+Der Nutzer will Bibliotheken auf mehreren Ebenen. Das ist richtig, braucht aber
+Disziplin, sonst entstehen zwei konkurrierende Zusammensetzungs-Systeme.
+
+- **Runden-Bibliothek** (das Gesamtpaket) — eine ganze Runden-Idee: Regelwerk +
+  Wettbewerbe/Gewichtung + Joker-Auswahl + Ereignis-Regeln + Big-Game-Formel.
+  **Das ist keine neue Erfindung**, sondern die Ausweitung von `charaktere.js`
+  (Stufe 1 „Schnellstart"), das heute schon Regelwerk + Saison-Wetten + Joker
+  bündelt.
+- **Joker-Bibliothek** — Sorten und Verteilung (`jokerTypen`, `jokerPlan`).
+- **Ereignis-Bibliothek** — fertige SÄTZE in der Grammatik oben, jeder mit
+  einem Satz Beschreibung. Kandidaten: *Trostpflaster · Spieltags-Krone ·
+  Pechvogel-Bonus · Scharfschütze · Dreier-Wertung · Jokerjagd · Losglück ·
+  Rollentausch*.
+- **Zufallsereignis-Bibliothek** — die `zufall`-Auslöser samt Beschaffenheit
+  (Frequenz, was passiert, wie lange).
+- **Wettbewerbs-Bibliothek** — welche Ligen, plus Gewichtungs-Presets.
+- **Big-Game-Bibliothek** — steht schon als eigene Aufgabe (21:30).
+
+🔴 **Die Kompositionsregel: die Bibliotheken MÜSSEN den Aspekten von
+`presetMerge.js` entsprechen.** Dort werden Regelwerke heute über acht benannte
+ASPEKTE gemischt, und ein Test wacht darüber, dass die Aspekte ALLE Regel-Felder
+abdecken. Wenn die Bibliotheken anders schneiden als die Aspekte, gibt es zwei
+Wege, ein Regelwerk zusammenzusetzen, die unterschiedliche Ergebnisse liefern —
+und dann ist nicht mehr feststellbar, was eine Runde eigentlich spielt.
+**Eine Bibliothek = ein Aspekt.** Wächst die Grammatik, wächst der Aspekt mit,
+und der Test schlägt an.
+
+Damit ist der Ablauf, den der Nutzer beschreibt, automatisch gedeckt:
+**Empfehlung annehmen → einzelne Bibliotheken austauschen → Feinheiten
+anpassen.** Genau das kann `presetMerge` schon, es bekommt nur mehr Aspekte.
+
+#### Wie das auf den drei Stufen aussieht
+
+Der schwierige Teil ist nicht die Grammatik, sondern dass Stufe 1 davon
+**nichts** merkt.
+
+- **Stufe 1 „Schnellstart"** — ein Runden-Charakter, fertig. Die Ereignis-Regeln
+  kommen mit und stehen als Liste von SÄTZEN da, nicht als Einstellungen:
+  „Alle 3 Spieltage wird der Beste belohnt. Das untere Fünftel bekommt einen
+  Trost-Joker." Lesen genügt, verstehen ist optional.
+- **Stufe 2 „Anpassen"** — EIN Regler „Wie viel soll nebenbei passieren?"
+  (nichts ↔ viel), der ein Bündel aus der Ereignis-Bibliothek wählt. Darunter
+  die einzelnen Sätze zum Ab- und Anhaken, jeder mit seiner Kurzbeschreibung.
+  Kein Satzbau, nur Auswahl.
+- **Stufe 3 „Profi"** — der Satzbaukasten: vier Auswahlfelder, die einen
+  lesbaren Satz ergeben, plus **Live-Vorschau**: „trifft dich etwa 4× pro
+  Saison" und „macht ~6 % deiner Saisonpunkte".
+
+⚠️ **Die Live-Vorschau ist nicht Komfort, sie ist die Betreuung.** Bei den
+Wettbewerbs-Gewichten war der entscheidende Fund, dass „Gewicht pro Spiel" nicht
+„Anteil an der Wertung" ist und die Oberfläche den resultierenden ANTEIL zeigen
+muss (`anteile()`/`anteilHinweis()`). Hier ist es dieselbe Falle in schärferer
+Form: „die besten 5 bekommen einen Joker" klingt nach einer Kleinigkeit und ist
+in einer Zwölfer-Runde fast die halbe Gruppe. Ohne Vorschau stellt ein Admin
+etwas ein und bekommt etwas anderes.
+
+#### ⚠️ Die Fallen, die die Betreuung abfangen muss
+
+Das ist wieder der eigentliche Inhalt, nicht der Baukasten. Gehört in
+`reglerWarnung.js`, wo die Trennung ERLAUBT/ERPROBT und die
+Kombinations-Regeln schon stehen.
+
+1. **Selbstverstärkung** — `rang oben` + `bonus` bei `bezug: gesamt`: der
+   Führende wird jeden Spieltag stärker. Das ist der teuerste Fehler der ganzen
+   Grammatik, weil er sich erst nach zehn Spieltagen zeigt und dann nicht mehr
+   korrigierbar ist. **Muss eine harte Warnung sein.**
+2. **Doppelter Ausgleich** — `rang unten`/`perzentil unten` + `bonus` neben
+   aktivem Aufhol-Bonus. `konflikte()` in `ereignisse.js` meldet genau diesen
+   Fall schon für den Trost-Joker; die Meldung muss die Grammatik mit abdecken.
+3. **Farmbare Serien** — `serie(kein Treffer, 3)` + fette Belohnung: wer absichtlich
+   drei Spieltage verschenkt, kassiert. Im Freundeskreis absurd, in einer
+   Community-Runde mit Preis nicht. **Die Regel dagegen steht schon:** der
+   Versäumnis-Ersatztipp ist „bewusst der zahmste — durch Tests abgesichert,
+   dass er nie mehr zahlt als ein mutiger eigener Treffer". Dasselbe muss für
+   jede Belohnung auf einen NEGATIVEN Auslöser gelten, und zwar als Test.
+4. **Kollision** — zwei Regeln treffen dieselbe Person am selben Spieltag.
+   Braucht eine feste Auflösungsreihenfolge (chronologisch, wie der Deckel in
+   `ereignisse.js`) und eine Obergrenze je Person und Spieltag.
+5. **Leerlauf** — eine Regel, die nie feuert, weil ihre Bedingung unerreichbar
+   ist (`serie(exakt, 8)`). Der Admin denkt, er hat etwas eingestellt. Dieselbe
+   Sorte Falle wie „alle Big-Game-Gewichte auf 0".
+6. **Unangekündigter Zufall** — ein `zufall`-Auslöser, von dem niemand weiß,
+   ist nicht spannend, sondern willkürlich. `jokerPlan.js` hat das schon
+   entschieden: **verdeckte Reihenfolge, offenes Kontingent.** Also sagen, DASS
+   es Zufallsereignisse gibt und wie oft — nie, wann.
+
+#### Was das für die Vermessung heißt
+
+Jede Regel liefert zwei Zahlen ins **Modifikator-Budget** (eigener Abschnitt
+unten): **wie oft trifft es eine Person pro Saison** und **welchen Anteil an
+den Saisonpunkten** macht sie aus. Erst damit ist eine Bibliothek eine
+Empfehlung und nicht eine Sammlung.
+
+⚠️ **Und der Punkt, der neu ist gegenüber allem Bisherigen:** `los`, `rang` und
+`perzentil` erzeugen **ungleiche Erwartungswerte zwischen Personen**. Alles, was
+bisher gemessen wurde, traf alle gleich (oder jeder entschied selbst). Der
+Simulator muss deshalb nicht nur den Mittelwert prüfen, sondern die STREUUNG
+zwischen Tippern gleicher Stärke — sonst sieht eine Runde, in der Losglück über
+den Sieg entscheidet, in der Ampel genauso grün aus wie eine faire.
+
+**Reihenfolge (nicht alles auf einmal):**
+1. `waehleBetroffene()` als reine Funktion + Tests — UI-frei, klein,
+   deterministisch aus Runden-Id geseedet wie `jokerPlan.js`. Ohne `wettlauf`.
+2. Die Grammatik als Datenmodell in `rules.ereignisse` erweitern, durch
+   `sanitize` und in den Aspekt von `presetMerge` — noch ohne neue Auslöser.
+3. EINE Mechanik umstellen (Ereignisse), messen, Ampel prüfen.
+4. Die Ereignis-Bibliothek mit 6–8 vermessenen Sätzen füllen.
+5. Auslöser `serie` und `rhythmus`, dann `zufall` + `sonderspiel`.
+6. Stufe-3-Baukasten mit Live-Vorschau, dann Stufe 2, dann Stufe 1.
+7. `wettlauf` zuletzt, wenn überhaupt.
 
 ### 📊 Modifikator-BUDGET: wie viel Prozent bringt was — und wie oft? (NEU, Nutzer)
 
@@ -1364,7 +1558,10 @@ haben alle dasselbe Regelwerk → lohnt erst über mehrere Runden hinweg.
 - Streak-Bonus (nutzt denselben Zähler wie die QT-Ball-ins-Gesicht-Saga)
 - ~~GIF an Mitspieler senden~~ ✅ ERLEDIGT — `taunts.js` + Screen `/spott`,
   Versand über die Teilen-Funktion des Geräts (keine eigene Tabelle nötig)
-- Elfmeterschießen-Duell (steht im Hub noch als „bald")
+- ❌ ~~Elfmeterschießen-Duell~~ **GESTRICHEN am 29.07.** (Nutzer). Auch aus dem
+  Hub entfernt (`SOON` in `RundenHub.jsx` ist jetzt leer — eine Ankündigung, die
+  niemand mehr baut, ist schlimmer als keine). Der wertvolle Teil daran lebt als
+  `paarung` in der Regel-Grammatik weiter.
 - **Benachrichtigungen** ✅ ERLEDIGT — `notify.js` + `/benachrichtigungen`:
   nur „neuer Spieltag" und „ungetipptes Spiel beginnt in X h", mit Nachtruhe
   und Tagesobergrenze. **Der Versand ist inzwischen gebaut** (`zustellung.js`,

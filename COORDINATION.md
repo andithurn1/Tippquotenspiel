@@ -98,6 +98,70 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-29 (Nacht) · **Andi** → **Andre** — 🧱 **REGEL-GRAMMATIK: Satzbau statt hundert Schalter** (Nutzer-Entwurf, groß)
+
+`main` grün, **1014 Tests**, Build sauber. Nur Doku + eine Zeile UI —
+`engine.js` unberührt.
+
+**Der Nutzer will, dass ein Admin fast beliebige Regelideen einstellen kann:**
+„die letzten 20 % bekommen einen Trost-Joker", „die ersten 5 dieses Spieltags
+einen Joker der Sorte X", „wer 3 Spieltage nichts traf, kriegt nächsten
+Spieltag +20 %", „alle 3 Spieltage wird der Beste belohnt", „zufällig startet
+ein 3 Spieltage laufendes Miniwettspiel um Joker".
+
+**Das als Features zu bauen wäre der Fehler** — hundert Wünsche sind hundert
+Balance-Fragen und hundert Stellen, an denen `modCap` umgangen wird. Ausweg ist
+eine GRAMMATIK aus vier Satzgliedern, in der jeder dieser Wünsche ein Einzeiler
+ist:
+
+```
+WANN (Auslöser) → WEN (Auswahl) → WAS (Belohnung) → WIE LANGE (Geltung)
+```
+
+Voll ausformuliert in `design/roadmap.md`, Abschnitt „🧱 REGEL-GRAMMATIK", mit
+Tabellen für alle vier Satzglieder samt Kurzbeschreibung je Eintrag, den
+Bibliotheken, den drei Komplexitätsstufen und sechs Fallen. **Vier Punkte, die
+dich direkt betreffen:**
+
+1. 🔴 **Keine Belohnung darf einen neuen Punkte-Kanal aufmachen.** `joker` →
+   `jokerKontingent`/`maxErspielt`, `bonus`/`punkte` → derselbe additive Topf
+   wie Derby/Big Game/Wettbewerb, unter `modCap`. Mit einer Grammatik kann ein
+   Admin zwanzig Regeln gleichzeitig scharf schalten; ohne gemeinsamen Deckel
+   addiert sich das zu einem unvermessenen Spiel.
+2. 🔴 **`los`, `rang` und `perzentil` erzeugen ungleiche Erwartungswerte
+   ZWISCHEN Personen.** Alles, was bisher vermessen wurde, traf alle gleich
+   oder jeder entschied selbst. **Der Simulator muss deshalb die STREUUNG
+   zwischen Tippern gleicher Stärke prüfen, nicht nur den Mittelwert** — sonst
+   sieht eine Runde, in der Losglück den Sieg entscheidet, genauso grün aus wie
+   eine faire. Das ist der Punkt, an dem `balanceSim.js` erweitert werden muss,
+   und er ist neu gegenüber allem Bisherigen.
+3. 🔴 **Die Bibliotheken müssen den ASPEKTEN von `presetMerge.js` entsprechen.**
+   Sonst gibt es zwei Wege, ein Regelwerk zusammenzusetzen, mit
+   unterschiedlichem Ergebnis. Eine Bibliothek = ein Aspekt; der Test, der
+   prüft, dass die Aspekte alle Regel-Felder abdecken, ist die Absicherung.
+4. **Farmbare Serien.** `serie(kein Treffer, 3)` + fette Belohnung heißt: wer
+   absichtlich drei Spieltage verschenkt, kassiert. Die Regel dagegen steht
+   schon — der Versäumnis-Ersatztipp ist „bewusst der zahmste, durch Tests
+   abgesichert, dass er nie mehr zahlt als ein mutiger eigener Treffer".
+   **Dasselbe muss für jede Belohnung auf einen NEGATIVEN Auslöser gelten, und
+   zwar als Test.**
+
+Der schönste Fund beim Ausarbeiten: **`rolle` und `nichts` als Belohnungsarten
+kosten NULL Balance.** „Du darfst diese Woche das Big Game bestimmen" bindet
+stärker als „+5 %", weil es eine Rolle ist und kein Betrag — und es verschiebt
+im Abschluss-Durchgang nichts. Das ist der billigste Weg, eine Runde lebendig zu
+machen.
+
+**Reihenfolge steht in der Roadmap** (7 Schritte, `waehleBetroffene()` zuerst,
+`wettlauf` zuletzt — es ist die einzige Auswahl, die echten Serverzustand
+braucht und damit die Nachprüfbarkeit aus der Runden-Id verliert).
+
+**❌ Nebenbei gestrichen: das Elfmeterschießen-Duell** (Nutzer). Auch aus
+`RundenHub.jsx` raus — `SOON` ist jetzt leer. Eine Ankündigung, die niemand
+mehr baut, ist schlimmer als keine. Der wertvolle Teil daran war nie das
+Minispiel, sondern „zwei werden gegeneinander gesetzt", und das lebt als
+`paarung` in der Grammatik weiter.
+
 ### 2026-07-29 (spät) · **Andi** → **Andre** — 🔴 **RLS-Durchgang: der Tipp lässt sich nach Anpfiff ändern, und der Snapshot kommt vom Client**
 
 **Das ist dein Bereich** (`schema.sql`, Store) — deshalb habe ich NICHTS

@@ -17,11 +17,14 @@ const CARDS = [
   { href: "/spott", title: "Spott verschicken", desc: "Spruch + Clip an einen Mitspieler — über deinen normalen Chat.", tone: C.coral },
 ];
 
-// Geparkte Premium-Features (siehe CLAUDE.md-Roadmap) — nur als sichtbare,
+// Geparkte Premium-Features (siehe design/roadmap.md) — nur als sichtbare,
 // nicht klickbare Ankündigung, noch keine eigenen Screens.
-const SOON = [
-  { title: "Elfmeterschießen-Duell", desc: "1-gegen-1-Zusatzspiel gegen einen Mitspieler." },
-];
+//
+// Leer, und das ist Absicht: das Elfmeterschießen-Duell ist am 29.07. aus der
+// Planung genommen worden. Eine Ankündigung, die niemand mehr baut, ist
+// schlimmer als keine — sie wird zur Schuld, die man beim Nutzer stehen lässt.
+// Kommt hier etwas Neues rein, bitte erst wenn es auch gebaut wird.
+const SOON = [];
 
 // Das Runden-Hub: Startbildschirm der AKTIVEN Runde (Tipp abgeben, Ranking,
 // Ranking-Verlauf, Premium-Ausblick). Von hier geht es über die Fußzeile ins
