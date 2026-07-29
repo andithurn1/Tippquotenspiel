@@ -65,7 +65,21 @@ export const DEFAULT_RULES = {
   combo: { tendenz: 1.15, abstand: 1.5, exakt: 2.3 },
   displayScale: 15,    // roh × 15 → schöne hohe Zahlen (Fairness/Rang unberührt)
   perGameCap: null,    // optionaler harter Deckel pro Spiel (z.B. 1000), null = offen
-  markets: { result: true, goals: { enabled: true, picksPerTeam: 2, allowDouble: true, allowBackups: true } },
+  // `goals.modus` entscheidet, WIE Torschützen getippt werden:
+  //   proTeam  — je Mannschaft `picksPerTeam` Namen (bisheriges Verhalten)
+  //   proSpiel — `picksProSpiel` Namen aus dem ganzen Spiel, ohne Trennung
+  // Der zweite Modus ist nicht nur Geschmack: die echten Torschützen-Quoten
+  // kommen OHNE Vereinszuordnung herein (`kader.js` leitet sie ab, braucht dafür
+  // aber zwei Spiele je Verein). Solange ein Spieler noch offen ist, lässt er
+  // sich in `proSpiel` trotzdem anbieten — in `proTeam` nicht.
+  markets: {
+    result: true,
+    goals: {
+      enabled: true, modus: "proTeam",
+      picksPerTeam: 2, picksProSpiel: 3,
+      allowDouble: true, allowBackups: true,
+    },
+  },
   oddsMode: "snapshot",
   // Underdog-Boost: zusätzlicher Multiplikator auf den Ergebnis-Teil, wenn das
   // REALE Ergebnis ein Außenseiter-Sieg war (Sieger-Quote als Maßstab). Boost=1
@@ -205,6 +219,9 @@ export const RULE_LIMITS = {
     exakt:   { min: 1, max: 4, step: 0.1  },
   },
   picksPerTeam: { min: 1, max: 3, step: 1 },
+  // Mehr Spielraum als je Mannschaft: hier verteilen sich die Namen auf beide
+  // Seiten, drei je Team entsprechen also sechs im Spiel.
+  picksProSpiel: { min: 1, max: 6, step: 1 },
   underdogBoost:     { min: 1,   max: 3,  step: 0.1 },
   underdogRampStart: { min: 1.2, max: 15, step: 0.1 },
   underdogRampEnd:   { min: 2,   max: 30, step: 0.5 },
@@ -320,7 +337,9 @@ export function sanitizeRules(partial = {}) {
       result: mk.result !== false,
       goals: {
         enabled: g.enabled !== false,
+        modus: g.modus === "proSpiel" ? "proSpiel" : "proTeam",
         picksPerTeam: clamp(Math.round(num(g.picksPerTeam, D.markets.goals.picksPerTeam)), L.picksPerTeam.min, L.picksPerTeam.max),
+        picksProSpiel: clamp(Math.round(num(g.picksProSpiel, D.markets.goals.picksProSpiel)), L.picksProSpiel.min, L.picksProSpiel.max),
         allowDouble: g.allowDouble !== false,
         allowBackups: g.allowBackups !== false,
       },
@@ -455,11 +474,22 @@ export function scoreResult(tip, actual, snap, rules = DEFAULT_RULES) {
 // Tore: gleicher Spieler 2× = Doppelpack. 2 Tore → double, 1 Tor → anytime (Floor), 0 → nichts.
 export function scoreGoals(picks, snap, rules = DEFAULT_RULES, playerGoals = null) {
   let net = 0; const detail = [];
-  for (const side of ["home", "away"]) {
+  // Im Modus `proSpiel` gibt es keine Trennung nach Mannschaft: die Namen
+  // stehen alle in EINEM Topf, und nachgeschlagen wird auf beiden Seiten. Die
+  // Tipp-Form bleibt trotzdem `{ home, away }` — schon abgegebene Tipps und die
+  // Datenbank ändern sich dadurch nicht, und ein Wechsel des Modus mitten in
+  // der Saison wertet Altes weiter richtig aus.
+  const proSpiel = rules?.markets?.goals?.modus === "proSpiel";
+  const seiten = proSpiel ? ["spiel"] : ["home", "away"];
+  for (const side of seiten) {
     const counts = {};
-    for (const p of picks[side] || []) if (p) counts[p] = (counts[p] || 0) + 1;
+    const quelle = proSpiel ? [...(picks.home || []), ...(picks.away || [])] : (picks[side] || []);
+    for (const p of quelle) if (p) counts[p] = (counts[p] || 0) + 1;
     for (const [p, c] of Object.entries(counts)) {
-      const P = snap.players[side][p]; if (!P) continue;
+      const P = proSpiel
+        ? (snap.players.home?.[p] ?? snap.players.away?.[p])
+        : snap.players[side][p];
+      if (!P) continue;
       const scored = playerGoals ? (playerGoals[p] || 0) : null;   // null = "angenommen es trifft"
       if (c >= 2) {
         const goals2 = scored == null ? 2 : scored;                // Auswertung: echte Toranzahl

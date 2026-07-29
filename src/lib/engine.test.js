@@ -705,3 +705,57 @@ describe("Team-/Derby-Modifikatoren", () => {
     expect(zurueck.teamMods.teams["FC Bayern München"]).toBeCloseTo(1.2, 5);
   });
 });
+
+// ── Torschützen: Modus proSpiel ─────────────────────────────
+// Gebaut, weil die echten Torschützen-Quoten OHNE Vereinszuordnung kommen.
+// `kader.js` leitet sie ab, braucht dafür aber zwei Spiele je Verein — bis
+// dahin lässt sich in diesem Modus trotzdem tippen.
+describe("scoreGoals — Modus proSpiel", () => {
+  const snap = {
+    players: {
+      home: { "Heim-Stürmer": { anytime: 2.0, double: 6.0 } },
+      away: { "Gast-Stürmer": { anytime: 3.0, double: 9.0 } },
+    },
+  };
+  const proTeam = sanitizeRules({ markets: { goals: { modus: "proTeam" } } });
+  const proSpiel = sanitizeRules({ markets: { goals: { modus: "proSpiel" } } });
+
+  it("sanitizeRules kennt beide Modi und fällt auf proTeam zurück", () => {
+    expect(proSpiel.markets.goals.modus).toBe("proSpiel");
+    expect(sanitizeRules({ markets: { goals: { modus: "quatsch" } } }).markets.goals.modus)
+      .toBe("proTeam");
+  });
+
+  // Der Kern: ein Name, der auf der „falschen" Seite steht, zählt trotzdem.
+  it("schlägt einen Spieler auf BEIDEN Seiten nach", () => {
+    const picks = { home: ["Gast-Stürmer"], away: [] };
+    expect(scoreGoals(picks, snap, proTeam, { "Gast-Stürmer": 1 }).net).toBe(0);
+    expect(scoreGoals(picks, snap, proSpiel, { "Gast-Stürmer": 1 }).net).toBeCloseTo(2.0);
+  });
+
+  it("wertet mehrere Namen aus einem Topf aus", () => {
+    const picks = { home: ["Heim-Stürmer", "Gast-Stürmer"], away: [] };
+    const r = scoreGoals(picks, snap, proSpiel, { "Heim-Stürmer": 1, "Gast-Stürmer": 1 });
+    expect(r.net).toBeCloseTo(1.0 + 2.0);
+  });
+
+  it("der Doppelpack funktioniert auch hier", () => {
+    const picks = { home: ["Heim-Stürmer", "Heim-Stürmer"], away: [] };
+    expect(scoreGoals(picks, snap, proSpiel, { "Heim-Stürmer": 2 }).net).toBeCloseTo(5.0);
+  });
+
+  // Alte Tipps liegen als { home, away } in der DB. Ein Moduswechsel mitten in
+  // der Saison darf sie nicht entwerten.
+  it("wertet einen alten, nach Mannschaften getrennten Tipp unverändert aus", () => {
+    const picks = { home: ["Heim-Stürmer"], away: ["Gast-Stürmer"] };
+    const alt = scoreGoals(picks, snap, proTeam, { "Heim-Stürmer": 1, "Gast-Stürmer": 1 });
+    const neu = scoreGoals(picks, snap, proSpiel, { "Heim-Stürmer": 1, "Gast-Stürmer": 1 });
+    expect(neu.net).toBeCloseTo(alt.net);
+  });
+
+  it("picksProSpiel wird beschnitten wie jeder andere Regler", () => {
+    expect(sanitizeRules({ markets: { goals: { picksProSpiel: 99 } } }).markets.goals.picksProSpiel)
+      .toBe(RULE_LIMITS.picksProSpiel.max);
+    expect(sanitizeRules({}).markets.goals.picksProSpiel).toBe(3);
+  });
+});

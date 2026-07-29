@@ -28,10 +28,12 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseTheOddsApiEvent } from "../src/lib/oddsApi.js";
 import { ausApiName, unbekannteKlubs } from "../src/lib/klubnamen.js";
 import { vereineVon } from "../src/lib/ligen.js";
+import { zuordne, verschmelze, fortschritt } from "../src/lib/kader.js";
 
 const HIER = dirname(fileURLToPath(import.meta.url));
 const WURZEL = resolve(HIER, "..");
 const ZIEL = resolve(WURZEL, "src/lib/quoten");
+const KADER = resolve(WURZEL, "src/lib/kader");
 
 const LIGEN = {
   bl: { label: "Bundesliga", sport: "soccer_germany_bundesliga" },
@@ -119,6 +121,37 @@ async function holeRaster(key, liga, eventId) {
   }
 }
 
+// Die TORSCHÜTZEN eines Spiels. Liefert nur Namen mit Quote — der Markt sagt
+// nicht, zu welcher Mannschaft ein Spieler gehört; das leitet `kader.js` aus
+// mehreren Spielen ab.
+//
+// ⚠️ `regions=us`: nur dort wird der Markt gestellt. Und er wird erst 1–7 Tage
+// vor Anpfiff geöffnet — für ein Spiel in vier Wochen kommt garantiert nichts
+// zurück, das ist kein Fehler. Leere Antworten kosten auch keinen Credit.
+async function holeTorschuetzen(key, liga, eventId) {
+  const url = `https://api.the-odds-api.com/v4/sports/${liga.sport}/events/${eventId}/odds`
+    + `?regions=us&markets=player_goal_scorer_anytime&oddsFormat=decimal&apiKey=${key}`;
+  try {
+    const { daten } = await hole(url);
+    const proSpieler = new Map();
+    for (const b of daten.bookmakers || []) {
+      for (const m of b.markets || []) {
+        for (const o of m.outcomes || []) {
+          // `name` ist "Yes"/"No", der Spieler steht in `description`.
+          if (o.name !== "Yes" || !o.description) continue;
+          const n = String(o.description).trim();
+          if (!proSpieler.has(n)) proSpieler.set(n, []);
+          proSpieler.get(n).push(Number(o.price));
+        }
+      }
+    }
+    if (!proSpieler.size) return null;
+    return Object.fromEntries([...proSpieler].map(([n, v]) => [n, median(v)]));
+  } catch {
+    return null;
+  }
+}
+
 const median = (a) => {
   const s = a.filter((v) => v > 1).sort((x, y) => x - y);
   if (!s.length) return null;
@@ -128,7 +161,7 @@ const median = (a) => {
 
 // KOSTET CREDITS: 1 für die 1X2-Quoten der ganzen Liga, plus 1 je Spiel für
 // das Ergebnis-Raster (nur mit `--raster`).
-async function holeQuoten(key, kurz, liga, { raster = false } = {}) {
+async function holeQuoten(key, kurz, liga, { raster = false, schuetzen = false } = {}) {
   const url = `https://api.the-odds-api.com/v4/sports/${liga.sport}/odds`
     + `?regions=eu&markets=h2h&oddsFormat=decimal&apiKey=${key}`;
   const { daten, rest } = await hole(url);
@@ -140,14 +173,16 @@ async function holeQuoten(key, kurz, liga, { raster = false } = {}) {
   // Raster deshalb übernommen und ihr Alter genannt, statt still zu
   // verschwinden.
   const altePfad = resolve(ZIEL, `${kurz}.js`);
-  let alteRaster = new Map(); let alteZeit = null;
-  if (!raster && existsSync(altePfad)) {
+  let alteRaster = new Map(); let alteSchuetzen = new Map(); let alteZeit = null;
+  if ((!raster || !schuetzen) && existsSync(altePfad)) {
     try {
       const alt = await import(pathToFileURL(altePfad).href + `?t=${Date.now()}`);
       alteZeit = alt.GEHOLT ?? null;
-      alteRaster = new Map((alt.default ?? [])
-        .filter((s) => s.correctScore)
+      const vorher = alt.default ?? [];
+      alteRaster = new Map(vorher.filter((s) => s.correctScore)
         .map((s) => [`${s.home}|${s.away}`, s.correctScore]));
+      alteSchuetzen = new Map(vorher.filter((s) => s.torschuetzen)
+        .map((s) => [`${s.home}|${s.away}`, s.torschuetzen]));
     } catch { /* kaputte Altdatei: dann eben ohne */ }
   }
 
@@ -175,6 +210,13 @@ async function holeQuoten(key, kurz, liga, { raster = false } = {}) {
     } else {
       const alt = alteRaster.get(paar);
       if (alt) eintrag.correctScore = alt;
+    }
+    if (schuetzen) {
+      const s = await holeTorschuetzen(key, liga, e.id);
+      if (s) eintrag.torschuetzen = s;
+    } else {
+      const alt = alteSchuetzen.get(paar);
+      if (alt) eintrag.torschuetzen = alt;
     }
     spiele.push(eintrag);
   }
@@ -215,14 +257,74 @@ async function holeQuoten(key, kurz, liga, { raster = false } = {}) {
     "export default ",
   ].join("\n");
   writeFileSync(pfad, kopf + JSON.stringify(spiele, null, 1) + ";\n", "utf8");
+  await schreibeKader(kurz, liga, spiele);
   console.log(`\n── ${liga.label} (${kurz}) ── ${spiele.length} Spiele → ${pfad}`);
   console.log(`   ${rest} Credits übrig`);
   return { kurz, ok: true, anzahl: spiele.length };
 }
 
+// ── Kader mitschreiben ──────────────────────────────────────
+// Die Torschützen-Quoten nennen keinen Verein. `kader.js` leitet ihn aus der
+// SCHNITTMENGE mehrerer Spiele ab — dafür muss über Läufe hinweg gesammelt
+// werden, denn ein einzelner Abruf zeigt jeden Verein meist nur einmal.
+// (Gemessen: 15 MLS-Spiele = 30 Klub-Auftritte bei 30 Vereinen, also null
+// Schnittmengen. Erst der Abruf der nächsten Runde löst auf.)
+async function schreibeKader(kurz, liga, spiele) {
+  const neu = spiele.filter((s) => s.torschuetzen).map((s) => ({
+    home: s.home, away: s.away, kickoff: s.kickoff,
+    spieler: Object.keys(s.torschuetzen),
+  }));
+  if (!neu.length) return;
+
+  const pfad = resolve(KADER, `${kurz}.js`);
+  let alt = [];
+  if (existsSync(pfad)) {
+    try {
+      const m = await import(pathToFileURL(pfad).href + `?t=${Date.now()}`);
+      alt = m.BEOBACHTUNGEN ?? [];
+    } catch { /* kaputte Altdatei: dann eben von vorn */ }
+  }
+  const alle = verschmelze(alt, neu);
+  const erg = zuordne(alle);
+  const f = fortschritt(erg);
+
+  mkdirSync(KADER, { recursive: true });
+  const kopf = [
+    "// ============================================================",
+    `//  ${liga.label.toUpperCase()} — KADER, abgeleitet aus den Torschützen-Quoten`,
+    "//",
+    "//  ERZEUGTE DATEI — nicht von Hand bearbeiten.",
+    `//  Wächst mit:  npm run odds:holen -- ${kurz} --schuetzen`,
+    "//",
+    `//  Stand:       ${new Date().toISOString()}`,
+    `//  Beobachtete Spiele: ${alle.length}`,
+    `//  Zugeordnet:  ${f.zugeordnet} von ${f.gesamt} Spielern (${Math.round(f.anteil * 100)} %)`,
+    "//",
+    "//  Es gibt KEINE Kaderquelle. Die Quoten sind der Kader: ein Buchmacher",
+    "//  bepreist keinen Verletzten. Der Verein steckt in der Schnittmenge —",
+    "//  wer in zwei Spielen desselben Klubs mit verschiedenen Gegnern",
+    "//  vorkommt, ist eindeutig. Bis dahin bleibt er offen und wird nicht",
+    "//  angeboten: ein Spieler bei der falschen Mannschaft wäre ein stiller",
+    "//  Fehler, der erst bei der Abrechnung auffällt.",
+    "// ============================================================",
+    "",
+    `export const ZUORDNUNG = ${JSON.stringify(erg.zuordnung, null, 1)};`,
+    "",
+    `export const BEOBACHTUNGEN = ${JSON.stringify(alle, null, 1)};`,
+    "",
+  ].join("\n");
+  writeFileSync(pfad, kopf, "utf8");
+  console.log(`   Kader: ${f.zugeordnet}/${f.gesamt} Spieler zugeordnet (${Math.round(f.anteil * 100)} %) aus ${alle.length} Spielen`);
+  if (f.zugeordnet === 0 && alle.length) {
+    console.log("      → Noch keine Schnittmenge. Jeder Verein kam bisher nur einmal vor;");
+    console.log("        der Abruf der NÄCHSTEN Spielrunde löst das auf.");
+  }
+}
+
 const args = process.argv.slice(2);
 const nurPruefen = args.includes("--pruefen");
 const mitRaster = args.includes("--raster");
+const mitSchuetzen = args.includes("--schuetzen");
 const keys = args.filter((a) => !a.startsWith("--"));
 const zuTun = keys.length ? keys : Object.keys(LIGEN);
 
@@ -238,7 +340,7 @@ if (!key) {
     try {
       out.push(nurPruefen
         ? await pruefe(key, kurz, liga)
-        : await holeQuoten(key, kurz, liga, { raster: mitRaster }));
+        : await holeQuoten(key, kurz, liga, { raster: mitRaster, schuetzen: mitSchuetzen }));
     } catch (e) {
       console.log(`\n── ${liga.label} (${kurz}) ──\n   ❌ ${e.message}`);
       out.push({ kurz, ok: false });

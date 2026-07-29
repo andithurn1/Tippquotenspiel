@@ -659,10 +659,45 @@ export default function Spielerstellung() {
             onChange={(on) => patchGoals({ enabled: on })} />
           {g.enabled && (
             <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-                <span style={{ fontSize: 13, color: C.muted }}>Picks pro Team</span>
-                <Stepper value={g.picksPerTeam} min={L.picksPerTeam.min} max={L.picksPerTeam.max}
-                  onStep={(d) => patchGoals({ picksPerTeam: Math.min(L.picksPerTeam.max, Math.max(L.picksPerTeam.min, g.picksPerTeam + d)) })} />
+              {/* Wie die Namen gewählt werden. Mehr als Geschmack: bei echten
+                  Marktquoten kommen die Torschützen OHNE Vereinszuordnung
+                  herein — im Spiel-Modus lässt sich trotzdem tippen. */}
+              <div style={{ fontSize: 11.5, color: C.muted, marginTop: 6, marginBottom: 5 }}>
+                Wie viele Schützen?
+              </div>
+              <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                {[
+                  { key: "proTeam", label: "Je Mannschaft", hint: "Getrennte Wahl für Heim und Auswärts." },
+                  { key: "proSpiel", label: "Je Spiel", hint: "Ein Topf für beide Mannschaften — freier, und unabhängig von der Vereinszuordnung." },
+                ].map((m) => {
+                  const an = (g.modus ?? "proTeam") === m.key;
+                  return (
+                    <button key={m.key} title={m.hint} onClick={() => patchGoals({ modus: m.key })} style={{
+                      flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
+                      borderRadius: 11, fontSize: 12, fontWeight: 700,
+                      background: an ? `${C.sky}22` : C.surface, color: an ? C.sky : C.muted,
+                      border: `1px solid ${an ? C.sky + "66" : C.line}`,
+                    }}>{m.label}</button>
+                  );
+                })}
+              </div>
+              {(g.modus ?? "proTeam") === "proSpiel" ? (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
+                  <span style={{ fontSize: 13, color: C.muted }}>Schützen pro Spiel</span>
+                  <Stepper value={g.picksProSpiel} min={L.picksProSpiel.min} max={L.picksProSpiel.max}
+                    onStep={(d) => patchGoals({ picksProSpiel: Math.min(L.picksProSpiel.max, Math.max(L.picksProSpiel.min, g.picksProSpiel + d)) })} />
+                </div>
+              ) : (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
+                  <span style={{ fontSize: 13, color: C.muted }}>Picks pro Team</span>
+                  <Stepper value={g.picksPerTeam} min={L.picksPerTeam.min} max={L.picksPerTeam.max}
+                    onStep={(d) => patchGoals({ picksPerTeam: Math.min(L.picksPerTeam.max, Math.max(L.picksPerTeam.min, g.picksPerTeam + d)) })} />
+                </div>
+              )}
+              <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 6, lineHeight: 1.45 }}>
+                {(g.modus ?? "proTeam") === "proSpiel"
+                  ? `${g.picksProSpiel} Namen aus beiden Mannschaften zusammen — wer sie verteilt, ist euch überlassen.`
+                  : `${g.picksPerTeam} Namen je Mannschaft, also ${g.picksPerTeam * 2} im Spiel.`}
               </div>
               <Toggle label="Doppelpack erlaubt" on={g.allowDouble}
                 onChange={(on) => patchGoals({ allowDouble: on })} />

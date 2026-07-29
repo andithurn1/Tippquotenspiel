@@ -331,6 +331,30 @@ beliebig oft abspielen. `klubnamen.js` übersetzt „Bayern Munich" →
 Vereins, und ein falsch geratener Klub hängt die Quoten still ans falsche Spiel.
 Unbekannte Namen kommen unverändert zurück und fallen dadurch auf.
 
+**Kader ohne Kaderquelle** (`src/lib/kader.js`, erzeugt: `src/lib/kader/<liga>.js`):
+Die echten Torschützen-Quoten nennen **keinen Verein** — nur
+`{ description: "Talles Magno", price: 2.15 }`, rund 21 Namen je Spiel. Unser
+Tippmodell braucht die Trennung. Gelöst OHNE externe Kaderliste, weil eine
+solche gepflegt werden müsste (Transfers, Leihen, Sperren) und nach jedem
+Fenster falsch wäre: **die Quoten SIND der Kader** — ein Buchmacher bepreist
+keinen Verletzten. Der Verein steckt in der SCHNITTMENGE über mehrere Spiele
+(kommt jemand in NYC–TOR und NYC–MTL vor, spielt er für NYC). Vier Punkte:
+(1) zwei Spiele desselben Klubs mit VERSCHIEDENEN Gegnern lösen auf — zweimal
+derselbe Gegner nicht; (2) wer noch offen ist, wird NICHT angeboten (ein
+Spieler bei der falschen Mannschaft fiele erst bei der Abrechnung auf, und dann
+hat jemand auf ihn getippt); (3) bei einem Widerspruch (Transfer) gewinnt die
+NEUERE Beobachtung, sonst bliebe er für immer unauflösbar; (4) der Abruf
+SAMMELT über Läufe (`--schuetzen`), weil ein einzelner Lauf jeden Verein meist
+nur einmal zeigt — gemessen: 15 MLS-Spiele = 30 Klub-Auftritte bei 30 Vereinen,
+also null Schnittmengen. Erst die nächste Spielrunde löst auf.
+
+**Torschützen-Modus** (`rules.markets.goals.modus`): `proTeam` (Vorgabe, je
+Mannschaft `picksPerTeam`) oder `proSpiel` (`picksProSpiel` Namen aus einem
+Topf). Der zweite Modus ist nicht nur Geschmack — er kommt OHNE Vereins-
+zuordnung aus und ist damit auch dann spielbar, wenn der Kader noch offen ist.
+Die Tipp-Form bleibt in beiden Fällen `{ home, away }`, damit ein Moduswechsel
+mitten in der Saison abgegebene Tipps nicht entwertet.
+
 **Liga-Daten** (`ligaGenerator.js` + `ligen.js`): fünf Wettbewerbe im EINEN
 Match-Katalog — Bundesliga 306 · Premier League 380 · La Liga 380 · Serie A 380
 · Champions League 159 = 1605 Spiele (Aufbau ~50 ms, reine Funktionen, gecacht).
