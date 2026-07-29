@@ -1029,6 +1029,174 @@ Messgrundlage, nicht umgekehrt.
 `Spielerstellung.jsx`, `presetMerge.js` (Aspekt „bigGame" prüfen — ein Test
 wacht darüber, dass die Aspekte ALLE Regel-Felder abdecken).
 
+### 🔒 RLS-Durchgang: vier Löcher, eines davon bricht das ganze Spiel (2026-07-29)
+
+Durchgesehen wurde `supabase/schema.sql`, Abschnitt Row Level Security, gegen
+die Tabellen-Definitionen. **Das ist kein laufender Schaden** — im Freundeskreis
+mit bekannten Leuten passiert nichts. Aber **bevor eine offene Community-Runde
+aufgemacht wird, muss das zu.** Nach Schwere sortiert.
+
+> ⚠️ **`schema.sql` und die Store-Dateien sind Andres Bereich.** Deshalb hier
+> nur der Befund samt Lösungsweg, nicht die Änderung.
+
+**🔴 1. Der Tipp lässt sich NACH Anpfiff noch ändern — und der Snapshot kommt
+vom Client.** Das ist der schwerste Befund, weil er die Grundlage des Spiels
+aushebelt.
+
+```sql
+create policy "tips_update_own" on public.tips for update to authenticated
+  using (user_id = auth.uid());
+```
+
+Keine Prüfung auf Anpfiff, kein Blick auf `matches.kickoff`. `CLAUDE.md` sagt
+ausdrücklich: „das Einfrieren ab Anpfiff ist Sache von Store/UI". Nur ist die
+UI keine Schranke — der Supabase-Client spricht direkt mit Postgres, und ein
+Aufruf am Frontend vorbei kann einen Tipp umschreiben, wenn das Spiel längst
+gelaufen ist. **RLS ist hier die einzige serverseitige Instanz, und sie prüft es
+nicht.**
+
+Schlimmer noch: `tips.snapshot` ist eine vom Client geschriebene Spalte. Der
+Snapshot ist aber genau das, woran die Auszahlung hängt (`correctScore[reales
+Ergebnis]`). Wer ihn selbst mitschickt, kann sich seine Quote **aussuchen** —
+ein getippter Endstand mit Quote 200 ist eine Zeile JSON. Die ganze
+Anker-Regel („Anker immer auf der Quote des REALEN Ergebnisses") wird damit
+gegenstandslos, weil der Anker gar nicht von uns kommt.
+
+**Lösungsweg:** beides gehört serverseitig. Entweder Tipp-Abgabe über eine
+API-Route mit `service_role`, die den Snapshot AUS DER DB stempelt und nach
+Anpfiff ablehnt — oder auf DB-Ebene: `insert`/`update`-Policies um
+`exists (select 1 from matches mt where mt.id = tips.match_id and mt.kickoff > now())`
+erweitern, plus einen `before insert or update`-Trigger, der `new.snapshot`
+aus `matches` überschreibt statt ihn zu übernehmen. Der Trigger ist der
+wichtigere Teil: eine Spalte, die der Client setzen darf, ist keine Messung.
+
+**🔴 2. Der Beitritts-Code ist keine Schranke — er steht in einer Tabelle, die
+jeder lesen darf.**
+
+```sql
+join_code text not null unique,   -- in public.rounds
+create policy "rounds_read" on public.rounds for select to authenticated using (true);
+```
+
+Der Kommentar daneben sagt: „der Code selbst ist die Zugangsschranke, nicht die
+Sichtbarkeit". Das Schema widerspricht dem — der Code steht IN der frei
+lesbaren Zeile. Ein einziges `select join_code from rounds` liefert die Codes
+**aller** Runden. Die Absicht ist richtig, die Umsetzung hebt sie auf.
+
+**🔴 3. Beitreten prüft den Code überhaupt nicht.**
+
+```sql
+create policy "members_join_self" on public.round_members for insert to authenticated
+  with check (user_id = auth.uid());
+```
+
+Geprüft wird nur, dass man sich nicht für jemand anderen einträgt. **Die
+`round_id` ist frei wählbar** — man braucht den Code also nicht einmal (siehe 2),
+man kann direkt in jede beliebige Runde einsteigen. Der Code-Abgleich passiert
+in `getRoundByCode()`, also in Anwendungscode, den ein direkter API-Aufruf
+umgeht. Danach greifen alle „gleiche Runde"-Policies: Mitglieder, abgerechnete
+Tipps, Stimmen, Saison-Wetten.
+
+**Lösungsweg für 2 + 3 zusammen:** Beitritt über eine `security definer`-Funktion
+`join_round(code text)`, die den Code prüft und die Mitgliedschaft selbst
+anlegt. Dann darf `rounds` auf Mitglieder eingeschränkt werden (`rounds_read`
+über `round_members`), und der Code verlässt die Datenbank nie. RLS kann keine
+Parameter entgegennehmen — deshalb ist die Funktion hier der richtige Weg, nicht
+eine schlauere Policy.
+
+**🟡 4. Vollständiges Nutzer- und Rundenverzeichnis für jeden Angemeldeten.**
+
+`profiles_read using (true)` und `rounds_read using (true)`: jeder Eingeloggte
+kann alle Profile (Anzeigename, Avatar, `premium_until`) und alle Runden
+abziehen. Im Freundeskreis belanglos; bei offenen Community-Runden ist es eine
+Abgreif-Fläche und bei `premium_until` nebenbei die Preisgabe, wer zahlt.
+Sinnvoll: Profile nur für Leute sichtbar, mit denen man eine Runde teilt.
+
+**✅ Was gut gelöst ist** — damit beim Aufräumen nichts kaputtgeht:
+- **Spalten-Rechte für `premium_until`.** RLS kann keine Spalten einschränken;
+  das ist über `revoke update` + `grant update (display_name, avatar)` gelöst.
+  Sauber, und die Sorte Detail, die man leicht übersieht.
+- **Keine DELETE-Policies** → Löschen ist überall verboten. Richtige Voreinstellung.
+- **`tips_read_own_or_settled`** verhindert Abschreiben vor Anpfiff korrekt.
+- Bei `update`-Policies ohne `with check` nimmt Postgres den `using`-Ausdruck
+  auch für die neue Zeile — ein Tipp lässt sich also nicht auf einen anderen
+  Nutzer umschreiben. Beim Umbau bitte nicht versehentlich aufweichen.
+
+### 🎲 WEN trifft es? — die unausgebaute Achse (Befund, 2026-07-29)
+
+Ein Vorschlag aus dem Durchsehen des Gesamtstands, angeregt vom Nutzer. **Jede
+Mechanik dieses Spiels hat vier Achsen:**
+
+| Achse | Frage | Beispiel |
+|---|---|---|
+| **WANN** | Was löst es aus? | jeder Spieltag · Frequenz · Meilenstein · Abstimmung |
+| **WEN** | Wen in der Gruppe trifft es? | alle · jeder selbst · die Zurückliegenden |
+| **WAS** | Was passiert dann? | Punkte-Faktor · Joker-Gutschrift · Struktur · Anzeige |
+| **WIE VIEL** | Stärke × Häufigkeit | → das Modifikator-Budget |
+
+Trägt man die bestehenden Mechaniken ein, fällt ein Ungleichgewicht auf:
+
+| Mechanik | WANN | WEN |
+|---|---|---|
+| Joker-Verteilung | Frequenz, blockweise | `frei` · `gleich` · `kontingent` ✅ |
+| Aufhol-Bonus | je Spieltag | `letzter` · Quantil · unter dem Schnitt ✅ |
+| Versäumnis | Tipp fehlt | der Vergessliche |
+| Big Game | beim Öffnen des Spieltags | **alle gleich** (trifft ein SPIEL, keine Person) |
+| Team/Derby | feste Begegnung | alle gleich |
+| Joker-Abstimmung | Abstimmung | alle gleich |
+| Ereignisse | Meilenstein | der Einzelne, der ihn schafft |
+| Saison-Wetten | Freischaltfenster | alle gleich |
+
+**Der Befund: die WEN-Achse ist fast leer.** Praktisch alles ist entweder „alle
+gleich" oder „jeder für sich". Eine rang-abhängige Auswahl gibt es **genau
+einmal** (Aufhol-Bonus), und die ist ausgerechnet die, die bei großen Gruppen
+bricht (siehe Abschnitt „Große Gruppen"). Was komplett fehlt:
+
+- **Auslosung** — „diesen Spieltag trifft es drei Ausgeloste"
+- **Paarung / Duell** — „du gegen X diesen Spieltag". `ereignisse.js` führt
+  `duell` schon im Katalog, und das Elfmeterschießen liegt geparkt herum: der
+  Adressaten-Mechanismus dafür existiert nur nicht.
+- **Knappheit / Wettlauf** — „die ersten fünf, die zugreifen"
+- **Soziale Vergabe** — „wer letzte Woche Letzter war, bestimmt das Big Game".
+  Reizvoll, weil es aus einem Trostpflaster eine Rolle macht statt eines Bonus.
+- **Ansage / Selbstverpflichtung** — „ich kündige an, dass ich diesen Spieltag
+  doppelt gehe": Risiko statt Geschenk, und die einzige Variante, die
+  Modifikatoren interessanter macht, ohne sie stärker zu machen.
+
+**Der Vorschlag: EIN gemeinsames Auswahl-Modell statt fünf lokaler Varianten.**
+Das ist genau die Lehre aus der Zeitachse — dort lagen vier Spieltags-Zählungen
+nebeneinander, bis `rundenSchluessel()` daraus eine machte. Für die WEN-Achse
+fehlt dieses Gegenstück noch.
+
+```
+waehleBetroffene({ modus, mitglieder, stand, rundenSpieltag, rundenId })
+  → [userId]
+modi: alle · zufall(n) · rang(oben|unten|mitte, n oder Quantil)
+     · paarung · selbst · wettlauf(n)
+```
+
+Vier Eigenschaften, die es haben muss:
+1. **Deterministisch aus Runden-Id + Spieltag geseedet**, wie `jokerPlan.js`.
+   Alle sehen dasselbe, es ist nachprüfbar, und der Creator-Code bleibt kurz —
+   gespeichert wird die REGEL, nicht die ausgerollte Liste. Bei tausend
+   Teilnehmern ist Nachprüfbarkeit wichtiger als bei zwölf: der Verdacht der
+   Bevorzugung entsteht sonst von selbst und lässt sich nicht widerlegen.
+2. **Keine Wertung, nur Auswahl.** Es liefert eine Personenliste, sonst nichts —
+   dieselbe Trennung, die die Zeitachse sauber gehalten hat.
+3. **Jede bestehende Mechanik wird dadurch eine Familie**, ohne neu gebaut zu
+   werden: Big Game „nur für die Verfolger", Ereignisse per Los, ein Joker als
+   Duell vergeben.
+4. ⚠️ **Und genau deshalb gehört es an den Balance-Durchgang.** Auslosung und
+   Rang-Auswahl erzeugen **ungleiche Erwartungswerte** — das ist der Unterschied
+   zu „alle gleich" und geht direkt ins Modifikator-Budget. Dieselbe Falle,
+   die bei „gleiches Kontingent, andere Reihenfolge" schon dokumentiert ist:
+   ein systembedingt ungleicher Zwischenstand sieht wie Bevorzugung aus, wenn
+   man ihn nicht als Fortschritt anzeigt.
+
+**Reihenfolge:** Modell + Tests zuerst (klein, UI-frei), dann EINE Mechanik
+darauf umstellen (Ereignisse bietet sich an — dort ist der Schaden am
+kleinsten), messen, dann die übrigen. Nicht alle auf einmal.
+
 ### 📊 Modifikator-BUDGET: wie viel Prozent bringt was — und wie oft? (NEU, Nutzer)
 
 Gehört an den **Abschluss-Durchgang** (siehe Balance-Abschnitt oben), nicht

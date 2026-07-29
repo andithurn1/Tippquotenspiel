@@ -98,6 +98,71 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-29 (spät) · **Andi** → **Andre** — 🔴 **RLS-Durchgang: der Tipp lässt sich nach Anpfiff ändern, und der Snapshot kommt vom Client**
+
+**Das ist dein Bereich** (`schema.sql`, Store) — deshalb habe ich NICHTS
+geändert, nur befundet. Voll ausformuliert in `design/roadmap.md`, Abschnitt
+„🔒 RLS-Durchgang". Kein laufender Schaden: im Freundeskreis passiert nichts.
+Aber **vor der ersten offenen Community-Runde muss das zu**, und Punkt 1 wäre
+auch im Freundeskreis unangenehm, wenn es jemand merkt.
+
+**1. 🔴 `tips_update_own` prüft den Anpfiff nicht.** Die Policy prüft nur
+`user_id = auth.uid()`. `CLAUDE.md` sagt „das Einfrieren ab Anpfiff ist Sache
+von Store/UI" — nur ist die UI keine Schranke, der Supabase-Client spricht
+direkt mit Postgres. Ein Tipp lässt sich umschreiben, wenn das Spiel gelaufen
+ist.
+
+**2. 🔴 `tips.snapshot` wird vom Client geschrieben.** Das ist der Wert, an dem
+die Auszahlung hängt. Wer ihn mitschickt, sucht sich seine Quote aus — ein
+Endstand mit Quote 200 ist eine Zeile JSON. Die Architektur-Regel „Anker immer
+auf der Quote des REALEN Ergebnisses" ist damit nicht durchgesetzt, sondern nur
+vereinbart. **Ein Trigger, der `new.snapshot` aus `matches` überschreibt, ist
+hier mehr wert als jede Policy.**
+
+**3. 🔴 Der Beitritts-Code ist keine Schranke.** `join_code` steht in
+`public.rounds`, und `rounds_read` ist `using (true)` — ein `select join_code
+from rounds` liefert alle Codes. Der Kommentar im Schema sagt „der Code ist die
+Zugangsschranke, nicht die Sichtbarkeit"; das Schema hebt das auf.
+
+**4. 🔴 `members_join_self` prüft den Code gar nicht** — nur, dass man sich
+nicht für jemand anderen einträgt. Die `round_id` ist frei wählbar, man kommt
+also ohne Code in jede Runde. Der Abgleich steckt in `getRoundByCode()`, also in
+Anwendungscode, den ein direkter Aufruf umgeht.
+
+**Vorschlag für 3+4 zusammen:** eine `security definer`-Funktion
+`join_round(code text)`, die prüft und die Mitgliedschaft selbst anlegt. Danach
+darf `rounds_read` auf Mitglieder eingeschränkt werden und der Code verlässt die
+DB nie. RLS nimmt keine Parameter — deshalb Funktion statt schlauerer Policy.
+
+**Was gut ist und beim Aufräumen nicht kaputtgehen darf:** die Spalten-Rechte
+für `premium_until` (`revoke update` + `grant update (display_name, avatar)`),
+das Fehlen aller DELETE-Policies, und `tips_read_own_or_settled`.
+
+---
+
+### 2026-07-29 (spät) · **Andi** — 🎲 **Befund: die WEN-Achse ist fast leer** (Anregung des Nutzers)
+
+Auch in `design/roadmap.md`. Kurz: jede Mechanik hat vier Achsen — **WANN**
+(Auslöser), **WEN** (wen in der Gruppe trifft es), **WAS** (Wirkung),
+**WIE VIEL** (Stärke × Häufigkeit). Trägt man alles ein, ist WEN fast leer:
+praktisch alles ist „alle gleich" oder „jeder für sich". Rang-abhängige Auswahl
+gibt es **genau einmal** (Aufhol-Bonus) — und das ist ausgerechnet die, die bei
+großen Gruppen bricht.
+
+Es fehlen: Auslosung · Paarung/Duell (`ereignisse.js` führt `duell` schon im
+Katalog, das Elfmeterschießen liegt geparkt — nur der Adressaten-Mechanismus
+fehlt) · Wettlauf · soziale Vergabe („der Letzte der Vorwoche bestimmt das Big
+Game") · Ansage/Selbstverpflichtung.
+
+**Vorschlag: ein gemeinsames `waehleBetroffene()` statt fünf lokaler
+Varianten** — dieselbe Lehre wie bei der Zeitachse, wo vier Spieltags-Zählungen
+nebeneinanderlagen, bis `rundenSchluessel()` daraus eine machte. Deterministisch
+aus Runden-Id geseedet wie `jokerPlan.js`, reine Auswahl ohne Wertung.
+
+⚠️ **Geht an deine Ecke:** Auslosung und Rang-Auswahl erzeugen UNGLEICHE
+Erwartungswerte. Das gehört durch `balanceSim` und ins Modifikator-Budget,
+bevor es in ein Preset kommt.
+
 ### 2026-07-29, 21:30 · **AUFTRAG vom Nutzer** — 🎛️ Big Game individualisierbar + Preset-Bibliothek
 
 > **👉 Wer als frische Session hier einsteigt: DAS ist deine Aufgabe.**
