@@ -1274,9 +1274,133 @@ Game bestimmen" ist stärker als „+5 %", weil es eine Rolle ist und kein Betra
 Das ist der billigste Weg, eine Runde lebendig zu machen, und der einzige, der
 im Abschluss-Durchgang nichts verschiebt.
 
-**WIE LANGE — Geltung.** `sofort` · `naechsterSpieltag` · `fenster(n)`.
-Das Fenster ist der Fall Miniwettspiel: eine Regel, die den Zustand für mehrere
-Spieltage verändert.
+**Die Wirkung darf NEGATIV sein** — deshalb heißt die Achse Wirkung und nicht
+Belohnung. Der Auslöser dafür war der Wunsch „der König bekommt beim nächsten
+Mal Abzug".
+
+| Wirkung (negativ) | Kurzbeschreibung |
+|---|---|
+| `malus(%)` | „Abzug auf deine Punkte." |
+| `jokerEntzug(n)` | „Ein Joker verfällt." |
+| `sperre(was)` | „Diesen Spieltag kein Joker." / „Nur Tendenz, kein Ergebnis." |
+| `handicap(art)` | „Dein Favoriten-Malus zählt doppelt." |
+| `pflicht(was)` | „Du musst gegen den Favoriten tippen." |
+| **`umverteilung`** | **„Der Führende gibt ab, die Verfolger bekommen."** |
+| `tausch` | „Zwei tauschen ihren Joker." |
+
+🔴 **`umverteilung` ist die einzige SUMMENNEUTRALE Wirkung** — Punkte werden
+verschoben statt erzeugt. Sie kann das Modifikator-Budget deshalb gar nicht
+aufblähen und ist damit die billigste Art, den Vorsprung an der Spitze zu
+begrenzen. **Vor `malus` bevorzugen.**
+
+⚠️ **Bonus für den Letzten und Malus für den Ersten sind NICHT dasselbe**,
+obwohl sie sich gleich anfühlen. Der Bonus hebt das Punkteniveau (die
+Anzeige-Skalierung wandert mit), der Malus senkt es, und beides zusammen presst
+das Feld doppelt. `umverteilung` macht beide Seiten in einem Zug und lässt die
+Summe in Ruhe.
+
+⚠️ **Verlust wiegt schwerer als entgangener Gewinn.** Ein Abzug für den
+Führenden ist die Mechanik mit dem höchsten Absprung-Risiko der ganzen
+Grammatik. Deshalb: als „die Verfolger holen auf" rahmen statt als Strafe — und
+**niemals einen Malus aus einer verdeckten Lotterie ziehen.** Wer Punkte
+verliert, muss es vorher gewusst haben.
+
+**WEN — weitere Auswahlen**, die aus dem Bestand ableitbar sind:
+
+| Auswahl | Kurzbeschreibung |
+|---|---|
+| `koenig` | „Der Tabellenführer." — eigener Name, weil häufigster und gefährlichster Fall |
+| `verfolger(n)` | „Die Plätze 2 bis n+1." |
+| **`aufsteiger(n)`** | **„Wer die meisten Plätze gutgemacht hat."** |
+| `absteiger(n)` | „Wer am meisten verloren hat." |
+| `titelverteidiger` | „Wer letzten Spieltag der Beste war." |
+| `nachbarn` | „Die direkt über und unter dir." — jeder bekommt eine andere Auswahl |
+| `gruppe(id)` | „Eine Division oder ein Grüppchen." |
+| **`neu`** | **„Wer erst seit n Spieltagen dabei ist."** |
+| `inaktiv` | „Wer n Spieltage nicht getippt hat." |
+| **`freiwillig`** | **„Wer sich meldet."** — Risiko auf eigenen Wunsch |
+
+Drei davon lösen echte Probleme statt nur Varianten zu sein:
+- **`aufsteiger` belohnt BEWEGUNG statt POSITION** und ist dadurch
+  selbstbegrenzend — man kann nicht dauerhaft der größte Kletterer sein. Es ist
+  die einzige „belohne die Guten"-Regel, die sich nicht selbst verstärkt.
+- **`neu` ist eine Community-Notwendigkeit, keine Spielerei.** Wer einer offenen
+  Runde am 12. von 34 Spieltagen beitritt, hat keine Chance und ist in zwei
+  Wochen weg. Ohne so eine Regel wächst eine Community-Runde nur bis zum ersten
+  Spieltag.
+- ⚠️ **`freiwillig` ist balancekritisch:** Zocker melden sich häufiger als
+  Kenner. Ungemessen ist das ein Zocker-Turbo.
+
+**WANN — weitere Auslöser**, alle aus Daten, die wir schon haben:
+
+| Auslöser | Kurzbeschreibung | Daten |
+|---|---|---|
+| **`lotterie(tabelle)`** | „Es wird gelost, was passiert." | eigener Abschnitt unten |
+| `quotenereignis(ab)` | „Ein Außenseiter über Quote X hat gewonnen." | ✅ Quoten |
+| **`gruppenereignis`** | **„Niemand in der Runde hat es getroffen."** / „Alle haben." | ✅ Tipps |
+| `spielereignis(art)` | „Ein Spiel endete 0:0." / „Der Führende hat verloren." | ✅ Ergebnisse |
+| `enge(schwelle)` | „Wenn die Tabelle vorn eng ist." | ✅ Tabelle |
+| `abstimmung` | „Die Runde entscheidet." | ✅ `voting.js` |
+| `adminAusloesung` | „Der Admin drückt den Knopf." | wie beim Big Game |
+| `kaskade(regel)` | „Ein Ereignis löst das nächste aus." | ⚠️ Zyklus-Erkennung nötig |
+
+**`gruppenereignis` ist der beste Kandidat der Liste:** „niemand hat dieses
+Spiel richtig getippt → alle bekommen einen Joker" braucht keine neuen Daten,
+erzeugt ein Gemeinschaftsgefühl, das keine individuelle Regel hinbekommt, und
+ist automatisch balancefair, weil es alle gleich trifft.
+
+**WIE LANGE — Geltung.** `sofort` · `naechsterSpieltag` · `fenster(n)` ·
+`rest` (bis Saisonende) · `bisAusgeloest` · **`jackpot`** („holt es niemand,
+wächst es und wandert weiter"). Das Fenster ist der Fall Miniwettspiel: eine
+Regel, die den Zustand für mehrere Spieltage verändert.
+
+⚠️ **`jackpot` braucht eine Obergrenze**, sonst entscheidet ein einzelner
+Spieltag die Saison.
+
+#### 🎰 Die Lotterie: gelost wird mit einstellbaren Wahrscheinlichkeiten
+
+Statt dass jede Regel ihr eigenes `zufall(frequenz)` trägt, definiert der Admin
+EINE Ziehung: eine Liste von Ereignissen mit Gewichten, je Spieltag gezogen.
+
+Zwei Dinge gehören zwingend dazu:
+
+1. **Ein ausdrückliches „nichts passiert" mit eigenem Gewicht.** Sonst passiert
+   immer etwas, und dann ist es kein Ereignis mehr, sondern der Normalzustand.
+2. **Gewichte werden als HÄUFIGKEIT angezeigt, nie als Zahl.** „Gewicht 3" sagt
+   niemandem etwas, „kommt etwa 4× in 34 Spieltagen" schon. Wörtlich dieselbe
+   Falle wie bei den Wettbewerbs-Gewichten, wo `anteile()` genau deshalb
+   eingebaut wurde: der Admin denkt in Häufigkeiten und stellt Faktoren ein.
+
+⚠️ **Und die Falle, für die die Lösung schon im Haus ist:** reiner Zufall
+bündelt. `jokerPlan.js` hat das dokumentiert — *„sonst bündelt reiner Zufall
+vier Joker in fünf Spieltagen; formal fair, gefühlt kaputt"* — und löst es
+BLOCKWEISE. Die Lotterie braucht denselben zweiten Modus: **Kontingent**
+(„diese vier Ereignisse kommen je einmal, an gelosten Spieltagen") neben der
+reinen Ziehung. Ohne ihn baut man einen Fehler ein, den das Projekt schon
+einmal behoben hat.
+
+#### 🚫 Ausschlüsse: über GRUPPEN, nicht über Paare
+
+Naiv wäre `schliesstAus: [regelId]`. Das nicht bauen — bei 20 Regeln sind das
+bis zu 190 Paare, die niemand pflegt. Drei Primitive genügen:
+
+| Mittel | Kurzbeschreibung |
+|---|---|
+| **`gruppe` + `maxGleichzeitig(n)`** | „Höchstens ein Glücksereignis pro Spieltag." |
+| `abstand(n)` | „Dieselbe Regel erst wieder nach n Spieltagen." (Abklingzeit) |
+| `vorrang(n)` | „Wer gewinnt, wenn zwei gleichzeitig greifen." |
+
+**Damit wird aus einer Warnung eine Einstellung:** `konflikte()` in
+`ereignisse.js` meldet heute „Trost-Joker + Aufhol-Bonus = Doppelbelohnung".
+Mit Gruppen ist das keine Meldung mehr, sondern die Voreinstellung — beide in
+Gruppe „Ausgleich" mit `maxGleichzeitig: 1`.
+
+⚠️ **`vorrang` ist Pflicht, nicht Komfort.** Ohne feste Auflösungsreihenfolge
+rechnet dieselbe Runde auf zwei Geräten verschieden. `ereignisse.js` deckelt aus
+genau diesem Grund chronologisch.
+
+⚠️ **`abstand` ist das Gegenmittel gegen farmbare Serien.** „3× nichts
+getroffen → Bonus" mit `abstand: 5` lässt sich nicht wöchentlich melken.
 
 #### Bibliotheken — verschachtelt, aber mit EINER Kompositionsregel
 
@@ -1289,6 +1413,8 @@ Disziplin, sonst entstehen zwei konkurrierende Zusammensetzungs-Systeme.
   (Stufe 1 „Schnellstart"), das heute schon Regelwerk + Saison-Wetten + Joker
   bündelt.
 - **Joker-Bibliothek** — Sorten und Verteilung (`jokerTypen`, `jokerPlan`).
+  **Filter- und sortierbar, siehe eigener Abschnitt direkt darunter** — das ist
+  die ausdrückliche Nutzer-Anforderung, kein Komfort.
 - **Ereignis-Bibliothek** — fertige SÄTZE in der Grammatik oben, jeder mit
   einem Satz Beschreibung. Kandidaten: *Trostpflaster · Spieltags-Krone ·
   Pechvogel-Bonus · Scharfschütze · Dreier-Wertung · Jokerjagd · Losglück ·
@@ -1310,6 +1436,77 @@ und der Test schlägt an.
 Damit ist der Ablauf, den der Nutzer beschreibt, automatisch gedeckt:
 **Empfehlung annehmen → einzelne Bibliotheken austauschen → Feinheiten
 anpassen.** Genau das kann `presetMerge` schon, es bekommt nur mehr Aspekte.
+
+#### 🏷️ Die Bibliothek als SORTIMENT — sechs Facetten, eine davon gemessen
+
+**Ausdrücklicher Nutzer-Wunsch (29.07.):** „ich will eigentlich nicht, dass der
+Erste gerade mit viel Abstand so stark davonziehen kann, und will das schon so
+kommunizieren." Daraus folgt: die Bibliothek ist keine Liste, sondern ein
+Sortiment mit Facetten — und die wichtigste Facette ist, **was ein Eintrag mit
+dem Feld macht.**
+
+| Facette | Werte | wofür |
+|---|---|---|
+| **Wirkrichtung** | ausgleichend · neutral · verstärkend | die Leitfrage |
+| Vergabe | zugeteilt · erspielt · gelost · frei · sozial | „wie komme ich dran" |
+| Gültigkeit | sofort · Fenster(n) · Saison · bis Ereignis | zeitlich |
+| Wirkung | Faktor · Malus · Umverteilung · Rolle · Sonderspiel | was passiert |
+| Budget | „~4× pro Saison · ~6 % der Punkte" | wie stark |
+| Sichtbarkeit | offen · verdeckt | angekündigt oder nicht |
+
+🔴 **Die Wirkrichtung wird GEMESSEN, nicht behauptet.** Das ist der Kern des
+Vorschlags und die Hausregel des Projekts („die Herkunft wird abgelesen, nicht
+behauptet"). Ein Eintrag heißt nicht „Ausgleichsjoker", weil jemand das
+hingeschrieben hat, sondern weil ein Simulator-Lauf zeigt, dass er die Streuung
+der Endpunkte senkt und Überholvorgänge häufiger macht. **Die Kennzahl dafür
+existiert schon:** `aufholFlipQuote` in `balanceSim.js` misst genau, wie oft
+jemand von hinten noch vorbeizieht. Dazu die Veränderung der Punkte-Streuung.
+Zwei Zahlen, ein Etikett.
+
+**Sortier-Schlüssel** (Voreinstellung: Wirkrichtung):
+ausgleichend → verstärkend · Saison-Anteil · Häufigkeit · Erklärbarkeit
+(passt es auf Stufe 1?) · Verträglichkeit mit der bisherigen Auswahl.
+
+**Filter:** nur ausgleichende · nur was ohne Zusatzdaten läuft (`braucht`, das
+Muster gibt es bei Saison-Wetten und Ereignissen schon) · nur was auf Stufe 1
+erklärbar ist · **verträglich mit meiner Auswahl**.
+
+**Der letzte Filter ist der wertvollste:** die Bibliothek kennt die
+Ausschluss-Gruppen (Abschnitt oben) und kann deshalb live ausgrauen, was zur
+bisherigen Auswahl nicht passt — statt es zuzulassen und später zu warnen.
+
+**Kategorien im Sortiment** (Beispiele, wie der Nutzer sie genannt hat):
+*Ausgleichsjoker* (begünstigen hintere Plätze) · *Serien-/Scorestreak-Joker*
+(belohnen Läufe — die am stärksten selbstverstärkende Sorte, deshalb der
+engste Deckel) · *Mut-Joker* · *Heimat-Joker* · *Rollen* (kosten keine
+Balance) · *Zufalls-/Losjoker*.
+
+⚠️ **Serien-Joker gehören in die Bibliothek, aber NICHT in unsere Empfehlung.**
+Sie sind das Gegenteil dessen, was der Nutzer will; wer sie ausdrücklich sucht,
+soll sie finden — mit sichtbarem Etikett „verstärkend".
+
+#### 📣 Das Runden-Profil: eine Zahl, die der Admin wirklich braucht
+
+Einzelne Etiketten helfen beim Auswählen, beantworten aber nicht die Frage, die
+der Nutzer gestellt hat. Deshalb rechnet die Spielerstellung aus der GESAMTEN
+Auswahl ein Profil und sagt es in einem Satz:
+
+> „Deine Runde wirkt **ausgleichend**. Ein Rückstand von 10 % wird in etwa
+> 6 Spieltagen aufgeholt, wenn du gut tippst. Der Führende kann sich nicht
+> dauerhaft absetzen."
+
+⚠️ **Und die Gegenwarnung, die genauso dazugehört: zu viel Ausgleich zerstört
+den Sinn des Tippens.** Das steht schon im Aufhol-Abschnitt — „ein zu starker
+Ausgleich entwertet gutes Tippen (Punkte-Verhältnis kippt Richtung 1,0 und
+darunter wird das Ranking beliebig)" — und `balanceSim` misst es als
+`punkteVerhaeltnis`. **Das Ziel ist also kein Extrem, sondern ein Korridor:**
+
+- **`punkteVerhaeltnis`** — gewinnt der Kenner noch? (darf nicht Richtung 1,0)
+- **`aufholFlipQuote`** — kann ein Zurückliegender noch aufholen? (darf nicht 0)
+
+Beide Zahlen gibt es bereits. Die Empfehlung heißt deshalb nicht „möglichst
+ausgleichend", sondern: **der Kenner gewinnt, aber niemand ist nach zehn
+Spieltagen raus.** Das ist die Formulierung, die in die Oberfläche gehört.
 
 #### Wie das auf den drei Stufen aussieht
 
@@ -1379,6 +1576,12 @@ bisher gemessen wurde, traf alle gleich (oder jeder entschied selbst). Der
 Simulator muss deshalb nicht nur den Mittelwert prüfen, sondern die STREUUNG
 zwischen Tippern gleicher Stärke — sonst sieht eine Runde, in der Losglück über
 den Sieg entscheidet, in der Ampel genauso grün aus wie eine faire.
+
+**⭐ Startmenge — die vier, die viel lösen und billig zu vermessen sind:**
+`umverteilung` (summenneutral, begrenzt den Vorsprung an der Spitze) ·
+`gruppenereignis` (trifft alle gleich, braucht keine neuen Daten) ·
+`aufsteiger` (belohnt Bewegung statt Position, selbstbegrenzend) ·
+`neu` (ohne sie wächst keine Community-Runde über den ersten Spieltag hinaus).
 
 **Reihenfolge (nicht alles auf einmal):**
 1. `waehleBetroffene()` als reine Funktion + Tests — UI-frei, klein,
