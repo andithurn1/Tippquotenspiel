@@ -53,6 +53,15 @@ Erlaubnisse liegen in `.claude/settings.json` (committed) — Lesen/Schreiben,
   `-m` mit Anführungszeichen: PowerShell zerlegt sie sonst.
 - **Der Mock-Store lebt im Arbeitsspeicher.** Ein voller Seitenwechsel im
   Browser setzt ihn zurück — angelegte Runden sind dann weg.
+- **`vercel.json` verträgt KEINE eigenen Felder** (auch kein `_hinweis`), und
+  der Gratis-Tarif erlaubt nur EINEN Cron-Lauf pro Tag. Ein stündlicher Plan
+  lässt nicht den Job scheitern, sondern **den ganzen Build** — genau daran ist
+  jedes Deployment vom 26.–29.07. gestorben, ohne dass es jemandem auffiel.
+  Deshalb steht dort `0 3 * * *`. Folge: ein Spieltag öffnet sich bis zu 24 h
+  später, der Big-Game-Wert wird also später eingefroren. Verkraftbar (das
+  Tipp-Fenster geht eine Woche vorher auf), und der Admin-Knopf in der
+  Spielwahl bleibt der schnellere Weg. Mit einem Pro-Tarif darf wieder
+  `0 * * * *` dort stehen.
 
 ## Stack
 
