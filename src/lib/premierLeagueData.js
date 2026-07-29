@@ -32,12 +32,17 @@ export const PL_TEAM_RATINGS = {
   "AFC Bournemouth":          { code: "BOU", attack: 1.08, defense: 1.05 },
   "Crystal Palace":           { code: "CRY", attack: 1.05, defense: 0.95 },
   "FC Fulham":                { code: "FUL", attack: 1.05, defense: 1.00 },
-  "West Ham United":          { code: "WHU", attack: 0.95, defense: 1.15 },
   "FC Everton":               { code: "EVE", attack: 0.90, defense: 1.05 },
-  "Wolverhampton Wanderers":  { code: "WOL", attack: 0.88, defense: 1.20 },
   "Leeds United":             { code: "LEE", attack: 0.85, defense: 1.18 },
+  // ── Aufsteiger 2026/27 ────────────────────────────────────
+  // Ersetzen Burnley, West Ham und Wolverhampton. Die drei bekommen bewusst
+  // DIESELBEN Rating-Plätze wie die Abgestiegenen (0,80–0,85 Angriff,
+  // 1,18–1,25 Abwehr): die Spreizung der Liga bleibt damit unverändert, und
+  // die Balance ist gegen genau diese Spreizung vermessen.
+  "Ipswich Town":             { code: "IPS", attack: 0.85, defense: 1.15 },
   "AFC Sunderland":           { code: "SUN", attack: 0.82, defense: 1.22 },
-  "FC Burnley":               { code: "BUR", attack: 0.80, defense: 1.25 },
+  "Hull City":                { code: "HUL", attack: 0.82, defense: 1.20 },
+  "Coventry City":            { code: "COV", attack: 0.80, defense: 1.25 },
 };
 
 export const PL_DERBYS = [

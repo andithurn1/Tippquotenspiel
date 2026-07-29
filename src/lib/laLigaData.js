@@ -23,19 +23,23 @@ export const PD_TEAM_RATINGS = {
   "Athletic Bilbao":     { code: "ATH", attack: 1.20, defense: 0.85 },
   "Real Betis":          { code: "BET", attack: 1.18, defense: 0.98 },
   "Real Sociedad":       { code: "RSO", attack: 1.12, defense: 0.95 },
-  "Girona FC":           { code: "GIR", attack: 1.08, defense: 1.05 },
   "FC Sevilla":          { code: "SEV", attack: 1.05, defense: 1.02 },
   "Celta Vigo":          { code: "CTA", attack: 1.05, defense: 1.08 },
   "FC Valencia":         { code: "VAL", attack: 1.00, defense: 1.05 },
   "Rayo Vallecano":      { code: "RAY", attack: 0.95, defense: 1.05 },
   "CA Osasuna":          { code: "OSA", attack: 0.92, defense: 1.02 },
-  "RCD Mallorca":        { code: "MLL", attack: 0.90, defense: 1.05 },
   "Espanyol Barcelona":  { code: "ESP", attack: 0.88, defense: 1.10 },
   "FC Getafe":           { code: "GET", attack: 0.85, defense: 0.95 },
   "Deportivo Alavés":    { code: "ALA", attack: 0.85, defense: 1.08 },
   "FC Elche":            { code: "ELC", attack: 0.82, defense: 1.15 },
   "UD Levante":          { code: "LEV", attack: 0.80, defense: 1.20 },
-  "Real Oviedo":         { code: "OVI", attack: 0.78, defense: 1.22 },
+  // ── Aufsteiger 2026/27 ────────────────────────────────────
+  // Ersetzen Girona, Mallorca und Oviedo. Girona lag im Mittelfeld (1,08);
+  // sein Platz geht an Málaga, damit die Liga oben nicht ausdünnt und die
+  // Spreizung erhalten bleibt, gegen die die Balance vermessen ist.
+  "Málaga":              { code: "MAL", attack: 1.00, defense: 1.08 },
+  "Deportivo La Coruña": { code: "DEP", attack: 0.90, defense: 1.05 },
+  "Racing Santander":    { code: "RAC", attack: 0.78, defense: 1.22 },
 };
 
 export const PD_DERBYS = [

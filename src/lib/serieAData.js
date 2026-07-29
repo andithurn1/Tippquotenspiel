@@ -32,10 +32,13 @@ export const SA_TEAM_RATINGS = {
   "Cagliari Calcio":   { code: "CAG", attack: 0.85, defense: 1.12 },
   "CFC Genua":         { code: "GEN", attack: 0.85, defense: 1.08 },
   "Parma Calcio":      { code: "PAR", attack: 0.82, defense: 1.15 },
-  "Hellas Verona":     { code: "VER", attack: 0.80, defense: 1.18 },
   "US Lecce":          { code: "LEC", attack: 0.78, defense: 1.20 },
-  "US Cremonese":      { code: "CRE", attack: 0.76, defense: 1.20 },
-  "AC Pisa":           { code: "PIS", attack: 0.75, defense: 1.22 },
+  // ── Aufsteiger 2026/27 ────────────────────────────────────
+  // Ersetzen Hellas Verona, Cremonese und Pisa — dieselben Rating-Plätze,
+  // damit die Spreizung der Liga unverändert bleibt.
+  "AC Monza":          { code: "MZA", attack: 0.80, defense: 1.18 },
+  "Venezia FC":        { code: "VEN", attack: 0.76, defense: 1.20 },
+  "Frosinone Calcio":  { code: "FRO", attack: 0.75, defense: 1.22 },
 };
 
 export const SA_DERBYS = [

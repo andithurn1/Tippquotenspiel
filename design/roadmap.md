@@ -21,7 +21,7 @@ Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 - **Design-Ebene** (`src/lib/theme.js`) — eine Quelle für Farben/Schrift
   (Account 1 hat darauf die Fanfarben-Umschaltung gebaut)
 
-Test-Stand: **924 grün**, Build sauber (Stand 2026-07-28).
+Test-Stand: **933 grün**, Build sauber (Stand 2026-07-28).
 
 > ⚠️ **Diese Datei war am 27.07. deutlich veraltet.** Mehrere Abschnitte standen
 > als „NEU" oder „offen" da, obwohl der Code längst lag — wer sie als
@@ -72,7 +72,7 @@ Test-Stand: **924 grün**, Build sauber (Stand 2026-07-28).
 > Es fehlt nur die Quelle. **Die Champions League bleibt bis zur Auslosung
 > erzeugt** — das ist Wartezeit, kein Versäumnis.
 >
-> ### 🚨 Nachtrag 2026-07-28: die Klublisten von PL, La Liga und Serie A stimmen nicht
+> ### ✅ Nachtrag 2026-07-28: die Klublisten von PL, La Liga und Serie A sind korrigiert
 >
 > Aufgefallen beim Abgleich gegen die Quoten-API (`npm run odds:pruefen`,
 > kostenlos). **Je Liga sind DREI Vereine falsch** — Auf- und Absteiger, die wir
@@ -89,11 +89,27 @@ Test-Stand: **924 grün**, Build sauber (Stand 2026-07-28).
 > die es in dieser Liga nicht gibt. Die Bundesliga ist NICHT betroffen (18 von 18
 > stimmen, von OpenLigaDB unabhängig bestätigt).
 >
-> ⚠️ **Nicht einfach die Namen tauschen:** jeder Klub braucht auch ein
-> `attack`/`defense`-Rating, und die Ratings der Liga sind aufeinander UND auf
-> die Champions League abgestimmt (`ligen.js`). Ein Aufsteiger mit
-> Mittelfeld-Rating verschiebt die ganze Quoten-Verteilung, gegen die die Balance
-> vermessen ist. Also: Listen korrigieren, Ratings setzen, dann `npm run balance`.
+**Erledigt am selben Tag.** Vorgehen, weil es beim nächsten Auf-/Abstieg wieder
+gebraucht wird:
+> 1. **Klubs tauschen**, aber die Aufsteiger bekommen DIESELBEN Rating-Plätze
+>    wie die Abgestiegenen — die Spreizung der Liga bleibt damit unverändert,
+>    und genau gegen diese Spreizung ist die Balance vermessen. Einzige
+>    Ausnahme: Girona lag im Mittelfeld (1,08), sein Platz ging an Málaga, damit
+>    La Liga oben nicht ausdünnt.
+> 2. **Die Champions League mitziehen.** Girona stand dort als eigener Eintrag;
+>    ein Klub in der CL, den keine Liga führt, ist ein Widerspruch im Katalog.
+>    Ersetzt durch Villarreal, mit denselben Werten wie in `laLigaData.js`.
+>    Ein Test hält das jetzt fest.
+> 3. **`npm run balance`** — Ergebnis: kein Preset kippt, der Kenner gewinnt
+>    überall (Standard 50,8 % · Hardcore 63,3 % · Gemütlich 60,8 %).
+> 4. **`npm run seed:matches`**, weil die Klubs in den SQL-Dateien stecken.
+>
+> Gegenprobe: `npm run odds:pruefen` meldet für alle vier Ligen „alle Klubnamen
+> passen" — 80 Klubs gegen die Live-API, ohne einen Credit zu verbrauchen.
+>
+> ⚠️ **Nicht die Ratings vergessen.** Ein Aufsteiger mit Mittelfeld-Rating
+> verschiebt die Quoten-Verteilung, gegen die die Presets vermessen sind. Namen
+> tauschen allein reicht nicht.
 >
 > ⚠️ **Nutzer-Aufgabe:** `supabase/seed-matches-bl.sql` ist neu erzeugt und muss
 > im SQL-Editor erneut ausgeführt werden, sonst kennt die Live-DB weiter den

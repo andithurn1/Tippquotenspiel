@@ -56,7 +56,11 @@ const EUROPA = {
   "Sparta Prag":         { code: "SPA", attack: 0.92, defense: 1.22 },
   "Young Boys Bern":     { code: "YB",  attack: 0.88, defense: 1.28 },
   "Slovan Bratislava":   { code: "SLO", attack: 0.75, defense: 1.38 },
-  "Girona FC":           { code: "GIR", attack: 1.08, defense: 1.05 },
+  // Girona stand hier, spielt 2026/27 aber nicht mehr in La Liga — ein Klub in
+  // der Champions League, den keine Liga führt, wäre ein Widerspruch im
+  // Katalog. Villarreal ist der nächste spanische Teilnehmer und steht in
+  // `laLigaData.js` mit genau diesen Werten.
+  "Villarreal CF":       { code: "VIL", attack: 1.30, defense: 0.95 },
   "Aston Villa":         { code: "AVL", attack: 1.30, defense: 0.92 },
   "Bologna FC":          { code: "BOL", attack: 1.05, defense: 1.00 },
 };

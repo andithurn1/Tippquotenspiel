@@ -32,13 +32,57 @@ export const KLUB_ALIASE = {
     "Werder Bremen": "SV Werder Bremen",
     "SC Paderborn": "SC Paderborn 07",
   },
-  // ⚠️ Für pl/pd/sa steht hier bewusst (fast) nichts: dort stimmen nicht die
-  // SCHREIBWEISEN nicht überein, sondern die Klub-LISTEN — siehe
-  // `unbekannteKlubs()` und die Roadmap. Aliase einzutragen, bevor die Listen
-  // stimmen, würde den eigentlichen Fehler verdecken.
-  pl: {},
-  pd: {},
-  sa: {},
+  // Die API lässt bei englischen Klubs das Präfix weg, unser Katalog führt es
+  // („FC Arsenal"). Rein kosmetisch, aber ohne Eintrag findet der Snapshot sein
+  // Match nicht.
+  pl: {
+    "Arsenal": "FC Arsenal",
+    "Bournemouth": "AFC Bournemouth",
+    "Brentford": "FC Brentford",
+    "Brighton and Hove Albion": "Brighton & Hove Albion",
+    "Chelsea": "FC Chelsea",
+    "Everton": "FC Everton",
+    "Fulham": "FC Fulham",
+    "Liverpool": "FC Liverpool",
+    "Sunderland": "AFC Sunderland",
+  },
+  pd: {
+    "Alavés": "Deportivo Alavés",
+    "Barcelona": "FC Barcelona",
+    "Elche CF": "FC Elche",
+    "Espanyol": "Espanyol Barcelona",
+    "Getafe": "FC Getafe",
+    "Levante": "UD Levante",
+    "Real Racing Club de Santander": "Racing Santander",
+    "Sevilla": "FC Sevilla",
+    "Valencia": "FC Valencia",
+    "Villarreal": "Villarreal CF",
+  },
+  // Bei der Serie A ist es kein Präfix-Problem, sondern die deutschen
+  // Ortsnamen: „Mailand" gegen „Milan", „Neapel" gegen „Napoli". Deshalb sind
+  // hier fast alle zwanzig Klubs aufgeführt.
+  sa: {
+    "AC Milan": "AC Mailand",
+    "AS Roma": "AS Rom",
+    "Atalanta BC": "Atalanta Bergamo",
+    "Bologna": "Bologna FC",
+    "Cagliari": "Cagliari Calcio",
+    "Como": "Como 1907",
+    "Fiorentina": "AC Florenz",
+    "Frosinone": "Frosinone Calcio",
+    "Genoa": "CFC Genua",
+    "Inter Milan": "Inter Mailand",
+    "Juventus": "Juventus Turin",
+    "Lazio": "Lazio Rom",
+    "Lecce": "US Lecce",
+    "Monza": "AC Monza",
+    "Napoli": "SSC Neapel",
+    "Parma": "Parma Calcio",
+    "Sassuolo": "US Sassuolo",
+    "Torino": "FC Turin",
+    "Udinese": "Udinese Calcio",
+    "Venezia": "Venezia FC",
+  },
 };
 
 // Einen API-Namen in unseren Katalog übersetzen. Unbekannte Namen kommen

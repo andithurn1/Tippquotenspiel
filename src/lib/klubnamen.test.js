@@ -40,20 +40,56 @@ describe("unbekannteKlubs", () => {
   });
 });
 
-// Die Bundesliga ist die Liga, deren Klubliste nachweislich stimmt (der
-// Spielplan kam von OpenLigaDB mit denselben 18 Vereinen). Bricht dieser Test,
-// hat sich entweder der Katalog oder die Alias-Liste bewegt.
-describe("Bundesliga — die Abbildung ist vollständig", () => {
-  it("jedes Alias zeigt auf einen Klub, den es bei uns wirklich gibt", () => {
-    const unsere = new Set(vereineVon("bl"));
-    for (const ziel of Object.values(KLUB_ALIASE.bl)) {
-      expect(unsere.has(ziel), `„${ziel}" steht in keinem Katalog`).toBe(true);
+// Ein Alias, das ins Leere zeigt, ist schlimmer als keines: der Name sieht
+// übersetzt aus und passt trotzdem auf kein Match.
+describe("Die Alias-Tabellen zeigen auf echte Klubs", () => {
+  for (const liga of ["bl", "pl", "pd", "sa"]) {
+    it(`${liga}: jedes Ziel steht wirklich im Katalog`, () => {
+      const unsere = new Set(vereineVon(liga));
+      for (const ziel of Object.values(KLUB_ALIASE[liga])) {
+        expect(unsere.has(ziel), `„${ziel}" steht nicht in ${liga}`).toBe(true);
+      }
+    });
+
+    it(`${liga}: kein Alias ist überflüssig`, () => {
+      for (const [api, ziel] of Object.entries(KLUB_ALIASE[liga])) {
+        expect(api, `„${api}" ist identisch mit dem Ziel`).not.toBe(ziel);
+      }
+    });
+  }
+});
+
+// Jede Liga hat genau so viele Klubs, wie sie haben soll — der Fehler, der uns
+// bei drei Ligen unterlaufen ist, wäre hier NICHT aufgefallen (die Anzahl
+// stimmte ja), aber ein versehentlich gelöschter Klub schon.
+describe("Liga-Besetzungen", () => {
+  it("Bundesliga 18, die anderen drei je 20", () => {
+    expect(vereineVon("bl")).toHaveLength(18);
+    for (const liga of ["pl", "pd", "sa"]) expect(vereineVon(liga)).toHaveLength(20);
+  });
+
+  it("kein Klub steht doppelt in derselben Liga", () => {
+    for (const liga of ["bl", "pl", "pd", "sa"]) {
+      const v = vereineVon(liga);
+      expect(new Set(v).size, `Dublette in ${liga}`).toBe(v.length);
     }
   });
 
-  it("kein Alias ist überflüssig — es übersetzt wirklich eine Abweichung", () => {
-    for (const [api, ziel] of Object.entries(KLUB_ALIASE.bl)) {
-      expect(api, `„${api}" ist identisch mit dem Ziel`).not.toBe(ziel);
-    }
+  // Ein Klub in der Champions League, den keine Liga führt, ist ein
+  // Widerspruch im Katalog — genau das war Girona, nachdem er aus La Liga
+  // abgestiegen ist.
+  it("jeder CL-Teilnehmer aus unseren vier Ligen steht auch in seiner Liga", () => {
+    const ligaKlubs = new Set(["bl", "pl", "pd", "sa"].flatMap((l) => vereineVon(l)));
+    const verwaist = vereineVon("cl").filter((k) => {
+      // Nur prüfen, was aussieht wie ein Klub unserer vier Ligen: alle anderen
+      // (Porto, Ajax, Celtic …) haben bei uns bewusst keine Liga.
+      return ligaKlubs.has(k) === false && KLUB_LIGEN_VERDACHT.has(k);
+    });
+    expect(verwaist).toEqual([]);
   });
 });
+
+// Klubs, die in einer UNSERER vier Ligen spielen müssten, wenn sie in der CL
+// stehen. Bewusst eine kurze, explizite Liste: die CL enthält absichtlich
+// Teilnehmer aus Ligen, die wir gar nicht führen.
+const KLUB_LIGEN_VERDACHT = new Set(["Girona FC", "RCD Mallorca", "Real Oviedo", "AC Pisa", "Hellas Verona", "US Cremonese", "FC Burnley", "West Ham United", "Wolverhampton Wanderers"]);

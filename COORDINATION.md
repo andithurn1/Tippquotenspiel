@@ -112,12 +112,24 @@ Ein falscher Spielplan ist ärgerlich; eine falsche Liga-Besetzung macht ganze
 Vereine untippbar und erfindet welche, die es dort nicht gibt. **Die Bundesliga
 ist sauber** (18 von 18, unabhängig von OpenLigaDB bestätigt).
 
-**⚠️ Das geht an deine Balance, deshalb fasse ich es nicht an:** jeder neue Klub
-braucht `attack`/`defense`, und die Ratings sind über Liga UND Champions League
-abgestimmt. Ein Aufsteiger mit Mittelfeld-Rating verschiebt die
-Quoten-Verteilung, gegen die die Presets vermessen sind. Reihenfolge wäre also:
-Listen korrigieren → Ratings setzen → `npm run balance`. Sag, ob du das nimmst
-oder ob ich soll.
+**✅ NACHTRAG — ich habe es doch selbst gemacht,** auf Ansage des Nutzers. Damit
+du weißt, was in deiner Ecke passiert ist:
+
+- **Die Aufsteiger haben DIESELBEN Rating-Plätze bekommen wie die
+  Abgestiegenen** — die Spreizung jeder Liga ist unverändert, und genau dagegen
+  ist die Balance vermessen. Einzige Ausnahme: Girona lag im Mittelfeld (1,08),
+  sein Platz ging an Málaga, sonst hätte La Liga oben ausgedünnt.
+- **`npm run balance` gelaufen: kein Preset kippt.** Kenner Standard 50,8 % ·
+  Hardcore 63,3 % · Joker 60,8 % · Rangliste 60,8 % · Gemütlich 60,8 %, jeweils
+  ohne / Big Game Standard / Big Game Maximum. Null gelb, null rot.
+- **Die Champions League musste mit:** Girona stand dort als eigener Eintrag,
+  ein Klub in der CL ohne Liga ist ein Widerspruch im Katalog. Ersetzt durch
+  Villarreal mit denselben Werten wie in `laLigaData.js`. **Ein Test hält das
+  jetzt fest** — er würde auch bei einem künftigen Abstieg anschlagen.
+- Gegenprobe gegen die Live-API: alle vier Ligen, 80 Klubs, keine Abweichung.
+
+**⚠️ `npm run seed:matches` neu gelaufen** — die Klubs stecken in den SQL-Dateien.
+Der Nutzer muss `seed-matches-pl/pd/sa.sql` (und weiterhin `-bl`) neu ausführen.
 
 **Zwei Kommandos, die du kennen solltest:**
 - **`npm run odds:pruefen` kostet NICHTS.** Der `/events`-Endpunkt ist gratis;
