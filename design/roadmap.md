@@ -286,6 +286,58 @@ kommen **echte Spielernamen frei Haus**. Unsere Kader sind bewusst erfunden
 dieses Problem hat der Buchmacher schon gelöst: er stellt nur Spieler, die auch
 spielen. Er liefert grob 20 je Partie, wir brauchen 5 je Team. Das passt.
 
+### 📏 NACHGEMESSEN (30.07.): die Torschützen kommen erst ~2 TAGE vorher, nicht 1–7
+
+Die Angabe „1–7 Tage" oben war eine Schätzung aus zwei Datenpunkten (ein Monat
+vorher = 0, 64 Stunden vorher = 3 Bücher). Der Nutzer fragte, ob es wenigstens
+4 Tage seien. **Nachgemessen an 10 Spielen aus fünf Ligen — nein:**
+
+| Vorlauf | Liga | Buchmacher | Ausgänge |
+|---|---|---|---|
+| 1,6 T | MLS | 3 | 73 |
+| 2,6 T | MLS | 4 | 114 |
+| 2,7 T | MLS | 4 | 109 |
+| 2,8 T | MLS | 4 | 118 |
+| **3,1 T** | **Dänemark, Schweiz** | **0** | **0** |
+| **3,2 T** | **Schottland** | **0** | **0** |
+| **3,5 T** | **Argentinien** | **0** | **0** |
+| 4,5 T | Argentinien | 0 | 0 |
+| 6,6 T | Argentinien | 0 | 0 |
+| 9,5 / 16,7 T | MLS | 0 | 0 |
+
+**Die Schwelle liegt zwischen 2,8 und 3,1 Tagen.** Sie ist damit deutlich enger
+als angenommen und liegt UNTER dem Wert, mit dem man planen möchte.
+
+⚠️ **Zwei Einschränkungen, die dazugehören:** (1) Die Bundesliga ließ sich nicht
+messen — sie startet erst am 28.08., der früheste Anpfiff liegt 29 Tage weg.
+Der endgültige Beleg ist erst Ende August möglich. (2) Getestet wurde mit
+`regions=us,eu`; die vollen MLS-Bücher kommen von US-Anbietern, die ihre
+Heimatliga früher bepreisen. Für die Bundesliga ist eher MIT, nicht mit
+weniger Vorlauf zu rechnen — aber die drei europäischen Ligen bei 3,1–3,2 Tagen
+waren ebenfalls leer.
+
+💡 **Nützlicher Nebenbefund: leere Antworten kosten wirklich keinen Credit.**
+Über sechs erfolglose Abfragen blieb der Zähler bei 347 stehen. Ein
+Warteschleifen-Skript, das täglich nachsieht, ob die Märkte schon offen sind,
+ist damit gratis.
+
+**→ Die Folge für den Entwurf:** ein Tipp-Fenster von einer Woche und echte
+Torschützen schließen sich aus. Der brauchbare Ausweg ist NICHT, das Fenster zu
+verkürzen (dann verliert man die frühen Tipper), sondern die beiden Dinge zu
+trennen, die man bisher zusammen gedacht hat:
+
+- **NAMEN früh, PREISE spät.** Welche Spieler zur Auswahl stehen, weiß
+  `kader.js` schon lange vorher — die Zuordnung wächst über die Läufe und
+  bleibt bestehen, sie hängt nicht am aktuellen Spiel. Echte Namen sind also
+  eine Woche vorher verfügbar; nur ihre ANYTIME-Quote ist es nicht.
+- **Der Preis wird beim Öffnen des Spieltags eingefroren** (`quotenStand:
+  "oeffnung"`), für alle gleich. Liegt der Markt bis dahin vor, ist er echt;
+  sonst bleibt der abgeleitete Preis stehen. In beiden Fällen sehen alle
+  Tipper dasselbe, und das ist die Fairness-Regel, um die es geht.
+
+Damit ist die Kollision aufgelöst, ohne das Tipp-Fenster anzufassen: **der
+Spieler bekommt immer echte Namen und immer denselben Preis wie alle anderen.**
+
 ⚠️ **Es hängt aber an einem Faden, und der berührt eine Fairness-Regel:** die
 Quoten kommen 1–7 Tage vor Anpfiff, unser Tipp-Fenster öffnet standardmäßig
 **eine Woche** vorher. Wer früh tippt, sähe erfundene Namen, wer spät tippt,
