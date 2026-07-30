@@ -9,6 +9,7 @@ import { PRESETS } from "@/lib/presets";
 import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
 import { STAERKE_STUFEN, BETRIFFT } from "@/lib/catchup";
+import { KURVEN, KURVE, SAISONFORM_LIMITS, beschreibeSaisonform } from "@/lib/saisonform";
 import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
 import { alleVereine, vereineVon, LIGEN } from "@/lib/ligen";
 import { wettbewerbLabel } from "@/lib/wettbewerbe";
@@ -99,6 +100,7 @@ export default function Spielerstellung() {
   const patchJoker = (p) => { touched(); setRules((r) => ({ ...r, joker: { ...r.joker, ...p } })); };
   const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
+  const patchSaisonform = (p) => { touched(); setRules((r) => ({ ...r, saisonform: { ...(r.saisonform || DEFAULT_RULES.saisonform), ...p } })); };
   const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
   const patchBigGame = (p) => { touched(); setRules((r) => ({ ...r, bigGame: { ...r.bigGame, ...p } })); };
   const setSaison = (saison) => { touched(); setRules((r) => ({ ...r, saison })); };
@@ -287,6 +289,7 @@ export default function Spielerstellung() {
   const tmTeams = tm.teams || {};
   const tmAktiv = tm.derbyFaktor > 1 || Object.keys(tmTeams).length > 0;
   const au = rules.aufholen || DEFAULT_RULES.aufholen;
+  const sf = rules.saisonform || DEFAULT_RULES.saisonform;
   const ve = rules.versaeumnis || DEFAULT_RULES.versaeumnis;
   const bg = rules.bigGame || DEFAULT_RULES.bigGame;
   // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
@@ -1039,6 +1042,107 @@ export default function Spielerstellung() {
                 {" "}Die Live-Vorschau unten zeigt, ob der Bonus zu stark wird.
               </p>
             </div>
+          )}
+
+          {/* Saisonform: Streichresultate + Gewichtung der Spieltage */}
+          <SectionTitle>Streicher &amp; Saisonverlauf</SectionTitle>
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+            Wie stark darf ein einzelner Spieltag die Saison bestimmen? Beides greift
+            auf die fertigen Spieltagspunkte — die Wertung eines Spiels bleibt unberührt.
+          </p>
+
+          <Field label="Streichresultate">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {[0, 1, 2, 3, 5].map((n) => {
+                const on = sf.streich === n;
+                return (
+                  <button key={n} onClick={() => patchSaisonform({ streich: n })} style={{
+                    cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                    background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
+                    border: `1px solid ${on ? C.mint + "66" : C.line}`,
+                  }}>{n === 0 ? "keine" : `${n} streichen`}</button>
+                );
+              })}
+            </div>
+          </Field>
+          <p style={{ fontSize: 11, color: C.muted, marginTop: 2, marginBottom: 10, lineHeight: 1.4 }}>
+            Die schwächsten Spieltage zählen nicht — verzeiht einen Ausrutscher oder
+            einen Urlaub. <strong>Gemessen der einzige milde Ausgleich hier</strong>:
+            senkt den Vorsprung des Ersten leicht, ohne das Können zu entwerten.
+          </p>
+
+          {sf.streich > 0 && (
+            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 10 }}>
+              <Toggle label="Nur Spieltage streichen, an denen getippt wurde"
+                on={sf.nurGetippte}
+                onChange={(on) => patchSaisonform({ nurGetippte: on })} />
+              <p style={{ fontSize: 11, color: sf.nurGetippte ? C.muted : C.coral, marginTop: 2, lineHeight: 1.4 }}>
+                {sf.nurGetippte
+                  ? "Ein vergessener Spieltag bleibt stehen und wird nicht verschenkt."
+                  : "⚠️ Aus: ein vergessener Spieltag wird als Nullrunde gestrichen — Auslassen kostet dann nichts mehr und arbeitet gegen die Versäumnis-Regel."}
+              </p>
+            </div>
+          )}
+
+          <Field label="Gewichtung über die Saison">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {KURVEN.map((k) => {
+                const on = sf.kurve === k.key;
+                return (
+                  <button key={k.key} onClick={() => patchSaisonform({ kurve: k.key })}
+                    title={k.text} style={{
+                      cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                      background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
+                      border: `1px solid ${on ? C.gold + "66" : C.line}`,
+                    }}>{k.label}</button>
+                );
+              })}
+            </div>
+          </Field>
+          <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+            {KURVE[sf.kurve]?.text}
+          </p>
+
+          {/* ⚠️ Diese Warnung ist der Grund, warum der Regler überhaupt so
+              beschrieben ist. Gemessen (400 Läufe): „Endspurt" senkt den
+              Vorsprung des Ersten NICHT, sondern vergrößert ihn — weil Gewicht
+              auf einen Teil der Saison die wirksame Stichprobe verkleinert.
+              Ohne diesen Hinweis stellt ein Admin das ein, um auszugleichen,
+              und bekommt das Gegenteil. */}
+          {sf.kurve !== "flach" && (
+            <div style={{
+              marginTop: 8, marginBottom: 8, padding: "9px 11px", borderRadius: 10,
+              background: `${C.coral}14`, border: `1px solid ${C.coral}44`,
+            }}>
+              <div style={{ fontSize: 11.5, color: C.coral, fontWeight: 700, marginBottom: 3 }}>
+                Kein Ausgleich — ein Spannungsregler
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>
+                Nachgemessen: eine ungleiche Gewichtung <strong>vergrößert</strong> den
+                Vorsprung des Ersten und macht die Saison zufälliger, weil weniger
+                Spieltage wirklich zählen. Für ein spannendes Saisonende gut — zum
+                Ausgleichen nicht. Dafür sind die Streicher da.
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <Slider label="Wie ausgeprägt?" value={sf.staerke}
+                  min={SAISONFORM_LIMITS.staerke.min} max={SAISONFORM_LIMITS.staerke.max}
+                  step={SAISONFORM_LIMITS.staerke.step}
+                  fmt={(v) => `×${v.toFixed(1)}`}
+                  onChange={(v) => patchSaisonform({ staerke: v })} />
+              </div>
+            </div>
+          )}
+
+          {/* Die Zusammenfassung nur zeigen, wenn sie mehr sagt als die
+              Kurvenzeile darüber. Im Standardzustand stünde sonst zweimal
+              „Jeder Spieltag zählt gleich viel." untereinander. */}
+          {(sf.kurve !== "flach" || sf.streich > 0) && (
+            <p style={{
+              fontSize: 11.5, color: C.text, marginTop: 4, marginBottom: 12, lineHeight: 1.45,
+              padding: "8px 10px", borderRadius: 8, background: C.surface, border: `1px solid ${C.line}`,
+            }}>
+              {beschreibeSaisonform(sf, 34)}
+            </p>
           )}
 
           {/* Saison-Wetten (Langzeit-Ebene) */}
