@@ -20,8 +20,8 @@
 //  API-Schlüssel nie ins Frontend gerät.
 // ============================================================
 
-import { buildSnapshot, dixonColes } from "./oddsGenerator";
-import { teileAuf } from "./kader";
+import { buildSnapshot, dixonColes, SCORER_SHARES } from "./oddsGenerator";
+import { teileAuf, kaderVon } from "./kader";
 
 // ── Niedrig-Ergebnis-Korrektur für ECHTE Quoten ─────────────
 // Warum sie hier eingeschaltet ist und im Generator nicht: hereinkommende
@@ -441,6 +441,45 @@ export function spielerAusMarkt({ torschuetzen, home, away, zuordnung = {}, cap 
   return { home: heim, away: gast, unbekannt: geteilt.unbekannt };
 }
 
+// ── Echte NAMEN ohne Marktpreis ─────────────────────────────
+// Der Fall, der den Regelfall darstellt, sobald eine Runde läuft: die
+// Torschützen-QUOTEN öffnen erst rund zwei Tage vor Anpfiff (nachgemessen an
+// zehn Spielen aus fünf Ligen), das Tipp-Fenster geht aber eine Woche vorher
+// auf. Wer früh tippt, sähe also erfundene Namen — und wer spät tippt, echte.
+//
+// Auflösung: **Namen und Preise trennen.** Die Vereinszuordnung in `kader.js`
+// hängt nicht am kommenden Spiel, sie wächst über frühere Spieltage und steht
+// längst. Also werden die echten Namen sofort angeboten, und nur der PREIS
+// bleibt vorerst abgeleitet — dieselbe Poisson-Rechnung wie beim erzeugten
+// Kader (`SCORER_SHARES`, eine Quelle für beide Wege).
+//
+// ⚠️ Sichtbar gemacht wird das über `spielerQuelle: "kader"` und
+// `spielerPreiseOffen: true` — der Spieler soll wissen, dass die Namen echt
+// sind und die Quote noch nachgezogen wird. Eine stille Mischung wäre die
+// schlechteste Variante: sie sieht aus wie ein Marktpreis und ist keiner.
+export function spielerAusKader({ home, away, zuordnung = {}, lamH, lamA, cap = 200, minProTeam = 2 }) {
+  const seite = (verein, lambda) => {
+    const namen = kaderVon(zuordnung, verein).slice(0, SCORER_SHARES.length);
+    const out = {};
+    namen.forEach((name, i) => {
+      const lam = lambda * SCORER_SHARES[i];
+      const pAnytime = 1 - Math.exp(-lam);
+      const pDouble = Math.max(1 - Math.exp(-lam) - lam * Math.exp(-lam), 0.0005);
+      out[name] = {
+        anytime: Math.min(cap, Math.max(1.01, +(1 / (pAnytime * SCHUETZEN_MARGE)).toFixed(2))),
+        double: Math.min(cap, Math.max(1.01, +(1 / (pDouble * SCHUETZEN_MARGE)).toFixed(2))),
+      };
+    });
+    return out;
+  };
+  const heim = seite(home, lamH);
+  const gast = seite(away, lamA);
+  // Dieselbe Schwelle wie beim Marktpreis-Weg: eine halb echte Liste wäre im
+  // Tipp-Screen auf einer Seite eine leere Fläche.
+  if (Object.keys(heim).length < minProTeam || Object.keys(gast).length < minProTeam) return null;
+  return { home: heim, away: gast };
+}
+
 export function snapshotFromOdds({
   matchId, home, away, kickoff, odds, cap = 200, correctScore = null, namensPool = null,
   torschuetzen = null, kaderZuordnung = null, total = null,
@@ -496,6 +535,19 @@ export function snapshotFromOdds({
   const echteSpieler = spielerAusMarkt({
     torschuetzen, home, away, zuordnung: kaderZuordnung ?? {}, cap,
   });
+  // Rangfolge: echte Namen MIT Marktpreis > echte Namen mit abgeleitetem Preis
+  // > erfundener Kader. Die mittlere Stufe ist der Normalfall im Tipp-Fenster,
+  // weil die Torschützen-Märkte erst ~2 Tage vor Anpfiff öffnen.
+  const nurNamen = echteSpieler ? null : spielerAusKader({
+    home, away, zuordnung: kaderZuordnung ?? {},
+    lamH: fit.lamH, lamA: fit.lamA, cap,
+  });
+  if (nurNamen) {
+    snap.players = { home: nurNamen.home, away: nurNamen.away };
+    // Damit die Oberfläche „Quoten folgen etwa 48 h vor Anpfiff" sagen kann,
+    // statt einen abgeleiteten Preis als Marktpreis auszugeben.
+    snap.spielerPreiseOffen = true;
+  }
   if (echteSpieler) {
     snap.players = { home: echteSpieler.home, away: echteSpieler.away };
     // Wer im Markt stand, aber noch keinem Verein zugeordnet ist. Sichtbar
@@ -515,7 +567,7 @@ export function snapshotFromOdds({
   snap.torschnittQuelle = Number(total) > 0.3 ? "totals"
     : (torschnitt ? "raster" : "geschaetzt");
   if (fit.rho) snap.rho = fit.rho;
-  snap.spielerQuelle = echteSpieler ? "markt" : "erfunden";
+  snap.spielerQuelle = echteSpieler ? "markt" : (nurNamen ? "kader" : "erfunden");
   snap.marge = +probs.overround.toFixed(4);
   return snap;
 }

@@ -113,7 +113,9 @@ const LAST_NAMES = ["Brandt", "Kessler", "Vural", "Adeyemi", "Nowak", "Sörensen
 function pick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
 
 // 5 Angriffsspieler je Team, jeder trägt einen Anteil an der Team-Tor-Erwartung.
-const SCORER_SHARES = [0.30, 0.22, 0.18, 0.12, 0.09];
+// Exportiert, weil `oddsApi.js` dieselbe Verteilung für ECHTE Namen ohne
+// Marktpreis braucht — zwei Kopien liefen sonst auseinander.
+export const SCORER_SHARES = [0.30, 0.22, 0.18, 0.12, 0.09];
 
 // Der Kader eines Vereins ist über die SAISON STABIL — er wird deshalb aus dem
 // VEREINSNAMEN gezogen, nicht aus dem Spiel. Sonst hieße Bayerns Torjäger an

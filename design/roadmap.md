@@ -1686,11 +1686,68 @@ selbst mitschickt (siehe „RLS-Durchgang", Punkt 1), ist JEDES dieser Modelle
 nur eine Vereinbarung, keine Regel. Erst ein Trigger, der den Snapshot
 serverseitig stempelt, macht die Einstellung wirksam.
 
-**Die Idee dahinter, die der Nutzer separat genannt hat — „in kleineren
-privaten Runden die Beeinflussung durch die Tippabgabe":** das wäre ein
-VIERTES Modell und ein echtes Feature, kein Schalter — ein Totalisator. Die
-Quote entsteht dann nicht (nur) aus dem Markt, sondern aus dem Tippverhalten
-der Runde: tippen alle den Favoriten, sinkt seine Auszahlung.
+### 🎚️ Tipp-Einfluss auf die Quote — ENTSCHIEDEN: bleibt als Admin-Option (Nutzer, 30.07.)
+
+**Der Nutzer will das ausdrücklich behalten**, mit einer Kalibrierungs-Ansage,
+die das ganze Problem löst: *„im normalen Markt wäre ja ein Tippender
+marginal."*
+
+Genau das ist der Maßstab. Ein Totalisator, in dem ein einzelner Tipp die Quote
+sichtbar bewegt, ist kaputt — nicht weil die Mechanik falsch wäre, sondern weil
+die MARKTGRÖSSE fehlt. An einer echten Börse steht ein Tipp gegen Millionen;
+in einer Zwölfer-Runde stünde er gegen elf.
+
+**Daraus folgt die Bauform:** nicht „Gruppe gegen Markt", sondern **die Gruppe
+wird dem Markt HINZUGERECHNET**, mit einem einstellbaren Gewicht:
+
+```
+p_final ∝ p_markt · (1 − a) + p_gruppe · a
+a = tippEinfluss · (n_tipps / (n_tipps + marktTiefe))
+```
+
+- **`marktTiefe`** ist der eigentliche Regler. Sie sagt, gegen wie viele
+  „virtuelle Mitspieler" die Runde antritt. Bei `marktTiefe: 200` bewegt ein
+  einzelner Tipp in einer Zwölfer-Runde die Quote um Bruchteile eines Prozents
+  — genau das „marginal", das der Nutzer meint. Bei `marktTiefe: 10` wird es
+  spürbar. **Das ist der Unterschied zwischen Würze und Chaos, und er ist eine
+  Zahl.**
+- **`tippEinfluss`** (0–1) deckelt, wie weit es maximal gehen darf, auch wenn
+  sehr viele tippen.
+- Standard: **aus** (`tippEinfluss: 0`) — dann ändert sich gar nichts.
+
+**Warum das die Architektur-Regel 4 NICHT bricht:** der Anker bleibt die Quote
+des REALEN Ergebnisses, und er bleibt für alle gleich. Verschoben wird nur, wie
+diese Quote zustande kommt — und zwar **einmal, beim Öffnen des Spieltags**,
+nicht fortlaufend. Damit gilt weiter: einmal festgelegt, für alle dasselbe.
+
+⚠️ **Der Punkt, der das Ganze sonst kippt: WANN wird gerechnet?** Wer während
+der Tippphase live nachrechnet, baut ein Wettrennen — früh tippen wäre besser
+oder schlechter, je nachdem. Und wer nach Anpfiff rechnet, ändert den Wert
+abgegebener Tipps rückwirkend. **Beides ist verboten.** Es gibt genau ein
+zulässiges Fenster: die Tipps werden gesammelt, und **beim Schließen des
+Tipp-Fensters** entsteht daraus die endgültige Quote — vor Anpfiff, nach dem
+letzten Tipp, für alle gleich. Wer früh tippt, hat weder Vor- noch Nachteil.
+
+⚠️ **Zweite Falle: der Tippende darf seine eigene Quote nicht drücken.** Wer den
+Favoriten tippt und dadurch dessen Auszahlung senkt, bestraft sich selbst fürs
+Mittippen — und in einer kleinen Runde merkt er es. Sauber ist, die eigene
+Stimme aus der eigenen Quote herauszurechnen (jeder sieht die Quote, die aus
+den Tipps der ANDEREN entsteht). Das ist mehr Rechnung, aber es ist der
+Unterschied zwischen „die Runde bewegt den Markt" und „ich schade mir selbst".
+
+⚠️ **Dritte: kleine Runden brauchen einen Boden.** Bei drei Tippern ist die
+Gruppenverteilung reines Rauschen. Unterhalb einer Mindestzahl (Vorschlag: 8)
+sollte der Einfluss automatisch auf 0 gehen, statt eine Zufallszahl als
+Marktmeinung auszugeben.
+
+**Reizvoll bleibt es trotzdem**, und zwar aus einem Grund, der zum erklärten
+Ziel des Nutzers passt: es bestraft Herdenverhalten von selbst. Wer tippt, was
+alle tippen, bekommt weniger — ganz ohne Modifikator, ohne Malus und ohne dass
+jemand eine Regel erklären muss.
+
+**Ursprünglicher Entwurfs-Gedanke:** die Quote entsteht dann nicht (nur) aus
+dem Markt, sondern aus dem Tippverhalten der Runde: tippen alle den Favoriten,
+sinkt seine Auszahlung.
 - **Reizvoll**, weil es Herdenverhalten von selbst bestraft und damit genau das
   Ziel „der Erste soll nicht davonziehen" bedient, ohne einen Modifikator.
 - ⚠️ **Bricht aber Architektur-Regel 4** („Anker immer auf der Quote des REALEN

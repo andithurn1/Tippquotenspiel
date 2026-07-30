@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   impliedProbabilities, outcomeProbs, fitLambdas, snapshotFromOdds,
   parseTheOddsApiEvent, snapshotsFromTheOddsApi, RHO, rasterAusMarkt, longshotK, spielerAusMarkt,
-  fitLambdasMitTotal, torschnittAusRaster, torschnittAusTotals, totalsAusEvent,
+  fitLambdasMitTotal, torschnittAusRaster, torschnittAusTotals, totalsAusEvent, spielerAusKader,
 } from "@/lib/oddsApi";
 import { dixonColes } from "@/lib/oddsGenerator";
 import { scoreTip, DEFAULT_RULES } from "@/lib/engine";
@@ -639,5 +639,78 @@ describe("snapshotsFromTheOddsApi nimmt die Über/Unter-Linie mit", () => {
       expect(s.snapshot.winner.home).toBeCloseTo(1.27, 5);
       expect(s.snapshot.winner.away).toBeCloseTo(7.5, 5);
     }
+  });
+});
+
+// ── Echte NAMEN ohne Marktpreis ─────────────────────────────
+// Nachgemessen (30.07.): die Torschützen-Märkte öffnen erst ~2 Tage vor
+// Anpfiff, das Tipp-Fenster geht eine Woche vorher auf. Wer früh tippt, sähe
+// sonst erfundene Namen und wer spät tippt echte. Auflösung: Namen und Preise
+// trennen — die Vereinszuordnung hängt nicht am kommenden Spiel.
+describe("spielerAusKader — Namen früh, Preise spät", () => {
+  const ZUORDNUNG = {
+    "Anna Alpha": "FC Alpha", "Bea Alpha": "FC Alpha", "Cem Alpha": "FC Alpha",
+    "Dana Beta": "SV Beta", "Emre Beta": "SV Beta",
+    "Fremd Person": "Dritter Klub",
+  };
+  const basis = {
+    matchId: "x", home: "FC Alpha", away: "SV Beta",
+    kickoff: "2026-08-28T18:30:00Z", odds: FAVORIT,
+  };
+
+  it("bietet die bekannten Spieler beider Vereine an", () => {
+    const r = spielerAusKader({
+      home: "FC Alpha", away: "SV Beta", zuordnung: ZUORDNUNG, lamH: 1.8, lamA: 1.1,
+    });
+    expect(Object.keys(r.home)).toEqual(["Anna Alpha", "Bea Alpha", "Cem Alpha"]);
+    expect(Object.keys(r.away)).toEqual(["Dana Beta", "Emre Beta"]);
+  });
+
+  it("kein Spieler eines fremden Vereins rutscht hinein", () => {
+    const r = spielerAusKader({
+      home: "FC Alpha", away: "SV Beta", zuordnung: ZUORDNUNG, lamH: 1.8, lamA: 1.1,
+    });
+    expect([...Object.keys(r.home), ...Object.keys(r.away)]).not.toContain("Fremd Person");
+  });
+
+  it("die Preise sind plausibel geordnet — der erste Schütze ist am billigsten", () => {
+    const r = spielerAusKader({
+      home: "FC Alpha", away: "SV Beta", zuordnung: ZUORDNUNG, lamH: 1.8, lamA: 1.1,
+    });
+    const heim = Object.values(r.home);
+    expect(heim[0].anytime).toBeLessThan(heim[1].anytime);
+    expect(heim[0].double).toBeGreaterThan(heim[0].anytime);
+  });
+
+  it("zu wenige bekannte Spieler → gar keine Liste statt einer halben", () => {
+    expect(spielerAusKader({
+      home: "FC Alpha", away: "Unbekannt", zuordnung: ZUORDNUNG, lamH: 1.8, lamA: 1.1,
+    })).toBeNull();
+  });
+
+  describe("Rangfolge im Snapshot", () => {
+    it("ohne alles: erfundener Kader", () => {
+      const s = snapshotFromOdds(basis);
+      expect(s.spielerQuelle).toBe("erfunden");
+      expect(s.spielerPreiseOffen).toBeUndefined();
+    });
+
+    it("mit bekanntem Kader: echte Namen, Preis noch offen", () => {
+      const s = snapshotFromOdds({ ...basis, kaderZuordnung: ZUORDNUNG });
+      expect(s.spielerQuelle).toBe("kader");
+      expect(s.spielerPreiseOffen).toBe(true);
+      expect(Object.keys(s.players.home)).toContain("Anna Alpha");
+    });
+
+    // Sobald der Markt da ist, gewinnt er — er ist Preis, keine Schätzung.
+    it("mit Marktpreisen gewinnt der Markt", () => {
+      const s = snapshotFromOdds({
+        ...basis, kaderZuordnung: ZUORDNUNG,
+        torschuetzen: { "Anna Alpha": 2.5, "Bea Alpha": 3.1, "Dana Beta": 4.0, "Emre Beta": 5.5 },
+      });
+      expect(s.spielerQuelle).toBe("markt");
+      expect(s.spielerPreiseOffen).toBeUndefined();
+      expect(s.players.home["Anna Alpha"].anytime).toBe(2.5);
+    });
   });
 });

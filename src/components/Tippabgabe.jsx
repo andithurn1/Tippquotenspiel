@@ -354,6 +354,25 @@ export default function Tippabgabe({ matchId }) {
               </Section>
             )}
 
+            {/* Echte Namen, Quote folgt noch. Nachgemessen: die
+                Torschützen-Märkte öffnen erst rund zwei Tage vor Anpfiff, das
+                Tipp-Fenster geht eine Woche vorher auf. Ohne diesen Hinweis
+                hielte der Spieler den abgeleiteten Preis für einen Marktpreis —
+                und wunderte sich, wenn er sich später ändert. */}
+            {scorer.enabled && SNAP.spielerPreiseOffen && (
+              <div style={{
+                fontSize: 11.5, lineHeight: 1.45, color: C.muted, marginBottom: 10,
+                padding: "9px 11px", borderRadius: 10,
+                background: C.surface, border: `1px solid ${C.line}`,
+              }}>
+                <strong style={{ color: C.text }}>Die Namen sind echt, die Quoten noch vorläufig.</strong>{" "}
+                Buchmacher stellen die Torschützen-Quoten erst rund <strong>48 Stunden</strong> vor
+                Anpfiff. Bis dahin siehst du unsere eigene Einschätzung — tippen kannst du
+                trotzdem schon jetzt. Verrechnet wird mit der Quote, die beim Öffnen
+                des Spieltags für alle gilt.
+              </div>
+            )}
+
             {/* Torschützen aus dem Regelwerk */}
             {/* Modus `proSpiel`: EIN Topf für beide Mannschaften. Gebaut, weil
                 die echten Torschützen-Quoten ohne Vereinszuordnung kommen —

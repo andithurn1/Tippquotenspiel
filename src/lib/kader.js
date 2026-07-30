@@ -163,6 +163,25 @@ export function teileAuf({ home, away, spieler = [], zuordnung = {} }) {
 
 // Wie weit ist die Zuordnung? Speist die Anzeige im Abruf-Skript: solange hier
 // viel offen ist, lohnt ein weiterer Abruf mehr als jede Handarbeit.
+// Die bekannten Spieler EINES Vereins — die Umkehrung von `zuordnung`.
+//
+// Gebraucht, weil Namen und Preise verschieden früh verfügbar sind: die
+// Torschützen-QUOTEN öffnen erst rund zwei Tage vor Anpfiff (nachgemessen, siehe
+// `design/roadmap.md`), das Tipp-Fenster aber eine Woche vorher. Die
+// ZUORDNUNG hängt dagegen nicht am kommenden Spiel — sie wächst über frühere
+// Spieltage und steht deshalb längst.
+//
+// Damit lässt sich der Torschützen-Tipp mit ECHTEN Namen anbieten, lange bevor
+// es dafür einen Marktpreis gibt. Sortiert, damit die Auswahl bei gleichem
+// Datenstand überall dieselbe Reihenfolge hat.
+export function kaderVon(zuordnung = {}, verein) {
+  if (!verein) return [];
+  return Object.entries(zuordnung)
+    .filter(([, v]) => v === verein)
+    .map(([spieler]) => spieler)
+    .sort((a, b) => a.localeCompare(b));
+}
+
 export function fortschritt({ zuordnung = {}, offen = [] }) {
   const zugeordnet = Object.keys(zuordnung).length;
   const gesamt = zugeordnet + offen.length;
