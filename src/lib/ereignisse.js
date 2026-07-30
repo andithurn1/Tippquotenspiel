@@ -124,6 +124,13 @@ export const EREIGNIS_LIMITS = {
   maxErspielt: { min: 1, max: 15, step: 1 },
   anzahl: { min: 2, max: 10, step: 1 },      // Serie
   abQuote: { min: 2, max: 15, step: 0.5 },   // Außenseiter
+  // ── Begrenzer, für JEDES Ereignis verfügbar ───────────────
+  // 0 heißt „aus" und ist die Vorgabe — ohne Zutun ändert sich nichts am
+  // bisherigen Verhalten. Sie sind der zweite Wert zu jeder Option: die
+  // Einstellung sagt, WAS passiert, der Begrenzer, wie oft es höchstens
+  // passieren darf.
+  abstand: { min: 0, max: 10, step: 1 },        // Abklingzeit in Spieltagen
+  maxProSaison: { min: 0, max: 20, step: 1 },   // 0 = unbegrenzt
 };
 
 export const DEFAULT_EREIGNISSE = { enabled: false, maxErspielt: 5, aktive: [] };
@@ -163,6 +170,11 @@ export function sanitizeEreignisse(partial = {}) {
     if (typ.parameter.includes("abQuote")) {
       eintrag.abQuote = +clamp(a.abQuote, EREIGNIS_LIMITS.abQuote, typ.standard.abQuote).toFixed(1);
     }
+    // Die Begrenzer gelten für JEDEN Typ, nicht nur für die, die sie in
+    // `parameter` führen — sie sind keine Eigenschaft des Ereignisses, sondern
+    // eine Grenze, die der Admin ihm setzt. Vorgabe 0 = aus.
+    eintrag.abstand = Math.round(clamp(a.abstand, EREIGNIS_LIMITS.abstand, 0));
+    eintrag.maxProSaison = Math.round(clamp(a.maxProSaison, EREIGNIS_LIMITS.maxProSaison, 0));
     aktive.push(eintrag);
   }
 
@@ -315,15 +327,45 @@ export function auswerten({
   // konstruierte Fälle und bleibt deterministisch.
   roh.sort((a, b) => pos(a) - pos(b) || a.key.localeCompare(b.key));
 
+  // ── Begrenzer JE EREIGNIS, vor dem Gesamtdeckel ─────────────
+  // `maxErspielt` deckelt die SUMME und sagt nichts darüber, wie oft ein
+  // EINZELNES Ereignis feuert. Genau dort sitzt die farmbare Serie: „drei
+  // Spieltage in Folge getippt" zahlt sonst an jedem dritten Spieltag, und wer
+  // einmal drin ist, bleibt drin. Zwei Begrenzer reichen dagegen:
+  //
+  //   abstand      — Abklingzeit: nach einem Treffer n Spieltage Ruhe
+  //   maxProSaison — wie oft dieses Ereignis überhaupt zahlt
+  //
+  // Beide greifen CHRONOLOGISCH, aus demselben Grund wie der Gesamtdeckel: die
+  // früh verdienten zählen, sonst hinge das Ergebnis an der Sortierung.
+  const zuletzt = new Map();   // key → Position des letzten Treffers
+  const gezaehlt = new Map();  // key → wie oft schon gezahlt
+  const erlaubt = [];
+  let gebremst = 0;
+  for (const g of roh) {
+    const cfgE = cfg.aktive.find((a) => a.key === g.key) ?? {};
+    const p = pos(g);
+    const vor = zuletzt.get(g.key);
+    const zuFrueh = cfgE.abstand > 0 && vor != null && p - vor < cfgE.abstand;
+    const zuOft = cfgE.maxProSaison > 0 && (gezaehlt.get(g.key) ?? 0) >= cfgE.maxProSaison;
+    if (zuFrueh || zuOft) { gebremst++; continue; }
+    zuletzt.set(g.key, p);
+    gezaehlt.set(g.key, (gezaehlt.get(g.key) ?? 0) + 1);
+    erlaubt.push(g);
+  }
+
   const gutschriften = [];
   let gesamt = 0;
   let verworfen = 0;
-  for (const g of roh) {
+  for (const g of erlaubt) {
     if (gesamt + g.belohnung > cfg.maxErspielt) { verworfen++; continue; }
     gutschriften.push(g);
     gesamt += g.belohnung;
   }
-  return { gutschriften, gesamt, gedeckelt: verworfen > 0, verworfen };
+  // `gebremst` und `verworfen` bleiben getrennt: das eine ist eine Regel des
+  // Ereignisses, das andere der Gesamtdeckel. Wer sie zusammenwirft, kann dem
+  // Admin nicht sagen, an welcher Schraube er drehen muss.
+  return { gutschriften, gesamt, gedeckelt: verworfen > 0, verworfen, gebremst };
 }
 
 // ── Konflikte mit anderen Regeln ────────────────────────────

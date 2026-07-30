@@ -310,12 +310,74 @@ describe("Im Regelwerk und im Creator-Code", () => {
       ...DEFAULT_RULES,
       ereignisse: AN([{ key: "serie", anzahl: 4, belohnung: 2 }], { maxErspielt: 6 }),
     });
-    expect(rules.ereignisse.aktive[0]).toEqual({ key: "serie", anzahl: 4, belohnung: 2 });
+    // Die Begrenzer stehen seit 30.07. an JEDEM Eintrag, Vorgabe 0 = aus.
+    expect(rules.ereignisse.aktive[0]).toEqual({
+      key: "serie", anzahl: 4, belohnung: 2, abstand: 0, maxProSaison: 0,
+    });
     expect(sanitizeRules(rules)).toEqual(rules);
   });
 
   it("beschreibt sich in einem Satz", () => {
     expect(beschreibeEreignisse(DEFAULT_EREIGNISSE)).toContain("nur vom Admin");
     expect(beschreibeEreignisse(AN([{ key: "serie" }], { maxErspielt: 4 }))).toContain("4");
+  });
+});
+
+// ── Begrenzer: der zweite Wert zu jeder Option ──────────────
+// `maxErspielt` deckelt die SUMME und sagt nichts darüber, wie oft ein
+// EINZELNES Ereignis feuert. Genau dort sitzt die farmbare Serie.
+describe("Begrenzer je Ereignis", () => {
+  // Zwölf Spieltage am Stück getippt: „3 in Folge" löst ohne Bremse viermal aus.
+  const zwoelf = Array.from({ length: 12 }, (_, i) =>
+    e("ich", i + 1, `m${i + 1}`, { home: 1, away: 0 }, { home: 1, away: 0 }));
+
+  it("ohne Begrenzer bleibt alles wie bisher", () => {
+    const r = auswerten({ eintraege: zwoelf, ereignisse: AN([{ key: "serie", anzahl: 3, belohnung: 1 }]) });
+    expect(r.gutschriften).toHaveLength(4);
+    expect(r.gebremst).toBe(0);
+  });
+
+  it("abstand bremst die Wiederholung — das Gegenmittel gegen farmbare Serien", () => {
+    const r = auswerten({
+      eintraege: zwoelf,
+      ereignisse: AN([{ key: "serie", anzahl: 3, belohnung: 1, abstand: 5 }]),
+    });
+    expect(r.gutschriften.length).toBeLessThan(4);
+    expect(r.gebremst).toBeGreaterThan(0);
+  });
+
+  it("maxProSaison kappt die Anzahl hart", () => {
+    const r = auswerten({
+      eintraege: zwoelf,
+      ereignisse: AN([{ key: "serie", anzahl: 3, belohnung: 1, maxProSaison: 2 }]),
+    });
+    expect(r.gutschriften).toHaveLength(2);
+    expect(r.gebremst).toBe(2);
+  });
+
+  it("gebremst und verworfen bleiben getrennt", () => {
+    // Sonst kann man dem Admin nicht sagen, an welcher Schraube er drehen muss:
+    // das eine ist eine Regel des Ereignisses, das andere der Gesamtdeckel.
+    const r = auswerten({
+      eintraege: zwoelf,
+      ereignisse: AN([{ key: "serie", anzahl: 3, belohnung: 1, maxProSaison: 3 }], { maxErspielt: 2 }),
+    });
+    expect(r.gebremst).toBe(1);      // der vierte Treffer wurde gebremst
+    expect(r.verworfen).toBe(1);     // vom Rest fiel einer unter den Deckel
+    expect(r.gutschriften).toHaveLength(2);
+  });
+
+  it("die frühen zählen — gebremst wird chronologisch", () => {
+    const r = auswerten({
+      eintraege: zwoelf,
+      ereignisse: AN([{ key: "serie", anzahl: 3, belohnung: 1, maxProSaison: 1 }]),
+    });
+    expect(r.gutschriften[0].matchday).toBe(3);
+  });
+
+  it("die Begrenzer laufen durch sanitize und werden beschnitten", () => {
+    const c = sanitizeEreignisse(AN([{ key: "serie", abstand: 99, maxProSaison: -5 }]));
+    expect(c.aktive[0].abstand).toBe(EREIGNIS_LIMITS.abstand.max);
+    expect(c.aktive[0].maxProSaison).toBe(0);
   });
 });
