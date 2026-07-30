@@ -597,3 +597,47 @@ describe("spielerAusMarkt", () => {
     expect(Object.keys(mit.players.home).sort()).toEqual(["Magno", "Wolf"]);
   });
 });
+
+// ── Die Route liefert dieselbe Qualität wie der Offline-Weg ─
+// `/api/odds` holt seit 30.07. `h2h,totals`. Ohne die Weitergabe in
+// `snapshotsFromTheOddsApi` blieb der Torschnitt trotzdem geschätzt — dieselbe
+// App hätte dann zwei Qualitätsstufen gehabt, je nachdem woher die Quoten kamen.
+describe("snapshotsFromTheOddsApi nimmt die Über/Unter-Linie mit", () => {
+  const event = (mitTotals) => ({
+    id: "evt1", home_team: "Bayern Munich", away_team: "VfB Stuttgart",
+    commence_time: "2026-08-28T18:30:00Z",
+    bookmakers: [{
+      markets: [
+        { key: "h2h", outcomes: [
+          { name: "Bayern Munich", price: 1.27 },
+          { name: "Draw", price: 6.4 },
+          { name: "VfB Stuttgart", price: 7.5 },
+        ] },
+        ...(mitTotals ? [{ key: "totals", outcomes: [
+          { name: "Over", point: 4.5, price: 2.1 },
+          { name: "Under", point: 4.5, price: 1.75 },
+        ] }] : []),
+      ],
+    }],
+  });
+
+  it("ohne totals bleibt der Torschnitt geschätzt — wie bisher", () => {
+    const [s] = snapshotsFromTheOddsApi([event(false)]);
+    expect(s.snapshot.torschnittQuelle).toBe("geschaetzt");
+  });
+
+  it("mit totals ist er gemessen", () => {
+    const [s] = snapshotsFromTheOddsApi([event(true)]);
+    expect(s.snapshot.torschnittQuelle).toBe("totals");
+    expect(s.total).toBeGreaterThan(0);
+    expect(s.snapshot.torschnitt).toBeCloseTo(s.total, 1);
+  });
+
+  it("die echten 1X2-Quoten bleiben in beiden Fällen unangetastet", () => {
+    for (const mit of [true, false]) {
+      const [s] = snapshotsFromTheOddsApi([event(mit)]);
+      expect(s.snapshot.winner.home).toBeCloseTo(1.27, 5);
+      expect(s.snapshot.winner.away).toBeCloseTo(7.5, 5);
+    }
+  });
+});

@@ -563,8 +563,13 @@ export function snapshotsFromTheOddsApi(events = [], { idPrefix = "api", cap = 2
   for (const e of events) {
     const parsed = parseTheOddsApiEvent(e, { idPrefix });
     if (!parsed) continue;
-    const snap = snapshotFromOdds({ ...parsed, cap });
-    if (snap) out.push({ ...parsed, snapshot: snap });
+    // Die Über/Unter-Linie mitnehmen, wenn der Abruf sie enthält. Ohne diese
+    // Zeile blieb der Torschnitt geschätzt, obwohl die Messung im selben
+    // Ergebnis lag — die Route hätte schlechtere Snapshots geliefert als der
+    // Offline-Weg über `npm run odds:holen`.
+    const total = torschnittAusTotals(totalsAusEvent(e));
+    const snap = snapshotFromOdds({ ...parsed, cap, total });
+    if (snap) out.push({ ...parsed, total: total ?? undefined, snapshot: snap });
   }
   return out;
 }

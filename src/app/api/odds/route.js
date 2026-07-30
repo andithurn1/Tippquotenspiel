@@ -20,6 +20,20 @@ const cache = new Map(); // liga → { ts, data }
 
 const BASIS = "https://api.the-odds-api.com/v4/sports";
 
+// Kürzel → Sport-Key des Anbieters. Dieselben Kürzel wie überall sonst im
+// Projekt (`bl`, `pl`, …). Ohne diese Tabelle antwortete `?liga=bl` mit einem
+// 502 „Anbieter antwortete mit 404" — der Aufrufer benutzt das Kürzel, das der
+// Rest der App verwendet, und bekommt eine Fehlermeldung über einen fremden
+// Server. Volle Sport-Keys bleiben erlaubt.
+const KUERZEL = {
+  bl: "soccer_germany_bundesliga",
+  pl: "soccer_epl",
+  pd: "soccer_spain_la_liga",
+  sa: "soccer_italy_serie_a",
+  mls: "soccer_usa_mls",
+  cl: "soccer_uefa_champs_league",
+};
+
 export async function GET(request) {
   const key = process.env.ODDS_API_KEY;
   if (!key) {
@@ -30,7 +44,8 @@ export async function GET(request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const liga = searchParams.get("liga") || "soccer_germany_bundesliga";
+  const roh = searchParams.get("liga") || "bl";
+  const liga = KUERZEL[roh] || roh;
 
   const jetzt = Date.now();
   const gecacht = cache.get(liga);
@@ -38,8 +53,13 @@ export async function GET(request) {
     return Response.json({ ...gecacht.data, gecacht: true });
   }
 
+  // `totals` kommt mit: der Anbieter rechnet Märkte × Regionen, ein zweiter
+  // Markt kostet also 1 Credit für die GANZE Liga. Dafür ist der Torschnitt
+  // gemessen statt geschätzt — sonst lieferte diese Route schlechtere
+  // Snapshots als der Offline-Weg über `npm run odds:holen`, und dieselbe App
+  // hätte zwei Qualitätsstufen, je nachdem woher die Quoten kamen.
   const url = `${BASIS}/${encodeURIComponent(liga)}/odds`
-    + `?regions=eu&markets=h2h&oddsFormat=decimal&apiKey=${encodeURIComponent(key)}`;
+    + `?regions=eu&markets=h2h,totals&oddsFormat=decimal&apiKey=${encodeURIComponent(key)}`;
 
   try {
     const res = await fetch(url, { cache: "no-store" });
