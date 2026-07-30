@@ -255,7 +255,16 @@ export function applySaisonform(verlauf = [], rules = {}) {
     board: stufe.board
       .map((z) => {
         const tage = (proNutzer.get(z.userId) ?? []).slice(0, i + 1);
-        return { ...z, total: anwenden(tage, cfg).total };
+        const r = anwenden(tage, cfg);
+        return {
+          ...z, total: r.total,
+          // Mit an die Zeile, weil der Spieler sonst eine Summe sieht, die
+          // nicht zu seinen Spieltagen passt, und sich das nicht erklären kann.
+          // Dieselbe Regel wie bei den Ertragsquellen: was die Punktzahl
+          // verändert, bekommt einen Namen.
+          gestrichen: r.gestrichen.length,
+          vorlaeufig: r.vorlaeufig,
+        };
       })
       .sort((a, b) => b.total - a.total || String(a.name ?? "").localeCompare(String(b.name ?? ""))),
   }));

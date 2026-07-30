@@ -92,6 +92,17 @@ export default function Ranking() {
                     border: `1px solid ${C.mint}55`, borderRadius: 999, padding: "2px 7px",
                   }}>+{b.saison} Saison</span>
                 )}
+                {/* Streichresultate — ohne diesen Hinweis sieht der Spieler eine
+                    Summe, die nicht zu seinen Spieltagen passt, und kann sich
+                    das nicht erklären. `vorläufig`, weil noch ein schlechterer
+                    Spieltag kommen kann und dann ein anderer herausfällt. */}
+                {b.gestrichen > 0 && (
+                  <span title={`Die ${b.gestrichen} schwächsten Spieltage zählen nicht.`
+                    + (b.vorlaeufig ? " Welche das sind, kann sich noch ändern." : "")} style={{
+                    fontFamily: MONO, fontSize: 10, color: C.muted,
+                    border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 7px",
+                  }}>−{b.gestrichen} gestrichen</span>
+                )}
                 <span style={{
                   fontFamily: MONO, fontSize: 15, fontVariantNumeric: "tabular-nums", minWidth: 44, textAlign: "right",
                   color: b.total < 0 ? C.coral : C.text,

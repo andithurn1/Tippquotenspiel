@@ -338,3 +338,24 @@ describe("brauchtVerlauf", () => {
     expect(brauchtVerlauf()).toBe(false);
   });
 });
+
+// Die Anzeige braucht die Zahl an der Zeile — sonst sieht der Spieler eine
+// Summe, die nicht zu seinen Spieltagen passt, und kann sich das nicht erklären.
+describe("applySaisonform beschriftet die Zeilen", () => {
+  const verlauf3 = [1, 2, 3].map((md) => ({
+    wettbewerb: "bl", matchday: md,
+    board: [{ userId: "a", name: "a", total: [100, 105, 195][md - 1], tips: md, gewertet: md }],
+  }));
+
+  it("nennt, wie viele Spieltage gestrichen wurden", () => {
+    const r = applySaisonform(verlauf3, { saisonform: { streich: 1 } });
+    expect(r[2].board[0].gestrichen).toBe(1);
+    expect(r[2].board[0].vorlaeufig).toBe(true);
+  });
+
+  it("ohne Streicher steht dort nichts Irreführendes", () => {
+    const r = applySaisonform(verlauf3, { saisonform: { kurve: "endspurt" } });
+    expect(r[2].board[0].gestrichen).toBe(0);
+    expect(r[2].board[0].vorlaeufig).toBe(false);
+  });
+});
