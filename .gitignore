@@ -24,3 +24,7 @@ npm-debug.log*
 .claude/settings.local.json
 .claude/launch.json
 scratch/
+
+# Delta-SQL ist eine Wegwerf-Datei (npm run seed:delta) — nach dem
+# naechsten odds:holen veraltet und dann gefaehrlich. Nie einchecken.
+supabase/_quoten-update.sql

@@ -435,6 +435,15 @@ Match-Katalog — Bundesliga 306 · Premier League 380 · La Liga 380 · Serie A
 · Champions League 159 = 1605 Spiele (Aufbau ~50 ms, reine Funktionen, gecacht).
 **Der Bundesliga-Spielplan ist seit 28.07.2026 ECHT** (siehe oben), die übrigen
 vier Wettbewerbe sind weiter erzeugt.
+**Nach einem `odds:holen` reicht `npm run seed:delta`**: es schreibt NUR die
+Spiele mit echten Marktquoten (aktuell 70, ~98 KB) statt aller 1636 in fünf
+Dateien mit 1,8 MB — ein Einfügen im SQL-Editor statt fünf. ⚠️ Die erzeugte
+`supabase/_quoten-update.sql` ist eine **Wegwerf-Datei** und steht in
+`.gitignore`: nach dem nächsten Abruf ist sie veraltet, und wer sie dann noch
+einmal ausführt, schreibt alte Quoten über neue — ohne Fehlermeldung. Erzeugen,
+ausführen, löschen. `npm run seed:matches` bleibt der Weg, wenn sich Klubs,
+Spielpläne oder der Katalog selbst geändert haben.
+
 `ligaGenerator.js` baut eine Saison aus Ratings + Anstoß-Slots (Circle-Methode);
 die vier Ligadateien liefern nur Daten. **`ligen.js` ist die EINE Liste** —
 Mock-Store, Seed-Skript und Vereinsfilter lesen daraus, sonst läuft die
