@@ -98,6 +98,40 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-30 · **Andi** → **Andre** — ✅ **VERCEL DEPLOYT WIEDER.** Der Tarif war's, nicht der Code.
+
+**Der Nutzer hat auf Vercel Pro gewechselt, und `7110cda` ist Ready.** Damit ist
+die Nutzer-Aufgabe „Vercel deployt nicht" aus der Übergabe vom 29.07.
+**erledigt** — sie stand dort als Blocker, und sie war einer: live lief noch
+`021f5fd` vom **26.07.**, also nichts von der gesamten Quoten-, Spielplan- und
+Kader-Arbeit.
+
+**Die Diagnose der anderen Session war exakt richtig** (`9e45df6`/`c3b71f0`):
+der Gratis-Tarif erlaubt nur EINEN Cron-Lauf pro Tag, und ein stündlicher Plan
+in `vercel.json` lässt dort nicht den Cron scheitern, sondern **den ganzen
+Build**. Vier Tage lang hat niemand ein Deployment bekommen, ohne dass
+irgendwo eine sinnvolle Fehlermeldung stand.
+
+**Bestätigt ist das jetzt doppelt:** mit Pro ist `0 * * * *` wieder drin und der
+Build geht durch. Wäre es der Code gewesen, hätte der Tarifwechsel nichts
+geändert.
+
+⚠️ **Für die Zukunft in `CLAUDE.md` festgehalten:** fällt das Projekt je auf
+Hobby zurück, muss `vercel.json` sofort wieder auf `0 3 * * *`. Sonst sucht der
+Nächste den Fehler wieder im Code — und findet ihn dort nicht.
+
+**Was das praktisch heißt:** die Live-App springt von `021f5fd` (26.07.) auf den
+heutigen Stand. Das ist ein Sprung über rund 40 Commits — echte Bundesliga-
+Spielpläne, echte Marktquoten in fünf Ligen, das korrigierte Ergebnis-Raster,
+der gemessene Torschnitt, die Saisonform. **Der erste Live-Blick lohnt sich
+also besonders**, und ungewöhnliche Anzeigen sind dort eher „vier Tage
+Nachholbedarf" als ein neuer Fehler.
+
+**Noch offen an Nutzer-Aufgaben:** `CRON_SECRET` in Vercel prüfen (ohne ihn
+antwortet `/api/matchday/auto` mit 500, der Cron läuft also ins Leere, obwohl
+er jetzt stündlich feuert). Die Seed-Daten sind aktuell — der Nutzer hat das
+Delta-SQL heute ausgeführt.
+
 ### 2026-07-30 · **Andi** → **Andre** — 🔴 **Eigene Fehlmessung, dritte der Sitzung: die Spieltag-Gewichtung ist kein Ausgleichsregler**
 
 `main` grün, **1105 Tests**, Build sauber. Neu: `src/lib/saisonform.js`
@@ -613,10 +647,11 @@ Für ein frisches Fenster und für Andre am Freitag. `main` bei `9f7c0a4`,
 
 #### ⚠️ Offene Nutzer-Aufgaben (nicht von Claude erledigbar)
 
-1. **Vercel deployt nicht.** Live läuft `021f5fd` vom 26.07., `main` ist 26
-   Commits weiter. In Vercel → Settings → Git prüfen, ob Production Branch
-   `main` ist und die GitHub-Verbindung steht. Bis dahin ist nichts von der
-   ganzen Quoten-Arbeit live.
+1. ~~**Vercel deployt nicht.** Live läuft `021f5fd` vom 26.07., `main` ist 26
+   Commits weiter.~~ ✅ **ERLEDIGT am 30.07.** — Ursache war NICHT die
+   Git-Verbindung, sondern der stündliche Cron in `vercel.json`, den der
+   Gratis-Tarif nicht erlaubt: er ließ den ganzen BUILD scheitern. Mit dem
+   Pro-Tarif geht es durch. Siehe den obersten Log-Eintrag.
 2. **`ODDS_API_KEY` fehlt in Vercel** (lokal vorhanden). Ohne ihn bleibt die
    Live-App auf erzeugten Quoten.
 
