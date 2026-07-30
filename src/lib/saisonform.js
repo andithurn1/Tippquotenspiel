@@ -1,0 +1,201 @@
+// ============================================================
+//  SAISONFORM — Gewichtung der Spieltage und Streichresultate
+//
+//  Zwei Stellschrauben, die dieselbe Frage beantworten: **wie stark darf ein
+//  einzelner Spieltag die Saison bestimmen?** Beide greifen NICHT in `scoreTip`,
+//  sondern auf die FERTIGEN Spieltagspunkte — dieselbe Bauart wie
+//  `catchup.js`, und aus demselben Grund: die Wertung eines Spiels darf nicht
+//  davon abhängen, wann in der Saison es liegt oder wie andere Spieltage
+//  ausgingen. Sonst wäre ein Tipp nicht mehr für sich bewertbar.
+//
+//  1) GEWICHTUNG — eine Kurve über die Saison.
+//
+//     🔴 **ACHTUNG, das ist KEIN Ausgleichsregler.** Beim Bauen stand hier die
+//     Begründung „der eleganteste Hebel gegen einen davonziehenden Führenden".
+//     Die Messung hat sie umgeworfen (400 Läufe × 34 Spieltage × 12 Tipper):
+//
+//       Form                          Bester gewinnt   Vorsprung 1./2.
+//       flach                              74,0 %           3,66 %
+//       Endspurt x2,5 (Stärke konstant)    68,8 %           3,86 %
+//       Endspurt x2,5 (mit Formkurven)     53,0 %           4,95 %
+//
+//     Die Gewichtung senkt den Vorsprung des Führenden nicht, sie VERGRÖSSERT
+//     ihn — und kostet massiv Können-Ausdruck. Grund: Gewicht auf einen Teil
+//     der Saison zu konzentrieren verkleinert die effektive Stichprobe. Weniger
+//     wirksame Spieltage heißt mehr Rauschen, und wer in der schweren Phase
+//     zufällig heiß läuft, gewinnt mit größerem Abstand.
+//
+//     Was sie wirklich ist: ein DRAMATURGIE-Regler („das letzte Drittel
+//     entscheidet"). Als Spielgefühl legitim — aber in der Bibliothek gehört
+//     sie unter „verstärkend", nie in eine Ausgleichs-Empfehlung.
+//
+//  2) STREICHRESULTATE — die n schlechtesten Spieltage zählen nicht. Von den
+//     beiden das einzige, das tut, was es soll: 6 Streicher senken den
+//     Vorsprung von 3,66 auf 3,45 %, bei nur 1,5 Punkten weniger
+//     Können-Ausdruck — und die Wirkung hängt NICHT davon ab, ob sich die Form
+//     der Spieler ändert (73,0 % in beiden Szenarien).
+//
+//  ⚠️ **Die Summe der Gewichte bleibt konstant** (Mittelwert 1). Ohne diese
+//  Normierung höbe „Endspurt" das gesamte Punkteniveau an, und die
+//  Anzeige-Skalierung (`displayScale`) wanderte mit — dieselbe Falle wie bei
+//  „Bonus für den Letzten hebt das Niveau, Malus für den Ersten senkt es".
+//  Die Kurve verschiebt Gewicht, sie erzeugt keines.
+// ============================================================
+
+export const KURVEN = [
+  {
+    key: "flach",
+    label: "Gleichmäßig",
+    text: "Jeder Spieltag zählt gleich viel.",
+  },
+  {
+    key: "steigend",
+    label: "Langsam steigend",
+    text: "Später im Jahr zählt etwas mehr. Ein früher Vorsprung schmilzt von selbst.",
+  },
+  {
+    key: "endspurt",
+    label: "Endspurt",
+    text: "Das letzte Drittel entscheidet. Bis dahin bleibt fast jeder dran.",
+  },
+  {
+    key: "rueckrunde",
+    label: "Rückrunde zählt doppelt",
+    text: "Die zweite Saisonhälfte wiegt schwerer — die klassische Halbzeit-Regel.",
+  },
+];
+
+export const KURVE = Object.fromEntries(KURVEN.map((k) => [k.key, k]));
+
+export const SAISONFORM_LIMITS = {
+  streich: { min: 0, max: 8, step: 1 },
+  staerke: { min: 1.0, max: 2.5, step: 0.1 },
+};
+
+export const DEFAULT_SAISONFORM = {
+  kurve: "flach",
+  staerke: 1.5,        // wie ausgeprägt die Kurve ist (1.0 = flach, egal welche)
+  streich: 0,          // wie viele Spieltage gestrichen werden
+  nurGetippte: true,   // siehe unten — die wichtigste Voreinstellung des Moduls
+};
+
+function clamp(v, { min, max }, fallback) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+}
+
+export function sanitizeSaisonform(partial = {}) {
+  const p = partial && typeof partial === "object" ? partial : {};
+  const kurve = KURVE[p.kurve] ? p.kurve : DEFAULT_SAISONFORM.kurve;
+  return {
+    kurve,
+    staerke: +clamp(p.staerke, SAISONFORM_LIMITS.staerke, DEFAULT_SAISONFORM.staerke).toFixed(2),
+    streich: Math.round(clamp(p.streich, SAISONFORM_LIMITS.streich, DEFAULT_SAISONFORM.streich)),
+    // Nur ein ausdrückliches `false` schaltet es ab. Wer das Feld vergisst,
+    // bekommt die sichere Variante — siehe die Warnung bei `streichen()`.
+    nurGetippte: p.nurGetippte !== false,
+  };
+}
+
+// ── Die Kurve ───────────────────────────────────────────────
+// Liefert für n Spieltage n Faktoren mit Mittelwert 1. `staerke` spreizt sie:
+// 1.0 ist immer flach, 2.5 ist die stärkste erlaubte Spreizung.
+export function gewichte(kurve, anzahl, staerke = DEFAULT_SAISONFORM.staerke) {
+  const n = Math.max(0, Math.floor(anzahl));
+  if (!n) return [];
+  const s = Math.max(1, Number(staerke) || 1);
+  // Rohform je Kurve, danach auf Mittelwert 1 normiert.
+  const roh = Array.from({ length: n }, (_, i) => {
+    const t = n === 1 ? 0 : i / (n - 1);         // 0 … 1 über die Saison
+    switch (kurve) {
+      case "steigend":   return 1 + (s - 1) * (t - 0.5);
+      case "endspurt":   return t >= 2 / 3 ? s : 1;
+      case "rueckrunde": return t >= 0.5 ? s : 1;
+      default:           return 1;
+    }
+  });
+  const summe = roh.reduce((a, b) => a + b, 0);
+  // Mittelwert exakt 1: die Kurve verschiebt Gewicht, sie erzeugt keines.
+  return roh.map((f) => +(f * n / summe).toFixed(6));
+}
+
+// ── Streichen ───────────────────────────────────────────────
+// ⚠️ **Die Falle, an der dieses Feature sonst scheitert:** Streichresultate
+// machen das AUSLASSEN kostenlos. Wer einen Spieltag gar nicht tippt, hat dort
+// null Punkte — genau der Wert, der am ehesten gestrichen wird. Damit wird aus
+// der Regel „ein Ausrutscher wird verziehen" ein „zwei Spieltage darfst du
+// schwänzen", und das arbeitet direkt gegen `versaeumnis`, das denselben Fall
+// mit einem Ersatz-Tipp und einem Malus abdeckt.
+//
+// Deshalb streicht `nurGetippte: true` (Vorgabe) ausschließlich Spieltage, an
+// denen tatsächlich getippt wurde. Ein verpasster Spieltag bleibt stehen.
+function streichIndizes(werte, streich, nurGetippte) {
+  if (!(streich > 0)) return new Set();
+  const kandidaten = werte
+    .map((w, i) => ({ i, punkte: w.punkte, getippt: w.getippt !== false }))
+    .filter((w) => (nurGetippte ? w.getippt : true))
+    // Der schlechteste zuerst; bei Gleichstand der frühere, damit das Ergebnis
+    // nicht an der Eingabereihenfolge hängt.
+    .sort((a, b) => a.punkte - b.punkte || a.i - b.i)
+    .slice(0, streich);
+  return new Set(kandidaten.map((k) => k.i));
+}
+
+// ── Anwenden ────────────────────────────────────────────────
+// `spieltage` = [{ key, punkte, getippt }] in CHRONOLOGISCHER Reihenfolge.
+// Gibt die gewichtete Summe zurück, dazu was gestrichen wurde und mit welchem
+// Faktor jeder Spieltag zählte — die Aufschlüsselung ist der halbe Wert der
+// Sache, sonst wirkt ein springender Zwischenstand willkürlich.
+export function anwenden(spieltage = [], saisonform = DEFAULT_SAISONFORM) {
+  const cfg = sanitizeSaisonform(saisonform);
+  const liste = Array.isArray(spieltage) ? spieltage : [];
+  const f = gewichte(cfg.kurve, liste.length, cfg.staerke);
+
+  // Gestrichen wird nach dem GEWICHTETEN Wert: ein schwacher Spieltag mit
+  // hohem Gewicht kostet mehr als ein schwacher mit niedrigem, und genau den
+  // will man loswerden. Nach rohen Punkten zu streichen verschenkte den
+  // teuersten Ausrutscher.
+  const gewichtet = liste.map((s, i) => ({
+    ...s, faktor: f[i] ?? 1, punkte: (Number(s.punkte) || 0) * (f[i] ?? 1),
+  }));
+  const raus = streichIndizes(gewichtet, cfg.streich, cfg.nurGetippte);
+
+  let total = 0;
+  const detail = gewichtet.map((s, i) => {
+    const gestrichen = raus.has(i);
+    if (!gestrichen) total += s.punkte;
+    return { key: s.key, faktor: +s.faktor.toFixed(3), punkte: +s.punkte.toFixed(2), gestrichen };
+  });
+
+  return {
+    total: +total.toFixed(2),
+    detail,
+    gestrichen: detail.filter((d) => d.gestrichen).map((d) => d.key),
+    // Solange die Saison läuft, kann sich ändern, WELCHER Spieltag gestrichen
+    // wird — ein schlechterer kann noch kommen. Der Zwischenstand ist deshalb
+    // vorläufig, und das muss die Oberfläche sagen dürfen.
+    vorlaeufig: cfg.streich > 0,
+  };
+}
+
+// Ein Satz für die Spielerstellung. Ohne ihn ist die Kurve eine Zahl, mit ihm
+// eine Aussage — dieselbe Rolle wie `anteilHinweis()` bei den
+// Wettbewerbs-Gewichten.
+export function beschreibeSaisonform(saisonform = DEFAULT_SAISONFORM, spieltage = 34) {
+  const cfg = sanitizeSaisonform(saisonform);
+  const teile = [];
+  if (cfg.kurve !== "flach" && cfg.staerke > 1) {
+    const f = gewichte(cfg.kurve, spieltage, cfg.staerke);
+    const ersterZehnter = f.slice(0, Math.max(1, Math.round(spieltage / 10)));
+    const letzterZehnter = f.slice(-Math.max(1, Math.round(spieltage / 10)));
+    const mittel = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+    const verhaeltnis = mittel(letzterZehnter) / mittel(ersterZehnter);
+    teile.push(`${KURVE[cfg.kurve].label}: die letzten Spieltage zählen etwa `
+      + `${verhaeltnis.toFixed(1)}× so viel wie die ersten.`);
+  }
+  if (cfg.streich > 0) {
+    teile.push(`Die ${cfg.streich} schlechtesten Spieltage zählen nicht`
+      + (cfg.nurGetippte ? " — aber nur solche, an denen du getippt hast." : "."));
+  }
+  return teile.length ? teile.join(" ") : "Jeder Spieltag zählt gleich viel.";
+}

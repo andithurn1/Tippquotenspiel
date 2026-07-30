@@ -1753,22 +1753,71 @@ Beim Durchgehen des Bestands sind mir vier Stellen aufgefallen, an denen heute
 ein FESTER Wert steht, wo eine Einstellung Spielsinn hätte — zwei davon dienen
 direkt dem Ziel „der Erste soll nicht davonziehen" und sind billig:
 
-**1. ⭐ Spieltag-Gewichtung über die Saison** (`spieltagGewicht`). Heute zählt
-jeder Spieltag gleich. Klassisch und stark: eine KURVE — flach · steigend ·
-Endspurt (letztes Drittel zählt mehr). **Das ist der eleganteste Hebel gegen
-einen davonziehenden Führenden**, den es gibt: ein früher Vorsprung ist einfach
-weniger wert, ohne dass irgendjemand einen Malus bekommt oder ein Modifikator
-greift. Reine Multiplikation auf fertige Spieltagspunkte, also leicht zu
-vermessen. ⚠️ Gegenwarnung: zu steil und die ersten 20 Spieltage sind
-bedeutungslos — dann steigt man vorne aus statt hinten.
+**1. Spieltag-Gewichtung über die Saison** — 🔴 **GEBAUT und VERMESSEN, und die
+Messung hat meine eigene Begründung umgeworfen** (`src/lib/saisonform.js`,
+30.07.).
 
-**2. ⭐ Streichresultate** (`streichergebnisse: n`). Die n schlechtesten
-Spieltage zählen nicht. In Tippspielen seit jeher üblich, weil es einen
-verpatzten Spieltag oder einen Urlaub verzeiht — und es wirkt ausgleichend,
-ohne jemandem etwas zu schenken. Verträgt sich außerdem mit dem
-Versäumnis-Modul, statt mit ihm zu konkurrieren. ⚠️ Ab wann greifen sie? Erst
-am Saisonende zu streichen macht den Zwischenstand unlesbar; laufend zu
-streichen macht ihn springend. Vorschlag: laufend, aber sichtbar als „vorläufig".
+> ⚠️ **Ich hatte hier geschrieben: „der eleganteste Hebel gegen einen
+> davonziehenden Führenden". Das ist FALSCH.** 400 Läufe × 34 Spieltage ×
+> 12 Tipper, gemessen wurde, wie oft der stärkste Tipper die Saison gewinnt und
+> wie groß der Vorsprung des Ersten ist:
+>
+> | Form | Bester gewinnt | Vorsprung 1./2. |
+> |---|---|---|
+> | flach | 74,0 % | 3,66 % |
+> | Endspurt ×2,5, Stärke konstant | 68,8 % | 3,86 % |
+> | **Endspurt ×2,5, mit Formkurven** | **53,0 %** | **4,95 %** |
+> | Rückrunde ×2,0, mit Formkurven | 57,0 % | 4,43 % |
+>
+> **Die Gewichtung senkt den Vorsprung des Führenden NICHT — sie vergrößert
+> ihn**, und sie kostet massiv Können-Ausdruck. Der Grund ist im Nachhinein
+> offensichtlich und war es vorher nicht: **Gewicht auf einen Teil der Saison zu
+> konzentrieren verkleinert die effektive Stichprobe.** Weniger wirksame
+> Spieltage heißt mehr Rauschen, und wer zufällig in der schweren Phase heiß
+> läuft, gewinnt mit größerem Abstand. Aus einem Fairness-Regler wird ein
+> Zufallsregler.
+>
+> **Was sie WIRKLICH ist:** ein Dramaturgie-Regler. „Das letzte Drittel
+> entscheidet" macht das Saisonende spannend und ist als Spielgefühl legitim —
+> aber sie gehört in die Bibliothek unter **verstärkend/zufällig**, nicht unter
+> ausgleichend, und niemals in die Empfehlung für „der Erste soll nicht
+> davonziehen". Genau dafür ist die gemessene Wirkrichtung da.
+>
+> **Die Lehre ist dieselbe wie bei ρ:** die Mechanik war plausibel, der
+> Wirkzusammenhang erfunden. Erst die Messung mit FORMKURVEN (Spieler, deren
+> Stärke sich über die Saison ändert) hat es gezeigt — bei konstanter Stärke
+> ist der Effekt klein und man hätte ihn übersehen.
+
+**2. ⭐ Streichresultate** (`streich` in `saisonform.js`) — **GEBAUT, und als
+einziges der beiden tut es, was es soll.** Dieselbe Messung:
+
+| Form | Bester gewinnt | Vorsprung 1./2. |
+|---|---|---|
+| flach | 74,0 % | 3,66 % |
+| 3 Streicher | 73,0 % | 3,57 % |
+| 6 Streicher | 72,5 % | **3,45 %** |
+
+Der Vorsprung sinkt, der Können-Ausdruck bleibt fast unberührt (−1,5 Punkte),
+und — anders als bei der Gewichtung — **ist die Wirkung unabhängig davon, ob
+sich die Form der Spieler ändert** (73,0 % in beiden Szenarien). Das ist ein
+echter, wenn auch milder Ausgleichsregler. Er verzeiht Urlaub und Ausrutscher.
+
+⚠️ **Die Falle, an der Streichresultate sonst scheitern, ist gelöst:** sie
+machen das AUSLASSEN kostenlos. Ein nicht getippter Spieltag hat null Punkte —
+genau der Wert, der zuerst gestrichen wird. Aus „ein Ausrutscher wird
+verziehen" würde „zwei Spieltage darfst du schwänzen", und das arbeitet direkt
+gegen `versaeumnis`. Deshalb streicht `nurGetippte: true` (Vorgabe) nur
+Spieltage, an denen wirklich getippt wurde.
+
+⚠️ Gestrichen wird nach dem GEWICHTETEN Wert, nicht nach rohen Punkten — sonst
+verschenkt man den teuersten Ausrutscher. Und der Zwischenstand ist
+`vorlaeufig`, solange gestrichen wird: welcher Spieltag herausfällt, kann sich
+noch ändern.
+
+**Noch offen:** beide sind reine Funktionen und noch nicht ins Leaderboard
+eingehängt (das berührt `scoreLeaderboardHistory`, wo auch `applyCatchup`
+sitzt). Und sie gehören durch `balanceSim`, bevor sie in ein Preset kommen —
+die Messung oben ist ein eigenes, vereinfachtes Modell, kein Ersatz dafür.
 
 **3. Sichtbarkeit fremder Tipps** (`tippSicht`). Heute hart verdrahtet: fremde
 Tipps erst, wenn das Spiel ein Ergebnis hat. Sinnvolle Varianten: *nach

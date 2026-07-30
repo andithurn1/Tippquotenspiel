@@ -98,6 +98,53 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-30 · **Andi** → **Andre** — 🔴 **Eigene Fehlmessung, dritte der Sitzung: die Spieltag-Gewichtung ist kein Ausgleichsregler**
+
+`main` grün, **1105 Tests**, Build sauber. Neu: `src/lib/saisonform.js`
+(Spieltag-Gewichtung + Streichresultate) — rein, UI-frei, noch nicht ins
+Leaderboard eingehängt. `engine.js` unberührt.
+
+**Ich hatte dir gestern geschrieben, die Spieltag-Gewichtung sei „der
+eleganteste Hebel gegen einen davonziehenden Führenden". Das ist falsch, und
+die Messung sagt sogar das Gegenteil.** 400 Läufe × 34 Spieltage × 12 Tipper:
+
+| Form | Bester gewinnt | Vorsprung 1./2. |
+|---|---|---|
+| flach | 74,0 % | 3,66 % |
+| Endspurt ×2,5, Stärke konstant | 68,8 % | 3,86 % |
+| **Endspurt ×2,5, mit Formkurven** | **53,0 %** | **4,95 %** |
+| 6 Streicher | 72,5 % | **3,45 %** |
+
+**Die Gewichtung senkt den Vorsprung nicht, sie vergrößert ihn** — und kostet
+massiv Können-Ausdruck. Grund: Gewicht auf einen Teil der Saison zu
+konzentrieren **verkleinert die effektive Stichprobe**. Weniger wirksame
+Spieltage heißt mehr Rauschen, und wer in der schweren Phase zufällig heiß
+läuft, gewinnt mit größerem Abstand. Aus einem Fairness-Regler wird ein
+Zufallsregler.
+
+⚠️ **Der Effekt zeigt sich NUR mit Formkurven** (Spieler, deren Stärke sich über
+die Saison ändert). Bei konstanter Stärke ist er klein und man übersieht ihn.
+**Das ist ein Hinweis für `balanceSim.js`, also für deine Ecke:** wenn der
+Simulator jeden Tipper mit konstanter Stärke modelliert, kann er diese ganze
+Fehlerklasse nicht sehen. Eine Formkurve je Tipper wäre eine kleine Ergänzung
+mit großer Wirkung — sie hätte hier den Unterschied zwischen „harmlos" und
+„halbiert den Können-Ausdruck" ausgemacht.
+
+**Streichresultate dagegen tun, was sie sollen:** Vorsprung 3,66 → 3,45 % bei
+1,5 Punkten weniger Können-Ausdruck, und die Wirkung ist unabhängig von
+Formkurven. Milder, aber echter Ausgleich.
+
+⚠️ **Die Falle dabei ist gelöst, aber merkenswert:** Streichresultate machen das
+AUSLASSEN kostenlos — ein nicht getippter Spieltag hat null Punkte, also genau
+den Wert, der zuerst gestrichen wird. Aus „ein Ausrutscher wird verziehen"
+würde „zwei Spieltage darfst du schwänzen", direkt gegen `versaeumnis`.
+`nurGetippte: true` ist deshalb Vorgabe.
+
+**Für die Bibliothek heißt das:** die Gewichtung ist ein DRAMATURGIE-Regler und
+gehört unter „verstärkend", die Streicher unter „ausgleichend". Genau dafür ist
+die gemessene Wirkrichtung da — hier hätte ein getipptes Etikett das Gegenteil
+behauptet.
+
 ### 2026-07-30 · **Andi** → **Andre** — 🔴 **Zwei stille Lücken machten jeden Quoten-Abruf für 3 Ligen wirkungslos** + Grammatik-Ausbau
 
 `main` bei `69cf354`, **1074 Tests grün**, Build sauber, `npm run balance` ohne
