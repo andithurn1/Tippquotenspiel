@@ -3,7 +3,7 @@
 //    sind (siehe store.js). Scoring bleibt in der Engine — hier werden
 //    nur Rohdaten geladen/geschrieben.
 
-import { DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules } from "./engine";
+import { DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules, brauchtVerlauf } from "./engine";
 import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
@@ -230,9 +230,12 @@ export function createSupabaseStore() {
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
       const rules = round?.rules ?? DEFAULT_RULES;
       const entries = tips.map((t) => eintragVon(t, nameOf, matchOf));
-      // Bei aktivem Aufhol-Bonus über den Verlauf (Endstand mit Bonus).
+      // Verlaufsabhängige Regeln (Aufhol-Bonus, Saisonform) über den Verlauf.
+      // WELCHE das sind, entscheidet die Engine an einer Stelle — hier stand
+      // vorher `rules.aufholen?.enabled`, und mit der Saisonform war das still
+      // falsch.
       let board;
-      if (rules.aufholen?.enabled) {
+      if (brauchtVerlauf(rules)) {
         const h = scoreLeaderboardHistory(entries, rules);
         board = h.length ? h[h.length - 1].board : [];
       } else {

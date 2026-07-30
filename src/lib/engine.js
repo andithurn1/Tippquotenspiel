@@ -853,6 +853,24 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES) {
 // `spieltageChronologisch`. Nach Zahl sortiert würde der Verlauf springen und
 // der Aufhol-Bonus zum falschen Zeitpunkt greifen, weil er am Stand VOR dem
 // Spieltag hängt.
+// Braucht dieses Regelwerk den VERLAUF, um einen Endstand zu berechnen?
+//
+// `scoreLeaderboard` summiert nur — das genügt, solange keine Regel auf die
+// Abfolge der Spieltage schaut. Sobald eine es tut, muss der Endstand aus
+// `scoreLeaderboardHistory` kommen, sonst fehlt ihr Beitrag stillschweigend.
+//
+// ⚠️ **Diese Frage gehört an EINE Stelle.** Sie stand als
+// `rules.aufholen?.enabled` in beiden Store-Dateien — und als die Saisonform
+// dazukam, waren beide falsch, ohne dass irgendetwas fehlschlug: Streicher und
+// Gewichtung wurden im Leaderboard schlicht nicht angewandt, außer der
+// Aufhol-Bonus war zufällig auch an. Wer hier eine dritte verlaufsabhängige
+// Regel ergänzt, ändert nur diese Funktion.
+export function brauchtVerlauf(rules = DEFAULT_RULES) {
+  if (rules?.aufholen?.enabled === true) return true;
+  const sf = sanitizeSaisonform(rules?.saisonform);
+  return sf.kurve !== "flach" || sf.streich > 0;
+}
+
 export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES) {
   const geordnet = spieltageChronologisch(entries);
 

@@ -3,7 +3,7 @@ import {
   KURVEN, KURVE, SAISONFORM_LIMITS, DEFAULT_SAISONFORM,
   sanitizeSaisonform, gewichte, anwenden, beschreibeSaisonform, applySaisonform,
 } from "@/lib/saisonform";
-import { DEFAULT_RULES, sanitizeRules, scoreLeaderboardHistory } from "@/lib/engine";
+import { DEFAULT_RULES, sanitizeRules, scoreLeaderboardHistory, brauchtVerlauf } from "@/lib/engine";
 
 // Ein Spieltag, wie ihn der Verlauf liefert.
 const s = (key, punkte, getippt = true) => ({ key, punkte, getippt });
@@ -303,5 +303,38 @@ describe("scoreLeaderboardHistory nimmt die Saisonform an", () => {
     expect(r.saisonform.kurve).toBe("endspurt");
     expect(r.saisonform.streich).toBe(SAISONFORM_LIMITS.streich.max);
     expect(sanitizeRules(r)).toEqual(r);
+  });
+});
+
+// ── brauchtVerlauf: die Naht zum Store ──────────────────────
+// Der Endstand kam bisher nur dann aus dem Verlauf, wenn der Aufhol-Bonus an
+// war (`rules.aufholen?.enabled`, in BEIDEN Store-Dateien). Mit der Saisonform
+// war das still falsch: Streicher und Gewichtung wurden im Leaderboard
+// schlicht nicht angewandt, außer der Bonus war zufällig auch an. Die Frage
+// gehört deshalb an eine Stelle.
+describe("brauchtVerlauf", () => {
+  it("ohne verlaufsabhängige Regel genügt die Summe", () => {
+    expect(brauchtVerlauf(DEFAULT_RULES)).toBe(false);
+  });
+
+  it("der Aufhol-Bonus braucht den Verlauf", () => {
+    expect(brauchtVerlauf({ ...DEFAULT_RULES, aufholen: { enabled: true } })).toBe(true);
+  });
+
+  it("Streicher brauchen ihn auch", () => {
+    expect(brauchtVerlauf({ ...DEFAULT_RULES, saisonform: { streich: 2 } })).toBe(true);
+  });
+
+  it("eine Gewichtungskurve ebenso", () => {
+    expect(brauchtVerlauf({ ...DEFAULT_RULES, saisonform: { kurve: "endspurt" } })).toBe(true);
+  });
+
+  it("eine flache Kurve ohne Streicher ist kein Grund", () => {
+    expect(brauchtVerlauf({ ...DEFAULT_RULES, saisonform: { kurve: "flach", streich: 0 } })).toBe(false);
+  });
+
+  it("kommt mit fehlenden Regeln klar", () => {
+    expect(brauchtVerlauf({})).toBe(false);
+    expect(brauchtVerlauf()).toBe(false);
   });
 });

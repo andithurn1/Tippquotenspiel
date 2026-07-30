@@ -3,7 +3,7 @@
 // „Freundeskreis" auf dem Match JOR-ESP (real 5:1). Zurücksetzen bei
 // jedem Prozessstart — bewusst, es ist nur eine Attrappe.
 
-import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules } from "./engine";
+import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules, brauchtVerlauf } from "./engine";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { generateJoinCode } from "./joinCode";
 import { alleMatches } from "./ligen";
@@ -248,7 +248,11 @@ export function createMockStore() {
       const roundTips = tips.filter((t) => t.round_id === roundId);
       const entries = roundTips.map(eintragVon);
       let board;
-      if (rules.aufholen?.enabled) {
+      // Verlaufsabhängige Regeln (Aufhol-Bonus, Saisonform) brauchen den ganzen
+      // Verlauf. WELCHE das sind, entscheidet die Engine an einer Stelle —
+      // hier stand vorher `rules.aufholen?.enabled`, und mit der Saisonform war
+      // das still falsch.
+      if (brauchtVerlauf(rules)) {
         const h = scoreLeaderboardHistory(entries, rules);
         board = h.length ? h[h.length - 1].board : [];
       } else {
