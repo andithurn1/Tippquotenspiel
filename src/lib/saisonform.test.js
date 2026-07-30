@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   KURVEN, KURVE, SAISONFORM_LIMITS, DEFAULT_SAISONFORM,
-  sanitizeSaisonform, gewichte, anwenden, beschreibeSaisonform,
+  sanitizeSaisonform, gewichte, anwenden, beschreibeSaisonform, applySaisonform,
 } from "@/lib/saisonform";
+import { DEFAULT_RULES, sanitizeRules, scoreLeaderboardHistory } from "@/lib/engine";
 
 // Ein Spieltag, wie ihn der Verlauf liefert.
 const s = (key, punkte, getippt = true) => ({ key, punkte, getippt });
@@ -116,10 +117,16 @@ describe("Streichresultate", () => {
     expect(anwenden(saison, { streich: 0 }).gestrichen).toEqual([]);
   });
 
-  it("mehr streichen als da sind, geht nicht schief", () => {
+  it("es bleibt immer mindestens ein Spieltag stehen", () => {
+    // Sonst stünden am 2. Spieltag einer Runde mit „3 Streichern" alle bei
+    // null, und die Tabelle wäre so lange leer, bis genug Spieltage zusammen
+    // sind. Ein Zwischenstand, den es aus Regelgründen nicht gibt, sieht wie
+    // ein Fehler aus — und der Spieler kann nicht wissen, dass er keiner ist.
     const r = anwenden(saison, { streich: 8 });
-    expect(r.gestrichen).toHaveLength(5);
-    expect(r.total).toBe(0);
+    expect(r.gestrichen).toHaveLength(4);
+    expect(r.total).toBe(100);          // der beste Spieltag bleibt
+    const zwei = anwenden([s("a", 40), s("b", 10)], { streich: 3 });
+    expect(zwei.total).toBe(40);
   });
 
   // ⚠️ Die Falle, an der dieses Feature sonst scheitert.
@@ -182,5 +189,119 @@ describe("Klartext für die Spielerstellung", () => {
   it("erwähnt die Streicher samt der Einschränkung auf Getipptes", () => {
     expect(beschreibeSaisonform({ streich: 2 })).toMatch(/getippt/i);
     expect(beschreibeSaisonform({ streich: 2, nurGetippte: false })).not.toMatch(/getippt hast/i);
+  });
+});
+
+// ── Anbindung an den Verlauf ────────────────────────────────
+describe("applySaisonform", () => {
+  // Verlauf wie aus scoreLeaderboardHistory: kumulative Stände je Spieltag.
+  const verlauf = (proNutzer) => {
+    const tage = proNutzer[Object.keys(proNutzer)[0]].length;
+    return Array.from({ length: tage }, (_, i) => ({
+      wettbewerb: "bl", matchday: i + 1,
+      board: Object.entries(proNutzer).map(([userId, punkte]) => ({
+        userId, name: userId,
+        total: punkte.slice(0, i + 1).reduce((a, b) => a + b, 0),
+        tips: i + 1, gewertet: i + 1,
+      })).sort((a, b) => b.total - a.total),
+    }));
+  };
+
+  it("ist die Regel aus, bleibt der Verlauf unangetastet", () => {
+    const v = verlauf({ a: [10, 20, 30] });
+    expect(applySaisonform(v, {})).toBe(v);
+    expect(applySaisonform(v, { saisonform: DEFAULT_SAISONFORM })).toBe(v);
+  });
+
+  it("Streicher wirken auf jede Stufe des Verlaufs", () => {
+    const v = verlauf({ a: [100, 5, 90], b: [70, 70, 70] });
+    const r = applySaisonform(v, { saisonform: { streich: 1 } });
+    // Letzte Stufe: A verliert seinen 5er, B einen 70er.
+    const letzte = r[r.length - 1].board;
+    expect(letzte.find((z) => z.userId === "a").total).toBe(190);
+    expect(letzte.find((z) => z.userId === "b").total).toBe(140);
+    expect(letzte[0].userId).toBe("a");
+  });
+
+  it("jede Stufe rechnet nur mit den bis dahin gespielten Spieltagen", () => {
+    // Der Zwischenstand muss aus sich heraus stimmen, nicht aus der Sicht
+    // des Saisonendes.
+    const v = verlauf({ a: [100, 5, 90] });
+    const r = applySaisonform(v, { saisonform: { streich: 1 } });
+    expect(r[0].board[0].total).toBe(100);   // ein Spieltag → nichts gestrichen
+    expect(r[1].board[0].total).toBe(100);   // der 5er fällt weg
+    expect(r[2].board[0].total).toBe(190);
+  });
+
+  it("die Tabelle wird nach der neuen Summe neu sortiert", () => {
+    const v = verlauf({ fuehrend: [100, 100, 0], stetig: [70, 70, 70] });
+    const r = applySaisonform(v, { saisonform: { streich: 1 } });
+    const letzte = r[r.length - 1].board;
+    expect(letzte[0].userId).toBe("fuehrend");
+    expect(letzte[0].total).toBe(200);
+  });
+
+  // ⚠️ Nicht getippt ist nicht dasselbe wie null Punkte.
+  it("ein ausgelassener Spieltag wird nicht als Nullrunde gestrichen", () => {
+    const v = [
+      { wettbewerb: "bl", matchday: 1, board: [{ userId: "a", name: "a", total: 80, tips: 1, gewertet: 1 }] },
+      // Spieltag 2 ausgelassen: Summe unverändert, `gewertet` unverändert.
+      { wettbewerb: "bl", matchday: 2, board: [{ userId: "a", name: "a", total: 80, tips: 1, gewertet: 1 }] },
+      { wettbewerb: "bl", matchday: 3, board: [{ userId: "a", name: "a", total: 100, tips: 2, gewertet: 2 }] },
+    ];
+    const r = applySaisonform(v, { saisonform: { streich: 1 } });
+    // Gestrichen wird der schwächere GETIPPTE (20), nicht die Nichtteilnahme.
+    expect(r[2].board[0].total).toBe(80);
+  });
+});
+
+// ── Verdrahtung in der Engine ───────────────────────────────
+// Der Beweis, dass die Saisonform im echten Verlauf ankommt — und nicht nur
+// als Modul danebenliegt. Genau die Lücke, die bei den Quoten-Dateien zweimal
+// unbemerkt geblieben war.
+describe("scoreLeaderboardHistory nimmt die Saisonform an", () => {
+  const eintrag = (userId, matchday, punkte) => ({
+    userId, name: userId, matchday, wettbewerb: "bl",
+    matchId: `m${matchday}-${userId}`,
+    tip: { home: 1, away: 0 },
+    result: { home: 1, away: 0 },
+    // Ein Snapshot, dessen Quote die Punktzahl steuert: je kleiner die Quote,
+    // desto weniger Punkte. So lassen sich starke und schwache Spieltage bauen.
+    snapshot: {
+      matchId: `m${matchday}-${userId}`,
+      winner: { home: punkte, draw: 4, away: 6 },
+      correctScore: [[punkte, 5, 9], [6, 7, 11], [12, 14, 20]],
+      teamGoals: { home: [2, 3, 6], away: [4, 3, 4] },
+      margin: { home: [0, 3, 7], away: [0, 3, 7] },
+    },
+  });
+
+  const eintraege = [
+    ...[1, 2, 3].map((md) => eintrag("a", md, md === 2 ? 1.05 : 9)),
+    ...[1, 2, 3].map((md) => eintrag("b", md, 4)),
+  ];
+
+  it("ohne Saisonform bleibt alles wie bisher", () => {
+    const ohne = scoreLeaderboardHistory(eintraege, DEFAULT_RULES);
+    const mitFlach = scoreLeaderboardHistory(eintraege, sanitizeRules({
+      ...DEFAULT_RULES, saisonform: { kurve: "flach", streich: 0 },
+    }));
+    expect(mitFlach).toEqual(ohne);
+  });
+
+  it("ein Streicher verändert den Endstand", () => {
+    const ohne = scoreLeaderboardHistory(eintraege, DEFAULT_RULES);
+    const mit = scoreLeaderboardHistory(eintraege, sanitizeRules({
+      ...DEFAULT_RULES, saisonform: { streich: 1 },
+    }));
+    const summe = (v) => v[v.length - 1].board.reduce((s, z) => s + z.total, 0);
+    expect(summe(mit)).toBeLessThan(summe(ohne));
+  });
+
+  it("die Saisonform reist über sanitizeRules mit", () => {
+    const r = sanitizeRules({ ...DEFAULT_RULES, saisonform: { kurve: "endspurt", streich: 99 } });
+    expect(r.saisonform.kurve).toBe("endspurt");
+    expect(r.saisonform.streich).toBe(SAISONFORM_LIMITS.streich.max);
+    expect(sanitizeRules(r)).toEqual(r);
   });
 });

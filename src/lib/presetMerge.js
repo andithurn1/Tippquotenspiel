@@ -62,9 +62,14 @@ export const ASPEKTE = [
   },
   {
     key: "fairness",
-    label: "Anschluss & Versäumnis",
-    hint: "Aufhol-Bonus für Zurückliegende und was bei einem vergessenen Spieltag passiert.",
-    keys: ["aufholen", "versaeumnis"],
+    label: "Anschluss, Versäumnis & Saisonform",
+    hint: "Aufhol-Bonus, vergessene Spieltage — und wie stark ein einzelner Spieltag die Saison bestimmt.",
+    // `saisonform` gehört hierher, weil es dieselbe Frage beantwortet wie der
+    // Aufhol-Bonus: wie stark darf ein Rückstand werden. Die beiden greifen
+    // nacheinander auf denselben Verlauf — wer das eine übernimmt, will das
+    // andere mit, sonst gleicht ein Bonus einen Abstand aus, den die
+    // Saisonform gar nicht entstehen lässt.
+    keys: ["aufholen", "versaeumnis", "saisonform"],
   },
   {
     key: "saison",

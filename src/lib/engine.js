@@ -5,6 +5,7 @@
 // ============================================================
 
 import { applyCatchup, BETRIFFT, betrifftWert } from "./catchup";
+import { applySaisonform, sanitizeSaisonform, DEFAULT_SAISONFORM } from "./saisonform";
 
 
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
@@ -159,6 +160,15 @@ export const DEFAULT_RULES = {
   //  schwelle — ab welchem Rückstand (Anteil an der Spitze) es überhaupt greift
   //  betrifft — "letzter" | "unteres-drittel" | "unter-schnitt"
   aufholen: { enabled: false, staerke: 0.2, schwelle: 0.2, betrifft: "unteres-drittel" },
+
+  // ── Saisonform: Gewichtung der Spieltage + Streichresultate ──
+  // Greift NICHT in scoreTip, sondern auf die fertigen Spieltagspunkte im
+  // Verlauf — wie der Aufhol-Bonus, und aus demselben Grund. Standard ist ein
+  // No-op (flache Kurve, keine Streicher).
+  // ⚠️ Die GEWICHTUNG ist gemessen KEIN Ausgleichsregler, sondern ein
+  // Dramaturgie-Regler — sie vergrößert den Vorsprung des Ersten. Details im
+  // Kopf von `saisonform.js`.
+  saisonform: { ...DEFAULT_SAISONFORM },
 
   // ── Versäumnis: was passiert, wenn jemand einen Spieltag vergisst ──
   //  strategie    — "wahrscheinlich" | "schnitt" | "zufall" (siehe autoTip.js)
@@ -368,6 +378,9 @@ export function sanitizeRules(partial = {}) {
           ? { betrifftWert: betrifftWert(betrifft, a.betrifftWert) } : {}),
       };
     })(),
+    // Der Katalog der Kurven ist die EINE Quelle — deshalb delegiert, wie bei
+    // Saison-Wetten und Joker-Verteilung auch.
+    saisonform: sanitizeSaisonform(src.saisonform),
     versaeumnis: (() => {
       const v = src.versaeumnis && typeof src.versaeumnis === "object" ? src.versaeumnis : {};
       const erlaubt = ["wahrscheinlich", "schnitt", "zufall"];
@@ -854,10 +867,15 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES) {
       return r != null && r <= i;
     }), rules),
   }));
-  // Aufhol-Boni erst hier drauf: sie hängen am Stand VOR dem Spieltag, lassen
-  // sich also nur über den fertigen Verlauf berechnen (siehe catchup.js).
-  // Ist die Regel aus, gibt applyCatchup den Verlauf unverändert zurück.
-  return applyCatchup(roh, rules);
+  // Reihenfolge der beiden Nachbearbeitungen ist NICHT beliebig:
+  //
+  // 1. Saisonform (Gewichtung + Streichresultate) formt die Spieltagspunkte um.
+  // 2. Aufhol-Boni reagieren auf den Rückstand — und der soll die Gewichtung
+  //    und die Streicher schon enthalten, sonst gleicht der Bonus einen
+  //    Abstand aus, den es nach den Regeln der Runde gar nicht gibt.
+  //
+  // Beide geben den Verlauf unverändert zurück, wenn ihre Regel aus ist.
+  return applyCatchup(applySaisonform(roh, rules), rules);
 }
 
 

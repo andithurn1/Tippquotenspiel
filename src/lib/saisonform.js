@@ -131,13 +131,20 @@ export function gewichte(kurve, anzahl, staerke = DEFAULT_SAISONFORM.staerke) {
 // denen tatsächlich getippt wurde. Ein verpasster Spieltag bleibt stehen.
 function streichIndizes(werte, streich, nurGetippte) {
   if (!(streich > 0)) return new Set();
+  // ⚠️ Es bleibt IMMER mindestens ein Spieltag stehen. Sonst stehen am 2.
+  // Spieltag einer Runde mit „3 Streichern" alle bei null Punkten, und die
+  // Tabelle ist so lange leer, bis genug Spieltage zusammen sind. Ein
+  // Zwischenstand, der aus Regelgründen nicht existiert, sieht wie ein Fehler
+  // aus — und der Spieler kann nicht wissen, dass er keiner ist.
+  const moeglich = Math.min(streich, Math.max(0, werte.length - 1));
+  if (!moeglich) return new Set();
   const kandidaten = werte
     .map((w, i) => ({ i, punkte: w.punkte, getippt: w.getippt !== false }))
     .filter((w) => (nurGetippte ? w.getippt : true))
     // Der schlechteste zuerst; bei Gleichstand der frühere, damit das Ergebnis
     // nicht an der Eingabereihenfolge hängt.
     .sort((a, b) => a.punkte - b.punkte || a.i - b.i)
-    .slice(0, streich);
+    .slice(0, moeglich);
   return new Set(kandidaten.map((k) => k.i));
 }
 
@@ -198,4 +205,58 @@ export function beschreibeSaisonform(saisonform = DEFAULT_SAISONFORM, spieltage 
       + (cfg.nurGetippte ? " — aber nur solche, an denen du getippt hast." : "."));
   }
   return teile.length ? teile.join(" ") : "Jeder Spieltag zählt gleich viel.";
+}
+
+// ── Anbindung an den Verlauf ────────────────────────────────
+// `verlauf` = [{ wettbewerb, matchday, board }] aus `scoreLeaderboardHistory`,
+// `board` = [{ userId, name, total, … }] als KUMULATIVER Stand.
+//
+// Die Saisonform braucht Punkte JE SPIELTAG, der Verlauf hält Summen — die
+// Differenz zum Vorstand liefert sie. Danach wird der Verlauf mit den neu
+// gewichteten Summen überschrieben.
+//
+// ⚠️ **Reihenfolge gegenüber dem Aufhol-Bonus:** Saisonform ZUERST, Catchup
+// danach. Der Anschluss-Bonus reagiert auf den Rückstand — und der soll die
+// Gewichtung und die Streicher schon enthalten, sonst gleicht er einen
+// Abstand aus, den es nach den Regeln der Runde gar nicht gibt.
+//
+// ⚠️ **Nicht getippt ist nicht dasselbe wie null Punkte.** Ein Spieler, der
+// einen Spieltag ausgelassen hat, erscheint im kumulativen Board mit
+// unveränderter Summe — die Differenz ist 0, aber das ist keine Leistung von 0,
+// sondern eine Nichtteilnahme. `gewertet` unterscheidet beides; ohne diese
+// Unterscheidung würde `nurGetippte` wirkungslos.
+export function applySaisonform(verlauf = [], rules = {}) {
+  const cfg = sanitizeSaisonform(rules?.saisonform);
+  const aus = cfg.kurve === "flach" && !(cfg.streich > 0);
+  if (aus || !Array.isArray(verlauf) || verlauf.length === 0) return verlauf;
+
+  // Je Nutzer die Punkte jedes Spieltags aus den kumulativen Ständen holen.
+  const proNutzer = new Map();
+  verlauf.forEach((stufe, i) => {
+    const vorher = i > 0 ? verlauf[i - 1].board : [];
+    const vorSumme = new Map(vorher.map((z) => [z.userId, z.total]));
+    const vorGewertet = new Map(vorher.map((z) => [z.userId, z.gewertet ?? 0]));
+    for (const z of stufe.board) {
+      if (!proNutzer.has(z.userId)) proNutzer.set(z.userId, []);
+      proNutzer.get(z.userId).push({
+        key: `${stufe.wettbewerb ?? ""}#${stufe.matchday}`,
+        punkte: z.total - (vorSumme.get(z.userId) ?? 0),
+        // Getippt heißt: an diesem Spieltag kam mindestens eine Wertung dazu.
+        getippt: (z.gewertet ?? 0) > (vorGewertet.get(z.userId) ?? 0),
+      });
+    }
+  });
+
+  // Für jede Stufe des Verlaufs neu aufsummieren — mit genau den Spieltagen,
+  // die BIS DAHIN gespielt sind. Der Zwischenstand muss aus sich heraus
+  // stimmen, nicht aus der Sicht des Saisonendes.
+  return verlauf.map((stufe, i) => ({
+    ...stufe,
+    board: stufe.board
+      .map((z) => {
+        const tage = (proNutzer.get(z.userId) ?? []).slice(0, i + 1);
+        return { ...z, total: anwenden(tage, cfg).total };
+      })
+      .sort((a, b) => b.total - a.total || String(a.name ?? "").localeCompare(String(b.name ?? ""))),
+  }));
 }
