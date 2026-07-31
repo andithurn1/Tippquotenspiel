@@ -10,6 +10,7 @@ import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
 import { STAERKE_STUFEN, BETRIFFT } from "@/lib/catchup";
 import { KURVEN, KURVE, SAISONFORM_LIMITS, beschreibeSaisonform } from "@/lib/saisonform";
+import { TIPPEINFLUSS_LIMITS, beschreibeTippEinfluss } from "@/lib/tippEinfluss";
 import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
 import { alleVereine, vereineVon, LIGEN } from "@/lib/ligen";
 import { wettbewerbLabel } from "@/lib/wettbewerbe";
@@ -101,6 +102,7 @@ export default function Spielerstellung() {
   const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
   const patchSaisonform = (p) => { touched(); setRules((r) => ({ ...r, saisonform: { ...(r.saisonform || DEFAULT_RULES.saisonform), ...p } })); };
+  const patchTippEinfluss = (p) => { touched(); setRules((r) => ({ ...r, tippEinfluss: { ...(r.tippEinfluss || DEFAULT_RULES.tippEinfluss), ...p } })); };
   const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
   const patchBigGame = (p) => { touched(); setRules((r) => ({ ...r, bigGame: { ...r.bigGame, ...p } })); };
   const setSaison = (saison) => { touched(); setRules((r) => ({ ...r, saison })); };
@@ -290,6 +292,7 @@ export default function Spielerstellung() {
   const tmAktiv = tm.derbyFaktor > 1 || Object.keys(tmTeams).length > 0;
   const au = rules.aufholen || DEFAULT_RULES.aufholen;
   const sf = rules.saisonform || DEFAULT_RULES.saisonform;
+  const te = rules.tippEinfluss || DEFAULT_RULES.tippEinfluss;
   const ve = rules.versaeumnis || DEFAULT_RULES.versaeumnis;
   const bg = rules.bigGame || DEFAULT_RULES.bigGame;
   // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
@@ -706,6 +709,79 @@ export default function Spielerstellung() {
                 onChange={(on) => patchGoals({ allowDouble: on })} />
               <Toggle label="Backup-Schützen erlaubt" on={g.allowBackups}
                 onChange={(on) => patchGoals({ allowBackups: on })} />
+            </div>
+          )}
+
+          {/* Tipp-Einfluss auf die Quote (Totalisator-Anteil) */}
+          <SectionTitle>Bewegt eure Runde die Quoten?</SectionTitle>
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+            Normalerweise gelten allein die Marktquoten. Ihr könnt aber einstellen, dass
+            eure eigenen Tipps mitzählen — wie bei einem Totalisator. <strong>Wer tippt,
+            was alle tippen, bekommt dann weniger</strong>; wer sich traut, mehr.
+          </p>
+
+          <Field label="Wie stark zählt die Runde mit?">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {[
+                { v: 0, label: "aus" },
+                { v: 0.25, label: "Hauch" },
+                { v: 0.5, label: "spürbar" },
+                { v: 1, label: "voll" },
+              ].map((s) => {
+                const on = te.staerke === s.v;
+                return (
+                  <button key={s.v} onClick={() => patchTippEinfluss({ staerke: s.v })} style={{
+                    cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                    background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
+                    border: `1px solid ${on ? C.gold + "66" : C.line}`,
+                  }}>{s.label}</button>
+                );
+              })}
+            </div>
+          </Field>
+
+          {te.staerke > 0 && (
+            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
+              {/* Der eigentliche Regler. „Gegen wie viele virtuelle Mitspieler
+                  tretet ihr an" ist die Frage, die ein Admin beantworten kann —
+                  ein abstrakter Mischungsfaktor wäre es nicht. */}
+              <Slider label="Gegen wie großen Markt?" value={te.marktTiefe}
+                min={TIPPEINFLUSS_LIMITS.marktTiefe.min} max={TIPPEINFLUSS_LIMITS.marktTiefe.max}
+                step={TIPPEINFLUSS_LIMITS.marktTiefe.step}
+                fmt={(v) => `${v} Mitspieler`}
+                onChange={(v) => patchTippEinfluss({ marktTiefe: v })} />
+              <p style={{ fontSize: 11, color: C.muted, marginTop: -8, marginBottom: 12, lineHeight: 1.4 }}>
+                Kleiner Markt = eure Tipps schlagen stärker durch. Großer Markt = ihr seid
+                ein Tropfen darin, so wie ein einzelner Wetter bei einem Buchmacher.
+              </p>
+
+              <Slider label="Erst ab wie vielen Tippern?" value={te.minTipper}
+                min={TIPPEINFLUSS_LIMITS.minTipper.min} max={TIPPEINFLUSS_LIMITS.minTipper.max}
+                step={TIPPEINFLUSS_LIMITS.minTipper.step}
+                fmt={(v) => `${v} Tipper`}
+                onChange={(v) => patchTippEinfluss({ minTipper: v })} />
+              <p style={{ fontSize: 11, color: C.muted, marginTop: -8, marginBottom: 10, lineHeight: 1.4 }}>
+                Darunter bleibt alles beim Markt — zu wenige Tipps wären Zufall, keine
+                Meinung.
+              </p>
+
+              {/* Die Live-Vorschau ist hier die eigentliche Betreuung: „50 %
+                  Mischung" sagt niemandem etwas, „ein Tipp verschiebt 0,45 %"
+                  schon. Dieselbe Rolle wie anteile() bei den Wettbewerben. */}
+              <p style={{
+                fontSize: 11.5, color: C.text, lineHeight: 1.45,
+                padding: "8px 10px", borderRadius: 8, background: C.surface, border: `1px solid ${C.line}`,
+              }}>
+                {beschreibeTippEinfluss(te, Math.max(te.minTipper, 12))}
+              </p>
+
+              <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                Fair bleibt es durch zwei Regeln: <strong>dein eigener Tipp drückt deine
+                eigene Quote nicht</strong>, und gerechnet wird erst nach Anpfiff, wenn
+                alle Tipps da sind — früh oder spät tippen ändert also nichts. Die
+                Sieger-Quoten (1X2) bleiben unangetastet, verschoben werden nur die
+                Ergebnis-Quoten.
+              </p>
             </div>
           )}
 
