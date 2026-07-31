@@ -6,6 +6,7 @@
 
 import { applyCatchup, BETRIFFT, betrifftWert } from "./catchup";
 import { applySaisonform, sanitizeSaisonform, DEFAULT_SAISONFORM } from "./saisonform";
+import { mitTippEinfluss, sanitizeTippEinfluss, DEFAULT_TIPPEINFLUSS } from "./tippEinfluss";
 
 
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
@@ -169,6 +170,13 @@ export const DEFAULT_RULES = {
   // Dramaturgie-Regler — sie vergrößert den Vorsprung des Ersten. Details im
   // Kopf von `saisonform.js`.
   saisonform: { ...DEFAULT_SAISONFORM },
+
+  // ── Tipp-Einfluss: die Runde bewegt die Quote mit (Totalisator) ──
+  // Standard AUS. Verschiebt nur das ERGEBNIS-Raster, nie die 1X2 — die
+  // bleiben der äußere Marktanker. `marktTiefe` ist der eigentliche Regler:
+  // gegen wie viele „virtuelle Mitspieler" die Runde antritt. Details und die
+  // drei Fairness-Regeln im Kopf von `tippEinfluss.js`.
+  tippEinfluss: { ...DEFAULT_TIPPEINFLUSS },
 
   // ── Versäumnis: was passiert, wenn jemand einen Spieltag vergisst ──
   //  strategie    — "wahrscheinlich" | "schnitt" | "zufall" (siehe autoTip.js)
@@ -381,6 +389,7 @@ export function sanitizeRules(partial = {}) {
     // Der Katalog der Kurven ist die EINE Quelle — deshalb delegiert, wie bei
     // Saison-Wetten und Joker-Verteilung auch.
     saisonform: sanitizeSaisonform(src.saisonform),
+    tippEinfluss: sanitizeTippEinfluss(src.tippEinfluss),
     versaeumnis: (() => {
       const v = src.versaeumnis && typeof src.versaeumnis === "object" ? src.versaeumnis : {};
       const erlaubt = ["wahrscheinlich", "schnitt", "zufall"];
@@ -823,7 +832,14 @@ export function projectTip(tip, snap, rules = DEFAULT_RULES) {
 // (Match noch nicht ausgewertet) zählen 0. Rückgabe absteigend sortiert mit Rang.
 export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES) {
   const byUser = new Map();
-  for (const e of entries) {
+  // Tipp-Einfluss: die Runde bewegt das Ergebnis-Raster mit. Ist die Regel aus
+  // (Vorgabe), kommen die Einträge unverändert zurück — dieselben Objekte, kein
+  // Kopieren. Hier und nicht beim Speichern des Tipps, weil die Mischung erst
+  // feststehen darf, wenn ALLE Tipps da sind (siehe tippEinfluss.js).
+  // ⚠️ Der Verlauf ruft diese Funktion je Spieltag erneut auf und mischt damit
+  // jeweils nur mit den bis dahin sichtbaren Tipps — das ist richtig so: ein
+  // Zwischenstand soll aus sich heraus stimmen.
+  for (const e of mitTippEinfluss(entries, rules)) {
     const cur = byUser.get(e.userId) || { userId: e.userId, name: e.name, total: 0, tips: 0, gewertet: 0 };
     cur.tips += 1;
     if (e.result) {

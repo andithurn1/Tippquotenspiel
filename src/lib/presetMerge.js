@@ -81,7 +81,9 @@ export const ASPEKTE = [
     key: "maerkte",
     label: "Märkte",
     hint: "Worauf überhaupt getippt wird (Ergebnis, Torschützen, Anzahl der Tipps).",
-    keys: ["markets", "oddsMode"],
+    // `tippEinfluss` gehört hierher, weil es beantwortet, WORAUS die Quote
+    // entsteht — also zur selben Frage wie `oddsMode`, nicht zur Fairness.
+    keys: ["markets", "oddsMode", "tippEinfluss"],
   },
   {
     key: "anzeige",
