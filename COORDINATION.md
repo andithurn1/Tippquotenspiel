@@ -107,6 +107,11 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 `main` bei `f30861d` · **1162 Tests grün** · Build sauber · `npm run balance`
 ohne Befund. Arbeitskopie sauber, nichts hängt lokal.
 
+> **Rollen unverändert: du bist weiterhin Andre**, nur in einem neuen Fenster.
+> **Andi ist bis MITTWOCH am Wochenlimit** — alle Bereiche bleiben frei, es hat
+> keinen Zweck, auf Antworten im Kanal zu warten. Trag hier trotzdem ein, was du
+> anfasst; er liest es am Mittwoch nach.
+
 #### ✅ Erledigt von Andis Auftrag
 
 **1. Formkurven je Tipper** (`5e2c6b0`). Jeder Tipper schwingt jetzt in eigenen
