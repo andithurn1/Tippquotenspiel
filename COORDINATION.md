@@ -99,6 +99,95 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-31 · **ÜBERGABE an die nächste Andre-Session** — 🔄 **Punkte 1+2 erledigt, 3+4 offen**
+
+> **👉 Frische Session: DAS ist dein Einstieg.** Das Fenster davor lief voll,
+> der Nutzer arbeitet ab jetzt in einem neuen Chat weiter.
+
+`main` bei `f30861d` · **1162 Tests grün** · Build sauber · `npm run balance`
+ohne Befund. Arbeitskopie sauber, nichts hängt lokal.
+
+#### ✅ Erledigt von Andis Auftrag
+
+**1. Formkurven je Tipper** (`5e2c6b0`). Jeder Tipper schwingt jetzt in eigenen
+Wellen über die Saison, zwei Phasen, damit sie nicht im Gleichtakt laufen. Form
+zieht die Trefferquote zur BASIS (Tippen ohne Information) und wieder weg —
+beim Kenner schmilzt in schwacher Phase also seine UNTERSCHEIDUNG, er wagt an
+den falschen Stellen. Die beiden Extreme tragen bewusst keine Form (sie sind
+Messinstrumente). Wirkung: der Kenner verliert quer durch alle Presets ~6
+Punkte Siegquote — ehrlichere Messung, kein schlechteres Spiel.
+⚠️ **Dabei kippten drei Tests, und das war der Ertrag.** Sie liefen mit 30
+Saisons und EINER Saatzahl; seit die Form streut, trägt das nicht mehr. Ich
+habe die Zusicherungen NICHT gelockert, sondern die Messung tragfähig gemacht
+(80 bzw. 60 Saisons).
+
+**2. Tipp-Einfluss messbar** (`f30861d`). Die Blindstelle lag tiefer als
+beschrieben: mit fünf Archetypen liegt die Runde unter `minTipper` (8) — die
+Regel hätte nie feuern können. Neu ist ein **Publikum** (ungewertete Mittipper,
+bewusst schief gemischt, weil eine Gleichverteilung keine Herde hätte).
+**Andis Vorhersage bestätigt:** Favorit 14,2 % → 9,2 %, Kenner 56,7 % → 71,7 %,
+Solide 12,5 % → 8,3 %.
+**Zusatzbefund fürs Empfehlungsband:** mehr Einfluss ist NICHT besser. Bei
+hoher Stärke und kleiner Markttiefe übertönt die Gruppe den Marktanker, aus
+Information wird Rauschen, der Zocker steigt (4,2 → 7,5 %). Zart einstellen;
+die **Markttiefe** ist der wichtigere der beiden Regler.
+
+#### 🔴 Offen — hier machst du weiter
+
+**3. `saisonform` messbar machen** (`src/lib/saisonform.js`, von Andi).
+Spieltag-Gewichtung + Streichresultate, hängt in `scoreLeaderboardHistory` vor
+`applyCatchup`. Vorgehen wie bei Punkt 2: erst prüfen, ob der Simulator sie
+überhaupt SIEHT, dann messen. Die Formkurven aus Punkt 1 sind die
+Voraussetzung — Andi hat belegt, dass Spieltag-Gewichtung ohne sie harmlos
+aussieht (74 % → 68,8 %) und mit ihnen den Können-Ausdruck halbiert (74 % → 53 %).
+
+**4. Der RLS-Befund** — laut Andi der wichtigste offene Posten im ganzen
+Projekt. `tips_update_own` prüft den Anpfiff nicht, und `tips.snapshot` wird vom
+CLIENT geschrieben — der Wert, an dem die ganze Auszahlung hängt. Braucht einen
+Trigger, der den Snapshot serverseitig setzt. Berührt `schema.sql` → danach
+**Nutzer-Aufgabe** (SQL im Supabase-Editor ausführen).
+
+#### 🟡 Offene Fäden vom Nutzer (aus meinem Fenster, noch nicht gebaut)
+
+- **Steal-Joker.** Version 2 („am Gewinn mitverdienen") ist entworfen und
+  unbedenklich, solange sie **keinen neuen Punkte-Kanal** aufmacht (Nullsumme
+  oder Deckel wie `maxErspielt`). **Version 1 („fremde Tipps blockieren") habe
+  ich NICHT gebaut** — sie bricht die Regel, dass ein abgegebener Tipp seinen
+  Wert nicht mehr ändert, und lädt zum Ganging-up auf den Führenden ein. Mein
+  Gegenvorschlag: **gegen jemanden wetten** statt blockieren — genauso frech,
+  aber vor Anpfiff festgelegt und symmetrisch. **Der Nutzer hat dazu noch nicht
+  entschieden — bitte nachfragen, bevor du baust.**
+- **Saison-Wetten erweitern.** (a) Die Bayern-Verdrahtung raus: im Preset
+  „Ohne den Titelfavoriten" steht viermal `ausser: ["FC Bayern München"]` fest
+  — in einer Premier-League-Runde sinnlos. (b) Katalog erweitern: Absteiger,
+  Vizemeister, Top-4, **direkter Vergleich** („wer steht am Ende vor wem"),
+  Tabellenplatz-Vorhersage **mit Bereich** (der Gladbach-Fall). (c) Sichtbarkeit
+  + Fortschritt + Historie — ⚠️ Fairness-Kante: fremde Tipps erst NACH
+  Fensterschluss zeigen.
+- **Tipp-Fenster-UI.** Das Modell ist fertig (`anker` je Spiel/Spieltag,
+  `erklaereTippfenster()` mit drei Klartext-Zeilen, `dauerText()`), nur die
+  Oberfläche fehlt: freies Eingabefeld statt nur vier Stufen + die drei Zeilen
+  anzeigen.
+- **Grenzen-Durchgang.** Ich hatte `mutFaktor` gefunden: eine Messung war als
+  engere HARTE Grenze gelandet, der Regler endete kurz hinter der Empfehlung.
+  Behoben — aber ich habe die übrigen `RULE_LIMITS` nicht systematisch geprüft.
+
+#### 📌 Arbeitsweise, die sich bewährt hat
+
+- **Erst prüfen, ob der Simulator eine neue Ebene SIEHT, dann messen.** Diese
+  Lehre hat inzwischen fünf Blindstellen gefunden.
+- **Testsuite sichert INVARIANTEN, `npm run balance` MISST.** Eine Aussage, die
+  3 Saatzahlen × 40 Saisons braucht, gehört nicht in die Suite.
+- **Eine Messung verengt NIE `RULE_LIMITS`** — sie landet als Band in
+  `reglerWarnung.js`, mit Beispielrechnung.
+- **UI immer im Browser prüfen.** Hat mehrfach Dinge gefunden, die Tests und
+  Build anstandslos passiert haben (`wettbewerbeIn` liefert Objekte statt Keys;
+  `overflow: hidden` im Telefon-Rahmen bricht `position: sticky`).
+- ⚠️ **Node ist nicht im PATH.** Jedem Aufruf voranstellen:
+  `$env:PATH = "C:\Users\andit\AppData\Local\Microsoft\WinGet\Packages\OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe\node-v24.18.0-win-x64;" + $env:PATH`
+- **Commit-Nachrichten über eine Datei** (`git commit -F`) — PowerShell zerlegt
+  mehrzeilige Texte an den Anführungszeichen.
+
 ### 2026-07-30 · **ÜBERGABE an Andre** — 🎯 **Deine Aufgabe: der Simulator sieht drei Dinge nicht**
 
 > **👉 Wer als frische Session einsteigt: DAS ist deine Aufgabe.** Kurz unten
