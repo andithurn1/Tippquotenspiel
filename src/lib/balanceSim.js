@@ -88,17 +88,56 @@ function impliedDistribution(snap) {
 // Favoriten" und „setzt stur auf Außenseiter" sind keine Menschen, sondern
 // MESSINSTRUMENTE. Sie halten je einen Rand fest, an dem man abliest, ob das
 // Regelwerk kippt; eine Ausnahme darin würde die Skala verbiegen.
+// ── FORM: niemand ist eine Saison lang gleich stark ─────────
+// Bis hierher war jeder Tipper über 34 Spieltage konstant. Das klingt harmlos
+// und macht den Simulator für eine ganze FEHLERKLASSE blind: alles, was einen
+// AUSSCHNITT der Saison stärker gewichtet, verkleinert die effektive
+// Stichprobe — und das sieht man nur, wenn die Stichprobe überhaupt streut.
+//
+// Belegt an der Spieltag-Gewichtung: bei konstanter Stärke sah sie harmlos aus
+// (Kenner 74 % → 68,8 %), mit Formkurven halbierte sie den Können-Ausdruck
+// (74 % → 53 %) und vergrößerte den Vorsprung des Ersten.
+//
+// Modelliert als glatte Welle mit eigener Phase je Tipper, plus eine zweite,
+// schnellere Schwingung — eine reine Sinuskurve wäre zu regelmäßig, echte Form
+// kommt in ungleichen Wellen. Deterministisch aus dem Seed.
+//
+// `form` ist ein Faktor um 1: >1 gut drauf, <1 schwache Phase. Er zieht die
+// Trefferquote zur BASIS (= Tippen ohne Information) und wieder weg davon —
+// Form ist also nicht „mehr Glück", sondern „ich lese die Spiele gerade
+// besser oder schlechter".
+const FORM_AMPLITUDE = 0.45;
+
+export function formFaktor(phase, phase2, md, spieltage) {
+  const t = spieltage > 0 ? md / spieltage : 0;
+  const welle = Math.sin(2 * Math.PI * (t + phase))
+    + 0.5 * Math.sin(2 * Math.PI * (2.7 * t + phase2));
+  return 1 + FORM_AMPLITUDE * (welle / 1.5);
+}
+
+// Trefferquote unter Form: `p` ist die Quote mit voller Information, `basis`
+// die ohne. Bei form = 1 bleibt alles wie bisher.
+const mitForm = (p, basis, form) => basis + (p - basis) * form;
+
+// ⚠️ `form: false` bei den beiden Extremen — aus demselben Grund wie
+// `fanBrille`. „Tippt immer den Favoriten" und „setzt stur auf Außenseiter"
+// sind keine Menschen, sondern MESSINSTRUMENTE: sie halten je einen Rand fest,
+// an dem man abliest, ob das Regelwerk kippt. Ein Instrument, das mal besser
+// und mal schlechter misst, verbiegt die Skala.
 export const PROFILE = [
   { key: "favorit", label: "Favoriten-Tipper", desc: "tippt immer den Favoriten",
-    aussenseiter: () => false, fanBrille: false },
+    aussenseiter: () => false, fanBrille: false, form: false },
   { key: "solide", label: "Solide", desc: "fast immer Favorit, selten mal mutig",
-    aussenseiter: (u, r) => r() < 0.12, fanBrille: true },
+    aussenseiter: (u, r, f) => r() < mitForm(0.12, 0.12, f), fanBrille: true, form: true },
   { key: "kenner", label: "Kenner", desc: "wagt gezielt — erwischt ~jede 4. Überraschung",
-    aussenseiter: (u, r) => r() < (u ? 0.28 : 0.07), fanBrille: true },
+    // Der einzige mit echter UNTERSCHEIDUNG (0.28 bei Überraschung gegen 0.07
+    // sonst). Genau die schmilzt in schwacher Form Richtung Basis 0.12 — dann
+    // wagt er zwar noch, aber nicht mehr an den richtigen Stellen.
+    aussenseiter: (u, r, f) => r() < mitForm(u ? 0.28 : 0.07, 0.12, f), fanBrille: true, form: true },
   { key: "mutig", label: "Mutig", desc: "etwa jedes zweite Spiel Außenseiter",
-    aussenseiter: (u, r) => r() < 0.45, fanBrille: true },
+    aussenseiter: (u, r, f) => r() < mitForm(0.45, 0.45, f), fanBrille: true, form: true },
   { key: "zocker", label: "Zocker", desc: "setzt stur auf Außenseiter",
-    aussenseiter: () => true, fanBrille: false },
+    aussenseiter: () => true, fanBrille: false, form: false },
 ];
 
 function strategien(snap, verteilung) {
@@ -226,6 +265,10 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
 
   for (let s = 0; s < seasons; s++) {
     const saison = new Array(n).fill(0);
+    // Je Saison eine eigene Formkurve pro Tipper — zwei Phasen, damit die
+    // Wellen nicht im Gleichtakt laufen. Wären alle gleichzeitig gut drauf,
+    // höbe sich die Form gegenseitig auf und wäre wieder unsichtbar.
+    const formPhase = PROFILE.map(() => [rand(), rand()]);
     // Kumulativer Stand je Spieltag — Grundlage, um den Aufhol-Bonus zu prüfen
     // (er hängt am Stand VOR dem jeweiligen Spieltag).
     const verlauf = aufholenAktiv ? [] : null;
@@ -274,7 +317,10 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
         if (p.fanBrille && idx === eigenesSpiel[pi] && rand() < FAN_OPTIMISMUS) {
           return !eigenerIstFavorit[pi];   // eigener Verein Außenseiter → Außenseiter-Tipp
         }
-        return p.aussenseiter(sp.ueberraschung, rand);
+        // Form nur bei den „Menschen" — die beiden Messinstrumente bleiben
+        // konstant, sonst verbiegt sich die Skala, an der wir ablesen.
+        const f = p.form ? formFaktor(formPhase[pi][0], formPhase[pi][1], md, matchdays) : 1;
+        return p.aussenseiter(sp.ueberraschung, rand, f);
       }));
       // Joker: jeder setzt ihn auf sein erstes Außenseiter-Spiel (dort ist am
       // meisten zu holen), sonst aufs erste Spiel.

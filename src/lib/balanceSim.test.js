@@ -1,10 +1,60 @@
 import { describe, it, expect } from "vitest";
-import { simulateBalance, bewerten } from "./balanceSim";
+import { simulateBalance, bewerten, formFaktor, PROFILE } from "./balanceSim";
 import { DEFAULT_RULES, sanitizeRules } from "./engine";
 import { PRESETS } from "./presets";
 
 // Klein halten, damit die Tests flott bleiben — die Aussagen sind dieselben.
 const KLEIN = { seasons: 25, matchdays: 9, perMatchday: 9, seed: 7 };
+
+describe("Formkurven — niemand ist eine Saison lang gleich stark", () => {
+  it("die Kurve schwingt über die Saison und bleibt um 1 herum", () => {
+    const werte = Array.from({ length: 34 }, (_, md) => formFaktor(0.2, 0.7, md, 34));
+    expect(Math.max(...werte)).toBeGreaterThan(1.1);
+    expect(Math.min(...werte)).toBeLessThan(0.9);
+    // Kein Ausreißer, der die Trefferquote ins Absurde zieht.
+    expect(Math.max(...werte)).toBeLessThan(1.6);
+    expect(Math.min(...werte)).toBeGreaterThan(0.4);
+  });
+
+  it("verschiedene Phasen laufen NICHT im Gleichtakt", () => {
+    // Wären alle Tipper gleichzeitig gut drauf, höbe sich die Form gegenseitig
+    // auf und wäre wieder unsichtbar — genau der Fehler, den sie beheben soll.
+    const a = Array.from({ length: 34 }, (_, md) => formFaktor(0.0, 0.1, md, 34));
+    const b = Array.from({ length: 34 }, (_, md) => formFaktor(0.5, 0.9, md, 34));
+    const abstand = a.reduce((s, x, i) => s + Math.abs(x - b[i]), 0) / a.length;
+    expect(abstand).toBeGreaterThan(0.15);
+  });
+
+  it("die beiden Messinstrumente tragen KEINE Form", () => {
+    // „Tippt immer den Favoriten" und „setzt stur auf Außenseiter" halten je
+    // einen Rand fest. Ein Instrument, das mal besser misst, verbiegt die Skala.
+    const instrumente = PROFILE.filter((p) => p.key === "favorit" || p.key === "zocker");
+    expect(instrumente).toHaveLength(2);
+    for (const p of instrumente) expect(p.form).toBe(false);
+    // Und alle übrigen tragen sie.
+    for (const p of PROFILE.filter((x) => !["favorit", "zocker"].includes(x.key))) {
+      expect(p.form).toBe(true);
+    }
+  });
+
+  it("beim Kenner schmilzt in schwacher Form die UNTERSCHEIDUNG", () => {
+    // Der Punkt ist nicht „er wagt weniger", sondern „er wagt an den falschen
+    // Stellen": bei Form 0 ist seine Quote bei Überraschung dieselbe wie ohne.
+    const kenner = PROFILE.find((p) => p.key === "kenner");
+    const quote = (u, f) => {
+      let treffer = 0;
+      for (let i = 0; i < 2000; i++) {
+        const werte = [(i + 0.5) / 2000];
+        if (kenner.aussenseiter(u, () => werte[0], f)) treffer++;
+      }
+      return treffer / 2000;
+    };
+    // Volle Form: klarer Unterschied zwischen Überraschung und nicht.
+    expect(quote(true, 1) - quote(false, 1)).toBeGreaterThan(0.15);
+    // Keine Form: kein Unterschied mehr.
+    expect(Math.abs(quote(true, 0) - quote(false, 0))).toBeLessThan(0.01);
+  });
+});
 
 describe("simulateBalance — der Ranking-Joker bleibt messbar", () => {
   // Regression zu einem stillen Messfehler: der Simulator setzte als Gewicht

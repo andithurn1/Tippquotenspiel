@@ -9,7 +9,13 @@ import { simulateBalance } from "./balanceSim";
 //
 // Bewusst mit fester Saatzahl und moderater Saison-Zahl: reproduzierbar und
 // schnell genug für jeden Testlauf.
-const OPT = { seasons: 30, matchdays: 17, perMatchday: 9, seed: 4242 };
+// ⚠️ 30 Saisons reichten, solange jeder Tipper die ganze Saison gleich stark
+// war. Seit `balanceSim` FORMKURVEN kennt, streut eine Saison deutlich mehr —
+// eine einzelne Stichprobe kippte damit am Rand (Underdog-Party bei maximalem
+// Big Game), obwohl der Mehrfach-Lauf 42,5 % Kenner gegen 20 % Zocker misst.
+// Die Zusicherung wird deshalb NICHT gelockert, sondern die Messung tragfähig
+// gemacht. Das ist der Unterschied zwischen „Test bestehen" und „wissen".
+const OPT = { seasons: 80, matchdays: 17, perMatchday: 9, seed: 4242 };
 
 describe("Presets — Balance", () => {
   for (const preset of PRESETS) {

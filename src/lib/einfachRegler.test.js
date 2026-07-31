@@ -147,7 +147,9 @@ describe("Schnelltest Balance: keine Stufe kippt das Spiel", () => {
     for (const s of r.stufen) {
       it(`${r.key}/${s.key} lässt nicht den Zocker gewinnen`, () => {
         const rules = anwenden(BASIS, r.key, s.key);
-        const sim = simulateBalance(rules, { seasons: 30, seed: 987654 });
+        // 60 statt 30 Saisons: seit `balanceSim` Formkurven kennt, streut eine
+        // einzelne Stichprobe stärker (siehe presets.balance.test.js).
+        const sim = simulateBalance(rules, { seasons: 60, seed: 987654 });
         expect(sim.kennerQuote).toBeGreaterThan(sim.zockerQuote);
       });
     }
