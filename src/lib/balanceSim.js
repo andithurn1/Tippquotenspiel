@@ -23,6 +23,7 @@ import { scoreTip, maxTotalModifier, maxJokerFactor } from "./engine";
 import { archetypeSnapshots } from "./rulePreview";
 import { ARCHETYPE_FREQ } from "./bundesligaStats";
 import { applyCatchup } from "./catchup";
+import { sanitizeTippEinfluss, mischeRaster } from "./tippEinfluss";
 
 // Kleiner, schneller Zufallsgenerator mit Seed (mulberry32) — reproduzierbar.
 function rng(seed) {
@@ -106,6 +107,29 @@ function impliedDistribution(snap) {
 // Trefferquote zur BASIS (= Tippen ohne Information) und wieder weg davon —
 // Form ist also nicht „mehr Glück", sondern „ich lese die Spiele gerade
 // besser oder schlechter".
+// ── PUBLIKUM: die Runde ist größer als fünf Archetypen ──────
+// `tippEinfluss` greift erst ab `minTipper` (Standard 8) — mit fünf gemessenen
+// Tippern könnte die Regel also NIE feuern, und der Mischanteil bliebe immer 0.
+// Das ist genau die Blindstelle: nicht „die Regel wirkt nicht", sondern „der
+// Simulator hat gar keine Runde, in der sie wirken könnte".
+//
+// Ergänzt wird deshalb ein PUBLIKUM: zusätzliche Tipper, die mittippen und
+// damit die Gruppenverteilung bilden, aber NICHT gewertet werden. Sie sind der
+// Rest der Runde, nicht weitere Messpunkte.
+//
+// Die Mischung ist bewusst nicht gleichverteilt — eine echte Runde besteht
+// überwiegend aus soliden Tippern und Kennern. Reine Favoriten-Tipper gibt es
+// wenige, reine Dauerzocker praktisch nicht (das sind Messinstrumente, keine
+// Menschen). Genau diese Schieflage IST der Herdeneffekt, den die Regel
+// bestrafen soll: wenn fast alle den Favoriten tippen, wird der Favoriten-Tipp
+// teuer. Eine Gleichverteilung hätte keine Herde und nichts zu messen.
+const PUBLIKUM_MIX = [
+  { key: "solide", anteil: 0.40 },
+  { key: "kenner", anteil: 0.25 },
+  { key: "mutig", anteil: 0.25 },
+  { key: "favorit", anteil: 0.10 },
+];
+
 const FORM_AMPLITUDE = 0.45;
 
 export function formFaktor(phase, phase2, md, spieltage) {
@@ -207,8 +231,29 @@ const BIGGAME_WERT_MAX = 0.75;
 // ihren Joker dorthin, wo er strategisch hingehört — der Könner auf sein
 // sicherstes Spiel (Favorit), der Zocker auf seine Überraschungs-Wette
 // (Außenseiter). Genau da entscheidet sich, ob das Regelwerk kippt.
-export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatchday = 9, seed = 12345 } = {}) {
+export function simulateBalance(rules, {
+  seasons = 100, matchdays = 17, perMatchday = 9, seed = 12345,
+  mitglieder = 12,     // Rundengröße inkl. der fünf gemessenen Archetypen
+} = {}) {
   const snaps = archetypeSnapshots();               // [{ key, snap, ... }]
+
+  // ── Tipp-Einfluss: nur aufbauen, wenn die Regel überhaupt an ist ──
+  // Der gemischte Raster kostet je Spiel und Tipper eine eigene Rechnung.
+  // Steht die Regel auf 0 (Standard), bleibt der Pfad komplett unberührt —
+  // dieselbe Laufzeit und dieselben Zahlen wie bisher.
+  const teCfg = sanitizeTippEinfluss(rules?.tippEinfluss);
+  const teAktiv = teCfg.staerke > 0;
+  // Das Publikum füllt die Runde auf `mitglieder` auf. Es tippt mit, wird aber
+  // nicht gewertet — sonst wären es weitere Messpunkte statt Mitspieler.
+  const publikum = teAktiv ? (() => {
+    const rest = Math.max(0, mitglieder - PROFILE.length);
+    const out = [];
+    for (const m of PUBLIKUM_MIX) {
+      const anzahl = Math.round(rest * m.anteil);
+      for (let i = 0; i < anzahl; i++) out.push(PROFILE.find((p) => p.key === m.key));
+    }
+    return out;
+  })() : [];
   // Je Spielart einmal: Quoten-Verteilung + die beiden Tipp-Strategien.
   const artOf = new Map(snaps.map((s) => {
     const verteilung = impliedDistribution(s.snap);
@@ -322,6 +367,9 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
         const f = p.form ? formFaktor(formPhase[pi][0], formPhase[pi][1], md, matchdays) : 1;
         return p.aussenseiter(sp.ueberraschung, rand, f);
       }));
+
+      // Das Publikum tippt mit — nur für die Gruppenverteilung, ungewertet.
+      const wahlPublikum = publikum.map((p) => spiele.map((sp) => p.aussenseiter(sp.ueberraschung, rand, 1)));
       // Joker: jeder setzt ihn auf sein erstes Außenseiter-Spiel (dort ist am
       // meisten zu holen), sonst aufs erste Spiel.
       const jokerIdx = wahl.map((w) => {
@@ -352,6 +400,21 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
       spiele.forEach((sp, idx) => {
         if (sp.ueberraschung) ueberraschungen += 1;
         const actual = { ...sp.real, playerGoals: null };
+
+        // ── Tipp-Einfluss: die Runde bewegt das Ergebnis-Raster ──
+        // Alle Tipps DIESER Begegnung einsammeln — gewertete und Publikum.
+        // Ohne das Publikum blieben es fünf und `minTipper` (8) griffe nie.
+        const gruppenTipps = teAktiv ? [
+          ...PROFILE.map((p, pi) => ({
+            userId: p.key,
+            tip: wahl[pi][idx] ? sp.def.upset : sp.def.modal,
+          })),
+          ...publikum.map((p, k) => ({
+            userId: `publikum-${k}`,
+            tip: wahlPublikum[k][idx] ? sp.def.upset : sp.def.modal,
+          })),
+        ] : null;
+
         for (let pi = 0; pi < n; pi++) {
           const aufAussenseiter = wahl[pi][idx];
           if (aufAussenseiter && sp.ueberraschung) dabei[pi] += 1;
@@ -371,10 +434,20 @@ export function simulateBalance(rules, { seasons = 100, matchdays = 17, perMatch
             gewicht,
             ...(eigener ? { verein: eigener } : {}),
           };
-          const punkte = scoreTip(tipp, actual, sp.snap, rules).total;
+          // Jeder wird nach den Tipps der ÜBRIGEN bepreist (`ohneUserId`) —
+          // sonst bestrafte sich, wer den Favoriten tippt, fürs eigene
+          // Mittippen. Das Verfahren bleibt für alle gleich.
+          const snapFuerMich = teAktiv
+            ? { ...sp.snap, correctScore: mischeRaster({
+                raster: sp.snap.correctScore, tipps: gruppenTipps,
+                cfg: teCfg, ohneUserId: PROFILE[pi].key,
+              }) }
+            : sp.snap;
+
+          const punkte = scoreTip(tipp, actual, snapFuerMich, rules).total;
           saison[pi] += punkte;
           summeMit += punkte;
-          summeOhne += scoreTip(tipp, actual, sp.snap, ohneMod).total;
+          summeOhne += scoreTip(tipp, actual, snapFuerMich, ohneMod).total;
         }
       });
       // Zwischenstand nach diesem Spieltag festhalten (für den Aufhol-Test).

@@ -6,6 +6,40 @@ import { PRESETS } from "./presets";
 // Klein halten, damit die Tests flott bleiben — die Aussagen sind dieselben.
 const KLEIN = { seasons: 25, matchdays: 9, perMatchday: 9, seed: 7 };
 
+describe("Tipp-Einfluss — die Regel bestraft Herdenverhalten", () => {
+  const OPT = { seasons: 30, matchdays: 17, perMatchday: 9, seed: 4242, mitglieder: 12 };
+  const mit = (staerke) => sanitizeRules({
+    ...PRESETS[0].rules,
+    tippEinfluss: { staerke, marktTiefe: 200, minTipper: 8 },
+  });
+
+  // ⚠️ Die AUSSAGE „bestraft Herdenverhalten" steht bewusst NICHT hier,
+  // sondern in `npm run balance`. Sie braucht 3 Saatzahlen × 40 Saisons; bei
+  // 30 Saisons dreht sich das Vorzeichen, und der Lauf kostete 16 Sekunden in
+  // jeder Testrunde. Dieselbe Arbeitsteilung wie beim Rest: die Testsuite
+  // sichert INVARIANTEN, der Balance-Lauf MISST.
+  // Gemessen (Standard-Preset, stärke 0.15): Favorit 14,2 % → 9,2 %,
+  // Kenner 56,7 % → 71,7 %, Solide 12,5 % → 8,3 %.
+
+  it("die Regel kommt im Simulator überhaupt an", () => {
+    // Der eigentliche Blindstellen-Test: vorher war der Mischanteil IMMER 0,
+    // weil fünf Archetypen unter `minTipper` (8) liegen. Ändert sich nichts,
+    // ist der Simulator wieder blind — egal in welche Richtung.
+    const aus = simulateBalance(mit(0), OPT);
+    const an = simulateBalance(mit(0.4), OPT);
+    expect(an.profile.map((p) => p.siegquote))
+      .not.toEqual(aus.profile.map((p) => p.siegquote));
+  });
+
+  it("bei ausgeschalteter Regel ändert sich GAR nichts", () => {
+    // Der Standard ist „aus" — dort darf der neue Pfad die Zahlen nicht
+    // anfassen, sonst wären alle bisherigen Messungen entwertet.
+    const a = simulateBalance(mit(0), OPT);
+    const b = simulateBalance(sanitizeRules(PRESETS[0].rules), OPT);
+    expect(a.profile.map((p) => p.siegquote)).toEqual(b.profile.map((p) => p.siegquote));
+  });
+});
+
 describe("Formkurven — niemand ist eine Saison lang gleich stark", () => {
   it("die Kurve schwingt über die Saison und bleibt um 1 herum", () => {
     const werte = Array.from({ length: 34 }, (_, md) => formFaktor(0.2, 0.7, md, 34));
