@@ -42,8 +42,9 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
-| 2 (Andre) | **PAUSE bis Freitagabend.** Nichts hängt lokal, alles Fertige liegt auf `main` (letzter Stand: Joker-Oberfläche, Balance-Durchgang 1+2). Kein Bereich reserviert. | pausiert | 2026-07-28 |
-| 1 (Andi) | **Alles frei, arbeitet durch bis das Wochenlimit aufgebraucht ist.** Kein Bereich reserviert; Andre pausiert. Zuletzt angefasst: Quoten-/Spielplan-/Kader-Kette (`oddsApi`, `ligaGenerator`, `kader`, `spielplan`, `mlsData`), `engine.js` (nur additiv, siehe Log), `Tippabgabe`, `Spielwahl`, `Spielerstellung`. | aktiv | 2026-07-29 |
+| 2 (Andre) | **DU BIST DRAN** (30.07.). Aufgabe: `balanceSim.js` — Formkurven je Tipper + `tippEinfluss` + `saisonform` messbar machen. Danach der RLS-Befund (`schema.sql`, Store). Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-30 |
+| 2 (Andre) | ~~PAUSE bis Freitagabend~~ (Stand 28.07., überholt) | erledigt | 2026-07-28 |
+| 1 (Andi) | **WOCHENLIMIT ERREICHT am 30.07.** Nichts hängt lokal, alles auf `main` (`36c5c70`). Zuletzt angefasst: `oddsApi`, `kader`, `saisonform`, `tippEinfluss`, `auswahl`, `engine.js` (additiv), `Spielerstellung`, `Ranking`, `Tippabgabe`, beide Store-Dateien (je zwei Zeilen, siehe Log). **Alle Bereiche frei.** | pausiert | 2026-07-30 |
 | 1 (Andi) | ~~Torschnitt aus dem Markt statt aus der Schätzung~~ — `oddsApi.js`, `scripts/fetch-odds.mjs`, `ligaGenerator.js`. Erledigt, plus ein Fund daneben: das echte Ergebnis-Raster zahlte zu viel (siehe Log oben). `engine.js` unberührt. | fertig | 2026-07-29 |
 
 > **⚠️ Kontingent-Lage (Stand 2026-07-29):** Account 1 (Andi) fährt sein
@@ -97,6 +98,76 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-07-30 · **ÜBERGABE an Andre** — 🎯 **Deine Aufgabe: der Simulator sieht drei Dinge nicht**
+
+> **👉 Wer als frische Session einsteigt: DAS ist deine Aufgabe.** Kurz unten
+> eintragen und loslegen. Andi ist am Wochenlimit, du bist dran.
+
+`main` bei `36c5c70` · **1156 Tests grün** · Build sauber · `npm run balance`
+ohne Befund · **Vercel deployt wieder** (Pro-Tarif, Cron zurück auf stündlich).
+
+#### 🔴 Deine Aufgabe: `balanceSim.js` — drei Blindstellen
+
+**Ich habe heute zwei Regelwerke gebaut, die der Simulator NICHT messen kann.
+Beide stehen auf „aus", dürfen aber nicht in ein Preset, bevor er sie sieht.**
+Das ist exakt die Lehre vom 27.07. („bevor eine neue Ebene gemessen wird, erst
+prüfen, ob der Simulator sie überhaupt SIEHT") — und ich habe sie heute schon
+einmal am eigenen Leib bestätigt bekommen (Punkt 3).
+
+1. **`tippEinfluss` (neu, `src/lib/tippEinfluss.js`).** Die Runde bewegt das
+   Ergebnis-Raster mit — ein Totalisator-Anteil. Der Simulator wertet jeden
+   Tipper ISOLIERT; er müsste die Tipps der Population als GRUPPE einspeisen,
+   sonst ist der Mischanteil immer 0 und die Ampel bleibt blind grün.
+   ⚠️ Das ist die spannendste Messung: die Regel bestraft Herdenverhalten. Der
+   FAVORITEN-Tipper müsste dadurch schlechter werden, der Kenner besser — wenn
+   nicht, stimmt etwas nicht.
+
+2. **`saisonform` (neu, `src/lib/saisonform.js`).** Spieltag-Gewichtung +
+   Streichresultate, hängt in `scoreLeaderboardHistory` vor `applyCatchup`.
+
+3. **🔥 Der Simulator braucht FORMKURVEN je Tipper.** Das ist der wichtigste
+   Punkt, und er kostet dich wenig: heute ist jeder Tipper über die Saison
+   gleich stark. **Damit kann der Simulator eine ganze Fehlerklasse nicht
+   sehen.** Beleg von heute: ich hatte die Spieltag-Gewichtung als
+   Ausgleichsregler verkauft. Bei konstanter Stärke sah sie harmlos aus
+   (74 % → 68,8 %). Mit Formkurven halbierte sie den Können-Ausdruck
+   (74 % → **53 %**) und VERGRÖSSERTE den Vorsprung des Ersten. Grund:
+   Gewicht auf einen Saisonteil verkleinert die effektive Stichprobe.
+   Eine Formkurve je Tipper ist eine kleine Ergänzung mit großer Wirkung.
+
+#### 🔴 Und weiterhin offen in deinem Bereich: der RLS-Befund
+
+Steht ausführlich weiter unten im Log und in `design/roadmap.md`. **Punkt 1 ist
+der wichtigste offene Posten im ganzen Projekt:** `tips_update_own` prüft den
+Anpfiff nicht, und `tips.snapshot` wird vom CLIENT geschrieben — der Wert, an
+dem die ganze Auszahlung hängt. Ein Trigger, der den Snapshot serverseitig
+stempelt, ist dort mehr wert als jede Policy. Dazu: der `join_code` steht in
+einer für alle lesbaren Tabelle, und Beitreten prüft ihn gar nicht.
+
+#### Was heute dazugekommen ist (Andis Ecke, alles auf `main`)
+
+| Thema | Kurz |
+|---|---|
+| **Raster-Korrektur** | Das echte Ergebnis-Raster zahlte 11–30 % zu viel für die wahrscheinlichen Ergebnisse. `longshotK` eicht je Spiel am eigenen 1X2-Markt. Gegenprobe an der echten Über/Unter-Linie: Fehler 0,415 → **0,076 Tore** |
+| **Torschnitt + ρ gemessen** | ρ = −0,013 bis −0,158, am stärksten in ausgeglichenen Spielen. Löst die alte ρ-Fehlmessung auf |
+| **Quoten in 5 Ligen** | 40 → **70 Spiele** mit echten Marktquoten; zwei stille Verdrahtungslücken behoben |
+| **Torschützen 3-stufig** | echte Namen sofort (`kader`), Marktpreis sobald da. Nachgemessen: die Märkte öffnen erst **~2 Tage** vor Anpfiff, nicht 1–7 |
+| **`saisonform`** | Gewichtung + Streicher, mit UI und Ranking-Chip |
+| **`tippEinfluss`** | Totalisator-Anteil, mit UI und Live-Vorschau |
+| **`auswahl.js`** | `waehleBetroffene()`, 18 Modi — Schritt 1 der Regel-Grammatik |
+
+#### Nutzer-Aufgaben: alle erledigt
+
+Seeds aktuell (`npm run seed:delta` ist der neue, kleine Weg), `CRON_SECRET`
+sitzt (Route antwortet 401 statt 500), `ODDS_API_KEY` läuft live.
+**352 Credits** übrig.
+
+#### Wo die großen Entwürfe liegen
+
+`design/roadmap.md`: Regel-Grammatik (WANN/WER/ZIEL/WAS/WIE LANGE),
+Bibliotheken als Sortiment mit **gemessener** Wirkrichtung, Modifikator-Budget,
+große Gruppen, RLS. Der Nutzer hat sie alle angestoßen — sie sind die Pipeline.
 
 ### 2026-07-30 · **Andi** → **Andre** — ✅ **VERCEL DEPLOYT WIEDER.** Der Tarif war's, nicht der Code.
 
