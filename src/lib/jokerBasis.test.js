@@ -190,6 +190,40 @@ describe("darfEinsetzen — 5.0 Invariante: kein Joker ohne Tipp", () => {
   });
 });
 
+// ── K1 (Abnahme 31.07., design/drehrad.md Abschnitt 3b (a)) ────────────────
+// `nurVollstaendigGetippt` wandert nach jokerBasis.WER — allgemeine Frage,
+// kein Rad-Sonderfall. Nicht zu verwechseln mit der 5.0-Invariante oben: die
+// verlangt ÜBERHAUPT einen Tipp, dieser Wert verlangt ALLE Spiele.
+
+describe("darfEinsetzen — K1: wer: nurVollstaendigGetippt", () => {
+  const basis = sanitizeBasis({ wer: "nurVollstaendigGetippt" });
+
+  it("K1-1a. alleGetippt: true -> erlaubt", () => {
+    const r = darfEinsetzen(basis, "a", { hatGetippt: true, alleGetippt: true });
+    expect(r).toEqual({ erlaubt: true, grund: null });
+  });
+
+  it("K1-1b. alleGetippt: false -> abgelehnt", () => {
+    const r = darfEinsetzen(basis, "a", { hatGetippt: true, alleGetippt: false });
+    expect(r.erlaubt).toBe(false);
+    expect(r.grund).toBeTruthy();
+  });
+
+  it("K1-1c. alleGetippt fehlt komplett -> ebenfalls abgelehnt (gilt als NICHT vollständig getippt)", () => {
+    const r = darfEinsetzen(basis, "a", { hatGetippt: true });
+    expect(r.erlaubt).toBe(false);
+    expect(r.grund).toBeTruthy();
+  });
+
+  it("K1-2. die 5.0-Invariante schlägt weiterhin durch: hatGetippt: false wird abgelehnt, egal was alleGetippt sagt", () => {
+    const r = darfEinsetzen(basis, "a", { hatGetippt: false, alleGetippt: true });
+    expect(r.erlaubt).toBe(false);
+    // Es ist der 5.0-Grund, nicht der nurVollstaendigGetippt-Grund — die
+    // Invariante prüft VOR der wer-Prüfung.
+    expect(r.grund).toMatch(/tipp/i);
+  });
+});
+
 // ── Pflichttest 3 — der wichtigste Test ─────────────────────
 
 describe("erfuelltBedingung — minQuote misst die Spiel-Quote, nicht die getippte", () => {

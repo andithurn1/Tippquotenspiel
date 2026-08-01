@@ -159,6 +159,54 @@ nur nicht fehlen.
   Deterministisch über `seeded` aus `seeded.js`.
 - `beschreibeDrehrad(drehrad, spieltage)` → ein Satz.
 
+---
+
+## 3b. Nachtrag zur Abnahme (31.07.) — zwei Lücken in dieser Spec
+
+Beide von der Umsetzung gemeldet, beide berechtigt: ich habe eine Einstellung
+und einen Deckel benannt, aber **keine Funktion, die sie durchsetzt**. Genau die
+Fehlerklasse, die bei `limitKlassen` schon einmal zugeschlagen hat — eine
+Einstellung, die ins Leere läuft, ist kein Baukastenteil.
+
+### (a) 🔴 Zwei `wer`-Kataloge
+
+`drehrad.js` führt lokal `alle · nurGetippte · abPlatz · abRueckstand`,
+`jokerBasis.WER` führt `alle · abPlatz · abRueckstand · adminFreigabe`. Zwei
+Listen für dieselbe Frage — sie laufen auseinander, sobald jemand eine ergänzt.
+
+**Festlegung:**
+- **`nurVollstaendigGetippt` wandert nach `jokerBasis.WER`.** Das ist eine
+  allgemeine Frage, kein Rad-Sonderfall: auch ein Joker kann verlangen, dass der
+  Spieltag KOMPLETT getippt wurde.
+  ⚠️ Nicht zu verwechseln mit der Invariante aus `joker-grundform.md` 5.0
+  („kein Joker ohne Tipp") — die verlangt *überhaupt* einen Tipp, dieser Wert
+  verlangt *alle*. `kontext` bekommt dafür `alleGetippt` neben `hatGetippt`.
+- **`drehrad.js` importiert `WER` aus `jokerBasis.js`** und führt keinen eigenen
+  Katalog. `adminFreigabe` gilt dort mit, das ist kein Schaden.
+- Die Auswertung bleibt `jokerBasis.darfEinsetzen` — kein zweiter Mechanismus.
+
+### (b) 🔴 `maxPunkteProSaison` wird gespeichert, aber nie durchgesetzt
+
+Ein Deckel, der nicht deckelt. `ereignisse.js` macht es richtig vor: dort setzt
+`auswerten()` den `maxErspielt`-Deckel **chronologisch** durch.
+
+**Festlegung — neue Funktion:**
+
+```
+auswerten(drehrad, ziehungen) -> { gutschriften, gedeckelt }
+```
+
+- `ziehungen` = `[{ userId, spieltag, feldId }]`, chronologisch.
+- `gutschriften` = was tatsächlich ankommt, je Nutzer.
+- **Nur `belohnung.typ === "punkte"` wird gedeckelt**, und zwar chronologisch je
+  Nutzer: ist `maxPunkteProSaison` erreicht, bringt die nächste Ziehung 0 Punkte.
+  Joker-, Münz- und Modifikator-Felder sind unberührt — sie haben ihre eigenen
+  Deckel an anderer Stelle.
+- `gedeckelt` listet, wem wie viel gekürzt wurde. Ohne diese Liste sieht ein
+  Spieler eine Auszahlung, die nicht zu seinem Rad passt, und kann sich das nicht
+  erklären — dieselbe Regel wie bei `gestrichen` in `saisonform.js`.
+- `maxPunkteProSaison: 0` heißt **kein Deckel**, nicht „keine Punkte".
+
 ## 4. Was geprüft wird
 
 **Keine Balance-Tests.** Geprüft wird nur, dass die Einstellungen greifen:

@@ -47,11 +47,20 @@ import { sanitizeLimitKlassen } from "./limitKlassen";
 
 // ── Kataloge ────────────────────────────────────────────────
 
+// K1 (Abnahme 31.07., design/drehrad.md Abschnitt 3b (a)): `nurVollstaendigGetippt`
+// wandert HIERHER statt in einem zweiten `wer`-Katalog im Drehrad zu leben —
+// das ist eine allgemeine Frage, kein Rad-Sonderfall: auch ein Joker kann
+// verlangen, dass der Spieltag KOMPLETT getippt wurde. ⚠️ Nicht zu verwechseln
+// mit der Invariante 5.0 („kein Joker ohne Tipp", weiter unten) — die verlangt
+// ÜBERHAUPT einen Tipp, dieser Wert verlangt ALLE Spiele des Spieltags.
+// `darfEinsetzen` liest dafür `kontext.alleGetippt` (neben dem bestehenden
+// `hatGetippt`). Fehlt `alleGetippt`, gilt es wie `false`.
 export const WER = [
   { key: "alle", label: "Alle", desc: "Jeder darf einsetzen. Vorgabe." },
   { key: "abPlatz", label: "Ab Tabellenplatz", desc: "Nur ab Tabellenplatz N abwärts (`werWert`)." },
   { key: "abRueckstand", label: "Ab Rückstand", desc: "Nur wer mindestens N Punkte hinter Platz 1 liegt (`werWert`)." },
   { key: "adminFreigabe", label: "Admin-Freigabe", desc: "Der Admin schaltet je Spieltag frei." },
+  { key: "nurVollstaendigGetippt", label: "Nur vollständig getippt", desc: "Nur wer ALLE Spiele des Spieltags getippt hat (`kontext.alleGetippt`)." },
 ];
 
 export const SICHT = [
@@ -430,6 +439,16 @@ function pruefeWer(b, userId, ctx) {
     return rueckstand >= b.werWert
       ? { erlaubt: true, grund: null }
       : { erlaubt: false, grund: `Nur ab ${b.werWert} Punkten Rückstand.` };
+  }
+
+  // K1: verlangt ALLE Spiele des Spieltags — anders als die 5.0-Invariante
+  // oben, die nur IRGENDEINEN Tipp verlangt. Fehlt `alleGetippt`, gilt das wie
+  // `false` (dieselbe Kulanz-Regel wie bei `hatGetippt`): lieber ein Joker zu
+  // wenig als einer auf einem Spieltag, der nicht komplett getippt wurde.
+  if (b.wer === "nurVollstaendigGetippt") {
+    return ctx.alleGetippt === true
+      ? { erlaubt: true, grund: null }
+      : { erlaubt: false, grund: "Nur erlaubt, wenn der komplette Spieltag getippt wurde." };
   }
 
   // "adminFreigabe"
