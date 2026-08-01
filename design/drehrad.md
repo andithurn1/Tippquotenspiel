@@ -1,0 +1,128 @@
+# Drehrad — vom Admin gebaute Zufalls-Ereignisse
+
+**Spec.** Account 2 (Andre), 2026-07-31, nach Vorgabe des Nutzers.
+
+> **Der Punkt:** Nicht „ein Drehrad" als fertiges Feature, sondern **ein Rad,
+> dessen Felder der Admin selbst anlegt** — Beschriftung, Feldgröße
+> (Wahrscheinlichkeit), Belohnung — dazu, wie oft es über die Runde auftaucht
+> und wer drehen darf.
+
+⚠️ **Keine Empfehlungen, keine Balance-Vorgaben in diesem Modul.** Was ein Feld
+auszahlt und wie groß es ist, entscheidet der Admin. Wer sich eine schiefe Runde
+bauen will, darf das. Dieses Dokument beschreibt nur, welche Variablen es gibt
+und dass sie tatsächlich greifen.
+
+---
+
+## 1. Warum das eine eigene Form ist
+
+Der Baukasten kennt bisher zwei Auslöser für eine Belohnung:
+
+| vorhanden | Auslöser |
+|---|---|
+| `jokerPlan` | ein Zeitpunkt (der Admin stellt eine Frequenz ein) |
+| `ereignisse` | eine Leistung („drei Spieltage in Folge getippt") |
+
+Das Drehrad ist der dritte: **Zufall aus einer vom Admin geschriebenen
+Tabelle.** Weder Zeitpunkt noch Leistung bestimmen, WAS herauskommt — nur, DASS
+gedreht wird.
+
+Deshalb ein eigenes Modul `src/lib/drehrad.js` statt eines weiteren
+`EREIGNIS_TYPEN`-Eintrags: die Ereignis-Typen haben feste Parameter, hier ist
+die Tabelle selbst der Inhalt.
+
+## 2. Was der Admin einstellt
+
+### 2.1 Die Felder
+
+```js
+felder: [
+  { id: "f1", label: "Joker geschenkt", gewicht: 3, belohnung: { typ: "joker", art: "joker.einzel", anzahl: 1 } },
+  { id: "f2", label: "50 Budget",        gewicht: 2, belohnung: { typ: "budget", betrag: 50 } },
+  { id: "f3", label: "Niete",            gewicht: 6, belohnung: { typ: "nichts" } },
+]
+```
+
+- **`gewicht`** ist die Feldgröße. Die Wahrscheinlichkeit ist `gewicht` geteilt
+  durch die Summe aller Gewichte — dadurch muss der Admin nie auf 100 kommen,
+  er zieht nur Felder größer oder kleiner. Ein Feld mit `gewicht: 0` liegt auf
+  dem Rad, kann aber nicht fallen (praktisch zum Vorbereiten).
+- **`label`** ist frei. Es steht auf dem Rad und in der Meldung.
+- Mindestens **zwei** Felder mit Gewicht über 0, sonst ist es kein Rad.
+
+### 2.2 Belohnungs-Typen
+
+| `typ` | Felder | Wirkung |
+|---|---|---|
+| `nichts` | — | Niete. Muss es geben, sonst ist Drehen risikolos. |
+| `joker` | `art`, `anzahl` | Gutschrift auf eine Joker-Art (`JOKER_ARTEN`). |
+| `budget` | `betrag` | Zahlt auf das Konto aus `jokerBudget.js`. |
+| `modifikator` | `faktor`, `spieltage` | Aufschlag auf die eigene Wertung für N Spieltage. Fällt in denselben additiven Topf, `modCap` greift weiter. |
+| `punkte` | `betrag` | Direkte Punkte. ⚠️ Siehe 2.5. |
+
+### 2.3 Wann gedreht wird
+
+Übernommen aus `jokerPlan.js` — **nicht neu bauen**:
+
+| Feld | Bedeutung |
+|---|---|
+| `frequenz` | „etwa jeder N-te Spieltag" |
+| `modus` | `gleich` (alle am selben Spieltag) · `kontingent` (jeder gleich oft, an eigenen Spieltagen) |
+| `fenster` | Saison-Abschnitt, über `fensterVon` aus `duellJoker.js` |
+
+Verteilt wird blockweise und deterministisch aus der Runden-Id, wie beim Joker —
+dadurch sehen alle dasselbe und es ist nachprüfbar.
+
+### 2.4 Wer dreht
+
+| `wer` | |
+|---|---|
+| `alle` | jeder, der an dem Spieltag getippt hat |
+| `nurGetippte` | nur wer den Spieltag vollständig getippt hat |
+| `abPlatz` / `abRueckstand` | über `jokerBasis.darfEinsetzen` — dieselbe Grundform wie bei den Jokern, kein zweiter Mechanismus |
+
+### 2.5 ⚠️ Zwei Dinge, die nicht verhandelbar sind
+
+**(1) Das Ergebnis wird beim Öffnen des Spieltags gezogen, nicht beim Klicken.**
+Sonst entscheidet der Zeitpunkt des Drehens mit, und wer wartet, hat mehr
+Information. Gezogen wird deterministisch aus `(rundenId, userId, spieltag)` —
+damit ist es für alle nachprüfbar dasselbe und ein Neuladen ändert nichts. Die
+Animation zeigt nur, was ohnehin feststeht.
+
+**(2) `punkte` ist erlaubt, aber es ist ein Punkte-Kanal.** `ereignisse.js`
+schließt so etwas für sich aus (Belohnung ist immer eine Joker-Gutschrift). Hier
+lassen wir es zu, weil der Admin entscheidet — **aber es bekommt einen eigenen
+Saison-Deckel** (`maxPunkteProSaison`), sonst hebelt ein Rad die ganze Wertung
+aus, ohne dass irgendwo eine Grenze greift. Der Deckel darf hoch stehen. Er darf
+nur nicht fehlen.
+
+## 3. Modul
+
+`src/lib/drehrad.js`, reine Funktionen, UI-frei.
+
+- `DEFAULT_DREHRAD`, `DREHRAD_LIMITS`, `BELOHNUNGS_TYPEN`
+- `sanitizeDrehrad(partial)` — Felder ohne `id`/`label` oder mit unbekanntem
+  Belohnungs-Typ fliegen raus. **Und wie bei `limitKlassen`: eine Funktion, die
+  sagt WAS rausgeflogen ist** (`pruefeFelder`), sonst verschwindet die Hälfte
+  des Rads stillschweigend.
+- `wahrscheinlichkeiten(felder)` → je Feld der Anteil. Für die Anzeige — der
+  Admin muss sehen, was seine Gewichte bedeuten, sonst dreht er blind.
+- `drehradPlan({ spieltage, drehrad, seed, userIds })` → an welchen Spieltagen
+  wer dreht. Ruft `jokerPlan` auf.
+- `ziehe(drehrad, { rundenId, userId, spieltag })` → das gezogene Feld.
+  Deterministisch über `seeded` aus `seeded.js`.
+- `beschreibeDrehrad(drehrad, spieltage)` → ein Satz.
+
+## 4. Was geprüft wird
+
+**Keine Balance-Tests.** Geprüft wird nur, dass die Einstellungen greifen:
+
+1. Ein Feld mit `gewicht: 0` fällt nie.
+2. Die Anteile aus `wahrscheinlichkeiten` summieren sich auf 1.
+3. `ziehe` liefert für dieselbe `(rundenId, userId, spieltag)` immer dasselbe
+   Feld — und für verschiedene Spieler am selben Spieltag verschiedene.
+4. Bei Frequenz N liegen die Drehungen im eingestellten Fenster und nirgends
+   sonst.
+5. `wer: "abRueckstand"` schließt Führende aus.
+6. `pruefeFelder` meldet jedes verworfene Feld mit Grund.
+7. Ein Rad mit weniger als zwei Feldern über Gewicht 0 ist ungültig und sagt das.
