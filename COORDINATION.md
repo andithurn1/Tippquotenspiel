@@ -101,6 +101,72 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-31 (III) · **Joker-Ökonomie beauftragt** — Budget, Limitierungsklassen, Würze
+
+**An Andi.** Der Nutzer hat den Baukasten-Gedanken deutlich erweitert. Spec:
+**`design/joker-oekonomie.md`**. Vier Bausteine, Duell-Joker Schritt 1 liegt
+bereits auf `main` (`411d1bf`, 1199 Tests grün).
+
+1. **`jokerBudget.js`** — eine gemeinsame Währung für alle Joker-Töpfe. Fünf
+   Quellen, davon eine (`leistung`) an `ereignisse.js` gehängt statt neu
+   gebaut. Preisdynamik `steigend` ist der eleganteste Selbst-Deckel: der erste
+   Einsatz billig, der vierte ruinös — begrenzt sich ohne hartes Verbot.
+2. **`limitKlassen.js`** — das Herzstück. Benannte Gruppen von Joker-Arten, die
+   sich ein Kontingent TEILEN. Ein Einsatz zählt gegen JEDE Klasse, in der seine
+   Art Mitglied ist; dadurch greifen mehrere Grenzen gleichzeitig („3 pro
+   Saison, davon 1 pro 5 Spieltage, und insgesamt 6 Joker"). Acht
+   Aktivierungs-Bedingungen, u. a. `abRueckstand` und `nurGegenFuehrende`.
+3. **`jokerBibliothek.js`** — sechs kuratierte Kombinationen mit Codeschema
+   `<Wertung>-<Ökonomie>`, z. B. `underdog-party-sparflamme`. **Kein
+   Jahreskürzel** — eine Einstellung ist zeitlos.
+4. **`aufwand.js`** — „wie viele Entscheidungen pro Spieltag". Zeitschutz, keine
+   Balance. Misst RELATIV zum Median-Spieltag, nach dem Vorbild der
+   Überfüllungs-Warnung in `zeitachse.js`.
+
+#### ⚠️ Die WÜRZE — und warum sie ausdrücklich eine Schätzung ist
+
+Neue Achse quer über alle Preset-Familien (0 `pur` … 3 `wild`), damit sichtbar
+wird, was zusammenpasst: eine laute Wertung braucht leise Joker. Vorläufige
+Regel: die Würze der Ebenen **addiert** sich, Empfehlungsband 2–4.
+
+**Diese Additionsregel ist geraten, nicht gemessen — und vermutlich falsch.**
+Der Nutzer hat sie selbst angezweifelt, zu Recht. Die Ebenen sind nicht
+unabhängig: die Wertung bestimmt die Streuung der Rohpunkte, die Joker
+MULTIPLIZIEREN sie (`jokerFactor` greift in `scoreTip` zuletzt). Laut + laut ist
+eher ein Produkt; Hardcore + viele Joker richtet dagegen wenig an, weil kaum
+etwas zu verstärken da ist. Additiv behandelt beide gleich.
+
+Konsequenz im Entwurf — **drei Fragen, drei getrennte Wahrheitsquellen, die
+sich nicht gegenseitig vertreten dürfen:**
+
+| Frage | Anzeige | Quelle |
+|---|---|---|
+| Ist es fair? | Ampel | **gemessen** (`balanceSim`) |
+| Wie laut fühlt es sich an? | Würze | **geschätzt** |
+| Wie viel Arbeit ist es? | Aufwand | gerechnet |
+
+Die Würze verengt NICHTS (dieselbe Regel wie „eine Messung verengt nie
+`RULE_LIMITS`"), und die Formel liegt an EINER Stelle (`wuerzeGesamt`), damit
+eine spätere Messung eine Funktion ändert statt dreißig Aufrufstellen.
+
+#### 💡 Der Weg von der Schätzung zur Messung: Community-Rückläufer
+
+Idee des Nutzers, und die Infrastruktur steht schon: der Store kennt
+`publishPreset()` und `getPresetByCode()`. Was fehlt, ist der Rückweg. Aus jeder
+beendeten Runde lassen sich OHNE neue Datenquelle zwei Zahlen ablesen, die schon
+im Verlauf stecken: **wie oft der Führende gewechselt hat** und **der Abstand
+1. zu 2.** Genau die beiden misst der Simulator als „Bester gewinnt" und
+„Vorsprung 1./2." — die Skalen sind vergleichbar. Aus genug echten Runden wird
+die Würze abgeleitet statt behauptet, nach dem Muster des Empfehlungsbands.
+
+⚠️ **Jetzt gebaut wird davon NUR das `wuerze`-Feld am veröffentlichten Preset.**
+Ein Bewertungssystem ohne echte Runden wäre Scheingenauigkeit — aber fehlt das
+Feld, ist die spätere Datenbasis verloren, und das lässt sich nicht nachholen.
+
+**Andi, wenn du Mittwoch draufschaust:** die Würze ist die Stelle, an der ich am
+ehesten danebenliege. Sie ist bewusst so gebaut, dass `npm run balance` sie
+später widerlegen kann, ohne dass etwas umgebaut werden muss.
+
 ### 2026-07-31 (später) · **`saisonform` ist für den Simulator unsichtbar — vier Gründe** + Duell-Joker beauftragt
 
 **An Andi, für Mittwoch.** Zwei Dinge.
