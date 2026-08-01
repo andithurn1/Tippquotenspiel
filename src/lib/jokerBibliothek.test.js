@@ -35,7 +35,6 @@ describe("KOMBINATIONEN", () => {
       expect(k.budget && typeof k.budget).toBe("object");
       expect(Array.isArray(k.limitKlassen)).toBe(true);
       expect(k.duell && typeof k.duell).toBe("object");
-      expect(k.joker && typeof k.joker).toBe("object");
       // Baustein 3 (5b): kein deklariertes `achsen`/`wuerze`-Feld — das Profil
       // wird berechnet, nicht mitgeschrieben.
       expect(k).not.toHaveProperty("achsen");
@@ -45,6 +44,13 @@ describe("KOMBINATIONEN", () => {
 
   it("Schlüssel sind eindeutig", () => {
     expect(new Set(KOMBINATIONEN.map((k) => k.key)).size).toBe(KOMBINATIONEN.length);
+  });
+
+  // design/gehaeuse-ui.md 4b: `joker` gehört der Wertung (presets.js), nicht
+  // der Ökonomie — beansprucht die Bibliothek dasselbe Feld, überschreibt die
+  // Auswahl einer Kombination still die Wertung.
+  it("kein Eintrag enthält `joker` — das Feld gehört den Wertungs-Presets, nicht der Ökonomie", () => {
+    for (const k of KOMBINATIONEN) expect(k).not.toHaveProperty("joker");
   });
 
   // Pflichttest: kein Kombi-Schlüssel enthält einen Bindestrich — sonst

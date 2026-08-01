@@ -135,7 +135,7 @@ export const DREHRAD_LIMITS = {
   // Belohnungs-Felder — reine Bedienbarkeits-Grenzen, keine Balance-Vorgabe.
   jokerAnzahl: { min: 1, max: 10, step: 1 },
   budgetBetrag: { min: 0, max: 500, step: 1 },   // identisch zu BUDGET_LIMITS.betrag
-  modFaktor: { min: 0.1, max: 5, step: 0.1 },
+  modFaktor: { min: 0.1, max: 5, step: 0.05 },
   modSpieltage: { min: 1, max: 10, step: 1 },
   punkteBetrag: { min: 0, max: 100, step: 1 },
   // ⚠️ `min: 0`, und 0 heißt KEIN Deckel.

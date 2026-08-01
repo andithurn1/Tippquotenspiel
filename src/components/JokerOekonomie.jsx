@@ -58,17 +58,21 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
   const patchBudgetFeld = (p) => onChange({ budget: p });
   const setzePreis = (key, v) => onChange({ budget: { preise: { ...preise, [key]: v } } });
 
-  // Ein Klick übernimmt das komplette Regelfragment der Kombination. `duell`
-  // und `joker` werden mit dem BISHERIGEN Regelwerk gemischt statt ersetzt —
-  // sonst gingen Felder verloren, die eine Kombination gar nicht kennt (z. B.
-  // `rules.joker.verteilung`, die woanders eingestellt wird). `budget` und
-  // `limitKlassen` sind dagegen bereits vollständige, in sich stimmige
-  // Fragmente aus dem Katalog und werden 1:1 übernommen.
+  // Ein Klick übernimmt das komplette Regelfragment der Kombination —
+  // `budget`, `limitKlassen` und `duell` werden GANZ ERSETZT, nicht mit dem
+  // bisherigen Regelwerk gemischt. Die drei sind ein zusammengehöriger Satz;
+  // ein halb übernommener Satz ergäbe eine Kombination, die niemand entworfen
+  // hat — dieselbe Begründung, aus der die Aspekte in `presetMerge.js`
+  // gemeinsam wandern (design/gehaeuse-ui.md 4b).
+  //
+  // ⚠️ `rules.joker` bleibt UNANGETASTET. Das ist der klassische Joker aus den
+  // Wertungs-Presets (`presets.js`) — beanspruchte die Ökonomie dasselbe Feld,
+  // überschriebe die Auswahl einer Kombination still die Wertung, und das
+  // zweiachsige Codeschema `<Wertung>-<Ökonomie>` wäre eine Lüge.
   const waehleKombi = (k) => onChange({
     budget: k.budget,
     limitKlassen: k.limitKlassen,
-    duell: { ...(rules.duell || {}), ...k.duell },
-    joker: { ...(rules.joker || {}), ...k.joker },
+    duell: k.duell,
   });
 
   return (
@@ -82,7 +86,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
           // — so lassen sich die sechs Karten untereinander vergleichen, bevor
           // eine davon gewählt wird. Das Profil des GANZEN Regelwerks steht
           // unten in 2.4.
-          const kProfil = achsenProfil({ budget: k.budget, duell: k.duell, joker: k.joker });
+          const kProfil = achsenProfil({ budget: k.budget, duell: k.duell });
           return (
             <button key={k.key} onClick={() => waehleKombi(k)} style={{
               textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,

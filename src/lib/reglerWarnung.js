@@ -259,7 +259,12 @@ const KOMBINATIONEN = [
       `Deine Modifikatoren summieren sich auf ×${formatWert(rohModifikator(r))}, gedeckelt wird bei ×${formatWert(r.modCap ?? 0)}. ` +
       "Die obersten Stufen wirken damit gar nicht mehr — entweder Deckel anheben oder die Faktoren senken.",
     fix: "Deckel auf die Summe anheben",
-    korrektur: (r) => ({ ...r, modCap: Math.min(RULE_LIMITS.modCap.max, +rohModifikator(r).toFixed(1)) }),
+    // ⚠️ Zwei Nachkommastellen, nicht eine. Seit die Modifikator-Regler auf
+    // dem 0,05-Raster stehen (siehe `reglerRaster.test.js`), kann die Summe
+    // z. B. 2,45 betragen — `toFixed(1)` schlüge dann 2,5 vor, also einen Wert,
+    // den der Admin gar nicht gewählt hat. Die Richtung wäre harmlos (ein
+    // höherer Deckel beißt weniger), die Anzeige aber falsch.
+    korrektur: (r) => ({ ...r, modCap: Math.min(RULE_LIMITS.modCap.max, +rohModifikator(r).toFixed(2)) }),
   },
   {
     id: "kein-unterschied",

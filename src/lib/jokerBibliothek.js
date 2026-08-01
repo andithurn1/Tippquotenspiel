@@ -4,10 +4,16 @@
 //  Baustein 3 aus design/joker-oekonomie.md. Zwei Dinge liegen hier:
 //
 //  1. `KOMBINATIONEN` — sechs fertige Joker-Ökonomien (Budget +
-//     Limitierungsklassen + Duell-Joker + klassischer Joker), die sich mit
-//     einem Wertungs-Preset aus `presets.js` zu einem Namen zusammensetzen:
-//     `<Erstname>-<Kombiname>`, z. B. "underdog-party-sparflamme". Erstname =
-//     die WERTUNG (presets.js), Kombiname = die JOKER-ÖKONOMIE (hier).
+//     Limitierungsklassen + Duell-Joker), die sich mit einem Wertungs-Preset
+//     aus `presets.js` zu einem Namen zusammensetzen: `<Erstname>-<Kombiname>`,
+//     z. B. "underdog-party-sparflamme". Erstname = die WERTUNG (presets.js),
+//     Kombiname = die JOKER-ÖKONOMIE (hier).
+//
+//     ⚠️ `joker` (der klassische Joker aus `presets.js`) gehört NICHT hierher.
+//     `presets.js` setzt dieses Feld bereits ("Joker", "Rangliste") — würde
+//     die Ökonomie es ebenfalls setzen, überschriebe die Auswahl einer
+//     Kombination still die Wertung, und das zweiachsige Codeschema
+//     `<Wertung>-<Ökonomie>` wäre eine Lüge (design/gehaeuse-ui.md 4b).
 //
 //  2. `achsenProfil(rules)` — der Ersatz für eine einzelne „Würze"-Zahl
 //     (design/joker-oekonomie.md 3.1b, design/joker-inventar.md Abschnitt 3).
@@ -80,7 +86,8 @@ export const SCHAERFEN = [
 
 // ── 3.2: der Startkatalog, nach Würze aufsteigend sortiert ──
 // Jede Kombination trägt ein vollständiges Regelfragment
-// { budget, limitKlassen, duell, joker } — kein eigenes `wuerze`- oder
+// { budget, limitKlassen, duell } — kein `joker`-Feld (siehe Kopfkommentar:
+// das gehört der Wertung, nicht der Ökonomie) und kein eigenes `wuerze`- oder
 // `achsen`-Feld (siehe Kopfkommentar). `neigung`/`dichte`/`schaerfe` sind
 // dokumentierender Text (Katalog-Schlüssel oben), keine Balance-Aussage.
 export const KOMBINATIONEN = [
@@ -94,7 +101,6 @@ export const KOMBINATIONEN = [
     budget: { enabled: false },
     limitKlassen: [],
     duell: { enabled: false },
-    joker: { enabled: false },
   },
   {
     key: "nadelstiche",
@@ -122,7 +128,6 @@ export const KOMBINATIONEN = [
       klau: { anteil: 0.5, modus: "nullsumme" },
       zielWahl: "frei",
     },
-    joker: { enabled: false },
   },
   {
     key: "gleichgewicht",
@@ -158,7 +163,6 @@ export const KOMBINATIONEN = [
       klau: { anteil: 0.35, modus: "nullsumme" },
       zielWahl: "nurVorne",
     },
-    joker: { enabled: false },
   },
   {
     key: "schlussoffensive",
@@ -188,7 +192,6 @@ export const KOMBINATIONEN = [
       block: { restanteil: 0.3, nurGewinn: true, beute: 0 },
       zielWahl: "nurVorne",
     },
-    joker: { enabled: false },
   },
   {
     key: "favoritenjagd",
@@ -225,12 +228,12 @@ export const KOMBINATIONEN = [
       klau: { anteil: 0.5, modus: "nullsumme" },
       zielWahl: "nurVorne",
     },
-    joker: { enabled: false },
   },
   {
     key: "rundumschlag",
     label: "Rundumschlag",
-    desc: "Viele Joker, jeder schwach. Der lebhafte Modus. Höchster Aufwand — Rating beachten.",
+    desc: "Viele kleine Einsätze aus einem großzügigen Münzstrom, gebündelt in einem "
+      + "gemeinsamen Kontingent. Der lebhafte Modus — höchster Aufwand, Rating beachten.",
     neigung: "neutral",
     dichte: "dicht",
     schaerfe: "zahm",
@@ -261,13 +264,6 @@ export const KOMBINATIONEN = [
       klau: { anteil: 0.25, modus: "nullsumme" },
       block: { restanteil: 0.6, nurGewinn: true, beute: 0 },
       zielWahl: "frei",
-    },
-    joker: {
-      enabled: true,
-      modus: "einzel",
-      faktor: 1.6,
-      heimat: { enabled: true, faktor: 1.1 },
-      mut: { enabled: false },
     },
   },
 ];

@@ -36,7 +36,7 @@
 import { rangliste } from "./saisonwetten";
 
 export const BIGGAME_LIMITS = {
-  aufschlag: { min: 0, max: 1, step: 0.1 },      // Aufschlag auf den Modifikator
+  aufschlag: { min: 0, max: 1, step: 0.05 },     // Aufschlag auf den Modifikator
   minSpannung: { min: 0, max: 0.8, step: 0.05 }, // ab welchem Wert es eins gibt
 };
 

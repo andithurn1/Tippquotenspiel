@@ -84,6 +84,36 @@ und ist im Telefon-Rahmen schon einmal passiert.
 `preview_start` hat schon einmal den alten Checkout gestartet (`CLAUDE.md`,
 Werkzeug-Fallen). Erkennungsprobe steht dort.
 
+---
+
+## 4b. 🔴 Entschieden: die Ökonomie fasst `joker` nicht an
+
+Bei der Abnahme von Schritt 1 gefragt: Ersetzt eine Bibliotheks-Kombination die
+Regelblöcke oder mischt sie? Die Umsetzung hatte `duell`/`joker` gemischt und
+`budget`/`limitKlassen` ersetzt — inkonsistent, weil die Spec dazu schwieg.
+
+**Die Ursache liegt tiefer: `joker` gehört gar nicht der Ökonomie.**
+
+Die Wertungs-Presets in `presets.js` setzen `joker` bereits — „Joker" und
+„Rangliste" tun genau das. Beansprucht die Ökonomie dasselbe Feld, überschreibt
+die Auswahl einer Ökonomie still die Wertung, und das zweiachsige Codeschema
+`<Wertung>-<Ökonomie>` (`joker-oekonomie.md` 3.1) wäre eine Lüge: die beiden
+Achsen wären nicht unabhängig.
+
+**Festlegung:**
+- `KOMBINATIONEN` setzen **`budget`, `limitKlassen` und `duell`** — mehr nicht.
+  Das `joker`-Feld fliegt aus den Einträgen raus.
+- Diese drei werden bei der Auswahl **ganz ersetzt**, nicht gemischt. Sie sind
+  je ein zusammengehöriger Satz; ein halb übernommener Satz ergäbe eine
+  Kombination, die niemand entworfen hat — dieselbe Begründung, aus der die
+  Aspekte in `presetMerge.js` gemeinsam wandern.
+- ⚠️ `rundumschlag` hieß „viele Joker, jeder schwach" und setzte dafür
+  `joker.modus`. Die Beschreibung muss nachziehen: die Dichte drückt sich über
+  **Münzen und Kontingente** aus, nicht über den Joker-Modus. Ein Eintrag, der
+  etwas verspricht, das er nicht setzt, ist schlimmer als einer, der weniger
+  kann.
+- Ein Test hält fest, dass **kein** Eintrag der Bibliothek `joker` enthält.
+
 ## 5. Reihenfolge
 
 1. `JokerOekonomie.jsx` + Verdrahtung ← **dieser Schritt**

@@ -264,7 +264,7 @@ export const RULE_LIMITS = {
   combo: {
     tendenz: { min: 1, max: 2, step: 0.05 },
     abstand: { min: 1, max: 3, step: 0.05 },
-    exakt:   { min: 1, max: 4, step: 0.1  },
+    exakt:   { min: 1, max: 4, step: 0.05 },
   },
   picksPerTeam: { min: 1, max: 3, step: 1 },
   // Mehr Spielraum als je Mannschaft: hier verteilen sich die Namen auf beide
@@ -288,12 +288,12 @@ export const RULE_LIMITS = {
   // der gesetzte Joker; die feinere Schrittweite bleibt, weil der Mut-Bonus
   // genau die hoechsten Auszahlungen verstaerkt und deshalb sensibler reagiert.
   joker: {
-    faktor: { min: 1, max: 2, step: 0.1 },
+    faktor: { min: 1, max: 2, step: 0.05 },
     mutFaktor: { min: 1, max: 2, step: 0.05 },
     anzahlFaktoren: { min: 2, max: 6, step: 1 },
   },
-  teamMods: { derbyFaktor: { min: 1, max: 2, step: 0.1 }, teamFaktor: { min: 1, max: 2, step: 0.1 } },
-  modCap: { min: 1, max: 4, step: 0.1 },
+  teamMods: { derbyFaktor: { min: 1, max: 2, step: 0.05 }, teamFaktor: { min: 1, max: 2, step: 0.05 } },
+  modCap: { min: 1, max: 4, step: 0.05 },
   aufholen: { staerke: { min: 0.05, max: 0.5, step: 0.05 }, schwelle: { min: 0, max: 0.5, step: 0.05 } },
   versaeumnis: { malusProzent: { min: 0, max: 100, step: 5 }, maxProSaison: { min: 0, max: 10, step: 1 } },
 };
@@ -307,7 +307,7 @@ function sanitizeJoker(jk, num, clamp) {
   const faktoren = [...new Set(roh
     .map((v) => num(v, NaN))
     .filter((v) => Number.isFinite(v))
-    .map((v) => +clamp(v, L.faktor.min, L.faktor.max).toFixed(1)))]
+    .map((v) => +clamp(v, L.faktor.min, L.faktor.max).toFixed(2)))]
     .sort((a, b) => b - a)
     .slice(0, L.anzahlFaktoren.max);
   return {
@@ -341,7 +341,7 @@ function sanitizeTeamMods(tm, num, clamp) {
   const roh = tm.teams && typeof tm.teams === "object" ? tm.teams : {};
   for (const [name, wert] of Object.entries(roh)) {
     if (typeof name !== "string" || !name.trim()) continue;
-    const f = +clamp(num(wert, 1), L.teamFaktor.min, L.teamFaktor.max).toFixed(1);
+    const f = +clamp(num(wert, 1), L.teamFaktor.min, L.teamFaktor.max).toFixed(2);
     if (f > 1) teams[name.trim().slice(0, 60)] = f;
   }
   return {

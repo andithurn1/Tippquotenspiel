@@ -32,6 +32,7 @@ import BalanceAmpel from "@/components/BalanceAmpel";
 import ProfiWarnungen from "@/components/ProfiWarnungen";
 import JokerVerteilung from "@/components/JokerVerteilung";
 import JokerOekonomie from "@/components/JokerOekonomie";
+import AufwandPanel from "@/components/AufwandPanel";
 import { band } from "@/lib/reglerWarnung";
 import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } from "@/lib/spielauswahl";
@@ -107,9 +108,10 @@ export default function Spielerstellung() {
   // `JokerOekonomie` meldet meist nur einen Münzen/Shop-Patch zurück (ein
   // einzelnes `budget`-Feld) — der läuft über `patchBudget` oben. Ein Klick in
   // der Bibliothek dort übernimmt dagegen das GANZE Regelfragment einer
-  // Kombination auf einmal (`budget` + `limitKlassen` + `duell` + `joker`,
-  // Letztere bereits vom Aufrufer mit dem bisherigen Regelwerk gemischt) —
-  // dafür reicht ein einzelnes Budget-Feld nicht, deshalb der Zweig hier.
+  // Kombination auf einmal (`budget` + `limitKlassen` + `duell`, alle drei
+  // GANZ ERSETZT, nicht gemischt) — dafür reicht ein einzelnes Budget-Feld
+  // nicht, deshalb der Zweig hier. `joker` (der klassische Joker aus den
+  // Wertungs-Presets) rührt die Ökonomie nicht an (design/gehaeuse-ui.md 4b).
   const patchOekonomie = (p) => {
     const keys = Object.keys(p);
     if (keys.length === 1 && keys[0] === "budget") { patchBudget(p.budget); return; }
@@ -272,6 +274,30 @@ export default function Spielerstellung() {
     const sichtbar = new Set(teamGruppen.flatMap((g) => g.vereine));
     return selectedTeams.filter((t) => !sichtbar.has(t));
   }, [teamGruppen, selectedTeams]);
+
+  // ── Aufwand: `kontext.spieleJeSpieltag` fürs AufwandPanel ─────
+  // Eine plausible Reihe aus der aktuellen Spielauswahl, wenn eine ermittelbar
+  // ist: bei „alle Spiele" ist das exakt (n Vereine → n/2 Spiele je Spieltag);
+  // bei einer Team-Beschränkung liefert `spieleProSpieltag` nur eine Spanne
+  // (kein Spielplan liegt hier vor) — die Mitte dient als plausibler Wert,
+  // dieselbe Rechnung wie in der Rückmeldung unter der Team-Auswahl unten.
+  // Ohne Spieltag-Grenzen dient eine volle Saison (34 Spieltage) als schlichte
+  // Vorgabe; `aufwand()` bildet ohnehin den Median darüber (aufwand.js
+  // Kopfkommentar).
+  const aufwandKontext = useMemo(() => {
+    const gesamt = teamGruppen.reduce((s, g) => s + g.vereine.length, 0) || ALL_TEAMS.length;
+    let proSpieltag;
+    if (teamFilterOn) {
+      const { min, max } = spieleProSpieltag(selectedTeams.length, gesamt);
+      proSpieltag = Math.round((min + max) / 2);
+    } else {
+      proSpieltag = Math.floor(gesamt / 2);
+    }
+    const von = sp.spieltagVon ?? 1;
+    const bis = sp.spieltagBis ?? 34;
+    const spieltage = Math.max(1, bis - von + 1);
+    return { spieleJeSpieltag: Array(spieltage).fill(proSpieltag) };
+  }, [teamFilterOn, selectedTeams, teamGruppen, sp.spieltagVon, sp.spieltagBis]);
 
   const createRound = async () => {
     if (!user) { setCreateErr("Bitte zuerst einloggen (Startseite)."); return; }
@@ -479,6 +505,11 @@ export default function Spielerstellung() {
               anderen Dimensionen. Steht bewusst hinter ihnen: erst probiert
               man die Regel, dann zählt man einzeln auf. */}
           <SpielauswahlListe spiele={sp} onChange={patchSpiele} />
+
+          {/* Aufwand: wie viele Entscheidungen verlangt ein Spieltag? Eine
+              Auskunft, kein Regler — deshalb in ALLEN drei Stufen sichtbar,
+              nicht erst ab „anpassen" (design/gehaeuse-ui.md 1). */}
+          <AufwandPanel rules={rules} kontext={aufwandKontext} />
 
           {/* Presets: Startpunkt, danach bleibt alles frei einstellbar */}
           {stufe !== "einfach" && <SectionTitle>Presets</SectionTitle>}
