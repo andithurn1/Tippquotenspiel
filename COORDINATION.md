@@ -42,6 +42,8 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
+| 2 (Andre) | **NÄCHSTE AUFGABE: Blindstellen-Durchgang `balanceSim.js`.** Sieht der Simulator die sechs neuen Ebenen? Nach Stand 31.07. nein — null Verweise. Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-31 |
+| 2 (Andre) | ~~Joker-Ökonomie: sechs Module + Einhängen + Creator-Code~~ — alles auf `main`, 1359 Tests grün | fertig | 2026-07-31 |
 | 2 (Andre) | **Duell-Joker** (Klau + Block) — `design/duell-joker.md` (Spec, liegt), `src/lib/duellJoker.js` + Test, danach `engine.js` (additiv), `presetMerge.js`, `reglerWarnung.js`, neue Komponente `DuellJoker.jsx`, Einbau in `Spielerstellung.jsx`. Vom Nutzer am 31.07. ausdrücklich beauftragt. | läuft | 2026-07-31 |
 | 2 (Andre) | **Punkt 3 `saisonform` messbar** — Blindstellen-Befund steht (siehe Log oben), Umsetzung PAUSIERT zugunsten der Duell-Joker. `balanceSim.js` ist unberührt. | pausiert | 2026-07-31 |
 | 2 (Andre) | **DU BIST DRAN** (30.07.). Aufgabe: `balanceSim.js` — Formkurven je Tipper + `tippEinfluss` + `saisonform` messbar machen. Danach der RLS-Befund (`schema.sql`, Store). Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-30 |
@@ -100,6 +102,92 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-07-31 (V) · **ÜBERGABE an die nächste Andre-Session** — Joker-Ökonomie steht, Messung fehlt
+
+> **👉 Frische Session: DAS ist dein Einstieg.** Das Fenster lief ans
+> 5-Stunden-Limit. Alles ist committet und gepusht, nichts hängt lokal.
+
+`main` bei `8a12fa0` · **1359 Tests grün** (Sessionstart: 1162) · Build sauber ·
+Arbeitskopie leer.
+
+#### ✅ Was diese Sitzung gebaut hat
+
+Sieben Commits, sechs neue Module plus das Einhängen:
+
+| Commit | Inhalt |
+|---|---|
+| `411d1bf` | `duellJoker.js` — Klau- und Block-Joker |
+| `0c890ae` | `jokerBudget.js` + `limitKlassen.js` |
+| `3fe6e55` | `jokerBasis.js` — die Grundform |
+| `2b12f6e` | `aufwand.js` — Entscheidungen je Spieltag |
+| `1e39773` | `jokerBibliothek.js` — Kombinationen, Code, Achsenprofil |
+| `d3973af` | **Einhängen** in `engine.js` + `presetMerge.js` |
+| `8a12fa0` | **Creator-Code auf Delta**, 3338 → 62 Zeichen |
+
+Specs: `design/duell-joker.md`, `joker-oekonomie.md`, `joker-inventar.md`,
+`joker-grundform.md`, `joker-einhaengen.md`, `creator-code-delta.md`.
+
+#### 🔴 DEINE AUFGABE: der Blindstellen-Durchgang
+
+**`balanceSim.js` sieht keine einzige der sechs Ebenen.** Nachgeprüft: null
+Verweise auf `duell`, `budget`, `limitKlassen`, `jokerBasis`, `jokerBibliothek`
+oder `saisonform` (die zwei Grep-Treffer sind das Wort „Traditionsduelle" in
+einem Kommentar).
+
+Vorgehen wie bei den Punkten 1 und 2 von Andis Auftrag: **erst prüfen, ob der
+Simulator die Ebene SIEHT, dann messen.** Bei `saisonform` waren es vier
+unabhängige Gründe, warum nicht — die stehen im Log-Eintrag vom 31.07. (I) und
+gelten unverändert, `balanceSim.js` ist bis heute unberührt:
+
+1. `applySaisonform` wird nie aufgerufen (Zeile 25/471).
+2. Ohne aktives Aufholen gibt es gar keinen Verlauf (Zeile 319).
+3. Die Verlaufs-Zeilen tragen kein `gewertet` → mit `nurGetippte: true` (Vorgabe)
+   greifen Streichresultate **nie**.
+4. Der Sieger kommt aus rohen Punkten (Zeile 462), nicht aus der gewichteten
+   Summe — dieselbe Referenz speist `aufholFlipQuote`.
+
+Für die neuen Ebenen kommt mindestens dazu: die Profile im Simulator setzen gar
+keine Duell-Joker, es gibt kein Budget und keine Limitklassen-Prüfung.
+
+⚠️ **Bis das steht, ist NICHTS balanciert.** Die sechs Bibliotheks-Kombinationen
+sind entworfen, nicht vermessen. Sie einstweilen reichhaltiger zu machen wäre
+genau der Fehler, vor dem `presets.js` im Kopf warnt: ein erster Entwurf setzte
+dort Werte nach Gefühl und ließ im Simulator sofort den Zocker mit 97 % gewinnen.
+
+#### 🟡 Danach offen
+
+- **Die sechs Kombinationen sind dünn.** Sie stellen im Wesentlichen Budget +
+  Duell-Joker ein, fassen `jokerBasis` gar nicht an und nutzen höchstens EINE
+  Limitklasse — obwohl überlagernde Klassen der ganze Witz sind. Erst messen,
+  dann ausbauen.
+- **Oberfläche** — `JokerOekonomie.jsx`, `LimitKlassen.jsx`, `AufwandPanel.jsx`,
+  Einbau in `Spielerstellung.jsx` über die drei Detailstufen.
+- **Store-Anbindung der Einsätze.** `applyDuellJoker` ist heute ein No-op, weil
+  `einsaetze` immer leer ist. Der Parameter steckt schon in der Kette.
+- **Lückenliste** in `design/joker-inventar.md` 4.5: L2 (variabler Einsatz),
+  L3 (Schutz über selbst gewählte Streichresultate), L4 (Ansage-Joker),
+  L5 (Dämpfer + `modFloor`), L6 (Frühtipp-Bonus). Alle ausgearbeitet, keiner
+  gebaut. **L1 (Quoten-Joker) ist vom Nutzer verworfen** — er bräche die
+  Prüfbarkeit des Snapshots und damit den RLS-Fix.
+- **Punkt 4 von Andis Auftrag, der RLS-Befund, ist weiterhin offen** und laut
+  ihm der wichtigste Posten im Projekt.
+
+#### 📌 Was sich in dieser Sitzung bewährt hat
+
+- **Der Ausführung wörtlich folgen lassen, nicht sinngemäß.** Zweimal hat sie
+  Fehler in MEINEN Vorgaben gefunden, statt sie zurechtzubiegen:
+  `voting.enabled` gibt es nicht (es ist `joker.abstimmung`), und
+  `markets.goals` hat kein `gewicht`. Beide hätten stumm nie beigetragen.
+- **Nie dem Bericht glauben, immer selbst nachmessen.** So kamen F1
+  (Zukunftswissen floss in vergangene Spieltage), F2 (der häufigste Fall lieferte
+  gar nichts) und F3 (ein fehlendes Feld schaltete ALLE Limits lautlos ab) ans
+  Licht — alle drei bei grünen Tests.
+- ⚠️ **Und die teuerste Falle: es gibt ZWEI Arbeitskopien.** `preview_start`
+  startete über die `launch.json` des Session-Primärverzeichnisses den ALTEN
+  Checkout in OneDrive. Der Dev-Server servierte tagealten Code, die
+  Browser-Prüfung bestätigte Verhalten, das mit der Änderung nichts zu tun
+  hatte. Behoben und in `CLAUDE.md` dokumentiert, samt Erkennungsprobe.
 
 ### 2026-07-31 (IV) · ⚠️ **ANKÜNDIGUNG grosser Push: `engine.js` + `presetMerge.js`**
 
