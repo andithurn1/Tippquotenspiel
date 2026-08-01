@@ -39,6 +39,15 @@
 //  Saisonform danach, weil sie ganze Spieltage gewichtet und streicht — sie
 //  muss den Wert wiegen, der wirklich zählt. Catchup zuletzt, unverändert.
 //
+//  ── Sichtbarkeit liegt in jokerBasis.sicht ──
+//  `duell.ansage`/`duell.oeffentlich` gibt es nicht mehr — zwei Wahrheiten über
+//  dieselbe Frage (WANN ein Einsatz für andere sichtbar wird) bleiben nicht
+//  stehen. Die Grundform aus `jokerBasis.js` deckt das über `sicht`
+//  (`sofort` · `nachAnpfiff` · `nachAuswertung`) ab, geschlüsselt je nach
+//  Joker-Art (`duell.klau`, `duell.block`) über `basisFuer()`. `sichtbarkeit`
+//  bleibt hier unverändert — das ist eine andere Frage: WIE ein Einsatz
+//  ausgewählt wird (offen vs. verdeckt), nicht WANN er sichtbar wird.
+//
 //  Reine Funktionen, UI-frei.
 // ============================================================
 
@@ -114,17 +123,6 @@ export const UMFANG = [
   },
 ];
 
-export const ANSAGE = [
-  {
-    key: "vorAnpfiff", label: "Vor Anpfiff",
-    desc: "Das Ziel erfährt vor dem Anpfiff, dass es getroffen wurde.",
-  },
-  {
-    key: "beiAuswertung", label: "Bei Auswertung",
-    desc: "Das Ziel erfährt erst mit der Auswertung, dass es getroffen wurde. Gesetzt wird der Einsatz trotzdem immer vor Anpfiff — nur die ANSAGE ist verzögert, nie der Zeitpunkt.",
-  },
-];
-
 // ── Grenzen & Vorgabe ───────────────────────────────────────
 
 export const DUELL_LIMITS = {
@@ -165,8 +163,6 @@ export const DEFAULT_DUELL = {
   maxProZiel: 2,
   immun: 1,
   konter: false,
-  ansage: "vorAnpfiff",
-  oeffentlich: true,
   kosten: "frei",
 };
 
@@ -248,8 +244,6 @@ export function sanitizeDuellJoker(partial = {}) {
     maxProZiel: Math.round(clamp(p.maxProZiel, DUELL_LIMITS.maxProZiel, DEFAULT_DUELL.maxProZiel)),
     immun: Math.round(clamp(p.immun, DUELL_LIMITS.immun, DEFAULT_DUELL.immun)),
     konter: p.konter === true,
-    ansage: ANSAGE.some((a) => a.key === p.ansage) ? p.ansage : DEFAULT_DUELL.ansage,
-    oeffentlich: p.oeffentlich !== false,
     kosten: p.kosten === "stattJoker" ? "stattJoker" : DEFAULT_DUELL.kosten,
   };
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  DUELL_TYPEN, PHASEN, ZIELWAHL, UMFANG, ANSAGE,
+  DUELL_TYPEN, PHASEN, ZIELWAHL, UMFANG,
   DUELL_LIMITS, DEFAULT_DUELL, EMPFEHLUNG,
   sanitizeDuellJoker, fensterVon, duellPlan, zulaessigeZiele,
   applyDuellJoker, beschreibeDuell, konflikte, waehleSpiele,
@@ -10,7 +10,7 @@ import {
 
 describe("Kataloge", () => {
   it("jeder Katalog-Eintrag hat key, label und desc", () => {
-    for (const liste of [DUELL_TYPEN, PHASEN, ZIELWAHL, UMFANG, ANSAGE]) {
+    for (const liste of [DUELL_TYPEN, PHASEN, ZIELWAHL, UMFANG]) {
       for (const e of liste) expect(e.key && e.label && e.desc).toBeTruthy();
       expect(new Set(liste.map((e) => e.key)).size).toBe(liste.length);
     }
@@ -24,11 +24,10 @@ describe("sanitizeDuellJoker", () => {
   });
 
   it("Unsinn fällt auf die Vorgabe zurück", () => {
-    const r = sanitizeDuellJoker({ phase: "quatsch", zielWahl: "quatsch", umfang: "quatsch", ansage: "quatsch", typen: ["quatsch"] });
+    const r = sanitizeDuellJoker({ phase: "quatsch", zielWahl: "quatsch", umfang: "quatsch", typen: ["quatsch"] });
     expect(r.phase).toBe(DEFAULT_DUELL.phase);
     expect(r.zielWahl).toBe(DEFAULT_DUELL.zielWahl);
     expect(r.umfang).toBe(DEFAULT_DUELL.umfang);
-    expect(r.ansage).toBe(DEFAULT_DUELL.ansage);
     expect(r.typen).toEqual(DEFAULT_DUELL.typen);
   });
 

@@ -47,6 +47,22 @@ describe("mergePresets", () => {
     expect(mix.combo).toEqual(sanitizeRules(STANDARD).combo); // Kombi von A
   });
 
+  it("der Joker-Aspekt nimmt duell/budget/limitKlassen/jokerBasis mit (Pflichttest 6)", () => {
+    const b = {
+      ...HARDCORE,
+      duell: { enabled: true, anzahl: 3 },
+      budget: { enabled: true, takt: "saison" },
+      limitKlassen: [{ id: "k1", mitglieder: ["duell.klau"], max: 3 }],
+      jokerBasis: { standard: { sicht: "sofort" } },
+    };
+    const mix = mergePresets(STANDARD, b, { ...defaultAuswahl("a"), modifikatoren: "b" });
+    const B = sanitizeRules(b);
+    expect(mix.duell).toEqual(B.duell);
+    expect(mix.budget).toEqual(B.budget);
+    expect(mix.limitKlassen).toEqual(B.limitKlassen);
+    expect(mix.jokerBasis).toEqual(B.jokerBasis);
+  });
+
   it("hält zusammengehörige Werte zusammen (Underdog samt Rampe)", () => {
     const mix = mergePresets(STANDARD, byKey("underdog-party"), { ...defaultAuswahl("a"), underdog: "b" });
     const B = sanitizeRules(byKey("underdog-party"));

@@ -4,6 +4,7 @@ import {
   sanitizeSaisonform, gewichte, anwenden, beschreibeSaisonform, applySaisonform,
 } from "@/lib/saisonform";
 import { DEFAULT_RULES, sanitizeRules, scoreLeaderboardHistory, brauchtVerlauf } from "@/lib/engine";
+import { DEFAULT_DUELL } from "@/lib/duellJoker";
 
 // Ein Spieltag, wie ihn der Verlauf liefert.
 const s = (key, punkte, getippt = true) => ({ key, punkte, getippt });
@@ -336,6 +337,17 @@ describe("brauchtVerlauf", () => {
   it("kommt mit fehlenden Regeln klar", () => {
     expect(brauchtVerlauf({})).toBe(false);
     expect(brauchtVerlauf()).toBe(false);
+  });
+
+  // Pflichttest 5 (design/joker-einhaengen.md): ein aktiver Duell-Joker
+  // braucht den Verlauf ebenso — sonst fielen die Überweisungen still unter
+  // den Tisch, weil `getLeaderboard` ohne Verlauf rechnet.
+  it("der Duell-Joker braucht den Verlauf, wenn er aktiv ist", () => {
+    expect(brauchtVerlauf({ ...DEFAULT_RULES, duell: { ...DEFAULT_DUELL, enabled: true } })).toBe(true);
+  });
+
+  it("ein inaktiver Duell-Joker ändert nichts", () => {
+    expect(brauchtVerlauf({ ...DEFAULT_RULES, duell: { ...DEFAULT_DUELL, enabled: false } })).toBe(false);
   });
 });
 

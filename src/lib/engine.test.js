@@ -6,6 +6,10 @@ import {
   jokerFactor, maxJokerFactor, maxTotalModifier, teamModFactor, totalModifier,
   invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday,
 } from "./engine";
+import { DEFAULT_DUELL } from "./duellJoker";
+import { DEFAULT_BUDGET } from "./jokerBudget";
+import { DEFAULT_LIMIT_KLASSEN } from "./limitKlassen";
+import { DEFAULT_BASIS } from "./jokerBasis";
 
 const odds = createMockOddsSource();
 const snap = odds.getSnapshot("JOR-ESP");
@@ -277,6 +281,44 @@ describe("sanitizeRules — Import & Regler-Grenzen", () => {
     const rules = sanitizeRules({ name: "Zocker-Modus", k: 1.2, combo: { exakt: 3.5 } });
     expect(sanitizeRules(decodePreset(encodePreset(rules)))).toEqual(rules);
   });
+
+  // ── Joker-Ökonomie: duell/budget/limitKlassen/jokerBasis ────
+  it("liefert die vier neuen Blöcke in ihrer Vorgabe (Pflichttest 1)", () => {
+    const r = sanitizeRules({});
+    expect(r.duell).toEqual(DEFAULT_DUELL);
+    expect(r.budget).toEqual(DEFAULT_BUDGET);
+    expect(r.limitKlassen).toEqual(DEFAULT_LIMIT_KLASSEN);
+    expect(r.jokerBasis).toEqual({ standard: DEFAULT_BASIS });
+  });
+
+  it("Müll in allen vier neuen Blöcken übersteht sanitizeRules und ergibt die Vorgaben (Pflichttest 2)", () => {
+    // Echter Müll: unbekannte Enum-Werte, falsche Typen — keine Zahlen, die
+    // nur auf ihre Grenze BESCHNITTEN würden (das wäre kein Rückfall auf die
+    // Vorgabe, sondern korrektes Clamping und damit ein anderer Testfall).
+    const r = sanitizeRules({
+      duell: { enabled: "ja", phase: "quatsch", zielWahl: "quatsch", umfang: "quatsch", typen: ["quatsch"] },
+      budget: { enabled: "ja", takt: "quatsch", verfall: "quatsch", quellen: "kaputt", preisModus: "quatsch" },
+      limitKlassen: "kaputt",
+      jokerBasis: {
+        standard: { wer: "quatsch", sicht: "quatsch", verfall: "quatsch", widerruf: "quatsch" },
+        quatschArt: { wer: "alle" },
+      },
+    });
+    expect(r.duell).toEqual(DEFAULT_DUELL);
+    expect(r.budget).toEqual(DEFAULT_BUDGET);
+    expect(r.limitKlassen).toEqual(DEFAULT_LIMIT_KLASSEN);
+    expect(r.jokerBasis).toEqual({ standard: DEFAULT_BASIS });
+  });
+
+  it("Creator-Code mit gesetzten neuen Blöcken läuft sauber hin und zurück (Pflichttest 7)", () => {
+    const rules = sanitizeRules({
+      duell: { ...DEFAULT_DUELL, enabled: true, anzahl: 3 },
+      budget: { ...DEFAULT_BUDGET, enabled: true, takt: "saison" },
+      limitKlassen: [{ id: "k1", mitglieder: ["duell.klau"], max: 3 }],
+      jokerBasis: { standard: { ...DEFAULT_BASIS, sicht: "sofort" } },
+    });
+    expect(sanitizeRules(decodePreset(encodePreset(rules)))).toEqual(rules);
+  });
 });
 
 describe("projectTip — Tipp-Vorschau (Potenzial)", () => {
@@ -421,6 +463,32 @@ describe("scoreLeaderboardHistory — kumulativer Rang-Verlauf je Spieltag", () 
     ]);
     expect(history.map((h) => h.matchday)).toEqual([1, 2]);
     expect(history[1].board[0].gewertet).toBe(2);
+  });
+
+  // ── Pflichttest 3 & 4: Regression — der dritte Parameter darf am
+  // bisherigen Verhalten nichts ändern, weder wenn er fehlt noch wenn er
+  // leer ist (`einsaetze` bleibt heute immer leer, siehe duellJoker.js).
+  describe("dritter Parameter (einsaetze) — Regression", () => {
+    const entries = [
+      { userId: "u1", name: "Du", tip: { home: 4, away: 1 }, matchday: 2, ...base },
+      { userId: "u1", name: "Du", tip: { home: 2, away: 1 }, matchday: 1, ...base },
+      { userId: "u2", name: "Max", tip: { home: 2, away: 1 }, matchday: 1, ...base },
+      { userId: "u2", name: "Max", tip: { home: 5, away: 1 }, matchday: 2, ...base },
+    ];
+
+    it("ohne dritten Parameter verhält es sich exakt wie vorher (Standard-Regelwerk)", () => {
+      const ohne = scoreLeaderboardHistory(entries, DEFAULT_RULES);
+      const mitLeer = scoreLeaderboardHistory(entries, DEFAULT_RULES, []);
+      expect(mitLeer).toEqual(ohne);
+    });
+
+    it("ein aktiver, aber ungenutzter Duell-Joker ändert am Verlauf nichts", () => {
+      const rules = sanitizeRules({ ...DEFAULT_RULES, duell: { ...DEFAULT_DUELL, enabled: true } });
+      const entries2 = entries.map((e) => ({ ...e, rules }));
+      const ohne = scoreLeaderboardHistory(entries2, rules);
+      const mitLeer = scoreLeaderboardHistory(entries2, rules, []);
+      expect(mitLeer).toEqual(ohne);
+    });
   });
 });
 

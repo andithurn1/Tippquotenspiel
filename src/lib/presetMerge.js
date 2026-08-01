@@ -47,8 +47,13 @@ export const ASPEKTE = [
     // bigGame gehört hierher, weil es denselben additiven Topf speist wie
     // Derby und Team-Faktoren — wer die Modifikatoren übernimmt, will es mit.
     // ereignisse gehört hierher, weil es denselben Joker-Topf speist —
-    // Modifikatoren übernimmt man als Ganzes oder gar nicht.
-    keys: ["joker", "teamMods", "modCap", "bigGame", "ereignisse", "wettbewerbe"],
+    // Modifikatoren übernimmt man als Ganzes oder gar nicht. Aus demselben
+    // Grund, nur stärker: duell/budget/limitKlassen/jokerBasis. `budget`
+    // bepreist ALLE Joker-Arten, `limitKlassen` deckelt sie, `jokerBasis` gibt
+    // ihnen ihre Form — wer die Ökonomie ohne die Joker übernähme (oder
+    // umgekehrt), bekäme eine Kombination, die niemand vermessen hat.
+    keys: ["joker", "teamMods", "modCap", "bigGame", "ereignisse", "wettbewerbe",
+           "duell", "budget", "limitKlassen", "jokerBasis"],
   },
   {
     key: "spiele",

@@ -7,6 +7,10 @@
 import { applyCatchup, BETRIFFT, betrifftWert } from "./catchup";
 import { applySaisonform, sanitizeSaisonform, DEFAULT_SAISONFORM } from "./saisonform";
 import { mitTippEinfluss, sanitizeTippEinfluss, DEFAULT_TIPPEINFLUSS } from "./tippEinfluss";
+import { applyDuellJoker, sanitizeDuellJoker, DEFAULT_DUELL } from "./duellJoker";
+import { sanitizeBudget, DEFAULT_BUDGET } from "./jokerBudget";
+import { sanitizeLimitKlassen, DEFAULT_LIMIT_KLASSEN } from "./limitKlassen";
+import { sanitizeJokerBasisKarte, DEFAULT_BASIS } from "./jokerBasis";
 
 
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
@@ -220,6 +224,32 @@ export const DEFAULT_RULES = {
   // den Rhythmus vor, alles andere ordnet sich ein. Reine Struktur- und
   // Anzeige-Frage, keine Wertung — Details in zeitachse.js.
   zeitachse: { ...DEFAULT_ZEITACHSE },
+
+  // ── Duell-Joker: Klau- & Block-Joker, der dritte Joker-Topf ──
+  // Zielt auf eine PERSON statt auf ein Spiel oder eine Aufgabe — Überweisung
+  // zwischen Mitspielern auf den fertigen Spieltagspunkten, nicht in scoreTip.
+  // Katalog + Auswertung in duellJoker.js. Standard aus.
+  duell: { ...DEFAULT_DUELL },
+
+  // ── Budget: die gemeinsame Währung über alle Joker-Arten ──
+  // Ersetzt viele eigene Kontingente durch EINEN Kontostand, aus dem jede
+  // Joker-Art bezahlt wird. Katalog + Verlaufsrechnung in jokerBudget.js.
+  // Standard aus.
+  budget: { ...DEFAULT_BUDGET },
+
+  // ── Limitierungsklassen: benannte Kontingente über mehrere Joker-Arten ──
+  // Eine Klasse fasst Joker-Arten zu einem gemeinsamen Deckel zusammen, mit
+  // eigenem Zeitfenster und eigener Aktivierungs-Bedingung. Katalog + Prüfung
+  // in limitKlassen.js. Standard leer (keine Klassen).
+  limitKlassen: [...DEFAULT_LIMIT_KLASSEN],
+
+  // ── Joker-Grundform: die sechs Dimensionen, die jeder Joker teilt ──
+  // Wer darf, wer sieht es, wann verfällt er, worauf gilt er, bis wann
+  // änderbar, wie viele auf ein Spiel — EINE Karte, geschlüsselt nach
+  // Joker-Art, mit einem `standard`-Eintrag als Vorgabe für alle Arten ohne
+  // eigene Abweichung. Details in jokerBasis.js. Standard = DEFAULT_BASIS
+  // für alle Arten.
+  jokerBasis: { standard: { ...DEFAULT_BASIS } },
 };
 
 // Domain-Grenzen der Regler — EINE Quelle für die UI-Slider (Spielerstellung)
@@ -410,6 +440,13 @@ export function sanitizeRules(partial = {}) {
     wettbewerbe: sanitizeWettbewerbe(src.wettbewerbe),
     tippfenster: sanitizeTippfenster(src.tippfenster),
     zeitachse: sanitizeZeitachse(src.zeitachse),
+    // Duell-Joker, Budget, Limitierungsklassen und Joker-Grundform prüfen
+    // sich selbst — dieselbe Delegation wie bei Saisonform und Saison-Wetten,
+    // damit die jeweiligen Kataloge die eine Quelle bleiben.
+    duell: sanitizeDuellJoker(src.duell),
+    budget: sanitizeBudget(src.budget),
+    limitKlassen: sanitizeLimitKlassen(src.limitKlassen),
+    jokerBasis: sanitizeJokerBasisKarte(src.jokerBasis),
   };
 }
 
@@ -883,11 +920,12 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES) {
 // Regel ergänzt, ändert nur diese Funktion.
 export function brauchtVerlauf(rules = DEFAULT_RULES) {
   if (rules?.aufholen?.enabled === true) return true;
+  if (sanitizeDuellJoker(rules?.duell).enabled) return true;
   const sf = sanitizeSaisonform(rules?.saisonform);
   return sf.kurve !== "flach" || sf.streich > 0;
 }
 
-export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES) {
+export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, einsaetze = []) {
   const geordnet = spieltageChronologisch(entries);
 
   // Position eines Spieltags im Verlauf — der kumulative Schnitt läuft über
@@ -901,15 +939,21 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES) {
       return r != null && r <= i;
     }), rules),
   }));
-  // Reihenfolge der beiden Nachbearbeitungen ist NICHT beliebig:
+  // Reihenfolge der drei Nachbearbeitungen ist NICHT beliebig:
   //
-  // 1. Saisonform (Gewichtung + Streichresultate) formt die Spieltagspunkte um.
-  // 2. Aufhol-Boni reagieren auf den Rückstand — und der soll die Gewichtung
+  // 1. Duell-Joker (Klau/Block), weil die Überweisung INNERHALB eines
+  //    Spieltags passiert.
+  // 2. Saisonform (Gewichtung + Streichresultate) formt die Spieltagspunkte
+  //    um — sie muss den Wert wiegen, der nach der Überweisung wirklich zählt.
+  // 3. Aufhol-Boni reagieren auf den Rückstand — und der soll die Gewichtung
   //    und die Streicher schon enthalten, sonst gleicht der Bonus einen
   //    Abstand aus, den es nach den Regeln der Runde gar nicht gibt.
   //
-  // Beide geben den Verlauf unverändert zurück, wenn ihre Regel aus ist.
-  return applyCatchup(applySaisonform(roh, rules), rules);
+  // Alle drei geben den Verlauf unverändert zurück, wenn ihre Regel aus ist
+  // (oder — beim Duell-Joker — wenn keine Einsätze vorliegen, siehe
+  // duellJoker.js). `einsaetze` ist heute immer leer (Store-Anbindung folgt),
+  // `applyDuellJoker` bleibt bis dahin ein No-op.
+  return applyCatchup(applySaisonform(applyDuellJoker(roh, rules, einsaetze), rules), rules);
 }
 
 
