@@ -163,6 +163,66 @@ Exportiert:
    `standard` plus gültige Arten durch.
 8. `konflikte` meldet die doppelte Absicherung.
 
+---
+
+## 4. Abnahme (31.07.) — zwei Nachbesserungen, drei Fragen beantwortet
+
+Kern abgenommen und nachgemessen: der Merge legt `standard` und Abweichung
+korrekt übereinander, `erfuelltBedingung` nimmt **strukturell keinen Tipp**
+entgegen (damit ist die Bedingung nicht farmbar), `darfWiderrufen` greift bei
+allen drei Werten und nie über den Anpfiff hinaus.
+
+### K1 🟠 — eine Einstellung, sechs Meldungen
+
+Gemessen: EIN Verstoß im `standard` (`sicht: "sofort"` +
+`widerruf: "sofortVerbindlich"`) erzeugt **sechs** Meldungen — eine je
+Joker-Art, weil `basisFuer` ohne Abweichung exakt den `standard` liefert.
+
+Die Begründung des Umsetzers („wie `pruefeEinsatz`, das jede Klasse einzeln
+nennt") trägt hier **nicht**. Dort ist jede Klasse eine eigene Regel, die der
+Admin geschrieben hat. Hier ist es **eine** Einstellung, sechsmal
+wiedergegeben. Das verdeckt, statt zu erklären — und damit genau das Gegenteil
+des Zwecks, für den die Grundform vorgezogen wurde.
+
+**Festlegung:**
+- Verstoß stammt aus dem `standard` → **EINE** Meldung, `bereich: "standard"`.
+- Verstoß stammt aus einer Art-**Abweichung** → eine Meldung je betroffener
+  Art, `bereich: "<jokerArt>"`.
+- Gilt beides, wird beides gemeldet — sie haben verschiedene Ursachen und
+  verschiedene Korrekturen.
+
+### K2 🟠 — `werWert` braucht zwei Bereiche
+
+`BASIS_LIMITS.werWert` ist `{ min: 0, max: 500 }` für `abPlatz` **und**
+`abRueckstand` gemeinsam. Für „ab Tabellenplatz N" ist 500 sinnlos — und
+`*_LIMITS` speist in diesem Projekt die UI-Regler (`RULE_LIMITS` tut es
+ausdrücklich). Ein Regler bis 500 für eine Tabellenposition ist unbedienbar.
+
+Der genannte Grund ist berechtigt: beim Bereinigen einer isolierten
+Art-Abweichung ist noch nicht bekannt, welches `wer` nach dem Merge gilt.
+**Die Lösung ist der Zeitpunkt, nicht ein gemeinsamer Bereich.**
+
+**Festlegung:**
+- `BASIS_LIMITS.abPlatz = { min: 1, max: 50, step: 1 }`
+- `BASIS_LIMITS.abRueckstand = { min: 0, max: 500, step: 1 }`
+- Beschnitten wird **im Merge** (`basisFuer`), denn dort sind `wer` und
+  `werWert` beide sicher bekannt. Die sparse Abweichung reicht den Rohwert
+  unbeschnitten durch — das ist kein Versäumnis, sondern die einzige Stelle,
+  an der er noch mehrdeutig ist.
+
+### Beantwortete Fragen
+
+1. **`adminFreigaben` = `[{ userId, spieltag }]`** — bestätigt. Rohe Liste, die
+   die Funktion selbst nach `aktuellerSpieltag` filtert, wie
+   `bisherigeEinsaetze` in `duellJoker.zulaessigeZiele`. Eine vorgefilterte
+   Liste würde die Filterregel an den Aufrufer verschieben und wäre die zweite
+   Wahrheit.
+2. **Übrige `BASIS_LIMITS`** — bestätigt: `quote` an `EREIGNIS_LIMITS.abQuote`
+   angelehnt, `widerrufStunden` 0–168 (Vorgabe 24), `stapeln` 1–10.
+3. **Die gefundene Testassertion** (`toHaveProperty("duell.klau")` liest den
+   Punkt als Pfad) war ein echter Fund — der Test wäre sonst leer durchgelaufen.
+   Die Umstellung auf die Array-Form ist richtig.
+
 ### Nicht Teil dieses Schritts
 
 Das Einhängen (`engine.js`, `presetMerge.js`) und das Ablösen von

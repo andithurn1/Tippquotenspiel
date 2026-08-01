@@ -93,6 +93,77 @@ achsenProfil(rules) -> { A: 0..3, B: 0..3, C: 0..3, D: 0..3, E: 0..3, F: 0..3 }
 weil sie eine überprüfbare Behauptung macht: *dieselbe* Achse verstärkt sich.
 Das kann `npm run balance` widerlegen, eine nackte Gesamtsumme nicht.
 
+## 3.1 Wie `achsenProfil(rules)` rechnet — verbindlich
+
+Je Achse werden **Beiträge** addiert und das Ergebnis auf 0–3 begrenzt. Jeder
+Beitrag ist an EIN Feld gebunden, damit später nachvollziehbar ist, welcher
+Regler eine Achse hochgetrieben hat (`achsenProfil` liefert deshalb neben dem
+Wert auch die Herkunft).
+
+⚠️ **Eine ausgeschaltete Ebene trägt immer 0 bei.** Jeder Beitrag prüft zuerst
+sein `enabled`.
+
+### A · Risiko
+
+| Feld | Beitrag |
+|---|---|
+| `underdogBoost` | ≥1,6 → 2 · >1,0 → 1 · sonst 0 |
+| `joker.mut.faktor` (wenn `mut.enabled`) | >1,15 → 2 · >1,0 → 1 |
+| `wrongPenalty` | ≥ −1 → 1 (kein Einsatz = Gratis-Lose) |
+| `minPayout` | ≤1 → 1 (kein Cutoff) |
+
+### B · Fokus
+
+| Feld | Beitrag |
+|---|---|
+| `joker.faktor` (wenn `joker.enabled`) | ≥2,5 → 2 · >1,5 → 1 |
+| `bigGame.aufschlag` (wenn aktiv) | ≥0,6 → 1 |
+| `teamMods.derbyFaktor` | >1,3 → 1 |
+| `wettbewerbe.enabled` | 1 |
+
+### C · Dramaturgie
+
+| Feld | Beitrag |
+|---|---|
+| `saisonform.kurve` ≠ `flach` | `staerke` ≥2,0 → 2 · sonst 1 |
+| `aufholen.enabled` | `staerke` ≥0,4 → 2 · sonst 1 |
+| `duell.phase` ∈ {`letztesDrittel`,`schlussspurt`} | 1 |
+
+### D · Sozial
+
+| Feld | Beitrag |
+|---|---|
+| `duell.enabled` | `typen` enthält `block` → 2 · sonst 1 |
+| `duell.zielWahl` = `frei` | +1 |
+| `voting.enabled` | 1 |
+| `joker.heimat.enabled` | 1 |
+
+### E · Ausdauer
+
+| Feld | Beitrag |
+|---|---|
+| `saisonform.streich` | >3 → 2 · >0 → 1 |
+| `versaeumnis.enabled` | 1 |
+| `ereignisse` mit Kategorie `meilenstein` | ≥3 aktiv → 2 · ≥1 → 1 |
+
+### F · Wissen
+
+| Feld | Beitrag |
+|---|---|
+| `markets.goals.enabled` | `gewicht` hoch → 2 · sonst 1 |
+| `saison.enabled` | `gewicht` ≥1,5 → 2 · sonst 1 |
+| `combo.exakt` | ≥3 → 1 |
+
+### `achsenKonflikte(profil)`
+
+Meldet **nur** Achsen mit Wert 3 **und** mindestens zwei beitragenden Quellen —
+eine einzelne Ebene auf Anschlag ist eine Entscheidung, zwei auf derselben Achse
+ein Zusammenstoß. Der Text nennt beide Herkünfte, damit der Admin weiß, welchen
+der beiden Regler er zurücknehmen kann.
+
+⚠️ **Keine Warnung bei hohen Werten auf VERSCHIEDENEN Achsen.** Das ist der
+ganze Sinn der Umstellung.
+
 ---
 
 ## 4. 🔴 Die Lücken — was ein Admin einstellen können sollte und heute nicht kann
