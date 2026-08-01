@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  WER, SICHT, VERFALL, WIDERRUF,
+  WER, SICHT, VERFALL, WIDERRUF, SYMMETRIE, UMFANG,
   BASIS_LIMITS, DEFAULT_BASIS,
   sanitizeBasis, sanitizeJokerBasisKarte, basisFuer,
   darfEinsetzen, erfuelltBedingung, darfWiderrufen,
@@ -11,7 +11,7 @@ import {
 
 describe("Kataloge", () => {
   it("jeder Katalog-Eintrag hat key, label und desc", () => {
-    for (const liste of [WER, SICHT, VERFALL, WIDERRUF]) {
+    for (const liste of [WER, SICHT, VERFALL, WIDERRUF, SYMMETRIE, UMFANG]) {
       for (const e of liste) expect(e.key && e.label && e.desc).toBeTruthy();
       expect(new Set(liste.map((e) => e.key)).size).toBe(liste.length);
     }
@@ -113,42 +113,80 @@ describe("darfEinsetzen — alle vier wer-Werte", () => {
     { userId: "d", total: 5 },
   ];
 
+  // ⚠️ 5.0-Anpassung: `darfEinsetzen` lehnt seit der Invariante „kein Joker
+  // ohne Tipp" (design/joker-grundform.md Abschnitt 5.0) OHNE
+  // `hatGetippt: true` grundsätzlich ab — unabhängig von `wer`. Diese Tests
+  // prüfen die WER-Logik, deshalb wird `hatGetippt: true` hier ausdrücklich
+  // mitgegeben, damit die Invariante nicht dazwischenfunkt. Die Invariante
+  // selbst hat einen eigenen Test-Block weiter unten (Pflichttest 1).
   it("2a. alle: immer erlaubt", () => {
     const basis = sanitizeBasis({ wer: "alle" });
-    expect(darfEinsetzen(basis, "d", { board })).toEqual({ erlaubt: true, grund: null });
+    expect(darfEinsetzen(basis, "d", { board, hatGetippt: true })).toEqual({ erlaubt: true, grund: null });
   });
 
   it("2b. abPlatz: nur ab dem eingestellten Tabellenplatz abwärts", () => {
     const basis = sanitizeBasis({ wer: "abPlatz", werWert: 3 }); // Platz 3 oder schlechter
-    expect(darfEinsetzen(basis, "a", { board }).erlaubt).toBe(true);  // Platz 3
-    expect(darfEinsetzen(basis, "d", { board }).erlaubt).toBe(true);  // Platz 4
-    expect(darfEinsetzen(basis, "b", { board }).erlaubt).toBe(false); // Platz 2
-    expect(darfEinsetzen(basis, "c", { board }).erlaubt).toBe(false); // Platz 1
+    expect(darfEinsetzen(basis, "a", { board, hatGetippt: true }).erlaubt).toBe(true);  // Platz 3
+    expect(darfEinsetzen(basis, "d", { board, hatGetippt: true }).erlaubt).toBe(true);  // Platz 4
+    expect(darfEinsetzen(basis, "b", { board, hatGetippt: true }).erlaubt).toBe(false); // Platz 2
+    expect(darfEinsetzen(basis, "c", { board, hatGetippt: true }).erlaubt).toBe(false); // Platz 1
   });
 
   it("2c. abRueckstand: nur wer mindestens werWert Punkte hinter Platz 1 liegt", () => {
     const basis = sanitizeBasis({ wer: "abRueckstand", werWert: 60 });
-    expect(darfEinsetzen(basis, "d", { board }).erlaubt).toBe(true);  // 95 Rückstand
-    expect(darfEinsetzen(basis, "b", { board }).erlaubt).toBe(false); // 50 Rückstand
-    expect(darfEinsetzen(basis, "c", { board }).erlaubt).toBe(false); // 0 Rückstand (führt selbst)
+    expect(darfEinsetzen(basis, "d", { board, hatGetippt: true }).erlaubt).toBe(true);  // 95 Rückstand
+    expect(darfEinsetzen(basis, "b", { board, hatGetippt: true }).erlaubt).toBe(false); // 50 Rückstand
+    expect(darfEinsetzen(basis, "c", { board, hatGetippt: true }).erlaubt).toBe(false); // 0 Rückstand (führt selbst)
   });
 
   it("2d. adminFreigabe: ohne Freigabe nicht erlaubt, mit Freigabe erlaubt", () => {
     const basis = sanitizeBasis({ wer: "adminFreigabe" });
-    const ohneFreigabe = darfEinsetzen(basis, "a", { board, aktuellerSpieltag: 5, adminFreigaben: [] });
+    const ohneFreigabe = darfEinsetzen(basis, "a", { board, hatGetippt: true, aktuellerSpieltag: 5, adminFreigaben: [] });
     expect(ohneFreigabe.erlaubt).toBe(false);
     expect(ohneFreigabe.grund).toBeTruthy();
 
     const mitFreigabe = darfEinsetzen(basis, "a", {
-      board, aktuellerSpieltag: 5, adminFreigaben: [{ userId: "a", spieltag: 5 }],
+      board, hatGetippt: true, aktuellerSpieltag: 5, adminFreigaben: [{ userId: "a", spieltag: 5 }],
     });
     expect(mitFreigabe.erlaubt).toBe(true);
 
     // Freigabe für einen ANDEREN Spieltag zählt nicht.
     const falscherTag = darfEinsetzen(basis, "a", {
-      board, aktuellerSpieltag: 6, adminFreigaben: [{ userId: "a", spieltag: 5 }],
+      board, hatGetippt: true, aktuellerSpieltag: 6, adminFreigaben: [{ userId: "a", spieltag: 5 }],
     });
     expect(falscherTag.erlaubt).toBe(false);
+  });
+});
+
+// ── Pflichttest 1 (5.0) — der wichtigste Test des ganzen Schritts ──────────
+
+describe("darfEinsetzen — 5.0 Invariante: kein Joker ohne Tipp", () => {
+  const basis = sanitizeBasis({ wer: "alle" });
+
+  it("1a. hatGetippt: false -> abgelehnt", () => {
+    const r = darfEinsetzen(basis, "a", { hatGetippt: false });
+    expect(r.erlaubt).toBe(false);
+    expect(r.grund).toBeTruthy();
+  });
+
+  it("1b. hatGetippt fehlt komplett -> ebenfalls abgelehnt (gilt als NICHT getippt)", () => {
+    const r = darfEinsetzen(basis, "a", {});
+    expect(r.erlaubt).toBe(false);
+    expect(r.grund).toBeTruthy();
+    // Auch ganz ohne Kontext-Objekt.
+    expect(darfEinsetzen(basis, "a").erlaubt).toBe(false);
+  });
+
+  it("1c. hatGetippt: true -> durchgelassen (bei sonst gültiger Basis)", () => {
+    expect(darfEinsetzen(basis, "a", { hatGetippt: true })).toEqual({ erlaubt: true, grund: null });
+  });
+
+  it("1d. die Invariante geht der wer-Prüfung vor, gilt also auch bei wer: adminFreigabe", () => {
+    const adminBasis = sanitizeBasis({ wer: "adminFreigabe" });
+    const ohneTipp = darfEinsetzen(adminBasis, "a", {
+      hatGetippt: false, aktuellerSpieltag: 5, adminFreigaben: [{ userId: "a", spieltag: 5 }],
+    });
+    expect(ohneTipp.erlaubt).toBe(false);
   });
 });
 
@@ -326,6 +364,129 @@ describe("konflikte", () => {
     expect(k).toHaveLength(1);
     expect(k[0].bereich).toBe("duell.klau");
     expect(k[0].key).toBe("basis-sofort-verbindlich-duell.klau");
+  });
+});
+
+// ── Erweiterung (design/joker-grundform.md Abschnitt 5) ─────────────────
+// Pflichttests 2–8 aus der Aufgabenstellung. Pflichttest 1 (5.0-Invariante)
+// steht bereits weiter oben, direkt neben den bestehenden wer-Tests.
+
+describe("sanitizeBasis — 5.1 symmetrie", () => {
+  it("2. jeder der drei symmetrie-Werte übersteht sanitizeBasis; Unsinn fällt auf beidseitig", () => {
+    expect(sanitizeBasis({ symmetrie: "beidseitig" }).symmetrie).toBe("beidseitig");
+    expect(sanitizeBasis({ symmetrie: "nurGewinn" }).symmetrie).toBe("nurGewinn");
+    expect(sanitizeBasis({ symmetrie: "nurVerlust" }).symmetrie).toBe("nurVerlust");
+    expect(sanitizeBasis({ symmetrie: "quatsch" }).symmetrie).toBe("beidseitig");
+    expect(sanitizeBasis({}).symmetrie).toBe("beidseitig");
+  });
+});
+
+describe("sanitizeBasis — 5.2 bestand", () => {
+  it("3. bestand: 0 bedeutet unbegrenzt und wird nicht auf 1 hochgezogen", () => {
+    expect(sanitizeBasis({ bestand: 0 }).bestand).toBe(0);
+    expect(sanitizeBasis({}).bestand).toBe(0); // Vorgabe
+    expect(sanitizeBasis({ bestand: 5 }).bestand).toBe(5);
+    // Wird trotzdem auf BASIS_LIMITS.bestand beschnitten.
+    expect(sanitizeBasis({ bestand: 9999 }).bestand).toBe(BASIS_LIMITS.bestand.max);
+    expect(sanitizeBasis({ bestand: -5 }).bestand).toBe(0);
+  });
+});
+
+describe("sanitizeBasis — 5.3 kasseSichtbar", () => {
+  it("4. kasseSichtbar ist nur bei ausdrücklichem false falsch", () => {
+    expect(sanitizeBasis({}).kasseSichtbar).toBe(true);
+    expect(sanitizeBasis({ kasseSichtbar: true }).kasseSichtbar).toBe(true);
+    expect(sanitizeBasis({ kasseSichtbar: undefined }).kasseSichtbar).toBe(true);
+    expect(sanitizeBasis({ kasseSichtbar: null }).kasseSichtbar).toBe(true);
+    expect(sanitizeBasis({ kasseSichtbar: "quatsch" }).kasseSichtbar).toBe(true);
+    expect(sanitizeBasis({ kasseSichtbar: false }).kasseSichtbar).toBe(false);
+  });
+});
+
+describe("darfEinsetzen — 5.5 Abklingzeit", () => {
+  const basis = sanitizeBasis({ wer: "alle", abklingzeit: 3 });
+
+  it("5. Sperre läuft für abklingzeit Spieltage nach dem letzten Einsatz DERSELBEN Art", () => {
+    const letzteEinsaetze = [{ jokerArt: "joker.einzel", spieltag: 10 }];
+
+    // Spieltag 12: 12 - 10 = 2 < 3 -> noch gesperrt.
+    const gesperrt = darfEinsetzen(basis, "a", {
+      hatGetippt: true, aktuellerSpieltag: 12, letzteEinsaetze,
+    }, "joker.einzel");
+    expect(gesperrt.erlaubt).toBe(false);
+    expect(gesperrt.grund).toBeTruthy();
+
+    // Spieltag 13: 13 - 10 = 3 >= 3 -> erlaubt.
+    const erlaubt = darfEinsetzen(basis, "a", {
+      hatGetippt: true, aktuellerSpieltag: 13, letzteEinsaetze,
+    }, "joker.einzel");
+    expect(erlaubt.erlaubt).toBe(true);
+  });
+
+  it("5b. ein Einsatz einer ANDEREN Art sperrt nicht mit", () => {
+    const letzteEinsaetze = [{ jokerArt: "duell.klau", spieltag: 10 }];
+    const r = darfEinsetzen(basis, "a", {
+      hatGetippt: true, aktuellerSpieltag: 12, letzteEinsaetze,
+    }, "joker.einzel");
+    expect(r.erlaubt).toBe(true);
+  });
+
+  it("6. ohne vierten Parameter jokerArt wird die Abklingzeit NICHT geprüft (Abwärtskompatibilität)", () => {
+    const letzteEinsaetze = [{ jokerArt: "joker.einzel", spieltag: 10 }];
+    // Spieltag 12 wäre mit Prüfung gesperrt (siehe Test 5) — ohne jokerArt
+    // greift die Prüfung gar nicht erst.
+    const r = darfEinsetzen(basis, "a", { hatGetippt: true, aktuellerSpieltag: 12, letzteEinsaetze });
+    expect(r.erlaubt).toBe(true);
+  });
+});
+
+describe("sanitizeBasis — 5.4 umfang/spieleProEinsatz/wahl", () => {
+  it("7. überstehen sanitizeBasis und fallen bei Unsinn auf die Vorgabe", () => {
+    expect(sanitizeBasis({ umfang: "einSpiel" }).umfang).toBe("einSpiel");
+    expect(sanitizeBasis({ umfang: "nSpiele" }).umfang).toBe("nSpiele");
+    expect(sanitizeBasis({ umfang: "spieltag" }).umfang).toBe("spieltag");
+    expect(sanitizeBasis({ umfang: "quatsch" }).umfang).toBe("einSpiel");
+    expect(sanitizeBasis({}).umfang).toBe("einSpiel");
+
+    expect(sanitizeBasis({ spieleProEinsatz: 3 }).spieleProEinsatz).toBe(3);
+    expect(sanitizeBasis({ spieleProEinsatz: 9999 }).spieleProEinsatz).toBe(BASIS_LIMITS.spieleProEinsatz.max);
+    expect(sanitizeBasis({}).spieleProEinsatz).toBe(1);
+
+    expect(sanitizeBasis({ wahl: "bestes" }).wahl).toBe("bestes");
+    expect(sanitizeBasis({ wahl: "selbst" }).wahl).toBe("selbst");
+    expect(sanitizeBasis({ wahl: "quatsch" }).wahl).toBe("selbst");
+    expect(sanitizeBasis({}).wahl).toBe("selbst");
+  });
+});
+
+describe("basisFuer — 5. neue Felder aus standard plus Art-Abweichung", () => {
+  it("8. merged die neuen Felder korrekt", () => {
+    const rules = {
+      jokerBasis: {
+        standard: { symmetrie: "nurGewinn", bestand: 4, kasseSichtbar: false, abklingzeit: 2, umfang: "nSpiele", spieleProEinsatz: 2, wahl: "bestes" },
+        "duell.klau": { symmetrie: "nurVerlust", abklingzeit: 5 },
+      },
+    };
+    // Art ohne eigene Abweichung übernimmt exakt den standard.
+    const einzel = basisFuer("joker.einzel", rules);
+    expect(einzel.symmetrie).toBe("nurGewinn");
+    expect(einzel.bestand).toBe(4);
+    expect(einzel.kasseSichtbar).toBe(false);
+    expect(einzel.abklingzeit).toBe(2);
+    expect(einzel.umfang).toBe("nSpiele");
+    expect(einzel.spieleProEinsatz).toBe(2);
+    expect(einzel.wahl).toBe("bestes");
+
+    // "duell.klau" überschreibt symmetrie und abklingzeit, der Rest kommt
+    // unverändert vom standard.
+    const klau = basisFuer("duell.klau", rules);
+    expect(klau.symmetrie).toBe("nurVerlust");
+    expect(klau.abklingzeit).toBe(5);
+    expect(klau.bestand).toBe(4);
+    expect(klau.kasseSichtbar).toBe(false);
+    expect(klau.umfang).toBe("nSpiele");
+    expect(klau.spieleProEinsatz).toBe(2);
+    expect(klau.wahl).toBe("bestes");
   });
 });
 

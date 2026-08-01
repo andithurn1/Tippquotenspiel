@@ -72,6 +72,26 @@ export const WIDERRUF = [
   { key: "sofortVerbindlich", label: "Sofort verbindlich", desc: "Kein Widerruf möglich, sobald gesetzt." },
 ];
 
+// 5.1 (design/joker-grundform.md Abschnitt 5.1): löst die heute fest
+// verdrahtete Symmetrie ab („wirkt symmetrisch, auch auf ein Minus").
+export const SYMMETRIE = [
+  { key: "beidseitig", label: "Beidseitig", desc: "Verdoppelt Gewinn UND Verlust. Vorgabe, heutiges Verhalten." },
+  { key: "nurGewinn", label: "Nur Gewinn", desc: "Wirkt nur nach oben — risikolos." },
+  { key: "nurVerlust", label: "Nur Verlust", desc: "Wirkt nur nach unten — der Malus-Joker, den ein Mitspieler verhängt." },
+];
+
+// 5.4 (design/joker-grundform.md Abschnitt 5.4): wandert sinngemäß aus
+// `duellJoker.js`s `UMFANG` hoch — jeder Joker stellt dieselbe Frage, nicht
+// nur der Duell-Joker. Bewusst NEU angelegt statt aus `duellJoker.js`
+// importiert: `duellJoker.js` gibt diese Felder erst in einem SPÄTEREN Schritt
+// ab (Abschnitt 5.4, letzter Satz) — bis dahin bleiben es zwei unabhängige
+// Kataloge mit identischem Inhalt, keine Kopplung in die falsche Richtung.
+export const UMFANG = [
+  { key: "einSpiel", label: "Ein Spiel", desc: "Wirkt nur auf ein einzelnes Spiel. Vorgabe." },
+  { key: "nSpiele", label: "Mehrere Spiele", desc: "Wirkt auf eine feste Anzahl Spiele (`spieleProEinsatz`)." },
+  { key: "spieltag", label: "Ganzer Spieltag", desc: "Wirkt auf den kompletten Spieltag." },
+];
+
 // ── Grenzen & Vorgabe ───────────────────────────────────────
 
 export const BASIS_LIMITS = {
@@ -90,6 +110,20 @@ export const BASIS_LIMITS = {
   quote: { min: 2, max: 15, step: 0.5 },
   widerrufStunden: { min: 0, max: 168, step: 1 },
   stapeln: { min: 1, max: 10, step: 1 },
+  // 5.2: wie viele man von einer Art HALTEN darf (Inventar), nicht wie viele
+  // man einsetzen darf. Kein Vorbild im Plan für die genaue Obergrenze —
+  // eigene, moderate Einschätzung, siehe Ausführungsbericht.
+  bestand: { min: 0, max: 20, step: 1 },
+  // 5.5: löst `duell.abstand` ab (design/joker-ausloeser.md Abschnitt 8).
+  // ⚠️ ABSICHTLICH weiter als `DUELL_LIMITS.abstand` (0–6). Jene Spanne stammt
+  // aus einem Regler, der nur die Einsätze EINES Jokers entzerren sollte. Hier
+  // ist es die allgemeine Sperre je Joker-Art, und ein Admin muss „höchstens
+  // einmal pro Halbserie" ausdrücken können — bei 34 Spieltagen sind das 17.
+  // Grenzen sind die des ERLAUBTEN, nicht des Empfohlenen (reglerWarnung.js):
+  // wer eine harte Sperre will, darf sie setzen.
+  abklingzeit: { min: 0, max: 20, step: 1 },
+  // 5.4: sinngemäß aus `DUELL_LIMITS.spieleProEinsatz` in duellJoker.js.
+  spieleProEinsatz: { min: 1, max: 5, step: 1 },
 };
 
 // `wer` → welcher Bereich aus BASIS_LIMITS gilt für `werWert`. `null`, wenn
@@ -109,6 +143,13 @@ export const DEFAULT_BASIS = {
   widerruf: "bisAnpfiff",
   widerrufStunden: 24,
   stapeln: 1,
+  symmetrie: "beidseitig",
+  bestand: 0,
+  kasseSichtbar: true,
+  abklingzeit: 0,
+  umfang: "einSpiel",
+  spieleProEinsatz: 1,
+  wahl: "selbst",
 };
 
 const clamp = (v, { min, max }, fallback) => {
@@ -141,6 +182,14 @@ function sanitizeVerfall(v) {
 
 function sanitizeWiderruf(v) {
   return WIDERRUF.some((w) => w.key === v) ? v : DEFAULT_BASIS.widerruf;
+}
+
+function sanitizeSymmetrie(v) {
+  return SYMMETRIE.some((s) => s.key === v) ? v : DEFAULT_BASIS.symmetrie;
+}
+
+function sanitizeUmfang(v) {
+  return UMFANG.some((u) => u.key === v) ? v : DEFAULT_BASIS.umfang;
 }
 
 // `null`/`undefined` gelten als „keine Vorgabe" (bleiben `null`), dieselbe
@@ -176,6 +225,15 @@ export function sanitizeBasis(partial = {}) {
     widerruf: sanitizeWiderruf(p.widerruf),
     widerrufStunden: Math.round(clamp(p.widerrufStunden, BASIS_LIMITS.widerrufStunden, DEFAULT_BASIS.widerrufStunden)),
     stapeln: Math.round(clamp(p.stapeln, BASIS_LIMITS.stapeln, DEFAULT_BASIS.stapeln)),
+    symmetrie: sanitizeSymmetrie(p.symmetrie),
+    bestand: Math.round(clamp(p.bestand, BASIS_LIMITS.bestand, DEFAULT_BASIS.bestand)),
+    // Nur ein ausdrückliches `false` schaltet ab — dieselbe Bauart wie
+    // `block.nurGewinn` in duellJoker.js.
+    kasseSichtbar: p.kasseSichtbar !== false,
+    abklingzeit: Math.round(clamp(p.abklingzeit, BASIS_LIMITS.abklingzeit, DEFAULT_BASIS.abklingzeit)),
+    umfang: sanitizeUmfang(p.umfang),
+    spieleProEinsatz: Math.round(clamp(p.spieleProEinsatz, BASIS_LIMITS.spieleProEinsatz, DEFAULT_BASIS.spieleProEinsatz)),
+    wahl: p.wahl === "bestes" ? "bestes" : DEFAULT_BASIS.wahl,
   };
 }
 
@@ -234,6 +292,25 @@ function sanitizeBasisAbweichung(partial) {
     const n = Number(o.stapeln);
     if (Number.isFinite(n)) out.stapeln = Math.round(clamp(n, BASIS_LIMITS.stapeln, BASIS_LIMITS.stapeln.min));
   }
+  if (SYMMETRIE.some((s) => s.key === o.symmetrie)) out.symmetrie = o.symmetrie;
+  if (o.bestand !== undefined && o.bestand !== null) {
+    const n = Number(o.bestand);
+    if (Number.isFinite(n)) out.bestand = Math.round(clamp(n, BASIS_LIMITS.bestand, BASIS_LIMITS.bestand.min));
+  }
+  // Boolesch: nur ein tatsächlich gesetzter boolescher Wert zählt als
+  // Abweichung — dieselbe „nur vorhanden UND gültig"-Regel wie bei den
+  // anderen Feldern in dieser Funktion.
+  if (typeof o.kasseSichtbar === "boolean") out.kasseSichtbar = o.kasseSichtbar;
+  if (o.abklingzeit !== undefined && o.abklingzeit !== null) {
+    const n = Number(o.abklingzeit);
+    if (Number.isFinite(n)) out.abklingzeit = Math.round(clamp(n, BASIS_LIMITS.abklingzeit, BASIS_LIMITS.abklingzeit.min));
+  }
+  if (UMFANG.some((u) => u.key === o.umfang)) out.umfang = o.umfang;
+  if (o.spieleProEinsatz !== undefined && o.spieleProEinsatz !== null) {
+    const n = Number(o.spieleProEinsatz);
+    if (Number.isFinite(n)) out.spieleProEinsatz = Math.round(clamp(n, BASIS_LIMITS.spieleProEinsatz, BASIS_LIMITS.spieleProEinsatz.min));
+  }
+  if (o.wahl === "selbst" || o.wahl === "bestes") out.wahl = o.wahl;
   return out;
 }
 
@@ -286,16 +363,50 @@ export function basisFuer(jokerArt, rules) {
 }
 
 // ── wer darf einsetzen ──────────────────────────────────────
-// `kontext = { board, aktuellerSpieltag, adminFreigaben }`. `board` = Snapshot
-// der Tabelle, `[{ userId, total, … }]`, dieselbe Form wie in `duellJoker.js`
-// und `limitKlassen.js`. `adminFreigaben` = welche Freigaben der Admin je
-// Spieltag erteilt hat, `[{ userId, spieltag }]` — dieselbe Bauart wie
-// `bisherigeEinsaetze` in `duellJoker.js`s `zulaessigeZiele`: eine rohe,
-// unfilterte Liste, die diese Funktion selbst nach `aktuellerSpieltag`
-// filtert.
-export function darfEinsetzen(basis, userId, kontext = {}) {
+// `kontext = { board, aktuellerSpieltag, adminFreigaben, hatGetippt,
+// letzteEinsaetze }`. `board` = Snapshot der Tabelle, `[{ userId, total, … }]`,
+// dieselbe Form wie in `duellJoker.js` und `limitKlassen.js`. `adminFreigaben`
+// = welche Freigaben der Admin je Spieltag erteilt hat, `[{ userId, spieltag }]`
+// — dieselbe Bauart wie `bisherigeEinsaetze` in `duellJoker.js`s
+// `zulaessigeZiele`: eine rohe, unfilterte Liste, die diese Funktion selbst
+// nach `aktuellerSpieltag` filtert.
+//
+// 🔴 5.0 INVARIANTE (design/joker-grundform.md Abschnitt 5.0): kein Joker ohne
+// Tipp. Das ist KEINE Einstellung, sie gilt IMMER, unabhängig von `wer` — ein
+// Spieler, der den Spieltag nicht tippt, kann dort nichts setzen. `hatGetippt`
+// muss ausdrücklich `true` sein; fehlt es (`undefined`) ODER ist es `false`,
+// gilt der Spieltag als NICHT getippt und der Einsatz wird abgelehnt — lieber
+// ein Joker zu wenig als einer auf einem Spieltag, den niemand gespielt hat.
+// Auch der Ersatz-Tipp aus `autoTip.js` (`versaeumnis`) zählt NICHT als Tipp
+// in diesem Sinn (Abschnitt 5.0) — das entscheidet der Aufrufer, der
+// `hatGetippt` befüllt, nicht diese Funktion.
+//
+// 5.5 ABKLINGZEIT (design/joker-ausloeser.md Abschnitt 8): `jokerArt` ist ein
+// optionaler VIERTER Parameter, damit bestehende Aufrufe ohne ihn nicht
+// brechen — ohne `jokerArt` wird die Abklingzeit nicht geprüft.
+// `kontext.letzteEinsaetze` = `[{ jokerArt, spieltag }]`, bereits auf DIESEN
+// Spieler eingegrenzt (der Aufrufer filtert nach `userId`, dieselbe
+// Verantwortungsteilung wie bei `adminFreigaben`/`bisherigeEinsaetze`).
+export function darfEinsetzen(basis, userId, kontext = {}, jokerArt = null) {
   const b = basis && typeof basis === "object" ? basis : DEFAULT_BASIS;
   const ctx = kontext && typeof kontext === "object" ? kontext : {};
+
+  if (ctx.hatGetippt !== true) {
+    return { erlaubt: false, grund: "Kein Joker ohne Tipp: an diesem Spieltag wurde nicht getippt." };
+  }
+
+  const werErgebnis = pruefeWer(b, userId, ctx);
+  if (!werErgebnis.erlaubt) return werErgebnis;
+
+  if (jokerArt != null) {
+    const abklingErgebnis = pruefeAbklingzeit(b, ctx, jokerArt);
+    if (!abklingErgebnis.erlaubt) return abklingErgebnis;
+  }
+
+  return { erlaubt: true, grund: null };
+}
+
+function pruefeWer(b, userId, ctx) {
   const board = Array.isArray(ctx.board) ? ctx.board : [];
 
   if (b.wer === "alle") return { erlaubt: true, grund: null };
@@ -329,6 +440,37 @@ export function darfEinsetzen(basis, userId, kontext = {}) {
   return freigegeben
     ? { erlaubt: true, grund: null }
     : { erlaubt: false, grund: "Der Admin hat diesen Spieltag noch nicht freigegeben." };
+}
+
+// Sperrt eine Joker-ART für `basis.abklingzeit` Spieltage NACH dem letzten
+// Einsatz DIESER Art — eine andere Art sperrt nicht mit. Ohne
+// `aktuellerSpieltag` (nicht bekannt) lässt sich die Sperre nicht auswerten —
+// dieselbe Kulanz wie bei `adminFreigaben` mit `jetzt == null`.
+function pruefeAbklingzeit(b, ctx, jokerArt) {
+  const abklingzeit = Number(b.abklingzeit) || 0;
+  if (abklingzeit <= 0) return { erlaubt: true, grund: null };
+
+  const aktuellerSpieltag = ctx.aktuellerSpieltag;
+  if (aktuellerSpieltag == null) return { erlaubt: true, grund: null };
+
+  const einsaetze = Array.isArray(ctx.letzteEinsaetze) ? ctx.letzteEinsaetze : [];
+  let letzterSpieltag = null;
+  for (const e of einsaetze) {
+    if (!e || e.jokerArt !== jokerArt) continue;
+    const st = Number(e.spieltag);
+    if (!Number.isFinite(st)) continue;
+    if (letzterSpieltag == null || st > letzterSpieltag) letzterSpieltag = st;
+  }
+  if (letzterSpieltag == null) return { erlaubt: true, grund: null };
+
+  const seit = Number(aktuellerSpieltag) - letzterSpieltag;
+  if (seit < abklingzeit) {
+    return {
+      erlaubt: false,
+      grund: `Abklingzeit: noch ${abklingzeit - seit} Spieltag(e) gesperrt (letzter Einsatz Spieltag ${letzterSpieltag}).`,
+    };
+  }
+  return { erlaubt: true, grund: null };
 }
 
 // ── worauf der Joker gilt ────────────────────────────────────
