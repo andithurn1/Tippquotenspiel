@@ -35,6 +35,7 @@ import ProfiWarnungen from "@/components/ProfiWarnungen";
 import JokerVerteilung from "@/components/JokerVerteilung";
 import JokerOekonomie from "@/components/JokerOekonomie";
 import LimitKlassen from "@/components/LimitKlassen";
+import JokerGrundform from "@/components/JokerGrundform";
 import AufwandPanel from "@/components/AufwandPanel";
 import { band } from "@/lib/reglerWarnung";
 import { BIGGAME_LIMITS } from "@/lib/bigGame";
@@ -644,6 +645,20 @@ export default function Spielerstellung() {
               <SectionTitle>Limitierungsklassen</SectionTitle>
               <LimitKlassen rules={rules}
                 onChange={(limitKlassen) => { touched(); setRules((r) => ({ ...r, limitKlassen })); }} />
+            </>
+          )}
+
+          {/* Joker-Grundform: die EINE Karte, die jeder Joker teilt (wer,
+              sicht, verfall, widerruf, stapeln, symmetrie, bestand,
+              kasseSichtbar, abklingzeit, umfang, bedingung) — nur in der
+              Profi-Stufe, aus demselben Grund wie Limitierungsklassen und
+              das Achsenprofil: erst hier ist eine Abweichung je Joker-Art
+              überhaupt eine Einstiegsfrage. */}
+          {stufe === "profi" && (
+            <>
+              <SectionTitle>Joker-Grundform</SectionTitle>
+              <JokerGrundform rules={rules}
+                onChange={(jokerBasis) => { touched(); setRules((r) => ({ ...r, jokerBasis })); }} />
             </>
           )}
 
