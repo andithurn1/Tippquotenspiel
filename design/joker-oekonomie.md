@@ -384,6 +384,103 @@ Datei wäre eine zweite Wahrheit und käme irgendwann auseinander.
   nicht als Messung. Dieselbe Ehrlichkeit wie bei der Würze.
 - `beschreibeAufwand(a)` → ein Satz für die UI.
 
+# 5c. Abnahme-Befunde an `jokerBudget.js` (31.07.), beide entschieden
+
+Das Modul liegt, die Bauart stimmt. Zwei Fehler, beide nachgemessen.
+
+## F1 🔴 — Zukunftswissen fließt in vergangene Spieltage
+
+`standAmTag()` sucht den jüngsten Stand mit `matchday <= t`; findet es keinen,
+fällt es auf `stand[0]` zurück — und der liegt in der ZUKUNFT.
+
+Gemessen: Quelle `rueckstand`, `stand` beginnt erst bei Spieltag 3. Spieler `b`
+bekommt **schon an Spieltag 1 und 2 volles Rückstands-Budget**, obwohl der
+Rückstand dort noch gar nicht existiert.
+
+Das ist dieselbe Fehlerklasse, die `applySaisonform` ausdrücklich vermeidet
+(„Der Zwischenstand muss aus sich heraus stimmen, nicht aus der Sicht des
+Saisonendes") und die beim Big Game zur Regel „eingefroren wird der WERT"
+geführt hat.
+
+**Festlegung:** Gibt es keinen Stand ZUM oder VOR dem Spieltag, liefert
+`standAmTag` **`null`**, und `rueckstand`/`platzierung` zahlen 0. Kein
+Rückgriff auf einen späteren Stand — lieber kein Budget als ein Budget aus
+Wissen, das der Spieler zu diesem Zeitpunkt nicht haben konnte.
+
+## F2 🟠 — der Normalfall liefert leere Ergebnisse
+
+`budgetVerlauf` leitet die Spielerliste allein aus `stand` und
+`leistung.ausgeloest` ab. Eine Runde mit ausschließlich der Quelle `gleich`
+und ohne `stand` liefert deshalb `proSpieler: {}` — **niemand bekommt Budget,
+obwohl das die häufigste Einstellung überhaupt ist.**
+
+Ursache liegt in dieser Spec: die Signatur in 5b nannte kein `userIds`.
+
+**Festlegung:** `budgetVerlauf` bekommt einen ausdrücklichen Parameter
+`userIds` — dieselbe Bauart wie `jokerPlan({ …, userIds })`. Er wird mit den
+aus `stand`/`ausgeloest` abgeleiteten Ids **vereinigt**, damit bestehende
+Aufrufe ohne `userIds` weiter funktionieren.
+
+# 5d. Abnahme-Befund an `limitKlassen.js` (31.07.) — 🔴 stilles Abschalten aller Limits
+
+Das Modul ist gut gebaut, aber es hat einen Fehler in der gefährlichsten
+möglichen Richtung.
+
+## Der Fehler
+
+`sanitizeKlasse` verlangt ein gültiges `aktivierung`-Objekt. Fehlt das Feld
+ganz, liefert `sanitizeAktivierung(undefined)` ein `null`, und **die ganze
+Klasse fliegt raus**. Die Tabelle in 2.2 führt `immer` aber ausdrücklich als
+**Vorgabe** — eine Vorgabe gilt, wenn nichts angegeben ist. *Fehlend* ist nicht
+dasselbe wie *unbekannt*.
+
+Gemessen: drei gültige Klassen ohne `aktivierung`-Feld → `sanitizeLimitKlassen`
+liefert `[]`, und `pruefeEinsatz` gibt daraufhin für JEDEN Einsatz
+`{ erlaubt: true, gruende: [] }` zurück.
+
+**Damit schaltet ein weggelassenes Feld sämtliche Limits ab, ohne eine einzige
+Meldung.** Bei einem Sicherheitsnetz ist das die schlechteste Fehlerrichtung,
+die es gibt: es reißt lautlos.
+
+Die Tests des Agenten sind trotzdem grün, weil sie durchgehend eine
+`aktivierung` mitgeben. Sie sind nicht falsch, nur unvollständig.
+
+## Festlegung (a) — fehlend heißt Vorgabe
+
+- `aktivierung` fehlt oder ist kein Objekt → `{ typ: "immer" }`.
+- Nur ein **unbekannter `typ`** verwirft die Klasse weiterhin. Das bleibt
+  richtig: eine Regel, die niemand auswerten kann, darf nicht so tun, als gälte
+  sie.
+
+## Festlegung (b) — Verworfenes muss sichtbar werden
+
+Auch ein berechtigtes Verwerfen (fehlende `id`, leere `mitglieder`, unbekannter
+`typ`) passiert heute stumm. Bei der Sicherung des ganzen Baukastens ist das zu
+wenig.
+
+Neue Funktion, nach dem Muster von `pruefeSpielplan` in `spielplan.js`, das
+ausdrücklich FEHLER von WARNUNGEN trennt:
+
+```
+pruefeKlassen(liste) -> { klassen, verworfen: [{ index, id, grund }] }
+```
+
+`sanitizeLimitKlassen` bleibt unverändert (rein, liefert nur das Array) — die
+Oberfläche ruft `pruefeKlassen`, um zu zeigen, was durchgefallen ist. Dieselbe
+Trennung wie zwischen `sanitizeRules` und `konflikte()`.
+
+## Zu den beiden offenen Fragen des Agenten — beide Auslegungen werden übernommen
+
+1. **`kontext`-Formen.** Bestätigt: `board = [{ userId, total }]`,
+   `budgetStand = { [userId]: kontostand }` (Schnappschuss zum betreffenden
+   Spieltag, vom Aufrufer aus `budgetVerlauf` abgeleitet),
+   `ausgeloesteEreignisse = [{ userId, ereignisKey, spieltag }]`,
+   `kontext.aktuellerSpieltag` optional für `offeneKlassen`.
+2. **`proZeitraum: "phase"` ohne eigenes Fenster** zählt über das Fenster von
+   `aktivierung.typ: "fenster"`, sonst über die ganze Saison. Bestätigt — ein
+   zweites Fensterfeld an derselben Klasse wäre verwirrend und die zweite
+   Wahrheit über denselben Zeitraum.
+
 # 6. Umsetzung in Schritten
 
 Jeder Schritt für sich testbar und commitfähig. **Reihenfolge ist bindend**,
