@@ -391,11 +391,22 @@ Damit die Umsetzung nicht raten muss.
   (siehe 3.1b).
 - ~~`wuerzeGesamt(teile)`~~ — entfällt, siehe 3.1b.
 
-Die `wuerze` der Wertungs-Presets kommt als **neues Feld neben `rules`** in
-`presets.js` (`gemuetlich` 0 · `standard` 1 · `joker` 2 · `rangliste` 2 ·
-`hardcore` 2 · `underdog-party` 3). Neben `rules`, nicht darin — dann bleibt
-`presets.balance.test.js` unberührt. Eine Nachschlage-Tabelle in einer anderen
-Datei wäre eine zweite Wahrheit und käme irgendwann auseinander.
+🔴 **`presets.js` wird NICHT angefasst.** Ein früherer Entwurf wollte dort ein
+`wuerze`-Feld je Preset ergänzen. Mit dem Achsenprofil ist das überflüssig und
+sogar schädlich: `achsenProfil(rules)` **leitet** das Profil aus dem Regelwerk
+ab, und jedes Preset IST ein Regelwerk. Ein zusätzlich hingeschriebenes Feld
+wäre eine zweite Wahrheit, die beim nächsten Preset-Tuning auseinanderläuft.
+
+Dieselbe Regel, nach der `reglerWarnung.js` sein Empfehlungsband aus den Presets
+ABLEITET statt es zu tippen: „ändern sich die Presets, wandert es mit."
+
+Gilt genauso für die Kombinationen dieser Bibliothek: sie tragen vollständige
+Regelfragmente, ihr Achsenprofil wird daraus **berechnet, nicht deklariert**.
+Die Würze-Spalte in Abschnitt 3.2 ist dokumentierender Text, kein Feld.
+
+⚠️ Ein Test muss festhalten, dass die berechneten Profile der sechs
+Kombinationen zu ihrer beschriebenen Neigung passen — sonst merkt niemand, wenn
+ein Regelfragment und seine Beschreibung auseinanderlaufen.
 
 ## Baustein 4 — `aufwand.js`
 
