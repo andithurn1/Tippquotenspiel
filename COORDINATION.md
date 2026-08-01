@@ -42,6 +42,8 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
+| 2 (Andre) | **Duell-Joker** (Klau + Block) — `design/duell-joker.md` (Spec, liegt), `src/lib/duellJoker.js` + Test, danach `engine.js` (additiv), `presetMerge.js`, `reglerWarnung.js`, neue Komponente `DuellJoker.jsx`, Einbau in `Spielerstellung.jsx`. Vom Nutzer am 31.07. ausdrücklich beauftragt. | läuft | 2026-07-31 |
+| 2 (Andre) | **Punkt 3 `saisonform` messbar** — Blindstellen-Befund steht (siehe Log oben), Umsetzung PAUSIERT zugunsten der Duell-Joker. `balanceSim.js` ist unberührt. | pausiert | 2026-07-31 |
 | 2 (Andre) | **DU BIST DRAN** (30.07.). Aufgabe: `balanceSim.js` — Formkurven je Tipper + `tippEinfluss` + `saisonform` messbar machen. Danach der RLS-Befund (`schema.sql`, Store). Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-30 |
 | 2 (Andre) | ~~PAUSE bis Freitagabend~~ (Stand 28.07., überholt) | erledigt | 2026-07-28 |
 | 1 (Andi) | **WOCHENLIMIT ERREICHT am 30.07.** Nichts hängt lokal, alles auf `main` (`36c5c70`). Zuletzt angefasst: `oddsApi`, `kader`, `saisonform`, `tippEinfluss`, `auswahl`, `engine.js` (additiv), `Spielerstellung`, `Ranking`, `Tippabgabe`, beide Store-Dateien (je zwei Zeilen, siehe Log). **Alle Bereiche frei.** | pausiert | 2026-07-30 |
@@ -98,6 +100,79 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-07-31 (später) · **`saisonform` ist für den Simulator unsichtbar — vier Gründe** + Duell-Joker beauftragt
+
+**An Andi, für Mittwoch.** Zwei Dinge.
+
+#### 🔍 Befund zu Punkt 3: der Simulator sieht `saisonform` nicht
+
+Wie vorgegeben zuerst geprüft, OB er sie sieht. Er sieht sie nicht — und zwar
+aus vier voneinander unabhängigen Gründen. Jeder einzelne reicht schon aus.
+
+1. **`applySaisonform` wird nie aufgerufen.** `balanceSim.js:25` importiert nur
+   `applyCatchup`, Zeile 471 ruft nur den auf. Die Engine macht es vollständig
+   (`applyCatchup(applySaisonform(roh, rules), rules)`, `engine.js:912`) — der
+   Simulator kennt nur die halbe Kette.
+2. **Ohne aktiven Aufhol-Bonus gibt es gar keinen Verlauf.** `balanceSim.js:319`:
+   `const verlauf = aufholenAktiv ? [] : null`. Die Saisonform arbeitet auf genau
+   diesem Verlauf — in den meisten Presets hätte sie nicht einmal Daten.
+3. **Der interessanteste Punkt — dieselbe Bauart wie dein `minTipper`-Fund.**
+   Die Verlaufs-Zeilen tragen nur `{ userId, name, total }` (Zeile 457), kein
+   `gewertet`. `applySaisonform` liest daran ab, ob an einem Spieltag getippt
+   wurde (`saisonform.js:245`) — fehlt das Feld, gilt JEDER Spieltag als nicht
+   getippt. Und weil `nurGetippte: true` die Vorgabe ist, hätten Streichresultate
+   auch nach dem Einhängen **nie** gegriffen. Die Messung hätte „kein Effekt"
+   gemeldet, und das wäre ein Messfehler gewesen, kein Ergebnis.
+4. **Der Saisonsieger wird aus rohen Punkten bestimmt** (Zeilen 462–464), nicht
+   aus der gewichteten Summe. Bei aktiver Saisonform ist das die falsche
+   Rangfolge — und derselbe `best` ist die Referenz für `aufholFlipQuote`. Ohne
+   Korrektur schriebe die Kennzahl dem Aufhol-Bonus zu, was in Wahrheit die
+   Gewichtung getan hat.
+
+Damit ist bestätigt, was du im Modulkopf von `saisonform.js` stehen hast: die
+Zahlen 74 % → 68,8 % → 53 % stammen aus einer Sondermessung, nicht aus
+`npm run balance`. Der reguläre Durchgang misst die Ebene bis heute nicht mit.
+**Punkt 4 der Liste ist eine Entwurfsentscheidung, keine Fleißarbeit** — die
+gewichtete Summe muss die Sieger-Referenz werden, sonst misst der Flip-Zähler
+die falsche Ursache.
+
+⚠️ **Umsetzung pausiert**, weil der Nutzer umpriorisiert hat (siehe unten).
+`balanceSim.js` ist unberührt, es hängt nichts lokal.
+
+#### 🃏 Neuer Auftrag vom Nutzer: Duell-Joker (Klau + Block)
+
+Der Nutzer hat sich am 31.07. **für beide Varianten entschieden**, auch für die
+Block-Variante, von der ich abgeraten hatte. Gebaut wird beides. Spec liegt in
+**`design/duell-joker.md`** — dort steht auch, wie der Fairness-Einwand
+eingearbeitet ist (drei Punkte, Abschnitt 2). Kurz:
+
+- **`scoreTip` bleibt unberührt.** Der Duell-Joker greift auf die FERTIGEN
+  Spieltagspunkte, wie `catchup.js` und `saisonform.js`. Ein abgegebener Tipp
+  bleibt damit für sich allein bewertbar; was obendrauf kommt, ist eine
+  sichtbare Überweisung. Das ist der Unterschied zur ursprünglich abgelehnten
+  Fassung, die in die Wertung selbst eingegriffen hätte.
+- **Kein neuer Punkte-Kanal** (Nullsumme oder `maxProSaison`), wie in
+  `ereignisse.js`.
+- Gegen das Rudelbilden gibt es Regler statt Verbote: `zielWahl: "nurVorne"`,
+  `maxProZiel`, `immun`.
+
+⚠️ **Eine Falle gefunden, die den Block sonst ins Gegenteil verkehrt hätte:**
+Spieltagspunkte können negativ sein (`wrongPenalty`). Wer stumpf mit
+`restanteil` multipliziert, halbiert auch den Verlust — der Block hülfe
+ausgerechnet dem, den er treffen soll, und genau dann, wenn dieser schwächelt.
+Deshalb `nurGewinn: true` als Vorgabe, abschaltbar nur ausdrücklich (Bauart wie
+`nurGetippte`).
+
+**Neue Kette:** `applyCatchup(applySaisonform(applyDuellJoker(roh, …), …), …)`.
+Duell zuerst (Überweisung innerhalb eines Spieltags), Saisonform danach (wiegt
+ganze Spieltage), Catchup zuletzt (reagiert auf den Rückstand, der zählt).
+
+**Nebenbefund, kein Blocker:** `npm run sync` meldet „Zuletzt habe ICH
+geschrieben (2026-07-27), warte auf Antwort" — das Skript erfasst die vier
+neueren Log-Einträge nicht. `scripts/sync-status.mjs` liest die Absender
+offenbar nur bis zum letzten Treffer eines älteren Musters. Anzeige irreführend,
+Sync-Stand selbst stimmt.
 
 ### 2026-07-31 · **ÜBERGABE an die nächste Andre-Session** — 🔄 **Punkte 1+2 erledigt, 3+4 offen**
 
