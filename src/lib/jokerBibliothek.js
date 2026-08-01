@@ -56,10 +56,15 @@ export const ACHSEN = [
   { key: "F", label: "Wissen", desc: "Detailkenntnis — der Kenner im engeren Sinn gewinnt." },
 ];
 
+// ⚠️ Alle `desc` hier sind SICHTBARER Text in der Spielerstellung.
+// Zwei Regeln, beide im Browser-Durchgang am 31.07. verletzt aufgefallen:
+//   1. „Münzen", nie „Budget" (design/joker-ausloeser.md Abschnitt 0).
+//   2. Keine Code-Bezeichner. Hier stand „nurGegenFuehrende" mitten im Satz.
+// Kataloge werden ungeprüft angezeigt — Tests fangen so etwas nicht.
 export const NEIGUNGEN = [
-  { key: "neutral", label: "Neutral", desc: "Keine Zielrichtung: gleiches Budget für alle, jeder darf jeden treffen." },
-  { key: "ausgleich", label: "Ausgleichend", desc: "Einsätze treffen nur, wer vorne steht — das bremst den Vorsprung, ohne das Budget selbst umzuverteilen." },
-  { key: "underdog", label: "Underdog", desc: "Budget UND Ziele bevorzugen ausdrücklich, wer hinten liegt." },
+  { key: "neutral", label: "Neutral", desc: "Keine Zielrichtung: gleich viele Münzen für alle, jeder darf jeden treffen." },
+  { key: "ausgleich", label: "Ausgleichend", desc: "Einsätze treffen nur, wer vorne steht — das bremst den Vorsprung, ohne die Münzen selbst umzuverteilen." },
+  { key: "underdog", label: "Underdog", desc: "Münzen UND Ziele bevorzugen ausdrücklich, wer hinten liegt." },
 ];
 
 export const DICHTEN = [
@@ -122,7 +127,7 @@ export const KOMBINATIONEN = [
   {
     key: "gleichgewicht",
     label: "Gleichgewicht",
-    desc: "Der Normalfall. Budget gleich für alle, Angriffe nur im letzten Drittel.",
+    desc: "Der Normalfall. Gleich viele Münzen für alle, Angriffe nur im letzten Drittel.",
     neigung: "ausgleich",
     dichte: "mittel",
     schaerfe: "zahm",
@@ -158,7 +163,7 @@ export const KOMBINATIONEN = [
   {
     key: "schlussoffensive",
     label: "Schluss-Offensive",
-    desc: "Alles im Schlussspurt, Budget spart sich bis dahin an.",
+    desc: "Alles im Schlussspurt — die Münzen sparen sich bis dahin an.",
     neigung: "ausgleich",
     dichte: "sparsam",
     schaerfe: "scharf",
@@ -188,7 +193,7 @@ export const KOMBINATIONEN = [
   {
     key: "favoritenjagd",
     label: "Favoriten-Jagd",
-    desc: "Budget aus Rückstand, nurGegenFuehrende. Die Runde jagt den Ersten.",
+    desc: "Münzen für den Rückstand, Angriffe nur nach vorne. Die Runde jagt den Ersten.",
     neigung: "underdog",
     dichte: "mittel",
     schaerfe: "scharf",

@@ -85,19 +85,19 @@ export const BELOHNUNGS_TYPEN = [
   },
   {
     key: "joker", label: "Joker",
-    desc: "Gutschrift auf eine Joker-Art (`art` aus JOKER_ARTEN, `anzahl`).",
+    desc: "Schreibt dem Spieler einen Joker der gewählten Art gut.",
   },
   {
-    key: "budget", label: "Budget",
-    desc: "Zahlt auf das Konto aus jokerBudget.js (`betrag`).",
+    key: "budget", label: "Münzen",
+    desc: "Zahlt Münzen auf das Konto des Spielers ein.",
   },
   {
     key: "modifikator", label: "Modifikator",
-    desc: "Aufschlag auf die eigene Wertung für N Spieltage (`faktor`, `spieltage`). Fällt in denselben additiven Topf, modCap greift weiter.",
+    desc: "Aufschlag auf die eigene Wertung für einige Spieltage. Fällt in denselben Topf wie Derby und Topspiel — der gemeinsame Deckel greift weiter.",
   },
   {
     key: "punkte", label: "Punkte",
-    desc: "Direkte Punkte (`betrag`). Braucht den Saison-Deckel `maxPunkteProSaison`.",
+    desc: "Direkte Punkte. Braucht einen Deckel für die Saison.",
   },
 ];
 

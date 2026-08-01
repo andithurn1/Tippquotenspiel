@@ -57,10 +57,10 @@ import { sanitizeLimitKlassen } from "./limitKlassen";
 // `hatGetippt`). Fehlt `alleGetippt`, gilt es wie `false`.
 export const WER = [
   { key: "alle", label: "Alle", desc: "Jeder darf einsetzen. Vorgabe." },
-  { key: "abPlatz", label: "Ab Tabellenplatz", desc: "Nur ab Tabellenplatz N abwärts (`werWert`)." },
-  { key: "abRueckstand", label: "Ab Rückstand", desc: "Nur wer mindestens N Punkte hinter Platz 1 liegt (`werWert`)." },
+  { key: "abPlatz", label: "Ab Tabellenplatz", desc: "Nur ab dem eingestellten Tabellenplatz abwärts." },
+  { key: "abRueckstand", label: "Ab Rückstand", desc: "Nur wer weit genug hinter Platz 1 liegt." },
   { key: "adminFreigabe", label: "Admin-Freigabe", desc: "Der Admin schaltet je Spieltag frei." },
-  { key: "nurVollstaendigGetippt", label: "Nur vollständig getippt", desc: "Nur wer ALLE Spiele des Spieltags getippt hat (`kontext.alleGetippt`)." },
+  { key: "nurVollstaendigGetippt", label: "Nur vollständig getippt", desc: "Nur wer ALLE Spiele des Spieltags getippt hat." },
 ];
 
 export const SICHT = [
@@ -77,7 +77,7 @@ export const VERFALL = [
 
 export const WIDERRUF = [
   { key: "bisAnpfiff", label: "Bis Anpfiff", desc: "Änderbar bis zum Anpfiff des Spiels. Vorgabe." },
-  { key: "bisStunden", label: "Bis X Stunden vorher", desc: "Änderbar bis `widerrufStunden` vor Anpfiff — reicht nie darüber hinaus." },
+  { key: "bisStunden", label: "Bis X Stunden vorher", desc: "Änderbar bis zu den eingestellten Stunden vor Anpfiff — nie darüber hinaus." },
   { key: "sofortVerbindlich", label: "Sofort verbindlich", desc: "Kein Widerruf möglich, sobald gesetzt." },
 ];
 
@@ -97,7 +97,7 @@ export const SYMMETRIE = [
 // Kataloge mit identischem Inhalt, keine Kopplung in die falsche Richtung.
 export const UMFANG = [
   { key: "einSpiel", label: "Ein Spiel", desc: "Wirkt nur auf ein einzelnes Spiel. Vorgabe." },
-  { key: "nSpiele", label: "Mehrere Spiele", desc: "Wirkt auf eine feste Anzahl Spiele (`spieleProEinsatz`)." },
+  { key: "nSpiele", label: "Mehrere Spiele", desc: "Wirkt auf eine feste Anzahl Spiele." },
   { key: "spieltag", label: "Ganzer Spieltag", desc: "Wirkt auf den kompletten Spieltag." },
 ];
 

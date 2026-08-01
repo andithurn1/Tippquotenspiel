@@ -98,11 +98,11 @@ export const PHASEN = [
   },
   {
     key: "schlussspurt", label: "Schlussspurt",
-    desc: "Nur in den letzten Spieltagen vor Saisonende (`schlussLaenge`).",
+    desc: "Nur in den letzten Spieltagen vor Saisonende.",
   },
   {
     key: "manuell", label: "Manuell",
-    desc: "Ein fest eingestelltes Spieltags-Fenster (`abSpieltag`–`bisSpieltag`).",
+    desc: "Ein fest eingestelltes Spieltags-Fenster von … bis.",
   },
 ];
 

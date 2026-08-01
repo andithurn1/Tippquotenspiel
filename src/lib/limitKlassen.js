@@ -87,11 +87,11 @@ export const AKTIVIERUNG_TYPEN = [
   },
   {
     key: "nachEreignis", label: "Nach Ereignis",
-    desc: "Ein Ereignis aus ereignisse.js muss ausgelöst haben.",
+    desc: "Ein erspieltes Ereignis muss vorher ausgelöst haben.",
   },
   {
-    key: "abBudget", label: "Ab Budget",
-    desc: "Erst ab N Budget.",
+    key: "abBudget", label: "Ab Münzstand",
+    desc: "Erst ab einem bestimmten Münzstand.",
   },
   {
     key: "nurGegenFuehrende", label: "Nur gegen Führende",

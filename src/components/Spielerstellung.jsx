@@ -31,6 +31,7 @@ import { CHARAKTERE } from "@/lib/charaktere";
 import BalanceAmpel from "@/components/BalanceAmpel";
 import ProfiWarnungen from "@/components/ProfiWarnungen";
 import JokerVerteilung from "@/components/JokerVerteilung";
+import JokerOekonomie from "@/components/JokerOekonomie";
 import { band } from "@/lib/reglerWarnung";
 import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } from "@/lib/spielauswahl";
@@ -102,6 +103,19 @@ export default function Spielerstellung() {
   const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
   const patchSaisonform = (p) => { touched(); setRules((r) => ({ ...r, saisonform: { ...(r.saisonform || DEFAULT_RULES.saisonform), ...p } })); };
+  const patchBudget = (p) => { touched(); setRules((r) => ({ ...r, budget: { ...(r.budget || DEFAULT_RULES.budget), ...p } })); };
+  // `JokerOekonomie` meldet meist nur einen Münzen/Shop-Patch zurück (ein
+  // einzelnes `budget`-Feld) — der läuft über `patchBudget` oben. Ein Klick in
+  // der Bibliothek dort übernimmt dagegen das GANZE Regelfragment einer
+  // Kombination auf einmal (`budget` + `limitKlassen` + `duell` + `joker`,
+  // Letztere bereits vom Aufrufer mit dem bisherigen Regelwerk gemischt) —
+  // dafür reicht ein einzelnes Budget-Feld nicht, deshalb der Zweig hier.
+  const patchOekonomie = (p) => {
+    const keys = Object.keys(p);
+    if (keys.length === 1 && keys[0] === "budget") { patchBudget(p.budget); return; }
+    touched();
+    setRules((r) => ({ ...r, ...p }));
+  };
   const patchTippEinfluss = (p) => { touched(); setRules((r) => ({ ...r, tippEinfluss: { ...(r.tippEinfluss || DEFAULT_RULES.tippEinfluss), ...p } })); };
   const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
   const patchBigGame = (p) => { touched(); setRules((r) => ({ ...r, bigGame: { ...r.bigGame, ...p } })); };
@@ -571,6 +585,18 @@ export default function Spielerstellung() {
             <>
               <SectionTitle>Die vier wichtigsten Fragen</SectionTitle>
               <EinfacheRegler rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
+            </>
+          )}
+
+          {/* Joker-Ökonomie: Bibliothek + Münzen + Shop bei „anpassen", dazu
+              das Achsenprofil des gesamten Regelwerks bei „profi" — dieselbe
+              Komponente, sie entscheidet selbst anhand von `stufe`, wie viel
+              sie zeigt. Bei „einfach" unsichtbar: dort entscheiden Charakter
+              und Preset. */}
+          {stufe !== "einfach" && (
+            <>
+              <SectionTitle>Joker-Ökonomie</SectionTitle>
+              <JokerOekonomie rules={rules} stufe={stufe} onChange={patchOekonomie} />
             </>
           )}
 
