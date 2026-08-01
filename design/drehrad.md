@@ -60,6 +60,52 @@ felder: [
 | `modifikator` | `faktor`, `spieltage` | Aufschlag auf die eigene Wertung für N Spieltage. Fällt in denselben additiven Topf, `modCap` greift weiter. |
 | `punkte` | `betrag` | Direkte Punkte. ⚠️ Siehe 2.5. |
 
+### 2.2b Sperrfrist — damit sich Felder nicht ständig wiederholen
+
+Vom Nutzer gefordert: einzelne Ereignisse sollen sich **nicht so schnell
+wiederholen**, innerhalb einer einstellbaren Frist.
+
+```js
+sperrfrist: 2,                                   // Vorgabe für ALLE Felder
+felder: [
+  { id: "f1", label: "Joker geschenkt", gewicht: 3, sperrfrist: 5, … },
+  { id: "f3", label: "Niete",           gewicht: 6, sperrfrist: 0, … },
+]
+```
+
+- Gezählt wird in **Drehungen dieses Spielers**, nicht in Spieltagen. Ein Rad,
+  das alle fünf Spieltage kommt, sperrt sonst faktisch die halbe Saison.
+- **Je Spieler**, nicht rundenweit. Was ein anderer gezogen hat, geht mich
+  nichts an — sonst hängt mein Rad an fremdem Glück.
+- `sperrfrist: 0` = keine Sperre. Sinnvoll für die Niete: die darf ruhig
+  mehrmals hintereinander kommen.
+- Am Feld gesetzt schlägt die Rad-Vorgabe.
+
+#### ⚠️ Was das für die Ziehung bedeutet
+
+Die Sperrfrist macht die Ziehung **abhängig von der Vorgeschichte**. Damit
+ändert sich die Signatur:
+
+```js
+ziehe(drehrad, { rundenId, userId, spieltag, bisherige })
+```
+
+`bisherige` = die zuletzt gezogenen Feld-Ids dieses Spielers, neueste zuerst.
+Gesperrte Felder fallen raus, die Gewichte werden über die **verbleibenden**
+neu normiert, dann wird gezogen.
+
+Determinismus bleibt erhalten (Abschnitt 2.5 Punkt 1): die Vorgeschichte ist
+selbst deterministisch, also ist es das Ergebnis auch. Ein Neuladen ändert
+nichts.
+
+🔴 **Der Randfall, an dem es sonst still bricht:** Sind durch die Sperrfristen
+**alle** Felder blockiert, wird die Sperre für diese eine Drehung **ignoriert**
+und über das volle Rad gezogen. Die Alternative wäre eine Drehung ohne Ergebnis
+— und genau so etwas fällt erst im Spielbetrieb auf. Ein Test hält den Fall
+fest, und `pruefeFelder` warnt den Admin schon beim Einstellen, wenn die
+Sperrfristen rechnerisch nicht aufgehen können (Summe der Sperren ≥ Anzahl der
+Felder mit Gewicht > 0).
+
 ### 2.3 Wann gedreht wird
 
 Übernommen aus `jokerPlan.js` — **nicht neu bauen**:
@@ -119,8 +165,13 @@ nur nicht fehlen.
 
 1. Ein Feld mit `gewicht: 0` fällt nie.
 2. Die Anteile aus `wahrscheinlichkeiten` summieren sich auf 1.
-3. `ziehe` liefert für dieselbe `(rundenId, userId, spieltag)` immer dasselbe
-   Feld — und für verschiedene Spieler am selben Spieltag verschiedene.
+3. `ziehe` liefert für dieselbe `(rundenId, userId, spieltag, bisherige)` immer
+   dasselbe Feld — und für verschiedene Spieler am selben Spieltag verschiedene.
+3b. **Sperrfrist:** ein gerade gezogenes Feld mit `sperrfrist: 2` kommt in den
+   nächsten zwei Drehungen nicht, in der dritten wieder. `sperrfrist: 0` sperrt
+   nie.
+3c. **Randfall:** sind alle Felder gesperrt, wird trotzdem gezogen (Sperre für
+   diese Drehung ignoriert) statt ein leeres Ergebnis zu liefern.
 4. Bei Frequenz N liegen die Drehungen im eingestellten Fenster und nirgends
    sonst.
 5. `wer: "abRueckstand"` schließt Führende aus.

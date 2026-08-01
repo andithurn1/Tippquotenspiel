@@ -223,6 +223,89 @@ Art-Abweichung ist noch nicht bekannt, welches `wer` nach dem Merge gilt.
    Punkt als Pfad) war ein echter Fund — der Test wäre sonst leer durchgelaufen.
    Die Umstellung auf die Array-Form ist richtig.
 
+---
+
+## 5. Erweiterung (31.07., zweite Runde) — sechs weitere Dimensionen
+
+Der Nutzer hat nachgefragt, was der Grundform noch fehlt. Ergebnis: eine
+Invariante und fünf neue Felder.
+
+### 5.0 🔴 INVARIANTE: kein Joker ohne Tipp
+
+**Ein Joker wird zusammen mit dem Tipp gesetzt. Wer den Spieltag nicht tippt,
+kann dort nichts setzen.**
+
+Das ist **keine Einstellung**, sondern eine Regel des Spiels — Entscheidung des
+Nutzers. Sie löst eine Frage auf, die ich als sechste Dimension vorschlagen
+wollte („was passiert mit einem gesetzten Joker bei Versäumnis?"): die Frage
+kann gar nicht mehr entstehen.
+
+Zwei Nebeneffekte, beide erwünscht:
+- Niemand kann einen Joker auf einem Spieltag **reservieren**, den er nicht
+  mitspielt.
+- ⚠️ **Auch der Ersatz-Tipp aus `versaeumnis` trägt keinen Joker.** `autoTip.js`
+  ist ausdrücklich „der zahmste" und durch Tests abgesichert, dass er nie mehr
+  zahlt als ein mutiger eigener Treffer. Ein Joker darauf bräche genau diese
+  Zusicherung. Damit entfällt auch der „Auto-Einsatz" als Idee — er hätte nur
+  auf einem Ersatz-Tipp Sinn ergeben.
+
+Umsetzung: `darfEinsetzen` bekommt `hatGetippt` in den `kontext` und lehnt ohne
+Tipp ab, mit klarem Grund.
+
+### 5.1 `symmetrie` — wirkt der Joker auch nach unten?
+
+Heute fest verdrahtet: `CLAUDE.md` hält fest „Wirkt symmetrisch, also auch auf
+ein Minus". Jeder Joker ist damit ein **Einsatz**. Das ist eine
+Architektur-Entscheidung, die kein Admin sehen oder ändern kann.
+
+| Wert | |
+|---|---|
+| `beidseitig` | Verdoppelt Gewinn UND Verlust. **Vorgabe, heutiges Verhalten.** |
+| `nurGewinn` | Nur nach oben — risikolos. |
+| `nurVerlust` | Nur nach unten: der **Malus-Joker**, den ein Mitspieler verhängt. |
+
+`nurVerlust` ist nebenbei die saubere Form für das, was der Block-Joker heute
+umständlich löst.
+
+### 5.2 `bestand` — wie viele darf man HALTEN
+
+Geregelt sind bisher: wie viele man einsetzen darf (Limitklassen) und was sie
+kosten (Shop). Nicht geregelt: wie viele im Inventar liegen dürfen.
+
+Eigene Frage. Ohne die Grenze sammelt jemand die halbe Saison und feuert am
+Schluss alles ab. `0` = unbegrenzt.
+
+### 5.3 `kasseSichtbar` — sehen die anderen meinen Bestand?
+
+`jokerPlan.sichtbarkeit` regelt den Joker-KALENDER. Nicht geregelt: ob
+**Münzstand und Inventar** offen liegen.
+
+Reine Sozial-Entscheidung, ändert die Runde stark: bei offener Kasse stellt man
+sich auf jemanden ein, der noch zwei Klau-Joker hat. Bei verdeckter ist jeder
+Einsatz eine Überraschung.
+
+### 5.4 `umfang` wandert aus `duell` hoch
+
+`duell.umfang` (`einSpiel` · `nSpiele` · `spieltag`) plus `spieleProEinsatz` und
+`wahl` stecken heute nur im Duell-Joker. Die Frage stellt **jeder** Joker.
+
+⚠️ Nach dem Einhängen muss `duell` diese Felder abgeben — sonst zwei Wahrheiten,
+gleiche Behandlung wie `ansage`/`oeffentlich`.
+
+### 5.5 `abklingzeit` — Cooldown
+
+Siehe `design/joker-ausloeser.md` Abschnitt 8. Spieltage Sperre nach einem
+Einsatz DIESER Art. `duell.abstand` fällt dadurch weg.
+
+### 5.6 Verworfen, mit Begründung
+
+| Idee | Warum nicht |
+|---|---|
+| **Übertragbarkeit an Mitspieler** | Absprachen — dieselbe Begründung wie beim Joker-Handel (`joker-inventar.md` 4.4). |
+| **Unverträglichkeit zwischen Arten** („Joker und Duell nie auf demselben Spiel") | Limitklassen decken das fast ab; ein zweiter Mechanismus wäre Überbau. |
+| **Anzeige-Details der Wirkung** | Keine Regel, sondern Optik. |
+| **Auto-Einsatz** | Hätte nur auf einem Ersatz-Tipp Sinn — und der darf keinen Joker tragen (5.0). |
+
 ### Nicht Teil dieses Schritts
 
 Das Einhängen (`engine.js`, `presetMerge.js`) und das Ablösen von
