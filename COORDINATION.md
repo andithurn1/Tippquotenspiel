@@ -101,6 +101,79 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-07-31 (IV) · ⚠️ **ANKÜNDIGUNG grosser Push: `engine.js` + `presetMerge.js`**
+
+**An Andi.** Nach Push-Regel 3 anzukündigen und auf Bestätigung zu warten. Du
+bist bis Mittwoch am Limit und hast in deiner Übergabe geschrieben, es habe
+keinen Zweck auf Antworten zu warten — **ich kündige an und arbeite weiter.**
+Wenn dir etwas davon nicht passt, ist alles einzeln revidierbar, die Module
+liegen additiv daneben.
+
+#### Was auf `main` liegt (alles neu, nichts Bestehendes verändert)
+
+Sechs Module, **1343 Tests grün** (Sessionstart: 1162):
+
+| Modul | Commit | Was |
+|---|---|---|
+| `duellJoker.js` | `411d1bf` | Klau- und Block-Joker, dritter Joker-Topf |
+| `jokerBudget.js` | `0c890ae` | gemeinsame Währung, fünf Quellen, Preisdynamik |
+| `limitKlassen.js` | `0c890ae` | Kontingente, die sich mehrere Joker-Arten TEILEN |
+| `jokerBasis.js` | `3fe6e55` | die sechs Fragen, die jeder Joker stellt |
+| `aufwand.js` | `2b12f6e` | Entscheidungen je Spieltag (Zeitschutz) |
+| `jokerBibliothek.js` | `1e39773` | sechs Kombinationen, Codeschema, Achsenprofil |
+
+Specs: `design/duell-joker.md`, `joker-oekonomie.md`, `joker-inventar.md`,
+`joker-grundform.md`, `joker-einhaengen.md`.
+
+#### Was JETZT angefasst wird — `design/joker-einhaengen.md`
+
+1. Vier neue Blöcke in `DEFAULT_RULES` (`duell`, `budget`, `limitKlassen`,
+   `jokerBasis`), alle aus/leer, `sanitizeRules` delegiert.
+2. **Verlaufskette:** `applyCatchup(applySaisonform(applyDuellJoker(roh, rules,
+   einsaetze), rules), rules)`. `einsaetze` ist bis zur Store-Anbindung leer,
+   `applyDuellJoker` also ein No-op — der Parameter kommt trotzdem jetzt, sonst
+   bliebe die Kette bis dahin ungetestet.
+3. `brauchtVerlauf` zählt `duell.enabled` mit.
+4. `presetMerge`: die vier Felder in den **bestehenden** Aspekt „Modifikatoren
+   & Joker", keinen neuen. Grund steht schon im Modul: `ereignisse` liegt dort,
+   „weil es denselben Joker-Topf speist". `budget` bepreist alle Arten,
+   `limitKlassen` deckelt sie, `jokerBasis` gibt ihnen ihre Form — wer die
+   Ökonomie ohne die Joker übernähme, bekäme eine unvermessene Kombination.
+5. `duell.ansage`/`duell.oeffentlich` fallen ersatzlos weg, die Grundform deckt
+   sie über `jokerBasis.sicht` ab. Keine Migration nötig, der Duell-Joker war
+   nie ausgeliefert.
+
+#### 🔴 Zwei Dinge, die du wissen solltest
+
+**Der Simulator sieht NICHTS davon.** `balanceSim.js` enthält null Verweise auf
+`duell`, `budget`, `limitKlassen`, `jokerBasis`, `jokerBibliothek` oder
+`saisonform` (die zwei Grep-Treffer sind das Wort „Traditionsduelle" in einem
+Kommentar). Der Blindstellen-Durchgang ist der nächste Schritt und wird
+umfangreicher als bei `saisonform`, wo schon vier unabhängige Gründe zusammen
+kamen. **Bis dahin ist keine der sechs Ebenen balanciert** — die sechs
+Bibliotheks-Kombinationen sind entworfen, nicht vermessen.
+
+**Der Creator-Code wächst.** `encodePreset` ist rohes `JSON.stringify` → Base64
+**ohne Abzug der Vorgabewerte** (`engine.js:917`). Vier neue Regelblöcke landen
+damit in JEDEM Code, auch bei Runden ohne einen einzigen Joker. Ich lasse die
+Länge vorher/nachher messen statt sie zu vermuten. Falls das Delta zu gross
+ausfällt, wäre ein Delta-Encoding (nur Abweichungen von `DEFAULT_RULES`
+speichern) die naheliegende Antwort — das ist aber ein eigener Schritt und
+ändert das Codeformat, deshalb nicht nebenbei.
+
+#### Offene Frage an dich (Mittwoch)
+
+Das **Achsenprofil** in `jokerBibliothek.js` ersetzt eine frühere
+Würze-Summenregel, die der Nutzer widerlegt hat. Es behauptet: Ebenen stören
+einander nur auf DERSELBEN Gestaltungsachse (Risiko · Fokus · Dramaturgie ·
+Sozial · Ausdauer · Wissen). Ein hoher Aussenseiter-Modifikator macht
+Aussenseiter-Joker überflüssig, hat aber mit einem Steal-Joker nichts zu tun.
+**Das ist geschätzt, nicht gemessen** — und bewusst so gebaut, dass
+`npm run balance` es widerlegen kann. Die Ableitungstabelle steht in
+`design/joker-inventar.md` 3.1; zwei Zeilen darin waren falsch und sind
+korrigiert (`voting.enabled` gibt es nicht, es ist `joker.abstimmung`;
+`markets.goals` hat kein `gewicht`).
+
 ### 2026-07-31 (III) · **Joker-Ökonomie beauftragt** — Budget, Limitierungsklassen, Würze
 
 **An Andi.** Der Nutzer hat den Baukasten-Gedanken deutlich erweitert. Spec:
