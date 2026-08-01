@@ -1,0 +1,143 @@
+# Auslöser-Katalog — wann gibt es Joker, wann gibt es Münzen
+
+**Katalog.** Account 2 (Andre), 2026-07-31, aus dem Gespräch mit dem Nutzer.
+
+⚠️ **Keine Empfehlungen in diesem Dokument.** Hier steht, welche Auslöser es
+geben soll — nicht, wie stark sie sein sollen oder welche zusammenpassen. Das
+entscheidet der Nutzer später, wenn das Gehäuse steht.
+
+---
+
+## 0. Die drei Begriffe (Sprachregelung)
+
+| Nutzer-Begriff | im Code | was es ist |
+|---|---|---|
+| **Münzen** | `rules.budget` | die Währung. Der Admin stellt ein, wie viel es wofür und für wen gibt. |
+| **Jokershop** | `budget.preise` | was jede Joker-Art in DIESER Runde kostet. Der Admin setzt die Preise. |
+| **Abklingzeit** | `jokerBasis.abklingzeit` | Cooldown je Joker-Art, siehe Abschnitt 4. |
+
+Alle sichtbaren Texte sagen **Münzen** und **Shop**, nicht „Budget". Die
+Code-Bezeichner bleiben wie sie sind — ein Rename über sechs Module wäre
+Bewegung ohne Gewinn, aber die Sprache in der Oberfläche muss stimmen.
+
+**Keine Zinsen.** Ein früherer Vorschlag von mir, vom Nutzer verworfen: Münzen
+vermehren sich nicht von selbst. Man bekommt sie, man gibt sie aus.
+
+---
+
+## 1. Was es heute gibt
+
+**Ernüchternd wenig — eine einzige Frequenzform.**
+
+`jokerPlan`: *„etwa jeder N-te Spieltag"*, blockweise verteilt, wahlweise für
+alle gleich oder jeder an eigenen Tagen, dazu ein Saison-Fenster.
+
+`ereignisse`: fünf Auslöser, alle an eigener Leistung — Serie, erster exakter
+Treffer, Außenseiter erwischt, Spieltag komplett getippt, Letzter des Spieltags.
+
+`budget.quellen`: Startkapital, gleich für alle, an Ereignisse gekoppelt, nach
+Rückstand, nach Platzierung.
+
+---
+
+## 2. Rhythmus — statt fester Frequenz
+
+| # | Auslöser | Daten vorhanden? |
+|---|---|---|
+| R1 | **Kurve statt Konstante** — selten am Anfang, dicht zum Schluss (oder umgekehrt). Braucht kein neues Konzept: `saisonform.gewichte()` erzeugt genau solche Kurven bereits (flach · steigend · Endspurt · Rückrunde). | ✅ direkt wiederverwendbar |
+| R2 | **Englische Woche** — nur an Doppelspieltagen. | ✅ `spieleJeSpieltag` |
+| R3 | **Nach der Pause** — Rückkehr nach einer Länderspielpause. Erkennbar am Abstand zwischen Anpfiffen. | ✅ `zeitachse.js` |
+| R4 | **Countdown** — die letzten N Spieltage tragen je einen. | ✅ = `phase: schlussspurt` |
+
+## 3. Tabellenstand — die dramaturgischen
+
+| # | Auslöser | Daten |
+|---|---|---|
+| T1 | **Führungswechsel** — wer die Spitze verliert, bekommt einen. Oder wer sie erobert. Zwei völlig verschiedene Rundengefühle aus demselben Auslöser, deshalb als Schalter. | ✅ Verlauf |
+| T2 | **Kopf-an-Kopf** — liegen die ersten beiden unter X Punkten auseinander, bekommen BEIDE einen. Belohnt Spannung, nicht Position. | ✅ Verlauf |
+| T3 | **Abstand gerissen** — alle mehr als X Punkte hinten schalten einen frei. | ✅ Verlauf |
+| T4 | **Rangsprung** — wer an einem Spieltag N Plätze gutmacht. | ✅ Verlauf |
+
+## 4. Aus den Spielen selbst
+
+| # | Auslöser | Daten |
+|---|---|---|
+| S1 | **Big Game** — der Spieltag mit dem dynamisch bestimmten Topspiel trägt einen Joker. | ✅ `bigGame.js` |
+| S2 | **Derby-Spieltag** | ✅ `DERBYS` in `bundesligaData.js` |
+| S3 | **Kollektiver Reinfall** — hat die Runde einen Spieltag GEMEINSAM verhauen, gibt es für alle einen Trost-Joker. Belohnt keine Leistung, sondern erkennt einen geteilten Moment an. | ✅ Tipps + Ergebnisse |
+| S4 | **Torreicher Spieltag** | ✅ Ergebnisse |
+
+## 5. Aus der Gruppe
+
+| # | Auslöser |
+|---|---|
+| G1 | **Abstimmung** — die Runde entscheidet. `voting.js` kann das bereits für Joker-Spieltage. |
+| G2 | **Weitergabe** — wer einen Spieltag gewinnt, verschenkt einen Joker. |
+| G3 | **Der Letzte bestimmt** — wer hinten liegt, wählt aus, wer den nächsten bekommt. |
+
+## 6. Zwei, die aus dem Rahmen fallen
+
+**V1 · Versteigerung.** Ein Joker wird versteigert, alle bieten Münzen. Passt
+genau zum Shop-Gedanken und macht daraus etwas Lebendiges — man schätzt ab, was
+der Joker *anderen* wert ist.
+⚠️ Joker-**Handel zwischen Spielern** bleibt verworfen (Absprachen, siehe
+`joker-inventar.md` 4.4). Eine Versteigerung gegen die Bank hat das Problem
+nicht: es fließt nichts von Spieler zu Spieler.
+
+**V2 · Rückverkauf.** Einen ungenutzten Joker am Saisonende zu Münzen machen.
+Damit ist Nichtstun keine reine Verschwendung, und Horten bekommt einen
+Gegenspieler — ohne dass wir Zinsen brauchen.
+
+## 7. Münz-Quellen, die noch fehlen
+
+| # | Quelle |
+|---|---|
+| M1 | **Rückverkauf** (= V2) — ein NICHT gesetzter Joker wird am Saisonende zu Münzen. |
+| M2 | **Aus dem Drehrad** — ein Feld kann Münzen auszahlen (`design/drehrad.md`). |
+
+### 🔴 Zwei Vorschläge von mir, beide vom Nutzer verworfen — und warum
+
+**Zinsen** auf ungenutzte Münzen und **Teilerstattung** für einen Joker, der
+nichts eingebracht hat. Beide abgelehnt, und beide aus demselben Grund:
+
+> **Sie mildern die Folge einer Entscheidung.** Ein Joker ist ein Einsatz. Wer
+> ihn falsch setzt, hat ihn falsch gesetzt — das ist der ganze Reiz. Wer
+> Rückerstattung einbaut, nimmt der Entscheidung ihr Gewicht und macht aus
+> einer Wette eine Formalie.
+
+Das ist eine Entwurfsregel, keine Einzelfallmeinung: **alles, was einen
+gesetzten Joker nachträglich abfedert, gehört nicht in dieses Spiel.**
+
+⚠️ Der Rückverkauf (M1) verletzt sie NICHT — er betrifft einen Joker, der nie
+gesetzt wurde. Nichts wird rückgängig gemacht, es wird nur etwas Ungenutztes
+verwertet.
+
+---
+
+## 8. 🔴 Abklingzeit (Cooldown) — fehlt komplett
+
+Vom Nutzer benannt und heute nirgends abgebildet. Weder `limitKlassen` noch der
+Shop decken es ab:
+
+- **Limitierungsklasse** = wie VIELE, geteilt mit anderen Arten.
+- **Preis** = was es KOSTET.
+- **Abklingzeit** = wie lange danach diese Art GESPERRT ist.
+
+Drei verschiedene Fragen. Man kann reich sein, Kontingent übrig haben — und
+trotzdem warten müssen.
+
+**Gehört in `jokerBasis.js`**, als siebte Dimension der Grundform. Damit trägt
+sie jede Joker-Art automatisch, statt dass jeder Typ sie neu erfindet — genau
+der Grund, aus dem die Grundform vorgezogen wurde.
+
+```js
+abklingzeit: 0,   // Spieltage Sperre nach einem Einsatz dieser Art. 0 = keine.
+```
+
+⚠️ **`duell.abstand` wird dadurch überflüssig** und muss weg — sonst stehen zwei
+Wahrheiten über dieselbe Frage nebeneinander. Gleiche Behandlung wie
+`duell.ansage`/`duell.oeffentlich`, die beim Einhängen in `jokerBasis.sicht`
+aufgegangen sind.
+
+`duell.immun` bleibt: das ist die Schonfrist des ZIELS, nicht die des
+Angreifers. Andere Frage, anderes Feld.
