@@ -125,6 +125,45 @@ export default function Drehrad({ rules, onChange }) {
         Keine Empfehlung, keine Vorgabe — was ein Feld auszahlt und wie groß es ist, entscheidest du.
       </p>
 
+      {/* ── Der Aus-Schalter ──
+          Nachgetragen: `enabled` kam später in `drehrad.js` dazu, die
+          Komponente entstand vorher. Ohne diesen Schalter stand das Rad auf
+          der Vorgabe „aus" und liess sich über die Oberfläche NICHT
+          einschalten — die ganze Ebene war unerreichbar.
+          Der Editor bleibt bewusst sichtbar, wenn das Rad aus ist: man soll
+          ein Rad in Ruhe vorbereiten und erst dann scharf schalten koennen. */}
+      <button
+        onClick={() => setze({ enabled: !cfg.enabled })}
+        style={{
+          display: "flex", alignItems: "center", gap: 10, width: "100%",
+          textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+          background: cfg.enabled ? `${C.gold}18` : C.surface,
+          border: `1px solid ${cfg.enabled ? C.gold + "66" : C.line}`,
+          borderRadius: 12, padding: "10px 12px", marginBottom: 12, color: C.text,
+        }}
+      >
+        <span style={{
+          width: 34, height: 20, borderRadius: 999, flexShrink: 0, position: "relative",
+          background: cfg.enabled ? C.gold : C.surface2,
+          border: `1px solid ${cfg.enabled ? "transparent" : C.line}`,
+        }}>
+          <span style={{
+            position: "absolute", top: 2, left: cfg.enabled ? 16 : 2,
+            width: 14, height: 14, borderRadius: 999, background: C.ink2, transition: "left .15s",
+          }} />
+        </span>
+        <span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: cfg.enabled ? C.gold : C.text }}>
+            {cfg.enabled ? "Drehrad ist an" : "Drehrad ist aus"}
+          </span>
+          <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+            {cfg.enabled
+              ? "In dieser Runde wird gedreht."
+              : "Du kannst das Rad trotzdem schon bauen — gedreht wird erst, wenn du es einschaltest."}
+          </span>
+        </span>
+      </button>
+
       {/* ── Der Proportionalbalken: die Draufsicht aufs Rad ── */}
       <Balken felder={felder} anteile={anteile} />
 

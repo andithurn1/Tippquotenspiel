@@ -34,6 +34,7 @@ import BalanceAmpel from "@/components/BalanceAmpel";
 import ProfiWarnungen from "@/components/ProfiWarnungen";
 import JokerVerteilung from "@/components/JokerVerteilung";
 import JokerOekonomie from "@/components/JokerOekonomie";
+import LimitKlassen from "@/components/LimitKlassen";
 import AufwandPanel from "@/components/AufwandPanel";
 import { band } from "@/lib/reglerWarnung";
 import { BIGGAME_LIMITS } from "@/lib/bigGame";
@@ -630,6 +631,19 @@ export default function Spielerstellung() {
             <>
               <SectionTitle>Joker-Ökonomie</SectionTitle>
               <JokerOekonomie rules={rules} stufe={stufe} onChange={patchOekonomie} />
+            </>
+          )}
+
+          {/* Limitierungsklassen: eigenes Gefüge aus Unterkontingenten, die
+              sich überlagern können — nur in der Profi-Stufe, dieselbe
+              Begründung wie beim Achsenprofil in JokerOekonomie (2.4): erst
+              hier sind einzelne Klassen mit eigenem Kontingent, Zeitraum und
+              Aktivierung überhaupt eine Einstiegsfrage. */}
+          {stufe === "profi" && (
+            <>
+              <SectionTitle>Limitierungsklassen</SectionTitle>
+              <LimitKlassen rules={rules}
+                onChange={(limitKlassen) => { touched(); setRules((r) => ({ ...r, limitKlassen })); }} />
             </>
           )}
 
