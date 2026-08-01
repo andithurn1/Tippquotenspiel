@@ -121,7 +121,9 @@ describe("aufwand — leerer oder fehlender Kontext", () => {
     expect(r.tippEntscheidungen).toBe(0);
     expect(r.jokerEntscheidungen).toBe(0);
     expect(r.gesamtProSpieltag).toBe(0);
-    expect(r.minutenSchaetzung).toBe(0);
+    expect(r.spieltage).toBe(0);
+    expect(r.entscheidungenJeSpiel).toBe(0);
+    expect(r.sekundenJeSpiel).toBe(0);
     expect(r.stufe).toBe("entspannt");
     expect(r.hinweise.length).toBeGreaterThan(0);
   });
@@ -137,17 +139,34 @@ describe("aufwand — leerer oder fehlender Kontext", () => {
   });
 });
 
-describe("aufwand — minutenSchaetzung wächst monoton", () => {
-  it("mehr gesamtProSpieltag bedeutet nie weniger Minuten", () => {
+describe("aufwand — Tatsachen und der Sekundenwert JE SPIEL", () => {
+  it("spieltage ist die Länge der übergebenen Reihe, keine Schätzung", () => {
+    expect(aufwand(NUR_ERGEBNIS, KONTEXT_GLEICH).spieltage).toBe(KONTEXT_GLEICH.spieleJeSpieltag.length);
+  });
+
+  it("sekundenJeSpiel wächst monoton mit den Entscheidungen je Spiel", () => {
     const wenig = aufwand(NUR_ERGEBNIS, KONTEXT_GLEICH);
     const viel = aufwand(
       { ...MIT_TORSCHUETZEN, joker: { enabled: true, modus: "ranking" }, duell: { enabled: true, proSpieltag: 3 } },
       KONTEXT_GLEICH,
     );
-    expect(viel.gesamtProSpieltag).toBeGreaterThan(wenig.gesamtProSpieltag);
-    expect(viel.minutenSchaetzung).toBeGreaterThan(wenig.minutenSchaetzung);
+    expect(viel.entscheidungenJeSpiel).toBeGreaterThan(wenig.entscheidungenJeSpiel);
+    expect(viel.sekundenJeSpiel).toBeGreaterThan(wenig.sekundenJeSpiel);
     // Die Umrechnung folgt SEKUNDEN_JE_ENTSCHEIDUNG direkt.
-    expect(wenig.minutenSchaetzung).toBeCloseTo((wenig.gesamtProSpieltag * SEKUNDEN_JE_ENTSCHEIDUNG) / 60, 1);
+    expect(wenig.sekundenJeSpiel)
+      .toBe(Math.round(wenig.entscheidungenJeSpiel * SEKUNDEN_JE_ENTSCHEIDUNG));
+  });
+
+  it("entscheidungenJeSpiel ist je SPIEL, nicht je Spieltag — bei reinem Ergebnis genau 1", () => {
+    // Ein Ergebnis-Tipp je Spiel, sonst nichts: unabhängig davon, wie viele
+    // Spiele ein Spieltag hat, kostet EIN Spiel genau EINE Entscheidung.
+    const klein = aufwand(NUR_ERGEBNIS, { spieleJeSpieltag: [4, 4, 4] });
+    const gross = aufwand(NUR_ERGEBNIS, { spieleJeSpieltag: [40, 40, 40] });
+    expect(klein.entscheidungenJeSpiel).toBe(1);
+    expect(gross.entscheidungenJeSpiel).toBe(1);
+    expect(klein.sekundenJeSpiel).toBe(gross.sekundenJeSpiel);
+    // Die Spieltags-Summe unterscheidet sich sehr wohl.
+    expect(gross.gesamtProSpieltag).toBeGreaterThan(klein.gesamtProSpieltag);
   });
 });
 
@@ -155,8 +174,10 @@ describe("beschreibeAufwand", () => {
   it("liefert einen lesbaren Satz", () => {
     const r = aufwand(MIT_TORSCHUETZEN, KONTEXT_GLEICH);
     const text = beschreibeAufwand(r);
+    expect(text).toContain("Spiele pro Spieltag");
+    expect(text).toContain("Spieltage");
     expect(text).toContain("Entscheidungen pro Spieltag");
-    expect(text).toContain("Minuten");
+    expect(text).toContain("Sekunden je Spiel");
   });
 
   it("stürzt bei leerer Eingabe nicht ab", () => {

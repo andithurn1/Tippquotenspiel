@@ -30,10 +30,25 @@
 //  ── ⚠️ `SEKUNDEN_JE_ENTSCHEIDUNG` ist eine SCHÄTZUNG, keine Messung ──
 //  Dieselbe Ehrlichkeit, die `CLAUDE.md` bei `RHO` in `oddsApi.js` erzwingt,
 //  nachdem dort zweimal eine Annahme als Messung durchgerutscht ist. Es gibt
-//  keine erhobenen Zeiten je Tipp-Entscheidung; der Wert ist so gewählt, dass
-//  er mit dem illustrativen Beispiel aus Abschnitt 4.3 übereinstimmt
-//  („~12 Entscheidungen pro Spieltag · etwa 7 Minuten" → 420 s / 12 ≈ 35 s).
-//  Das macht ihn nicht weniger geraten — nur nachvollziehbar geraten.
+//  keine erhobenen Zeiten je Tipp-Entscheidung; 35 s ist zurückgerechnet aus
+//  dem illustrativen Beispiel der Spec („~12 Entscheidungen · etwa 7 Minuten"
+//  → 420 s / 12 ≈ 35 s). Das macht den Wert nicht weniger geraten — nur
+//  nachvollziehbar geraten.
+//
+//  ── Deshalb: Sekunden JE SPIEL, kein Gesamtwert ──
+//  Ein erster Entwurf zeigte „etwa 10,5 Minuten pro Spieltag". Das war die
+//  falsche Größe, aus zwei Gründen:
+//  (1) **Fehler-Hebel.** Ein Gesamtwert multipliziert den geratenen Faktor mit
+//      Spielen UND Spieltagen. Liegt er um 20 s daneben — und realistisch
+//      braucht jemand zwischen 10 und 60 s je Tipp —, sind es über eine Saison
+//      Stunden. Je Spiel bleibt der Fehler ein Fehler von Sekunden, und wer
+//      hochrechnen will, tut es selbst und weiß dabei, was er tut.
+//  (2) **Falsche Präzision.** „10,5 Minuten" sieht gemessen aus. Die
+//      ENTSCHEIDUNGSZAHL ist aus dem Regelwerk abgeleitet und damit wahr, die
+//      Minuten waren es nie.
+//  Deshalb stehen im Text zuerst die Tatsachen (Spiele je Spieltag, Anzahl der
+//  Spieltage, Entscheidungen) und erst danach der Sekundenwert je Spiel — und
+//  der ist genau die Größe, die die Einstellungen verändern.
 //
 //  ── `jokerEntscheidungen` — was hochgerechnet wird ──
 //  Aus dem Regelwerk, nicht gemessen: der AKTIVE Joker-Modus (`joker.einzel`
@@ -167,7 +182,21 @@ export function aufwand(rules, kontext = {}) {
 
   jokerEntscheidungen = +jokerEntscheidungen.toFixed(2);
   const gesamtProSpieltag = +(tippEntscheidungen + jokerEntscheidungen).toFixed(2);
-  const minutenSchaetzung = +((gesamtProSpieltag * SEKUNDEN_JE_ENTSCHEIDUNG) / 60).toFixed(1);
+
+  // ── Wie viele Spieltage hat die Runde überhaupt ──
+  // Eine Tatsache, kein Schätzwert: die Länge der übergebenen Reihe.
+  const spieltage = rohSpiele.length;
+
+  // ── Was EIN Spiel kostet ──
+  // ⚠️ Bewusst je SPIEL, nicht je Saison. Ein Gesamtwert multipliziert den
+  // geschätzten Sekundenfaktor mit Spielen UND Spieltagen — aus 20 Sekunden
+  // Abweichung würden dann Stunden. Je Spiel bleibt ein Fehler ein Fehler von
+  // ein paar Sekunden, und der Leser kann selbst hochrechnen, wenn er will.
+  // Ausserdem ist genau DAS der Wert, den die Einstellungen verändern.
+  const entscheidungenJeSpiel = spieleProSpieltag > 0
+    ? +(gesamtProSpieltag / spieleProSpieltag).toFixed(2)
+    : 0;
+  const sekundenJeSpiel = Math.round(entscheidungenJeSpiel * SEKUNDEN_JE_ENTSCHEIDUNG);
 
   const stufe = stufeVon(gesamtProSpieltag, spieleProSpieltag);
   if (stufe === "viel" || stufe === "zuviel") {
@@ -179,10 +208,12 @@ export function aufwand(rules, kontext = {}) {
 
   return {
     spieleProSpieltag,
+    spieltage,
     tippEntscheidungen,
     jokerEntscheidungen,
     gesamtProSpieltag,
-    minutenSchaetzung,
+    entscheidungenJeSpiel,
+    sekundenJeSpiel,
     stufe,
     hinweise,
   };
@@ -197,6 +228,9 @@ export function beschreibeAufwand(a) {
   // bei `AVG_GOALS` in `PresetRating.jsx`. Nur die Anzeige, die Rohwerte im
   // Ergebnisobjekt bleiben Zahlen.
   const kommaZahl = (n) => String(n ?? 0).replace(".", ",");
-  return `${kommaZahl(x.gesamtProSpieltag)} Entscheidungen pro Spieltag (${x.spieleProSpieltag ?? 0} Spiele) `
-    + `· etwa ${kommaZahl(x.minutenSchaetzung)} Minuten — ${stufeLabel}.`;
+  // Zuerst die TATSACHEN (Spiele, Spieltage, Entscheidungen), erst danach der
+  // geschätzte Sekundenwert — und der ausdrücklich als „etwa", je Spiel.
+  return `${kommaZahl(x.spieleProSpieltag)} Spiele pro Spieltag · ${x.spieltage ?? 0} Spieltage `
+    + `· ${kommaZahl(x.gesamtProSpieltag)} Entscheidungen pro Spieltag `
+    + `· etwa ${x.sekundenJeSpiel ?? 0} Sekunden je Spiel — ${stufeLabel}.`;
 }
