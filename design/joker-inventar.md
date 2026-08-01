@@ -135,8 +135,14 @@ sein `enabled`.
 |---|---|
 | `duell.enabled` | `typen` enthält `block` → 2 · sonst 1 |
 | `duell.zielWahl` = `frei` | +1 |
-| `voting.enabled` | 1 |
+| `joker.abstimmung` === `true` | 1 |
 | `joker.heimat.enabled` | 1 |
+
+> 🔴 **Korrektur 31.07.:** Hier stand `voting.enabled`. Das Feld gibt es nicht —
+> die Joker-Abstimmung liegt als **Boolean** unter `rules.joker.abstimmung`
+> (`engine.js:125`, ausgewertet in `voting.js`). Die Zeile hätte nie
+> beigetragen. Gefunden bei der Abnahme von Baustein 3, weil die Umsetzung sie
+> wörtlich übernommen und gemeldet hat, statt sie still zurechtzubiegen.
 
 ### E · Ausdauer
 
@@ -150,9 +156,22 @@ sein `enabled`.
 
 | Feld | Beitrag |
 |---|---|
-| `markets.goals.enabled` | `gewicht` hoch → 2 · sonst 1 |
+| `markets.goals.enabled` | **Namen je Spiel** ≥4 → 2 · ≥1 → 1 |
 | `saison.enabled` | `gewicht` ≥1,5 → 2 · sonst 1 |
 | `combo.exakt` | ≥3 → 1 |
+
+> 🔴 **Korrektur 31.07.:** Hier stand „`gewicht` hoch → 2". `markets.goals` hat
+> **kein** `gewicht`-Feld (`engine.js:79`) — der Zweig war unerreichbar, es zählte
+> immer die 1. Der richtige Maßstab dafür, wie viel Detailwissen die Ebene
+> verlangt, ist die Zahl der zu tippenden **Namen je Spiel**:
+>
+> ```
+> namenJeSpiel = modus === "proTeam" ? picksPerTeam * 2 : picksProSpiel
+> ```
+>
+> Die Vorgabe (`proTeam`, `picksPerTeam: 2`) ergibt 4 Namen je Spiel und damit
+> den hohen Beitrag — das ist auch inhaltlich richtig, Torschützen sind die
+> wissensintensivste Ebene, die wir haben.
 
 ### `achsenKonflikte(profil)`
 
