@@ -42,6 +42,7 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
+| 2 (Andre) | ~~Joker-Baukasten: zehn Module + fünf Oberflächen-Bausteine~~ — alles auf `main`, 1472 Tests grün | fertig | 2026-08-02 |
 | 2 (Andre) | **NÄCHSTE AUFGABE: Blindstellen-Durchgang `balanceSim.js`.** Sieht der Simulator die sechs neuen Ebenen? Nach Stand 31.07. nein — null Verweise. Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-31 |
 | 2 (Andre) | ~~Joker-Ökonomie: sechs Module + Einhängen + Creator-Code~~ — alles auf `main`, 1359 Tests grün | fertig | 2026-07-31 |
 | 2 (Andre) | **Duell-Joker** (Klau + Block) — `design/duell-joker.md` (Spec, liegt), `src/lib/duellJoker.js` + Test, danach `engine.js` (additiv), `presetMerge.js`, `reglerWarnung.js`, neue Komponente `DuellJoker.jsx`, Einbau in `Spielerstellung.jsx`. Vom Nutzer am 31.07. ausdrücklich beauftragt. | läuft | 2026-07-31 |
@@ -102,6 +103,106 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-08-02 · **ÜBERGABE** — der Joker-Baukasten steht, Oberfläche inklusive
+
+> **👉 Frische Session: DAS ist dein Einstieg.** Der Eintrag darunter
+> („Joker-Ökonomie steht, Blindstellen-Durchgang fehlt") ist überholt — seither
+> sind zwölf Commits dazugekommen.
+
+`main` bei `b936dda` · **1472 Tests grün** (Sessionstart: 1162) · Build sauber ·
+Arbeitskopie leer.
+
+#### Was auf `main` liegt
+
+**Zehn Logik-Module**, alle mit Tests, alle über die Oberfläche erreichbar:
+
+| Modul | Was |
+|---|---|
+| `duellJoker.js` | Klau- und Block-Joker (dritter Joker-Topf, zielt auf eine PERSON) |
+| `jokerBudget.js` | **Münzen** — fünf Quellen, Takt, Verfall, Shop-Preise, Preisdynamik |
+| `limitKlassen.js` | Kontingente, die sich mehrere Joker-Arten TEILEN |
+| `jokerBasis.js` | die Grundform: 13 Dimensionen, die jeder Joker trägt |
+| `jokerBibliothek.js` | sechs Ökonomien, Codeschema, **Achsenprofil** |
+| `aufwand.js` | Entscheidungen je Spieltag (Zeitschutz) |
+| `drehrad.js` | Zufalls-Ereignisse aus einer Tabelle, die der Admin schreibt |
+
+**Fünf Oberflächen-Bausteine** in der Spielerstellung: `JokerOekonomie.jsx`,
+`AufwandPanel.jsx`, `Drehrad.jsx`, `LimitKlassen.jsx`, `JokerGrundform.jsx`.
+
+**Zwei Dinge am Bestand geändert** (beides angekündigt, siehe Eintrag darunter):
+- `engine.js` trägt fünf neue Regelblöcke, `sanitizeRules` delegiert an die
+  jeweiligen Module. Kette neu:
+  `applyCatchup(applySaisonform(applyDuellJoker(roh, …), …), …)`
+- **Creator-Code speichert nur noch Abweichungen** (`TS2-`): 3338 → 62 Zeichen
+  beim Standard-Preset. `TS1-` bleibt dekodierbar.
+
+#### 🟢 Zwei Wächter-Tests — das Wertvollste dieser Sitzung
+
+Keine Logik-Tests, sondern Prüfungen auf Eigenschaften, die man beim Bauen
+vergisst. Beide haben sofort echte Fehler gefunden:
+
+- **`uiTexte.test.js`** — Katalog-Texte werden ungeprüft angezeigt. Der Test
+  verbietet Dateinamen, camelCase-Bezeichner und das Wort „Budget". Fand beim
+  ERSTEN Lauf zehn Lecks, u. a. `ereignisse.js` und `nurGegenFuehrende` mitten
+  im Satz — bei 1421 grünen Tests.
+- **`reglerRaster.test.js`** — alle Multiplikator-Regler auf einem gemeinsamen
+  Raster von **0,05**, `min`/`max` selbst auf dem Raster, Rundlauf durch
+  `sanitizeRules`. Legte drei `.toFixed(1)`-Stellen frei, die eingestellte
+  Werte still gerundet hätten (1,15 → 1,2).
+
+⚠️ **Wer eine neue Ebene baut, hängt sie in beide Wächter ein.** Sie sind als
+benannte Listen geschrieben, damit ein vergessener Eintrag auffällt.
+
+#### 🔴 Was NICHT gemacht ist — und bewusst so
+
+**Balanciert ist nichts davon.** Der Nutzer hat ausdrücklich entschieden:
+Empfehlungen zu Stärke, Häufigkeit und Kombination kommen SPÄTER, wenn das
+Gehäuse steht. Bis dahin gilt: *„Wenn ein Admin unbedingt eine unbalancierte
+Tipprunde erstellen will, soll er's tun."*
+
+Was stattdessen geprüft wird: **dass die Einstellungen greifen.** Eine
+Einstellung, die ins Leere läuft, ist kein Baukastenteil. Drei solche Fälle sind
+in dieser Sitzung aufgeflogen — ein fehlendes Feld, das ALLE Limitklassen
+lautlos abschaltete; ein Punkte-Deckel, der gespeichert, aber nie durchgesetzt
+wurde; ein Drehrad, das über die Oberfläche gar nicht einschaltbar war.
+
+**`design/blindstellen-balancesim.md`** hält den Befund fest, wenn ihr doch
+messen wollt. Kurzfassung: `balanceSim.js` sieht keine der Ebenen, und bei
+`duell`/`budget`/`limitKlassen`/`jokerBasis` fehlt nicht die Verkabelung,
+sondern ein **Verhaltensmodell** — der Simulator kennt keine Entscheidung, an
+der diese Regeln greifen könnten. ⚠️ Wer das baut, legt mit der Zielstrategie
+das Ergebnis weitgehend selbst fest; deshalb dort die Auflage, über MEHRERE
+Strategien zu messen statt über eine.
+
+#### 🟡 Offene Fäden, alle mit Spec
+
+| Was | Wo |
+|---|---|
+| **Teilbibliotheken** — teilbare Aspekt-Codes (`TS2A-…`), 3–5 Einträge je Bereich, vom Admin speicherbar | `design/teilbibliotheken.md` |
+| **Abstands-Bedingung** — eine Regel gilt, SOLANGE die Tabelle eng/weit ist | `design/joker-ausloeser.md` 2b |
+| **16 Auslöser** — Führungswechsel, Kopf-an-Kopf, kollektiver Reinfall, Versteigerung … | `design/joker-ausloeser.md` |
+| **Lückenliste L2–L11** — variabler Einsatz, Schutz, Ansage-Joker, Dämpfer, Frühtipp-Bonus | `design/joker-inventar.md` 4.5 |
+| **Store-Anbindung** der Duell-Einsätze — `applyDuellJoker` ist bis dahin ein No-op | `design/duell-joker.md` |
+| **RLS-Befund** — laut Andi weiterhin der wichtigste offene Posten | Eintrag vom 31.07. |
+
+⚠️ **L1 (Quoten-Joker) ist VERWORFEN** — er bräche die Prüfbarkeit des
+Snapshots und damit den RLS-Fix. Begründung in `joker-inventar.md` 4.4.
+
+#### 📌 Arbeitsweise
+
+- ⚠️ **Es gibt ZWEI Arbeitskopien.** `preview_start` startete über die
+  `launch.json` des Session-Primärverzeichnisses den ALTEN Checkout in OneDrive;
+  der Dev-Server servierte tagealten Code, und die Browser-Prüfung bestätigte
+  Verhalten, das mit der Änderung nichts zu tun hatte. Behoben, Erkennungsprobe
+  steht in `CLAUDE.md`.
+- **Im Browser prüfen bleibt unverzichtbar.** Die Textlecks, das nicht
+  einschaltbare Drehrad und der `TS1-`-Bruch in der Import-Zeile waren alle
+  unsichtbar für Tests und Build.
+- **Beim Umsetzen wörtlich folgen lassen, nicht sinngemäß.** Mehrfach wurden so
+  Fehler in der VORGABE gefunden statt stillschweigend geglättet:
+  `voting.enabled` gibt es nicht (es ist `joker.abstimmung`), `markets.goals`
+  hat kein `gewicht`, der Punkte-Deckel widersprach sich selbst.
 
 ### 2026-07-31 (V) · **ÜBERGABE an die nächste Andre-Session** — Joker-Ökonomie steht, Messung fehlt
 
