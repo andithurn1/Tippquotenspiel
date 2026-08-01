@@ -49,6 +49,59 @@ Rückstand, nach Platzierung.
 | R3 | **Nach der Pause** — Rückkehr nach einer Länderspielpause. Erkennbar am Abstand zwischen Anpfiffen. | ✅ `zeitachse.js` |
 | R4 | **Countdown** — die letzten N Spieltage tragen je einen. | ✅ = `phase: schlussspurt` |
 
+## 2b. 🔴 Die Abstands-Bedingung — eine Regel gilt, SOLANGE die Tabelle so aussieht
+
+Vom Nutzer gefordert und grundsätzlich anders als alles bisherige: Die
+bestehenden Bedingungen fragen nach dem **Kalender** („ab Spieltag 12") oder
+nach einer **Person** („ich liege 30 Punkte hinten"). Diese hier fragt nach der
+**Verfassung der ganzen Runde** — und sie kann von Spieltag zu Spieltag
+umschlagen.
+
+### Das Maß: `spannung`
+
+Nicht ein einzelner Abstand, sondern eine einstellbare **Konstellation**:
+
+| `bezug` | misst |
+|---|---|
+| `ersterZweiter` | Abstand Platz 1 zu Platz 2 |
+| `ersterLetzter` | Abstand Platz 1 zum Schlusslicht |
+| `spitzengruppe` | Streuung über die ersten `n` Plätze |
+| `feld` | Streuung über alle |
+
+| `art` | |
+|---|---|
+| `relativ` | Anteil, z. B. „Platz 2 hat 85 % der Punkte von Platz 1". **Vorgabe** — absolute Punkte sagen je nach `displayScale` und Saisonlänge etwas völlig anderes. |
+| `absolut` | Punkte. Für Admins, die ihre Runde kennen. |
+
+⚠️ **Gewichtung zur Spitze.** Der Nutzer will ausdrücklich, dass Platz 1 stärker
+zählt. Deshalb `gewichtung: 0…1` — bei 0 zählen alle Ränge gleich, bei 1 nur der
+Abstand zur Spitze. Vorgabe hoch, weil die Frage fast immer „zieht der Erste
+davon?" lautet und nicht „wie liegt Platz 7 zu Platz 8".
+
+### Wie sie benutzt wird
+
+Als **Aktivierungs-Bedingung**, also überall dort, wo `limitKlassen.aktivierung`
+und `jokerBasis.wer` schon greifen:
+
+```
+{ typ: "abSpannung",  wert: 0.75 }   // nur solange es ENG ist
+{ typ: "unterSpannung", wert: 0.4 }  // nur wenn jemand DAVONZIEHT
+```
+
+Beispiel: „Der Klau-Joker existiert nur, solange der Zweite mindestens 75 % der
+Punkte des Ersten hat" — eine Runde, in der die Angriffe aufhören, sobald einer
+uneinholbar führt. Oder umgekehrt.
+
+⚠️ **Sie muss sich pro Spieltag NEU entscheiden dürfen.** Eine Bedingung, die
+einmal auslöst und dann festhängt, wäre eine verkleidete Kalender-Regel. Das
+heißt: sie liest den Stand VOR dem jeweiligen Spieltag — dieselbe Kante wie der
+Aufhol-Bonus in `catchup.js`, und aus demselben Grund.
+
+### Voreinstellungen
+
+3–5 kuratierte Konstellationen als eigene **Teilbibliothek**
+(`design/teilbibliotheken.md`), nicht als fest verdrahtete Sonderfälle.
+
 ## 3. Tabellenstand — die dramaturgischen
 
 | # | Auslöser | Daten |
