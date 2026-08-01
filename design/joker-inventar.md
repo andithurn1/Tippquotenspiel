@@ -104,7 +104,7 @@ zwei Sätzen erklären.
 
 | # | Fehlt | Achse | Warum es zählt | Verständlich? |
 |---|---|:--:|---|---|
-| **L1** | **Quoten-Joker / Quote einfrieren** | A | Wir sind ein QUOTEN-Tippspiel und haben keinen Joker auf die Quote. Heute friert der Snapshot beim Anpfiff für alle gleich ein. Ein Joker, der die Quote **zum Zeitpunkt deines Tipps** festschreibt, belohnt frühes Tippen und Marktgespür — die naheliegendste Mechanik unseres eigenen Themas, und sie fehlt komplett. | ✅ „Deine Quote gilt ab jetzt, egal wie sie sich noch bewegt." |
+| ~~L1~~ | ~~**Quoten-Joker / Quote einfrieren**~~ | A | 🔴 **VERWORFEN am 31.07. durch den Nutzer.** Siehe Abschnitt 4.4 — der Einwand ist zwingend. | — |
 | **L2** | **Variabler Einsatz je Spiel** | A/B | Heute ist der Joker ein FESTER Faktor. Der Spieler kann nicht wählen, *wie viel* er auf ein Spiel setzt. Das ist die stärkste fehlende Ausdrucksmöglichkeit — `ranking` kommt am nächsten, ist aber ein fester Pool. | ✅ „Verteile 100 Punkte Einsatz auf deine Spiele." |
 | **L3** | **Schutz / Versicherung** | C/E | Alle unsere Joker sind offensiv. Es gibt nichts Defensives: kein Boden für einen verpatzten Spieltag, keine Absicherung. Der Block-Joker trifft andere, er schützt nicht. Fehlender Gegenpol. | ✅ „Dein schlechtester Spieltag zählt mindestens X." |
 | **L4** | **Ansage / Vorhersage-Joker** | A/D | Vorab ansagen „ich treffe dieses Spiel exakt" — trifft man, gibt es extra; trifft man nicht, kostet es. Erzeugt Drama VOR dem Spiel statt danach, und ist öffentlich. Reine Dramaturgie, sehr billig zu bauen. | ✅ |
@@ -141,12 +141,131 @@ eine gemeinsame Grundform, aus der sich jeder Joker-Typ bedient — dieselbe
 
 | Idee | Warum nicht |
 |---|---|
+| **Quoten-Joker (L1)** — Quote zum Tippzeitpunkt einfrieren | 🔴 **Vom Nutzer verworfen, und der Einwand trägt weiter als „Effizienz".** `snapshot` ist heute **pro Spiel und global**, nicht pro Spieler — dieselbe Begegnung gehört zu vielen Runden (siehe „Big Game" in `CLAUDE.md`: eingefroren wird der WERT, nicht das Urteil). Ein Einfrieren je Tippzeitpunkt hieße ein eigener Snapshot pro Spieler und Spiel. Zwei Folgen, beide untragbar: (1) die Wertungen zweier Spieler wären nicht mehr gegeneinander prüfbar, weil sie auf verschiedenen Quoten stehen; (2) **es macht den offenen RLS-Befund unreparierbar** — `tips.snapshot` wird vom Client geschrieben und braucht einen serverseitigen Trigger, der den Wert prüft. Prüfen kann er nur, wenn es EINEN richtigen Wert gibt. Der Frühtipp-Gedanke bleibt über **L6** erhalten, ohne die Quote anzufassen. |
 | Joker-**Handel** zwischen Spielern | Absprachen. Zwei Spieler könnten sich gegenseitig hochschieben — das ist kein Regler, das ist ein Loch. |
 | Tipp ÄNDERN nach Anpfiff | Bricht die Snapshot-Kante. Nicht verhandelbar. |
 | Joker, der Punkte aus dem Nichts schafft | Verletzt „kein neuer Punkte-Kanal" (`ereignisse.js`). Immer Nullsumme oder Deckel. |
 | Herausforderungen / Minispiele | Bereits im Katalog vorbereitet, aber ohne Datenquelle nicht auswertbar. Ehrlich als „nicht aktivierbar" markiert. |
 
 ---
+
+## 4.5 Ausgearbeitete Lösungen
+
+Auf Anweisung des Nutzers am 31.07. durchdacht. Jede Lösung hält die drei
+Architekturregeln ein: `scoreTip` bleibt für sich bewertbar, kein neuer
+Punkte-Kanal, Modifikatoren bleiben additiv gedeckelt.
+
+### ⭐ L12–L15 — die gemeinsame Grundform (zuerst bauen)
+
+`src/lib/jokerBasis.js`. **Kein neuer Joker, sondern die Form, die jeder Joker
+trägt.** Ohne sie bringt jeder neue Typ wieder eigene Regler mit, und dann sind
+es elf Sonderfälle statt eines Baukastens.
+
+```js
+export const JOKER_BASIS = {
+  wer:       "alle",          // alle | abPlatz | abRueckstand | adminFreigabe
+  werWert:   0,
+  sicht:     "nachAnpfiff",   // sofort | nachAnpfiff | nachAuswertung
+  verfall:   "saison",        // periode | saison | wandert
+  widerruf:  "bisAnpfiff",    // bisAnpfiff | bisStunden | sofortVerbindlich
+  widerrufStunden: 0,
+  stapeln:   1,               // wie viele Joker auf DASSELBE Spiel
+  bedingung: { minQuote: null, maxQuote: null, wettbewerbe: [], phasen: [] },
+};
+```
+
+- `sanitizeJokerBasis(partial)` und `erfuelltBedingung(basis, snap)` liegen hier,
+  jeder Joker-Typ ruft sie auf statt eigene Prüfungen zu schreiben.
+- **`bedingung.minQuote` ist L15** und der saubere Ersatz für den verworfenen
+  L1: „dieser Joker gilt nur auf Spiele über Quote 3" macht Mut zur Bedingung,
+  ohne die Quote selbst anzufassen.
+- ⚠️ `widerruf` darf **nie über den Anpfiff hinaus** gehen. `bisStunden` zählt
+  Stunden VOR Anpfiff, nie danach — dieselbe Kante wie der Snapshot.
+
+### ⭐ L2 — variabler Einsatz je Spiel
+
+**Kein neues Modul: ein dritter `joker.modus` neben `einzel` und `ranking`.**
+`ranking` ist bereits die diskrete Fassung (fester Pool 2 · 1,5 · 1,2 · 1) —
+`einsatz` ist die stufenlose.
+
+Der Spieler verteilt je Spieltag ein Einsatz-Budget auf seine Spiele.
+
+⚠️ **Die entscheidende Regel, sonst ist es kaputt:** die Faktoren werden auf
+**Mittelwert 1 normiert**, exakt wie `gewichte()` in `saisonform.js`
+(„die Kurve verschiebt Gewicht, sie erzeugt keines"). Wer alles auf ein Spiel
+setzt, verschiebt sein Gewicht — er erzeugt keines. Ohne diese Normierung höbe
+ein hoher Gesamteinsatz schlicht das Punkteniveau, und `displayScale` wanderte
+mit; genau die Falle, die bei „Bonus für den Letzten" schon einmal dokumentiert
+ist.
+
+- `einsatzProSpieltag` (Vorgabe 100), `maxAnteilProSpiel` (Vorgabe 0,4) — der
+  Deckel gegen All-in, gleichzeitig die Umsetzung von **L7**.
+- Nicht verteilter Rest verfällt; er wandert nicht in den nächsten Spieltag,
+  sonst entsteht die Schluss-Salve.
+- `modCap` greift unverändert obendrauf.
+
+### ⭐ L3 — Schutz, ohne Punkte zu erfinden
+
+Die naheliegende Fassung („dein schlechtester Spieltag zählt mindestens X")
+**erzeugt Punkte aus dem Nichts** und verletzt die Regel aus `ereignisse.js`.
+Deshalb die andere Bauart, die nichts erschafft:
+
+**Das Streichresultat wird vom Automatismus zur Spielerentscheidung.**
+`saisonform.js` kann Streicher bereits — heute wählt sie das System (die n
+schlechtesten). Neu: `streichModus: "automatisch" | "joker"`. Bei `joker`
+entscheidet der Spieler selbst, welchen Spieltag er streicht, und verbraucht
+dafür einen Joker.
+
+Das ist punkteneutral, nutzt vorhandene, getestete Mechanik, und ist als
+Entscheidung viel interessanter als die automatische Variante — man muss
+abschätzen, ob noch ein schlechterer Spieltag kommt. `vorlaeufig` in
+`anwenden()` sagt heute schon genau das.
+
+⚠️ `nurGetippte` gilt weiter: ein ausgelassener Spieltag ist kein Ausrutscher.
+
+### ⭐ L5 — Dämpfer statt nur Aufschlag
+
+Die additive Fassung trägt das schon: `totalModifier` bildet `1 + Σ Aufschläge`.
+Ein **negativer** Aufschlag fügt sich ein, ohne die Mechanik zu ändern.
+
+Was fehlt, ist die Untergrenze. `modCap` deckelt nach oben; nach unten gibt es
+nichts, und ein Spiel könnte auf 0 oder darunter fallen — ein richtiger Tipp
+würde bestraft.
+
+- Neu: **`modFloor`** als Geschwister von `modCap` (Vorgabe 0,25).
+- ⚠️ **Ein Dämpfer dreht nie ein Plus ins Minus.** Gleiche Familie wie
+  `block.nurGewinn` beim Duell-Joker.
+- Betroffen: `teamMods.teams` (Faktor unter 1 erlauben) und
+  `wettbewerbGewicht` (Liga-Gewicht unter 1).
+
+**Nebeneffekt, der es besonders lohnend macht:** „nur das Interessanteste zählt"
+lässt sich damit ausdrücken, ohne Spiele aus der Runde zu werfen. Ein gedämpftes
+Spiel bleibt tippbar und zählt nur weniger — das ist fast immer besser als der
+Filter in `spielauswahl.js`, der es ganz verschwinden lässt.
+
+### L4 — Ansage-Joker
+
+Vor Anpfiff ansagen: „dieses Spiel treffe ich exakt."
+- Trifft man → Aufschlag auf die ohnehin fällige Exakt-Wertung.
+- Trifft man nicht → fester Abzug (`einsatz`), unabhängig davon, wie knapp.
+
+Punkteneutral kalibrierbar, weil die Quote den fairen Preis liefert: der
+Aufschlag ist die Gegenwahrscheinlichkeit des Abzugs. Baut vollständig auf der
+vorhandenen `exakt`-Ebene von `scoreTip` auf, braucht keine neue Wertungslogik —
+nur einen Eintrag am Tipp und die Auswertung im Verlauf.
+Sichtbarkeit über `JOKER_BASIS.sicht`: öffentlich angesagt ist die halbe Miete.
+
+### L6 · L10 · L11 — kurz
+
+- **L6 Frühtipp-Bonus:** `tippfenster.js` kennt Öffnungszeit und Anpfiff, der
+  Tipp trägt seinen Zeitstempel. Bonus als Anteil der verstrichenen
+  Fensterzeit. **Rettet den Frühtipp-Gedanken aus dem verworfenen L1, ohne die
+  Quote anzufassen.**
+- **L10 Kopier-Joker:** Tipp eines Mitspielers übernehmen, sichtbar erst nach
+  Anpfiff. Kein Punkte-Transfer, also harmlos — die freundliche Ergänzung zum
+  Klau-Joker auf derselben Achse D.
+- **L11 Serien-Joker:** `ereignisse.js` kennt Serien schon als AUSLÖSER; hier
+  ist die Serie selbst der Multiplikator. Deckel über `maxErspielt`-Muster.
 
 ## 5. Empfohlene Reihenfolge
 
