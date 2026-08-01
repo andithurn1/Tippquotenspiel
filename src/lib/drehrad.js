@@ -152,6 +152,13 @@ export const DREHRAD_LIMITS = {
 };
 
 export const DEFAULT_DREHRAD = {
+  // ⚠️ Nachgetragen bei der Abnahme am 31.07.: In der ersten Fassung fehlte
+  // `enabled` — als einzige optionale Ebene im ganzen Regelwerk hatte das Rad
+  // keinen Aus-Schalter (`duell`, `budget`, `joker`, `ereignisse`, `saison`,
+  // `bigGame` haben alle einen). Abschalten hätte geheißen, die Felder zu
+  // leeren, worauf `pruefeFelder` „kein gültiges Rad" meldet — ein
+  // FEHLERZUSTAND als Aus-Schalter. Standard aus, wie bei allen anderen.
+  enabled: false,
   felder: [],
   sperrfrist: 0,
   frequenz: 4,
@@ -296,6 +303,9 @@ export function sanitizeDrehrad(partial = {}) {
   const bisSpieltagRoh = leerWert(p.bisSpieltag) ? NaN : Number(p.bisSpieltag);
 
   return {
+    // Nur ein ausdrückliches `true` schaltet ein — dieselbe Bauart wie bei
+    // allen anderen optionalen Ebenen.
+    enabled: p.enabled === true,
     felder: pruefeFelder(p.felder, sperrfrist).felder,
     sperrfrist,
     frequenz: Math.round(clamp(p.frequenz, DREHRAD_LIMITS.frequenz, DEFAULT_DREHRAD.frequenz)),
@@ -341,7 +351,9 @@ export function drehradPlan({ spieltage = 34, drehrad = DEFAULT_DREHRAD, seed = 
   const fenster = fensterVon(cfg, spieltage);
   const breite = fenster.bis - fenster.von + 1;
 
-  if (breite < 1 || !userIds.length) {
+  // Ausgeschaltet heißt: keine Drehungen. Das Fenster wird trotzdem gemeldet,
+  // damit die Vorschau in der Oberfläche zeigen kann, WO gedreht WÜRDE.
+  if (!cfg.enabled || breite < 1 || !userIds.length) {
     return { von: fenster.von, bis: fenster.bis, proSpieler: Object.fromEntries(userIds.map((id) => [id, []])) };
   }
 

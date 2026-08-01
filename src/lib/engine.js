@@ -11,6 +11,7 @@ import { applyDuellJoker, sanitizeDuellJoker, DEFAULT_DUELL } from "./duellJoker
 import { sanitizeBudget, DEFAULT_BUDGET } from "./jokerBudget";
 import { sanitizeLimitKlassen, DEFAULT_LIMIT_KLASSEN } from "./limitKlassen";
 import { sanitizeJokerBasisKarte, DEFAULT_BASIS } from "./jokerBasis";
+import { sanitizeDrehrad, DEFAULT_DREHRAD } from "./drehrad";
 
 
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
@@ -243,6 +244,12 @@ export const DEFAULT_RULES = {
   // Joker-Art bezahlt wird. Katalog + Verlaufsrechnung in jokerBudget.js.
   // Standard aus.
   budget: { ...DEFAULT_BUDGET },
+
+  // ── Drehrad: der dritte Auslöser, reiner Zufall aus einer Admin-Tabelle ──
+  // `jokerPlan` liefert einen ZEITPUNKT, `ereignisse` eine LEISTUNG — das
+  // Drehrad zieht aus einer Tabelle, die der Admin selbst schreibt. Katalog +
+  // Ziehung in drehrad.js. Standard aus.
+  drehrad: { ...DEFAULT_DREHRAD },
 
   // ── Limitierungsklassen: benannte Kontingente über mehrere Joker-Arten ──
   // Eine Klasse fasst Joker-Arten zu einem gemeinsamen Deckel zusammen, mit
@@ -485,13 +492,14 @@ export function sanitizeRules(partial = {}) {
     wettbewerbe: sanitizeWettbewerbe(src.wettbewerbe),
     tippfenster: sanitizeTippfenster(src.tippfenster),
     zeitachse: sanitizeZeitachse(src.zeitachse),
-    // Duell-Joker, Budget, Limitierungsklassen und Joker-Grundform prüfen
-    // sich selbst — dieselbe Delegation wie bei Saisonform und Saison-Wetten,
-    // damit die jeweiligen Kataloge die eine Quelle bleiben.
+    // Duell-Joker, Budget, Limitierungsklassen, Joker-Grundform und Drehrad
+    // prüfen sich selbst — dieselbe Delegation wie bei Saisonform und
+    // Saison-Wetten, damit die jeweiligen Kataloge die eine Quelle bleiben.
     duell: sanitizeDuellJoker(src.duell),
     budget: sanitizeBudget(src.budget),
     limitKlassen: sanitizeLimitKlassen(src.limitKlassen),
     jokerBasis: sanitizeJokerBasisKarte(src.jokerBasis),
+    drehrad: sanitizeDrehrad(src.drehrad),
   };
 }
 

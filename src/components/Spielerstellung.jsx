@@ -25,6 +25,7 @@ import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
 import SaisonWetten from "@/components/SaisonWetten";
 import Ereignisse from "@/components/Ereignisse";
+import Drehrad from "@/components/Drehrad";
 import WettbewerbGewichte from "@/components/WettbewerbGewichte";
 import RundenCharaktere from "@/components/RundenCharaktere";
 import EinfacheRegler from "@/components/EinfacheRegler";
@@ -1052,6 +1053,14 @@ export default function Spielerstellung() {
           <SectionTitle>Joker verdienen</SectionTitle>
           <Ereignisse rules={rules}
             onChange={(ereignisse) => { touched(); setRules((r) => ({ ...r, ereignisse })); }} />
+
+          {/* Drehrad — der dritte Auslöser neben Zeitpunkt (Joker) und
+              Leistung (Ereignisse): reiner Zufall aus einer vom Admin selbst
+              geschriebenen Tabelle (design/drehrad.md). Nur in dieser Stufe,
+              weil hier bereits alles andere Feineinstellung ist. */}
+          <SectionTitle>Drehrad</SectionTitle>
+          <Drehrad rules={rules}
+            onChange={(drehrad) => { touched(); setRules((r) => ({ ...r, drehrad })); }} />
 
           {/* Team- & Derby-Regeln */}
           <SectionTitle>Team- &amp; Derby-Regeln</SectionTitle>

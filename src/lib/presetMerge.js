@@ -52,8 +52,11 @@ export const ASPEKTE = [
     // bepreist ALLE Joker-Arten, `limitKlassen` deckelt sie, `jokerBasis` gibt
     // ihnen ihre Form — wer die Ökonomie ohne die Joker übernähme (oder
     // umgekehrt), bekäme eine Kombination, die niemand vermessen hat.
+    // `drehrad` ebenfalls: es zahlt Joker, Münzen und Modifikatoren aus, also
+    // in genau dieselben Töpfe. Ein Rad ohne die Ökonomie, aus der es schöpft,
+    // wäre ein Auslöser ohne Wirkung.
     keys: ["joker", "teamMods", "modCap", "bigGame", "ereignisse", "wettbewerbe",
-           "duell", "budget", "limitKlassen", "jokerBasis"],
+           "duell", "budget", "limitKlassen", "jokerBasis", "drehrad"],
   },
   {
     key: "spiele",

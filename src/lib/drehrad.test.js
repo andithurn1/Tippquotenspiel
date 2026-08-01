@@ -241,6 +241,10 @@ describe("Test 3c — sind alle Felder gesperrt, wird trotzdem gezogen", () => {
 describe("Test 4 — Drehungen liegen im eingestellten Fenster und nirgends sonst", () => {
   it("alle geplanten Spieltage liegen zwischen von und bis des manuellen Fensters", () => {
     const drehrad = {
+      // `enabled: true` ist seit der Abnahme am 31.07. nötig — das Rad hatte
+      // als einzige optionale Ebene keinen Aus-Schalter. Ohne ihn plant
+      // `drehradPlan` bewusst keine Drehungen (eigener Test weiter unten).
+      enabled: true,
       felder: [feld("a", 5), feld("b", 5)],
       modus: "kontingent",
       frequenz: 2,
@@ -264,6 +268,7 @@ describe("Test 4 — Drehungen liegen im eingestellten Fenster und nirgends sons
 
   it("ruft jokerPlan auf — Modus „gleich“ liefert für alle dieselben Spieltage", () => {
     const drehrad = {
+      enabled: true,
       felder: [feld("a", 5), feld("b", 5)],
       modus: "gleich", frequenz: 4, phase: "manuell", abSpieltag: 1, bisSpieltag: 34,
     };
@@ -274,11 +279,34 @@ describe("Test 4 — Drehungen liegen im eingestellten Fenster und nirgends sons
   });
 
   it("deterministisch: gleiche Runde, gleicher Plan", () => {
-    const drehrad = { felder: [feld("a", 5), feld("b", 5)], modus: "kontingent", frequenz: 4 };
+    const drehrad = { enabled: true, felder: [feld("a", 5), feld("b", 5)], modus: "kontingent", frequenz: 4 };
     const userIds = ["u1", "u2"];
     const p1 = drehradPlan({ spieltage: 34, drehrad, seed: "runde-x", userIds });
     const p2 = drehradPlan({ spieltage: 34, drehrad, seed: "runde-x", userIds });
     expect(p1).toEqual(p2);
+  });
+
+  // Der Aus-Schalter, der bis zur Abnahme am 31.07. fehlte. Ohne ihn wäre
+  // „Rad aus" nur über das Leeren der Felder gegangen — worauf `pruefeFelder`
+  // „kein gültiges Rad" meldet. Ein FEHLERZUSTAND als Aus-Schalter.
+  it("ausgeschaltet plant keine Drehungen, meldet aber weiter das Fenster", () => {
+    const drehrad = {
+      enabled: false,
+      felder: [feld("a", 5), feld("b", 5)],
+      modus: "kontingent", frequenz: 2, phase: "manuell", abSpieltag: 10, bisSpieltag: 20,
+    };
+    const plan = drehradPlan({ spieltage: 34, drehrad, seed: "runde-aus", userIds: ["u1", "u2"] });
+    expect(plan.von).toBe(10);
+    expect(plan.bis).toBe(20);
+    expect(plan.proSpieler.u1).toEqual([]);
+    expect(plan.proSpieler.u2).toEqual([]);
+  });
+
+  it("Vorgabe ist AUS — wie bei jeder anderen optionalen Ebene", () => {
+    expect(DEFAULT_DREHRAD.enabled).toBe(false);
+    expect(sanitizeDrehrad({}).enabled).toBe(false);
+    expect(sanitizeDrehrad({ enabled: "ja" }).enabled).toBe(false);
+    expect(sanitizeDrehrad({ enabled: true }).enabled).toBe(true);
   });
 });
 
