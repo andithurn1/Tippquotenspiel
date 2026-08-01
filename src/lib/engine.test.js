@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   createMockOddsSource, DEFAULT_RULES, RULE_LIMITS,
   scoreResult, scoreGoals, scoreTip, applyCombo, toDisplay,
-  encodePreset, decodePreset, sanitizeRules, scoreLeaderboard, scoreLeaderboardHistory, projectTip,
+  encodePreset, decodePreset, istCreatorCode, sanitizeRules, scoreLeaderboard, scoreLeaderboardHistory, projectTip,
   jokerFactor, maxJokerFactor, maxTotalModifier, teamModFactor, totalModifier,
   invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday,
 } from "./engine";
@@ -10,6 +10,7 @@ import { DEFAULT_DUELL } from "./duellJoker";
 import { DEFAULT_BUDGET } from "./jokerBudget";
 import { DEFAULT_LIMIT_KLASSEN } from "./limitKlassen";
 import { DEFAULT_BASIS } from "./jokerBasis";
+import { PRESETS } from "./presets";
 
 const odds = createMockOddsSource();
 const snap = odds.getSnapshot("JOR-ESP");
@@ -228,12 +229,80 @@ describe("Creator-Codes", () => {
   it("Regelwerk übersteht encode → decode verlustfrei", () => {
     const rules = { ...DEFAULT_RULES, name: "Hardcore", k: 1.1 };
     const code = encodePreset(rules);
-    expect(code.startsWith("TS1-")).toBe(true);
-    expect(decodePreset(code)).toEqual(rules);
+    // Seit dem Delta-Format (TS2-) kodiert encodePreset nicht mehr das
+    // Vollformat — TS1- bleibt nur beim DEKODIEREN alter Codes bestehen.
+    expect(code.startsWith("TS2-")).toBe(true);
+    expect(decodePreset(code)).toEqual(sanitizeRules(rules));
   });
   it("ungültige Codes werfen einen Fehler", () => {
     expect(() => decodePreset("QUATSCH")).toThrow();
     expect(() => decodePreset(null)).toThrow();
+  });
+
+  // Regression: die Oberfläche prüfte selbst auf „TS1-" und hätte jeden neuen
+  // TS2-Code als Server-Kurzcode beim Store gesucht — grün in allen Tests,
+  // kaputt für den Nutzer. Seitdem fragt sie `istCreatorCode`, und die muss
+  // BEIDE Formate erkennen, aber keinen Kurzcode.
+  it("istCreatorCode erkennt beide Formate, aber keinen Kurzcode", () => {
+    expect(istCreatorCode(encodePreset(DEFAULT_RULES))).toBe(true);
+    expect(istCreatorCode("TS1-egal")).toBe(true);
+    expect(istCreatorCode("ABC123")).toBe(false);   // Server-Kurzcode
+    expect(istCreatorCode("")).toBe(false);
+    expect(istCreatorCode(null)).toBe(false);
+  });
+
+  it("jeder von encodePreset erzeugte Code wird von istCreatorCode erkannt", () => {
+    for (const p of PRESETS) expect(istCreatorCode(encodePreset(p.rules))).toBe(true);
+  });
+
+  it("Rundlauf über alle sechs Presets (Pflichttest 1)", () => {
+    expect(PRESETS.length).toBe(6);
+    for (const p of PRESETS) {
+      expect(decodePreset(encodePreset(p.rules))).toEqual(sanitizeRules(p.rules));
+    }
+  });
+
+  it("Rundlauf über ein Regelwerk mit ALLEN vier neuen Blöcken gesetzt (Pflichttest 2)", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      duell: { ...DEFAULT_DUELL, enabled: true, anzahl: 3 },
+      budget: { ...DEFAULT_BUDGET, enabled: true, takt: "saison" },
+      limitKlassen: [
+        { id: "k1", mitglieder: ["duell.klau"], max: 3 },
+        { id: "k2", mitglieder: ["duell.block"], max: 5 },
+      ],
+      jokerBasis: {
+        standard: { ...DEFAULT_BASIS },
+        heimat: { ...DEFAULT_BASIS, wer: "premium" },
+      },
+    });
+    expect(decodePreset(encodePreset(rules))).toEqual(sanitizeRules(rules));
+  });
+
+  it("ein von Hand gebauter TS1-Code (Vollformat) dekodiert weiterhin korrekt (Pflichttest 3)", () => {
+    const rules = { ...DEFAULT_RULES, name: "Alt-Format" };
+    const j = JSON.stringify(rules);
+    const b64 = Buffer.from(j, "utf8").toString("base64").replace(/=+$/, "");
+    const code = "TS1-" + b64;
+    expect(decodePreset(code)).toEqual(rules);
+  });
+
+  it("DEFAULT_RULES ergibt einen sehr kurzen Code, Rundlauf liefert DEFAULT_RULES (Pflichttest 4)", () => {
+    const code = encodePreset(DEFAULT_RULES);
+    expect(code.length).toBeLessThan(30);
+    expect(decodePreset(code)).toEqual(sanitizeRules(DEFAULT_RULES));
+  });
+
+  it("ungültiges Präfix wirft weiterhin (Pflichttest 5)", () => {
+    expect(() => decodePreset("QUATSCH")).toThrow("Ungültiger Creator-Code");
+    expect(() => decodePreset(null)).toThrow();
+    expect(() => decodePreset(undefined)).toThrow();
+  });
+
+  it("Code des Standard-Presets ist kürzer als 500 Zeichen (Pflichttest 6)", () => {
+    const standard = PRESETS.find((p) => p.key === "standard");
+    const code = encodePreset(standard.rules);
+    expect(code.length).toBeLessThan(500);
   });
 });
 

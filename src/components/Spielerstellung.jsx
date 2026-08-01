@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import {
   DEFAULT_RULES, RULE_LIMITS,
-  encodePreset, decodePreset, sanitizeRules,
+  encodePreset, decodePreset, sanitizeRules, istCreatorCode,
 } from "@/lib/engine";
 import { PRESETS } from "@/lib/presets";
 import { recommendedDisplayScale } from "@/lib/rulePreview";
@@ -143,14 +143,17 @@ export default function Spielerstellung() {
     catch { /* Clipboard nicht verfügbar — Nutzer kann den Code markieren */ }
   };
 
-  // Lädt entweder einen langen Text-Creator-Code (TS1-…) oder einen kurzen
+  // Lädt entweder einen langen Text-Creator-Code oder einen kurzen
   // Content-Creator-Code (server-gespeichertes Preset).
+  // ⚠️ Die Präfixe stehen NICHT hier, sondern in `engine.js` (`istCreatorCode`).
+  // Ein hier hingeschriebenes „TS1-" ließ beim Umstieg auf das Delta-Format
+  // jeden neuen Code in den Kurzcode-Zweig laufen und beim Store auflaufen.
   const load = async () => {
     const val = imp.trim();
     setImpErr("");
-    if (val.startsWith("TS1-")) {
+    if (istCreatorCode(val)) {
       try { setPresetKey(null); setRules(sanitizeRules(decodePreset(val))); setImp(""); }
-      catch { setImpErr("Kein gültiger Creator-Code (TS1-…)"); }
+      catch { setImpErr("Kein gültiger Creator-Code."); }
       return;
     }
     try {
@@ -1465,7 +1468,7 @@ export default function Spielerstellung() {
           {/* Import: langer ODER kurzer Code */}
           <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
             <input value={imp} onChange={(e) => { setImp(e.target.value); setImpErr(""); }}
-              placeholder="Code laden (TS1-… oder Kurzcode)" style={{
+              placeholder="Code laden (Creator-Code oder Kurzcode)" style={{
                 flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
                 borderRadius: 12, padding: "10px 12px", fontSize: 13, fontFamily: MONO, outline: "none",
               }} />

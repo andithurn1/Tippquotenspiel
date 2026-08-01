@@ -958,16 +958,58 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
 
 
 // ── 4) CREATOR-CODES (Modi teilen & anpassen) ───────────────
+// Nur die ABWEICHUNG von sanitizeRules(DEFAULT_RULES) speichern — sonst landen
+// alle Regelblöcke (auch ungenutzte) in jedem Code. Siehe
+// design/creator-code-delta.md. Objekte werden rekursiv verglichen, ein
+// Teilobjekt ohne Abweichung entfällt ganz. Arrays werden als GANZES
+// verglichen (JSON.stringify-Gleichheit) und im Abweichungsfall vollständig
+// gespeichert — kein Element-Diff, eine Liste ist eine Einheit.
+function ruleDelta(value, base) {
+  if (Array.isArray(value) || Array.isArray(base)) {
+    return JSON.stringify(value) === JSON.stringify(base) ? undefined : value;
+  }
+  if (value && base && typeof value === "object" && typeof base === "object") {
+    const out = {};
+    for (const key of Object.keys(value)) {
+      const d = ruleDelta(value[key], base[key]);
+      if (d !== undefined) out[key] = d;
+    }
+    return Object.keys(out).length ? out : undefined;
+  }
+  return value === base ? undefined : value;
+}
+
+const toBase64 = (j) => (typeof btoa !== "undefined" ? btoa(unescape(encodeURIComponent(j))) : Buffer.from(j, "utf8").toString("base64"));
+const fromBase64 = (b) => (typeof atob !== "undefined" ? decodeURIComponent(escape(atob(b))) : Buffer.from(b, "base64").toString("utf8"));
+
+// ⚠️ Die Präfixe sind AUSSCHLIESSLICH hier bekannt. Die Oberfläche muss einen
+// eingefügten Text von einem Server-Kurzcode unterscheiden können — tut sie das
+// über ein selbst hingeschriebenes „TS1-", bricht sie beim nächsten
+// Formatwechsel still. Genau das ist beim Umstieg auf das Delta-Format (TS2-)
+// passiert: `Spielerstellung.jsx` prüfte auf TS1- und hätte jeden neuen Code
+// als Kurzcode beim Store gesucht. Deshalb fragt die UI ab jetzt `istCreatorCode`.
+export const CREATOR_CODE_PRAEFIXE = ["TS2-", "TS1-"];
+
+export function istCreatorCode(text) {
+  return typeof text === "string" && CREATOR_CODE_PRAEFIXE.some((p) => text.startsWith(p));
+}
+
 export function encodePreset(rules) {
-  const j = JSON.stringify(rules);
-  const b64 = typeof btoa !== "undefined" ? btoa(unescape(encodeURIComponent(j))) : Buffer.from(j, "utf8").toString("base64");
-  return "TS1-" + b64.replace(/=+$/, "");
+  const clean = sanitizeRules(rules);
+  const base = sanitizeRules(DEFAULT_RULES);
+  const delta = ruleDelta(clean, base) || {};
+  const j = JSON.stringify(delta);
+  return "TS2-" + toBase64(j).replace(/=+$/, "");
 }
 export function decodePreset(code) {
-  if (!code?.startsWith("TS1-")) throw new Error("Ungültiger Creator-Code");
-  const b = code.slice(4);
-  const j = typeof atob !== "undefined" ? decodeURIComponent(escape(atob(b))) : Buffer.from(b, "base64").toString("utf8");
-  return JSON.parse(j);
+  if (code?.startsWith("TS2-")) {
+    const delta = JSON.parse(fromBase64(code.slice(4)));
+    return sanitizeRules(delta);
+  }
+  if (code?.startsWith("TS1-")) {
+    return JSON.parse(fromBase64(code.slice(4)));
+  }
+  throw new Error("Ungültiger Creator-Code");
 }
 
 

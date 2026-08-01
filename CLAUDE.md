@@ -54,6 +54,24 @@ Erlaubnisse liegen in `.claude/settings.json` (committed) — Lesen/Schreiben,
   ```
 - **`npm run build` NICHT bei laufendem Dev-Server** — überschreibt `.next`,
   danach lädt der Dev-Server stumm nichts mehr. Erst `preview_stop`.
+- 🔴 **ZWEI ARBEITSKOPIEN — die teuerste Falle auf diesem Rechner.**
+  Aktuell ist `C:\Dev\Tippquotenspiel`. Daneben liegt ein ALTER Checkout unter
+  `C:\Users\andit\OneDrive\Tippprojekt\Tippquotenspiel` (stand am 31.07.2026
+  noch auf `24d7abd` vom 30.07.).
+  `preview_start` liest die `launch.json` aus dem **Primärverzeichnis der
+  Session** (`C:\Users\andit\OneDrive\Tippprojekt\.claude\launch.json`), nicht
+  aus dem Arbeitsverzeichnis — und die startete per `npm --prefix Tippquotenspiel`
+  den alten Checkout. Der Dev-Server servierte damit tagealten Code, und eine
+  Browser-Prüfung bestätigte Verhalten, das mit der gerade gemachten Änderung
+  nichts zu tun hatte. Ohne Fehlermeldung, ohne Hinweis.
+  **Behoben am 31.07.2026** (absoluter Pfad in jener `launch.json`), aber wer
+  die Umgebung neu aufsetzt, tritt wieder hinein.
+  **Erkennungsprobe**, wenn eine Änderung im Browser nicht ankommt, obwohl die
+  Datei stimmt: nicht `.next` verdächtigen, sondern
+  ```js
+  fetch('/pfad?p=' + Date.now(), { cache: 'no-store' }).then(r => r.text()).then(t => t.includes('<neuer String>'))
+  ```
+  Liefert der SERVER den alten Text, ist es die falsche Arbeitskopie.
 - **Commit-Nachrichten über eine Datei** (`git commit -F <datei>`), nicht per
   `-m` mit Anführungszeichen: PowerShell zerlegt sie sonst.
 - **Der Mock-Store lebt im Arbeitsspeicher.** Ein voller Seitenwechsel im
