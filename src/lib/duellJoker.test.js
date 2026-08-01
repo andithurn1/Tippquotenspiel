@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  DUELL_TYPEN, PHASEN, ZIELWAHL, UMFANG,
+  DUELL_TYPEN, PHASEN, ZIELWAHL,
   DUELL_LIMITS, DEFAULT_DUELL, EMPFEHLUNG,
   sanitizeDuellJoker, fensterVon, duellPlan, zulaessigeZiele,
   applyDuellJoker, beschreibeDuell, konflikte, waehleSpiele,
@@ -10,7 +10,7 @@ import {
 
 describe("Kataloge", () => {
   it("jeder Katalog-Eintrag hat key, label und desc", () => {
-    for (const liste of [DUELL_TYPEN, PHASEN, ZIELWAHL, UMFANG]) {
+    for (const liste of [DUELL_TYPEN, PHASEN, ZIELWAHL]) {
       for (const e of liste) expect(e.key && e.label && e.desc).toBeTruthy();
       expect(new Set(liste.map((e) => e.key)).size).toBe(liste.length);
     }
@@ -24,11 +24,19 @@ describe("sanitizeDuellJoker", () => {
   });
 
   it("Unsinn fällt auf die Vorgabe zurück", () => {
-    const r = sanitizeDuellJoker({ phase: "quatsch", zielWahl: "quatsch", umfang: "quatsch", typen: ["quatsch"] });
+    const r = sanitizeDuellJoker({ phase: "quatsch", zielWahl: "quatsch", typen: ["quatsch"] });
     expect(r.phase).toBe(DEFAULT_DUELL.phase);
     expect(r.zielWahl).toBe(DEFAULT_DUELL.zielWahl);
-    expect(r.umfang).toBe(DEFAULT_DUELL.umfang);
     expect(r.typen).toEqual(DEFAULT_DUELL.typen);
+  });
+
+  // ── Umfang/Wahl/spieleProEinsatz/abstand wandern in jokerBasis ─
+  it("liefert umfang, spieleProEinsatz, wahl und abstand nicht mehr zurück (design/joker-grundform.md 5.4/5.5)", () => {
+    const r = sanitizeDuellJoker({ umfang: "spieltag", spieleProEinsatz: 3, wahl: "bestes", abstand: 5 });
+    expect(r).not.toHaveProperty("umfang");
+    expect(r).not.toHaveProperty("spieleProEinsatz");
+    expect(r).not.toHaveProperty("wahl");
+    expect(r).not.toHaveProperty("abstand");
   });
 
   it("Zahlen werden auf DUELL_LIMITS beschnitten", () => {
@@ -271,9 +279,10 @@ describe("fensterVon — alle Phasen bei 34 Spieltagen", () => {
 // ── Pflichtfall 10 ──────────────────────────────────────────
 
 describe("duellPlan", () => {
-  it("10. hält abstand ein und legt keinen Joker außerhalb des Fensters", () => {
-    const duell = { ...DEFAULT_DUELL, enabled: true, phase: "letztesDrittel", anzahl: 3, abstand: 2, proSpieltag: 1 };
-    const p = duellPlan({ spieltage: 34, duell, seed: "runde-test", userIds: ["u1", "u2", "u3"] });
+  it("10. hält den Abstand aus basis.abklingzeit ein und legt keinen Joker außerhalb des Fensters", () => {
+    const duell = { ...DEFAULT_DUELL, enabled: true, phase: "letztesDrittel", anzahl: 3, proSpieltag: 1 };
+    const basis = { abklingzeit: 2 };
+    const p = duellPlan({ spieltage: 34, duell, basis, seed: "runde-test", userIds: ["u1", "u2", "u3"] });
 
     expect(p.von).toBe(23);
     expect(p.bis).toBe(34);
@@ -286,7 +295,7 @@ describe("duellPlan", () => {
       }
       const sortiert = [...tage].sort((a, b) => a - b);
       for (let i = 1; i < sortiert.length; i++) {
-        expect(sortiert[i] - sortiert[i - 1]).toBeGreaterThanOrEqual(duell.abstand);
+        expect(sortiert[i] - sortiert[i - 1]).toBeGreaterThanOrEqual(basis.abklingzeit);
       }
     }
   });
@@ -295,11 +304,24 @@ describe("duellPlan", () => {
     const aus = duellPlan({ spieltage: 34, duell: { ...DEFAULT_DUELL, enabled: false }, seed: "x", userIds: ["u1"] });
     expect(aus.proSpieler.u1).toEqual([]);
   });
+
+  it("ohne basis läuft ohne Abstand durch, statt abzustürzen", () => {
+    const duell = { ...DEFAULT_DUELL, enabled: true, phase: "letztesDrittel", anzahl: 3, proSpieltag: 1 };
+    expect(() => duellPlan({ spieltage: 34, duell, seed: "y", userIds: ["u1", "u2"] })).not.toThrow();
+    const p = duellPlan({ spieltage: 34, duell, seed: "y", userIds: ["u1", "u2"] });
+    expect(p.von).toBe(23);
+    expect(p.bis).toBe(34);
+  });
 });
 
 // ── Korrektur 2 (Abschnitt 8b (b)) ─────────────────────────
 
 describe("waehleSpiele", () => {
+  // `waehleSpiele` bekommt seit design/joker-grundform.md 5.4 das fertig
+  // gemergte `basis`-Objekt aus jokerBasis.basisFuer() als zweiten Parameter,
+  // nicht mehr `duell` — hier als schlichtes Literal nachgebaut, damit dieser
+  // Test nicht von jokerBasis.js abhängt (Importzyklus-Vermeidung, siehe
+  // Kopfkommentar in duellJoker.js).
   const spiele = [
     { spielId: "s1", punkte: 3 },
     { spielId: "s2", punkte: 8 },
@@ -308,31 +330,31 @@ describe("waehleSpiele", () => {
   ];
 
   it("umfang: spieltag liefert alle Ids", () => {
-    expect(waehleSpiele(spiele, { ...DEFAULT_DUELL, umfang: "spieltag" })).toEqual(["s1", "s2", "s3", "s4"]);
+    expect(waehleSpiele(spiele, { umfang: "spieltag" })).toEqual(["s1", "s2", "s3", "s4"]);
   });
 
   it("umfang: einSpiel, wahl: bestes liefert das ertragreichste Spiel (Gleichstand -> kleinere spielId)", () => {
-    const r = waehleSpiele(spiele, { ...DEFAULT_DUELL, umfang: "einSpiel", wahl: "bestes" });
+    const r = waehleSpiele(spiele, { umfang: "einSpiel", wahl: "bestes" });
     expect(r).toEqual(["s2"]); // s2 und s3 sind gleichauf bei 8, s2 < s3
   });
 
   it("umfang: einSpiel, wahl: selbst liefert die erste gültige gewählte Id", () => {
-    const r = waehleSpiele(spiele, { ...DEFAULT_DUELL, umfang: "einSpiel", wahl: "selbst" }, ["nichtVorhanden", "s3", "s1"]);
+    const r = waehleSpiele(spiele, { umfang: "einSpiel", wahl: "selbst" }, ["nichtVorhanden", "s3", "s1"]);
     expect(r).toEqual(["s3"]);
   });
 
   it("umfang: nSpiele, wahl: bestes liefert die spieleProEinsatz ertragreichsten Spiele", () => {
-    const r = waehleSpiele(spiele, { ...DEFAULT_DUELL, umfang: "nSpiele", wahl: "bestes", spieleProEinsatz: 2 });
+    const r = waehleSpiele(spiele, { umfang: "nSpiele", wahl: "bestes", spieleProEinsatz: 2 });
     expect(r).toEqual(["s2", "s3"]);
   });
 
   it("umfang: nSpiele, wahl: selbst liefert die ersten spieleProEinsatz gültigen gewählten Ids", () => {
-    const r = waehleSpiele(spiele, { ...DEFAULT_DUELL, umfang: "nSpiele", wahl: "selbst", spieleProEinsatz: 2 }, ["s4", "unbekannt", "s1", "s2"]);
+    const r = waehleSpiele(spiele, { umfang: "nSpiele", wahl: "selbst", spieleProEinsatz: 2 }, ["s4", "unbekannt", "s1", "s2"]);
     expect(r).toEqual(["s4", "s1"]);
   });
 
   it("unbekannte Ids werden verworfen — kein Treffer auf ein nicht getipptes Spiel", () => {
-    const r = waehleSpiele(spiele, { ...DEFAULT_DUELL, umfang: "einSpiel", wahl: "selbst" }, ["unbekannt", "auchUnbekannt"]);
+    const r = waehleSpiele(spiele, { umfang: "einSpiel", wahl: "selbst" }, ["unbekannt", "auchUnbekannt"]);
     expect(r).toEqual([]);
   });
 });

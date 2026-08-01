@@ -48,6 +48,23 @@
 //  bleibt hier unverändert — das ist eine andere Frage: WIE ein Einsatz
 //  ausgewählt wird (offen vs. verdeckt), nicht WANN er sichtbar wird.
 //
+//  ── Umfang und Abklingzeit liegen jetzt in jokerBasis ──
+//  `umfang`/`spieleProEinsatz`/`wahl` (design/joker-grundform.md Abschnitt 5.4)
+//  und `abstand` (Abschnitt 5.5, jetzt `abklingzeit`) standen bis hierher noch
+//  einmal in `DEFAULT_DUELL`/`DUELL_LIMITS`/`sanitizeDuellJoker` — dieselbe
+//  Frage wie bei jedem anderen Joker, also gehört sie in die Grundform statt
+//  ein zweites Mal hier zu stehen (dieselbe Behandlung wie `ansage`/
+//  `oeffentlich` oben). `waehleSpiele` bekommt das fertig gemergte
+//  `basis`-Objekt (`basisFuer("duell.klau"|"duell.block", rules)`) als
+//  Parameter, `duellPlan` liest `basis.abklingzeit` für den Mindestabstand.
+//  ⚠️ `jokerBasis.js` importiert `fensterVon` aus DIESER Datei (über
+//  `jokerBudget.js`) — ein Import von `jokerBasis` hier ERZEUGT DESHALB EINEN
+//  ZYKLUS. Die Werte werden deshalb nur als Strings verglichen
+//  (`basis.umfang === "einSpiel"`), ohne den Katalog zu importieren.
+//  ⚠️ `proSpieltag` bleibt HIER in `duell` — das ist eine andere Frage („wie
+//  viele Duell-Joker an einem Spieltag", nicht „wie viele Spiele trifft ein
+//  Einsatz") und wandert nicht mit.
+//
 //  Reine Funktionen, UI-frei.
 // ============================================================
 
@@ -108,21 +125,6 @@ export const ZIELWAHL = [
   },
 ];
 
-export const UMFANG = [
-  {
-    key: "einSpiel", label: "Ein Spiel",
-    desc: "Wirkt nur auf ein einzelnes Spiel des Ziels.",
-  },
-  {
-    key: "nSpiele", label: "Mehrere Spiele",
-    desc: "Wirkt auf eine feste Anzahl Spiele des Ziels (`spieleProEinsatz`).",
-  },
-  {
-    key: "spieltag", label: "Ganzer Spieltag",
-    desc: "Wirkt auf den kompletten Spieltag des Ziels.",
-  },
-];
-
 // ── Grenzen & Vorgabe ───────────────────────────────────────
 
 export const DUELL_LIMITS = {
@@ -131,8 +133,6 @@ export const DUELL_LIMITS = {
   bisSpieltag: { min: 1, max: 38, step: 1 },
   anzahl: { min: 1, max: 6, step: 1 },
   proSpieltag: { min: 1, max: 3, step: 1 },
-  abstand: { min: 0, max: 6, step: 1 },
-  spieleProEinsatz: { min: 1, max: 5, step: 1 },
   klauAnteil: { min: 0.1, max: 1.0, step: 0.05 },
   blockRestanteil: { min: 0.0, max: 0.9, step: 0.05 },
   blockBeute: { min: 0.0, max: 0.5, step: 0.05 },
@@ -150,12 +150,8 @@ export const DEFAULT_DUELL = {
   bisSpieltag: null,
   anzahl: 2,
   proSpieltag: 1,
-  abstand: 1,
   sichtbarkeit: "offen",   // anders als beim normalen Joker bewusst OFFEN,
                            // siehe Kopfkommentar in duell-joker.md Abschnitt 5.B
-  umfang: "einSpiel",
-  spieleProEinsatz: 1,
-  wahl: "selbst",
   klau: { anteil: 0.35, modus: "nullsumme" },
   block: { restanteil: 0.5, nurGewinn: true, beute: 0 },
   maxProSaison: 60,
@@ -223,12 +219,8 @@ export function sanitizeDuellJoker(partial = {}) {
       : null,
     anzahl: Math.round(clamp(p.anzahl, DUELL_LIMITS.anzahl, DEFAULT_DUELL.anzahl)),
     proSpieltag: Math.round(clamp(p.proSpieltag, DUELL_LIMITS.proSpieltag, DEFAULT_DUELL.proSpieltag)),
-    abstand: Math.round(clamp(p.abstand, DUELL_LIMITS.abstand, DEFAULT_DUELL.abstand)),
     // `sichtbarkeit` kommt aus `jokerPlan.js` — eine Quelle für den Katalog.
     sichtbarkeit: SICHTBARKEIT.some((s) => s.key === p.sichtbarkeit) ? p.sichtbarkeit : DEFAULT_DUELL.sichtbarkeit,
-    umfang: UMFANG.some((u) => u.key === p.umfang) ? p.umfang : DEFAULT_DUELL.umfang,
-    spieleProEinsatz: Math.round(clamp(p.spieleProEinsatz, DUELL_LIMITS.spieleProEinsatz, DEFAULT_DUELL.spieleProEinsatz)),
-    wahl: p.wahl === "bestes" ? "bestes" : DEFAULT_DUELL.wahl,
     klau: {
       anteil: +clamp(pk.anteil, DUELL_LIMITS.klauAnteil, DEFAULT_DUELL.klau.anteil).toFixed(2),
       modus: pk.modus === "mitverdienen" ? "mitverdienen" : "nullsumme",
@@ -300,10 +292,16 @@ function abstandUndProSpieltagAnwenden(tage, abstand, proSpieltag) {
 
 // ── Der Plan ────────────────────────────────────────────────
 // Ruft `jokerPlan` aus `jokerPlan.js` für das Fenster auf und filtert
-// anschließend nach `abstand` und `proSpieltag`. Die blockweise,
+// anschließend nach Mindestabstand und `proSpieltag`. Die blockweise,
 // deterministische Verteilung INNERHALB des Fensters übernimmt `jokerPlan` —
 // nicht nachbauen.
-export function duellPlan({ spieltage = 34, duell = DEFAULT_DUELL, seed = "", userIds = [] } = {}) {
+//
+// `basis` ist das fertig gemergte Grundform-Objekt einer Duell-Art
+// (`basisFuer("duell.klau"|"duell.block", rules)`, siehe Kopfkommentar) —
+// `basis.abklingzeit` liefert den Mindestabstand zwischen zwei eigenen
+// Einsätzen (Abschnitt 5.5), nicht mehr `duell.abstand`. Fehlt `basis` ganz,
+// gilt Abstand 0 (kein Abstand) statt eines geratenen Werts.
+export function duellPlan({ spieltage = 34, duell = DEFAULT_DUELL, basis, seed = "", userIds = [] } = {}) {
   const cfg = sanitizeDuellJoker(duell);
   const fenster = fensterVon(cfg, spieltage);
   const breite = fenster.bis - fenster.von + 1;
@@ -322,11 +320,13 @@ export function duellPlan({ spieltage = 34, duell = DEFAULT_DUELL, seed = "", us
     userIds,
   });
 
+  const abstand = Number(basis?.abklingzeit) || 0;
+
   const proSpieler = {};
   for (const id of userIds) {
     const relativ = plan.proSpieler?.[id] ?? [];
     const absolut = relativ.map((t) => t + fenster.von - 1);
-    proSpieler[id] = abstandUndProSpieltagAnwenden(absolut, cfg.abstand, cfg.proSpieltag);
+    proSpieler[id] = abstandUndProSpieltagAnwenden(absolut, abstand, cfg.proSpieltag);
   }
 
   return { von: fenster.von, bis: fenster.bis, proSpieler };
@@ -386,19 +386,24 @@ export function zulaessigeZiele(board = [], userId, duell, { bisherigeEinsaetze 
 // berechnet, dort wo die Einzeltipps liegen (`scoreLeaderboardHistory`).
 //
 // `spieleDesZiels` = `[{ spielId, punkte }]` des Ziels an diesem Spieltag.
+// `basis` ist das fertig gemergte Grundform-Objekt einer Duell-Art
+// (`basisFuer("duell.klau"|"duell.block", rules)`, siehe Kopfkommentar) —
+// `umfang`/`spieleProEinsatz`/`wahl` kommen jetzt von dort, nicht mehr aus
+// `duell`. `jokerBasis.js` wird hier bewusst NICHT importiert (Importzyklus,
+// siehe Kopfkommentar) — die Werte werden nur als Strings verglichen.
 // `gewaehlteIds` = vom Angreifer gewählte Spiel-Ids, nur bei `wahl: "selbst"`
 // relevant.
-export function waehleSpiele(spieleDesZiels = [], duell, gewaehlteIds = []) {
-  const cfg = sanitizeDuellJoker(duell);
+export function waehleSpiele(spieleDesZiels = [], basis, gewaehlteIds = []) {
+  const b = basis && typeof basis === "object" ? basis : {};
   const spiele = Array.isArray(spieleDesZiels) ? spieleDesZiels : [];
 
-  if (cfg.umfang === "spieltag") {
+  if (b.umfang === "spieltag") {
     return spiele.map((s) => s.spielId);
   }
 
-  const anzahl = cfg.umfang === "nSpiele" ? cfg.spieleProEinsatz : 1;
+  const anzahl = b.umfang === "nSpiele" ? (Number(b.spieleProEinsatz) || 1) : 1;
 
-  if (cfg.wahl === "bestes") {
+  if (b.wahl === "bestes") {
     // Bei Gleichstand entscheidet die kleinere `spielId`, damit das Ergebnis
     // nicht an der Eingabereihenfolge hängt (dieselbe Regel wie
     // `streichIndizes` in `saisonform.js`).
