@@ -163,24 +163,42 @@ Jedes Preset **jeder** Familie bekennt deshalb eine `wuerze` von 0 bis 3:
 | 2 | `kräftig` | Entscheidet regelmäßig einzelne Spieltage. |
 | 3 | `wild` | Kann die Saison entscheiden. |
 
-### Die Regel: Würze ADDIERT sich, sie multipliziert sich nicht
+### 🔴 ÜBERHOLT: die Summenregel ist ersetzt
 
-Das ist die Beobachtung des Nutzers, in eine Zahl gegossen: **wenn die Wertung
-schon stark moduliert, braucht es kaum noch Joker.** Beide Ebenen ziehen aus
-demselben Vorrat.
+> Hier stand: „Gesamtwürze = Summe der Ebenen, Empfehlungsband 2 bis 4."
+> **Das ist am 31.07. durch den Nutzer widerlegt worden und gilt nicht mehr.**
+> Maßgeblich ist ab jetzt das **Achsenprofil** in
+> `design/joker-inventar.md`, Abschnitt 1 und 3.
+
+Der Einwand, kurz: eine einzelne Lautstärke-Zahl kann das nicht leisten. Ein
+hoher Modifikator auf Außenseiter-Spiele macht Außenseiter-*Joker* überflüssig,
+sagt aber **nichts** über einen Steal-Joker — der liegt auf einer ganz anderen
+Achse. Was zählt, ist **Richtungs-Überschneidung**, nicht Gesamtpegel.
+
+Die Summenregel hätte „Underdog-Modifikator + Steal-Joker" genauso bewertet wie
+„Underdog-Modifikator + Mut-Bonus", obwohl nur das zweite Paar kollidiert.
+
+**An ihre Stelle tritt:**
 
 ```
-Gesamtwürze = wuerze(Wertung) + wuerze(Joker-Ökonomie) + wuerze(Saison-Wetten)
-Empfehlungsband: 2 bis 4
+achsenProfil(rules) -> { A: 0..3, B: 0..3, C: 0..3, D: 0..3, E: 0..3, F: 0..3 }
 ```
 
-| Kombination | Summe | Urteil |
-|---|---|---|
-| Underdog-Party (3) + Sparflamme (0) | 3 | ✅ Die Wertung trägt die Spannung allein. |
-| Gemütlich (0) + Rundumschlag (3) | 3 | ✅ Ruhige Wertung, die Joker machen den Reiz. |
-| Standard (1) + Gleichgewicht (2) | 3 | ✅ Die Empfehlung. |
-| Underdog-Party (3) + Rundumschlag (3) | 6 | ❌ Zwei laute Ebenen übertönen einander. Reine Lotterie, und der höchste Aufwand. |
-| Gemütlich (0) + Sparflamme (0) | 0 | ⚠️ Sehr ruhig — legitim, aber die Oberfläche fragt einmal nach. |
+geprüft **je Achse** — hoch + hoch auf DERSELBEN Achse warnt, hoch auf
+verschiedenen Achsen ist unbedenklich. Die sechs Achsen (Risiko · Fokus ·
+Dramaturgie · Sozial · Ausdauer · Wissen) und die Zuordnung jeder bestehenden
+Regel-Ebene stehen im Inventar.
+
+**Was aus diesem Abschnitt gültig bleibt:** die vierstufige Skala 0–3 pro Ebene,
+die Karten-Anzeige als Punkte (●●○○), und vor allem die Ehrlichkeit unten — auch
+das Achsenprofil ist geschätzt, nicht gemessen. Es ist nur die bessere
+Schätzung, weil es eine überprüfbare Behauptung macht: *dieselbe* Achse
+verstärkt sich. Das kann `npm run balance` widerlegen, eine nackte Summe nicht.
+
+**Was das für Baustein 3 heißt:** die Bibliothek trägt je Kombination kein
+einzelnes `wuerze`, sondern ein Achsenprofil. `wuerzeGesamt(teile)` entfällt
+ersatzlos; an seine Stelle tritt `achsenProfil(rules)` plus eine Prüfung je
+Achse.
 
 ### 🔴 Die Additionsregel ist GERATEN, nicht gemessen
 
@@ -263,8 +281,14 @@ Regelwerk aus, damit die Waage in der Profi-Stufe nicht ausfällt.
 
 ## 3.2 Die Kombinationen (Startkatalog)
 
-Jede trägt: `key`, `label`, `desc`, **`wuerze`**, `neigung`, `dichte`,
-`schaerfe` und ein vollständiges `{ budget, limitKlassen, duell, joker }`.
+Jede trägt: `key`, `label`, `desc`, **`achsen`** (das Profil aus sechs Werten,
+siehe 3.1b), `neigung`, `dichte`, `schaerfe` und ein vollständiges
+`{ budget, limitKlassen, duell, joker }`.
+
+Die Spalte „Würze" unten ist der **Höchstwert** über die sechs Achsen — als
+Sortierhilfe für die Kartenreihenfolge brauchbar, als Balance-Aussage nicht.
+Die Ecke, in der eine Kombination laut ist, steht im Profil, nicht in dieser
+einen Zahl.
 
 | key | Label | Würze | Neigung | Dichte | Schärfe | Idee |
 |---|---|:---:|---|---|---|---|
@@ -357,11 +381,15 @@ Damit die Umsetzung nicht raten muss.
   gibt, liefert `null` statt geraten zu werden. Ein Test sichert ab, dass kein
   Kombi-Schlüssel je einen Bindestrich enthält; sonst bricht die Zerlegung
   still, sobald jemand einen hinzufügt.
-- `wuerzeVon(rules)` → 0–3 für ein FREI zusammengestelltes Regelwerk, damit die
-  Waage in der Profi-Stufe nicht ausfällt.
-- `wuerzeGesamt(teile)` → `{ summe, band: [2, 4], urteil: "leise"|"gut"|"laut" }`.
-  **Die eine Stelle mit der vorläufigen Formel** — Kopfkommentar muss sagen,
-  dass sie geschätzt ist (siehe 3.1b).
+- `achsenProfil(rules)` → `{ A, B, C, D, E, F }`, je 0–3, auch für ein FREI
+  zusammengestelltes Regelwerk — damit die Anzeige in der Profi-Stufe nicht
+  ausfällt. Achsen und Zuordnung: `design/joker-inventar.md` Abschnitt 1 + 2.
+- `achsenKonflikte(profil)` → `[{ achse, stufe, text }]`. Meldet **hoch + hoch
+  auf derselben Achse**; verschiedene Achsen melden nichts.
+  **Die eine Stelle mit der vorläufigen Annahme** — der Kopfkommentar muss
+  sagen, dass sie geschätzt und durch `npm run balance` widerlegbar ist
+  (siehe 3.1b).
+- ~~`wuerzeGesamt(teile)`~~ — entfällt, siehe 3.1b.
 
 Die `wuerze` der Wertungs-Presets kommt als **neues Feld neben `rules`** in
 `presets.js` (`gemuetlich` 0 · `standard` 1 · `joker` 2 · `rangliste` 2 ·
