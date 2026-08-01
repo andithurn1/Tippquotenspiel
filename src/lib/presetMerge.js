@@ -92,9 +92,17 @@ export const ASPEKTE = [
   },
   {
     key: "anzeige",
-    label: "Anzeige",
-    hint: "Punkte-Skalierung und Deckel — reine Optik, keine Fairness.",
-    keys: ["displayScale", "perGameCap"],
+    label: "Anzeige & Bedienung",
+    hint: "Punkte-Skalierung, Deckel und wie fein die Regler greifen — reine Optik und Bedienung, keine Fairness.",
+    // ⚠️ `reglerFeinheit` liegt HIER und nicht bei „Modifikatoren", obwohl es
+    // deren Regler betrifft. Es ist gar keine Spielregel: es ändert keinen
+    // einzigen Wert, sondern nur, welche Werte der EDITOR anbietet. Wer den
+    // Modifikator-Aspekt von jemandem übernimmt, soll dessen Bedienvorliebe
+    // nicht mitgeschleppt bekommen — zwei Regelwerke mit identischer Wirkung
+    // dürfen sich in der Feinheit unterscheiden.
+    // Nebenbei wäre „Modifikatoren" auch sachlich falsch: die Feinheit greift
+    // ebenso auf `k`, `m` und die Kombi-Stufen, die in anderen Aspekten liegen.
+    keys: ["displayScale", "perGameCap", "reglerFeinheit"],
   },
 ];
 

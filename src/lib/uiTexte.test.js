@@ -21,6 +21,7 @@ import { AKTIVIERUNG_TYPEN, PRO_ZEITRAUM } from "./limitKlassen";
 import { BELOHNUNGS_TYPEN } from "./drehrad";
 import { DUELL_TYPEN, PHASEN, ZIELWAHL, ANSAGE } from "./duellJoker";
 import { AUFWAND_STUFEN } from "./aufwand";
+import { REGLER_FEINHEITEN } from "./engine";
 
 const KATALOGE = {
   BUDGET_QUELLEN, TAKTE, VERFALL_TYPEN, PREISMODI, JOKER_ARTEN,
@@ -30,6 +31,7 @@ const KATALOGE = {
   BELOHNUNGS_TYPEN,
   DUELL_TYPEN, PHASEN, ZIELWAHL, ANSAGE,
   AUFWAND_STUFEN,
+  REGLER_FEINHEITEN,
 };
 
 // Alle sichtbaren Texte als [Herkunft, Text].

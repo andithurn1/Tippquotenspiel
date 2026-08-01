@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import {
   DEFAULT_RULES, RULE_LIMITS,
   encodePreset, decodePreset, sanitizeRules, istCreatorCode,
+  REGLER_FEINHEITEN, reglerSchritt,
 } from "@/lib/engine";
 import { PRESETS } from "@/lib/presets";
 import { recommendedDisplayScale } from "@/lib/rulePreview";
@@ -632,10 +633,32 @@ export default function Spielerstellung() {
           )}
 
           {stufe === "profi" && (<>
+          <SectionTitle>Regler-Feinheit</SectionTitle>
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+            Wie fein sich die Multiplikator-Regler weiter unten stellen lassen —
+            eine Feineinstellung für Profis, keine Einstiegsfrage.
+          </p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+            {REGLER_FEINHEITEN.map((f) => {
+              const an = (rules.reglerFeinheit ?? DEFAULT_RULES.reglerFeinheit) === f.wert;
+              return (
+                <button key={f.key} onClick={() => patch({ reglerFeinheit: f.wert })} style={{
+                  cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
+                  borderRadius: 10, flex: "1 1 120px", textAlign: "left",
+                  background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
+                  border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                }}>
+                  <div style={{ fontWeight: 700 }}>{f.label}</div>
+                  <div style={{ fontSize: 10.5, opacity: 0.8, marginTop: 2 }}>{f.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+
           <SectionTitle>Schärfe der Nähe-Belohnung</SectionTitle>
-          <Slider label="Ergebnis-Nähe (k)" value={rules.k} {...L.k} pfad="k" onChange={(v) => patch({ k: v })}
+          <Slider label="Ergebnis-Nähe (k)" value={rules.k} {...L.k} step={reglerSchritt(rules, L.k)} pfad="k" onChange={(v) => patch({ k: v })}
             hint="Höher = die Belohnung fällt mit jedem Tor Abstand steiler ab (Underdog-Regler)." />
-          <Slider label="Team-Tore-Nähe (m)" value={rules.m} {...L.m} pfad="m" onChange={(v) => patch({ m: v })}
+          <Slider label="Team-Tore-Nähe (m)" value={rules.m} {...L.m} step={reglerSchritt(rules, L.m)} pfad="m" onChange={(v) => patch({ m: v })}
             hint="Steilheit der siegerunabhängigen Team-Tore-Nähe." />
 
           {/* Underdog-Boost & Favoriten-Malus (teilen sich die Quoten-Ramp) */}
@@ -664,11 +687,11 @@ export default function Spielerstellung() {
 
           {/* Kombi-Multiplikatoren */}
           <SectionTitle>Kombi-Multiplikatoren (Tore × Ebene)</SectionTitle>
-          <Slider label="bei richtiger Tendenz" value={rules.combo.tendenz} {...L.combo.tendenz}
+          <Slider label="bei richtiger Tendenz" value={rules.combo.tendenz} {...L.combo.tendenz} step={reglerSchritt(rules, L.combo.tendenz)}
             onChange={(v) => patchCombo({ tendenz: v })} fmt={(x) => "×" + x.toFixed(2)} />
-          <Slider label="bei richtigem Abstand" value={rules.combo.abstand} {...L.combo.abstand} pfad="combo.abstand"
+          <Slider label="bei richtigem Abstand" value={rules.combo.abstand} {...L.combo.abstand} step={reglerSchritt(rules, L.combo.abstand)} pfad="combo.abstand"
             onChange={(v) => patchCombo({ abstand: v })} fmt={(x) => "×" + x.toFixed(2)} />
-          <Slider label="bei exaktem Ergebnis" value={rules.combo.exakt} {...L.combo.exakt} pfad="combo.exakt"
+          <Slider label="bei exaktem Ergebnis" value={rules.combo.exakt} {...L.combo.exakt} step={reglerSchritt(rules, L.combo.exakt)} pfad="combo.exakt"
             onChange={(v) => patchCombo({ exakt: v })} fmt={(x) => "×" + x.toFixed(1)} />
 
           {/* Skala & Cutoffs */}
@@ -911,7 +934,7 @@ export default function Spielerstellung() {
               {/* Im Ranking-Modus ist der Pool die Wahrheit — sonst zeigte der
                   Regler einen anderen Wert als die Stufen darunter. */}
               <Slider label={j.modus === "ranking" ? "Höchstes Gewicht" : "Joker-Faktor"}
-                value={j.modus === "ranking" ? j.faktoren[0] : j.faktor} {...L.joker.faktor}
+                value={j.modus === "ranking" ? j.faktoren[0] : j.faktor} {...L.joker.faktor} step={reglerSchritt(rules, L.joker.faktor)}
                 onChange={(v) => patchJoker(j.modus === "ranking"
                   ? { faktor: v, faktoren: buildWeightPool(v, j.faktoren.length) }
                   : { faktor: v })}
@@ -962,7 +985,7 @@ export default function Spielerstellung() {
                 {jh.enabled && (
                   <Field label={`Faktor: ×${(jh.faktor ?? 1.2).toFixed(1)}`}>
                     <input type="range"
-                      min={L.joker.faktor.min} max={L.joker.faktor.max} step={L.joker.faktor.step}
+                      min={L.joker.faktor.min} max={L.joker.faktor.max} step={reglerSchritt(rules, L.joker.faktor)}
                       value={jh.faktor ?? 1.2}
                       onChange={(e) => patchJoker({ heimat: { ...jh, faktor: Number(e.target.value) } })}
                       style={{ width: "100%", accentColor: C.gold }} />
@@ -980,7 +1003,7 @@ export default function Spielerstellung() {
                 {jm.enabled && (
                   <Field label={`Faktor: ×${(jm.faktor ?? 1.1).toFixed(2)}`}>
                     <input type="range"
-                      min={L.joker.mutFaktor.min} max={L.joker.mutFaktor.max} step={L.joker.mutFaktor.step}
+                      min={L.joker.mutFaktor.min} max={L.joker.mutFaktor.max} step={reglerSchritt(rules, L.joker.mutFaktor)}
                       value={jm.faktor ?? 1.1}
                       onChange={(e) => patchJoker({ mut: { ...jm, faktor: Number(e.target.value) } })}
                       style={{ width: "100%", accentColor: C.gold }} />
@@ -1049,7 +1072,7 @@ export default function Spielerstellung() {
             </div>
           ) : (
             <>
-              <Slider label="Derby zählt" value={tm.derbyFaktor} {...L.teamMods.derbyFaktor} pfad="teamMods.derbyFaktor"
+              <Slider label="Derby zählt" value={tm.derbyFaktor} {...L.teamMods.derbyFaktor} step={reglerSchritt(rules, L.teamMods.derbyFaktor)} pfad="teamMods.derbyFaktor"
                 onChange={(v) => patchTeamMods({ derbyFaktor: v })}
                 fmt={(x) => x <= 1 ? "aus" : "×" + x.toFixed(1)}
                 hint="Traditionsduelle (Revierderby, Klassiker, Nordderby …) zählen mehr. 1,0 = aus." />
@@ -1098,12 +1121,12 @@ export default function Spielerstellung() {
                 {bg.enabled && (
                   <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginTop: 10 }}>
                     <Slider label="Big Game zählt zusätzlich" value={bg.aufschlag}
-                      {...BIGGAME_LIMITS.aufschlag}
+                      {...BIGGAME_LIMITS.aufschlag} step={reglerSchritt(rules, BIGGAME_LIMITS.aufschlag)}
                       onChange={(v) => patchBigGame({ aufschlag: v })}
                       fmt={(x) => `+${x.toFixed(1)} → ×${(1 + x).toFixed(1)}`}
                       hint="Fließt in denselben Topf wie Derby und Team-Faktoren — addiert, nicht multipliziert." />
                     <Slider label="Mindest-Brisanz" value={bg.minSpannung}
-                      {...BIGGAME_LIMITS.minSpannung}
+                      {...BIGGAME_LIMITS.minSpannung} step={reglerSchritt(rules, BIGGAME_LIMITS.minSpannung)}
                       onChange={(v) => patchBigGame({ minSpannung: v })}
                       fmt={(x) => x.toFixed(2)}
                       hint="Reißt kein Spiel diese Schwelle, hat der Spieltag kein Big Game — besser als ein aufgeblasenes Mittelfeldduell." />
@@ -1114,7 +1137,7 @@ export default function Spielerstellung() {
               {/* Deckel — erscheint erst, wenn es überhaupt etwas zu deckeln gibt */}
               {(tmAktiv || j.enabled || bg.enabled) && (
                 <>
-                  <Slider label="Deckel für alle Modifikatoren" value={rules.modCap} {...L.modCap} pfad="modCap"
+                  <Slider label="Deckel für alle Modifikatoren" value={rules.modCap} {...L.modCap} step={reglerSchritt(rules, L.modCap)} pfad="modCap"
                     onChange={(v) => patch({ modCap: v })} fmt={(x) => "×" + x.toFixed(1)}
                     hint="Obergrenze, wenn Joker und Team-Regeln zusammentreffen." />
                   <p style={{ fontSize: 11, color: C.muted, marginTop: -2, marginBottom: 8, lineHeight: 1.45 }}>

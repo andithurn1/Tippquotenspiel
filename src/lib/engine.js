@@ -157,6 +157,13 @@ export const DEFAULT_RULES = {
   // aufschaukeln und die Balance sprengen; additiv bleibt es vorhersagbar.
   modCap: 2.5,
 
+  // Regler-Feinheit: rundenweite Übersteuerung der Schrittweite für ALLE
+  // Regler der Multiplikator-Familie (Standardraster 0,05, siehe RULE_LIMITS).
+  // Erlaubt: 0.05 (Vorgabe) · 0.025 · 0.01 — Katalog samt Begründung bei
+  // `REGLER_FEINHEITEN`. Ganzzahlige Regler bleiben davon unberührt, siehe
+  // `reglerSchritt`.
+  reglerFeinheit: 0.05,
+
   // Aufhol-Mechanismus („Anschluss halten"): Zurückliegende bekommen je
   // Spieltag einen Teil ihres Rückstands gutgeschrieben, damit Mitspielen
   // lohnt. Greift NICHT in scoreTip (das kennt nur ein Spiel), sondern im
@@ -298,6 +305,37 @@ export const RULE_LIMITS = {
   versaeumnis: { malusProzent: { min: 0, max: 100, step: 5 }, maxProSaison: { min: 0, max: 10, step: 1 } },
 };
 
+// ── Regler-Feinheit: wie fein der Admin die Multiplikator-Regler stellen darf ──
+// Das Standardraster der Multiplikator-Familie ist 0,05 (siehe RULE_LIMITS und
+// die Erklärung dort). Diese drei Werte sind NICHT beliebig gewählt:
+//  - 0,025 und 0,01 teilen 0,05 glatt — jeder Wert des Standardrasters bleibt
+//    damit erreichbar. Ein Raster von 0,02 täte das NICHT (es trifft 1,02 /
+//    1,04 / 1,06, aber nicht 1,05 oder 1,15) und machte die gemessene
+//    Mut-Bonus-Grenze bei 1,15 unerreichbar (siehe reglerRaster.test.js).
+//  - 0,01 ist die Untergrenze, weil `sanitizeRules` Multiplikatoren mit
+//    `.toFixed(2)` ablegt. Alles Feinere würde beim Speichern still
+//    weggerundet — der Admin bekäme einen Wert zurück, den er nicht
+//    eingestellt hat.
+export const REGLER_FEINHEITEN = [
+  { key: "normal", wert: 0.05, label: "Normal", desc: "Das übliche Raster: Schritte von 0,05." },
+  { key: "fein", wert: 0.025, label: "Fein", desc: "Halb so grob wie das übliche Raster: Schritte von 0,025." },
+  { key: "sehrFein", wert: 0.01, label: "Sehr fein", desc: "Das feinste erlaubte Raster: Schritte von 0,01." },
+];
+
+// Effektive Schrittweite eines einzelnen Reglers. Gehört `limits` zur
+// Multiplikator-Familie (erkennbar an `step === 0.05` — siehe reglerRaster.test.js
+// für die vollständige Familie), gilt die vom Admin gewählte Feinheit. Sonst
+// bleibt `limits.step` unverändert.
+// ⚠️ Ganzzahlige Regler (Spieltags-Anzahl, Kontingente, …) dürfen NIE feiner
+// werden — eine „Feinheit" von 0,01 auf so einem Feld wäre Unsinn. Deshalb die
+// Bindung an `step === 0.05` und nicht an „ist eine Kommazahl".
+export function reglerSchritt(rules, limits) {
+  if (limits?.step === 0.05) {
+    return rules?.reglerFeinheit ?? DEFAULT_RULES.reglerFeinheit;
+  }
+  return limits?.step;
+}
+
 // Joker-Block eigenständig säubern: Modus, Einzelfaktor und Ranking-Pool.
 // Der Pool wird entdoppelt, auf die Faktor-Grenzen beschnitten und absteigend
 // sortiert; bleibt zu wenig übrig, gilt der Default-Pool.
@@ -400,6 +438,13 @@ export function sanitizeRules(partial = {}) {
     joker: sanitizeJoker(jk, num, clamp),
     teamMods: sanitizeTeamMods(src.teamMods && typeof src.teamMods === "object" ? src.teamMods : {}, num, clamp),
     modCap: clamp(num(src.modCap, D.modCap), L.modCap.min, L.modCap.max),
+    // Unbekannte Werte fallen auf den Standard (0,05) zurück — derselbe
+    // Katalog-Fallback wie bei Saisonform, Versäumnis-Strategie usw.
+    reglerFeinheit: (() => {
+      const roh = num(src.reglerFeinheit, D.reglerFeinheit);
+      const treffer = REGLER_FEINHEITEN.find((f) => f.wert === roh);
+      return treffer ? treffer.wert : D.reglerFeinheit;
+    })(),
     aufholen: (() => {
       const a = src.aufholen && typeof src.aufholen === "object" ? src.aufholen : {};
       // Der Katalog ist die EINE Quelle — sonst müsste eine neue Stufe an zwei

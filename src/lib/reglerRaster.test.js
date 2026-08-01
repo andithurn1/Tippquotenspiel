@@ -32,7 +32,7 @@ import { describe, it, expect } from "vitest";
 //  der Liste, und ein Reviewer sieht die Lücke.
 // ============================================================
 
-import { RULE_LIMITS, sanitizeRules } from "./engine";
+import { RULE_LIMITS, sanitizeRules, REGLER_FEINHEITEN, reglerSchritt } from "./engine";
 import { BIGGAME_LIMITS } from "./bigGame";
 import { WETTBEWERB_LIMITS } from "./wettbewerbGewicht";
 import { DREHRAD_LIMITS, pruefeFelder } from "./drehrad";
@@ -153,4 +153,56 @@ describe("Regler-Raster der Multiplikator-Familie", () => {
       });
     });
   }
+});
+
+// ============================================================
+//  REGLER-FEINHEIT — der Admin darf das 0,05-Raster der ganzen
+//  Multiplikator-Familie oben rundenweise feiner stellen (0,025 · 0,01).
+//  `RULE_LIMITS` bleibt dabei unverändert die Quelle des STANDARD-Rasters —
+//  `reglerFeinheit` ist eine reine Runden-Übersteuerung on top, keine
+//  Änderung an den Grenzen selbst.
+// ============================================================
+describe("Regler-Feinheit", () => {
+  it("jede erlaubte Feinheit teilt 0,05 glatt — als Rechnung, nicht als Liste", () => {
+    // Genau der Grund, aus dem 0,02 NICHT erlaubt ist: 0,05 / 0,02 = 2,5,
+    // kein ganzzahliges Vielfaches, also kein glatter Teiler.
+    for (const f of REGLER_FEINHEITEN) {
+      const quotient = 0.05 / f.wert;
+      expect(Math.abs(quotient - Math.round(quotient))).toBeLessThan(1e-9);
+    }
+  });
+
+  it("keine Feinheit ist kleiner als 0,01", () => {
+    for (const f of REGLER_FEINHEITEN) {
+      expect(f.wert).toBeGreaterThanOrEqual(0.01);
+    }
+  });
+
+  it("reglerSchritt liefert für ein Multiplikator-Limit die eingestellte Feinheit, für ein ganzzahliges Limit unveraendert dessen Schrittweite", () => {
+    const rules = { reglerFeinheit: 0.01 };
+    // Multiplikator-Limit (step 0,05 in RULE_LIMITS) — folgt der Feinheit.
+    expect(reglerSchritt(rules, RULE_LIMITS.modCap)).toBe(0.01);
+    // Ganzzahliges Limit (step 1) — bleibt UNVERAENDERT, auch bei Feinheit 0,01.
+    expect(RULE_LIMITS.picksPerTeam.step).toBe(1);
+    expect(reglerSchritt(rules, RULE_LIMITS.picksPerTeam)).toBe(1);
+  });
+
+  it("sanitizeRules nimmt 0,025 an und wirft Unsinn auf 0,05 zurück", () => {
+    expect(sanitizeRules({ reglerFeinheit: 0.025 }).reglerFeinheit).toBe(0.025);
+    expect(sanitizeRules({ reglerFeinheit: 0.01 }).reglerFeinheit).toBe(0.01);
+    expect(sanitizeRules({ reglerFeinheit: 0.2 }).reglerFeinheit).toBe(0.05);
+    expect(sanitizeRules({ reglerFeinheit: "quatsch" }).reglerFeinheit).toBe(0.05);
+    expect(sanitizeRules({}).reglerFeinheit).toBe(0.05);
+  });
+
+  it("ein Wert auf dem feinen Raster übersteht den Rundlauf: modCap 2,42", () => {
+    expect(sanitizeRules({ reglerFeinheit: 0.01, modCap: 2.42 }).modCap).toBe(2.42);
+  });
+
+  it("RULE_LIMITS bleibt die Quelle des Standard-Rasters — unabhaengig von reglerFeinheit", () => {
+    expect(RULE_LIMITS.modCap.step).toBe(0.05);
+    const gesetzt = sanitizeRules({ reglerFeinheit: 0.01, modCap: 2.45 });
+    expect(gesetzt.modCap).toBe(2.45);
+    expect(RULE_LIMITS.modCap.step).toBe(0.05);
+  });
 });
