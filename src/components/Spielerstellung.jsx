@@ -50,6 +50,21 @@ import { C, MONO } from "@/lib/theme";
 // Bundesliga und Premier League mischt.
 const ALL_TEAMS = alleVereine();
 
+// ── Anzeige eines Multiplikators ────────────────────────────
+// ⚠️ NICHT `toFixed(1)`. Seit die Multiplikator-Regler auf dem 0,05-Raster
+// stehen (und über `reglerFeinheit` noch feiner gehen), hätte eine
+// Nachkommastelle aus 1,15 die Anzeige „×1.2" gemacht — einen Wert, den der
+// Admin nie eingestellt hat. Die Schrittweite wurde damals umgestellt, die
+// Formatierer nicht; das hier zieht sie nach.
+// Nachkommastellen erscheinen nur, wo sie etwas sagen (1,5 statt 1,50), und
+// mit deutschem Komma wie bei `AVG_GOALS` in PresetRating.jsx.
+const zahl = (x) => String(+Number(x).toFixed(2)).replace(".", ",");
+const fmtFaktor = (x) => "×" + zahl(x);
+// Für Regler, die bei genau 1 „aus" bedeuten. ⚠️ NUR bei genau 1 — vorher
+// stand hier `<= 1`, wodurch seit dem Dämpfer JEDER Wert unter 1 als „aus"
+// angezeigt worden wäre, obwohl er sehr wohl wirkt.
+const fmtFaktorOderAus = (x) => (x === 1 ? "aus" : fmtFaktor(x));
+
 // Ranking-Pool aus zwei verständlichen Reglern erzeugen: höchstes Gewicht und
 // Anzahl der Stufen. Dazwischen gleichmäßig bis 1 herunter — so ist der Pool
 // immer gültig (absteigend, ohne Dubletten), ohne dass der Admin einzelne
@@ -711,7 +726,7 @@ export default function Spielerstellung() {
             und werden über dieselbe Sieger-Quote skaliert.
           </p>
           <Slider label="Underdog-Boost (×)" value={rules.underdogBoost} {...L.underdogBoost} pfad="underdogBoost"
-            onChange={(v) => patch({ underdogBoost: v })} fmt={(x) => "×" + x.toFixed(1)}
+            onChange={(v) => patch({ underdogBoost: v })} fmt={fmtFaktor}
             hint="1,0 = aus. Höher = korrekt getippte Außenseiter-Siege zahlen zusätzlich mehr." />
           <Slider label="Favoriten-Reinfall-Malus" value={rules.favFlopPenalty} {...L.favFlopPenalty} pfad="favFlopPenalty"
             onChange={(v) => patch({ favFlopPenalty: v })} fmt={(x) => x === 0 ? "aus" : "−" + x}
@@ -734,7 +749,7 @@ export default function Spielerstellung() {
           <Slider label="bei richtigem Abstand" value={rules.combo.abstand} {...L.combo.abstand} step={reglerSchritt(rules, L.combo.abstand)} pfad="combo.abstand"
             onChange={(v) => patchCombo({ abstand: v })} fmt={(x) => "×" + x.toFixed(2)} />
           <Slider label="bei exaktem Ergebnis" value={rules.combo.exakt} {...L.combo.exakt} step={reglerSchritt(rules, L.combo.exakt)} pfad="combo.exakt"
-            onChange={(v) => patchCombo({ exakt: v })} fmt={(x) => "×" + x.toFixed(1)} />
+            onChange={(v) => patchCombo({ exakt: v })} fmt={fmtFaktor} />
 
           {/* Skala & Cutoffs */}
           </>)}
@@ -980,7 +995,7 @@ export default function Spielerstellung() {
                 onChange={(v) => patchJoker(j.modus === "ranking"
                   ? { faktor: v, faktoren: buildWeightPool(v, j.faktoren.length) }
                   : { faktor: v })}
-                fmt={(x) => "×" + x.toFixed(1)}
+                fmt={fmtFaktor}
                 hint={j.modus === "ranking"
                   ? "Das stärkste Gewicht der Rangliste. Die übrigen Stufen liegen gleichmäßig darunter."
                   : "Womit das markierte Spiel multipliziert wird."} />
@@ -1124,7 +1139,7 @@ export default function Spielerstellung() {
             <>
               <Slider label="Derby zählt" value={tm.derbyFaktor} {...L.teamMods.derbyFaktor} step={reglerSchritt(rules, L.teamMods.derbyFaktor)} pfad="teamMods.derbyFaktor"
                 onChange={(v) => patchTeamMods({ derbyFaktor: v })}
-                fmt={(x) => x <= 1 ? "aus" : "×" + x.toFixed(1)}
+                fmt={fmtFaktorOderAus}
                 hint="Traditionsduelle (Revierderby, Klassiker, Nordderby …) zählen mehr. 1,0 = aus." />
 
               <Toggle label="Einzelne Vereine hervorheben" on={eigeneVereine}
@@ -1184,7 +1199,7 @@ export default function Spielerstellung() {
                     <Slider label="Big Game zählt zusätzlich" value={bg.aufschlag}
                       {...BIGGAME_LIMITS.aufschlag} step={reglerSchritt(rules, BIGGAME_LIMITS.aufschlag)}
                       onChange={(v) => patchBigGame({ aufschlag: v })}
-                      fmt={(x) => `+${x.toFixed(1)} → ×${(1 + x).toFixed(1)}`}
+                      fmt={(x) => `+${zahl(x)} → ${fmtFaktor(1 + x)}`}
                       hint="Fließt in denselben Topf wie Derby und Team-Faktoren — addiert, nicht multipliziert." />
                     <Slider label="Mindest-Brisanz" value={bg.minSpannung}
                       {...BIGGAME_LIMITS.minSpannung} step={reglerSchritt(rules, BIGGAME_LIMITS.minSpannung)}
@@ -1199,7 +1214,7 @@ export default function Spielerstellung() {
               {(tmAktiv || j.enabled || bg.enabled) && (
                 <>
                   <Slider label="Deckel für alle Modifikatoren" value={rules.modCap} {...L.modCap} step={reglerSchritt(rules, L.modCap)} pfad="modCap"
-                    onChange={(v) => patch({ modCap: v })} fmt={(x) => "×" + x.toFixed(1)}
+                    onChange={(v) => patch({ modCap: v })} fmt={fmtFaktor}
                     hint="Obergrenze, wenn Joker und Team-Regeln zusammentreffen." />
                   <p style={{ fontSize: 11, color: C.muted, marginTop: -2, marginBottom: 8, lineHeight: 1.45 }}>
                     Modifikatoren werden <strong>addiert, nicht multipliziert</strong>: Joker ×2,0

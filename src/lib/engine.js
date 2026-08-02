@@ -292,7 +292,11 @@ export const RULE_LIMITS = {
   // Mehr Spielraum als je Mannschaft: hier verteilen sich die Namen auf beide
   // Seiten, drei je Team entsprechen also sechs im Spiel.
   picksProSpiel: { min: 1, max: 6, step: 1 },
-  underdogBoost:     { min: 1,   max: 3,  step: 0.1 },
+  // Gehört zur Multiplikator-Familie (Raster 0,05, siehe reglerRaster.test.js):
+  // der Boost multipliziert den Ergebnis-Teil und läuft damit in dieselbe
+  // Endauszahlung wie Joker, Derby und Big Game. Ihn als einzigen auf 0,1 zu
+  // lassen, wäre eine willkürliche Ausnahme.
+  underdogBoost:     { min: 1,   max: 3,  step: 0.05 },
   underdogRampStart: { min: 1.2, max: 15, step: 0.1 },
   underdogRampEnd:   { min: 2,   max: 30, step: 0.5 },
   favFlopPenalty:    { min: 0,   max: 20, step: 1   },

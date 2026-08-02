@@ -43,6 +43,15 @@ const RASTERWERT = 1.15;
 
 const FAMILIE = [
   {
+    // Nachgezogen am 02.08.: der Boost multipliziert den Ergebnis-Teil und
+    // läuft damit in dieselbe Endauszahlung wie Joker, Derby und Big Game.
+    // Ihn als einzigen auf 0,1 zu lassen, war eine willkürliche Ausnahme.
+    name: "underdogBoost",
+    limits: RULE_LIMITS.underdogBoost,
+    rundlauf: () => sanitizeRules({ underdogBoost: RASTERWERT }).underdogBoost,
+    erwartet: RASTERWERT,
+  },
+  {
     name: "joker.faktor",
     limits: RULE_LIMITS.joker.faktor,
     rundlauf: () => sanitizeRules({ joker: { enabled: true, faktor: RASTERWERT } }).joker.faktor,
