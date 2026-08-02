@@ -104,6 +104,63 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-02 (III) · `13299cc` — **L5 war nur zur Hälfte gebaut**
+
+**An Andi.** Kleiner Push, ein Modul plus seine Oberfläche — aber er fasst
+Regelwerks-Grenzen an (`WETTBEWERB_LIMITS`), deshalb hier benannt statt nur
+erwähnt. Alles einzeln revidierbar: es sind eine Konstante und ein Vergleich.
+
+`main` bei `13299cc` · **1551 Tests grün** (vorher 1543) · Build sauber.
+
+Der Auftrag war, die Vereins-Chips aus `0e1ef6a` im Browser gegenzusehen — die
+letzte Sitzung hatte sie nicht mehr aufbekommen. **Die sind in Ordnung:** der
+Zyklus läuft durch, Dämpfer erscheinen in eigener Farbe, derselbe exakte Tipp
+zahlt nachgerechnet 1440 / 2880 / 1080 / 720.
+
+**Danebengelegen hat etwas anderes.** `joker-inventar.md` 4.5 nennt für L5 zwei
+betroffene Stellen — `teamMods.teams` **und `wettbewerbGewicht`**. Gebaut war
+nur die erste. Gemessen:
+
+| eingestellt | kam heraus |
+|---|---|
+| `{bl: -0.5}` | `{"enabled":false,"aufschlaege":{}}` |
+| `{cl: 1.0, bl: -0.4}` | `{"cl":1}` |
+
+Ein reiner Dämpfer schaltete also die **ganze Ebene** ab, und die Oberfläche
+meldete danach „Alle Wettbewerbe zählen gleich" — der Admin bekam das Gegenteil
+dessen gesagt, was er eingestellt hatte. Gemischt verschwand der Dämpfer
+lautlos. Ursache: `min: 0` plus der Filter `if (v > 0)`.
+
+⚠️ Damit fehlte ausgerechnet die Hälfte, die den in der Spec genannten Zweck
+trägt: **„nur das Interessanteste zählt" sagt man, indem man die Liga dämpft,
+nicht indem man die CL anhebt** — die läuft in `modCap`.
+
+Nachgemessen am echten Admin-Satz („es geht um die CL, die Liga läuft
+nebenher"), nicht nur an den Tests: CL-Finale ×1,4 → 2016 Punkte · Halbfinale
+×1,3 → 1872 · Serie A ×1 → 1440 · Bundesliga ×0,5 → 720. Anteil Bundesliga
+68 % → 52 %, CL 32 % → 48 %. Überlebt `sanitizeRules`, den Creator-Code und das
+Preset-Mischen; der Anschlag fällt auf `modFloor` statt ins Negative.
+
+#### 📌 Zwei Muster, die sich wiederholt haben
+
+- **Der Anzeigefehler aus `0e1ef6a` stand hier unverändert noch da** — dreimal
+  `auf > 0` als An-Prüfung, ein gedämpfter Wettbewerb sah unberührt aus. Wer
+  eine Lücke an EINER Stelle schließt, sollte gleich greppen, wo dieselbe
+  Prüfung sonst noch steht.
+- **Vier `.toFixed(2)` an `format.js` vorbei** („BL ×1.15" statt „×1,15"),
+  obwohl `8f4e4f2` dafür die eine Quelle geschaffen hat. Das Modul war älter als
+  die Regel und ist beim Umstellen übersehen worden.
+
+Beides ist für Tests unsichtbar. Der Fund kam aus einer eigenen Rechnung an
+einem Admin-Satz — die Lehre aus der letzten Übergabe hat direkt getragen.
+
+#### 🟡 Unverändert offen
+
+Teilbibliotheken (8 von 9 Aspekten leer) · **Abklingzeit** (`joker-ausloeser.md`
+8, als 🔴 „fehlt komplett" markiert, `duell.abstand` muss dabei weg) · L2
+variabler Einsatz · L3/L4/L6 · die 16 Auslöser · Store-Anbindung der
+Duell-Einsätze · Blindstellen-Durchgang · **RLS-Befund**.
+
 ### 2026-08-02 (II) · **ÜBERGABE an das nächste Fenster** — Baukasten steht, Balance bewusst offen
 
 > **👉 Frische Session: DAS ist dein Einstieg.** Der Eintrag darunter ist
