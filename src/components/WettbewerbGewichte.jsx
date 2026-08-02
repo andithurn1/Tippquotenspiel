@@ -7,6 +7,7 @@ import { WETTBEWERBE, wettbewerbeIn } from "@/lib/wettbewerbe";
 import {
   WETTBEWERB_LIMITS, sanitizeWettbewerbe, anteile, anteilHinweis, beschreibeWettbewerbe,
 } from "@/lib/wettbewerbGewicht";
+import { zahl, fmtFaktorOderAus } from "@/lib/format";
 
 // ── Wettbewerbs-Gewichte ────────────────────────────────────
 // Der Regler allein wäre irreführend: „CL ×1,5" klingt nach doppelt so
@@ -44,7 +45,9 @@ export default function WettbewerbGewichte({ rules, onChange }) {
       <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Ein Champions-League-Halbfinale darf mehr zählen als ein Ligaspiel. Der
         Aufschlag fließt in <strong>denselben Topf</strong> wie Derby und Big Game —
-        addiert, nicht multipliziert, und vom Deckel begrenzt.
+        addiert, nicht multipliziert, und vom Deckel begrenzt. Ein Wettbewerb
+        kann auch weniger zählen: das Spiel bleibt tippbar und zählt nur
+        weniger — anders als ein Filter, der es ganz verschwinden lässt.
       </p>
 
       {waehlbar.length < 2 && (
@@ -61,8 +64,10 @@ export default function WettbewerbGewichte({ rules, onChange }) {
           <div key={w.key} style={{ marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span style={{ fontSize: 13, fontWeight: 700 }}>{w.label}</span>
-              <span style={{ fontFamily: MONO, fontSize: 13, color: auf > 0 ? C.gold : C.muted }}>
-                ×{(1 + auf).toFixed(2)}
+              <span
+                style={{ fontFamily: MONO, fontSize: 13, color: auf > 0 ? C.gold : auf < 0 ? C.indigo : C.muted }}
+                title={auf > 0 ? "zählt mehr" : auf < 0 ? "zählt weniger" : "kein Aufschlag"}>
+                {fmtFaktorOderAus(1 + auf)}
               </span>
             </div>
             <input type="range" value={auf}
@@ -77,7 +82,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
                 <div style={{ flex: 1, height: 6, borderRadius: 999, background: C.surface2, overflow: "hidden" }}>
                   <div style={{
                     width: `${Math.round(a.anteil * 100)}%`, height: "100%",
-                    background: auf > 0 ? C.gold : C.sky, borderRadius: 999,
+                    background: auf > 0 ? C.gold : auf < 0 ? C.indigo : C.sky, borderRadius: 999,
                   }} />
                 </div>
                 <span style={{ fontFamily: MONO, fontSize: 11, color: C.text, minWidth: 92, textAlign: "right" }}>
@@ -99,7 +104,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <span style={{ fontSize: 13, fontWeight: 700 }}>Je K.-o.-Runde zusätzlich</span>
           <span style={{ fontFamily: MONO, fontSize: 13, color: cfg.phasenStufe > 0 ? C.gold : C.muted }}>
-            +{cfg.phasenStufe.toFixed(2)}
+            +{zahl(cfg.phasenStufe)}
           </span>
         </div>
         <input type="range" value={cfg.phasenStufe}
@@ -108,8 +113,8 @@ export default function WettbewerbGewichte({ rules, onChange }) {
           onChange={(e) => setze({ ...cfg, enabled: true, phasenStufe: +e.target.value })}
           style={{ width: "100%", accentColor: C.gold, cursor: "pointer" }} />
         <p style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
-          Achtelfinale +{cfg.phasenStufe.toFixed(2)}, Viertelfinale +{(cfg.phasenStufe * 2).toFixed(2)},
-          Halbfinale +{(cfg.phasenStufe * 3).toFixed(2)}, Finale +{(cfg.phasenStufe * 4).toFixed(2)} —
+          Achtelfinale +{zahl(cfg.phasenStufe)}, Viertelfinale +{zahl(cfg.phasenStufe * 2)},
+          Halbfinale +{zahl(cfg.phasenStufe * 3)}, Finale +{zahl(cfg.phasenStufe * 4)} —
           ein Regler statt vier.
         </p>
       </div>

@@ -26,12 +26,25 @@
 //
 //  Reine Funktionen, UI-frei. Die Engine kennt weiterhin keine Ligennamen —
 //  sie liest den fertigen Aufschlag, den diese Datei aus den Daten ableitet.
+//
+//  ── Der Aufschlag darf auch NEGATIV sein ──
+//  „Dieser Wettbewerb zählt weniger" ist dieselbe Aussage wie ein Dämpfer bei
+//  den Vereinen — nach unten begrenzt durch `modFloor` in `totalModifier`,
+//  dieselbe Familie also. Der Nutzen: „nur das Interessanteste zählt" lässt
+//  sich damit ausdrücken, ohne Spiele über `spielauswahl.js` ganz aus der
+//  Runde zu werfen.
 // ============================================================
 
 import { PHASE, wettbewerbVon, phaseVon, WETTBEWERBE } from "./wettbewerbe";
+import { zahl, fmtFaktor } from "./format";
 
 export const WETTBEWERB_LIMITS = {
-  aufschlag: { min: 0, max: 1.5, step: 0.05 },     // je Wettbewerb
+  // -0,75 macht aus dem Faktor ×0,25 — dieselbe Untergrenze wie
+  // `RULE_LIMITS.teamMods.teamFaktor.min`. Kein einzelner Regler drückt ein
+  // Spiel damit tiefer als ein einzelner Vereins-Dämpfer, und `anteile()`
+  // rechnet weiter mit positiven Gewichten (0,25 > 0), die Anteils-Rechnung
+  // bleibt also heil.
+  aufschlag: { min: -0.75, max: 1.5, step: 0.05 },     // je Wettbewerb
   phasenStufe: { min: 0, max: 0.3, step: 0.05 },   // je K.-o.-Runde
 };
 
@@ -48,9 +61,10 @@ export function sanitizeWettbewerbe(partial = {}) {
   const aufschlaege = {};
   for (const w of WETTBEWERBE) {
     const v = clamp(roh[w.key], WETTBEWERB_LIMITS.aufschlag, 0);
-    // Neutrale Einträge (0) fliegen raus, damit ein Regelwerk klein bleibt und
-    // ein Creator-Code nicht mit Nullen zugemüllt wird.
-    if (v > 0) aufschlaege[w.key] = v;
+    // Neutrale Einträge (genau 0) fliegen raus, damit ein Regelwerk klein
+    // bleibt und ein Creator-Code nicht mit Nullen zugemüllt wird. Ein
+    // Dämpfer (negativ) ist aber kein neutraler Eintrag und bleibt stehen.
+    if (v !== 0) aufschlaege[w.key] = v;
   }
   const phasenStufe = clamp(p.phasenStufe, WETTBEWERB_LIMITS.phasenStufe, 0);
   return {
@@ -115,7 +129,7 @@ export function anteilHinweis(liste = []) {
   const stark = [...liste].sort((a, b) => b.schnittFaktor - a.schnittFaktor)[0];
   const groesster = liste[0];
   if (stark.key === groesster.key) return "";
-  return `${stark.label} zählt je Spiel am meisten (×${stark.schnittFaktor.toFixed(2)}), `
+  return `${stark.label} zählt je Spiel am meisten (${fmtFaktor(stark.schnittFaktor)}), `
     + `macht aber nur ${Math.round(stark.anteil * 100)} % der Gesamtwertung aus — `
     + `${groesster.label} hat schlicht mehr Spiele.`;
 }
@@ -134,7 +148,7 @@ export function beschreibeWettbewerbe(rules) {
   const cfg = sanitizeWettbewerbe(rules?.wettbewerbe);
   if (!cfg.enabled) return "Alle Wettbewerbe zählen gleich.";
   const teile = Object.entries(cfg.aufschlaege)
-    .map(([k, v]) => `${WETTBEWERBE.find((w) => w.key === k)?.kurz ?? k} ×${(1 + v).toFixed(2)}`);
-  if (cfg.phasenStufe > 0) teile.push(`+${cfg.phasenStufe.toFixed(2)} je K.-o.-Runde`);
+    .map(([k, v]) => `${WETTBEWERBE.find((w) => w.key === k)?.kurz ?? k} ${fmtFaktor(1 + v)}`);
+  if (cfg.phasenStufe > 0) teile.push(`+${zahl(cfg.phasenStufe)} je K.-o.-Runde`);
   return teile.join(" · ");
 }

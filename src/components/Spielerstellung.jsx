@@ -1157,7 +1157,8 @@ export default function Spielerstellung() {
               {eigeneVereine && (
                 <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
                   <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 8px", lineHeight: 1.4 }}>
-                    Antippen erhöht den Faktor in 0,1-Schritten bis ×2,0 und springt dann zurück auf „aus".
+                    Antippen wandert durch ×1,25, ×1,5, ×2, ×0,75, ×0,5 und zurück auf „aus".
+                    Werte unter ×1 dämpfen den Verein: er zählt dann weniger, nicht mehr.
                   </p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {ALL_TEAMS.map((team) => {

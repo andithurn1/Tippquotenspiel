@@ -176,3 +176,71 @@ describe("Im Regelwerk und im Creator-Code", () => {
     expect(beschreibeWettbewerbe(AN())).toContain("CL");
   });
 });
+
+// ── L5: Dämpfer statt nur Aufschlag ──
+// Vorher schaltete sich die ganze Ebene lautlos ab, sobald der einzige
+// eingestellte Wert ein Dämpfer (negativ) war — `v > 0` warf ihn aus
+// `aufschlaege` raus, `enabled` sah dann eine leere Liste und wurde `false`.
+describe("Dämpfer (negativer Aufschlag)", () => {
+  it("a) ein reiner Dämpfer bleibt erhalten und hält die Ebene AN", () => {
+    const s = sanitizeWettbewerbe({ enabled: true, aufschlaege: { bl: -0.5 } });
+    expect(s.enabled).toBe(true);
+    expect(s.aufschlaege.bl).toBe(-0.5);
+  });
+
+  it("b) gemischt: Aufschlag und Dämpfer überleben beide", () => {
+    const s = sanitizeWettbewerbe({ enabled: true, aufschlaege: { cl: 1.0, bl: -0.4 } });
+    expect(s.aufschlaege).toEqual({ cl: 1.0, bl: -0.4 });
+  });
+
+  it("c) genau 0 fliegt weiterhin raus", () => {
+    const s = sanitizeWettbewerbe({ enabled: true, aufschlaege: { bl: 0, cl: -0.3 } });
+    expect(s.aufschlaege).toEqual({ cl: -0.3 });
+  });
+
+  it("d) unter dem Minimum wird auf -0,75 beschnitten", () => {
+    const s = sanitizeWettbewerbe({ enabled: true, aufschlaege: { bl: -2 } });
+    expect(s.aufschlaege.bl).toBe(-0.75);
+  });
+
+  it("e) ein Dämpfer drückt den Faktor, aber nie unter modFloor", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES, modCap: 4, modFloor: 0.5,
+      wettbewerbe: { enabled: true, aufschlaege: { cl: -0.75 }, phasenStufe: 0 },
+    });
+    const snap = { wettbewerb: "cl", phase: "liga" };
+    expect(wettbewerbAufschlag(snap, rules)).toBeCloseTo(-0.75, 3);
+    const t = totalModifier({}, snap, rules);
+    expect(t.faktor).toBeCloseTo(0.5, 3);
+    expect(t.faktor).toBeGreaterThanOrEqual(rules.modFloor);
+    expect(t.gedaempft).toBe(true);
+  });
+
+  it("f) maxWettbewerbAufschlag ist 0, wenn ausschließlich Dämpfer eingestellt sind", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      wettbewerbe: { enabled: true, aufschlaege: { cl: -0.5, bl: -0.3 }, phasenStufe: 0 },
+    });
+    expect(maxWettbewerbAufschlag(rules)).toBe(0);
+  });
+
+  it("g) anteile(): der gedämpfte Wettbewerb bekommt einen kleineren Anteil als seinen Rohanteil", () => {
+    const matches = [...spiel("bl", "liga", 306), ...spiel("cl", "liga", 144)];
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      wettbewerbe: { enabled: true, aufschlaege: { cl: -0.5 }, phasenStufe: 0 },
+    });
+    const a = anteile(matches, rules).find((x) => x.key === "cl");
+    expect(a.anteil).toBeLessThan(a.anteilRoh);
+  });
+
+  it("h) beschreibeWettbewerbe nennt einen Dämpfer ohne Dezimalpunkt", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      wettbewerbe: { enabled: true, aufschlaege: { bl: -0.4 }, phasenStufe: 0 },
+    });
+    const text = beschreibeWettbewerbe(rules);
+    expect(text).toContain("BL");
+    expect(text).not.toMatch(/×\d+\.\d/);
+  });
+});
