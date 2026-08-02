@@ -126,17 +126,29 @@ export default function Spielerstellung() {
   const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
   const patchBigGame = (p) => { touched(); setRules((r) => ({ ...r, bigGame: { ...r.bigGame, ...p } })); };
   const setSaison = (saison) => { touched(); setRules((r) => ({ ...r, saison })); };
-  // Faktor eines Vereins eine Stufe weiterdrehen; über dem Maximum zurück auf
-  // „aus" (1 = kein Modifikator, fliegt aus der Liste, damit das Regelwerk
-  // klein bleibt). Der nächste Wert wird IM Updater aus dem vorherigen Stand
-  // berechnet — sonst lesen mehrere schnelle Klicks denselben alten Wert.
+  // Faktor eines Vereins durch feste Stufen weiterdrehen. 1 = kein
+  // Modifikator und fliegt aus der Liste, damit das Regelwerk klein bleibt.
+  // Der nächste Wert wird IM Updater aus dem vorherigen Stand berechnet —
+  // sonst lesen mehrere schnelle Klicks denselben alten Wert.
+  //
+  // ⚠️ Der Zyklus führt seit dem Dämpfer (02.08.) auch DURCH die Werte unter 1.
+  // Vorher lief er nur aufwärts in 0,1-Schritten — damit war ein Dämpfer über
+  // die Oberfläche gar nicht einstellbar, obwohl die Logik ihn seit demselben
+  // Tag kann. Genau die tote Kontaktstelle, die dieser Baukasten nicht haben
+  // darf; sie war beim Drehrad-Schalter schon einmal da.
+  //
+  // Feste Stufen statt +0,1: Mit Dämpfern wären es sonst 17 Antipper für einen
+  // vollen Durchlauf. Sechs benannte Stufen sind bedienbar, liegen alle auf dem
+  // 0,05-Raster, und wer es genauer will, hat den Regler in der Profi-Stufe.
+  const TEAM_STUFEN = [1.25, 1.5, 2, 0.75, 0.5, 1];
   const cycleTeamFaktor = (team) => {
     touched();
     setRules((r) => {
       const teams = { ...(r.teamMods?.teams || {}) };
       const jetzt = teams[team] ?? 1;
-      const naechster = jetzt >= RULE_LIMITS.teamMods.teamFaktor.max ? 1 : +(jetzt + 0.1).toFixed(1);
-      if (naechster > 1) teams[team] = naechster; else delete teams[team];
+      const i = TEAM_STUFEN.indexOf(jetzt);
+      const naechster = TEAM_STUFEN[(i + 1) % TEAM_STUFEN.length];
+      if (naechster !== 1) teams[team] = naechster; else delete teams[team];
       return { ...r, teamMods: { ...r.teamMods, teams } };
     });
   };
@@ -1125,16 +1137,27 @@ export default function Spielerstellung() {
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {ALL_TEAMS.map((team) => {
                       const f = tmTeams[team] ?? 1;
-                      const an = f > 1;
+                      // Ein DÄMPFER (unter 1) ist genauso „an" wie ein
+                      // Aufschlag — vorher galt nur `f > 1`, wodurch ein
+                      // gedämpfter Verein aussah wie ein unberührter.
+                      const an = f !== 1;
+                      const ton = f > 1 ? C.gold : C.indigo;
                       return (
                         <button key={team}
                           onClick={() => cycleTeamFaktor(team)}
+                          title={f > 1 ? "zählt mehr" : f < 1 ? "zählt weniger" : "kein Modifikator"}
                           style={{
                             cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
-                            background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
-                            border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                            background: an ? `${ton}22` : C.surface, color: an ? ton : C.muted,
+                            border: `1px solid ${an ? ton + "66" : C.line}`,
                           }}>
-                          {team}{an && <strong style={{ marginLeft: 5, fontFamily: MONO }}>×{f.toFixed(1)}</strong>}
+                          {team}{an && (
+                            // ⚠️ Zwei Nachkommastellen: mit `toFixed(1)` würde
+                            // aus einem Dämpfer von 0,75 die Anzeige „×0.8".
+                            <strong style={{ marginLeft: 5, fontFamily: MONO }}>
+                              ×{String(+f.toFixed(2)).replace(".", ",")}
+                            </strong>
+                          )}
                         </button>
                       );
                     })}
