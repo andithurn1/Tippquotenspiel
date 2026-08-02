@@ -1051,7 +1051,12 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
 // Teilobjekt ohne Abweichung entfällt ganz. Arrays werden als GANZES
 // verglichen (JSON.stringify-Gleichheit) und im Abweichungsfall vollständig
 // gespeichert — kein Element-Diff, eine Liste ist eine Einheit.
-function ruleDelta(value, base) {
+// ⚠️ EXPORTIERT, damit `teilbibliothek.js` dieselbe Kodierung benutzt statt
+// einer Kopie. Eine zweite Fassung dieser drei Funktionen wäre die
+// zuverlässigste Art, das Codeformat auseinanderlaufen zu lassen: ein
+// Teil-Code, der anders differenziert als der Vollcode, fiele erst auf, wenn
+// jemand einen geteilten Code nicht mehr laden kann.
+export function ruleDelta(value, base) {
   if (Array.isArray(value) || Array.isArray(base)) {
     return JSON.stringify(value) === JSON.stringify(base) ? undefined : value;
   }
@@ -1066,8 +1071,8 @@ function ruleDelta(value, base) {
   return value === base ? undefined : value;
 }
 
-const toBase64 = (j) => (typeof btoa !== "undefined" ? btoa(unescape(encodeURIComponent(j))) : Buffer.from(j, "utf8").toString("base64"));
-const fromBase64 = (b) => (typeof atob !== "undefined" ? decodeURIComponent(escape(atob(b))) : Buffer.from(b, "base64").toString("utf8"));
+export const toBase64 = (j) => (typeof btoa !== "undefined" ? btoa(unescape(encodeURIComponent(j))) : Buffer.from(j, "utf8").toString("base64"));
+export const fromBase64 = (b) => (typeof atob !== "undefined" ? decodeURIComponent(escape(atob(b))) : Buffer.from(b, "base64").toString("utf8"));
 
 // ⚠️ Die Präfixe sind AUSSCHLIESSLICH hier bekannt. Die Oberfläche muss einen
 // eingefügten Text von einem Server-Kurzcode unterscheiden können — tut sie das
