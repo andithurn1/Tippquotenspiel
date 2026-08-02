@@ -6,6 +6,7 @@ import {
   encodePreset, decodePreset, sanitizeRules, istCreatorCode,
   REGLER_FEINHEITEN, reglerSchritt,
 } from "@/lib/engine";
+import { istTeilCode, wendeTeilCodeAn } from "@/lib/teilbibliothek";
 import { PRESETS } from "@/lib/presets";
 import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
@@ -34,6 +35,7 @@ import BalanceAmpel from "@/components/BalanceAmpel";
 import ProfiWarnungen from "@/components/ProfiWarnungen";
 import JokerVerteilung from "@/components/JokerVerteilung";
 import JokerOekonomie from "@/components/JokerOekonomie";
+import Bausteine from "@/components/Bausteine";
 import LimitKlassen from "@/components/LimitKlassen";
 import JokerGrundform from "@/components/JokerGrundform";
 import AufwandPanel from "@/components/AufwandPanel";
@@ -191,6 +193,21 @@ export default function Spielerstellung() {
   const load = async () => {
     const val = imp.trim();
     setImpErr("");
+    // ⚠️ Teil-Code (TS2A-…) MUSS vor istCreatorCode geprüft werden. Sonst
+    // fiele er in den Kurzcode-Zweig darunter und liefe beim Store auf —
+    // dieselbe Falle, die es beim Umstieg auf das Delta-Format schon einmal
+    // gab (siehe Kommentar bei istCreatorCode unten).
+    if (istTeilCode(val)) {
+      try {
+        const neu = wendeTeilCodeAn(rules, val);
+        setPresetKey(null);
+        setRules(neu);
+        setImp("");
+      } catch {
+        setImpErr("Kein gültiger Teil-Code.");
+      }
+      return;
+    }
     if (istCreatorCode(val)) {
       try { setPresetKey(null); setRules(sanitizeRules(decodePreset(val))); setImp(""); }
       catch { setImpErr("Kein gültiger Creator-Code."); }
@@ -1612,10 +1629,20 @@ export default function Spielerstellung() {
             )}
           </div>
 
+          {/* Bausteine: einzelne Aspekte (Drehrad, Joker-Ökonomie, …) als
+              eigener Teil-Code — nur ab „anpassen", weil in „einfach"
+              Charakter und Preset die Entscheidung treffen. */}
+          {stufe !== "einfach" && (
+            <>
+              <SectionTitle>Bausteine</SectionTitle>
+              <Bausteine rules={rules} />
+            </>
+          )}
+
           {/* Import: langer ODER kurzer Code */}
           <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
             <input value={imp} onChange={(e) => { setImp(e.target.value); setImpErr(""); }}
-              placeholder="Code laden (Creator-Code oder Kurzcode)" style={{
+              placeholder="Code laden (Creator-Code, Kurzcode oder Teil-Code)" style={{
                 flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
                 borderRadius: 12, padding: "10px 12px", fontSize: 13, fontFamily: MONO, outline: "none",
               }} />

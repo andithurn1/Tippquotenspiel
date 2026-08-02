@@ -191,3 +191,48 @@ describe("wendeTeilCodeAn — ungültiger Code wirft mit klarer Meldung", () => 
     expect(() => wendeTeilCodeAn(DEFAULT_RULES, "Quatsch")).toThrow(/Teil-Code/);
   });
 });
+
+// ── Der Weg durch die Oberfläche ────────────────────────────
+// ⚠️ Diese Prüfung ist der Grund, aus dem es sie gibt: `load()` in
+// `Spielerstellung.jsx` unterscheidet Teil-Code, Creator-Code und
+// Server-Kurzcode allein am Präfix. Genau dort ist beim Umstieg auf das
+// Delta-Format (`TS1-` → `TS2-`) schon einmal ein Format durchs Raster
+// gefallen und beim Store aufgelaufen — grün in allen Tests, kaputt für den
+// Nutzer. Der Weg „erzeugen → einlesen" gehört deshalb dauerhaft in die Suite
+// und nicht in eine Datei, die nach dem Lauf gelöscht wird.
+describe("Erzeugen und wieder einlesen — der Weg, den die Oberfläche geht", () => {
+  it("ein Teil-Code wird NICHT für einen Creator- oder Kurzcode gehalten", () => {
+    for (const aspekt of ASPEKTE) {
+      const code = bildeTeilCode(sanitizeRules(DEFAULT_RULES), aspekt.key);
+      expect(istTeilCode(code), aspekt.key).toBe(true);
+      // Fiele er hier durch, landete er im Kurzcode-Zweig und liefe beim
+      // Store auf.
+      expect(istCreatorCode(code), aspekt.key).toBe(false);
+    }
+  });
+
+  it("umgekehrt: ein Vollcode wird nicht für einen Teil-Code gehalten", () => {
+    const voll = encodePreset(sanitizeRules(DEFAULT_RULES));
+    expect(istCreatorCode(voll)).toBe(true);
+    expect(istTeilCode(voll)).toBe(false);
+  });
+
+  it("und ein Server-Kurzcode ist weder das eine noch das andere", () => {
+    const kurz = generateJoinCode();
+    expect(istTeilCode(kurz)).toBe(false);
+    expect(istCreatorCode(kurz)).toBe(false);
+  });
+
+  it("der vollständige Weg: kopieren, bei jemand anderem einfügen", () => {
+    const meins = sanitizeRules({ ...DEFAULT_RULES, name: "Meine Runde", k: 1.55, m: 0.25 });
+    const code = bildeTeilCode(meins, "naehe");
+
+    const fremd = sanitizeRules({ ...DEFAULT_RULES, name: "Anderer Admin" });
+    const danach = wendeTeilCodeAn(fremd, code);
+
+    expect(danach.k).toBe(meins.k);
+    expect(danach.m).toBe(meins.m);
+    // Der Name gehört zu keinem Aspekt und darf nicht mitwandern.
+    expect(danach.name).toBe("Anderer Admin");
+  });
+});
