@@ -102,6 +102,50 @@ Aufhol-Bonus in `catchup.js`, und aus demselben Grund.
 3–5 kuratierte Konstellationen als eigene **Teilbibliothek**
 (`design/teilbibliotheken.md`), nicht als fest verdrahtete Sonderfälle.
 
+### 🔴 Nachtrag zur Abnahme (02.08.): die Bedingung stand auf dem Kopf
+
+Beim Nachmessen aufgefallen, und der Fehler liegt in dieser Spec, nicht in der
+Umsetzung.
+
+Eine `aktivierung` steuert bei uns ein **Kontingent**, keine **Erlaubnis** — so
+steht es im Kopf von `limitKlassen.js`: *„Ist sie [die Klasse] nicht offen,
+greift ihr Kontingent gar nicht — weder zählend noch blockierend."*
+
+Damit lässt sich der Beispielsatz oben („nur solange es eng ist") **nicht
+direkt** ausdrücken. Gemessen:
+
+| Klasse mit `max: 0` | eng | weit |
+|---|---|---|
+| `abSpannung` | gesperrt | erlaubt |
+| `unterSpannung` | erlaubt | gesperrt |
+
+Der Admin müsste also **`unterSpannung` mit `max: 0`** einstellen — „sperre,
+wenn jemand davonzieht" — um „erlaube, solange es eng ist" zu bekommen. Das ist
+richtig gerechnet und trotzdem unbedienbar: man muss die Regel gedanklich
+umdrehen und über einen Kontingent-Deckel von 0 ausdrücken.
+
+**Festlegung — eine Klasse bekommt eine `wirkung`:**
+
+| Wert | Bedeutung |
+|---|---|
+| `kontingent` | **Vorgabe, heutiges Verhalten.** Aktiv → Einsätze zählen gegen `max`. Inaktiv → die Klasse schränkt nichts ein. |
+| `nurWennAktiv` | Aktiv → zählt gegen `max` wie bisher. **Inaktiv → die Mitglieder sind GESPERRT.** |
+
+Damit steht der Satz direkt da:
+
+```js
+{ mitglieder: ["duell.klau"], wirkung: "nurWennAktiv",
+  aktivierung: { typ: "abSpannung", wert: 0.75 } }
+```
+
+⚠️ Der Gewinn ist größer als der Anlass: `nurWennAktiv` macht **jede**
+Aktivierungs-Bedingung als Erlaubnis-Fenster nutzbar — „nur ab Spieltag 20",
+„nur nach diesem Ereignis", „nur wer hinten liegt". Bisher konnte all das nur
+Kontingente steuern.
+
+⚠️ `max: 0` bleibt gültig und heißt weiterhin „solange aktiv: nichts erlaubt".
+Die beiden Wege dürfen sich nicht widersprechen — ein Test hält beide fest.
+
 ## 3. Tabellenstand — die dramaturgischen
 
 | # | Auslöser | Daten |

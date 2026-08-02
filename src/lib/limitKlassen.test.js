@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  AKTIVIERUNG_TYPEN, PRO_ZEITRAUM, LIMIT_KLASSEN_LIMITS, DEFAULT_LIMIT_KLASSEN,
+  AKTIVIERUNG_TYPEN, PRO_ZEITRAUM, WIRKUNGEN, LIMIT_KLASSEN_LIMITS, DEFAULT_LIMIT_KLASSEN,
   sanitizeLimitKlassen, pruefeEinsatz, offeneKlassen, beschreibeKlasse, pruefeKlassen,
 } from "./limitKlassen";
 
@@ -8,16 +8,22 @@ import {
 
 describe("Kataloge", () => {
   it("jeder Katalog-Eintrag hat key, label und desc, Keys sind eindeutig", () => {
-    for (const liste of [AKTIVIERUNG_TYPEN, PRO_ZEITRAUM]) {
+    for (const liste of [AKTIVIERUNG_TYPEN, PRO_ZEITRAUM, WIRKUNGEN]) {
       for (const e of liste) expect(e.key && e.label && e.desc).toBeTruthy();
       expect(new Set(liste.map((e) => e.key)).size).toBe(liste.length);
     }
   });
 
-  it("Abschnitt 2.2 nennt genau acht Aktivierungs-Typen", () => {
+  // 2b Nachtrag (design/joker-ausloeser.md): genau die zwei Wirkungen aus der
+  // Festlegung, „kontingent" zuerst als Vorgabe.
+  it("WIRKUNGEN nennt genau kontingent und nurWennAktiv", () => {
+    expect(WIRKUNGEN.map((w) => w.key)).toEqual(["kontingent", "nurWennAktiv"]);
+  });
+
+  it("Abschnitt 2.2/2b nennt genau zehn Aktivierungs-Typen", () => {
     expect(AKTIVIERUNG_TYPEN.map((t) => t.key).sort()).toEqual([
-      "abBudget", "abRueckstand", "abSpieltag", "abVorsprung",
-      "fenster", "immer", "nachEreignis", "nurGegenFuehrende",
+      "abBudget", "abRueckstand", "abSpannung", "abSpieltag", "abVorsprung",
+      "fenster", "immer", "nachEreignis", "nurGegenFuehrende", "unterSpannung",
     ]);
   });
 
@@ -106,6 +112,30 @@ describe("sanitizeLimitKlassen", () => {
       { id: "a", mitglieder: ["x"], max: 1, proZeitraum: "saison", aktivierung: { typ: "voodoo" } },
     ]);
     expect(r).toEqual([]);
+  });
+
+  // Pflichttest 1 (2b Nachtrag, design/joker-ausloeser.md): Vorgabe ist
+  // "kontingent" (heutiges Verhalten), Unsinn fällt darauf zurück.
+  it("wirkung: fehlendes Feld ist die Vorgabe kontingent", () => {
+    const r = sanitizeLimitKlassen([
+      { id: "a", mitglieder: ["x"], max: 1, proZeitraum: "saison", aktivierung: { typ: "immer" } },
+    ]);
+    expect(r[0].wirkung).toBe("kontingent");
+  });
+
+  it("wirkung: unbekannter Wert fällt auf kontingent zurück, statt die Klasse zu verwerfen", () => {
+    const r = sanitizeLimitKlassen([
+      { id: "a", mitglieder: ["x"], max: 1, proZeitraum: "saison", aktivierung: { typ: "immer" }, wirkung: "quatsch" },
+    ]);
+    expect(r).toHaveLength(1);
+    expect(r[0].wirkung).toBe("kontingent");
+  });
+
+  it("wirkung: nurWennAktiv wird unverändert übernommen", () => {
+    const r = sanitizeLimitKlassen([
+      { id: "a", mitglieder: ["x"], max: 1, proZeitraum: "saison", aktivierung: { typ: "immer" }, wirkung: "nurWennAktiv" },
+    ]);
+    expect(r[0].wirkung).toBe("nurWennAktiv");
   });
 });
 
@@ -345,6 +375,182 @@ describe("pruefeEinsatz — Aktivierungs-Bedingungen (Abschnitt 2.2)", () => {
     expect(gegenFuehrenden.erlaubt).toBe(false);
     expect(gegenAndere.erlaubt).toBe(true);
   });
+
+  // Pflichttest 5 (design/joker-ausloeser.md, Abschnitt 2b): abSpannung
+  // erlaubt bei engem Stand und sperrt bei weitem — unterSpannung umgekehrt.
+  it("abSpannung: aktiv nur solange die Tabelle eng beieinander liegt (relativ)", () => {
+    const klassen = basisKlasse({
+      typ: "abSpannung", wert: 0.75,
+      spannung: { bezug: "ersterZweiter", art: "relativ" },
+    });
+    const eng = pruefeEinsatz(
+      { spieltag: 1, jokerArt: "testArt", vonUserId: "u1" }, klassen, [],
+      { board: [{ userId: "u1", total: 100 }, { userId: "u2", total: 90 }] }, // 0.9 >= 0.75
+    );
+    const weit = pruefeEinsatz(
+      { spieltag: 1, jokerArt: "testArt", vonUserId: "u1" }, klassen, [],
+      { board: [{ userId: "u1", total: 100 }, { userId: "u2", total: 20 }] }, // 0.2 < 0.75
+    );
+    expect(eng.erlaubt).toBe(false); // Klasse aktiv (eng), max 0 blockiert
+    expect(weit.erlaubt).toBe(true); // Klasse inaktiv (weit), Kontingent greift nicht
+  });
+
+  it("unterSpannung: aktiv nur wenn jemand davonzieht (relativ) — umgekehrt zu abSpannung", () => {
+    const klassen = basisKlasse({
+      typ: "unterSpannung", wert: 0.4,
+      spannung: { bezug: "ersterZweiter", art: "relativ" },
+    });
+    const eng = pruefeEinsatz(
+      { spieltag: 1, jokerArt: "testArt", vonUserId: "u1" }, klassen, [],
+      { board: [{ userId: "u1", total: 100 }, { userId: "u2", total: 90 }] }, // 0.9, nicht < 0.4
+    );
+    const weit = pruefeEinsatz(
+      { spieltag: 1, jokerArt: "testArt", vonUserId: "u1" }, klassen, [],
+      { board: [{ userId: "u1", total: 100 }, { userId: "u2", total: 20 }] }, // 0.2 < 0.4
+    );
+    expect(eng.erlaubt).toBe(true); // Klasse inaktiv (kein Davonziehen)
+    expect(weit.erlaubt).toBe(false); // Klasse aktiv (jemand zieht davon), max 0 blockiert
+  });
+
+  it("abSpannung mit art: absolut vergleicht in umgekehrter Richtung (kleiner Abstand = eng)", () => {
+    const klassen = basisKlasse({
+      typ: "abSpannung", wert: 15,
+      spannung: { bezug: "ersterZweiter", art: "absolut" },
+    });
+    const eng = pruefeEinsatz(
+      { spieltag: 1, jokerArt: "testArt", vonUserId: "u1" }, klassen, [],
+      { board: [{ userId: "u1", total: 100 }, { userId: "u2", total: 90 }] }, // Abstand 10 <= 15
+    );
+    const weit = pruefeEinsatz(
+      { spieltag: 1, jokerArt: "testArt", vonUserId: "u1" }, klassen, [],
+      { board: [{ userId: "u1", total: 100 }, { userId: "u2", total: 50 }] }, // Abstand 50 > 15
+    );
+    expect(eng.erlaubt).toBe(false); // aktiv (Abstand klein genug)
+    expect(weit.erlaubt).toBe(true); // inaktiv (Abstand zu groß)
+  });
+});
+
+// ── 2b: die Abstands-Bedingung entscheidet sich pro Spieltag NEU ────
+// Pflichttest 6 (design/joker-ausloeser.md, Abschnitt 2b): dieselbe Klasse
+// ist an Spieltag 5 gesperrt und an Spieltag 20 erlaubt, wenn sich der Stand
+// dazwischen ändert — Beweis, dass die Bedingung nicht festhängt (keine
+// Kalender-Regel im Spannungs-Gewand).
+describe("2b — Abstands-Bedingung entscheidet sich pro Spieltag neu", () => {
+  it("dieselbe Klasse ist an Spieltag 5 (enger Stand) gesperrt und an Spieltag 20 (Stand danach auseinandergezogen) erlaubt", () => {
+    const klassen = [{
+      id: "x", mitglieder: ["testArt"], max: 0, proZeitraum: "saison",
+      aktivierung: { typ: "abSpannung", wert: 0.75, spannung: { bezug: "ersterZweiter", art: "relativ" } },
+    }];
+
+    const spieltag5 = pruefeEinsatz(
+      { spieltag: 5, jokerArt: "testArt", vonUserId: "u1" }, klassen, [],
+      { board: [{ userId: "u1", total: 40 }, { userId: "u2", total: 38 }] }, // 38/40 = 0.95, eng
+    );
+    const spieltag20 = pruefeEinsatz(
+      { spieltag: 20, jokerArt: "testArt", vonUserId: "u1" }, klassen, [],
+      { board: [{ userId: "u1", total: 160 }, { userId: "u2", total: 60 }] }, // 60/160 = 0.375, weit
+    );
+
+    expect(spieltag5.erlaubt).toBe(false);
+    expect(spieltag20.erlaubt).toBe(true);
+  });
+});
+
+// ── 2b Nachtrag: wirkung — Kontingent vs. Erlaubnis-Fenster ──
+// design/joker-ausloeser.md, „Nachtrag zur Abnahme (02.08.): die Bedingung
+// stand auf dem Kopf". `wirkung: "nurWennAktiv"` macht eine
+// Aktivierungs-Bedingung selbst zum Ablehnungsgrund, statt sie nur ein
+// Kontingent steuern zu lassen.
+describe("pruefeEinsatz — wirkung: nurWennAktiv (2b Nachtrag)", () => {
+  // Pflichttest 2: exakt der Satz aus der Spec — ERLAUBT bei engem Stand,
+  // SPERRT bei weitem Stand, ohne max: 0 und ohne gedankliche Umkehr.
+  it("nurWennAktiv mit abSpannung: erlaubt bei engem Stand, sperrt bei weitem Stand — ohne max: 0", () => {
+    const klassen = [{
+      id: "x", label: "Klau-Joker", mitglieder: ["duell.klau"], max: 3, proZeitraum: "saison",
+      wirkung: "nurWennAktiv",
+      aktivierung: { typ: "abSpannung", wert: 0.75, spannung: { bezug: "ersterZweiter", art: "relativ" } },
+    }];
+    const eng = pruefeEinsatz(
+      { spieltag: 1, jokerArt: "duell.klau", vonUserId: "u1", aufUserId: "u2" }, klassen, [],
+      { board: [{ userId: "u1", total: 100 }, { userId: "u2", total: 90 }] }, // 0.9 >= 0.75, eng
+    );
+    const weit = pruefeEinsatz(
+      { spieltag: 1, jokerArt: "duell.klau", vonUserId: "u1", aufUserId: "u2" }, klassen, [],
+      { board: [{ userId: "u1", total: 100 }, { userId: "u2", total: 20 }] }, // 0.2 < 0.75, weit
+    );
+    expect(eng.erlaubt).toBe(true);
+    expect(weit.erlaubt).toBe(false);
+  });
+
+  // Pflichttest 3: dieselbe Klasse als kontingent (Vorgabe) verhält sich
+  // weiterhin wie bisher — also gerade NICHT so: "weit" bleibt erlaubt, weil
+  // eine inaktive Klasse mit wirkung "kontingent" gar nichts einschränkt.
+  it("dieselbe Klasse als wirkung: kontingent (Vorgabe) sperrt bei weitem Stand NICHT", () => {
+    const klassen = [{
+      id: "x", label: "Klau-Joker", mitglieder: ["duell.klau"], max: 3, proZeitraum: "saison",
+      wirkung: "kontingent",
+      aktivierung: { typ: "abSpannung", wert: 0.75, spannung: { bezug: "ersterZweiter", art: "relativ" } },
+    }];
+    const eng = pruefeEinsatz(
+      { spieltag: 1, jokerArt: "duell.klau", vonUserId: "u1", aufUserId: "u2" }, klassen, [],
+      { board: [{ userId: "u1", total: 100 }, { userId: "u2", total: 90 }] }, // eng, aktiv, zählt gegen max
+    );
+    const weit = pruefeEinsatz(
+      { spieltag: 1, jokerArt: "duell.klau", vonUserId: "u1", aufUserId: "u2" }, klassen, [],
+      { board: [{ userId: "u1", total: 100 }, { userId: "u2", total: 20 }] }, // weit, inaktiv, kein Kontingent-Effekt
+    );
+    expect(eng.erlaubt).toBe(true);
+    expect(weit.erlaubt).toBe(true);
+  });
+
+  // Pflichttest 4: nurWennAktiv funktioniert auch mit einer
+  // nicht-spannungsbezogenen Aktivierung.
+  it("nurWennAktiv mit abSpieltag: vor dem Spieltag gesperrt, danach erlaubt", () => {
+    const klassen = [{
+      id: "x", label: "Spätzünder-Joker", mitglieder: ["testArt"], max: 3, proZeitraum: "saison",
+      wirkung: "nurWennAktiv",
+      aktivierung: { typ: "abSpieltag", wert: 10 },
+    }];
+    const vorher = pruefeEinsatz({ spieltag: 5, jokerArt: "testArt", vonUserId: "u1" }, klassen, [], {});
+    const nachher = pruefeEinsatz({ spieltag: 10, jokerArt: "testArt", vonUserId: "u1" }, klassen, [], {});
+    expect(vorher.erlaubt).toBe(false);
+    expect(nachher.erlaubt).toBe(true);
+  });
+
+  // Pflichttest 5: ist die Klasse aktiv, greift max weiter wie bisher — die
+  // beiden Wege (Kontingent und Erlaubnis-Fenster) dürfen sich nicht
+  // widersprechen.
+  it("nurWennAktiv UND aktiv: max blockiert weiterhin bei ausgeschöpftem Kontingent", () => {
+    const klassen = [{
+      id: "x", label: "Spätzünder-Joker", mitglieder: ["testArt"], max: 1, proZeitraum: "saison",
+      wirkung: "nurWennAktiv",
+      aktivierung: { typ: "abSpieltag", wert: 10 },
+    }];
+    const historie = [{ spieltag: 10, jokerArt: "testArt", vonUserId: "u1" }];
+    const r = pruefeEinsatz({ spieltag: 15, jokerArt: "testArt", vonUserId: "u1" }, klassen, historie, {});
+    expect(r.erlaubt).toBe(false);
+    expect(r.gruende).toHaveLength(1);
+    expect(r.gruende[0].klasseId).toBe("x");
+    // Grund ist das ausgeschöpfte Kontingent, nicht "nicht offen" — die
+    // Klasse IST aktiv.
+    expect(r.gruende[0].grund).toMatch(/Kontingent/);
+    expect(r.gruende[0].grund).not.toMatch(/nicht offen/);
+  });
+
+  // Pflichttest 6: der Grund nennt die Klasse UND dass sie nicht offen ist.
+  it("nurWennAktiv UND inaktiv: der Grund nennt Klasse und Nicht-Offen-Sein", () => {
+    const klassen = [{
+      id: "x", label: "Spätzünder-Joker", mitglieder: ["testArt"], max: 3, proZeitraum: "saison",
+      wirkung: "nurWennAktiv",
+      aktivierung: { typ: "abSpieltag", wert: 10 },
+    }];
+    const r = pruefeEinsatz({ spieltag: 5, jokerArt: "testArt", vonUserId: "u1" }, klassen, [], {});
+    expect(r.erlaubt).toBe(false);
+    expect(r.gruende).toHaveLength(1);
+    expect(r.gruende[0].klasseId).toBe("x");
+    expect(r.gruende[0].grund).toContain("Spätzünder-Joker");
+    expect(r.gruende[0].grund).toMatch(/nicht offen/);
+  });
 });
 
 // ── offeneKlassen ─────────────────────────────────────────────
@@ -389,5 +595,14 @@ describe("beschreibeKlasse", () => {
 
   it("liefert einen leeren String für eine ungültige Klasse", () => {
     expect(beschreibeKlasse({ mitglieder: [], aktivierung: { typ: "immer" } }, 34)).toBe("");
+  });
+
+  // 2b Nachtrag: die Wirkung muss im Text stehen, sonst sehen zwei Klassen
+  // mit gleichem Kontingent identisch aus, obwohl sie Gegenteiliges tun.
+  it("nennt die Wirkung, damit kontingent und nurWennAktiv sich im Text unterscheiden", () => {
+    const basis = { id: "a", label: "Klau-Joker", mitglieder: ["duell.klau"], max: 3, proZeitraum: "saison", aktivierung: { typ: "immer" } };
+    const kontingentText = beschreibeKlasse({ ...basis, wirkung: "kontingent" }, 34);
+    const nurWennAktivText = beschreibeKlasse({ ...basis, wirkung: "nurWennAktiv" }, 34);
+    expect(kontingentText).not.toBe(nurWennAktivText);
   });
 });

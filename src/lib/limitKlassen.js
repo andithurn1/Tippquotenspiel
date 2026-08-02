@@ -61,6 +61,11 @@
 // ============================================================
 
 import { fensterVon } from "./duellJoker";
+// 2b (design/joker-ausloeser.md): `abSpannung`/`unterSpannung` messen die
+// Verfassung der GANZEN RUNDE statt Kalender oder Person — siehe die beiden
+// neuen `klasseAktiv`-Fälle unten und den Kopfkommentar in `spannung.js`.
+import { sanitizeSpannung, spannungVon, beschreibeSpannung } from "./spannung";
+import { zahl } from "./format";
 
 // ── Kataloge ────────────────────────────────────────────────
 
@@ -97,6 +102,31 @@ export const AKTIVIERUNG_TYPEN = [
     key: "nurGegenFuehrende", label: "Nur gegen Führende",
     desc: "Nur Einsätze gegen die ersten N Plätze sind erlaubt.",
   },
+  {
+    key: "abSpannung", label: "Ab Spannung",
+    desc: "Nur solange die Tabelle eng beieinander liegt.",
+  },
+  {
+    key: "unterSpannung", label: "Unter Spannung",
+    desc: "Nur wenn jemand in der Tabelle davonzieht.",
+  },
+];
+
+// 2b Nachtrag (design/joker-ausloeser.md, „die Bedingung stand auf dem
+// Kopf"): `aktivierung` steuert von sich aus nur ein KONTINGENT, keine
+// ERLAUBNIS — eine geschlossene Klasse schränkt gar nichts ein. Um eine
+// Aktivierungs-Bedingung als echtes Erlaubnis-Fenster zu nutzen („die
+// Mitglieder existieren NUR, solange die Klasse offen ist"), braucht es ein
+// eigenes Feld statt eines gedanklich umgedrehten `max: 0`.
+export const WIRKUNGEN = [
+  {
+    key: "kontingent", label: "Kontingent",
+    desc: "Aktiv: Einsätze zählen gegen das Kontingent. Inaktiv: die Klasse schränkt nichts ein. Vorgabe.",
+  },
+  {
+    key: "nurWennAktiv", label: "Nur wenn aktiv",
+    desc: "Aktiv: zählt gegen das Kontingent wie gewohnt. Inaktiv: die Mitglieder sind gesperrt.",
+  },
 ];
 
 export const PRO_ZEITRAUM = [
@@ -129,6 +159,10 @@ export const LIMIT_KLASSEN_LIMITS = {
   abVorsprung: { min: 0, max: 500, step: 1 },
   abBudget: { min: 0, max: 500, step: 1 },
   plaetze: { min: 1, max: 50, step: 1 },
+  // `wert` von `abSpannung`/`unterSpannung`. Weit gefasst und OHNE Rundung
+  // (wie `abRueckstand`) — je nach `spannung.art` ist das ein Anteil
+  // (relativ, typisch 0…1) oder ein Punkte-Abstand (absolut).
+  spannungWert: { min: 0, max: 500, step: 0.01 },
 };
 
 export const DEFAULT_LIMIT_KLASSEN = [];
@@ -175,6 +209,22 @@ function sanitizeAktivierung(a) {
         typ: "nurGegenFuehrende",
         plaetze: Math.round(clamp(o.plaetze, LIMIT_KLASSEN_LIMITS.plaetze, 1)),
       };
+    // 2b: Vorgabewerte spiegeln die Beispiele aus design/joker-ausloeser.md
+    // (0.75 „eng" / 0.4 „zieht davon"). `spannung` wird über `sanitizeSpannung`
+    // IMMER als volle Konfiguration gespeichert — dieselbe „nie halb gesetzt"-
+    // Regel wie überall sonst in diesem Modul.
+    case "abSpannung":
+      return {
+        typ: "abSpannung",
+        wert: clamp(o.wert, LIMIT_KLASSEN_LIMITS.spannungWert, 0.75),
+        spannung: sanitizeSpannung(o.spannung),
+      };
+    case "unterSpannung":
+      return {
+        typ: "unterSpannung",
+        wert: clamp(o.wert, LIMIT_KLASSEN_LIMITS.spannungWert, 0.4),
+        spannung: sanitizeSpannung(o.spannung),
+      };
     default:
       return null;
   }
@@ -209,6 +259,10 @@ function sanitizeKlasse(k) {
     // `abSpieltag`/`bisSpieltag` in `sanitizeDuellJoker`.
     n: proZeitraum === "nSpieltage" ? Math.round(clamp(o.n, LIMIT_KLASSEN_LIMITS.n, 5)) : null,
     aktivierung,
+    // 2b Nachtrag: unbekannte/fehlende Werte fallen auf `kontingent` zurück
+    // — dasselbe Muster wie `proZeitraum` oben, damit heutiges Verhalten die
+    // Vorgabe bleibt.
+    wirkung: WIRKUNGEN.some((w) => w.key === o.wirkung) ? o.wirkung : "kontingent",
   };
 }
 
@@ -333,6 +387,24 @@ function klasseAktiv(akt, { userId, aufUserId = null, spieltag = null }, kontext
       return sortiert.slice(0, akt.plaetze).some((b) => b.userId === aufUserId);
     }
 
+    // 2b (design/joker-ausloeser.md): Verfassung der GANZEN RUNDE statt
+    // Kalender oder Person. Liest `ctx.board` bei JEDEM Aufruf frisch — kein
+    // Zustand, kein Cache — und entscheidet sich deshalb pro Spieltag neu,
+    // je nachdem, welchen Tabellenstand der Aufrufer als `ctx.board`
+    // übergibt (derselbe Stand VOR dem geprüften Spieltag wie bei
+    // `abRueckstand`/`abVorsprung` oben — dieselbe Kante wie der Aufhol-Bonus
+    // in `catchup.js`). Die Vergleichsrichtung dreht sich bei
+    // `art: "absolut"` um — siehe Kopfkommentar in `spannung.js`.
+    case "abSpannung": {
+      const wert = spannungVon(ctx.board, akt.spannung);
+      return akt.spannung.art === "absolut" ? wert <= akt.wert : wert >= akt.wert;
+    }
+
+    case "unterSpannung": {
+      const wert = spannungVon(ctx.board, akt.spannung);
+      return akt.spannung.art === "absolut" ? wert > akt.wert : wert < akt.wert;
+    }
+
     default:
       return false;
   }
@@ -387,9 +459,18 @@ export function pruefeEinsatz(einsatz = {}, klassen = [], historie = [], kontext
   for (const klasse of liste) {
     // Betrifft diese Klasse die eingesetzte Joker-Art überhaupt?
     if (!klasse.mitglieder.includes(e.jokerArt)) continue;
-    // Ist die Klasse gerade offen? Wenn nicht, greift ihr Kontingent nicht —
-    // weder zählend noch blockierend.
+    // Ist die Klasse gerade offen? Bei `wirkung: "kontingent"` (Vorgabe)
+    // greift ihr Kontingent dann gar nicht — weder zählend noch blockierend.
+    // Bei `wirkung: "nurWennAktiv"` ist eine geschlossene Klasse dagegen
+    // selbst der Ablehnungsgrund: die Mitglieder existieren nur, solange die
+    // Klasse offen ist (2b Nachtrag, design/joker-ausloeser.md).
     if (!klasseAktiv(klasse.aktivierung, { userId: e.vonUserId, aufUserId: e.aufUserId, spieltag }, ctx, spieltageGesamt)) {
+      if (klasse.wirkung === "nurWennAktiv") {
+        gruende.push({
+          klasseId: klasse.id,
+          grund: `„${klasse.label}“ ist gerade nicht offen: ${beschreibeAktivierung(klasse.aktivierung, spieltageGesamt)}.`,
+        });
+      }
       continue;
     }
 
@@ -437,10 +518,19 @@ function beschreibeAktivierung(akt, spieltage) {
       return `nur bei mindestens ${akt.wert} Punkten Vorsprung`;
     case "nachEreignis":
       return `erst nach dem Ereignis „${akt.ereignisKey}“`;
+    // ⚠️ „Münzen", nicht „Budget" (design/joker-ausloeser.md Abschnitt 0).
+    // Hier stand es doch — der Text-Wächter `uiTexte.test.js` prüft nur die
+    // KATALOGE, nicht die aus ihnen erzeugten Sätze.
     case "abBudget":
-      return `erst ab ${akt.wert} Budget`;
+      return `erst ab ${zahl(akt.wert)} Münzen`;
     case "nurGegenFuehrende":
       return `nur gegen die ersten ${akt.plaetze}`;
+    // ⚠️ `zahl()` statt der rohen Zahl: eine Schwelle von 0,75 stand hier als
+    // „0.75" mit englischem Punkt.
+    case "abSpannung":
+      return `nur solange eng (${beschreibeSpannung(akt.spannung)} Schwelle ${zahl(akt.wert)})`;
+    case "unterSpannung":
+      return `nur wenn jemand davonzieht (${beschreibeSpannung(akt.spannung)} Schwelle ${zahl(akt.wert)})`;
     default:
       return "";
   }
@@ -454,5 +544,11 @@ export function beschreibeKlasse(klasse, spieltage = 34) {
     : k.proZeitraum === "phase" ? "im Aktivierungs-Fenster"
     : "pro Saison";
   const aktText = beschreibeAktivierung(k.aktivierung, spieltage);
-  return `„${k.label}“: höchstens ${k.max} ${zeitraumText}${aktText ? `, ${aktText}` : ""}.`;
+  // 2b Nachtrag: ohne diesen Zusatz sehen zwei Klassen mit gleichem
+  // Kontingent identisch aus, obwohl `nurWennAktiv` außerhalb der
+  // Aktivierung sperrt und `kontingent` dort gar nichts einschränkt.
+  const wirkungText = k.wirkung === "nurWennAktiv"
+    ? "außerhalb davon gesperrt"
+    : "außerhalb davon ohne Einschränkung";
+  return `„${k.label}“: höchstens ${k.max} ${zeitraumText}${aktText ? `, ${aktText}` : ""} (${wirkungText}).`;
 }
