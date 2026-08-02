@@ -16,6 +16,10 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import NaheErgebnisse from "@/components/NaheErgebnisse";
 import { C, MONO } from "@/lib/theme";
+// ⚠️ Der SPIELER bekam hier gerundete Joker-Faktoren zu sehen: bei einem
+// eingestellten ×1,15 stand „×1.2" auf dem Knopf. Seit die Faktoren auf dem
+// 0,05-Raster stehen, muss die Anzeige mitziehen — Begründung in format.js.
+import { fmtFaktor } from "@/lib/format";
 
 // ── Design-Tokens (gleich wie das Abrechnungsfenster) ───────
 
@@ -519,7 +523,7 @@ export default function Tippabgabe({ matchId }) {
                               color: on ? C.gold : blockiert ? "rgba(138,144,180,0.4)" : C.muted,
                               border: `1px solid ${on ? C.gold + "77" : C.line}`,
                               textDecoration: blockiert ? "line-through" : "none",
-                            }}>×{f.toFixed(1)}</button>
+                            }}>{fmtFaktor(f)}</button>
                         );
                       })}
                     </div>
@@ -539,7 +543,7 @@ export default function Tippabgabe({ matchId }) {
                         border: `1px solid ${joker ? C.gold + "77" : C.line}`,
                         borderRadius: 12, padding: "11px 0",
                       }}>
-                      {joker ? `✓ Joker gesetzt · ×${RULES.joker.faktor.toFixed(1)}` : `Joker setzen · ×${RULES.joker.faktor.toFixed(1)}`}
+                      {joker ? `✓ Joker gesetzt · ${fmtFaktor(RULES.joker.faktor)}` : `Joker setzen · ${fmtFaktor(RULES.joker.faktor)}`}
                     </button>
                     {/* Die HERKUNFT nennen: „du setzt einen erspielten ein" ist
                         eine andere Aussage als „heute ist dein Joker-Spieltag". */}

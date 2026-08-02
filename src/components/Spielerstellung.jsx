@@ -45,25 +45,13 @@ import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
 import SpielauswahlListe from "@/components/SpielauswahlListe";
 import Zeitachse from "@/components/Zeitachse";
 import { C, MONO } from "@/lib/theme";
+import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
 // Bundesliga und Premier League mischt.
 const ALL_TEAMS = alleVereine();
 
-// ── Anzeige eines Multiplikators ────────────────────────────
-// ⚠️ NICHT `toFixed(1)`. Seit die Multiplikator-Regler auf dem 0,05-Raster
-// stehen (und über `reglerFeinheit` noch feiner gehen), hätte eine
-// Nachkommastelle aus 1,15 die Anzeige „×1.2" gemacht — einen Wert, den der
-// Admin nie eingestellt hat. Die Schrittweite wurde damals umgestellt, die
-// Formatierer nicht; das hier zieht sie nach.
-// Nachkommastellen erscheinen nur, wo sie etwas sagen (1,5 statt 1,50), und
-// mit deutschem Komma wie bei `AVG_GOALS` in PresetRating.jsx.
-const zahl = (x) => String(+Number(x).toFixed(2)).replace(".", ",");
-const fmtFaktor = (x) => "×" + zahl(x);
-// Für Regler, die bei genau 1 „aus" bedeuten. ⚠️ NUR bei genau 1 — vorher
-// stand hier `<= 1`, wodurch seit dem Dämpfer JEDER Wert unter 1 als „aus"
-// angezeigt worden wäre, obwohl er sehr wohl wirkt.
-const fmtFaktorOderAus = (x) => (x === 1 ? "aus" : fmtFaktor(x));
+// Zahlen-Anzeige: `src/lib/format.js` ist die eine Quelle (Begründung dort).
 
 // Ranking-Pool aus zwei verständlichen Reglern erzeugen: höchstes Gewicht und
 // Anzahl der Stufen. Dazwischen gleichmäßig bis 1 herunter — so ist der Pool
@@ -72,7 +60,12 @@ const fmtFaktorOderAus = (x) => (x === 1 ? "aus" : fmtFaktor(x));
 function buildWeightPool(max, anzahl) {
   const arr = [];
   for (let i = 0; i < anzahl; i++) {
-    arr.push(+(max - ((max - 1) * i) / (anzahl - 1)).toFixed(1));
+    // ⚠️ Zwei Nachkommastellen, nicht eine. Seit die Joker-Faktoren auf dem
+    // 0,05-Raster stehen, hätte `toFixed(1)` den erzeugten Pool wieder auf
+    // 0,1er-Stufen gezwungen — ein Höchstgewicht von 1,15 wäre nicht baubar
+    // gewesen, obwohl der Regler es hergibt. Das war kein Anzeige-, sondern
+    // ein Rechenfehler: der Pool selbst wurde grob.
+    arr.push(+(max - ((max - 1) * i) / (anzahl - 1)).toFixed(2));
   }
   return [...new Set(arr)].sort((a, b) => b - a);
 }
@@ -266,8 +259,8 @@ export default function Spielerstellung() {
 
     // Wie stark.
     teile.push(j.modus === "ranking"
-      ? `Gewichte bis ×${Math.max(...(j.faktoren || [1])).toFixed(1)}`
-      : `jeder ×${(j.faktor ?? 1.5).toFixed(1)}`);
+      ? `Gewichte bis ${fmtFaktor(Math.max(...(j.faktoren || [1])))}`
+      : `jeder ${fmtFaktor(j.faktor ?? 1.5)}`);
 
     // Woher zusätzlich — nur wenn Ereignisse überhaupt etwas beisteuern.
     const er = rules.ereignisse;
@@ -1017,7 +1010,7 @@ export default function Spielerstellung() {
                         background: f > 1 ? `${C.gold}18` : C.surface,
                         color: f > 1 ? C.gold : C.muted,
                         border: `1px solid ${f > 1 ? C.gold + "44" : C.line}`,
-                      }}>×{f.toFixed(1)}</span>
+                      }}>{fmtFaktor(f)}</span>
                     ))}
                   </div>
                   <p style={{ fontSize: 11, color: C.muted, marginBottom: 8, lineHeight: 1.4 }}>
@@ -1040,7 +1033,7 @@ export default function Spielerstellung() {
                 <Toggle label="Heimatbonus — Spiele des eigenen Vereins" on={jh.enabled === true}
                   onChange={(on) => patchJoker({ heimat: { ...jh, enabled: on } })} />
                 {jh.enabled && (
-                  <Field label={`Faktor: ×${(jh.faktor ?? 1.2).toFixed(1)}`}>
+                  <Field label={`Faktor: ${fmtFaktor(jh.faktor ?? 1.2)}`}>
                     <input type="range"
                       min={L.joker.faktor.min} max={L.joker.faktor.max} step={reglerSchritt(rules, L.joker.faktor)}
                       value={jh.faktor ?? 1.2}
@@ -1169,9 +1162,7 @@ export default function Spielerstellung() {
                           {team}{an && (
                             // ⚠️ Zwei Nachkommastellen: mit `toFixed(1)` würde
                             // aus einem Dämpfer von 0,75 die Anzeige „×0.8".
-                            <strong style={{ marginLeft: 5, fontFamily: MONO }}>
-                              ×{String(+f.toFixed(2)).replace(".", ",")}
-                            </strong>
+                            <strong style={{ marginLeft: 5, fontFamily: MONO }}>{fmtFaktor(f)}</strong>
                           )}
                         </button>
                       );
