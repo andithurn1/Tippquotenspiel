@@ -211,10 +211,32 @@ verwertet.
 
 ---
 
-## 8. 🔴 Abklingzeit (Cooldown) — fehlt komplett
+## 8. ✅ Abklingzeit (Cooldown) — GEBAUT (Stand 02.08.)
 
-Vom Nutzer benannt und heute nirgends abgebildet. Weder `limitKlassen` noch der
-Shop decken es ab:
+> **Nachtrag 02.08.:** Dieser Abschnitt stand bis heute auf 🔴 „fehlt
+> komplett". Das stimmt nicht mehr — die Abklingzeit liegt als Dimension in
+> `jokerBasis.js` (`BASIS_LIMITS.abklingzeit`, `DEFAULT_BASIS.abklingzeit`),
+> wird in `pruefeAbklingzeit` durchgesetzt und ist in `JokerGrundform.jsx`
+> einstellbar. `duell.abstand` ist wie gefordert weg; `duellPlan` liest
+> `basis.abklingzeit`.
+>
+> Nachgemessen (`abklingzeit: 3`, Einsatz an Spieltag 5): ST5/6/7 gesperrt mit
+> Restangabe im Grund, ab ST8 frei, eine ANDERE Joker-Art bleibt unberührt.
+>
+> ⚠️ **Zwei Dinge, die dabei aufgefallen sind:**
+> 1. `darfEinsetzen(basis, userId, kontext, jokerArt)` prüft die Abklingzeit
+>    **nur, wenn `jokerArt` mitgegeben wird** — ohne das vierte Argument fällt
+>    die Prüfung still aus. Der Aufrufer muss sie also kennen.
+> 2. Der Kontext-Schlüssel heißt **`letzteEinsaetze`**, nicht
+>    `bisherigeEinsaetze` (das ist der Name in `duellJoker.zulaessigeZiele`).
+>    Zwei ähnliche Namen für ähnliche Listen — beim Verkabeln leicht zu
+>    verwechseln.
+>
+> 🔴 Und der Punkt, der zählt: **`darfEinsetzen` hat null Aufrufer im
+> Spielbetrieb.** Die Abklingzeit ist gebaut und greift, wenn man sie fragt —
+> gefragt wird sie heute nirgends. Siehe `design/kontaktstellen.md`.
+
+Vom Nutzer benannt. Weder `limitKlassen` noch der Shop decken es ab:
 
 - **Limitierungsklasse** = wie VIELE, geteilt mit anderen Arten.
 - **Preis** = was es KOSTET.
