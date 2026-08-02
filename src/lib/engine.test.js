@@ -814,12 +814,48 @@ describe("Team-/Derby-Modifikatoren", () => {
     expect(mit.modifier.faktor).toBeCloseTo(1.5, 5);
   });
 
-  it("sanitizeRules beschneidet Faktoren und verwirft neutrale Vereins-Eintraege", () => {
+  it("sanitizeRules beschneidet Faktoren und verwirft nur NEUTRALE Vereins-Eintraege", () => {
     const r = sanitizeRules({ teamMods: { derbyFaktor: 99, teams: { "FC X": 99, "FC Y": 1, "FC Z": 0.2 } } });
     expect(r.teamMods.derbyFaktor).toBe(RULE_LIMITS.teamMods.derbyFaktor.max);
     expect(r.teamMods.teams["FC X"]).toBe(RULE_LIMITS.teamMods.teamFaktor.max);
     expect(r.teamMods.teams["FC Y"]).toBeUndefined();   // Faktor 1 = wirkungslos
-    expect(r.teamMods.teams["FC Z"]).toBeUndefined();   // unter 1 wird nicht erlaubt
+    // ⚠️ Geändert am 02.08.: Werte UNTER 1 sind seit dem Dämpfer gültig
+    // („dieses Spiel zählt weniger") und werden nicht mehr verworfen, sondern
+    // nur auf die Untergrenze beschnitten.
+    expect(r.teamMods.teams["FC Z"]).toBe(RULE_LIMITS.teamMods.teamFaktor.min);
+  });
+
+  // ── Dämpfer (L5 aus design/joker-inventar.md) ──
+  it("ein Faktor unter 1 dämpft, statt ignoriert zu werden", () => {
+    const snap = { home: "A", away: "B", winner: { home: 2, away: 3 } };
+    const tip = { home: 1, away: 0, goals: { home: [], away: [] } };
+    const gedaempft = sanitizeRules({ ...DEFAULT_RULES, teamMods: { derbyFaktor: 1, teams: { A: 0.7 } } });
+    expect(totalModifier(tip, snap, gedaempft).faktor).toBeCloseTo(0.7, 3);
+  });
+
+  it("modFloor fängt gestapelte Dämpfer ab — das Vorzeichen dreht sich nie", () => {
+    const snap = { home: "A", away: "B", winner: { home: 2, away: 3 } };
+    const tip = { home: 1, away: 0, goals: { home: [], away: [] } };
+    // Roh wäre 1 + (−0,75) + (−0,75) = −0,5.
+    const hart = sanitizeRules({
+      ...DEFAULT_RULES, modFloor: 0.25, teamMods: { derbyFaktor: 1, teams: { A: 0.25, B: 0.25 } },
+    });
+    const t = totalModifier(tip, snap, hart);
+    expect(t.faktor).toBe(0.25);
+    expect(t.gedaempft).toBe(true);
+
+    // Boden 0 erlaubt ein wertloses Spiel — aber nie ein negatives.
+    const boden0 = sanitizeRules({
+      ...DEFAULT_RULES, modFloor: 0, teamMods: { derbyFaktor: 1, teams: { A: 0.25, B: 0.25 } },
+    });
+    expect(totalModifier(tip, snap, boden0).faktor).toBe(0);
+  });
+
+  it("die Vorgabe bindet nicht — ohne Dämpfer bleibt alles wie bisher", () => {
+    const snap = { home: "A", away: "B", winner: { home: 2, away: 3 } };
+    const tip = { home: 1, away: 0, goals: { home: [], away: [] } };
+    expect(sanitizeRules(DEFAULT_RULES).modFloor).toBe(0.25);
+    expect(totalModifier(tip, snap, sanitizeRules(DEFAULT_RULES)).faktor).toBe(1);
   });
 
   it("maxTotalModifier kennt den schlimmsten Fall inklusive Deckel", () => {

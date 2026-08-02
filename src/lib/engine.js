@@ -158,6 +158,14 @@ export const DEFAULT_RULES = {
   // aufschaukeln und die Balance sprengen; additiv bleibt es vorhersagbar.
   modCap: 2.5,
 
+  // Das Gegenstück: der Boden, unter den gestapelte DÄMPFER (Team-/Wettbewerbs-
+  // Faktoren unter 1) ein Spiel nicht drücken können. Vorgabe 0,25 — sie
+  // bindet heute nie, weil ohne Dämpfer jeder Faktor bei mindestens 1 liegt.
+  // 0 wäre erlaubt und hieße „dieses Spiel kann komplett wertlos werden";
+  // negativ ist ausgeschlossen, sonst drehte sich das Vorzeichen einer
+  // richtigen Wertung um.
+  modFloor: 0.25,
+
   // Regler-Feinheit: rundenweite Übersteuerung der Schrittweite für ALLE
   // Regler der Multiplikator-Familie (Standardraster 0,05, siehe RULE_LIMITS).
   // Erlaubt: 0.05 (Vorgabe) · 0.025 · 0.01 — Katalog samt Begründung bei
@@ -306,8 +314,13 @@ export const RULE_LIMITS = {
     mutFaktor: { min: 1, max: 2, step: 0.05 },
     anzahlFaktoren: { min: 2, max: 6, step: 1 },
   },
-  teamMods: { derbyFaktor: { min: 1, max: 2, step: 0.05 }, teamFaktor: { min: 1, max: 2, step: 0.05 } },
+  // ⚠️ `min: 0.25`, nicht 1 — Werte UNTER 1 sind Dämpfer („dieses Spiel zählt
+  // weniger"). Vorher ging es nur nach oben, wodurch der Admin Wichtiges
+  // hervorheben, aber Unwichtiges nicht zurücknehmen konnte. Nach unten fängt
+  // `modFloor` ab.
+  teamMods: { derbyFaktor: { min: 0.25, max: 2, step: 0.05 }, teamFaktor: { min: 0.25, max: 2, step: 0.05 } },
   modCap: { min: 1, max: 4, step: 0.05 },
+  modFloor: { min: 0, max: 1, step: 0.05 },
   aufholen: { staerke: { min: 0.05, max: 0.5, step: 0.05 }, schwelle: { min: 0, max: 0.5, step: 0.05 } },
   versaeumnis: { malusProzent: { min: 0, max: 100, step: 5 }, maxProSaison: { min: 0, max: 10, step: 1 } },
 };
@@ -387,7 +400,10 @@ function sanitizeTeamMods(tm, num, clamp) {
   for (const [name, wert] of Object.entries(roh)) {
     if (typeof name !== "string" || !name.trim()) continue;
     const f = +clamp(num(wert, 1), L.teamFaktor.min, L.teamFaktor.max).toFixed(2);
-    if (f > 1) teams[name.trim().slice(0, 60)] = f;
+    // ⚠️ `!== 1` statt `> 1`: seit es DÄMPFER gibt (Faktor unter 1) muss auch
+    // ein Wert darunter erhalten bleiben. Genau 1 fliegt weiter raus — das ist
+    // „kein Modifikator" und hält das Regelwerk klein.
+    if (f !== 1) teams[name.trim().slice(0, 60)] = f;
   }
   return {
     derbyFaktor: clamp(num(tm.derbyFaktor, D.derbyFaktor), L.derbyFaktor.min, L.derbyFaktor.max),
@@ -445,6 +461,7 @@ export function sanitizeRules(partial = {}) {
     joker: sanitizeJoker(jk, num, clamp),
     teamMods: sanitizeTeamMods(src.teamMods && typeof src.teamMods === "object" ? src.teamMods : {}, num, clamp),
     modCap: clamp(num(src.modCap, D.modCap), L.modCap.min, L.modCap.max),
+    modFloor: clamp(num(src.modFloor, D.modFloor), L.modFloor.min, L.modFloor.max),
     // Unbekannte Werte fallen auf den Standard (0,05) zurück — derselbe
     // Katalog-Fallback wie bei Saisonform, Versäumnis-Strategie usw.
     reglerFeinheit: (() => {
@@ -735,12 +752,16 @@ export function jokerFactor(tip, rules = DEFAULT_RULES, snap = null, actual = nu
 export function teamModFactor(snap, rules = DEFAULT_RULES) {
   const tm = rules?.teamMods;
   if (!tm) return 1;
+  // ⚠️ Auch NEGATIVE Beiträge zählen (Faktor unter 1 = Dämpfer). Vorher stand
+  // hier `> 1`, wodurch Modifikatoren nur nach oben konnten: der Admin konnte
+  // Wichtiges hervorheben, aber Unwichtiges nicht zurücknehmen. Nach unten
+  // begrenzt `modFloor` in `totalModifier`.
   let aufschlag = 0;
-  if (snap?.derby && tm.derbyFaktor > 1) aufschlag += tm.derbyFaktor - 1;
+  if (snap?.derby && Number.isFinite(tm.derbyFaktor)) aufschlag += tm.derbyFaktor - 1;
   const teams = tm.teams || {};
   for (const seite of [snap?.home, snap?.away]) {
     const f = seite ? teams[seite] : undefined;
-    if (Number.isFinite(f) && f > 1) aufschlag += f - 1;
+    if (Number.isFinite(f)) aufschlag += f - 1;
   }
   // Das Big Game sagt dasselbe wie ein Derby („dieses Spiel zählt mehr, für
   // alle gleich") und gehört deshalb in denselben Aufschlag — nicht daneben.
@@ -763,15 +784,24 @@ export function teamModFactor(snap, rules = DEFAULT_RULES) {
 export function totalModifier(tip, snap, rules = DEFAULT_RULES, actual = null) {
   const joker = jokerFactor(tip, rules, snap, actual);
   const team = teamModFactor(snap, rules);
-  const aufschlag = Math.max(0, joker - 1) + Math.max(0, team - 1);
+  // Der Joker bleibt nach unten bei 0 gekappt — ein Joker, der SCHADET, ist
+  // eine eigene Entscheidung (`jokerBasis.symmetrie`) und nicht Sache dieser
+  // Stelle. Die Team-Ebene darf dagegen negativ beitragen: das ist der Dämpfer.
+  const aufschlag = Math.max(0, joker - 1) + (team - 1);
   const roh = 1 + aufschlag;
   const cap = Number.isFinite(rules?.modCap) ? rules.modCap : Infinity;
-  const faktor = Math.min(roh, cap);
+  // ⚠️ `modFloor` ist das Gegenstück zu `modCap`. Ohne ihn könnte ein Spiel
+  // durch gestapelte Dämpfer auf 0 oder darunter fallen — ein RICHTIGER Tipp
+  // würde dann bestraft. Der Boden ist nie negativ, damit sich das Vorzeichen
+  // einer Wertung nie umdreht (gleiche Familie wie `block.nurGewinn`).
+  const floor = Number.isFinite(rules?.modFloor) ? Math.max(0, rules.modFloor) : 0;
+  const faktor = Math.min(Math.max(roh, floor), cap);
   return {
     faktor: +faktor.toFixed(3),
     joker: +joker.toFixed(3),
     team: +team.toFixed(3),
     gedeckelt: roh > cap,
+    gedaempft: roh < floor,
   };
 }
 

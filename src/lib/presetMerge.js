@@ -55,7 +55,7 @@ export const ASPEKTE = [
     // `drehrad` ebenfalls: es zahlt Joker, Münzen und Modifikatoren aus, also
     // in genau dieselben Töpfe. Ein Rad ohne die Ökonomie, aus der es schöpft,
     // wäre ein Auslöser ohne Wirkung.
-    keys: ["joker", "teamMods", "modCap", "bigGame", "ereignisse", "wettbewerbe",
+    keys: ["joker", "teamMods", "modCap", "modFloor", "bigGame", "ereignisse", "wettbewerbe",
            "duell", "budget", "limitKlassen", "jokerBasis", "drehrad"],
   },
   {
