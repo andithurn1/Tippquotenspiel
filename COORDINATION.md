@@ -104,6 +104,93 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-02 (II) · **ÜBERGABE an das nächste Fenster** — Baukasten steht, Balance bewusst offen
+
+> **👉 Frische Session: DAS ist dein Einstieg.** Der Eintrag darunter ist
+> überholt, seither sind zehn Commits dazugekommen.
+
+`main` bei `6756774` · **1543 Tests grün** (Sessionstart: 1162) · Build sauber ·
+Arbeitskopie leer.
+
+#### 🔴 Zuerst: der Grundsatz, nach dem hier gebaut wird
+
+Steht jetzt auch in `CLAUDE.md` („Der Baukasten-Grundsatz"). Kurzfassung:
+
+1. **Regler UND Zahleneingabe** bei jeder Einstellung. Der Regler zum Fühlen,
+   das Feld zum Treffen — nicht entweder/oder.
+2. **Immer ein empfohlenes Preset dazu**, jederzeit abrufbar. Die sollen später
+   *die bekannten, ausgewogenen* sein, auf die man sich beruft.
+3. **Eine Einstellung, die ins Leere läuft, ist kein Baukastenteil.**
+
+⚠️ **Balance ist nicht der Job, Vollständigkeit ist es.** Empfehlungen zu
+Stärke und Häufigkeit kommen SPÄTER. Geprüft wird, ob eine Einstellung GREIFT —
+nicht, ob sie klug ist.
+
+#### Was seit der letzten Übergabe dazukam
+
+| Commit | Inhalt |
+|---|---|
+| `7a68a53` | **Dämpfer** — Modifikatoren können unter 1, `modFloor` als Gegenstück zu `modCap` |
+| `0e1ef6a` | Vereins-Chips mit festen Stufen `1 → 1,25 → 1,5 → 2 → 0,75 → 0,5 → aus` |
+| `35a14f7` · `8f4e4f2` | **`format.js`** — Zahlen-Anzeige an einer Stelle |
+| `c93a01c` · `b33ee07` | **Teilbibliotheken** — `TS2A-<aspekt>-…`, erzeugen und einlesen |
+| `6756774` | **Abstands-Bedingung** + `wirkung: "nurWennAktiv"` |
+
+**Neue Module:** `format.js`, `teilbibliothek.js`, `spannung.js`.
+**Neue Komponente:** `Bausteine.jsx`.
+
+#### 📌 Arbeitsweise — was sich bewährt hat, und was nicht
+
+**Der Loop (Hauptmodell plant und prüft, Subagent setzt um) lohnt sich** — aber
+nicht wegen der Ersparnis. Der Gewinn ist, dass ein WÖRTLICHER Leser
+Widersprüche in der Vorgabe findet, statt sie stillschweigend zu glätten. In
+dieser Sitzung mehrfach: `voting.enabled` gibt es nicht, `markets.goals` hat
+kein `gewicht`, der Punkte-Deckel widersprach sich selbst, `mische()` heißt in
+Wahrheit `mergePresets`.
+Faustregel: **über ~50 Zeilen neuer Code delegieren, darunter selbst machen.**
+Immer nur EIN Agent gleichzeitig — parallele Läufe sind mehrfach gestorben.
+
+**Nie dem Bericht glauben, immer selbst nachmessen.** Alle größeren Funde kamen
+aus eigenen Prüf-Skripten, nicht aus den (korrekten) Berichten.
+
+🔴 **Und der wichtigste Fund der Sitzung:** Tests prüfen, ob die Funktion tut,
+was dasteht — nicht, ob sie tut, was gemeint war. Die Abstands-Bedingung hatte
+22 grüne Tests und war trotzdem unbedienbar (siehe `6756774`). **Rechne jede
+neue Regel einmal an einem echten Admin-Satz durch**, bevor du sie abnimmst.
+
+**Vier tote Kontaktstellen sind so aufgeflogen** — Einstellungen, die nichts
+bewirkten: ein fehlendes Feld schaltete alle Limitklassen ab; ein Punkte-Deckel
+wurde gespeichert, aber nie durchgesetzt; das Drehrad war nicht einschaltbar;
+Dämpfer waren in der Logik erlaubt, aber in der Oberfläche nicht einstellbar.
+Muster: **wer Logik und Oberfläche nacheinander anfasst und danach die Logik
+erweitert, hinterlässt eine Lücke, die kein Test sieht.**
+
+**Drei Wächter-Tests, in beide neue Ebenen eintragen:**
+`uiTexte.test.js` (keine Bezeichner/Dateinamen in Katalogtexten, „Münzen" statt
+„Budget") · `reglerRaster.test.js` (0,05-Raster) · `format.test.js`.
+⚠️ `uiTexte` prüft nur KATALOGE, nicht die daraus gebauten Sätze — dort ist
+zweimal „Budget" durchgerutscht.
+
+**Werkzeug:** `git commit -F <datei>`, niemals Here-Strings (dreimal daran
+gescheitert). Node nicht im PATH. Und es gibt ZWEI Arbeitskopien — Details in
+`CLAUDE.md`.
+
+#### 🟡 Offen, alles mit Spec
+
+- **Vereins-Chips im Browser ungesehen** (hinter der Premium-Prüfung). Erster
+  Handgriff: einen Verein zweimal weiterklicken, `×0,75` in eigener Farbe?
+- **Teilbibliotheken: 8 von 9 Aspekten leer** — Einträge kuratieren.
+- **L2 variabler Einsatz** — die größte fehlende Mechanik
+  (`joker-inventar.md` 4.5). Berührt `scoreTip`, also mit Vorsicht.
+- **L3/L4/L6** — Schutz über selbst gewählte Streichresultate, Ansage-Joker,
+  Frühtipp-Bonus.
+- **16 Auslöser** in `joker-ausloeser.md` — Führungswechsel, Kopf-an-Kopf,
+  kollektiver Reinfall, Versteigerung.
+- **Store-Anbindung der Duell-Einsätze** — `applyDuellJoker` ist bis dahin
+  No-op.
+- **Blindstellen-Durchgang** `balanceSim.js` — erst wenn Empfehlungen anstehen.
+- **RLS-Befund** — laut Andi weiterhin der wichtigste Posten im Projekt.
+
 ### 2026-08-02 · **ÜBERGABE** — der Joker-Baukasten steht, Oberfläche inklusive
 
 > **👉 Frische Session: DAS ist dein Einstieg.** Der Eintrag darunter

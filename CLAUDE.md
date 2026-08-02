@@ -31,6 +31,27 @@ Dateien sind lang:
 Erlaubnisse liegen in `.claude/settings.json` (committed) — Lesen/Schreiben,
 `git`, `npm`, `node`; nur Force-Pushes fragen nach. Da ist nichts einzurichten.
 
+### 🔴 Der Baukasten-Grundsatz (Andi, 02.08.2026)
+
+**Maximale Individualisierung, wenn man sie will — und ein guter Vorschlag,
+wenn nicht.** Drei Dinge gelten für JEDE neue Einstellung:
+
+1. **Regler UND Zahleneingabe.** Der Regler ist zum Fühlen, das Feld zum
+   Treffen. Wer 1,15 einstellen will, soll es tippen können statt zu zielen.
+   Nicht entweder/oder — beides, nebeneinander.
+2. **Immer ein empfohlenes Preset dazu.** Jeder Bereich hat unsere kuratierten
+   Voreinstellungen, und die sollen später *die bekannten, ausgewogenen* sein,
+   auf die man sich beruft. Sie müssen jederzeit abrufbar bleiben, auch nachdem
+   jemand alles verstellt hat.
+3. **Eine Einstellung, die ins Leere läuft, ist kein Baukastenteil.** Wenn der
+   Regler auf Spieltag 12 steht, muss der Joker an Spieltag 12 existieren. Das
+   ist keine Balance-Frage, sondern die Mindestanforderung.
+
+⚠️ **Balance ist NICHT unser Job — Vollständigkeit ist es.** Empfehlungen zu
+Stärke, Häufigkeit und Kombination kommen später, wenn das Gehäuse steht. Wenn
+ein Admin sich eine kaputte Runde bauen will, soll er das dürfen. Was geprüft
+wird, ist ob die Einstellung GREIFT, nicht ob sie klug ist.
+
 ### Arbeitsweise, die Andi ausdrücklich will
 
 - **Möglichst wenig Rückfragen.** Andi schaut nur gelegentlich rüber. Aufgaben
