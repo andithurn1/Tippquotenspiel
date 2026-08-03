@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { DEFAULT_RULES, sanitizeRules, encodePreset, istCreatorCode } from "@/lib/engine";
+import {
+  DEFAULT_RULES, sanitizeRules, encodePreset, istCreatorCode,
+  scoreTip, createMockOddsSource,
+} from "@/lib/engine";
 import { ASPEKTE } from "@/lib/presetMerge";
 import { PRESETS } from "@/lib/presets";
 import { generateJoinCode } from "@/lib/joinCode";
@@ -190,6 +193,159 @@ describe("wendeTeilCodeAn — ungültiger Code wirft mit klarer Meldung", () => 
   it("wirft mit deutscher Fehlermeldung", () => {
     expect(() => wendeTeilCodeAn(DEFAULT_RULES, "Quatsch")).toThrow(/Teil-Code/);
   });
+});
+
+// ── Kuratierte Kataloge je Aspekt (design/teilbibliotheken.md Abschnitt 7,
+//    Schritt 3) ─────────────────────────────────────────────
+describe("TEILBIBLIOTHEKEN — jeder Aspekt ist kuratiert", () => {
+  // ⚠️ Nur eine UNTERgrenze. `design/teilbibliotheken.md` Abschnitt 3 nennt
+  // „3–5 Einträge je Bereich" — das ist ein Hinweis für die Kuratierung, keine
+  // Invariante. Eine erste Fassung dieses Tests hat die 5 als Obergrenze
+  // geprüft und ist prompt an `modifikatoren` gescheitert: dort stehen die
+  // SECHS Ökonomien aus `KOMBINATIONEN`, die es lange vor dieser Datei gab und
+  // die bewusst so geschnitten sind. Einen vermessenen Katalog wegen eines
+  // Halbsatzes im Entwurf zu kürzen, wäre der falsche Weg herum.
+  it("kein Aspekt ist mehr leer", () => {
+    for (const bibliothek of TEILBIBLIOTHEKEN) {
+      expect(bibliothek.eintraege.length, bibliothek.aspekt).toBeGreaterThanOrEqual(3);
+    }
+  });
+});
+
+describe("TEILBIBLIOTHEKEN — eindeutige Schlüssel, sichtbare Texte gesetzt", () => {
+  it("jeder Aspekt hat eindeutige keys, und label/desc sind nicht-leere Strings", () => {
+    for (const bibliothek of TEILBIBLIOTHEKEN) {
+      const keys = bibliothek.eintraege.map((e) => e.key);
+      expect(new Set(keys).size, bibliothek.aspekt).toBe(keys.length);
+      for (const eintrag of bibliothek.eintraege) {
+        expect(typeof eintrag.label, `${bibliothek.aspekt}.${eintrag.key}`).toBe("string");
+        expect(eintrag.label.trim(), `${bibliothek.aspekt}.${eintrag.key}`).not.toBe("");
+        expect(typeof eintrag.desc, `${bibliothek.aspekt}.${eintrag.key}`).toBe("string");
+        expect(eintrag.desc.trim(), `${bibliothek.aspekt}.${eintrag.key}`).not.toBe("");
+      }
+    }
+  });
+});
+
+// ⚠️ Verglichen wird nur, was der Eintrag TATSÄCHLICH angibt — rekursiv bis
+// aufs Blatt, Arrays als Ganzes.
+//
+// Eine erste Fassung verlangte Tiefengleichheit des ganzen Feldes und ist an
+// allen sechs `modifikatoren`-Einträgen gescheitert. Zu Recht: `KOMBINATIONEN`
+// speichert bewusst nur die ABWEICHUNG (`budget: { enabled: false }`), und die
+// delegierenden Sanitizer füllen daraus zehn Felder auf. Das ist kein Mangel,
+// sondern dieselbe Sparsamkeit, aus der auch der Creator-Code nur Deltas trägt.
+//
+// Die Zusicherung, um die es geht, bleibt dabei vollständig erhalten: kein
+// angegebener Wert darf unterwegs still verändert werden. Genau daran ist
+// `maerkte.schuetzenImMittelpunkt` mit `picksPerTeam: 4` aufgefallen (Grenze
+// ist 3) — der Eintrag hätte sonst etwas anderes geliefert, als er verspricht.
+// ⚠️ Auch in Arrays wird hineingeschaut, ELEMENTWEISE. Das weicht bewusst von
+// der Delta-Regel des Creator-Codes ab („Arrays werden als GANZES verglichen",
+// design/creator-code-delta.md) — dort geht es ums Kodieren, hier um die
+// Frage, ob ein Wert unterwegs verändert wurde. `limitKlassen` ist eine Liste
+// von Objekten, die `sanitizeLimitKlassen` je Element auffüllt; ein Vergleich
+// der ganzen Liste würde daran scheitern und dabei genau das verdecken, was
+// geprüft werden soll. Die Länge muss stimmen — ein verschluckter Eintrag wäre
+// sehr wohl eine Veränderung.
+function angegebeneWerteUeberleben(ist, soll, pfad = "") {
+  if (Array.isArray(soll)) {
+    expect(Array.isArray(ist), `${pfad} ist keine Liste`).toBe(true);
+    expect(ist.length, `${pfad} — Anzahl der Einträge`).toBe(soll.length);
+    soll.forEach((wert, i) => angegebeneWerteUeberleben(ist[i], wert, `${pfad}[${i}]`));
+    return;
+  }
+  if (soll === null || typeof soll !== "object") {
+    expect(JSON.stringify(ist), pfad).toBe(JSON.stringify(soll));
+    return;
+  }
+  for (const [feld, wert] of Object.entries(soll)) {
+    angegebeneWerteUeberleben(ist?.[feld], wert, pfad ? `${pfad}.${feld}` : feld);
+  }
+}
+
+describe("TEILBIBLIOTHEKEN — jeder Eintrag GREIFT (Pflichttest 7)", () => {
+  for (const bibliothek of TEILBIBLIOTHEKEN) {
+    for (const eintrag of bibliothek.eintraege) {
+      it(`Aspekt „${bibliothek.aspekt}“, Eintrag „${eintrag.key}“: sanitizeRules verändert keinen angegebenen Wert`, () => {
+        const clean = sanitizeRules({ ...DEFAULT_RULES, ...eintrag.werte });
+        angegebeneWerteUeberleben(clean, eintrag.werte, `${bibliothek.aspekt}.${eintrag.key}`);
+      });
+
+      it(`Aspekt „${bibliothek.aspekt}“, Eintrag „${eintrag.key}“: Rundlauf über den Teil-Code liefert dieselben Werte`, () => {
+        const geaendert = sanitizeRules({ ...DEFAULT_RULES, ...eintrag.werte });
+        const code = bildeTeilCode(geaendert, bibliothek.aspekt);
+        const ergebnis = wendeTeilCodeAn(DEFAULT_RULES, code);
+        angegebeneWerteUeberleben(ergebnis, eintrag.werte, `${bibliothek.aspekt}.${eintrag.key}`);
+      });
+    }
+  }
+});
+
+describe("TEILBIBLIOTHEKEN — mindestens zwei Einträge je Aspekt unterscheiden sich", () => {
+  it("kein Aspekt besteht aus lauter identischen Einträgen", () => {
+    for (const bibliothek of TEILBIBLIOTHEKEN) {
+      const stringified = bibliothek.eintraege.map((e) => JSON.stringify(e.werte));
+      expect(new Set(stringified).size, bibliothek.aspekt).toBeGreaterThan(1);
+    }
+  });
+});
+
+// ── Verschieden in den WERTEN ist nicht verschieden in der WIRKUNG ──────────
+//
+// 🔴 Der Test darüber vergleicht `werte` als Text und war grün, während drei
+// der vier „naehe"-Einträge an JEDEM Tipp exakt dieselben Punkte zahlten:
+// nur `k` war gestaffelt, `m` stand überall auf der Vorgabe — und weil
+// `scoreResult` das `max()` seiner Teile nimmt, überdeckte die an `m` hängende
+// Team-Tore-Nähe den ganzen Unterschied. Gefunden beim Nachrechnen, nicht vom
+// Test; genau die Fehlerklasse „ein Test prüft, ob die Funktion tut was
+// dasteht, nicht ob sie tut was gemeint war".
+//
+// Deshalb hier die Gegenprobe an echten Punkten. Sie gilt bewusst nur für
+// „naehe" und „kombi": das sind die beiden Aspekte, die unmittelbar auf die
+// Wertung EINES Tipps durchschlagen und sich deshalb ohne Saison-Simulation
+// messen lassen. Für die übrigen wäre eine Punkte-Probe eine halbe Messung,
+// die mehr verspricht, als sie hält.
+describe("TEILBIBLIOTHEKEN — die Einträge schmecken auch wirklich verschieden", () => {
+  const odds = createMockOddsSource();
+  const snap = odds.getSnapshot("JOR-ESP");
+  const actual = odds.getResult("JOR-ESP"); // real 5:1
+
+  // Tipps mit WACHSENDEM Abstand zum echten Ergebnis — sonst wird die
+  // Nähe-Dämpfung gar nicht angefasst. Eine erste Fassung dieser Probe nahm
+  // nur exakt/Abstand/Tendenz/daneben und sah deshalb keinen Unterschied.
+  const TIPPS = [
+    { home: 5, away: 1 }, { home: 4, away: 1 }, { home: 3, away: 1 },
+    { home: 2, away: 0 }, { home: 1, away: 1 }, { home: 0, away: 3 },
+  ];
+
+  // ⚠️ MIT Torschützen. Eine erste Fassung tippte leere Schützen-Listen und
+  // meldete daraufhin, „flach" und „gestuft" seien identisch — was stimmte,
+  // aber nichts über die Einträge aussagte: die Kombi-Stufen vervielfachen
+  // die TOR-Gewinne (`applyCombo`), und ohne getippte Schützen gibt es nichts
+  // zu vervielfachen. Der Wächter muss anfassen, was er misst.
+  // Al-Naimat trifft wirklich (2×), Yamal auch (1×) — so tragen beide Seiten
+  // etwas bei, statt dass die Tor-Ebene glatt null bleibt.
+  const SCHUETZEN = { home: ["Al-Naimat"], away: ["Yamal"] };
+
+  const punkteProfil = (werte) => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, ...werte });
+    return TIPPS.map((t) =>
+      scoreTip({ ...t, goals: SCHUETZEN }, actual, snap, rules).raw);
+  };
+
+  for (const aspekt of ["naehe", "kombi"]) {
+    it(`Aspekt „${aspekt}“: je zwei Einträge zahlen für dieselben Tipps verschieden`, () => {
+      const eintraege = TEILBIBLIOTHEKEN.find((b) => b.aspekt === aspekt).eintraege;
+      const profile = eintraege.map((e) => [e.key, JSON.stringify(punkteProfil(e.werte))]);
+      for (let i = 0; i < profile.length; i++) {
+        for (let j = i + 1; j < profile.length; j++) {
+          expect(profile[i][1], `„${profile[i][0]}“ und „${profile[j][0]}“ zahlen identisch`)
+            .not.toBe(profile[j][1]);
+        }
+      }
+    });
+  }
 });
 
 // ── Der Weg durch die Oberfläche ────────────────────────────

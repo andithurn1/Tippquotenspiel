@@ -23,6 +23,7 @@ import { BELOHNUNGS_TYPEN } from "./drehrad";
 import { DUELL_TYPEN, PHASEN, ZIELWAHL, ANSAGE } from "./duellJoker";
 import { AUFWAND_STUFEN } from "./aufwand";
 import { REGLER_FEINHEITEN } from "./engine";
+import { TEILBIBLIOTHEKEN } from "./teilbibliothek";
 
 const KATALOGE = {
   BUDGET_QUELLEN, TAKTE, VERFALL_TYPEN, PREISMODI, JOKER_ARTEN,
@@ -44,6 +45,18 @@ function sichtbareTexte() {
     for (const e of liste) {
       for (const feld of ["label", "desc"]) {
         if (typeof e?.[feld] === "string") out.push([`${name}.${e.key}.${feld}`, e[feld]]);
+      }
+    }
+  }
+  // TEILBIBLIOTHEKEN ist verschachtelt ([{ aspekt, eintraege: [{key,label,desc}] }]),
+  // passt also nicht in die flache KATALOGE-Map — hier zusätzlich einsammeln,
+  // mit derselben Herkunfts-Form wie oben, nur um den Aspekt erweitert.
+  for (const bibliothek of TEILBIBLIOTHEKEN) {
+    for (const e of bibliothek.eintraege) {
+      for (const feld of ["label", "desc"]) {
+        if (typeof e?.[feld] === "string") {
+          out.push([`TEILBIBLIOTHEKEN.${bibliothek.aspekt}.${e.key}.${feld}`, e[feld]]);
+        }
       }
     }
   }
