@@ -21,7 +21,44 @@ Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 - **Design-Ebene** (`src/lib/theme.js`) — eine Quelle für Farben/Schrift
   (Account 1 hat darauf die Fanfarben-Umschaltung gebaut)
 
-Test-Stand: **933 grün**, Build sauber (Stand 2026-07-28).
+### Dazugekommen 29.07.–03.08. (Account 2)
+
+Der Joker-Baukasten und der Wettmodus. Kurz gehalten — die Begründungen stehen
+in den Specs, der Verlauf im Nachrichten-Log von `COORDINATION.md`.
+
+- **Joker-Ökonomie**: `duellJoker` · `jokerBudget` · `limitKlassen` ·
+  `jokerBasis` (13 Dimensionen inkl. Abklingzeit) · `jokerBibliothek` ·
+  `aufwand` · `drehrad` · `spannung` — alle an `engine.js` angeschlossen und
+  über fünf Oberflächen-Bausteine erreichbar.
+- **Creator-Code auf Delta** (`TS2-`): 3338 → 62 Zeichen beim Standard-Preset.
+- **Teilbibliotheken** (`teilbibliothek.js`, `TS2A-`): einzelne Aspekte teilen.
+  Alle neun Aspekte kuratiert, 39 Einträge.
+- **L5 Dämpfer** — Modifikatoren können unter 1: Vereine, Derby UND
+  Wettbewerbe (`design/joker-inventar.md` 4.5).
+- **L2 variabler Einsatz** — dritter `joker.modus`, samt Mindest-/Höchsteinsatz,
+  Skippen und Deckungsplanung. Bedienbar in Spielerstellung und Tippabgabe.
+  → `design/einsatz-joker.md`, `design/wettmodus.md`
+- **Zwei Währungen**: 🃏 Narren (Shop) · 🪙 Münzen (Einsatz).
+  → `design/waehrungen.md`. Münzstand in Tippabgabe, Hub und Schnellmenü.
+- **Format an einer Stelle** (`format.js`), **Zahleneingabe an einer Stelle**
+  (`Eingaben.jsx` — vorher fünf auseinandergelaufene Kopien).
+- **Drei Wächter-Tests**: `uiTexte` (sichtbare Katalogtexte, in beide
+  Richtungen) · `reglerRaster` (0,05-Raster) · `format`.
+
+🔴 **Und ein Befund, der wie eine Erledigung aussieht, aber keiner ist:**
+`design/kontaktstellen.md` — **sieben Prüffunktionen haben null Aufrufer im
+Spielbetrieb**. Die Module sind gebaut, getestet und einstellbar; im laufenden
+Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
+**Wer diese Liste als „fertig" liest, baut auf Sand.**
+
+**Nur Spec, noch nichts gebaut:** Regel-Abstimmung samt Verfassung
+(`design/abstimmung-verfassung.md`) · Münz-Takt (`wettmodus.md` 3) ·
+Glücksrad als SVG (`drehrad.md` 3c).
+
+Test-Stand: **1671 grün**, Build sauber (Stand 2026-08-03).
+Vorher stand hier **933 grün (28.07.)** — über eine Woche still, während die
+Suite um 738 Tests gewachsen ist. Genau die Drift, vor der der Kasten unten
+zweimal warnt; diesmal ist sie mir selbst passiert.
 
 > ⚠️ **Diese Datei war am 27.07. deutlich veraltet.** Mehrere Abschnitte standen
 > als „NEU" oder „offen" da, obwohl der Code längst lag — wer sie als
