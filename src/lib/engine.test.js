@@ -5,7 +5,7 @@ import {
   encodePreset, decodePreset, istCreatorCode, sanitizeRules, scoreLeaderboard, scoreLeaderboardHistory, projectTip,
   jokerFactor, maxJokerFactor, maxTotalModifier, teamModFactor, totalModifier,
   invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday,
-  invalidEinsatzMatchdays, einsatzUsageForMatchday,
+  invalidEinsatzMatchdays, einsatzUsageForMatchday, einsatzKonflikte, einsatzPlanung,
 } from "./engine";
 import { DEFAULT_DUELL } from "./duellJoker";
 import { DEFAULT_BUDGET } from "./jokerBudget";
@@ -883,6 +883,165 @@ describe("Joker — Einsatz-Modus (L2, variabler Einsatz je Spiel)", () => {
     expect(u.verteilt).toBe(0);
     expect(u.frei).toBe(100);
     expect(Number.isFinite(u.maxProSpiel)).toBe(true);
+  });
+});
+
+describe("Joker — Einsatz-Modus: Bezugsgröße korrigiert (design/einsatz-joker.md Abschnitt 1)", () => {
+  it("🔴 ohne spieleImSpieltag fällt die Rechnung auf die Tippanzahl zurück und meldet bezug: 'tipps'", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100 } });
+    const tips = [{ matchday: 1, match_id: "m0", gewicht: 3.6 }];
+    const u = einsatzUsageForMatchday(tips, 1, rules);
+    expect(u.bezug).toBe("tipps");
+  });
+
+  it("🔴 Die Korrektur: bei 9 Spielen im Spieltag ist ein Einsatz von 40 Münzen immer Faktor 3,6 — egal ob 1, 3 oder 9 Spiele getippt wurden", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100 } });
+    const spieleImSpieltag = 9;
+    // neutralerEinsatz = 100/9 → Faktor für 40 Münzen ist 40/(100/9) = 3.6,
+    // unabhängig davon, wie viele Spiele der Spieler bislang getippt hat.
+    const gewichtFuer40 = 40 / (100 / spieleImSpieltag);
+    expect(gewichtFuer40).toBeCloseTo(3.6, 6);
+
+    for (const anzahlGetippt of [1, 3, 9]) {
+      const tips = [{ matchday: 1, match_id: "m0", gewicht: gewichtFuer40 }];
+      for (let i = 1; i < anzahlGetippt; i++) tips.push({ matchday: 1, match_id: `m${i}`, gewicht: 0 });
+      const u = einsatzUsageForMatchday(tips, 1, rules, null, undefined, spieleImSpieltag);
+      expect(u.bezug, `anzahlGetippt=${anzahlGetippt}`).toBe("spieltag");
+      expect(u.verteilt, `anzahlGetippt=${anzahlGetippt}`).toBeCloseTo(40, 6);
+    }
+
+    // Ohne den Parameter (alte, falsche Bezugsgröße) driftet derselbe,
+    // unveränderte Faktor je nach Tippanzahl — genau der Fehler aus Abschnitt 1.
+    const beiEinemTipp = einsatzUsageForMatchday(
+      [{ matchday: 1, match_id: "m0", gewicht: gewichtFuer40 }], 1, rules,
+    );
+    expect(beiEinemTipp.bezug).toBe("tipps");
+    expect(beiEinemTipp.verteilt).toBeCloseTo(360, 6); // 3.6 * (100/1), NICHT 40
+  });
+
+  it("invalidEinsatzMatchdays: der Deckel bezieht sich auf die echte Spieltagsgröße, nicht auf die Zahl der Tipps", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", maxAnteilProSpiel: 0.4 } });
+    const tips = [{ matchday: 1, matchId: "m0", gewicht: 3.0 }, { matchday: 1, matchId: "m1", gewicht: 0 }];
+    // Fallback (kein spieleImSpieltag): Deckel = 0.4 * 2 (Tippanzahl) = 0.8 → beanstandet.
+    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+    // Mit der echten Spieltagsgröße (9): Deckel = 0.4 * 9 = 3.6 → gültig.
+    expect(invalidEinsatzMatchdays(tips, rules, undefined, 9)).toEqual([]);
+  });
+});
+
+describe("Joker — Einsatz-Modus: Mindesteinsatz und Skippen (design/einsatz-joker.md Abschnitt 2/3)", () => {
+  it("sanitizeRules: minAnteilProSpiel und skippenErlaubt liefern die Vorgabe; Müll fällt zurück; skippenErlaubt bleibt bei fehlender Angabe true", () => {
+    const r = sanitizeRules({});
+    expect(r.joker.minAnteilProSpiel).toBe(0);
+    expect(r.joker.skippenErlaubt).toBe(true);
+
+    const muell = sanitizeRules({ joker: { minAnteilProSpiel: "quatsch", skippenErlaubt: "quatsch" } });
+    expect(muell.joker.minAnteilProSpiel).toBe(0);
+    expect(muell.joker.skippenErlaubt).toBe(true); // nur === false schaltet ab, "quatsch" tut es nicht
+
+    const hoch = sanitizeRules({ joker: { minAnteilProSpiel: 99 } });
+    expect(hoch.joker.minAnteilProSpiel).toBe(RULE_LIMITS.joker.minAnteilProSpiel.max);
+    const tief = sanitizeRules({ joker: { minAnteilProSpiel: -1 } });
+    expect(tief.joker.minAnteilProSpiel).toBe(RULE_LIMITS.joker.minAnteilProSpiel.min);
+
+    const aus = sanitizeRules({ joker: { skippenErlaubt: false } });
+    expect(aus.joker.skippenErlaubt).toBe(false);
+  });
+
+  it("Einsatz über 0, aber unter dem Mindesteinsatz, wird beanstandet", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", minAnteilProSpiel: 0.1 } });
+    // Fallback n=5 (Tippanzahl), minProSpiel = 0.1*5 = 0.5. 0.3 liegt über 0,
+    // aber unter dem Minimum.
+    const tips = [0.3, 1.2, 1.2, 1.2, 1.1].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
+    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+  });
+
+  it("genau 0 bleibt bei skippenErlaubt: true gültig", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", minAnteilProSpiel: 0.1, skippenErlaubt: true } });
+    const tips = [0, 1.25, 1.25, 1.25, 1.25].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
+    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([]);
+  });
+
+  it("genau 0 wird bei skippenErlaubt: false beanstandet", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", minAnteilProSpiel: 0.1, skippenErlaubt: false } });
+    const tips = [0, 1.25, 1.25, 1.25, 1.25].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
+    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+  });
+});
+
+describe("einsatzKonflikte (design/einsatz-joker.md Abschnitt 2.1)", () => {
+  it("minAnteilProSpiel > maxAnteilProSpiel wird gemeldet", () => {
+    const rules = sanitizeRules({ joker: { minAnteilProSpiel: 0.5, maxAnteilProSpiel: 0.3 } });
+    const funde = einsatzKonflikte(rules);
+    expect(funde.some((f) => f.key === "einsatz-min-ueber-max")).toBe(true);
+  });
+
+  it("skippenErlaubt: false und Mindesteinsätze übersteigen das Budget wird gemeldet — aber nur bei bekannter Spieltagsgröße", () => {
+    const rules = sanitizeRules({ joker: { minAnteilProSpiel: 0.15, skippenErlaubt: false } });
+    // 9 Spiele × 0.15 = 1.35 > 1 → übersteigt das Budget.
+    const mitGroesse = einsatzKonflikte(rules, 9);
+    expect(mitGroesse.some((f) => f.key === "einsatz-mindest-uebersteigt-budget")).toBe(true);
+    // Ohne bekannte Spieltagsgröße wird NICHT geraten.
+    const ohneGroesse = einsatzKonflikte(rules);
+    expect(ohneGroesse.some((f) => f.key === "einsatz-mindest-uebersteigt-budget")).toBe(false);
+  });
+
+  it("ein sauberes Regelwerk meldet nichts", () => {
+    const rules = sanitizeRules({ joker: { minAnteilProSpiel: 0.05, maxAnteilProSpiel: 0.4, skippenErlaubt: true } });
+    expect(einsatzKonflikte(rules, 9)).toEqual([]);
+    expect(einsatzKonflikte(sanitizeRules({}))).toEqual([]);
+  });
+});
+
+describe("einsatzPlanung (design/einsatz-joker.md Abschnitt 3, ⭐ maxJetztSetzbar)", () => {
+  it("kein Mindesteinsatz, nichts verteilt → maxJetztSetzbar ist maxJeSpiel", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100, maxAnteilProSpiel: 0.4, minAnteilProSpiel: 0 } });
+    const p = einsatzPlanung({ tips: [], spieltag: 1, spieleImSpieltag: 9, rules, aktuellesSpiel: "m0" });
+    expect(p.bezug).toBe("spieltag");
+    expect(p.maxJeSpiel).toBe(40);
+    expect(p.maxJetztSetzbar).toBe(40);
+  });
+
+  it("⭐ Mindesteinsatz gesetzt, skippenErlaubt: false, vier Spiele offen → gekürzt um die DREI übrigen, nicht um vier", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100, maxAnteilProSpiel: 0.9, minAnteilProSpiel: 0.1, skippenErlaubt: false } });
+    const p = einsatzPlanung({ tips: [], spieltag: 1, spieleImSpieltag: 4, rules, aktuellesSpiel: "m0" });
+    expect(p.offeneSpiele).toBe(4);
+    expect(p.minJeSpiel).toBe(10);
+    expect(p.maxJeSpiel).toBe(90);
+    // 100 frei − (3 übrige × 10 Mindesteinsatz) = 70 — NICHT 60 (das wäre der
+    // Fehler, alle vier statt der drei übrigen abzuziehen).
+    expect(p.maxJetztSetzbar).toBe(70);
+  });
+
+  it("schon viel verteilt → maxJetztSetzbar wird auf frei gekürzt", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100, maxAnteilProSpiel: 0.4, minAnteilProSpiel: 0 } });
+    const tips = [{ matchday: 1, match_id: "m1", gewicht: 8 }]; // 8 * (100/9) ≈ 88.89 Münzen verteilt
+    const p = einsatzPlanung({ tips, spieltag: 1, spieleImSpieltag: 9, rules, aktuellesSpiel: "m0" });
+    expect(p.maxJeSpiel).toBe(40);
+    expect(p.frei).toBeLessThan(40);
+    expect(p.maxJetztSetzbar).toBeCloseTo(p.frei, 6);
+  });
+
+  it("maxJetztSetzbar wird nie negativ", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100, maxAnteilProSpiel: 0.4, minAnteilProSpiel: 0.3, skippenErlaubt: false } });
+    // Budget fast aufgebraucht, dazu ein hoher Mindesteinsatz für viele
+    // übrige Spiele → die Reserve übersteigt das freie Budget bei weitem.
+    const tips = [{ matchday: 1, match_id: "m1", gewicht: 8.9 }]; // ≈ 98.89 Münzen bei n=9
+    const p = einsatzPlanung({ tips, spieltag: 1, spieleImSpieltag: 9, rules, aktuellesSpiel: "m0" });
+    expect(p.maxJetztSetzbar).toBe(0);
+  });
+
+  it("fehlbetrag entsteht bei Unterdeckung und ist bei skippenErlaubt: true gar nicht nötig", () => {
+    const tips = [{ matchday: 1, match_id: "m1", gewicht: 8.9 }]; // ≈ 98.89 Münzen bei n=9
+    const rulesStreng = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100, minAnteilProSpiel: 0.3, skippenErlaubt: false } });
+    const pStreng = einsatzPlanung({ tips, spieltag: 1, spieleImSpieltag: 9, rules: rulesStreng, aktuellesSpiel: "m0" });
+    expect(pStreng.noetigFuerOffene).toBeGreaterThan(0);
+    expect(pStreng.fehlbetrag).toBeGreaterThan(0);
+
+    const rulesLocker = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100, minAnteilProSpiel: 0.3, skippenErlaubt: true } });
+    const pLocker = einsatzPlanung({ tips, spieltag: 1, spieleImSpieltag: 9, rules: rulesLocker, aktuellesSpiel: "m0" });
+    expect(pLocker.noetigFuerOffene).toBe(0);
+    expect(pLocker.fehlbetrag).toBe(0);
   });
 });
 

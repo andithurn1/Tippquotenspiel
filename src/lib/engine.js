@@ -149,6 +149,8 @@ export const DEFAULT_RULES = {
     // hat, und der Deckel gegen All-in (zugleich L7 — Spiel-Deckel).
     einsatzProSpieltag: 100,
     maxAnteilProSpiel: 0.4,
+    minAnteilProSpiel: 0,      // Mindesteinsatz je Spiel, als Anteil am Budget. 0 = keiner.
+    skippenErlaubt: true,      // Darf ein Spiel mit Einsatz 0 getippt werden?
     // verteilung — an welchen Spieltagen es einen Joker gibt (jokerPlan.js).
     // Standard "frei": jeder setzt an jedem Spieltag selbst.
     verteilung: { ...DEFAULT_VERTEILUNG },
@@ -341,6 +343,11 @@ export const RULE_LIMITS = {
     // Multiplikator-Familie aus reglerRaster.test.js (Raster 0,05).
     einsatzProSpieltag: { min: 10, max: 1000, step: 10 },
     maxAnteilProSpiel: { min: 0.05, max: 1, step: 0.05 },
+    // Ebenfalls nur für modus "einsatz" (L2), gleiche Begründung wie bei
+    // `maxAnteilProSpiel`: eine Validierungsgrenze, kein Multiplikator, der in
+    // den additiven Topf von `totalModifier` fließt — gehört deshalb NICHT in
+    // die Multiplikator-Familie aus reglerRaster.test.js.
+    minAnteilProSpiel: { min: 0, max: 1, step: 0.05 },
   },
   // ⚠️ `min: 0.25`, nicht 1 — Werte UNTER 1 sind Dämpfer („dieses Spiel zählt
   // weniger"). Vorher ging es nur nach oben, wodurch der Admin Wichtiges
@@ -407,6 +414,12 @@ function sanitizeJoker(jk, num, clamp) {
     // teamMods.derbyFaktor/modCap, die auch nicht auf ein Raster geschnitten werden).
     einsatzProSpieltag: clamp(Math.round(num(jk.einsatzProSpieltag, D.einsatzProSpieltag)), L.einsatzProSpieltag.min, L.einsatzProSpieltag.max),
     maxAnteilProSpiel: clamp(num(jk.maxAnteilProSpiel, D.maxAnteilProSpiel), L.maxAnteilProSpiel.min, L.maxAnteilProSpiel.max),
+    minAnteilProSpiel: clamp(num(jk.minAnteilProSpiel, D.minAnteilProSpiel), L.minAnteilProSpiel.min, L.minAnteilProSpiel.max),
+    // Vorgabe TRUE — anders als `abstimmung` (Vorgabe false, `=== true`).
+    // `=== true` würde hier eine FEHLENDE Angabe zu `false` machen und damit
+    // die Vorgabe verkehren; `!== false` lässt sie bei true, solange niemand
+    // ausdrücklich abschaltet. Gleiches Muster wie `winnerFloor`/`allowDouble`.
+    skippenErlaubt: jk.skippenErlaubt !== false,
     // Passive Typen — gleiche Grenzen wie der aktive Joker, damit kein Typ
     // heimlich staerker sein kann als der, den man bewusst setzt.
     heimat: {
@@ -992,15 +1005,48 @@ export function weightUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RULE
   return { pool, belegt, frei, alleVergeben: frei.length === 0 };
 }
 
+// 🔴 Nachtrag 03.08. (design/einsatz-joker.md Abschnitt 1): löst `spieleImSpieltag`
+// (Zahl ODER Funktion `(spieltagSchluessel) => Zahl`) zur echten Spieltagsgröße
+// auf. Funktion gewählt statt z. B. einer Map, weil sie demselben Muster wie
+// `schluessel` folgt: der Aufrufer reicht dieselbe Schlüssel-Form durch, mit
+// der `invalidEinsatzMatchdays`/`einsatzUsageForMatchday` ohnehin schon
+// gruppieren (`schluessel(t)` bzw. der aufgelöste `ziel`) — keine zweite,
+// eigene Adressierung nötig. Eine reine Zahl bleibt erlaubt, wenn alle
+// Spieltage einer Runde gleich groß sind (häufigster Fall, ein Wettbewerb).
+// Liefert null, wenn nichts Brauchbares herauskommt — der Aufrufer fällt dann
+// auf die alte Bezugsgröße (Zahl der Tipps) zurück und MELDET das.
+function resolveSpieleImSpieltag(spieleImSpieltag, spieltagSchluessel) {
+  if (typeof spieleImSpieltag === "function") {
+    const n = spieleImSpieltag(spieltagSchluessel);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+  return Number.isFinite(spieleImSpieltag) && spieleImSpieltag > 0 ? spieleImSpieltag : null;
+}
+
 // Prüfregel für den Einsatz-Modus (L2): beanstandet einen Spieltag, wenn die
 // Gewichte EINES Nutzers die Normierung verletzen. Gleiche Bauart wie
-// `invalidWeightMatchdays`, aber ohne Pool — stattdessen drei Bedingungen:
+// `invalidWeightMatchdays`, aber ohne Pool — stattdessen fünf Bedingungen:
 //  • ein Gewicht ist negativ,
-//  • ein einzelnes Gewicht übersteigt `maxAnteilProSpiel * anzahlTipps`
-//    dieses Spieltags (der Spiel-Deckel, L7),
-//  • die SUMME der Gewichte übersteigt die Anzahl der Tipps dieses Spieltags
+//  • ein einzelnes Gewicht übersteigt `maxAnteilProSpiel * n` (der
+//    Spiel-Deckel, L7),
+//  • die SUMME der Gewichte übersteigt `n`
 //    (Mittelwert über 1 = Gewicht aus dem Nichts). Kleiner ist erlaubt — das
 //    ist der verfallene Rest (siehe design/joker-inventar.md 4.5, Nachtrag).
+//  • ein Gewicht liegt über 0, aber unter `minAnteilProSpiel * n`
+//    (design/einsatz-joker.md Abschnitt 3: entweder gar nicht, oder
+//    mindestens so viel — die Poker-Blind-Lesart),
+//  • `skippenErlaubt === false` und ein Gewicht ist (annähernd) 0.
+// 🔴 Nachtrag 03.08.: `n` ist jetzt `spieleImSpieltag` — die Zahl der Spiele
+// IM SPIELTAG, nicht mehr `gewichte.length` (die Zahl der GETIPPTEN Spiele).
+// Über die Tippanzahl zu normieren war falsch: die Bedeutung eines
+// gespeicherten Faktors wanderte, während der Spieler weitertippte (gemessen:
+// ein Einsatz von 40 war nach sechs Tipps nur noch 6,7 wert). Fehlt der neue
+// Parameter (null/undefined) — z. B. weil ein alter Aufrufer ihn noch nicht
+// reicht — fällt `n` auf `gewichte.length` zurück; das ist die ALTE, FALSCHE
+// Bezugsgröße, nur noch als Notlösung geduldet. Anders als bei
+// `einsatzUsageForMatchday` gibt es hier kein `bezug`-Feld in der Rückgabe
+// (Liste von Spieltag-Schlüsseln, kein Objekt je Spieltag) — der Rückfall
+// steht stattdessen hier im Kopfkommentar.
 // 🔴 Die Toleranz muss zu dem passen, was ein echter Client schickt.
 // Eine erste Fassung nahm 1e-9. Gemessen mit einer regelkonformen Verteilung
 // (Maximum auf ein Spiel, Rest gleichmässig) und Gewichten auf sechs
@@ -1011,24 +1057,28 @@ export function weightUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RULE
 // reinem Rundungsglück — und der Spieler hätte eine Fehlermeldung bekommen,
 // die er durch Umverteilen nicht loswird.
 // Der Fehler wächst mit der Zahl der Summanden, die Toleranz deshalb auch.
+// Dieselbe Toleranz wird beim Mindesteinsatz NACH UNTEN angewandt.
 // Rückgabe wie `invalidWeightMatchdays`: Liste von { wettbewerb, matchday },
 // leer = gültig.
-export function invalidEinsatzMatchdays(tips = [], rules = DEFAULT_RULES, schluessel = spieltagKey) {
-  const maxAnteil = Number.isFinite(rules?.joker?.maxAnteilProSpiel)
-    ? rules.joker.maxAnteilProSpiel : DEFAULT_RULES.joker.maxAnteilProSpiel;
-  const gruppen = new Map();   // Spieltag-Schlüssel → { wettbewerb, matchday, gewichte: [] }
+export function invalidEinsatzMatchdays(tips = [], rules = DEFAULT_RULES, schluessel = spieltagKey, spieleImSpieltag = null) {
+  const j = rules?.joker || DEFAULT_RULES.joker;
+  const maxAnteil = Number.isFinite(j.maxAnteilProSpiel) ? j.maxAnteilProSpiel : DEFAULT_RULES.joker.maxAnteilProSpiel;
+  const minAnteil = Number.isFinite(j.minAnteilProSpiel) ? j.minAnteilProSpiel : DEFAULT_RULES.joker.minAnteilProSpiel;
+  const skippenErlaubt = j.skippenErlaubt !== false;
+  const gruppen = new Map();   // Spieltag-Schlüssel → { wettbewerb, matchday, key, gewichte: [] }
   for (const t of tips) {
     const w = t?.gewicht;
     if (!Number.isFinite(w)) continue;
     const key = schluessel(t);
-    const eintrag = gruppen.get(key) || { wettbewerb: t.wettbewerb ?? null, matchday: t.matchday ?? null, gewichte: [] };
+    const eintrag = gruppen.get(key) || { wettbewerb: t.wettbewerb ?? null, matchday: t.matchday ?? null, key, gewichte: [] };
     eintrag.gewichte.push(w);
     gruppen.set(key, eintrag);
   }
   const fehler = [];
-  for (const { wettbewerb, matchday, gewichte } of gruppen.values()) {
-    const n = gewichte.length;
+  for (const { wettbewerb, matchday, key, gewichte } of gruppen.values()) {
+    const n = resolveSpieleImSpieltag(spieleImSpieltag, key) ?? gewichte.length;
     const maxProSpiel = maxAnteil * n;
+    const minProSpiel = minAnteil * n;
     const summe = gewichte.reduce((s, w) => s + w, 0);
     // Ein Gewicht trägt bis zu ~5e-7 Rundungsfehler; über n Summanden addiert
     // sich das. 1e-6 je Tipp deckt das mit Reserve ab und ist immer noch
@@ -1037,19 +1087,30 @@ export function invalidEinsatzMatchdays(tips = [], rules = DEFAULT_RULES, schlue
     const negativ = gewichte.some((w) => w < 0);
     const ueberSpiel = gewichte.some((w) => w > maxProSpiel + toleranz);
     const ueberSumme = summe > n + toleranz;
-    if (negativ || ueberSpiel || ueberSumme) fehler.push({ wettbewerb, matchday });
+    // > 0, aber unter dem Mindesteinsatz — genau 0 bleibt bei skippenErlaubt
+    // gültig (die "entweder gar nicht, oder mindestens so viel"-Regel).
+    const unterMindest = gewichte.some((w) => w > toleranz && w < minProSpiel - toleranz);
+    const nullOhneSkip = !skippenErlaubt && gewichte.some((w) => w <= toleranz);
+    if (negativ || ueberSpiel || ueberSumme || unterMindest || nullOhneSkip) fehler.push({ wettbewerb, matchday });
   }
   return fehler;
 }
 
 // Belegung des Einsatz-Budgets für EINEN Spieltag — speist die spätere
 // Oberfläche, Muster `weightUsageForMatchday`. Rechnet Faktor → Einsatz über
-// `einsatz = gewicht * (einsatzProSpieltag / anzahlTipps)`, damit die UI
-// „73 von 100 verteilt" in EINSATZ-Einheiten anzeigen kann (nicht in
-// Faktoren). `exceptMatchId` blendet den gerade bearbeiteten Tipp aus, analog
-// zu `weightUsageForMatchday`.
+// `einsatz = gewicht * neutralerEinsatz`, damit die UI „73 von 100 verteilt"
+// in EINSATZ-Einheiten anzeigen kann (nicht in Faktoren). `exceptMatchId`
+// blendet den gerade bearbeiteten Tipp aus, analog zu `weightUsageForMatchday`.
+// 🔴 Nachtrag 03.08. (design/einsatz-joker.md Abschnitt 1): `neutralerEinsatz`
+// war `einsatzProSpieltag / anzahlTipps` — dieselbe falsche Bezugsgröße wie
+// bei `invalidEinsatzMatchdays`, siehe deren Kopfkommentar. Richtig ist
+// `einsatzProSpieltag / spieleImSpieltag`. Fehlt `spieleImSpieltag`
+// (null/undefined oder nicht auflösbar), fällt die Rechnung auf `anzahlTipps`
+// zurück — UND die Rückgabe trägt `bezug: "spieltag" | "tipps"`, damit der
+// Aufrufer sieht, worauf gerechnet wurde, statt still eine andere
+// Bezugsgröße zu bekommen.
 // ⚠️ Bei `anzahlTipps === 0` wird nicht durch null geteilt — early return.
-export function einsatzUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RULES, exceptMatchId = null, schluessel = spieltagKey) {
+export function einsatzUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RULES, exceptMatchId = null, schluessel = spieltagKey, spieleImSpieltag = null) {
   const ziel = (spieltag && typeof spieltag === "object")
     ? schluessel(spieltag)
     : schluessel({ matchday: spieltag });
@@ -1063,16 +1124,136 @@ export function einsatzUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RUL
   const passend = tips.filter((t) => schluessel(t) === ziel
     && t.match_id !== exceptMatchId && t.matchId !== exceptMatchId);
   const anzahlTipps = passend.length;
+
+  const aufgeloest = resolveSpieleImSpieltag(spieleImSpieltag, ziel);
+  const bezug = aufgeloest != null ? "spieltag" : "tipps";
+
   if (anzahlTipps === 0) {
-    return { verteilt: 0, budget, frei: budget, maxProSpiel };
+    return { verteilt: 0, budget, frei: budget, maxProSpiel, bezug };
   }
-  const proTipp = budget / anzahlTipps;
+  const n = aufgeloest ?? anzahlTipps;
+  const proTipp = budget / n;
   const verteilt = passend.reduce((s, t) => s + (Number.isFinite(t?.gewicht) ? t.gewicht : 0) * proTipp, 0);
   return {
     verteilt: +verteilt.toFixed(2),
     budget,
     frei: +Math.max(0, budget - verteilt).toFixed(2),
     maxProSpiel,
+    bezug,
+  };
+}
+
+// ── Konflikte mit anderen Regeln (design/einsatz-joker.md Abschnitt 2.1) ──
+// Zwei Kombinationen bei modus "einsatz", die ins Leere laufen — sie müssen
+// dem Admin gemeldet werden, nicht stillschweigend korrigiert.
+// 🔴 Abweichung von der Vorgabe: verlangt war die Form `{ key, text, korrektur }`
+// nach dem Muster von `konflikte()` in `jokerBasis.js`/`jokerBudget.js` — die
+// beiden weichen aber selbst voneinander ab, und KEINE der beiden kennt ein
+// Feld `korrektur`. `jokerBasis.js` liefert zusätzlich `bereich` (weil dort
+// nach Joker-ART aufgeschlüsselt wird, ob ein Fund vom `standard` oder einer
+// Art-Abweichung stammt — hier gibt es aber keine Arten, nur ein Regelwerk).
+// `jokerBudget.js` liefert nur `{ key, text }`, mit `korrigieren: true` als
+// SELTENE Ausnahme bei genau einem Fund. Übernommen wird hier die einfachere
+// Form aus `jokerBudget.js` — `einsatzKonflikte` ist wie dort ein reiner
+// Regelwerks-Check ohne Aufschlüsselung nach Joker-Art —, die Korrektur steht
+// als Satz im Text, genau wie es `jokerBudget.js` schon macht.
+// Texte: normales Deutsch, keine Bezeichner, keine Dateinamen, Einheit
+// "Münzen" (design/einsatz-joker.md 3.1), nie "Budget".
+export function einsatzKonflikte(rules = DEFAULT_RULES, spieleImSpieltag = null) {
+  const j = rules?.joker || DEFAULT_RULES.joker;
+  const minAnteil = Number.isFinite(j.minAnteilProSpiel) ? j.minAnteilProSpiel : DEFAULT_RULES.joker.minAnteilProSpiel;
+  const maxAnteil = Number.isFinite(j.maxAnteilProSpiel) ? j.maxAnteilProSpiel : DEFAULT_RULES.joker.maxAnteilProSpiel;
+  const skippenErlaubt = j.skippenErlaubt !== false;
+  const out = [];
+
+  // Fall 1: kein zulässiger Einsatz existiert mehr.
+  if (minAnteil > maxAnteil) {
+    out.push({
+      key: "einsatz-min-ueber-max",
+      text: "Der Mindesteinsatz je Spiel liegt über dem Höchsteinsatz — damit ist kein Einsatz mehr zulässig. Mindesteinsatz senken oder Höchsteinsatz anheben.",
+    });
+  }
+
+  // Fall 2: hängt an der Spieltagsgröße — nur prüfen, wenn sie bekannt ist
+  // (design/einsatz-joker.md 2.1: "kann erst gemeldet werden, wenn die Größe
+  // bekannt ist"). Anders als bei den schluessel-basierten Funktionen ist
+  // hier keine Funktion `(spieltagSchluessel) => Zahl` vorgesehen, sondern nur
+  // eine Zahl — es gibt keinen konkreten Spieltag, sondern eine "typische
+  // Größe" (Spielerstellung) bzw. die verbindliche Größe (Tippabgabe).
+  const n = resolveSpieleImSpieltag(spieleImSpieltag, null);
+  if (!skippenErlaubt && n != null && minAnteil * n > 1) {
+    const prozent = Math.round(minAnteil * n * 100);
+    out.push({
+      key: "einsatz-mindest-uebersteigt-budget",
+      text: `Bei ${n} Spielen im Spieltag verlangen die Mindesteinsätze zusammen ${prozent} % der Münzen — mehr, als ein Spieltag hergibt. Ohne „Skippen erlaubt“ könnte der Spieltag gar nicht regelkonform getippt werden. Mindesteinsatz senken oder Skippen wieder erlauben.`,
+    });
+  }
+
+  return out;
+}
+
+// ── Planung beim Tippen (design/einsatz-joker.md Abschnitt 3, ⭐ Kernfunktion) ──
+// Sobald ein Mindesteinsatz gilt, ist Verteilen keine freie Wahl mehr, sondern
+// eine Deckungsrechnung: wer früh zu viel setzt, kann die Mindesteinsätze der
+// übrigen Spiele nicht mehr bezahlen. Alle Beträge in MÜNZ-Einheiten
+// (Punkten), nicht in Faktoren — die Oberfläche zeigt Punkte.
+//
+// `aktuellesSpiel` (eine matchId) zählt IMMER als offen, auch wenn dafür schon
+// ein Tipp vorliegt — der Spieler bearbeitet es ja gerade. Sein eigener,
+// eventuell schon gespeicherter Einsatz zählt weder zu `verteilt` noch als
+// "vorliegender Tipp" — gleiches Muster wie `exceptMatchId` bei
+// `einsatzUsageForMatchday`.
+//
+// `spieleImSpieltag` — Zahl oder Funktion, siehe `resolveSpieleImSpieltag`
+// oben. Fehlt sie oder ist sie 0/negativ, wird NICHT durch null geteilt:
+// `bezug` wird "tipps", und ohne bekannte Gesamtzahl kann nicht ermittelt
+// werden, wie viele Spiele noch offen sind — `offeneSpiele`/`noetigFuerOffene`
+// sind dann 0 und `maxJetztSetzbar` verzichtet auf jede Reservierung. Das ist
+// der degradierte Notbetrieb (Rückfall auf die einzig bekannte Zahl, die der
+// bereits vorliegenden Tipps), kein Ersatz für die echte Deckungsrechnung.
+export function einsatzPlanung({ tips = [], spieltag, spieleImSpieltag, rules = DEFAULT_RULES, aktuellesSpiel = null, schluessel = spieltagKey }) {
+  const j = rules?.joker || DEFAULT_RULES.joker;
+  const budget = Number.isFinite(j.einsatzProSpieltag) ? j.einsatzProSpieltag : DEFAULT_RULES.joker.einsatzProSpieltag;
+  const minAnteil = Number.isFinite(j.minAnteilProSpiel) ? j.minAnteilProSpiel : DEFAULT_RULES.joker.minAnteilProSpiel;
+  const maxAnteil = Number.isFinite(j.maxAnteilProSpiel) ? j.maxAnteilProSpiel : DEFAULT_RULES.joker.maxAnteilProSpiel;
+  const skippenErlaubt = j.skippenErlaubt !== false;
+  const minJeSpiel = +(minAnteil * budget).toFixed(2);
+  const maxJeSpiel = +(maxAnteil * budget).toFixed(2);
+
+  const ziel = (spieltag && typeof spieltag === "object")
+    ? schluessel(spieltag)
+    : schluessel({ matchday: spieltag });
+  const alleTipps = tips.filter((t) => schluessel(t) === ziel);
+  // Der Tipp auf `aktuellesSpiel` zählt nicht als "vorliegend" — siehe
+  // Kopfkommentar.
+  const vorliegend = aktuellesSpiel == null
+    ? alleTipps
+    : alleTipps.filter((t) => (t.match_id ?? t.matchId ?? null) !== aktuellesSpiel);
+
+  const aufgeloest = resolveSpieleImSpieltag(spieleImSpieltag, ziel);
+  const bezug = aufgeloest != null ? "spieltag" : "tipps";
+  // Notbetrieb ohne bekannte Spieltagsgröße: die einzig verfügbare Zahl ist
+  // die der bereits vorliegenden Tipps — mindestens 1, sonst Division durch 0.
+  const n = aufgeloest ?? Math.max(1, vorliegend.length);
+
+  const neutralerEinsatz = budget / n;
+  const verteilt = +(vorliegend.reduce((s, t) => s + (Number.isFinite(t?.gewicht) ? t.gewicht : 0) * neutralerEinsatz, 0)).toFixed(2);
+  const frei = +Math.max(0, budget - verteilt).toFixed(2);
+
+  const offeneSpiele = aufgeloest != null ? Math.max(0, aufgeloest - vorliegend.length) : 0;
+  const noetigFuerOffene = skippenErlaubt ? 0 : +(minJeSpiel * offeneSpiele).toFixed(2);
+  const fehlbetrag = +Math.max(0, noetigFuerOffene - frei).toFixed(2);
+
+  // "übrige" = OHNE das gerade bearbeitete Spiel. Zöge man dessen eigenen
+  // Mindesteinsatz mit ab, könnte der Spieler nie das Maximum setzen.
+  const uebrigeOffene = aktuellesSpiel != null ? Math.max(0, offeneSpiele - 1) : offeneSpiele;
+  const reserveUebrige = skippenErlaubt ? 0 : minJeSpiel * uebrigeOffene;
+  const maxJetztSetzbar = Math.max(0, +(Math.min(maxJeSpiel, frei - reserveUebrige)).toFixed(2));
+
+  return {
+    budget, neutralerEinsatz: +neutralerEinsatz.toFixed(4), verteilt, frei,
+    offeneSpiele, minJeSpiel, maxJeSpiel,
+    noetigFuerOffene, fehlbetrag, maxJetztSetzbar, bezug,
   };
 }
 
