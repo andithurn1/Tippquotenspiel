@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { DEFAULT_RULES, projectTip, weightUsageForMatchday } from "@/lib/engine";
+import {
+  DEFAULT_RULES, projectTip, weightUsageForMatchday,
+  einsatzPlanung, invalidEinsatzMatchdays, spieltagKey,
+} from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
 import { zeitachse, rundenSchluessel } from "@/lib/zeitachse";
@@ -19,7 +22,8 @@ import { C, MONO } from "@/lib/theme";
 // ⚠️ Der SPIELER bekam hier gerundete Joker-Faktoren zu sehen: bei einem
 // eingestellten ×1,15 stand „×1.2" auf dem Knopf. Seit die Faktoren auf dem
 // 0,05-Raster stehen, muss die Anzeige mitziehen — Begründung in format.js.
-import { fmtFaktor } from "@/lib/format";
+import { fmtFaktor, zahl } from "@/lib/format";
+import { Zahl } from "@/components/Eingaben";
 
 // ── Design-Tokens (gleich wie das Abrechnungsfenster) ───────
 
@@ -87,10 +91,18 @@ export default function Tippabgabe({ matchId }) {
   const scorer = RULES.markets.goals;
   const [picks, setPicks] = useState(null);
   const [done, setDone] = useState(false);
-  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error
+  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error | einsatzUngueltig
+  // Nur befüllt, wenn `saveState === "einsatzUngueltig"` — der ausformulierte
+  // Grund, warum der Spieltag die Einsatz-Regeln verletzt.
+  const [einsatzGrund, setEinsatzGrund] = useState("");
   // Gewichtung dieses Spiels: Flag (Modus „einzel") bzw. Faktor (Modus „ranking").
   const [joker, setJoker] = useState(false);
   const [gewicht, setGewicht] = useState(1);
+  // Hat der Spieler den Einsatz selbst angefasst (oder lag schon einer vor)?
+  // Solange nicht, gilt der berechnete Vorschlag statt des rohen `gewicht`.
+  // ⚠️ Muss HIER stehen, vor dem frühen `return` weiter unten — die Rechnung
+  // dazu braucht `planung` und liegt deshalb danach, der Zustand aber nicht.
+  const [einsatzBeruehrt, setEinsatzBeruehrt] = useState(false);
   // Andere Tipps des Nutzers in dieser Runde — für „welche Gewichte am selben
   // Spieltag sind schon vergeben" (Ranking-Modus).
   const [meineTips, setMeineTips] = useState([]);
@@ -150,7 +162,8 @@ export default function Tippabgabe({ matchId }) {
         .catch(() => {});
       const dieser = tips.find((t) => t.user_id === user.id && t.match_id === matchId);
       if (dieser?.tip?.joker === true) setJoker(true);
-      if (Number.isFinite(dieser?.tip?.gewicht)) setGewicht(dieser.tip.gewicht);
+      // Ein bereits abgegebener Einsatz gewinnt immer gegen den Vorschlag.
+      if (Number.isFinite(dieser?.tip?.gewicht)) { setGewicht(dieser.tip.gewicht); setEinsatzBeruehrt(true); }
     }).catch(() => {});
     return () => { live = false; };
   }, [roundId, user, matchId]);
@@ -218,6 +231,16 @@ export default function Tippabgabe({ matchId }) {
   const spieltag = { wettbewerb: wettbewerbVon(match), matchday: match.matchday ?? null };
   const jokerAktiv = jokerGiltFuerSpieltag(RULES, spieltag, votes);
   const rankingModus = RULES.joker?.modus === "ranking";
+  const einsatzModus = RULES.joker?.modus === "einsatz";
+  // Spieltagsgröße für den Einsatz-Modus (design/einsatz-joker.md Abschnitt 1):
+  // die Bezugsgröße ist die Zahl der Spiele IM Spieltag, nicht die der
+  // getippten. `schluessel` (RUNDEN-Spieltag) fällt auf `spieltagKey` zurück,
+  // wenn die Zeitachse noch keinen liefert.
+  // ⚠️ Bewusst KEIN `useMemo`: diese Stelle liegt nach dem frühen Return oben
+  // (Hook-Regel, siehe dortiger Kommentar) — ein einfaches `const` über eine
+  // Liste kostet hier nichts.
+  const schl = schluessel ?? spieltagKey;
+  const spieleImSpieltag = alleMatches.filter((m) => schl(m) === schl(spieltag)).length;
   // Kontingent aus BEIDEN Töpfen: zugeteilt (Plan) + erspielt (Ereignisse).
   // Ohne diese Zusammenführung wäre ein erspielter Joker eine Zahl ohne Wirkung.
   // `plan` und `gutschriften` sind oben berechnet (Hook-Regel, siehe dort).
@@ -235,8 +258,62 @@ export default function Tippabgabe({ matchId }) {
     ? weightUsageForMatchday(meineTips, spieltag, RULES, matchId, schluessel)
     : null;
   const gewichtBelegtVon = (g) => belegung?.belegt.find((b) => b.gewicht === g)?.matchId ?? null;
+  // Einsatz-Modus: Deckungsrechnung fürs Verteilen des Spieltags-Budgets
+  // (design/einsatz-joker.md Abschnitt 3). `aktuellesSpiel` zählt immer als
+  // offen, auch wenn dafür schon ein Tipp vorliegt — der Spieler bearbeitet
+  // ihn ja gerade (siehe Kopfkommentar von `einsatzPlanung`).
+  const planung = einsatzModus
+    ? einsatzPlanung({
+        tips: meineTips, spieltag, spieleImSpieltag, rules: RULES,
+        aktuellesSpiel: matchId, schluessel: schl,
+      })
+    : null;
   // Gewichtung fließt in die Vorschau ein, damit man sofort sieht, was sie bringt.
-  const gewichtung = rankingModus ? { gewicht } : { joker };
+  // ⚠️ Einsatz UND Ranking benutzen dasselbe Feld `tip.gewicht` (Absicht,
+  // design/einsatz-joker.md) — kein eigenes Feld für den Einsatz-Modus.
+  const setzeEinsatz = (muenzen) => {
+    if (!einsatzModus || !(planung.neutralerEinsatz > 0)) return;
+    setEinsatzBeruehrt(true);
+    setGewicht(Math.max(0, muenzen) / planung.neutralerEinsatz);
+  };
+  const skippenErlaubt = RULES.joker?.skippenErlaubt !== false;
+
+  // 🔴 Der voreingestellte Einsatz muss GÜLTIG sein.
+  //
+  // Im Browser aufgefallen: `gewicht` startet bei 1, das ergibt genau den
+  // neutralen Einsatz — bei 21 Spielen und 100 Münzen also 4,76. Steht der
+  // Mindesteinsatz auf 5, ist dieser Vorschlag von Anfang an regelwidrig: der
+  // Spieler ändert nichts, drückt ab und wird abgewiesen, ohne je etwas
+  // falsch gemacht zu haben. Eine Vorgabe, die man erst reparieren muss, ist
+  // schlimmer als gar keine.
+  //
+  // Deshalb wird der neutrale Einsatz in das erlaubte Band gezogen. Passt er
+  // nicht hinein (Mindesteinsatz über dem, was hier noch geht), bleibt nur
+  // Auslassen — und ob das erlaubt ist, hat der Admin entschieden. Ist es das
+  // nicht, ist das sein Konflikt, und `einsatzKonflikte` meldet ihn in der
+  // Spielerstellung.
+  const einsatzVorschlag = () => {
+    const min = planung.minJeSpiel;
+    const max = Math.max(0, planung.maxJetztSetzbar);
+    if (min > max) return skippenErlaubt ? 0 : max;
+    return Math.min(max, Math.max(min, planung.neutralerEinsatz));
+  };
+  // Solange der Spieler nichts angefasst hat, gilt der Vorschlag — und zwar
+  // ÜBERALL: Anzeige, Vorschau und Abgabe. Sonst zeigte die Oberfläche einen
+  // Wert und speicherte einen anderen.
+  const einsatzAktuell = einsatzModus
+    ? (einsatzBeruehrt ? gewicht * planung.neutralerEinsatz : einsatzVorschlag())
+    : 0;
+  const gewichtEffektiv = einsatzModus && planung.neutralerEinsatz > 0
+    ? einsatzAktuell / planung.neutralerEinsatz
+    : gewicht;
+
+  // Gewichtung fließt in die Vorschau ein, damit man sofort sieht, was sie bringt.
+  // ⚠️ Einsatz UND Ranking benutzen dasselbe Feld `tip.gewicht` (Absicht,
+  // design/einsatz-joker.md) — kein eigenes Feld für den Einsatz-Modus.
+  const gewichtung = einsatzModus
+    ? { gewicht: gewichtEffektiv }
+    : rankingModus ? { gewicht } : { joker };
   const proj = projectTip({ home: h, away: a, goals: projGoals, ...gewichtung }, SNAP, RULES);
 
   const setPick = (ti, pi, field, val) =>
@@ -251,6 +328,43 @@ export default function Tippabgabe({ matchId }) {
     setSaveState("saving");
     try {
       if (!user) { setSaveState("guest"); return; }
+      // Einsatz-Modus: der Spieltag darf nach `invalidEinsatzMatchdays` nicht
+      // regelwidrig werden — anders als beim Ranking-Regler (der belegte
+      // Gewichte schon beim Klicken sperrt) lässt sich eine Unterdeckung beim
+      // Setzen selbst nicht verhindern (design/einsatz-joker.md 3.2: „kein
+      // Blockieren, solange es reparabel ist"). Gesperrt wird darum erst hier,
+      // beim Absenden — und mit der Zahl, die fehlt.
+      if (einsatzModus) {
+        const tipsFuerPruefung = [
+          ...meineTips.filter((t) => (t.match_id ?? t.matchId ?? null) !== matchId),
+          // ⚠️ `gewichtEffektiv`, nicht `gewicht` — solange der Spieler den
+          // Einsatz nicht angefasst hat, gilt der Vorschlag. Mit dem rohen
+          // `gewicht` prüfte man einen Wert, den niemand sieht und der auch
+          // nicht gespeichert wird.
+          { match_id: matchId, matchday: spieltag.matchday, wettbewerb: spieltag.wettbewerb, gewicht: gewichtEffektiv },
+        ];
+        const fehlerhaft = invalidEinsatzMatchdays(tipsFuerPruefung, RULES, schl, spieleImSpieltag)
+          .some((f) => f.wettbewerb === spieltag.wettbewerb && f.matchday === spieltag.matchday);
+        if (fehlerhaft) {
+          // ⚠️ Die Meldung muss den GRUND nennen, nicht nur „ungültig".
+          // `invalidEinsatzMatchdays` gibt nur zurück, WELCHER Spieltag
+          // beanstandet ist — warum, muss hier aus den Zahlen abgeleitet
+          // werden. Ein früherer Entwurf zeigte immer den Fehlbetrag; bei
+          // einem Verstoß, der keine Unterdeckung ist, stand dort „dir fehlen
+          // 0 Münzen" — eine Zahl, die nichts erklärt.
+          const e = einsatzAktuell;
+          const grund = e > 0 && e < planung.minJeSpiel - 1e-9
+            ? `dein Einsatz liegt unter dem Mindesteinsatz von ${zahl(planung.minJeSpiel)} Münzen`
+            : e <= 0 && !skippenErlaubt
+            ? "in dieser Runde darf kein Spiel ausgelassen werden — setz mindestens den Mindesteinsatz"
+            : planung.fehlbetrag > 0
+            ? `dir fehlen ${zahl(planung.fehlbetrag)} Münzen für die Mindesteinsätze dieses Spieltags`
+            : "deine Münzen gehen an diesem Spieltag nicht auf — nimm auf einem Spiel zurück";
+          setEinsatzGrund(grund);
+          setSaveState("einsatzUngueltig");
+          return;
+        }
+      }
       const goals = goalsAusPicks(picks, scorer);
       // Absicherung gegen veralteten Zustand: ein Ranking-Gewicht, das
       // inzwischen anderweitig belegt ist, wird auf neutral zurückgesetzt.
@@ -502,9 +616,59 @@ export default function Tippabgabe({ matchId }) {
                 borderRadius: 14, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
               }}>
                 <div style={{ fontSize: 11, color: C.gold, textTransform: "uppercase", letterSpacing: 1 }}>
-                  {rankingModus ? "Gewicht dieses Spiels" : "Joker"}
+                  {einsatzModus ? "Einsatz dieses Spiels" : rankingModus ? "Gewicht dieses Spiels" : "Joker"}
                 </div>
-                {rankingModus ? (
+                {einsatzModus ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+                      <input type="range" min={0} max={Math.max(0, planung.maxJetztSetzbar)} step={1}
+                        value={Math.min(Math.round(einsatzAktuell), Math.max(0, planung.maxJetztSetzbar))}
+                        disabled={gesperrt}
+                        onChange={(e) => setzeEinsatz(Number(e.target.value))}
+                        style={{ flex: 1, accentColor: C.gold, cursor: gesperrt ? "default" : "pointer" }} />
+                      <span style={{
+                        fontFamily: MONO, fontSize: 15, fontWeight: 700, color: C.gold,
+                        minWidth: 44, textAlign: "right",
+                      }}>{zahl(einsatzAktuell)}</span>
+                    </div>
+                    <div style={{ marginTop: 8, maxWidth: 160 }}>
+                      <Zahl label="Münzen auf dieses Spiel" wert={Math.round(einsatzAktuell)}
+                        limits={{ min: 0, max: Math.max(0, Math.round(planung.maxJetztSetzbar)), step: 1 }}
+                        onChange={(v) => setzeEinsatz(v)} />
+                    </div>
+
+                    {/* "73 von 100 Münzen verteilt" samt Balken */}
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: 11.5, color: C.muted }}>
+                        {zahl(planung.verteilt)} von {zahl(planung.budget)} Münzen für diesen Spieltag verteilt
+                      </div>
+                      <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>
+                        <div style={{
+                          position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: 999, background: C.gold,
+                          width: `${Math.max(0, Math.min(100, (planung.verteilt / (planung.budget || 1)) * 100))}%`,
+                        }} />
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: 10.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
+                      Auf dieses Spiel kannst du höchstens {zahl(planung.maxJetztSetzbar)} Münzen setzen.
+                    </p>
+
+                    {planung.noetigFuerOffene > 0 && (
+                      <p style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+                        Noch {planung.offeneSpiele} {planung.offeneSpiele === 1 ? "Spiel" : "Spiele"} offen,
+                        dafür brauchst du mindestens {zahl(planung.noetigFuerOffene)} Münzen.
+                      </p>
+                    )}
+
+                    {planung.fehlbetrag > 0 && (
+                      <p style={{ fontSize: 10.5, color: C.coral, marginTop: 5, lineHeight: 1.45 }}>
+                        Dir fehlen {zahl(planung.fehlbetrag)} Münzen. Nimm auf einem anderen Spiel
+                        zurück{skippenErlaubt ? " oder lass eines aus" : ""}.
+                      </p>
+                    )}
+                  </>
+                ) : rankingModus ? (
                   <>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
                       {/* ×1,0 (neutral) ist immer wählbar; höhere Gewichte nur, wenn
@@ -588,6 +752,7 @@ export default function Tippabgabe({ matchId }) {
           <Confirmation
             snap={SNAP} h={h} a={a} winner={winner} csQuote={csQuote}
             kickoffLabel={kickoffLabel} picks={picks} teams={teams} saveState={saveState}
+            einsatzGrund={einsatzGrund}
             roundName={roundName}
             onEdit={() => { setSaveState("idle"); setDone(false); }}
           />
@@ -657,9 +822,15 @@ const SAVE_HINT = {
   error:  { text: "Speichern fehlgeschlagen — später erneut versuchen", col: C.coral },
 };
 
-function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState, roundName, onEdit }) {
+function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState, einsatzGrund, roundName, onEdit }) {
+  // Einsatz-Modus: nicht gespeichert, weil der Spieltag die Einsatz-Regeln
+  // verletzt (design/einsatz-joker.md 3.2). Der GRUND wird beim Absenden
+  // ausformuliert und hier nur eingesetzt — es gibt vier verschiedene, und
+  // „ungültig" allein sagt dem Spieler nicht, was er tun soll.
   const hint = saveState === "saved"
     ? { text: `✓ gespeichert in „${roundName ?? "deiner Runde"}"`, col: C.mint }
+    : saveState === "einsatzUngueltig"
+    ? { text: `nicht gespeichert — ${einsatzGrund}`, col: C.coral }
     : SAVE_HINT[saveState];
   return (
     <div style={{ position: "relative", padding: "30px 22px 24px" }}>

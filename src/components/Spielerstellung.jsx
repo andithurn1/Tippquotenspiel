@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import {
   DEFAULT_RULES, RULE_LIMITS,
   encodePreset, decodePreset, sanitizeRules, istCreatorCode,
-  REGLER_FEINHEITEN, reglerSchritt,
+  REGLER_FEINHEITEN, reglerSchritt, einsatzKonflikte,
 } from "@/lib/engine";
 import { istTeilCode, wendeTeilCodeAn } from "@/lib/teilbibliothek";
 import { PRESETS } from "@/lib/presets";
@@ -48,6 +48,7 @@ import SpielauswahlListe from "@/components/SpielauswahlListe";
 import Zeitachse from "@/components/Zeitachse";
 import { C, MONO } from "@/lib/theme";
 import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
+import { Zahl } from "@/components/Eingaben";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
 // Bundesliga und Premier League mischt.
@@ -379,6 +380,13 @@ export default function Spielerstellung() {
   const te = rules.tippEinfluss || DEFAULT_RULES.tippEinfluss;
   const ve = rules.versaeumnis || DEFAULT_RULES.versaeumnis;
   const bg = rules.bigGame || DEFAULT_RULES.bigGame;
+  // Typische Spieltagsgröße für den Einsatz-Modus (L2, Konflikt 2.1 Fall 2):
+  // dieselbe Rechnung wie `aufwandKontext` oben fürs AufwandPanel — hier gibt
+  // es keinen konkreten Spieltag, nur eine plausible Größe aus der aktuellen
+  // Spielauswahl. `einsatzKonflikte` bekommt sie ausdrücklich als „typisch"
+  // markiert (Text unten), verbindlich prüft erst die Tippabgabe.
+  const einsatzSpieleTypisch = aufwandKontext.spieleJeSpieltag[0] ?? null;
+  const einsatzKonfliktListe = j.modus === "einsatz" ? einsatzKonflikte(rules, einsatzSpieleTypisch) : [];
   // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
   const auStufe = STAERKE_STUFEN.find((s) => s.staerke === au.staerke && s.schwelle === au.schwelle)?.key ?? "custom";
 
@@ -981,6 +989,7 @@ export default function Spielerstellung() {
                   {[
                     { key: "einzel", label: "Ein Joker", hint: "Ein Spiel pro Spieltag" },
                     { key: "ranking", label: "Rangliste", hint: "Alle Spiele ranken" },
+                    { key: "einsatz", label: "Einsatz", hint: "Münzen auf Spiele verteilen" },
                   ].map((m) => {
                     const on = j.modus === m.key;
                     return (
@@ -999,16 +1008,23 @@ export default function Spielerstellung() {
               </Field>
 
               {/* Im Ranking-Modus ist der Pool die Wahrheit — sonst zeigte der
-                  Regler einen anderen Wert als die Stufen darunter. */}
-              <Slider label={j.modus === "ranking" ? "Höchstes Gewicht" : "Joker-Faktor"}
-                value={j.modus === "ranking" ? j.faktoren[0] : j.faktor} {...L.joker.faktor} step={reglerSchritt(rules, L.joker.faktor)}
-                onChange={(v) => patchJoker(j.modus === "ranking"
-                  ? { faktor: v, faktoren: buildWeightPool(v, j.faktoren.length) }
-                  : { faktor: v })}
-                fmt={fmtFaktor}
-                hint={j.modus === "ranking"
-                  ? "Das stärkste Gewicht der Rangliste. Die übrigen Stufen liegen gleichmäßig darunter."
-                  : "Womit das markierte Spiel multipliziert wird."} />
+                  Regler einen anderen Wert als die Stufen darunter.
+                  ⚠️ Im Einsatz-Modus gibt es ihn NICHT: dort bestimmt der
+                  gesetzte Münzbetrag den Faktor, `joker.faktor` wird gar nicht
+                  gelesen. Ein sichtbarer Regler ohne Wirkung ist genau das,
+                  was der Baukasten-Grundsatz ausschließt — beim Bauen der
+                  Einsatz-Bedienung stehen geblieben und hier entfernt. */}
+              {j.modus !== "einsatz" && (
+                <Slider label={j.modus === "ranking" ? "Höchstes Gewicht" : "Joker-Faktor"}
+                  value={j.modus === "ranking" ? j.faktoren[0] : j.faktor} {...L.joker.faktor} step={reglerSchritt(rules, L.joker.faktor)}
+                  onChange={(v) => patchJoker(j.modus === "ranking"
+                    ? { faktor: v, faktoren: buildWeightPool(v, j.faktoren.length) }
+                    : { faktor: v })}
+                  fmt={fmtFaktor}
+                  hint={j.modus === "ranking"
+                    ? "Das stärkste Gewicht der Rangliste. Die übrigen Stufen liegen gleichmäßig darunter."
+                    : "Womit das markierte Spiel multipliziert wird."} />
+              )}
 
               {j.modus === "ranking" && (
                 <>
@@ -1034,6 +1050,88 @@ export default function Spielerstellung() {
                     Jedes Gewicht darf pro Spieltag nur <strong>einmal</strong> vergeben werden —
                     alle haben denselben Pool, die Verteilung ist die Kunst. Übrige Spiele zählen ×1,0.
                   </p>
+                </>
+              )}
+
+              {/* Einsatz-Modus (L2): kein fester Pool, sondern ein Münz-Budget
+                  je Spieltag, das der Spieler frei auf die Spiele verteilt.
+                  Die beiden Anteils-Regler speichern weiterhin einen ANTEIL
+                  (design/einsatz-joker.md Abschnitt 2: reist mit dem
+                  Creator-Code, unabhängig vom Budget einer fremden Runde) —
+                  angezeigt werden aber Münzen, weil der Admin in Münzen denkt. */}
+              {j.modus === "einsatz" && (
+                <>
+                  <Slider label="Münzen je Spieltag" value={j.einsatzProSpieltag}
+                    {...L.joker.einsatzProSpieltag}
+                    onChange={(v) => patchJoker({ einsatzProSpieltag: v })}
+                    fmt={(x) => `${zahl(x)} Münzen`}
+                    hint="Was jeder Spieler an diesem Spieltag zu verteilen hat." />
+                  <Zahl label="Münzen je Spieltag" wert={j.einsatzProSpieltag} limits={L.joker.einsatzProSpieltag}
+                    onChange={(v) => patchJoker({ einsatzProSpieltag: v })} />
+
+                  {/* ⚠️ Kein `reglerSchritt` hier: `maxAnteilProSpiel` ist laut
+                      RULE_LIMITS-Kommentar ausdrücklich NICHT Teil der
+                      Multiplikator-Familie (reglerRaster.test.js) — eine
+                      Validierungsgrenze, kein additiver Modifikator. Die
+                      Regler-Feinheit des Admins soll dieses Feld nicht anfassen. */}
+                  <Slider label="Höchsteinsatz je Spiel" value={j.maxAnteilProSpiel}
+                    {...L.joker.maxAnteilProSpiel}
+                    onChange={(v) => patchJoker({ maxAnteilProSpiel: v })}
+                    fmt={(x) => `${zahl(Math.round(x * j.einsatzProSpieltag))} von ${zahl(j.einsatzProSpieltag)} Münzen`}
+                    hint="Mehr darf niemand auf ein einzelnes Spiel setzen." />
+                  <Zahl label="Höchsteinsatz je Spiel (Münzen)"
+                    wert={Math.round(j.maxAnteilProSpiel * j.einsatzProSpieltag)}
+                    limits={{
+                      min: Math.round(L.joker.maxAnteilProSpiel.min * j.einsatzProSpieltag),
+                      max: Math.round(L.joker.maxAnteilProSpiel.max * j.einsatzProSpieltag),
+                      step: Math.max(1, Math.round(L.joker.maxAnteilProSpiel.step * j.einsatzProSpieltag)),
+                    }}
+                    onChange={(v) => patchJoker({ maxAnteilProSpiel: v / j.einsatzProSpieltag })} />
+
+                  {/* Gleiche Begründung wie beim Höchsteinsatz oben — kein `reglerSchritt`. */}
+                  <Slider label="Mindesteinsatz je Spiel" value={j.minAnteilProSpiel}
+                    {...L.joker.minAnteilProSpiel}
+                    onChange={(v) => patchJoker({ minAnteilProSpiel: v })}
+                    fmt={(x) => x === 0 ? "kein Mindesteinsatz" : `${zahl(Math.round(x * j.einsatzProSpieltag))} Münzen`}
+                    hint="0 = kein Mindesteinsatz. Sonst gilt: auf ein Spiel entweder gar nichts setzen oder mindestens so viel." />
+                  <Zahl label="Mindesteinsatz je Spiel (Münzen, 0 = keiner)"
+                    wert={Math.round(j.minAnteilProSpiel * j.einsatzProSpieltag)}
+                    limits={{
+                      min: 0,
+                      max: Math.round(L.joker.minAnteilProSpiel.max * j.einsatzProSpieltag),
+                      step: Math.max(1, Math.round(L.joker.minAnteilProSpiel.step * j.einsatzProSpieltag)),
+                    }}
+                    onChange={(v) => patchJoker({ minAnteilProSpiel: v / j.einsatzProSpieltag })} />
+
+                  <Toggle label="Spiele auslassen erlaubt" on={j.skippenErlaubt !== false}
+                    onChange={(on) => patchJoker({ skippenErlaubt: on })} />
+                  <p style={{ fontSize: 11, color: C.muted, marginTop: -4, marginBottom: 8, lineHeight: 1.4 }}>
+                    Erlaubt: ein Spiel mit Einsatz 0 tippen, ohne den Mindesteinsatz zu verletzen —
+                    die Poker-Blind-Lesart „entweder gar nicht, oder mindestens so viel".
+                  </p>
+
+                  {/* Konflikt-Hinweise (design/einsatz-joker.md 2.1). Fall 2
+                      hängt an der Spieltagsgröße, die hier nicht sicher bekannt
+                      ist — deshalb ausdrücklich als typische Größe markiert;
+                      verbindlich prüft erst die Tippabgabe. */}
+                  {einsatzKonfliktListe.length > 0 && (
+                    <div style={{
+                      background: `${C.gold}12`, border: `1px solid ${C.gold}33`, borderRadius: 12,
+                      padding: "10px 12px", marginBottom: 10,
+                    }}>
+                      {einsatzKonfliktListe.map((k) => (
+                        <div key={k.key} style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.45, marginBottom: 4 }}>
+                          {k.text}
+                        </div>
+                      ))}
+                      {einsatzSpieleTypisch != null && (
+                        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                          Angenommen bei etwa {einsatzSpieleTypisch} Spielen je Spieltag — eure tatsächliche
+                          Zahl hängt von der Spielauswahl oben ab und wird beim Tippen verbindlich geprüft.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
 
