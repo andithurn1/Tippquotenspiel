@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C } from "@/lib/theme";
 import {
   AKTIVIERUNG_TYPEN, PRO_ZEITRAUM, LIMIT_KLASSEN_LIMITS,
   pruefeKlassen, beschreibeKlasse,
 } from "@/lib/limitKlassen";
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { EREIGNIS_TYPEN } from "@/lib/ereignisse";
+import { Zahl } from "@/components/Eingaben";
 
 const SPIELTAGE = 34;
 
@@ -364,21 +365,5 @@ function Banner({ ton, children }) {
     }}>
       {children}
     </div>
-  );
-}
-
-function Zahl({ label, wert, limits, onChange }) {
-  return (
-    <label style={{ fontSize: 11, color: C.muted, flex: "1 1 130px", display: "block" }}>
-      {label}
-      <input type="number" value={wert ?? ""}
-        min={limits.min} max={limits.max} step={limits.step}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{
-          display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
-          background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-          borderRadius: 10, padding: "7px 9px", fontSize: 13, fontFamily: MONO, outline: "none",
-        }} />
-    </label>
   );
 }

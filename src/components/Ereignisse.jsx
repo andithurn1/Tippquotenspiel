@@ -5,6 +5,7 @@ import {
   AUSWERTBARE_TYPEN, EREIGNIS_TYPEN, EREIGNIS_LIMITS, EREIGNIS,
   sanitizeEreignisse, konflikte, beschreibeEreignisse,
 } from "@/lib/ereignisse";
+import { Zahl } from "@/components/Eingaben";
 
 const KATEGORIE = {
   meilenstein: "Aus dem Tippen selbst",
@@ -107,16 +108,16 @@ export default function Ereignisse({ rules, onChange }) {
                 {an && (
                   <div style={{ marginTop: 9, paddingTop: 9, borderTop: `1px solid ${C.line}`, display: "flex", gap: 12, flexWrap: "wrap" }}>
                     <Zahl label="Joker dafür" wert={wert(t.key, "belohnung")}
-                      limits={EREIGNIS_LIMITS.belohnung}
+                      limits={EREIGNIS_LIMITS.belohnung} breite={110}
                       onChange={(v) => setzeFeld(t.key, "belohnung", v)} />
                     {t.parameter.includes("anzahl") && (
                       <Zahl label="Spieltage in Folge" wert={wert(t.key, "anzahl")}
-                        limits={EREIGNIS_LIMITS.anzahl}
+                        limits={EREIGNIS_LIMITS.anzahl} breite={110}
                         onChange={(v) => setzeFeld(t.key, "anzahl", v)} />
                     )}
                     {t.parameter.includes("abQuote") && (
                       <Zahl label="ab Sieger-Quote" wert={wert(t.key, "abQuote")}
-                        limits={EREIGNIS_LIMITS.abQuote}
+                        limits={EREIGNIS_LIMITS.abQuote} breite={110}
                         onChange={(v) => setzeFeld(t.key, "abQuote", v)} />
                     )}
                   </div>
@@ -151,21 +152,5 @@ export default function Ereignisse({ rules, onChange }) {
         {beschreibeEreignisse(cfg)}
       </div>
     </div>
-  );
-}
-
-function Zahl({ label, wert, limits, onChange }) {
-  return (
-    <label style={{ fontSize: 11, color: C.muted, flex: "1 1 110px" }}>
-      {label}
-      <input type="number" value={wert ?? ""}
-        min={limits.min} max={limits.max} step={limits.step}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{
-          display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
-          background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-          borderRadius: 10, padding: "7px 9px", fontSize: 13, fontFamily: MONO, outline: "none",
-        }} />
-    </label>
   );
 }

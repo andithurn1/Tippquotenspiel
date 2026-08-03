@@ -7,6 +7,7 @@ import {
   BUDGET_QUELLEN, TAKTE, VERFALL_TYPEN, PREISMODI, JOKER_ARTEN,
   preisFuer, BUDGET_LIMITS, beschreibeBudget,
 } from "@/lib/jokerBudget";
+import { Zahl } from "@/components/Eingaben";
 
 // Vorgabe je Quellen-Typ beim Hinzufügen — deckt sich mit den Fallbacks in
 // `sanitizeQuelle` (jokerBudget.js), damit ein frisch hinzugefügter Block
@@ -135,18 +136,18 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                 {an && (
                   <div style={{ marginTop: 9, paddingTop: 9, borderTop: `1px solid ${C.line}`, display: "flex", gap: 12, flexWrap: "wrap" }}>
                     {(q.key === "startkapital" || q.key === "gleich" || q.key === "platzierung") && (
-                      <Zahl label="Narren" wert={wert(q.key, "betrag")} limits={BUDGET_LIMITS.betrag}
+                      <Zahl label="Narren" wert={wert(q.key, "betrag")} limits={BUDGET_LIMITS.betrag} breite={150} marginTop={8}
                         onChange={(v) => setzeQuelleFeld(q.key, "betrag", v)} />
                     )}
                     {q.key === "leistung" && (
-                      <Zahl label="Narren je Ereignis" wert={wert(q.key, "proEreignis")} limits={BUDGET_LIMITS.proEreignis}
+                      <Zahl label="Narren je Ereignis" wert={wert(q.key, "proEreignis")} limits={BUDGET_LIMITS.proEreignis} breite={150} marginTop={8}
                         onChange={(v) => setzeQuelleFeld(q.key, "proEreignis", v)} />
                     )}
                     {q.key === "rueckstand" && (
                       <>
-                        <Zahl label="Narren je Punkt Rückstand" wert={wert(q.key, "proPunktRueckstand")} limits={BUDGET_LIMITS.proPunktRueckstand}
+                        <Zahl label="Narren je Punkt Rückstand" wert={wert(q.key, "proPunktRueckstand")} limits={BUDGET_LIMITS.proPunktRueckstand} breite={150} marginTop={8}
                           onChange={(v) => setzeQuelleFeld(q.key, "proPunktRueckstand", v)} />
-                        <Zahl label="Deckel je Vorfall (0 = keiner)" wert={wert(q.key, "deckel")} limits={BUDGET_LIMITS.deckel}
+                        <Zahl label="Deckel je Vorfall (0 = keiner)" wert={wert(q.key, "deckel")} limits={BUDGET_LIMITS.deckel} breite={150} marginTop={8}
                           onChange={(v) => setzeQuelleFeld(q.key, "deckel", v)} />
                       </>
                     )}
@@ -193,7 +194,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
           </div>
         </Field>
         {budget.takt === "alleNSpieltage" && (
-          <Zahl label="N Spieltage" wert={budget.n} limits={BUDGET_LIMITS.n}
+          <Zahl label="N Spieltage" wert={budget.n} limits={BUDGET_LIMITS.n} breite={150} marginTop={8}
             onChange={(v) => patchBudgetFeld({ n: v })} />
         )}
 
@@ -215,7 +216,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
           </div>
         </Field>
         {budget.verfall === "deckel" && (
-          <Zahl label="Deckel (max. Ansparen)" wert={budget.maxAnsparen} limits={BUDGET_LIMITS.maxAnsparen}
+          <Zahl label="Deckel (max. Ansparen)" wert={budget.maxAnsparen} limits={BUDGET_LIMITS.maxAnsparen} breite={150} marginTop={8}
             onChange={(v) => patchBudgetFeld({ maxAnsparen: v })} />
         )}
 
@@ -251,7 +252,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
           </div>
         </Field>
         {budget.preisModus !== "fix" && (
-          <Zahl label="Steigerung je weiterem Einsatz" wert={budget.steigerung} limits={BUDGET_LIMITS.steigerung}
+          <Zahl label="Steigerung je weiterem Einsatz" wert={budget.steigerung} limits={BUDGET_LIMITS.steigerung} breite={150} marginTop={8}
             onChange={(v) => patchBudgetFeld({ steigerung: v })} />
         )}
 
@@ -363,22 +364,6 @@ function Field({ label, children }) {
       <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>{label}</div>
       {children}
     </div>
-  );
-}
-
-function Zahl({ label, wert, limits, onChange }) {
-  return (
-    <label style={{ fontSize: 11, color: C.muted, flex: "1 1 150px", display: "block", marginTop: 8 }}>
-      {label}
-      <input type="number" value={wert ?? ""}
-        min={limits.min} max={limits.max} step={limits.step}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{
-          display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
-          background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-          borderRadius: 10, padding: "7px 9px", fontSize: 13, fontFamily: MONO, outline: "none",
-        }} />
-    </label>
   );
 }
 

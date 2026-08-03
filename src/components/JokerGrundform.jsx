@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C } from "@/lib/theme";
 import {
   WER, SICHT, VERFALL, WIDERRUF, SYMMETRIE, UMFANG,
   BASIS_LIMITS, DEFAULT_BASIS,
@@ -9,6 +9,7 @@ import {
 } from "@/lib/jokerBasis";
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { WETTBEWERBE, PHASEN } from "@/lib/wettbewerbe";
+import { Zahl as ZahlInput } from "@/components/Eingaben";
 
 // ============================================================
 //  JOKER-GRUNDFORM — der Editor für die EINE Karte, die jeder Joker teilt
@@ -253,7 +254,7 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
         <Katalog katalog={WER} aktiv={werAktuell} onWahl={(k) => onPatch({ wer: k })} />
         {werWertLimits && (
           <ZahlInput label={werAktuell === "abPlatz" ? "Ab Tabellenplatz (abwärts)" : "Ab Rückstand (Punkte)"}
-            wert={wert("werWert") ?? werWertLimits.min} limits={werWertLimits}
+            wert={wert("werWert") ?? werWertLimits.min} limits={werWertLimits} breite={150}
             onChange={(v) => onPatch({ werWert: v })} />
         )}
       </Feldgruppe>
@@ -271,12 +272,12 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
         {widerrufAktuell === "bisStunden" && (
           <ZahlInput label="Stunden vor Anpfiff (nie darüber hinaus)"
             wert={wert("widerrufStunden") ?? DEFAULT_BASIS.widerrufStunden}
-            limits={BASIS_LIMITS.widerrufStunden} onChange={(v) => onPatch({ widerrufStunden: v })} />
+            limits={BASIS_LIMITS.widerrufStunden} breite={150} onChange={(v) => onPatch({ widerrufStunden: v })} />
         )}
       </Feldgruppe>
 
       <Feldgruppe titel="Stapeln — wie viele Joker höchstens auf dasselbe Spiel (über alle Arten hinweg)">
-        <ZahlInput label="Höchstens" wert={wert("stapeln")} limits={BASIS_LIMITS.stapeln}
+        <ZahlInput label="Höchstens" wert={wert("stapeln")} limits={BASIS_LIMITS.stapeln} breite={150}
           onChange={(v) => onPatch({ stapeln: v })} />
       </Feldgruppe>
 
@@ -285,7 +286,7 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
       </Feldgruppe>
 
       <Feldgruppe titel="Bestand — wie viele man höchstens im Inventar HALTEN darf (0 = unbegrenzt)">
-        <ZahlInput label="Höchstens im Bestand" wert={wert("bestand")} limits={BASIS_LIMITS.bestand}
+        <ZahlInput label="Höchstens im Bestand" wert={wert("bestand")} limits={BASIS_LIMITS.bestand} breite={150}
           onChange={(v) => onPatch({ bestand: v })} />
       </Feldgruppe>
 
@@ -295,14 +296,14 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
       </Feldgruppe>
 
       <Feldgruppe titel="Abklingzeit — Sperre in Spieltagen nach einem Einsatz DIESER Art">
-        <ZahlInput label="Spieltage gesperrt (0 = keine Sperre)" wert={wert("abklingzeit")} limits={BASIS_LIMITS.abklingzeit}
+        <ZahlInput label="Spieltage gesperrt (0 = keine Sperre)" wert={wert("abklingzeit")} limits={BASIS_LIMITS.abklingzeit} breite={150}
           onChange={(v) => onPatch({ abklingzeit: v })} />
       </Feldgruppe>
 
       <Feldgruppe titel="Umfang — worauf ein Einsatz wirkt">
         <Katalog katalog={UMFANG} aktiv={umfangAktuell} onWahl={(k) => onPatch({ umfang: k })} />
         {umfangAktuell === "nSpiele" && (
-          <ZahlInput label="Spiele pro Einsatz" wert={wert("spieleProEinsatz")} limits={BASIS_LIMITS.spieleProEinsatz}
+          <ZahlInput label="Spiele pro Einsatz" wert={wert("spieleProEinsatz")} limits={BASIS_LIMITS.spieleProEinsatz} breite={150}
             onChange={(v) => onPatch({ spieleProEinsatz: v })} />
         )}
         {umfangAktuell !== "spieltag" && (
@@ -324,9 +325,9 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <ZahlInput label="Min. Außenseiter-Quote (leer = keine)" wert={bedWert("minQuote") ?? ""}
-            limits={BASIS_LIMITS.quote} leerErlaubt onChange={(v) => onPatchBedingung({ minQuote: v })} />
+            limits={BASIS_LIMITS.quote} leerErlaubt breite={150} onChange={(v) => onPatchBedingung({ minQuote: v })} />
           <ZahlInput label="Max. Außenseiter-Quote (leer = keine)" wert={bedWert("maxQuote") ?? ""}
-            limits={BASIS_LIMITS.quote} leerErlaubt onChange={(v) => onPatchBedingung({ maxQuote: v })} />
+            limits={BASIS_LIMITS.quote} leerErlaubt breite={150} onChange={(v) => onPatchBedingung({ maxQuote: v })} />
         </div>
         <div style={{ marginTop: 8 }}>
           <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 5 }}>Wettbewerbe (leer = alle)</div>
@@ -403,27 +404,6 @@ function ToggleKnopf({ an, onChange, textAn, textAus }) {
       </span>
       <span style={{ fontSize: 11.5 }}>{an ? textAn : textAus}</span>
     </button>
-  );
-}
-
-function ZahlInput({ label, wert, limits, onChange, leerErlaubt = false }) {
-  return (
-    <label style={{ fontSize: 11, color: C.muted, flex: "1 1 150px", display: "block" }}>
-      {label}
-      <input type="number" value={wert ?? ""}
-        min={limits.min} max={limits.max} step={limits.step}
-        placeholder={leerErlaubt ? "keine" : undefined}
-        onChange={(e) => {
-          const roh = e.target.value;
-          if (leerErlaubt && roh === "") { onChange(undefined); return; }
-          onChange(Number(roh));
-        }}
-        style={{
-          display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
-          background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-          borderRadius: 10, padding: "7px 9px", fontSize: 13, fontFamily: MONO, outline: "none",
-        }} />
-    </label>
   );
 }
 

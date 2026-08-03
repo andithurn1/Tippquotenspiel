@@ -75,6 +75,16 @@ wird, ist ob die Einstellung GREIFT, nicht ob sie klug ist.
   ```
 - **`npm run build` NICHT bei laufendem Dev-Server** — überschreibt `.next`,
   danach lädt der Dev-Server stumm nichts mehr. Erst `preview_stop`.
+- ⚠️ **Die Browser-Konsole sammelt ALTE Fehler ein.** `read_console_messages`
+  liefert einen Puffer, der ein Neuladen überlebt. Wer während einer laufenden
+  Bearbeitung liest, sieht Übersetzungsfehler aus Zwischenständen, die es im
+  Code längst nicht mehr gibt — am 03.08. eine Viertelstunde an einem
+  „Identifier already declared" gesucht, das nie existierte: der Subagent hatte
+  beim Umstellen kurzzeitig Import und lokale Funktion nebeneinander, der
+  Dev-Server hat das übersetzt und gemeldet.
+  **Erkennungsprobe:** rendert die Seite (`document.body.innerText` hat
+  Inhalt), ist der Fehler alt. Entscheidend ist ein `rm -rf .next` plus
+  `npm run build` — der baut ohne Puffer.
 - 🔴 **ZWEI ARBEITSKOPIEN — die teuerste Falle auf diesem Rechner.**
   Aktuell ist `C:\Dev\Tippquotenspiel`. Daneben liegt ein ALTER Checkout unter
   `C:\Users\andit\OneDrive\Tippprojekt\Tippquotenspiel` (stand am 31.07.2026

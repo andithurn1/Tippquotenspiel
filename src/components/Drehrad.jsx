@@ -9,6 +9,7 @@ import {
 import { PHASEN } from "@/lib/duellJoker";
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { WER } from "@/lib/jokerBasis";
+import { Zahl } from "@/components/Eingaben";
 
 const SPIELTAGE = 34;
 // Beispiel-Spieler nur für die Vorschau — dieselbe Bauart wie in
@@ -292,9 +293,9 @@ export default function Drehrad({ rules, onChange }) {
           )}
           {cfg.phase === "manuell" && (
             <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-              <Zahl label="Von Spieltag" wert={cfg.abSpieltag ?? ""} limits={DREHRAD_LIMITS.abSpieltag} leerErlaubt
+              <Zahl label="Von Spieltag" wert={cfg.abSpieltag ?? ""} limits={DREHRAD_LIMITS.abSpieltag} leerErlaubt leerText="Vorgabe"
                 onChange={(v) => setze({ abSpieltag: v })} />
-              <Zahl label="Bis Spieltag" wert={cfg.bisSpieltag ?? ""} limits={DREHRAD_LIMITS.bisSpieltag} leerErlaubt
+              <Zahl label="Bis Spieltag" wert={cfg.bisSpieltag ?? ""} limits={DREHRAD_LIMITS.bisSpieltag} leerErlaubt leerText="Vorgabe"
                 onChange={(v) => setze({ bisSpieltag: v })} />
             </div>
           )}
@@ -475,7 +476,7 @@ function FeldZeile({
           onChange={(v) => onPatch({ gewicht: v })} />
         <div style={{ flex: "1 1 150px" }}>
           <Zahl label={`Sperrfrist (Vorgabe ${sperrfristVorgabe})`} wert={feld.sperrfrist ?? ""}
-            limits={DREHRAD_LIMITS.sperrfrist} leerErlaubt
+            limits={DREHRAD_LIMITS.sperrfrist} leerErlaubt leerText="Vorgabe"
             onChange={(v) => onPatch({ sperrfrist: v })} />
           <div style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>
             {eigeneSperrfrist ? "eigener Wert" : `folgt der Vorgabe (${sperrfristVorgabe})`}
@@ -562,26 +563,5 @@ function Banner({ ton, children }) {
     }}>
       {children}
     </div>
-  );
-}
-
-function Zahl({ label, wert, limits, onChange, leerErlaubt = false }) {
-  return (
-    <label style={{ fontSize: 11, color: C.muted, flex: "1 1 130px", display: "block" }}>
-      {label}
-      <input type="number" value={wert ?? ""}
-        min={limits.min} max={limits.max} step={limits.step}
-        placeholder={leerErlaubt ? "Vorgabe" : undefined}
-        onChange={(e) => {
-          const roh = e.target.value;
-          if (leerErlaubt && roh === "") { onChange(undefined); return; }
-          onChange(Number(roh));
-        }}
-        style={{
-          display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
-          background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-          borderRadius: 10, padding: "7px 9px", fontSize: 13, fontFamily: MONO, outline: "none",
-        }} />
-    </label>
   );
 }
