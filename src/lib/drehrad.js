@@ -88,8 +88,8 @@ export const BELOHNUNGS_TYPEN = [
     desc: "Schreibt dem Spieler einen Joker der gewählten Art gut.",
   },
   {
-    key: "budget", label: "Diamanten",
-    desc: "Zahlt Diamanten auf das Konto des Spielers ein.",
+    key: "budget", label: "Narren",
+    desc: "Zahlt Narren auf das Konto des Spielers ein.",
   },
   {
     key: "modifikator", label: "Modifikator",
@@ -437,7 +437,7 @@ export function beschreibeDrehrad(drehrad, spieltage = 34) {
 // `spieltageChronologisch`, deshalb zählt schlicht die Eingabereihenfolge).
 //
 // Nur `belohnung.typ === "punkte"` wird gedeckelt, CHRONOLOGISCH JE NUTZER —
-// Joker-, Diamanten- und Modifikator-Felder sind unberührt, sie haben ihre eigenen
+// Joker-, Narren- und Modifikator-Felder sind unberührt, sie haben ihre eigenen
 // Deckel an anderer Stelle (jokerBudget.js, modCap). `gedeckelt` listet, wem
 // wie viel gekürzt wurde — ohne diese Liste sieht ein Spieler eine
 // Auszahlung, die nicht zu seinem Rad passt, und kann sich das nicht

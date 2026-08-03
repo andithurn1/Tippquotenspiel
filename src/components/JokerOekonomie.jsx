@@ -21,14 +21,14 @@ const STANDARD_QUELLE = {
 
 const EINSAETZE = [1, 2, 3, 4];
 
-// ── Bibliothek, Diamanten, Jokershop, Achsenprofil ──────────
+// ── Bibliothek, Narren, Jokershop, Achsenprofil ──────────
 // „Acht Module liegen fertig und getestet in src/lib/. Kein einziges ist über
 // die Oberfläche erreichbar." (design/gehaeuse-ui.md). Diese Komponente macht
 // vier davon bedienbar: die kuratierte Bibliothek (`jokerBibliothek.js`), die
 // gemeinsame Währung samt Preisen (`jokerBudget.js`) und — nur in der
 // Profi-Stufe — das Achsenprofil über das GANZE Regelwerk.
 //
-// Sprache in sichtbaren Texten: „Diamanten" und „Shop", nie „Budget"
+// Sprache in sichtbaren Texten: „Narren" und „Shop", nie „Budget"
 // (design/waehrungen.md Abschnitt 2). Die Code-Bezeichner bleiben wie sie
 // sind.
 export default function JokerOekonomie({ rules, onChange, stufe }) {
@@ -105,11 +105,11 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
         ist „zu hoch".
       </p>
 
-      {/* 2.2 Diamanten */}
+      {/* 2.2 Narren */}
       <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 14, paddingTop: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Diamanten</div>
+        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Narren</div>
         <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
-          Woher eure Diamanten kommen. Mehrere Quellen gleichzeitig sind erlaubt —
+          Woher eure Narren kommen. Mehrere Quellen gleichzeitig sind erlaubt —
           sie addieren sich.
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -135,16 +135,16 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                 {an && (
                   <div style={{ marginTop: 9, paddingTop: 9, borderTop: `1px solid ${C.line}`, display: "flex", gap: 12, flexWrap: "wrap" }}>
                     {(q.key === "startkapital" || q.key === "gleich" || q.key === "platzierung") && (
-                      <Zahl label="Diamanten" wert={wert(q.key, "betrag")} limits={BUDGET_LIMITS.betrag}
+                      <Zahl label="Narren" wert={wert(q.key, "betrag")} limits={BUDGET_LIMITS.betrag}
                         onChange={(v) => setzeQuelleFeld(q.key, "betrag", v)} />
                     )}
                     {q.key === "leistung" && (
-                      <Zahl label="Diamanten je Ereignis" wert={wert(q.key, "proEreignis")} limits={BUDGET_LIMITS.proEreignis}
+                      <Zahl label="Narren je Ereignis" wert={wert(q.key, "proEreignis")} limits={BUDGET_LIMITS.proEreignis}
                         onChange={(v) => setzeQuelleFeld(q.key, "proEreignis", v)} />
                     )}
                     {q.key === "rueckstand" && (
                       <>
-                        <Zahl label="Diamanten je Punkt Rückstand" wert={wert(q.key, "proPunktRueckstand")} limits={BUDGET_LIMITS.proPunktRueckstand}
+                        <Zahl label="Narren je Punkt Rückstand" wert={wert(q.key, "proPunktRueckstand")} limits={BUDGET_LIMITS.proPunktRueckstand}
                           onChange={(v) => setzeQuelleFeld(q.key, "proPunktRueckstand", v)} />
                         <Zahl label="Deckel je Vorfall (0 = keiner)" wert={wert(q.key, "deckel")} limits={BUDGET_LIMITS.deckel}
                           onChange={(v) => setzeQuelleFeld(q.key, "deckel", v)} />

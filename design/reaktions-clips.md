@@ -259,7 +259,7 @@ Aufbau: `Opener + Anrede-Nomen (+ Tail)`. Wenige Listen → hunderte Varianten.
 *♦ = geschlechtsneutral verwendbar*
 
 > Waffe ♦ · Maschine ♦ · Rakete ♦ · Granate ♦ · Kanone ♦ · Bestie ♦ · Legende ♦ ·
-> Naturgewalt ♦ · Wucht ♦ · Phänomen ♦ · Titan ♦ · Genie ♦ · Diamant ♦ · Orakel ♦ ·
+> Naturgewalt ♦ · Wucht ♦ · Phänomen ♦ · Titan ♦ · Genie ♦ · Narr ♦ · Orakel ♦ ·
 > Sportskanone ♦ · Quotengott/Quotengöttin · Fußball-Prophet/-Prophetin ·
 > Tippgott/Tippgöttin · Halbgott/Halbgöttin · Hellseher/Hellseherin ·
 > König/Königin · Meister/Meisterin · Zauberer/Zauberin · Chef/Chefin ·

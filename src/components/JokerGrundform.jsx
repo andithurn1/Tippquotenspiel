@@ -289,9 +289,9 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
           onChange={(v) => onPatch({ bestand: v })} />
       </Feldgruppe>
 
-      <Feldgruppe titel="Kasse sichtbar — sehen andere Diamantenstand und Bestand?">
+      <Feldgruppe titel="Kasse sichtbar — sehen andere Narrenstand und Bestand?">
         <ToggleKnopf an={wert("kasseSichtbar")} onChange={(v) => onPatch({ kasseSichtbar: v })}
-          textAn="Offen — jeder sieht Diamanten und Bestand" textAus="Verdeckt — jeder Einsatz bleibt eine Überraschung" />
+          textAn="Offen — jeder sieht Narren und Bestand" textAus="Verdeckt — jeder Einsatz bleibt eine Überraschung" />
       </Feldgruppe>
 
       <Feldgruppe titel="Abklingzeit — Sperre in Spieltagen nach einem Einsatz DIESER Art">

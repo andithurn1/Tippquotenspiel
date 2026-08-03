@@ -16,7 +16,7 @@ und WAS das bedeutet — nicht, ob es gut ist.
 
 | Komponente | Deckt ab | Stufe |
 |---|---|---|
-| `JokerOekonomie.jsx` | Bibliothek, Diamanten, Shop, Achsenprofil | anpassen + profi |
+| `JokerOekonomie.jsx` | Bibliothek, Narren, Shop, Achsenprofil | anpassen + profi |
 | `LimitKlassen.jsx` | Limitierungsklassen anlegen/bearbeiten | profi |
 | `JokerGrundform.jsx` | die 13 Dimensionen, standard + Abweichungen | profi |
 | `Drehrad.jsx` | Feld-Editor, Frequenz, Sperrfristen | profi |
@@ -39,14 +39,14 @@ aus `achsenProfil(rules)`.
 ⚠️ Die Balken sind eine **Richtungsanzeige, keine Bewertung**. Kein Balken ist
 „zu hoch". Unter den Karten ein Satz, der das sagt.
 
-### 2.2 Diamanten (Stufe „anpassen")
+### 2.2 Narren (Stufe „anpassen")
 
 Ein Block pro Quelle aus `budget.quellen`, hinzufügbar und entfernbar.
 `BUDGET_QUELLEN` liefert `label`/`desc`.
 
 Dazu Takt und Verfall als Karten-Reihe (`TAKTE`, `VERFALL_TYPEN`).
 
-**Sprache: „Diamanten", nicht „Budget"** — das ist der Shop-Topf. Seit
+**Sprache: „Narren", nicht „Budget"** — das ist der Shop-Topf. Seit
 03.08. gibt es zwei Währungen, gültige Regel: `design/waehrungen.md` 2.
 
 ### 2.3 Jokershop (Stufe „anpassen")
@@ -67,7 +67,7 @@ im Kleingedruckten — im Panel.
 ## 3. Verdrahtung in `Spielerstellung.jsx`
 
 - Import + `patchBudget`-Helfer nach dem Muster von `patchSaisonform`.
-- Render unter `stufe === "anpassen"` (Bibliothek + Diamanten + Shop) und
+- Render unter `stufe === "anpassen"` (Bibliothek + Narren + Shop) und
   `stufe === "profi"` (alles).
 - Bei `stufe === "einfach"` unsichtbar — dort entscheiden Charakter und Preset.
 
@@ -110,7 +110,7 @@ Achsen wären nicht unabhängig.
   Aspekte in `presetMerge.js` gemeinsam wandern.
 - ⚠️ `rundumschlag` hieß „viele Joker, jeder schwach" und setzte dafür
   `joker.modus`. Die Beschreibung muss nachziehen: die Dichte drückt sich über
-  **Diamanten und Kontingente** aus, nicht über den Joker-Modus. Ein Eintrag, der
+  **Narren und Kontingente** aus, nicht über den Joker-Modus. Ein Eintrag, der
   etwas verspricht, das er nicht setzt, ist schlimmer als einer, der weniger
   kann.
 - Ein Test hält fest, dass **kein** Eintrag der Bibliothek `joker` enthält.

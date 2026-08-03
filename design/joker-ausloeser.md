@@ -1,4 +1,4 @@
-# Auslöser-Katalog — wann gibt es Joker, wann gibt es Diamanten
+# Auslöser-Katalog — wann gibt es Joker, wann gibt es Narren
 
 **Katalog.** Account 2 (Andre), 2026-07-31, aus dem Gespräch mit dem Nutzer.
 
@@ -12,7 +12,7 @@ entscheidet der Nutzer später, wenn das Gehäuse steht.
 
 ⚠️ **Veraltet seit 03.08.:** Diese Tabelle ging von EINER Währung aus
 („Münzen" = `rules.budget`). Das stimmt nicht mehr — es gibt jetzt zwei Töpfe
-mit zwei Namen: **Diamanten** für den Shop (`rules.budget`, weiterhin) und
+mit zwei Namen: **Narren** für den Shop (`rules.budget`, weiterhin) und
 **Münzen** für den Wetteinsatz je Spiel (`rules.joker.einsatzProSpieltag`,
 neu). Die gültige Sprachregel steht in `design/waehrungen.md` Abschnitt 2.
 Die Tabelle bleibt unten stehen, damit sichtbar ist, was sich geändert hat —
@@ -20,11 +20,11 @@ ungültig ist nur ihre erste Zeile.
 
 | Nutzer-Begriff | im Code | was es ist |
 |---|---|---|
-| ~~**Münzen**~~ **Diamanten** | `rules.budget` | die Shop-Währung. Der Admin stellt ein, wie viel es wofür und für wen gibt. |
+| ~~**Münzen**~~ **Narren** | `rules.budget` | die Shop-Währung. Der Admin stellt ein, wie viel es wofür und für wen gibt. |
 | **Jokershop** | `budget.preise` | was jede Joker-Art in DIESER Runde kostet. Der Admin setzt die Preise. |
 | **Abklingzeit** | `jokerBasis.abklingzeit` | Cooldown je Joker-Art, siehe Abschnitt 4. |
 
-Alle sichtbaren Texte sagen **Diamanten** und **Shop** für diesen Topf, nicht
+Alle sichtbaren Texte sagen **Narren** und **Shop** für diesen Topf, nicht
 „Budget". Die Code-Bezeichner bleiben wie sie sind — ein Rename über sechs
 Module wäre Bewegung ohne Gewinn, aber die Sprache in der Oberfläche muss
 stimmen.
@@ -184,27 +184,27 @@ Die beiden Wege dürfen sich nicht widersprechen — ein Test hält beide fest.
 
 ## 6. Zwei, die aus dem Rahmen fallen
 
-**V1 · Versteigerung.** Ein Joker wird versteigert, alle bieten Diamanten. Passt
+**V1 · Versteigerung.** Ein Joker wird versteigert, alle bieten Narren. Passt
 genau zum Shop-Gedanken und macht daraus etwas Lebendiges — man schätzt ab, was
 der Joker *anderen* wert ist.
 ⚠️ Joker-**Handel zwischen Spielern** bleibt verworfen (Absprachen, siehe
 `joker-inventar.md` 4.4). Eine Versteigerung gegen die Bank hat das Problem
 nicht: es fließt nichts von Spieler zu Spieler.
 
-**V2 · Rückverkauf.** Einen ungenutzten Joker am Saisonende zu Diamanten machen.
+**V2 · Rückverkauf.** Einen ungenutzten Joker am Saisonende zu Narren machen.
 Damit ist Nichtstun keine reine Verschwendung, und Horten bekommt einen
 Gegenspieler — ohne dass wir Zinsen brauchen.
 
-## 7. Diamanten-Quellen, die noch fehlen
+## 7. Narren-Quellen, die noch fehlen
 
 | # | Quelle |
 |---|---|
-| M1 | **Rückverkauf** (= V2) — ein NICHT gesetzter Joker wird am Saisonende zu Diamanten. |
-| M2 | **Aus dem Drehrad** — ein Feld kann Diamanten auszahlen (`design/drehrad.md`). |
+| M1 | **Rückverkauf** (= V2) — ein NICHT gesetzter Joker wird am Saisonende zu Narren. |
+| M2 | **Aus dem Drehrad** — ein Feld kann Narren auszahlen (`design/drehrad.md`). |
 
 ### 🔴 Zwei Vorschläge von mir, beide vom Nutzer verworfen — und warum
 
-**Zinsen** auf ungenutzte Diamanten und **Teilerstattung** für einen Joker, der
+**Zinsen** auf ungenutzte Narren und **Teilerstattung** für einen Joker, der
 nichts eingebracht hat. Beide abgelehnt, und beide aus demselben Grund:
 
 > **Sie mildern die Folge einer Entscheidung.** Ein Joker ist ein Einsatz. Wer

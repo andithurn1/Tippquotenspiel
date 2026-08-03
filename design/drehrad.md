@@ -200,7 +200,7 @@ auswerten(drehrad, ziehungen) -> { gutschriften, gedeckelt }
 - `gutschriften` = was tatsächlich ankommt, je Nutzer.
 - **Nur `belohnung.typ === "punkte"` wird gedeckelt**, und zwar chronologisch je
   Nutzer: ist `maxPunkteProSaison` erreicht, bringt die nächste Ziehung 0 Punkte.
-  Joker-, Diamanten- und Modifikator-Felder sind unberührt — sie haben ihre eigenen
+  Joker-, Narren- und Modifikator-Felder sind unberührt — sie haben ihre eigenen
   Deckel an anderer Stelle.
 - `gedeckelt` listet, wem wie viel gekürzt wurde. Ohne diese Liste sieht ein
   Spieler eine Auszahlung, die nicht zu seinem Rad passt, und kann sich das nicht

@@ -1,10 +1,10 @@
-# Zwei Währungen — Diamanten und Münzen
+# Zwei Währungen — Narren und Münzen
 
 **Spec.** Account 2 (Andre), 2026-08-03, nach Vorgabe des Nutzers.
 **Löst die Sprachregelung in `joker-ausloeser.md` Abschnitt 0 ab.**
 
 > **Die Entscheidung:** Es gibt zwei Töpfe, und sie bekommen jetzt zwei Namen.
-> **Diamanten** für den Shop (Joker kaufen), **Münzen** für Wetteinsätze.
+> **Narren** für den Shop (Joker kaufen), **Münzen** für Wetteinsätze.
 > Beide müssen dem Spieler angezeigt werden — beim Tippen und im Schnellmenü,
 > auch wenn er mehrere Tippspiele parallel hat.
 
@@ -16,7 +16,7 @@ Bis heute hieß beides „Münzen". Das war schon in `einsatz-joker.md` 3.1 als
 Falle notiert: wer die Töpfe zusammenlegt, kann seine Saison-Ersparnisse in
 einen einzigen Spieltag kippen — die Schluss-Salve, die ausgeschlossen ist.
 
-| | 💎 **Diamanten** | 🪙 **Münzen** |
+| | 🃏 **Narren** | 🪙 **Münzen** |
 |---|---|---|
 | Code | `rules.budget`, `jokerBudget.js` | `rules.joker.einsatzProSpieltag` |
 | Woher | über die Saison **verdient**, fünf Quellen | jeden **Spieltag neu**, für alle gleich |
@@ -33,7 +33,7 @@ ausschließlich, was der Spieler LIEST. Dieselbe Trennung wie bisher zwischen
 
 | Wo | Wort |
 |---|---|
-| Shop, Preise, `budget.quellen`, `budget.verfall`, Drehrad-Feld `budget` | **Diamanten** |
+| Shop, Preise, `budget.quellen`, `budget.verfall`, Drehrad-Feld `budget` | **Narren** |
 | Einsatz je Spiel, `einsatzProSpieltag`, Mindest-/Höchsteinsatz, Planung | **Münzen** |
 | überall | **nie** „Budget" |
 
@@ -55,7 +55,7 @@ Drei Orte, alle vom Nutzer benannt:
 
 ### 3.1 Tippabgabe / Tippübersicht
 Die **Münzen** dieses Spieltags, samt Planung aus `einsatz-joker.md` 3.2
-(„73 von 100 verteilt", „höchstens 7 auf dieses Spiel"). Die **Diamanten** als
+(„73 von 100 verteilt", „höchstens 7 auf dieses Spiel"). Die **Narren** als
 Kontostand daneben, weil man beim Tippen entscheidet, ob man einen Joker
 einsetzt.
 
@@ -76,7 +76,7 @@ beiden Stände, kompakt, ohne Planungs-Text.
 
 `design/kontaktstellen.md` hält fest, dass `kannBezahlen` und `budgetVerlauf`
 **null Aufrufer im Spielbetrieb** haben. Es gibt heute also keinen echten
-Diamanten-Kontostand — nur ein Regelwerk, das beschreibt, wie er entstünde.
+Narren-Kontostand — nur ein Regelwerk, das beschreibt, wie er entstünde.
 
 **Festlegung:** Eine Währung wird nur angezeigt, wenn ihr Stand aus echten
 Daten stammt.
@@ -84,7 +84,7 @@ Daten stammt.
 - **Münzen** sind heute schon echt: sie folgen aus dem Spieltag und den
   abgegebenen Tipps (`einsatzPlanung`). Anzeigen, sobald
   `joker.modus === "einsatz"`.
-- **Diamanten** erst, wenn `budget.enabled` **und** die Verkabelung aus
+- **Narren** erst, wenn `budget.enabled` **und** die Verkabelung aus
   `kontaktstellen.md` steht. Bis dahin **gar nichts** anzeigen — kein „0", kein
   Platzhalter.
 

@@ -529,7 +529,7 @@ function FeldZeile({
       )}
       {belohnung.typ === "budget" && (
         <div style={{ marginTop: 8, maxWidth: 150 }}>
-          <Zahl label="Diamanten" wert={belohnung.betrag} limits={DREHRAD_LIMITS.budgetBetrag}
+          <Zahl label="Narren" wert={belohnung.betrag} limits={DREHRAD_LIMITS.budgetBetrag}
             onChange={(v) => onBelohnungPatch({ betrag: v })} />
         </div>
       )}

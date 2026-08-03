@@ -95,8 +95,8 @@ export const AKTIVIERUNG_TYPEN = [
     desc: "Ein erspieltes Ereignis muss vorher ausgelöst haben.",
   },
   {
-    key: "abBudget", label: "Ab Diamantenstand",
-    desc: "Erst ab einem bestimmten Diamantenstand.",
+    key: "abBudget", label: "Ab Narrenstand",
+    desc: "Erst ab einem bestimmten Narrenstand.",
   },
   {
     key: "nurGegenFuehrende", label: "Nur gegen Führende",
@@ -518,11 +518,11 @@ function beschreibeAktivierung(akt, spieltage) {
       return `nur bei mindestens ${akt.wert} Punkten Vorsprung`;
     case "nachEreignis":
       return `erst nach dem Ereignis „${akt.ereignisKey}“`;
-    // ⚠️ „Diamanten", nicht „Budget" (design/waehrungen.md Abschnitt 2).
+    // ⚠️ „Narren", nicht „Budget" (design/waehrungen.md Abschnitt 2).
     // Hier stand es doch — der Text-Wächter `uiTexte.test.js` prüft nur die
     // KATALOGE, nicht die aus ihnen erzeugten Sätze.
     case "abBudget":
-      return `erst ab ${zahl(akt.wert)} Diamanten`;
+      return `erst ab ${zahl(akt.wert)} Narren`;
     case "nurGegenFuehrende":
       return `nur gegen die ersten ${akt.plaetze}`;
     // ⚠️ `zahl()` statt der rohen Zahl: eine Schwelle von 0,75 stand hier als

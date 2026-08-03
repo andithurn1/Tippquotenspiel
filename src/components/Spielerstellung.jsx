@@ -119,7 +119,7 @@ export default function Spielerstellung() {
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
   const patchSaisonform = (p) => { touched(); setRules((r) => ({ ...r, saisonform: { ...(r.saisonform || DEFAULT_RULES.saisonform), ...p } })); };
   const patchBudget = (p) => { touched(); setRules((r) => ({ ...r, budget: { ...(r.budget || DEFAULT_RULES.budget), ...p } })); };
-  // `JokerOekonomie` meldet meist nur einen Diamanten/Shop-Patch zurück (ein
+  // `JokerOekonomie` meldet meist nur einen Narren/Shop-Patch zurück (ein
   // einzelnes `budget`-Feld) — der läuft über `patchBudget` oben. Ein Klick in
   // der Bibliothek dort übernimmt dagegen das GANZE Regelfragment einer
   // Kombination auf einmal (`budget` + `limitKlassen` + `duell`, alle drei
@@ -660,7 +660,7 @@ export default function Spielerstellung() {
             </>
           )}
 
-          {/* Joker-Ökonomie: Bibliothek + Diamanten + Shop bei „anpassen", dazu
+          {/* Joker-Ökonomie: Bibliothek + Narren + Shop bei „anpassen", dazu
               das Achsenprofil des gesamten Regelwerks bei „profi" — dieselbe
               Komponente, sie entscheidet selbst anhand von `stufe`, wie viel
               sie zeigt. Bei „einfach" unsichtbar: dort entscheiden Charakter

@@ -64,7 +64,7 @@ export const BUDGET_QUELLEN = [
     // ⚠️ `desc` ist SICHTBARER Text. Hier stand einmal „Gekoppelt an
     // ereignisse.js" — ein Dateiname in der Oberfläche. Im Browser-Durchgang
     // aufgefallen, nicht in den Tests: Kataloge werden ungeprüft angezeigt.
-    desc: "Ein erspieltes Ereignis zahlt Diamanten aus, statt einen Joker gutzuschreiben.",
+    desc: "Ein erspieltes Ereignis zahlt Narren aus, statt einen Joker gutzuschreiben.",
   },
   {
     key: "rueckstand", label: "Rückstand",
@@ -84,7 +84,7 @@ export const TAKTE = [
 ];
 
 export const VERFALL_TYPEN = [
-  { key: "nie", label: "Nie", desc: "Diamanten sammeln sich unbegrenzt an. Führt zum Horten und zur Schluss-Salve." },
+  { key: "nie", label: "Nie", desc: "Narren sammeln sich unbegrenzt an. Führt zum Horten und zur Schluss-Salve." },
   { key: "periode", label: "Je Zeitraum", desc: "Verfällt am Ende jedes Takts. Zwingt zum Einsetzen." },
   { key: "deckel", label: "Deckel", desc: "Sammeln erlaubt bis zur Obergrenze — der Mittelweg. Vorgabe." },
 ];
@@ -433,10 +433,10 @@ export function konflikte(rules) {
 // Ein Satz für die UI, Muster `beschreibeDuell`.
 export function beschreibeBudget(budget, spieltage = 34) {
   const cfg = sanitizeBudget(budget);
-  // ⚠️ Sichtbarer Text: „Diamanten", nie „Budget" (design/waehrungen.md
+  // ⚠️ Sichtbarer Text: „Narren", nie „Budget" (design/waehrungen.md
   // Abschnitt 2). Die Code-Bezeichner heißen weiter `budget`, die Oberfläche
   // spricht die Sprache des Nutzers.
-  if (!cfg.enabled || !cfg.quellen.length) return "Keine Diamanten in dieser Runde.";
+  if (!cfg.enabled || !cfg.quellen.length) return "Keine Narren in dieser Runde.";
   const quellenText = cfg.quellen
     .map((q) => BUDGET_QUELLEN.find((b) => b.key === q.typ)?.label ?? q.typ)
     .join(", ");
@@ -444,5 +444,5 @@ export function beschreibeBudget(budget, spieltage = 34) {
   const verfallText = VERFALL_TYPEN.find((v) => v.key === cfg.verfall)?.label ?? cfg.verfall;
   const deckelText = cfg.verfall === "deckel" ? ` bei ${cfg.maxAnsparen}` : "";
   void spieltage; // aktuell nicht gebraucht, Signatur analog zu beschreibeDuell
-  return `Diamanten aus ${quellenText} (${taktText}). Verfall: ${verfallText}${deckelText}.`;
+  return `Narren aus ${quellenText} (${taktText}). Verfall: ${verfallText}${deckelText}.`;
 }

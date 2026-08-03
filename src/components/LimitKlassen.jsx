@@ -334,7 +334,7 @@ function KlasseZeile({
         )}
         {aktivierung.typ === "abBudget" && (
           <div style={{ marginTop: 8, maxWidth: 150 }}>
-            <Zahl label="Ab Diamantenstand" wert={aktivierung.wert ?? 0} limits={LIMIT_KLASSEN_LIMITS.abBudget}
+            <Zahl label="Ab Narrenstand" wert={aktivierung.wert ?? 0} limits={LIMIT_KLASSEN_LIMITS.abBudget}
               onChange={(v) => onAktivierungPatch({ wert: v })} />
           </div>
         )}

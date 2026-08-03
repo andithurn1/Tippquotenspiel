@@ -38,7 +38,7 @@ const KATALOGE = {
 };
 
 // 🔴 Zwei-Währungen-Regel (design/waehrungen.md Abschnitt 2, ersetzt
-// joker-ausloeser.md Abschnitt 0): der Shop-Topf heißt „Diamanten", der
+// joker-ausloeser.md Abschnitt 0): der Shop-Topf heißt „Narren", der
 // Wetteinsatz je Spiel heißt „Münzen". Absichtlich eine BENANNTE Liste statt
 // eines Filters über alle Kataloge — die Einsatz-Texte (nicht in dieser
 // Datei geprüft, siehe `engine.js`) SOLLEN „Münzen" sagen, nur die
@@ -87,7 +87,7 @@ describe("Sichtbare Katalog-Texte", () => {
   });
 
   // Sprachregelung: design/waehrungen.md Abschnitt 2. Die Code-Bezeichner
-  // heißen weiter `budget` — die Oberfläche sagt „Diamanten".
+  // heißen weiter `budget` — die Oberfläche sagt „Narren".
   it("sagen nie „Budget“", () => {
     const treffer = sichtbareTexte().filter(([, t]) => /Budget/i.test(t));
     expect(treffer.map(([wo, t]) => `${wo}: ${t}`)).toEqual([]);
@@ -96,7 +96,7 @@ describe("Sichtbare Katalog-Texte", () => {
   // Zwei-Währungen-Regel, zweite Richtung: die Shop-Kataloge dürfen „Münzen"
   // nicht sagen — sonst laufen die beiden Wortwelten wieder auseinander,
   // sobald jemand einen Katalog ergänzt (design/waehrungen.md Abschnitt 2).
-  it("Shop-Kataloge sagen „Diamanten“, nie „Münzen“", () => {
+  it("Shop-Kataloge sagen „Narren“, nie „Münzen“", () => {
     const treffer = sichtbareTexteAus(SHOP_KATALOGE).filter(([, t]) => /Münzen/.test(t));
     expect(treffer.map(([wo, t]) => `${wo}: ${t}`)).toEqual([]);
   });
