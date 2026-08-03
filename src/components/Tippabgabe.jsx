@@ -637,15 +637,25 @@ export default function Tippabgabe({ matchId }) {
                         onChange={(v) => setzeEinsatz(v)} />
                     </div>
 
-                    {/* "73 von 100 Münzen verteilt" samt Balken */}
+                    {/* „73 von 100 Münzen verteilt" samt Balken.
+                        🔴 Gezeigt wird `verteilt` PLUS dem, was gerade auf
+                        diesem Spiel liegt. `planung.verteilt` lässt das
+                        aktuelle Spiel bewusst aus — es wird ja gerade
+                        entschieden, und `maxJetztSetzbar` muss dagegen
+                        rechnen. Für die ANZEIGE ist das falsch: im Browser
+                        stand „0 von 100 verteilt", während 5 Münzen auf
+                        diesem Spiel lagen, und das Schnellmenü zeigte für
+                        denselben Spieltag eine andere Zahl. Mit dem
+                        aktuellen Einsatz stimmen beide überein — und der
+                        Balken wandert beim Schieben mit, was er soll. */}
                     <div style={{ marginTop: 12 }}>
                       <div style={{ fontSize: 11.5, color: C.muted }}>
-                        {zahl(planung.verteilt)} von {zahl(planung.budget)} Münzen für diesen Spieltag verteilt
+                        {zahl(planung.verteilt + einsatzAktuell)} von {zahl(planung.budget)} Münzen für diesen Spieltag verteilt
                       </div>
                       <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>
                         <div style={{
                           position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: 999, background: C.gold,
-                          width: `${Math.max(0, Math.min(100, (planung.verteilt / (planung.budget || 1)) * 100))}%`,
+                          width: `${Math.max(0, Math.min(100, ((planung.verteilt + einsatzAktuell) / (planung.budget || 1)) * 100))}%`,
                         }} />
                       </div>
                     </div>

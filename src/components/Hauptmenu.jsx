@@ -8,6 +8,8 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { getStore } from "@/lib/store";
 import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "@/lib/roundStatus";
+import { muenzStand } from "@/lib/muenzstand";
+import Waehrungen from "@/components/Waehrungen";
 import { C, MONO } from "@/lib/theme";
 
 const SCREENS = [
@@ -37,7 +39,8 @@ export default function Hauptmenu() {
         const relevant = filterMatchesByTeams(matches, r.team_filter);
         const { total, open } = computeMatchStatus(relevant);
         const tips = await getStore().listTips({ roundId: r.id });
-        return { ...r, status: { total, open, tippedByMe: countTippedByUser(tips, user.id) } };
+        const stand = muenzStand({ rules: r.rules, matches: relevant, tips, userId: user.id });
+        return { ...r, status: { total, open, tippedByMe: countTippedByUser(tips, user.id) }, stand };
       }));
       if (live) setRounds(withStatus);
     });
@@ -92,6 +95,11 @@ export default function Hauptmenu() {
                   <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginTop: 5 }}>
                     {r.status.total} Spiele · {r.status.open} offen · {r.status.tippedByMe} von dir getippt
                   </div>
+                  {r.stand && (
+                    <div style={{ marginTop: 5 }}>
+                      <Waehrungen stand={r.stand} kompakt />
+                    </div>
+                  )}
                 </button>
               );
             })}

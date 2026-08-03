@@ -6,6 +6,8 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "@/lib/roundStatus";
+import { muenzStand } from "@/lib/muenzstand";
+import Waehrungen from "@/components/Waehrungen";
 import { C, MONO } from "@/lib/theme";
 
 
@@ -36,6 +38,7 @@ export default function RundenHub() {
   const [status, setStatus] = useState(null); // { total, open, tippedByMe }
   const [abstimmung, setAbstimmung] = useState(false);
   const [saison, setSaison] = useState(false);
+  const [stand, setStand] = useState(null); // Münzstand dieser Runde, siehe muenzstand.js
 
   useEffect(() => {
     let live = true;
@@ -48,6 +51,7 @@ export default function RundenHub() {
         const relevant = filterMatchesByTeams(matches, round?.team_filter);
         const { total, open } = computeMatchStatus(relevant);
         setStatus({ total, open, tippedByMe: countTippedByUser(tips, user?.id) });
+        setStand(muenzStand({ rules: round?.rules, matches: relevant, tips, userId: user?.id }));
       }).catch(() => {});
     return () => { live = false; };
   }, [roundId, user]);
@@ -74,6 +78,15 @@ export default function RundenHub() {
             ? `${status.total} Spiele · ${status.open} offen · ${status.tippedByMe} von dir getippt`
             : "Status lädt …"}
         </div>
+
+        {stand && (
+          <div style={{
+            background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16,
+            padding: "14px 16px", marginBottom: 16,
+          }}>
+            <Waehrungen stand={stand} />
+          </div>
+        )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {abstimmung && (
