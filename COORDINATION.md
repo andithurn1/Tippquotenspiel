@@ -104,6 +104,74 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-03 · `6b75736` + `7ee20b9` — Teilbibliotheken kuratiert, L2 als Logik
+
+**An Andi.** `main` bei `7ee20b9` · **1646 Tests grün** (Sessionstart: 1543) ·
+Build sauber. `7ee20b9` fasst `engine.js` an (neuer `joker.modus`), ist nach
+Push-Regel 3 also ein großer Push — hiermit angekündigt, additiv gebaut und
+einzeln revidierbar.
+
+#### `6b75736` — alle neun Aspekte haben jetzt Einträge
+
+39 Einträge, 78 sichtbare Texte. `saison` wird aus `SAISON_PRESETS`
+**referenziert** statt kopiert, gleiche Behandlung wie
+`modifikatoren`/`KOMBINATIONEN`. `TEILBIBLIOTHEKEN` hängt jetzt im
+`uiTexte`-Wächter.
+
+🔴 **Der Ertrag war nicht die Kuratierung, sondern was beim Nachrechnen auffiel:**
+drei der vier `naehe`-Einträge zahlten an JEDEM Tipp exakt dasselbe. Ich hatte
+nur `k` gestaffelt und `m` überall auf der Vorgabe gelassen — und weil
+`scoreResult` das `max()` seiner Teile nimmt, überdeckte die an `m` hängende
+Team-Tore-Nähe den ganzen Unterschied. Der Test „mindestens zwei Einträge
+unterscheiden sich" war dabei grün: er vergleicht `werte` als Text.
+
+Neuer Wächter: für `naehe` und `kombi` werden echte PUNKTE über sechs Tipps
+gerechnet und paarweise verschiedene Profile verlangt. Er hat beim ersten Lauf
+gleich noch einmal zugeschlagen — diesmal berechtigt gegen meine Probe, die
+ohne getippte Torschützen lief und deshalb die Kombi-Stufen gar nicht anfasste.
+
+#### `7ee20b9` — L2 variabler Einsatz (nur Logik, Oberfläche fehlt noch)
+
+Dritter `joker.modus` neben `einzel` und `ranking`. **Die Spec ließ offen, wo
+normiert wird** — „Mittelwert 1" braucht den ganzen Spieltag, `jokerAufschlaege`
+sieht aber nur einen Tipp. Entschieden und in `joker-inventar.md` 4.5
+(Nachtrag 03.08.) begründet: der fertige Faktor steht im vorhandenen
+`tip.gewicht`. Kein neues Feld, keine Store-Änderung. `scoreTip` den Spieltag
+mitzugeben hätte die Snapshot-Regel gebrochen.
+
+🔴 **Zwei Fehler dabei, beide von mir, beide erst beim Nachmessen sichtbar:**
+
+1. Ich hatte `RULE_LIMITS.modCap.max` als Einzeldeckel vorgegeben. Ab **elf**
+   Spielen je Spieltag verwarf der regelkonforme Einsätze als „manipuliert" —
+   Spieler verteilt richtig, Prüfung nickt, Joker zahlt stumm nichts. Bei Runden
+   über mehrere Wettbewerbe der Normalfall. Der Deckel ist raus; `modCap` in
+   `totalModifier` trägt das ohnehin, und die Spieltags-Regel ist der einzige
+   Ort, der die Zahl der Spiele kennt.
+2. Die Toleranz der Spieltags-Prüfung stand auf `1e-9`. Ein Client, der auf
+   sechs Nachkommastellen rundet, liegt bis zu `3e-6` daneben — ob eine korrekte
+   Verteilung durchging, hing an reinem Rundungsglück (n=10 und 24 fielen durch,
+   n=11 nicht). Jetzt `1e-6 × Anzahl Tipps`.
+
+Bewusste Halbheit, im Code notiert: ein Gewicht unter 1 dämpft noch nicht.
+
+#### 📌 Was diese Sitzung bestätigt hat
+
+**Der wörtliche Leser findet Widersprüche in der Vorgabe.** Fünf Fehler in
+meinen eigenen Vorgaben sind so aufgefallen (`picksPerTeam: 4` gibt es nicht,
+„3–5 Einträge" ist keine Invariante, Tiefengleichheit schlägt bei bewussten
+Teil-Objekten fehl, dazu die beiden oben).
+
+**Und die Lehre der letzten Übergabe trägt weiter:** jeder ernste Fund kam aus
+einer eigenen Rechnung an einem echten Admin-Satz, keiner aus den Tests. Die
+Tests waren jedes Mal grün.
+
+#### 🟡 Offen
+
+**Oberfläche zu L2** (Modus wählbar + Einsätze verteilen) · Teilbibliotheken
+sind belegt, aber noch nicht über die Oberfläche abrufbar · L3/L4/L6 · die 16
+Auslöser · **`design/kontaktstellen.md`** (sieben Prüffunktionen ohne Aufrufer —
+das ist der Vorlauf für jede Balance-Messung) · **RLS-Befund**.
+
 ### 2026-08-02 (III) · `13299cc` — **L5 war nur zur Hälfte gebaut**
 
 **An Andi.** Kleiner Push, ein Modul plus seine Oberfläche — aber er fasst
