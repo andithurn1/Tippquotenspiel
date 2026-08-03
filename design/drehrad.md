@@ -207,6 +207,60 @@ auswerten(drehrad, ziehungen) -> { gutschriften, gedeckelt }
   erklären — dieselbe Regel wie bei `gestrichen` in `saisonform.js`.
 - `maxPunkteProSaison: 0` heißt **kein Deckel**, nicht „keine Punkte".
 
+## 3c. Die Darstellung — prozedural, nicht vorgerendert (03.08.)
+
+Frage des Nutzers: kann sich das Rad je nach Admin-Einstellung visuell
+anpassen, und ginge das über **vorher erzeugte Clips**, aus denen nach dem
+Ergebnis der passende abgespielt wird?
+
+### 🔴 Warum Clips hier nicht tragen
+
+**Die Kombinationsmenge ist nicht endlich.** Der Admin schreibt die Tabelle
+selbst — Anzahl der Felder, Beschriftung, Gewicht. Nötig wäre ein Clip je
+(Rad-Konfiguration × Ausgang), und die Konfiguration ist frei. Selbst je Runde
+vorgerendert bräuchte es eine Render-Strecke, eine Ablage und eine
+Ungültigmachung.
+
+**Und ein Clip backt den Text ein.** Das Rad ist in der Spielerstellung live
+editierbar; eine geänderte Beschriftung macht jeden Clip dieses Rades veraltet,
+ein zusätzliches Feld ebenso. Man hätte einen Zwischenspeicher, der bei jeder
+Admin-Änderung zerfällt — und merkt es erst, wenn ein Spieler ein Rad sieht,
+das es so nicht mehr gibt.
+
+### Was stattdessen
+
+**Der Ausgang steht vor der Animation fest** (Abschnitt 2.5: gezogen beim
+Öffnen des Spieltags, deterministisch). Die Animation zeigt also nur, was
+ohnehin feststeht — der leichteste Fall, den es gibt.
+
+1. **Rad als SVG aus der Feldliste.** Segmentwinkel `gewicht / Σ gewichte`,
+   also genau die Zahl, die `wahrscheinlichkeiten()` schon liefert. Damit passt
+   sich die Darstellung jeder Einstellung von selbst an, ohne dass irgendwo
+   eine zweite Wahrheit über die Feldgrößen entsteht.
+2. **Eine CSS-Drehung auf den Zielwinkel**, mit Verzögerung am Ende. Der
+   Zielwinkel folgt aus der Mitte des Gewinnersegments plus ein paar vollen
+   Umdrehungen.
+
+⚠️ **Die Fläche IST die Wahrscheinlichkeit.** Gleich große Segmente bei
+ungleichen Gewichten wären eine falsche Anzeige, und die Detailangabe dahinter
+heilt das nicht — sie liest nur, wer ohnehin misstraut. Vom Nutzer am 03.08.
+bestätigt: die Felder sollen unterschiedlich groß sein.
+
+⚠️ **Die Animation ist nie die Wahrheit.** Ein Neuladen mitten in der Drehung
+zeigt dasselbe Ergebnis; wer sie überspringt, verliert nichts. Und
+`prefers-reduced-motion` schaltet sie ab — dann steht das Ergebnis einfach da.
+
+### Wo Clips doch hingehören
+
+Nicht ans Rad, sondern an die **Reaktion auf das Ergebnis** — und dort ist die
+Menge klein und fest, weil sie am Belohnungs-TYP hängt (`nichts` · `joker` ·
+`budget` · `modifikator` · `punkte`), nicht am einzelnen Feld. Fünf Clips statt
+N × M, unabhängig davon, was der Admin in seine Tabelle schreibt.
+
+Dafür gibt es im Projekt bereits ein Muster: `design/reaktions-clips.md`
+(`taunts.js`). Wer das baut, holt es sich von dort, statt eine zweite
+Clip-Verwaltung anzulegen.
+
 ## 4. Was geprüft wird
 
 **Keine Balance-Tests.** Geprüft wird nur, dass die Einstellungen greifen:
