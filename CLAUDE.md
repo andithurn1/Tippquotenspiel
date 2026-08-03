@@ -95,6 +95,11 @@ wird, ist ob die Einstellung GREIFT, nicht ob sie klug ist.
   Liefert der SERVER den alten Text, ist es die falsche Arbeitskopie.
 - **Commit-Nachrichten über eine Datei** (`git commit -F <datei>`), nicht per
   `-m` mit Anführungszeichen: PowerShell zerlegt sie sonst.
+  ℹ️ **Umlaute dürfen rein.** Die älteren Commits schreiben „Uebergabe",
+  „gruen", „Daempfer" — das stammt aus der Zeit von `-m` und ist über eine
+  UTF-8-Datei nicht mehr nötig (am 03.08. gegengeprüft, `git log` zeigt sie
+  korrekt). Die Krücke bitte nicht weiter abschreiben, sie liest sich wie ein
+  Rechtschreibfehler.
 - **Der Mock-Store lebt im Arbeitsspeicher.** Ein voller Seitenwechsel im
   Browser setzt ihn zurück — angelegte Runden sind dann weg.
 - **`vercel.json` verträgt KEINE eigenen Felder** (auch kein `_hinweis`), und
