@@ -104,6 +104,97 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-03 (II) · **ÜBERGABE** — der Wettmodus ist bedienbar, vier Specs warten
+
+> **👉 Frische Session: DAS ist dein Einstieg.** Alles darunter ist Historie.
+> Andi ist ab dem 04.08. wieder frisch — dieser Eintrag ist für ihn geschrieben.
+
+`main` bei `f9aa65f` · **1671 Tests grün** (Sessionstart: 1543) · Build sauber ·
+Arbeitskopie leer · 14 Commits.
+
+#### 🔴 Der Nutzer hat den Baukasten deutlich erweitert
+
+Vier Vorgaben aus dieser Sitzung, alle mit Spec, drei davon noch ungebaut:
+
+1. **Zwei Währungen.** 🃏 **Narren** für den Shop (Joker kaufen), 🪙 **Münzen**
+   für Wetteinsätze. Code-Bezeichner unverändert (`budget` bleibt `budget`),
+   nur sichtbare Texte. → `design/waehrungen.md` · **gebaut**
+2. **Der Wett-Spielmodus.** Jeder bekommt regelmäßig Münzen und verteilt sie
+   auf Spiele. **Gewonnenes fließt NICHT zurück in den Einsatz-Topf** — man
+   setzt Münzen, man gewinnt Punkte. → `design/wettmodus.md` · **teils gebaut**
+3. **Regel-Abstimmung samt Verfassung.** → `design/abstimmung-verfassung.md` ·
+   **nur Spec**
+4. **Glücksrad prozedural**, keine vorgerenderten Clips. →
+   `design/drehrad.md` 3c · **nur Spec**
+
+#### ✅ Was auf `main` liegt
+
+| Commit | Inhalt |
+|---|---|
+| `13299cc` | **L5 fertig** — Wettbewerbe konnten nicht dämpfen |
+| `216afa2` | **`design/kontaktstellen.md`** — sieben Prüffunktionen ohne Aufrufer |
+| `6b75736` | Teilbibliotheken: alle neun Aspekte belegt |
+| `7ee20b9` · `db32749` | **L2 Einsatz-Joker**, Logik samt Mindesteinsatz und Planung |
+| `1da2060` · `5d9b02a` | Währungen umbenannt, zwei neue Specs |
+| `ff3d652` | Zahleneingabe: fünf Kopien zu einer |
+| `728e3b8` · `f9aa65f` | **Einsatz-Bedienung + Münzstand** an drei Orten |
+
+Der Wettmodus ist damit von Ende zu Ende bedienbar: einstellen → verteilen →
+absenden → im Hub und im Schnellmenü überblicken.
+
+#### 🔴 Der wichtigste Befund: `design/kontaktstellen.md`
+
+**Sieben Prüffunktionen haben null Aufrufer im Spielbetrieb** —
+`darfEinsetzen`, `erfuelltBedingung`, `darfWiderrufen`, `pruefeEinsatz`,
+`kannBezahlen`, `ziehe`, `zulaessigeZiele`. `engine.js` holt aus den vier
+Modulen ausschließlich `sanitize*` und `DEFAULT_*`.
+
+Das ist **kein Baufehler** — jede Spec sagt „nicht Teil dieses Schritts". Aber
+die Menge stand nirgends zusammen, und sie ist der Vorlauf für alles Weitere:
+solange es keinen Ort gibt, an dem ein Joker GESETZT wird, kann `balanceSim.js`
+diese Ebenen prinzipiell nicht messen — und die Narren haben keinen Kontostand,
+weshalb sie bewusst gar nicht angezeigt werden.
+
+#### 📌 Was diese Sitzung gelehrt hat
+
+**Kein einziger ernster Fund kam aus den Tests.** Alle aus eigenen Rechnungen
+an einem echten Admin-Satz oder aus dem Browser — die Tests waren jedes Mal
+grün. Die Lehre der letzten Übergabe hat also unmittelbar getragen. Beispiele:
+
+- L5 war zur Hälfte gebaut; ein reiner Dämpfer schaltete die ganze Ebene ab.
+- Drei `naehe`-Teilbibliotheks-Einträge zahlten an JEDEM Tipp identisch, weil
+  nur `k` gestaffelt war und `m` nicht.
+- Ein fester Einzeldeckel verwarf ab **elf** Spielen je Spieltag regelkonforme
+  Einsätze — stumm.
+- Eine Toleranz von `1e-9` ließ regelkonforme Verteilungen nach Rundungsglück
+  durchfallen.
+- Der **voreingestellte** Einsatz war ungültig (4,76 bei Mindesteinsatz 5).
+
+**Der wörtliche Leser trägt.** Der `executor` hat **zwölf** Fehler in meinen
+eigenen Vorgaben gemeldet, statt sie zu glätten — `picksPerTeam: 4` gibt es
+nicht, „3–5 Einträge" ist keine Invariante, `konflikte()` hat in zwei Modulen
+verschiedene Formen, und zuletzt: `verteilt` stimmt zwischen Tippabgabe und
+Münzstand NICHT überein, anders als ich behauptet hatte.
+
+**Zwei Werkzeug-Fallen neu in `CLAUDE.md`:** die Browser-Konsole sammelt ALTE
+Fehler über ein Neuladen hinweg (eine Viertelstunde an einem Bruch gesucht, den
+es nicht gab — entscheidend ist `rm -rf .next` + Build). Und: Umlaute in
+Commit-Nachrichten sind erlaubt, die ASCII-Schreibweise war eine Krücke aus der
+`-m`-Zeit.
+
+#### 🟡 Offen, nach Wert sortiert
+
+1. **Verkabelung** (`kontaktstellen.md` 5) — ein Ort, an dem ein Joker gesetzt
+   wird. Voraussetzung für Balance-Messung UND für den Narren-Kontostand.
+2. **Münz-Takt** (`wettmodus.md` 3) — klein, macht den Wettmodus rund.
+   ⚠️ `TAKTE` aus `jokerBudget.js` wiederverwenden, nicht duplizieren.
+3. **Regel-Abstimmung** (`abstimmung-verfassung.md`) — eigenes Modul, NICHT in
+   `voting.js` (das ist die Joker-Abstimmung, andere Frage).
+4. **Glücksrad als SVG** (`drehrad.md` 3c).
+5. L3/L4/L6 · die 16 Auslöser · Store-Anbindung der Duell-Einsätze.
+6. **RLS-Befund** — laut Andi weiterhin der wichtigste Posten im Projekt, und
+   er ist in dieser Sitzung nicht angefasst worden.
+
 ### 2026-08-03 · `6b75736` + `7ee20b9` — Teilbibliotheken kuratiert, L2 als Logik
 
 **An Andi.** `main` bei `7ee20b9` · **1646 Tests grün** (Sessionstart: 1543) ·
