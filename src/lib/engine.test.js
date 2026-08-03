@@ -5,6 +5,7 @@ import {
   encodePreset, decodePreset, istCreatorCode, sanitizeRules, scoreLeaderboard, scoreLeaderboardHistory, projectTip,
   jokerFactor, maxJokerFactor, maxTotalModifier, teamModFactor, totalModifier,
   invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday,
+  invalidEinsatzMatchdays, einsatzUsageForMatchday,
 } from "./engine";
 import { DEFAULT_DUELL } from "./duellJoker";
 import { DEFAULT_BUDGET } from "./jokerBudget";
@@ -743,6 +744,145 @@ describe("Joker — Gewichtung einzelner Spiele", () => {
     ], rules);
     expect(board[0].userId).toBe("u2");
     expect(board[0].total).toBeGreaterThan(board[1].total);
+  });
+});
+
+describe("Joker — Einsatz-Modus (L2, variabler Einsatz je Spiel)", () => {
+  const tipp = { home: 4, away: 1, goals: { home: ["Al-Naimat"], away: ["Yamal"] } };
+
+  it("sanitizeRules: einsatzProSpieltag und maxAnteilProSpiel liefern die Vorgabe", () => {
+    const r = sanitizeRules({});
+    expect(r.joker.einsatzProSpieltag).toBe(100);
+    expect(r.joker.maxAnteilProSpiel).toBe(0.4);
+  });
+
+  it("sanitizeRules: Müll in beiden Feldern fällt auf die Vorgabe zurück bzw. wird beschnitten", () => {
+    const r = sanitizeRules({ joker: { einsatzProSpieltag: "quatsch", maxAnteilProSpiel: "quatsch" } });
+    expect(r.joker.einsatzProSpieltag).toBe(100);
+    expect(r.joker.maxAnteilProSpiel).toBe(0.4);
+    const hoch = sanitizeRules({ joker: { einsatzProSpieltag: 99999, maxAnteilProSpiel: 99 } });
+    expect(hoch.joker.einsatzProSpieltag).toBe(RULE_LIMITS.joker.einsatzProSpieltag.max);
+    expect(hoch.joker.maxAnteilProSpiel).toBe(RULE_LIMITS.joker.maxAnteilProSpiel.max);
+    const tief = sanitizeRules({ joker: { einsatzProSpieltag: -50, maxAnteilProSpiel: -1 } });
+    expect(tief.joker.einsatzProSpieltag).toBe(RULE_LIMITS.joker.einsatzProSpieltag.min);
+    expect(tief.joker.maxAnteilProSpiel).toBe(RULE_LIMITS.joker.maxAnteilProSpiel.min);
+  });
+
+  it("sanitizeRules: modus 'einsatz' übersteht die Bereinigung, unbekannter Modus fällt auf 'einzel' zurück", () => {
+    expect(sanitizeRules({ joker: { modus: "einsatz" } }).joker.modus).toBe("einsatz");
+    expect(sanitizeRules({ joker: { modus: "unsinn" } }).joker.modus).toBe("einzel");
+  });
+
+  it("🔴 Normierung: Summe = Anzahl Tipps ist gültig, Summe darüber wird beanstandet", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz" } });
+    const gueltig = [2, 1, 1, 0.5, 0.5].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
+    expect(invalidEinsatzMatchdays(gueltig, rules)).toEqual([]);
+    const ungueltig = [2, 2, 1, 1, 1].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
+    expect(invalidEinsatzMatchdays(ungueltig, rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+  });
+
+  it("ein einzelnes Gewicht über maxAnteilProSpiel * anzahlTipps wird beanstandet", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", maxAnteilProSpiel: 0.4 } });
+    // 5 Tipps, 0.4 → Deckel 2.0. Summe bleibt bewusst <= 5, damit NUR der
+    // Einzel-Deckel greift, nicht die Summenregel.
+    const grenzwertig = [2, 0.75, 0.75, 0.75, 0.75].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
+    expect(invalidEinsatzMatchdays(grenzwertig, rules)).toEqual([]); // genau am Deckel, gültig
+    const zuHoch = [2.1, 0.7, 0.7, 0.7, 0.7].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
+    expect(invalidEinsatzMatchdays(zuHoch, rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+  });
+
+  it("ein Gewicht von 0 ist zulässig", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz" } });
+    const tips = [0, 1.25, 1.25, 1.25, 1.25].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
+    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([]);
+  });
+
+  it("Unterverteilung (Summe kleiner als Anzahl Tipps) ist gültig — der Rest verfällt", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz" } });
+    const tips = [1, 1, 0.5, 0.5, 0].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht })); // Summe 3 < 5
+    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([]);
+  });
+
+  it("Regression: modus 'ranking' und 'einzel' bleiben unverändert, invalidWeightMatchdays bleibt grün", () => {
+    const rankingRules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1] } });
+    expect(jokerFactor({ ...tipp, gewicht: 2 }, rankingRules)).toBe(2);
+    expect(jokerFactor({ ...tipp, gewicht: 1.5 }, rankingRules)).toBe(1.5);
+    expect(invalidWeightMatchdays([
+      { matchday: 1, gewicht: 2 }, { matchday: 1, gewicht: 1.5 }, { matchday: 1, gewicht: 1 },
+    ], rankingRules)).toEqual([]);
+    const einzelRules = sanitizeRules({ ...DEFAULT_RULES, joker: { enabled: true, modus: "einzel", faktor: 1.5 } });
+    expect(jokerFactor({ ...tipp, joker: true }, einzelRules)).toBe(1.5);
+  });
+
+  it("jokerFactor mit modus 'einsatz': greift ab 1, ist unter 1 neutral, weist Unsinn ab", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz" } });
+    expect(jokerFactor({ ...tipp, gewicht: 2 }, rules)).toBe(2);
+    expect(jokerFactor({ ...tipp, gewicht: 0.5 }, rules)).toBe(1);       // Halbheit: kein Dämpfer nach unten
+    expect(jokerFactor({ ...tipp, gewicht: 0 }, rules)).toBe(1);         // 0 ist gültig, aber neutral
+    expect(jokerFactor({ ...tipp, gewicht: -1 }, rules)).toBe(1);        // negativ = manipuliert → neutral
+    expect(jokerFactor({ ...tipp, gewicht: NaN }, rules)).toBe(1);
+  });
+
+  // 🔴 Der Wächter gegen einen Fehler, der schon einmal drin war.
+  //
+  // Eine erste Fassung deckelte den Einzelfaktor bei `RULE_LIMITS.modCap.max`
+  // (4) und gab darüber 1 zurück — als wäre der Wert manipuliert. Gemessen
+  // fiel damit ab ZEHN Spielen je Spieltag auseinander, was zusammengehört:
+  // `invalidEinsatzMatchdays` erlaubt bei 0,4 und elf Spielen einen Faktor von
+  // 4,4, der Deckel verwarf ihn. Der Spieler hätte regelkonform verteilt, die
+  // Prüfung hätte genickt, und der Joker hätte stumm nichts gezahlt — bei
+  // Runden über mehrere Wettbewerbe der Normalfall, nicht der Randfall.
+  //
+  // Die beiden Stellen müssen sich einig sein. Deshalb hier beide zusammen,
+  // über eine Spanne von Spieltagsgrößen.
+  it("der Einzelfaktor und die Spieltags-Prüfung widersprechen sich nie", () => {
+    const rules = sanitizeRules({
+      joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100, maxAnteilProSpiel: 0.4 },
+    });
+    const anteil = rules.joker.maxAnteilProSpiel;
+
+    for (const n of [3, 5, 8, 9, 10, 11, 12, 17, 24]) {
+      // Der grösstmögliche erlaubte Einsatz auf EIN Spiel, der Rest gleichmässig
+      // auf die übrigen — ein Satz, den die Spieltags-Prüfung durchwinken muss.
+      const spitze = +(anteil * n).toFixed(6);
+      const rest = +((n - spitze) / (n - 1)).toFixed(6);
+      const tips = [{ matchday: 1, gewicht: spitze }];
+      for (let i = 1; i < n; i++) tips.push({ matchday: 1, gewicht: rest });
+
+      const beanstandet = invalidEinsatzMatchdays(tips, rules).length > 0;
+      expect(beanstandet, `n=${n}: der maximal erlaubte Einsatz wird beanstandet`).toBe(false);
+
+      // …und dann MUSS der Faktor auch wirken. Genau hier brach es vorher.
+      expect(jokerFactor({ ...tipp, gewicht: spitze }, rules),
+        `n=${n}: Faktor ${spitze} ist erlaubt, wirkt aber nicht`).toBeGreaterThan(1);
+    }
+  });
+
+  it("einsatzUsageForMatchday: rechnet Faktoren korrekt in Einsätze um und meldet den freien Rest", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100, maxAnteilProSpiel: 0.4 } });
+    const tips = [2, 1, 1, 0.5, 0.5].map((gewicht, i) => ({ matchday: 1, match_id: `m${i}`, gewicht }));
+    const u = einsatzUsageForMatchday(tips, 1, rules);
+    expect(u.budget).toBe(100);
+    expect(u.verteilt).toBe(100);       // Summe 5 × (100/5) = 100
+    expect(u.frei).toBe(0);
+    expect(u.maxProSpiel).toBe(40);     // 0.4 × 100
+
+    // Unterverteilung: 4 Tipps, Gewichte-Summe 2 (statt 4) → die Hälfte des
+    // Budgets bleibt frei, der Rest verfällt (kein Übertrag).
+    const unterRules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100 } });
+    const unterTips = [1, 0.5, 0.5, 0].map((gewicht, i) => ({ matchday: 1, match_id: `n${i}`, gewicht }));
+    const u2 = einsatzUsageForMatchday(unterTips, 1, unterRules);
+    expect(u2.budget).toBe(100);
+    expect(u2.verteilt).toBe(50);        // 4 Tipps, proTipp=25, Summe Gewichte 2 → 50
+    expect(u2.frei).toBe(50);
+  });
+
+  it("einsatzUsageForMatchday: keine Division durch 0 ohne Tipps an diesem Spieltag", () => {
+    const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", einsatzProSpieltag: 100 } });
+    const u = einsatzUsageForMatchday([], 1, rules);
+    expect(u.verteilt).toBe(0);
+    expect(u.frei).toBe(100);
+    expect(Number.isFinite(u.maxProSpiel)).toBe(true);
   });
 });
 

@@ -110,13 +110,28 @@ export const DEFAULT_RULES = {
   // wrongPenalty/favFlopPenalty — der Joker bleibt damit eine echte Wette statt
   // eines Gratis-Aufschlags. Wer ihn einschalten DARF (Premium-Admin), ist keine
   // Engine-Frage, sondern eine Berechtigung in Store/UI.
-  // Zwei Modi:
+  // Drei Modi:
   //  "einzel"  — der Tipper markiert EIN Spiel (`tip.joker === true`) → `faktor`.
   //  "ranking" — jedes Spiel bekommt ein Gewicht (`tip.gewicht`) aus `faktoren`.
   //              Jeder Pool-Wert darf pro Spieltag nur EINMAL vergeben werden,
   //              dadurch ist die Gewichtung ein echtes Ranking: alle haben
   //              denselben Pool, die Kunst ist die Verteilung. Ohne diese Regel
   //              würde jeder überall das Maximum setzen und der Modus wäre wertlos.
+  //  "einsatz" — die stufenlose Fassung von "ranking": der Tipper verteilt je
+  //              Spieltag ein Einsatz-Budget (`einsatzProSpieltag`) auf seine
+  //              Spiele, gedeckelt über `maxAnteilProSpiel` (zugleich L7 — kein
+  //              einzelnes Spiel darf zu viel des Budgets binden). Der fertige,
+  //              auf Mittelwert 1 normierte Faktor landet in `tip.gewicht` —
+  //              KEIN neues Feld, dieselbe Krücke, die `ranking` schon nutzt.
+  //              Siehe design/joker-inventar.md 4.5 (L2) samt Nachtrag 03.08.:
+  //              die Normierung passiert in der Oberfläche (die den Spieltag
+  //              kennt), `jokerAufschlaege` sieht nur den einzelnen Tipp und
+  //              prüft stattdessen einen BEREICH statt einer Pool-Zugehörigkeit.
+  //              ⚠️ Halbheit, bewusst in Kauf genommen: `Math.max(0, w-1)` gibt
+  //              für ein Gewicht unter 1 (wer wenig setzt) 0 zurück statt eines
+  //              echten Dämpfers — ein echter Dämpfer nach unten müsste durch
+  //              `totalModifier` laufen, wo `modFloor` greift. Das ist hier
+  //              NICHT umgesetzt.
   // abstimmung: die Runde stimmt gemeinsam ab, an WELCHEN Spieltagen es einen
   // Joker gibt (statt an jedem). Premium-Funktion; die Auszählung liegt in
   // voting.js, die Durchsetzung greift in Tippabgabe/Spielwahl.
@@ -130,6 +145,10 @@ export const DEFAULT_RULES = {
     enabled: false, modus: "einzel", faktor: 1.5, faktoren: [2, 1.5, 1.2, 1], abstimmung: false,
     heimat: { enabled: false, faktor: 1.2 },
     mut: { enabled: false, faktor: 1.1 },
+    // Nur für modus "einsatz" (L2): was jeder Spieler je Spieltag zu verteilen
+    // hat, und der Deckel gegen All-in (zugleich L7 — Spiel-Deckel).
+    einsatzProSpieltag: 100,
+    maxAnteilProSpiel: 0.4,
     // verteilung — an welchen Spieltagen es einen Joker gibt (jokerPlan.js).
     // Standard "frei": jeder setzt an jedem Spieltag selbst.
     verteilung: { ...DEFAULT_VERTEILUNG },
@@ -317,6 +336,11 @@ export const RULE_LIMITS = {
     faktor: { min: 1, max: 2, step: 0.05 },
     mutFaktor: { min: 1, max: 2, step: 0.05 },
     anzahlFaktoren: { min: 2, max: 6, step: 1 },
+    // Nur für modus "einsatz" (L2). `einsatzProSpieltag` ist eine Punktzahl
+    // (Schritt 10), KEIN Multiplikator — gehört deshalb nicht in die
+    // Multiplikator-Familie aus reglerRaster.test.js (Raster 0,05).
+    einsatzProSpieltag: { min: 10, max: 1000, step: 10 },
+    maxAnteilProSpiel: { min: 0.05, max: 1, step: 0.05 },
   },
   // ⚠️ `min: 0.25`, nicht 1 — Werte UNTER 1 sind Dämpfer („dieses Spiel zählt
   // weniger"). Vorher ging es nur nach oben, wodurch der Admin Wichtiges
@@ -374,10 +398,15 @@ function sanitizeJoker(jk, num, clamp) {
     .slice(0, L.anzahlFaktoren.max);
   return {
     enabled: jk.enabled === true,
-    modus: jk.modus === "ranking" ? "ranking" : "einzel",
+    modus: jk.modus === "ranking" ? "ranking" : jk.modus === "einsatz" ? "einsatz" : "einzel",
     faktor: clamp(num(jk.faktor, D.faktor), L.faktor.min, L.faktor.max),
     faktoren: faktoren.length >= L.anzahlFaktoren.min ? faktoren : [...D.faktoren],
     abstimmung: jk.abstimmung === true,
+    // Nur für modus "einsatz" (L2) — Budget ist eine Punktzahl (Math.round),
+    // der Anteils-Deckel ein reiner Bruchteil (kein Rundungszwang, analog zu
+    // teamMods.derbyFaktor/modCap, die auch nicht auf ein Raster geschnitten werden).
+    einsatzProSpieltag: clamp(Math.round(num(jk.einsatzProSpieltag, D.einsatzProSpieltag)), L.einsatzProSpieltag.min, L.einsatzProSpieltag.max),
+    maxAnteilProSpiel: clamp(num(jk.maxAnteilProSpiel, D.maxAnteilProSpiel), L.maxAnteilProSpiel.min, L.maxAnteilProSpiel.max),
     // Passive Typen — gleiche Grenzen wie der aktive Joker, damit kein Typ
     // heimlich staerker sein kann als der, den man bewusst setzt.
     heimat: {
@@ -684,6 +713,43 @@ export const JOKER_TYPEN = [
         const gueltig = Number.isFinite(w) && (j.faktoren || []).includes(w);
         return gueltig ? Math.max(0, w - 1) : 0;
       }
+      if (j.modus === "einsatz") {
+        // Stufenlose Fassung von "ranking" (L2, siehe joker-inventar.md 4.5
+        // samt Nachtrag 03.08.): statt eines Pools verteilt der Spieler ein
+        // Einsatz-Budget je Spieltag, normiert auf Mittelwert 1 — die
+        // Normierung passiert in der Oberfläche (die den Spieltag kennt) und
+        // landet fertig hier in `tip.gewicht`. Diese Stelle sieht nur EINEN
+        // Tipp und kann die Normierung selbst nicht prüfen, deshalb eine
+        // Bereichsprüfung statt Pool-Zugehörigkeit — ein manipulierter Client
+        // soll keinen Fantasie-Faktor einschleusen.
+        //
+        // 🔴 Geprüft wird NUR nach unten. Eine erste Fassung deckelte hier
+        // zusätzlich bei `RULE_LIMITS.modCap.max` (4) — das war falsch und
+        // hätte still Schaden angerichtet. Der höchste ZULÄSSIGE Faktor ist
+        // `maxAnteilProSpiel × Spiele im Spieltag`, hängt also an einer Zahl,
+        // die genau diese Stelle nicht kennt. Gemessen: bei 0,4 und einem
+        // Spieltag mit 11 Spielen ist 4,4 völlig regelkonform,
+        // `invalidEinsatzMatchdays` winkt es durch — der feste Deckel hätte es
+        // als „manipuliert" verworfen und 1 zurückgegeben. Der Spieler hätte
+        // korrekt verteilt, die Prüfung hätte genickt, und der Joker hätte
+        // stumm nichts gezahlt. Runden über mehrere Wettbewerbe haben
+        // regelmäßig mehr als zehn Spiele je Spieltag, das wäre also kein
+        // Randfall gewesen.
+        //
+        // Nach oben braucht es hier auch gar nichts: `totalModifier` deckelt
+        // die Summe aller Modifikatoren mit `modCap` — dort liegt die
+        // Zusicherung, dass nichts davonläuft, und zwar für ALLE Ebenen
+        // gemeinsam. Die Spieltags-Regel (`invalidEinsatzMatchdays`) ist der
+        // eigentliche Wächter gegen zu viel Einsatz; sie kennt die Zahl der
+        // Spiele und kann sie deshalb als Einzige richtig prüfen.
+        const w = tip?.gewicht;
+        if (!Number.isFinite(w) || w < 0) return 0;
+        // ⚠️ Halbheit, bewusst: w < 1 (wer wenig setzt) ergibt hier 0 statt
+        // eines echten Dämpfers. Ein echter Dämpfer nach unten müsste durch
+        // `totalModifier` laufen, wo `modFloor` greift — das ist hier NICHT
+        // umgesetzt, siehe Kopfkommentar bei `DEFAULT_RULES.joker`.
+        return Math.max(0, w - 1);
+      }
       if (tip?.joker !== true) return 0;
       const f = j.faktor;
       return Number.isFinite(f) && f > 0 ? Math.max(0, f - 1) : 0;
@@ -814,6 +880,17 @@ export function maxJokerFactor(rules = DEFAULT_RULES) {
   const j = rules?.joker;
   if (!j?.enabled) return 1;
   if (j.modus === "ranking") return Math.max(1, ...(j.faktoren || [1]));
+  // Kein Pool bei "einsatz" (L2). Der wirklich höchste Faktor wäre
+  // `maxAnteilProSpiel × Spiele im Spieltag` — die Zahl der Spiele steht dem
+  // Regelwerk aber nicht zur Verfügung. `RULE_LIMITS.modCap.max` ist hier die
+  // ehrlichste Näherung: eine OBERGRENZE für die Anzeige-Empfehlung, keine
+  // Zusicherung. `maxTotalModifier` schneidet ohnehin mit `modCap` zu, und der
+  // Wert dient nur der Skalierungs-Empfehlung, nie der Wertung.
+  // ⚠️ Nicht zu verwechseln mit der Prüfung in JOKER_TYPEN „aktiv": dort stand
+  // dieser Deckel einmal als HARTE Grenze und hat ab zehn Spielen je Spieltag
+  // regelkonforme Einsätze verworfen. An dieser Stelle ist er unschädlich,
+  // weil er nichts verwirft, sondern nur schätzt.
+  if (j.modus === "einsatz") return RULE_LIMITS.modCap.max;
   return Number.isFinite(j.faktor) ? j.faktor : 1;
 }
 
@@ -913,6 +990,90 @@ export function weightUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RULE
   const belegt = pool.map((gewicht) => ({ gewicht, matchId: belegtVon.get(gewicht) ?? null }));
   const frei = pool.filter((g) => g !== 1 && !belegtVon.has(g));
   return { pool, belegt, frei, alleVergeben: frei.length === 0 };
+}
+
+// Prüfregel für den Einsatz-Modus (L2): beanstandet einen Spieltag, wenn die
+// Gewichte EINES Nutzers die Normierung verletzen. Gleiche Bauart wie
+// `invalidWeightMatchdays`, aber ohne Pool — stattdessen drei Bedingungen:
+//  • ein Gewicht ist negativ,
+//  • ein einzelnes Gewicht übersteigt `maxAnteilProSpiel * anzahlTipps`
+//    dieses Spieltags (der Spiel-Deckel, L7),
+//  • die SUMME der Gewichte übersteigt die Anzahl der Tipps dieses Spieltags
+//    (Mittelwert über 1 = Gewicht aus dem Nichts). Kleiner ist erlaubt — das
+//    ist der verfallene Rest (siehe design/joker-inventar.md 4.5, Nachtrag).
+// 🔴 Die Toleranz muss zu dem passen, was ein echter Client schickt.
+// Eine erste Fassung nahm 1e-9. Gemessen mit einer regelkonformen Verteilung
+// (Maximum auf ein Spiel, Rest gleichmässig) und Gewichten auf sechs
+// Nachkommastellen — so, wie eine Oberfläche sie aus einer Division bekommt:
+// die Summe lag je nach Spieltagsgrösse bis zu 3e-6 daneben. Bei zehn und bei
+// 24 Spielen wurde die Verteilung deshalb beanstandet, bei neun, elf und
+// siebzehn nicht. Ob ein korrekt verteilter Spieltag durchgeht, hing damit an
+// reinem Rundungsglück — und der Spieler hätte eine Fehlermeldung bekommen,
+// die er durch Umverteilen nicht loswird.
+// Der Fehler wächst mit der Zahl der Summanden, die Toleranz deshalb auch.
+// Rückgabe wie `invalidWeightMatchdays`: Liste von { wettbewerb, matchday },
+// leer = gültig.
+export function invalidEinsatzMatchdays(tips = [], rules = DEFAULT_RULES, schluessel = spieltagKey) {
+  const maxAnteil = Number.isFinite(rules?.joker?.maxAnteilProSpiel)
+    ? rules.joker.maxAnteilProSpiel : DEFAULT_RULES.joker.maxAnteilProSpiel;
+  const gruppen = new Map();   // Spieltag-Schlüssel → { wettbewerb, matchday, gewichte: [] }
+  for (const t of tips) {
+    const w = t?.gewicht;
+    if (!Number.isFinite(w)) continue;
+    const key = schluessel(t);
+    const eintrag = gruppen.get(key) || { wettbewerb: t.wettbewerb ?? null, matchday: t.matchday ?? null, gewichte: [] };
+    eintrag.gewichte.push(w);
+    gruppen.set(key, eintrag);
+  }
+  const fehler = [];
+  for (const { wettbewerb, matchday, gewichte } of gruppen.values()) {
+    const n = gewichte.length;
+    const maxProSpiel = maxAnteil * n;
+    const summe = gewichte.reduce((s, w) => s + w, 0);
+    // Ein Gewicht trägt bis zu ~5e-7 Rundungsfehler; über n Summanden addiert
+    // sich das. 1e-6 je Tipp deckt das mit Reserve ab und ist immer noch
+    // Größenordnungen kleiner als jeder Einsatz, den jemand absichtlich setzt.
+    const toleranz = 1e-6 * Math.max(1, n);
+    const negativ = gewichte.some((w) => w < 0);
+    const ueberSpiel = gewichte.some((w) => w > maxProSpiel + toleranz);
+    const ueberSumme = summe > n + toleranz;
+    if (negativ || ueberSpiel || ueberSumme) fehler.push({ wettbewerb, matchday });
+  }
+  return fehler;
+}
+
+// Belegung des Einsatz-Budgets für EINEN Spieltag — speist die spätere
+// Oberfläche, Muster `weightUsageForMatchday`. Rechnet Faktor → Einsatz über
+// `einsatz = gewicht * (einsatzProSpieltag / anzahlTipps)`, damit die UI
+// „73 von 100 verteilt" in EINSATZ-Einheiten anzeigen kann (nicht in
+// Faktoren). `exceptMatchId` blendet den gerade bearbeiteten Tipp aus, analog
+// zu `weightUsageForMatchday`.
+// ⚠️ Bei `anzahlTipps === 0` wird nicht durch null geteilt — early return.
+export function einsatzUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RULES, exceptMatchId = null, schluessel = spieltagKey) {
+  const ziel = (spieltag && typeof spieltag === "object")
+    ? schluessel(spieltag)
+    : schluessel({ matchday: spieltag });
+  const j = rules?.joker || DEFAULT_RULES.joker;
+  const budget = Number.isFinite(j.einsatzProSpieltag) ? j.einsatzProSpieltag : DEFAULT_RULES.joker.einsatzProSpieltag;
+  const maxAnteil = Number.isFinite(j.maxAnteilProSpiel) ? j.maxAnteilProSpiel : DEFAULT_RULES.joker.maxAnteilProSpiel;
+  // maxAnteil·n (Gewicht-Einheiten je Spiel) × (budget/n) (Einsatz je Gewicht)
+  // = maxAnteil·budget — das n kürzt sich heraus, der Deckel ist unabhängig
+  // von der Zahl der Tipps dieses Spieltags.
+  const maxProSpiel = +(maxAnteil * budget).toFixed(2);
+  const passend = tips.filter((t) => schluessel(t) === ziel
+    && t.match_id !== exceptMatchId && t.matchId !== exceptMatchId);
+  const anzahlTipps = passend.length;
+  if (anzahlTipps === 0) {
+    return { verteilt: 0, budget, frei: budget, maxProSpiel };
+  }
+  const proTipp = budget / anzahlTipps;
+  const verteilt = passend.reduce((s, t) => s + (Number.isFinite(t?.gewicht) ? t.gewicht : 0) * proTipp, 0);
+  return {
+    verteilt: +verteilt.toFixed(2),
+    budget,
+    frei: +Math.max(0, budget - verteilt).toFixed(2),
+    maxProSpiel,
+  };
 }
 
 // Gesamtwertung eines Tipps inkl. Kombi-Multiplikator, Favoriten-Malus und Joker.

@@ -294,6 +294,40 @@ ist.
   sonst entsteht die Schluss-Salve.
 - `modCap` greift unverändert obendrauf.
 
+#### 🔴 Nachtrag 03.08.: wo die Normierung stattfindet — die Spec ließ es offen
+
+Beim Bauen aufgefallen, und es ist keine Kleinigkeit: **„auf Mittelwert 1
+normiert" setzt voraus, dass man alle Tipps eines Spieltags kennt.**
+`jokerAufschlaege` in `engine.js` sieht aber immer nur EINEN Tipp — es bekommt
+`(tip, snap, j, actual)` und sonst nichts. `ranking` umgeht das über den festen
+Pool: jeder Wert darf pro Spieltag nur einmal vergeben werden, dadurch ist die
+Normierung im Zuschnitt des Pools schon enthalten. Ein stufenloser Einsatz hat
+diese Krücke nicht.
+
+Zwei Wege, und der naheliegende ist der falsche:
+
+| Weg | Warum (nicht) |
+|---|---|
+| `scoreTip` den Spieltag mitgeben | Bricht die Architektur: `scoreTip` bewertet EINEN Tipp für sich. Und es bräche die Snapshot-Regel — ein später abgegebener Tipp würde den Faktor eines früheren nachträglich ändern. Genau das darf nicht passieren („ein abgegebener Tipp ändert seinen Wert nicht"). |
+| **Der normierte Faktor steht am Tipp** | Der Spieler verteilt in der Oberfläche, die dort bekannte Spieltags-Größe normiert, und gespeichert wird der fertige Faktor — **im vorhandenen Feld `tip.gewicht`**, das `ranking` schon benutzt. |
+
+**Festlegung: der zweite Weg.** Folgen:
+
+- **Kein neues Tipp-Feld, keine Store-Änderung, keine Migration.** `saveTip`
+  trägt `gewicht` bereits durch (`Tippabgabe.jsx` setzt es für `ranking`).
+- `jokerAufschlaege` behandelt `modus: "einsatz"` wie `ranking`, nur mit einer
+  BEREICHS-Prüfung statt `pool.includes(w)` — ein manipulierter Client soll
+  keinen Fantasie-Faktor einschleusen können.
+- Die Spieltags-Regel („Summe der Einsätze passt, keiner über
+  `maxAnteilProSpiel`") gehört dorthin, wo `invalidWeightMatchdays` schon
+  steht: eine Prüffunktion über die Tipps EINES Nutzers, mit demselben
+  `schluessel`-Parameter für den Runden-Spieltag.
+- ⚠️ **„Rest verfällt" ist damit automatisch richtig herum:** wer weniger als
+  `einsatzProSpieltag` verteilt, hat lauter Faktoren unter 1 und verliert
+  Gewicht. Es muss nichts eigens dafür gebaut werden — es ist die Folge davon,
+  dass gegen das FESTE Budget normiert wird und nicht gegen das tatsächlich
+  Ausgegebene.
+
 ### ⭐ L3 — Schutz, ohne Punkte zu erfinden
 
 Die naheliegende Fassung („dein schlechtester Spieltag zählt mindestens X")
