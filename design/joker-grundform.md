@@ -278,7 +278,7 @@ Schluss alles ab. `0` = unbegrenzt.
 ### 5.3 `kasseSichtbar` — sehen die anderen meinen Bestand?
 
 `jokerPlan.sichtbarkeit` regelt den Joker-KALENDER. Nicht geregelt: ob
-**Münzstand und Inventar** offen liegen.
+**Diamantenstand und Inventar** offen liegen.
 
 Reine Sozial-Entscheidung, ändert die Runde stark: bei offener Kasse stellt man
 sich auf jemanden ein, der noch zwei Klau-Joker hat. Bei verdeckter ist jeder

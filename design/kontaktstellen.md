@@ -31,7 +31,7 @@ Dazu die Gegenprobe, welche Bezeichner `engine.js` aus den vier neuen Modulen
 | `erfuelltBedingung` | `jokerBasis` | `minQuote`/`maxQuote`, `wettbewerbe`, `phasen` (L15) | **0** |
 | `darfWiderrufen` | `jokerBasis` | `widerruf`, `widerrufStunden` | **0** |
 | `pruefeEinsatz` · `pruefeKlassen` | `limitKlassen` | Kontingente, `wirkung`, acht Aktivierungen | **0** |
-| `kannBezahlen` · `budgetVerlauf` | `jokerBudget` | Münzstand, Quellen, Takt, Verfall | **0** |
+| `kannBezahlen` · `budgetVerlauf` | `jokerBudget` | Diamantenstand, Quellen, Takt, Verfall | **0** |
 | `ziehe` · `auswerten` | `drehrad` | die Ziehung und `maxPunkteProSaison` | **0** |
 | `zulaessigeZiele` · `duellPlan` | `duellJoker` | `zielWahl`, `maxProZiel`, `immun` | **0** |
 

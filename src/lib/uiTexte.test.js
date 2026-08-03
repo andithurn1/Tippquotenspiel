@@ -37,10 +37,22 @@ const KATALOGE = {
   REGLER_FEINHEITEN,
 };
 
-// Alle sichtbaren Texte als [Herkunft, Text].
-function sichtbareTexte() {
+// 🔴 Zwei-Währungen-Regel (design/waehrungen.md Abschnitt 2, ersetzt
+// joker-ausloeser.md Abschnitt 0): der Shop-Topf heißt „Diamanten", der
+// Wetteinsatz je Spiel heißt „Münzen". Absichtlich eine BENANNTE Liste statt
+// eines Filters über alle Kataloge — die Einsatz-Texte (nicht in dieser
+// Datei geprüft, siehe `engine.js`) SOLLEN „Münzen" sagen, nur die
+// Shop-Kataloge nicht. `BELOHNUNGS_TYPEN` (drehrad.js) gehört dazu: geprüft
+// am 03.08., der einzige Eintrag, der überhaupt eine Währung auszahlt
+// (`budget`), zahlt auf den Shop-Topf — der Katalog ist NICHT gemischt. Ein
+// neuer Shop-Katalog muss hier von Hand eingetragen werden, sonst prüft ihn
+// niemand.
+const SHOP_KATALOGE = { BUDGET_QUELLEN, TAKTE, VERFALL_TYPEN, PREISMODI, BELOHNUNGS_TYPEN };
+
+// Sichtbare Texte aus einer Katalog-Map als [Herkunft, Text].
+function sichtbareTexteAus(kataloge) {
   const out = [];
-  for (const [name, liste] of Object.entries(KATALOGE)) {
+  for (const [name, liste] of Object.entries(kataloge)) {
     if (!Array.isArray(liste)) continue;
     for (const e of liste) {
       for (const feld of ["label", "desc"]) {
@@ -48,6 +60,12 @@ function sichtbareTexte() {
       }
     }
   }
+  return out;
+}
+
+// Alle sichtbaren Texte als [Herkunft, Text].
+function sichtbareTexte() {
+  const out = sichtbareTexteAus(KATALOGE);
   // TEILBIBLIOTHEKEN ist verschachtelt ([{ aspekt, eintraege: [{key,label,desc}] }]),
   // passt also nicht in die flache KATALOGE-Map — hier zusätzlich einsammeln,
   // mit derselben Herkunfts-Form wie oben, nur um den Aspekt erweitert.
@@ -68,10 +86,18 @@ describe("Sichtbare Katalog-Texte", () => {
     expect(sichtbareTexte().length).toBeGreaterThan(60);
   });
 
-  // Sprachregelung: design/joker-ausloeser.md Abschnitt 0. Die Code-Bezeichner
-  // heißen weiter `budget` — die Oberfläche sagt „Münzen".
-  it("sagen „Münzen“, nie „Budget“", () => {
+  // Sprachregelung: design/waehrungen.md Abschnitt 2. Die Code-Bezeichner
+  // heißen weiter `budget` — die Oberfläche sagt „Diamanten".
+  it("sagen nie „Budget“", () => {
     const treffer = sichtbareTexte().filter(([, t]) => /Budget/i.test(t));
+    expect(treffer.map(([wo, t]) => `${wo}: ${t}`)).toEqual([]);
+  });
+
+  // Zwei-Währungen-Regel, zweite Richtung: die Shop-Kataloge dürfen „Münzen"
+  // nicht sagen — sonst laufen die beiden Wortwelten wieder auseinander,
+  // sobald jemand einen Katalog ergänzt (design/waehrungen.md Abschnitt 2).
+  it("Shop-Kataloge sagen „Diamanten“, nie „Münzen“", () => {
+    const treffer = sichtbareTexteAus(SHOP_KATALOGE).filter(([, t]) => /Münzen/.test(t));
     expect(treffer.map(([wo, t]) => `${wo}: ${t}`)).toEqual([]);
   });
 
