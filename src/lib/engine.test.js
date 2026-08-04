@@ -778,7 +778,7 @@ describe("Joker — Einsatz-Modus (L2, variabler Einsatz je Spiel)", () => {
     const gueltig = [2, 1, 1, 0.5, 0.5].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
     expect(invalidEinsatzMatchdays(gueltig, rules)).toEqual([]);
     const ungueltig = [2, 2, 1, 1, 1].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
-    expect(invalidEinsatzMatchdays(ungueltig, rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+    expect(invalidEinsatzMatchdays(ungueltig, rules)).toEqual([{ wettbewerb: null, matchday: 1, key: "#1" }]);
   });
 
   it("ein einzelnes Gewicht über maxAnteilProSpiel * anzahlTipps wird beanstandet", () => {
@@ -788,7 +788,7 @@ describe("Joker — Einsatz-Modus (L2, variabler Einsatz je Spiel)", () => {
     const grenzwertig = [2, 0.75, 0.75, 0.75, 0.75].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
     expect(invalidEinsatzMatchdays(grenzwertig, rules)).toEqual([]); // genau am Deckel, gültig
     const zuHoch = [2.1, 0.7, 0.7, 0.7, 0.7].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
-    expect(invalidEinsatzMatchdays(zuHoch, rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+    expect(invalidEinsatzMatchdays(zuHoch, rules)).toEqual([{ wettbewerb: null, matchday: 1, key: "#1" }]);
   });
 
   it("ein Gewicht von 0 ist zulässig", () => {
@@ -923,7 +923,7 @@ describe("Joker — Einsatz-Modus: Bezugsgröße korrigiert (design/einsatz-joke
     const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", maxAnteilProSpiel: 0.4 } });
     const tips = [{ matchday: 1, matchId: "m0", gewicht: 3.0 }, { matchday: 1, matchId: "m1", gewicht: 0 }];
     // Fallback (kein spieleImSpieltag): Deckel = 0.4 * 2 (Tippanzahl) = 0.8 → beanstandet.
-    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([{ wettbewerb: null, matchday: 1, key: "#1" }]);
     // Mit der echten Spieltagsgröße (9): Deckel = 0.4 * 9 = 3.6 → gültig.
     expect(invalidEinsatzMatchdays(tips, rules, undefined, 9)).toEqual([]);
   });
@@ -953,7 +953,7 @@ describe("Joker — Einsatz-Modus: Mindesteinsatz und Skippen (design/einsatz-jo
     // Fallback n=5 (Tippanzahl), minProSpiel = 0.1*5 = 0.5. 0.3 liegt über 0,
     // aber unter dem Minimum.
     const tips = [0.3, 1.2, 1.2, 1.2, 1.1].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
-    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([{ wettbewerb: null, matchday: 1, key: "#1" }]);
   });
 
   it("genau 0 bleibt bei skippenErlaubt: true gültig", () => {
@@ -965,7 +965,7 @@ describe("Joker — Einsatz-Modus: Mindesteinsatz und Skippen (design/einsatz-jo
   it("genau 0 wird bei skippenErlaubt: false beanstandet", () => {
     const rules = sanitizeRules({ joker: { enabled: true, modus: "einsatz", minAnteilProSpiel: 0.1, skippenErlaubt: false } });
     const tips = [0, 1.25, 1.25, 1.25, 1.25].map((gewicht, i) => ({ matchday: 1, matchId: `m${i}`, gewicht }));
-    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([{ wettbewerb: null, matchday: 1 }]);
+    expect(invalidEinsatzMatchdays(tips, rules)).toEqual([{ wettbewerb: null, matchday: 1, key: "#1" }]);
   });
 });
 

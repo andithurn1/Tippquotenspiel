@@ -9,6 +9,7 @@ import { applySaisonform, sanitizeSaisonform, DEFAULT_SAISONFORM } from "./saiso
 import { mitTippEinfluss, sanitizeTippEinfluss, DEFAULT_TIPPEINFLUSS } from "./tippEinfluss";
 import { applyDuellJoker, sanitizeDuellJoker, DEFAULT_DUELL } from "./duellJoker";
 import { sanitizeBudget, DEFAULT_BUDGET } from "./jokerBudget";
+import { sanitizeMuenzTakt, DEFAULT_MUENZ_TAKT, MUENZ_TAKT_LIMITS } from "./muenzTakt";
 import { sanitizeLimitKlassen, DEFAULT_LIMIT_KLASSEN } from "./limitKlassen";
 import { sanitizeJokerBasisKarte, DEFAULT_BASIS } from "./jokerBasis";
 import { sanitizeDrehrad, DEFAULT_DREHRAD } from "./drehrad";
@@ -151,6 +152,10 @@ export const DEFAULT_RULES = {
     maxAnteilProSpiel: 0.4,
     minAnteilProSpiel: 0,      // Mindesteinsatz je Spiel, als Anteil am Budget. 0 = keiner.
     skippenErlaubt: true,      // Darf ein Spiel mit Einsatz 0 getippt werden?
+    // Nur für modus "einsatz" (L2): WIE OFT es Münzen gibt — bisher fest an
+    // jedem Spieltag, jetzt einstellbar (design/wettmodus.md Abschnitt 3).
+    // Katalog + Perioden-Rechnung liegen in muenzTakt.js, nicht dupliziert.
+    ...DEFAULT_MUENZ_TAKT,
     // verteilung — an welchen Spieltagen es einen Joker gibt (jokerPlan.js).
     // Standard "frei": jeder setzt an jedem Spieltag selbst.
     verteilung: { ...DEFAULT_VERTEILUNG },
@@ -348,6 +353,10 @@ export const RULE_LIMITS = {
     // den additiven Topf von `totalModifier` fließt — gehört deshalb NICHT in
     // die Multiplikator-Familie aus reglerRaster.test.js.
     minAnteilProSpiel: { min: 0, max: 1, step: 0.05 },
+    // Ganzzahliger Regler (wie viele Runden-Spieltage eine Münz-Periode
+    // umfasst) — gehört wie `einsatzProSpieltag` NICHT in die
+    // Multiplikator-Familie aus reglerRaster.test.js.
+    einsatzTaktN: MUENZ_TAKT_LIMITS.einsatzTaktN,
   },
   // ⚠️ `min: 0.25`, nicht 1 — Werte UNTER 1 sind Dämpfer („dieses Spiel zählt
   // weniger"). Vorher ging es nur nach oben, wodurch der Admin Wichtiges
@@ -430,6 +439,9 @@ function sanitizeJoker(jk, num, clamp) {
       enabled: jk.mut?.enabled === true,
       faktor: clamp(num(jk.mut?.faktor, D.mut.faktor), L.mutFaktor.min, L.mutFaktor.max),
     },
+    // WIE OFT es Münzen gibt (nur modus "einsatz") — delegiert an
+    // muenzTakt.js, damit der Takt-Katalog dort die eine Quelle bleibt.
+    ...sanitizeMuenzTakt(jk),
     // WANN es überhaupt einen Joker gibt — delegiert an jokerPlan.js, damit
     // der Katalog der Modi dort die eine Quelle bleibt (wie sanitizeSaison).
     verteilung: sanitizeVerteilung(jk.verteilung),
@@ -1058,8 +1070,13 @@ function resolveSpieleImSpieltag(spieleImSpieltag, spieltagSchluessel) {
 // die er durch Umverteilen nicht loswird.
 // Der Fehler wächst mit der Zahl der Summanden, die Toleranz deshalb auch.
 // Dieselbe Toleranz wird beim Mindesteinsatz NACH UNTEN angewandt.
-// Rückgabe wie `invalidWeightMatchdays`: Liste von { wettbewerb, matchday },
-// leer = gültig.
+// Rückgabe wie `invalidWeightMatchdays`: Liste von { wettbewerb, matchday, key },
+// leer = gültig. 🔴 Nachtrag Münz-Takt (design/wettmodus.md 3): `key` ist der
+// Gruppen-Schlüssel, über den ohnehin schon gruppiert wird — seit der
+// Münz-Takt mehrere Spieltage zu EINER Periode zusammenfassen kann, reichen
+// `wettbewerb`/`matchday` dem Aufrufer nicht mehr zum Wiedererkennen: sie
+// tragen dann irgendeinen der Spieltage der Gruppe (den des ERSTEN Tipps, der
+// beim Gruppieren angetroffen wurde), nicht zwingend den gemeinten.
 export function invalidEinsatzMatchdays(tips = [], rules = DEFAULT_RULES, schluessel = spieltagKey, spieleImSpieltag = null) {
   const j = rules?.joker || DEFAULT_RULES.joker;
   const maxAnteil = Number.isFinite(j.maxAnteilProSpiel) ? j.maxAnteilProSpiel : DEFAULT_RULES.joker.maxAnteilProSpiel;
@@ -1091,7 +1108,7 @@ export function invalidEinsatzMatchdays(tips = [], rules = DEFAULT_RULES, schlue
     // gültig (die "entweder gar nicht, oder mindestens so viel"-Regel).
     const unterMindest = gewichte.some((w) => w > toleranz && w < minProSpiel - toleranz);
     const nullOhneSkip = !skippenErlaubt && gewichte.some((w) => w <= toleranz);
-    if (negativ || ueberSpiel || ueberSumme || unterMindest || nullOhneSkip) fehler.push({ wettbewerb, matchday });
+    if (negativ || ueberSpiel || ueberSumme || unterMindest || nullOhneSkip) fehler.push({ wettbewerb, matchday, key });
   }
   return fehler;
 }
