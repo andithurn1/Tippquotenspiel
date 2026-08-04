@@ -11,7 +11,13 @@ import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { spieltagOeffnen } from "./spieltagOeffnen";
 import { withSaisonPunkte } from "./saisonBoard";
+import { withDrehradPunkte } from "./drehradBoard";
 import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
+
+// Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
+// Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
+// LimitKlassen.jsx) — eine feste Saison-Länge, kein echter Spielplan-Bezug.
+const SPIELTAGE = 34;
 
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
@@ -261,10 +267,39 @@ export function createMockStore() {
       // Saison-Punkte drauf (und reine Saison-Tipper ergänzen) — siehe
       // saisonBoard.js. Der Mock hält die Saison-Tipps ALLER Runden in einer
       // Liste, deshalb hier nach Runde filtern.
-      return withSaisonPunkte({
+      board = withSaisonPunkte({
         board, rules, matches: [...matches.values()], nameOf,
         seasonTips: seasonTips.filter((s) => s.round_id === roundId),
       });
+      // Drehrad-Punkte drauf (drehradBoard.js) — ERST Saison, DANN Rad: beide
+      // sortieren und ranken das Board neu, der jeweils letzte Aufruf gewinnt.
+      // Es darf nur EINE Reihenfolge geben, sonst hängt die Rangfolge am
+      // Aufrufort statt an der Regel. Saison zuerst, weil Saison-Wetten auch
+      // Spieler neu ins Board aufnehmen (reine Saison-Tipper) — das Rad zahlt
+      // bewusst NUR an, wer schon im Board steht (siehe drehradBoard.js), muss
+      // also NACH dieser Ergänzung laufen, sonst verpasst ein reiner
+      // Saison-Tipper seine Rad-Ziehung.
+      //
+      // `kontext` macht `wer`/`werWert` UND die 5.0-Invariante („kein Rad ohne
+      // Tipp") scharf (Nachtrag zu design/kontaktstellen.md, 2026-08-04) —
+      // ohne ihn zöge jeder im Board, unabhängig von diesen Einstellungen.
+      // `board` ist der bereits fertige (Saison-)Stand von oben — dieselbe
+      // Wahl wie in `Tippabgabe.jsx`s `pruefeJokerEinsatz`. `tipps` kommt aus
+      // `roundTips`, das hier schon vorliegt, nur um `matchId`/`matchday`
+      // ergänzt. `adminFreigaben`/`letzteEinsaetze` bleiben leer: es gibt noch
+      // keinen Speicherort für Admin-Freigaben (siehe Schritt 1) und keine
+      // eigene Abklingzeit-Historie fürs Rad — ein am `jokerBasis.standard`
+      // gesetzter `abklingzeit`-Wert bliebe dadurch für das Rad wirkungslos.
+      const kontext = {
+        board,
+        tipps: roundTips.map((t) => ({
+          userId: t.user_id, matchId: t.match_id,
+          matchday: matches.get(t.match_id)?.matchday ?? null,
+        })),
+        adminFreigaben: [],
+        letzteEinsaetze: [],
+      };
+      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage: SPIELTAGE, nameOf, kontext });
     },
 
     // Roh-Einträge einer Runde (Tipp + Snapshot + Ergebnis + matchday, ohne

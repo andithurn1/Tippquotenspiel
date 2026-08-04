@@ -27,13 +27,13 @@ Dazu die Gegenprobe, welche Bezeichner `engine.js` aus den vier neuen Modulen
 
 | Funktion | Modul | Was sie durchsetzt | Aufrufer im Spielbetrieb |
 |---|---|---|:--:|
-| `darfEinsetzen` | `jokerBasis` | `wer`, „kein Joker ohne Tipp", `abklingzeit` | **1** (`pruefeJokerEinsatz` → `Tippabgabe.jsx`) |
+| `darfEinsetzen` | `jokerBasis` | `wer`, „kein Joker ohne Tipp", `abklingzeit` | **2** (`pruefeJokerEinsatz` → `Tippabgabe.jsx`; `drehradBoard.js` → `store.mock.js`/`store.supabase.js`) |
 | `erfuelltBedingung` | `jokerBasis` | `minQuote`/`maxQuote`, `wettbewerbe`, `phasen` (L15) | **1** (`pruefeJokerEinsatz` → `Tippabgabe.jsx`) |
 | `darfWiderrufen` | `jokerBasis` | `widerruf`, `widerrufStunden` | **0** |
 | `pruefeEinsatz` · `pruefeKlassen` | `limitKlassen` | Kontingente, `wirkung`, acht Aktivierungen | **0** |
 | `kannBezahlen` | `jokerBudget` | Narrenstand darf nie unters Guthaben fallen | **1** (`Tippabgabe.jsx`, vor dem Speichern) |
 | `budgetVerlauf` | `jokerBudget` | Narrenstand, Quellen, Takt, Verfall (Zufluss-Seite) | **1** (`kontoVerlauf` — darüber `Tippabgabe.jsx`, `narrenstand.js` → `RundenHub.jsx`/`Hauptmenu.jsx`) |
-| `ziehe` · `auswerten` | `drehrad` | die Ziehung und `maxPunkteProSaison` | **0** |
+| `ziehe` · `auswerten` | `drehrad` | die Ziehung und `maxPunkteProSaison` | **1** (`drehradBoard.js` → `store.mock.js`/`store.supabase.js`) |
 | `zulaessigeZiele` · `duellPlan` | `duellJoker` | `zielWahl`, `maxProZiel`, `immun` | **0** |
 
 Aufrufer haben nur: `basisFuer` (im eigenen Editor), `drehradPlan` (Vorschau)
@@ -182,3 +182,80 @@ Ausdrücklich NICHT Teil dieses Schritts: `ziehe`/`auswerten` (`drehrad`),
 `darfWiderrufen` (`jokerBasis`), `zulaessigeZiele`/`duellPlan`
 (`duellJoker`), `pruefeEinsatz`/`pruefeKlassen` (`limitKlassen`) — deren
 Zeilen in der Tabelle oben stehen weiterhin auf **0**.
+
+**2026-08-04, Schritt 3 aus Abschnitt 5 umgesetzt: die Drehrad-Ziehung zahlt
+aus.** Neues Modul `src/lib/drehradBoard.js`, Geschwister von
+`saisonBoard.js` — `drehradZiehungen({ rules, rundenId, userIds, spieltage })`
+bestimmt über `drehradPlan` WER an WELCHEN Spieltagen dreht und ruft je
+Spieler chronologisch `ziehe(drehrad, { rundenId, userId, spieltag,
+bisherige })` auf, `bisherige` als die eigenen Feld-Ids neueste zuerst (sonst
+wirkt die Sperrfrist aus `drehrad.md` 2.2b nicht). `withDrehradPunkte({ board,
+rules, rundenId, spieltage, nameOf })` ruft `auswerten(rules.drehrad,
+ziehungen)` auf und rechnet aus `gutschriften` NUR die Einträge mit
+`belohnung.typ === "punkte"` je Spieler zusammen, addiert sie als eigenes
+`drehrad`-Feld auf `total` und rankt neu — Bauart 1:1 gespiegelt von
+`withSaisonPunkte`.
+
+Es wird NICHTS gespeichert — die Ziehung wird bei jedem Aufruf neu berechnet.
+`drehrad.md` 2.5 Punkt 1 verlangt Determinismus aus `(rundenId, userId,
+spieltag)`, und weil `ziehe` das bereits ist, erfüllt reines Rechnen die
+Forderung vollständig; eine Ablage in `spieltagOeffnen`/`openMatchday` wäre
+hier sogar falsch gewesen, weil `matches` dort global über alle Runden liegt
+(Big-Game-Begründung), eine Drehrad-Ziehung aber je Runde UND Spieler ist.
+
+Verkabelt in `store.mock.js` und `store.supabase.js`, jeweils direkt NACH
+`withSaisonPunkte` an derselben Stelle in `getLeaderboard`: Saison zuerst,
+dann Rad — beide sortieren und ranken das Board neu, also darf es nur EINE
+Reihenfolge geben. Saison zuerst, weil `withSaisonPunkte` reine
+Saison-Tipper erst ins Board aufnimmt; `withDrehradPunkte` ergänzt bewusst
+KEINE neuen Spieler — wer nicht im Board steht, hat nicht mitgespielt und
+dreht auch nicht. `spieltage` kommt dabei aus einer neuen lokalen
+`SPIELTAGE = 34`-Konstante in beiden Stores, derselbe Wert und dieselbe
+Bauart wie in `Tippabgabe.jsx`/`Drehrad.jsx`/`JokerVerteilung.jsx`.
+
+⚠️ **Halbe Verkabelung, ausdrücklich benannt statt verschwiegen:** Dieser
+Schritt zahlt NUR `belohnung.typ === "punkte"` aus. Rad-Felder mit
+Joker-, Narren- (Budget-) oder Modifikator-Belohnung werden zwar gezogen und
+tauchen in `auswerten()`s `gutschriften` auf, wirken sich im Spiel aber
+weiterhin NICHT aus — sie gehören in andere Töpfe (`jokerKontingent`,
+`jokerBudget`, `modCap`), die dieser Schritt nicht anfasst. Ein Admin, der ein
+Rad mit einem Joker- oder Budget-Feld baut, sieht also weiterhin keine
+Wirkung dieses Feldes im Spielbetrieb — nur `punkte`-Felder greifen.
+
+**Nachtrag, noch selbentags: `wer`/`werWert` entscheiden jetzt WIRKLICH, wer
+dreht.** Die erste Fassung von `drehradZiehungen` zog für JEDEN übergebenen
+`userId`, unabhängig von `rules.drehrad.wer`/`.werWert` — der `wer`-Regler in
+`Drehrad.jsx` lief damit ins Leere, obwohl `darfEinsetzen` jetzt in der
+Tabelle oben als Aufrufer steht. `drehradZiehungen`/`withDrehradPunkte`
+bekamen dafür einen optionalen `kontext`-Parameter (`{ board, tipps,
+adminFreigaben, letzteEinsaetze }`, jeweils ALLE Spieler roh). Fehlt er,
+bleibt das Verhalten unverändert (Regressionsschutz für bestehende Aufrufer).
+Wird er mitgegeben — beide Stores tun das jetzt in `getLeaderboard` —, prüft
+`drehradZiehungen` vor JEDER Ziehung `darfEinsetzen(drehradBasis(rules),
+userId, ctx, "drehrad")`: zuerst die 5.0-Invariante „kein Rad ohne Tipp"
+(`ctx.hatGetippt`, gilt für JEDES `wer`, nicht nur `abPlatz`/`abRueckstand`),
+dann `wer`/`werWert` selbst. `"drehrad"` ist keine Art aus `JOKER_ARTEN` —
+`basisFuer("drehrad", rules)` liefert deshalb den `jokerBasis.standard`-
+Eintrag zurück (kein neuer Art-Schlüssel erfunden) und liefert von dort
+`sicht`/`verfall`/`bedingung`/`widerruf`/… — **`wer`/`werWert` selbst kommen
+aber bewusst NICHT von dort, sondern bleiben `rules.drehrad.wer`/`.werWert`**
+(`drehradBasis()` überschreibt sie nach dem `basisFuer`-Aufruf): das Rad führt
+diese beiden Felder als eigene Einstellung mit eigenem Regler in
+`Drehrad.jsx`; nähme man stattdessen `jokerBasis.standard.wer`, liefe dieser
+Regler ins Leere — dieselbe Fehlerklasse nur an neuer Stelle. `wer:
+"abPlatz"`/`"abRueckstand"` bewertet dabei den `board`-Snapshot, der auch an
+`withDrehradPunkte` übergeben wurde (der fertige Saison-Stand) — für einen
+Spieler, der über die Saison mehrfach zieht, ist das die AKTUELLE Position
+zum Zeitpunkt des Aufrufs, nicht die historische Position am jeweiligen
+Dreh-Spieltag (`getLeaderboardHistory` wird hier NICHT herangezogen). Offen
+bleibt weiterhin, wie in Schritt 1: `adminFreigaben` ist mangels
+Speicherort immer leer, `wer: "adminFreigabe"` lehnt am Rad deshalb
+konsequent ab. Neu offen: `letzteEinsaetze` ist ebenfalls immer leer — es
+gibt keine eigene Abklingzeit-Historie fürs Rad —, ein am
+`jokerBasis.standard` gesetzter `abklingzeit`-Wert bleibt für das Rad
+deshalb wirkungslos, selbst wenn er für echte Joker greift.
+
+Ausdrücklich NICHT Teil dieses Schritts: `darfWiderrufen` (`jokerBasis`),
+`zulaessigeZiele`/`duellPlan` (`duellJoker`), `pruefeEinsatz`/`pruefeKlassen`
+(`limitKlassen`) — deren Zeilen in der Tabelle oben stehen weiterhin auf
+**0**.
