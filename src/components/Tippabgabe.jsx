@@ -12,6 +12,7 @@ import { zeitachse, rundenSchluessel } from "@/lib/zeitachse";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
 import { darfJokerSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
+import { pruefeJokerEinsatz } from "@/lib/jokerBasis";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -91,10 +92,14 @@ export default function Tippabgabe({ matchId }) {
   const scorer = RULES.markets.goals;
   const [picks, setPicks] = useState(null);
   const [done, setDone] = useState(false);
-  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error | einsatzUngueltig
+  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error | einsatzUngueltig | jokerUngueltig
   // Nur befüllt, wenn `saveState === "einsatzUngueltig"` — der ausformulierte
   // Grund, warum der Spieltag die Einsatz-Regeln verletzt.
   const [einsatzGrund, setEinsatzGrund] = useState("");
+  // Nur befüllt, wenn `saveState === "jokerUngueltig"` — der ausformulierte
+  // Grund, warum `pruefeJokerEinsatz` (design/kontaktstellen.md Abschnitt 5
+  // Punkt 1) den Einsatz abgelehnt hat.
+  const [jokerGrund, setJokerGrund] = useState("");
   // Gewichtung dieses Spiels: Flag (Modus „einzel") bzw. Faktor (Modus „ranking").
   const [joker, setJoker] = useState(false);
   const [gewicht, setGewicht] = useState(1);
@@ -111,6 +116,9 @@ export default function Tippabgabe({ matchId }) {
   const [meineEintraege, setMeineEintraege] = useState([]);
   const [votes, setVotes] = useState([]);   // Joker-Abstimmung der Runde
   const [alleMatches, setAlleMatches] = useState([]);  // für die Zeitachse der Runde
+  // Tabellenstand der Runde — für die `wer`-Modi `abPlatz`/`abRueckstand`
+  // aus jokerBasis.js (design/kontaktstellen.md Abschnitt 5 Punkt 1).
+  const [board, setBoard] = useState([]);
 
   useEffect(() => {
     let live = true;
@@ -142,9 +150,13 @@ export default function Tippabgabe({ matchId }) {
   useEffect(() => {
     if (!user) return;
     let live = true;
-    Promise.all([getStore().listTips({ roundId }), getStore().listMatches(), getStore().listVotes({ roundId })]).then(([tips, ms, vs]) => {
+    Promise.all([
+      getStore().listTips({ roundId }), getStore().listMatches(), getStore().listVotes({ roundId }),
+      getStore().getLeaderboard(roundId),
+    ]).then(([tips, ms, vs, lb]) => {
       if (!live) return;
       setVotes(vs);
+      setBoard(lb);
       // Wettbewerb mit anreichern — der Gewichte-Schlüssel ist wettbewerb+matchday.
       const infoOf = new Map(ms.map((m) => [m.id, { matchday: m.matchday ?? null, wettbewerb: wettbewerbVon(m) }]));
       const eigene = tips
@@ -154,6 +166,9 @@ export default function Tippabgabe({ matchId }) {
           matchday: infoOf.get(t.match_id)?.matchday ?? null,
           wettbewerb: infoOf.get(t.match_id)?.wettbewerb ?? null,
           gewicht: t.tip?.gewicht,
+          // Für `letzteEinsaetze` (Abklingzeit, jokerBasis.js): ob auf DIESEM
+          // Tipp der Joker (Modus „einzel") gesetzt wurde.
+          joker: t.tip?.joker === true,
         }));
       setMeineTips(eigene);
       setAlleMatches(ms);
@@ -241,6 +256,34 @@ export default function Tippabgabe({ matchId }) {
   // Liste kostet hier nichts.
   const schl = schluessel ?? spieltagKey;
   const spieleImSpieltag = alleMatches.filter((m) => schl(m) === schl(spieltag)).length;
+
+  // Kontext für `pruefeJokerEinsatz` (design/kontaktstellen.md Abschnitt 5
+  // Punkt 1) — hängt an `spieltag`/`schl`, die beide `match` voraussetzen und
+  // deshalb erst NACH dem frühen Return oben feststehen (siehe Meldung am
+  // Ende dieser Ausführung: Abweichung von der Hook-Vorgabe).
+  const alleGetippt = alleMatches
+    .filter((m) => schl(m) === schl(spieltag))
+    .every((m) => m.id === matchId || meineTips.some((t) => t.match_id === m.id));
+  // Aus den eigenen Tipps: alle mit gesetztem Joker (Modus „einzel") oder
+  // einem Gewicht ungleich neutral (Modi „ranking"/„einsatz") — das sind die
+  // Einsätze, an denen `pruefeAbklingzeit` in jokerBasis.js misst.
+  const letzteEinsaetze = meineTips
+    .filter((t) => t.joker === true || (t.gewicht != null && t.gewicht !== 1))
+    .map((t) => ({ jokerArt: rankingModus ? "joker.ranking" : "joker.einzel", spieltag: t.matchday }));
+  const kontext = {
+    // Der Tipp, der hier gerade gespeichert wird, IST der Tipp DIESES
+    // Spieltags — die Invariante „kein Joker ohne Tipp" (jokerBasis.js,
+    // Abschnitt 5.0) ist damit in diesem Screen immer erfüllt.
+    hatGetippt: true,
+    board,
+    aktuellerSpieltag: spieltag.matchday,
+    // Es gibt derzeit keinen Speicherort für Admin-Freigaben — der Modus
+    // `adminFreigabe` lehnt deshalb konsequent ab, statt still durchzulassen.
+    adminFreigaben: [],
+    alleGetippt,
+    letzteEinsaetze,
+  };
+
   // Kontingent aus BEIDEN Töpfen: zugeteilt (Plan) + erspielt (Ereignisse).
   // Ohne diese Zusammenführung wäre ein erspielter Joker eine Zahl ohne Wirkung.
   // `plan` und `gutschriften` sind oben berechnet (Hook-Regel, siehe dort).
@@ -362,6 +405,33 @@ export default function Tippabgabe({ matchId }) {
             : "deine Münzen gehen an diesem Spieltag nicht auf — nimm auf einem Spiel zurück";
           setEinsatzGrund(grund);
           setSaveState("einsatzUngueltig");
+          return;
+        }
+      }
+      // Joker-Grundform prüfen (design/kontaktstellen.md Abschnitt 5 Punkt 1):
+      // nur wenn tatsächlich eine Gewichtung gesetzt wird — sonst gäbe es für
+      // einen unangetasteten Tipp gar nichts zu prüfen.
+      //
+      // ⚠️ Geprüft wird `gewichtEffektiv`, NICHT `gewicht` — dieselbe
+      // Unterscheidung wie oben bei `einsatzAktuell`. Im Einsatz-Modus gilt bis
+      // zur ersten Berührung der VORSCHLAG, und der liegt wegen des
+      // Mindesteinsatzes regelmäßig ungleich neutral. Über `gewicht` geprüft
+      // liefe ausgerechnet der häufigste Fall — Regler stehen lassen und
+      // absenden — ungeprüft durch, obwohl ein gewichteter Tipp gespeichert
+      // wird. Die Kontaktstelle wäre dann halb tot, und das ist schlechter als
+      // ganz tot: sie sähe verkabelt aus.
+      // Außerhalb des Einsatz-Modus ist `gewichtEffektiv === gewicht` (siehe
+      // dort), Ranking- und Einzel-Fall ändern sich also nicht.
+      if (jokerAktiv && !gesperrt && (joker === true || gewichtEffektiv !== 1)) {
+        const jokerArt = rankingModus ? "joker.ranking" : "joker.einzel";
+        const pruef = pruefeJokerEinsatz({
+          rules: RULES, userId: user.id, snap: SNAP, jokerArt,
+          wettbewerb: spieltag.wettbewerb, phase: match.phase ?? null,
+          kontext,
+        });
+        if (pruef.erlaubt === false) {
+          setJokerGrund(pruef.grund);
+          setSaveState("jokerUngueltig");
           return;
         }
       }
@@ -762,7 +832,7 @@ export default function Tippabgabe({ matchId }) {
           <Confirmation
             snap={SNAP} h={h} a={a} winner={winner} csQuote={csQuote}
             kickoffLabel={kickoffLabel} picks={picks} teams={teams} saveState={saveState}
-            einsatzGrund={einsatzGrund}
+            einsatzGrund={einsatzGrund} jokerGrund={jokerGrund}
             roundName={roundName}
             onEdit={() => { setSaveState("idle"); setDone(false); }}
           />
@@ -832,15 +902,19 @@ const SAVE_HINT = {
   error:  { text: "Speichern fehlgeschlagen — später erneut versuchen", col: C.coral },
 };
 
-function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState, einsatzGrund, roundName, onEdit }) {
+function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState, einsatzGrund, jokerGrund, roundName, onEdit }) {
   // Einsatz-Modus: nicht gespeichert, weil der Spieltag die Einsatz-Regeln
   // verletzt (design/einsatz-joker.md 3.2). Der GRUND wird beim Absenden
   // ausformuliert und hier nur eingesetzt — es gibt vier verschiedene, und
   // „ungültig" allein sagt dem Spieler nicht, was er tun soll.
+  // Joker-Grundform: derselbe Aufbau, nur mit dem Grund aus
+  // `pruefeJokerEinsatz` (design/kontaktstellen.md Abschnitt 5 Punkt 1).
   const hint = saveState === "saved"
     ? { text: `✓ gespeichert in „${roundName ?? "deiner Runde"}"`, col: C.mint }
     : saveState === "einsatzUngueltig"
     ? { text: `nicht gespeichert — ${einsatzGrund}`, col: C.coral }
+    : saveState === "jokerUngueltig"
+    ? { text: `nicht gespeichert — ${jokerGrund}`, col: C.coral }
     : SAVE_HINT[saveState];
   return (
     <div style={{ position: "relative", padding: "30px 22px 24px" }}>

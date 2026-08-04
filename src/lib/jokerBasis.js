@@ -524,6 +524,26 @@ export function erfuelltBedingung(basis, snap, wettbewerb = null, phase = null) 
   return { erlaubt: true, grund: null };
 }
 
+// ── EIN Aufruf fürs Setzen eines Jokers ──────────────────────
+// design/kontaktstellen.md Abschnitt 5 Punkt 1: bis hierhin hatten
+// `darfEinsetzen` und `erfuelltBedingung` NULL Aufrufer im Spielbetrieb —
+// diese Funktion ist die Verkabelung, die das behebt. Sie ist der EINE Ort,
+// an dem beide beim tatsächlichen Setzen eines Jokers gefragt werden.
+//
+// Die Reihenfolge ist Absicht: ERST `darfEinsetzen` (die Grundberechtigung —
+// `wer`, „kein Joker ohne Tipp", Abklingzeit), DANN erst `erfuelltBedingung`
+// (die Eigenschaft DIESES Spiels — minQuote/maxQuote, Wettbewerb, Phase).
+// „Du darfst hier gar nicht einsetzen" ist für den Spieler eine nützlichere
+// Meldung als „dieses Spiel passt nicht zur Bedingung" — wer schon an der
+// Grundberechtigung scheitert, muss nicht zusätzlich über eine
+// Spiel-Eigenschaft stolpern, die am eigentlichen Problem vorbeigeht.
+export function pruefeJokerEinsatz({ rules, jokerArt, userId, snap, wettbewerb = null, phase = null, kontext = {} }) {
+  const basis = basisFuer(jokerArt, rules);
+  const wer = darfEinsetzen(basis, userId, kontext, jokerArt);
+  if (wer.erlaubt === false) return wer;
+  return erfuelltBedingung(basis, snap, wettbewerb, phase);
+}
+
 // ── bis wann änderbar ────────────────────────────────────────
 // `jetzt`/`anpfiff` als Zeitstempel (ms), dieselbe Bauart wie `tippStatus` in
 // `tippfenster.js`. Geschlossen wird IMMER spätestens beim Anpfiff — dieselbe

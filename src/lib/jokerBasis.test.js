@@ -3,7 +3,7 @@ import {
   WER, SICHT, VERFALL, WIDERRUF, SYMMETRIE, UMFANG,
   BASIS_LIMITS, DEFAULT_BASIS,
   sanitizeBasis, sanitizeJokerBasisKarte, basisFuer,
-  darfEinsetzen, erfuelltBedingung, darfWiderrufen,
+  darfEinsetzen, erfuelltBedingung, darfWiderrufen, pruefeJokerEinsatz,
   beschreibeBasis, konflikte,
 } from "./jokerBasis";
 
@@ -525,6 +525,67 @@ describe("basisFuer — 5. neue Felder aus standard plus Art-Abweichung", () => 
 });
 
 // ── Beschreibung ─────────────────────────────────────────────
+
+// ── Verkabelung: pruefeJokerEinsatz ──────────────────────────
+// design/kontaktstellen.md Abschnitt 5 Punkt 1.
+
+describe("pruefeJokerEinsatz", () => {
+  // Außenseiter-Siegquote dieses Snapshots: 6.0 (Gast).
+  const snap = { winner: { home: 1.5, draw: 3.4, away: 6.0 } };
+
+  it("1. Vorgabe-Regelwerk plus hatGetippt: erlaubt", () => {
+    const r = pruefeJokerEinsatz({
+      rules: {}, jokerArt: "joker.einzel", userId: "a", snap,
+      kontext: { hatGetippt: true },
+    });
+    expect(r).toEqual({ erlaubt: true, grund: null });
+  });
+
+  it("2. hatGetippt fehlt: abgelehnt, Grund nennt 'ohne Tipp'", () => {
+    const r = pruefeJokerEinsatz({
+      rules: {}, jokerArt: "joker.einzel", userId: "a", snap,
+      kontext: {},
+    });
+    expect(r.erlaubt).toBe(false);
+    expect(r.grund).toContain("ohne Tipp");
+  });
+
+  it("3. bedingung.minQuote oberhalb der Sieger-Quote des Snapshots: abgelehnt", () => {
+    const rules = { jokerBasis: { standard: { bedingung: { minQuote: 10 } } } };
+    const r = pruefeJokerEinsatz({
+      rules, jokerArt: "joker.einzel", userId: "a", snap,
+      kontext: { hatGetippt: true },
+    });
+    expect(r.erlaubt).toBe(false);
+  });
+
+  it("4. beide verletzt (kein Tipp UND Quote zu niedrig): der Grund kommt aus darfEinsetzen", () => {
+    const rules = { jokerBasis: { standard: { bedingung: { minQuote: 10 } } } };
+    const r = pruefeJokerEinsatz({
+      rules, jokerArt: "joker.einzel", userId: "a", snap,
+      kontext: {}, // kein Tipp
+    });
+    expect(r.erlaubt).toBe(false);
+    expect(r.grund).toContain("ohne Tipp");
+  });
+
+  // 5. Gegenprobe nach design/kontaktstellen.md Abschnitt 5: derselbe Aufruf
+  // einmal mit Vorgabe-Regelwerk und einmal mit einer Einstellung auf
+  // Anschlag muss ein MESSBAR anderes Ergebnis liefern — sonst wäre die
+  // Kontaktstelle weiterhin tot, nur unsichtbarer als vorher.
+  it("5. Gegenprobe: Vorgabe-Regelwerk vs. Einstellung auf Anschlag liefert messbar anderes Ergebnis", () => {
+    const kontext = { hatGetippt: true };
+    const vorgabe = pruefeJokerEinsatz({
+      rules: {}, jokerArt: "joker.einzel", userId: "a", snap, kontext,
+    });
+    const anschlag = pruefeJokerEinsatz({
+      rules: { jokerBasis: { standard: { bedingung: { minQuote: BASIS_LIMITS.quote.max } } } },
+      jokerArt: "joker.einzel", userId: "a", snap, kontext,
+    });
+    expect(vorgabe.erlaubt).toBe(true);
+    expect(anschlag.erlaubt).toBe(false);
+  });
+});
 
 describe("beschreibeBasis", () => {
   it("nennt wer, Sicht, Verfall, Widerruf und Stapel-Grenze", () => {

@@ -27,8 +27,8 @@ Dazu die Gegenprobe, welche Bezeichner `engine.js` aus den vier neuen Modulen
 
 | Funktion | Modul | Was sie durchsetzt | Aufrufer im Spielbetrieb |
 |---|---|---|:--:|
-| `darfEinsetzen` | `jokerBasis` | `wer`, „kein Joker ohne Tipp", `abklingzeit` | **0** |
-| `erfuelltBedingung` | `jokerBasis` | `minQuote`/`maxQuote`, `wettbewerbe`, `phasen` (L15) | **0** |
+| `darfEinsetzen` | `jokerBasis` | `wer`, „kein Joker ohne Tipp", `abklingzeit` | **1** (`pruefeJokerEinsatz` → `Tippabgabe.jsx`) |
+| `erfuelltBedingung` | `jokerBasis` | `minQuote`/`maxQuote`, `wettbewerbe`, `phasen` (L15) | **1** (`pruefeJokerEinsatz` → `Tippabgabe.jsx`) |
 | `darfWiderrufen` | `jokerBasis` | `widerruf`, `widerrufStunden` | **0** |
 | `pruefeEinsatz` · `pruefeKlassen` | `limitKlassen` | Kontingente, `wirkung`, acht Aktivierungen | **0** |
 | `kannBezahlen` · `budgetVerlauf` | `jokerBudget` | Narrenstand, Quellen, Takt, Verfall | **0** |
@@ -98,3 +98,26 @@ Ein Wächter-Test wäre denkbar (Muster `uiTexte.test.js`), wurde hier aber
 bewusst **nicht** gebaut: er müsste den Quelltext nach Aufrufern durchsuchen,
 und ein Test, der Textsuche über das Projekt macht, geht bei der ersten
 Umbenennung kaputt und erzieht dann zum Abschalten.
+
+---
+
+**2026-08-04.** Schritt 1 aus Abschnitt 5 umgesetzt: `jokerBasis.js` bekam
+`pruefeJokerEinsatz({ rules, jokerArt, userId, snap, wettbewerb, phase,
+kontext })` — erst `darfEinsetzen`, dann bei Erfolg `erfuelltBedingung`.
+`Tippabgabe.jsx` ruft sie beim Speichern eines Tipps auf, sobald tatsächlich
+eine Gewichtung gesetzt wird (Joker aktiv, nicht gesperrt, und `joker ===
+true` oder `gewicht !== 1`). Der Screen lädt dafür zusätzlich
+`getStore().getLeaderboard(roundId)` (State `board`, für die `wer`-Modi
+`abPlatz`/`abRueckstand`) und baut `kontext` mit `hatGetippt: true` (der
+gerade gespeicherte Tipp erfüllt die Invariante immer), `alleGetippt` sowie
+`letzteEinsaetze` aus den eigenen Tipps.
+
+Ausdrücklich NICHT Teil dieses Schritts: `pruefeEinsatz`/`pruefeKlassen`
+(`limitKlassen`), `kannBezahlen`/`budgetVerlauf` (`jokerBudget`),
+`ziehe`/`auswerten` (`drehrad`), `zulaessigeZiele`/`duellPlan`
+(`duellJoker`) sowie `darfWiderrufen` (`jokerBasis`) — deren Zeile in der
+Tabelle oben steht weiterhin auf **0**. Offen bleibt außerdem
+`kontext.adminFreigaben`: es gibt noch keinen Speicherort für
+Admin-Freigaben, `Tippabgabe.jsx` übergibt dafür bewusst eine leere Liste,
+wodurch der `wer`-Modus `adminFreigabe` konsequent ablehnt statt still
+durchzulassen.
