@@ -34,15 +34,16 @@ Dazu die Gegenprobe, welche Bezeichner `engine.js` aus den vier neuen Modulen
 | `kannBezahlen` | `jokerBudget` | Narrenstand darf nie unters Guthaben fallen | **1** (`Tippabgabe.jsx`, vor dem Speichern) |
 | `budgetVerlauf` | `jokerBudget` | Narrenstand, Quellen, Takt, Verfall (Zufluss-Seite) | **1** (`kontoVerlauf` — darüber `Tippabgabe.jsx`, `narrenstand.js` → `RundenHub.jsx`/`Hauptmenu.jsx`) |
 | `ziehe` · `auswerten` | `drehrad` | die Ziehung und `maxPunkteProSaison` | **1** (`drehradBoard.js` → `store.mock.js`/`store.supabase.js`) |
-| `zulaessigeZiele` · `duellPlan` | `duellJoker` | `zielWahl`, `maxProZiel`, `immun` | **0** |
+| `zulaessigeZiele` · `duellPlan` | `duellJoker` | `zielWahl`, `maxProZiel`, `immun` | **1** (`Tippabgabe.jsx`: `duellPlan` bestimmt den Duell-Spieltag im Screen, `zulaessigeZiele` läuft dort zweimal — Auswahl der Ziele und erneute Prüfung beim Speichern) |
 
 Aufrufer haben nur: `basisFuer` (im eigenen Editor), `drehradPlan` (Vorschau)
 — beide weiterhin nur in der Admin-Oberfläche, keiner im Spiel. `preisFuer`
 war bis Schritt 2 ebenfalls nur die Admin-Vorschau (`JokerOekonomie.jsx`) —
 seither hat es außerdem echte Aufrufer im Spiel, siehe unten.
 
-`applyDuellJoker` hängt in `engine.js` in der Kette, ist aber ein No-op, solange
-`einsaetze` leer bleibt (bekannt, siehe `duell-joker.md`).
+`applyDuellJoker` hängt in `engine.js` in der Kette und ist seit dem Schritt
+vom 2026-08-04 (siehe unten, `einsaetzeAusTipps`) **kein No-op mehr** — sobald
+echte Tipps mit `tip.duell` vorliegen, wirkt die Regel.
 
 ## 3. 🔴 Was das heißt — und was es NICHT heißt
 
@@ -259,3 +260,68 @@ Ausdrücklich NICHT Teil dieses Schritts: `darfWiderrufen` (`jokerBasis`),
 `zulaessigeZiele`/`duellPlan` (`duellJoker`), `pruefeEinsatz`/`pruefeKlassen`
 (`limitKlassen`) — deren Zeilen in der Tabelle oben stehen weiterhin auf
 **0**.
+
+**2026-08-04, Schritt 4 aus Abschnitt 5 umgesetzt: die Duell-Einsätze.**
+`duellJoker.js` bekam `einsaetzeAusTipps(tipps, { spieltagVon })` — übersetzt
+die roh gespeicherten Tipps (`tip.duell = { auf, typ }`) in die Form, die
+`applyDuellJoker` als drittes Argument erwartet
+(`[{ spieltag, vonUserId, aufUserId, typ }]`). Nur `spielIds`/`basis` bleiben
+draußen (Spiel-Ebene, spätere Verfeinerung); fehlt `basis`, behandelt
+`applyDuellJoker` das bereits korrekt als „ganzer Spieltag zählt". Je Spieler
+UND Spieltag zählt höchstens EIN Einsatz — bei mehreren Kandidaten (z. B. zwei
+Duell-Tipps am selben Spieltag) gewinnt der mit dem frühesten `kickoff`, bei
+Gleichstand die kleinere `matchId`, NICHT der erste Eintrag in der Eingabe —
+sonst hinge das Ergebnis an der Reihenfolge der Datenbank-Antwort statt an den
+Daten selbst (getestet mit gedrehter Eingabereihenfolge). Die Rückgabe ist
+chronologisch nach `spieltag` sortiert, weil `applyDuellJoker` `maxProSaison`
+chronologisch deckelt.
+
+Verkabelt an ALLEN fünf tatsächlich gefundenen Aufrufern von
+`scoreLeaderboardHistory` (deckt sich mit der in der Vorgabe erwarteten
+Aufteilung 2/2/1): `store.mock.js` (`getLeaderboard`, `getLeaderboardHistory`),
+`store.supabase.js` (`getLeaderboard`, `getLeaderboardHistory`) und
+`Historie.jsx`. An allen fünf Stellen wird `einsaetzeAusTipps(...)` aus
+denselben Roh-Tipp-Einträgen abgeleitet, die dort ohnehin schon für
+`scoreLeaderboardHistory` gebaut werden. `applyDuellJoker` ist damit **kein
+No-op mehr** in der echten Kette (Tabelle in Abschnitt 2 oben aktualisiert).
+
+⚠️ `einsaetzeAusTipps` braucht für den Gleichstand-Fall zusätzlich `matchId`
+je Tipp — die `entries`, die `getLeaderboard`/`getLeaderboardHistory` für
+`scoreLeaderboardHistory` selbst bauen (`eintragVon(...)`), tragen dieses Feld
+NICHT (nur `userId`, `name`, `tip`, `snapshot`, `result`, `matchday`,
+`wettbewerb`, `kickoff`). An den vier Stellen in `store.mock.js`/
+`store.supabase.js` wird deshalb für `einsaetzeAusTipps` extra eine um
+`matchId` angereicherte Kopie gebaut (`{ ...eintragVon(t), matchId:
+t.match_id }`), statt `entries` selbst zu verändern — in `Historie.jsx` ist
+das nicht nötig, weil `getRoundEntries` `matchId` schon mitliefert.
+
+**Die Spieler-Eingabe** sitzt in `Tippabgabe.jsx`, im selben Chip-Muster wie
+die bestehende Ranking-/Joker-Auswahl (nur in Coral statt Gold). Sichtbar nur,
+wenn `rules.duell.enabled` UND `duellPlan({ spieltage: SPIELTAGE, duell:
+rules.duell, basis, seed: roundId, userIds: board.map(b => b.userId) })` den
+aktuellen Spieltag für DIESEN Spieler als Duell-Spieltag ausweist — `basis`
+kommt aus `basisFuer("duell.klau"|"duell.block", rules)`, wie bei
+`pruefeJokerEinsatz`. Die Ziel-Auswahl läuft über `zulaessigeZiele(board,
+userId, rules.duell, { bisherigeEinsaetze: einsaetzeAusTipps(alleTipps),
+aktuellerSpieltag })`; `alleTipps` (seit Schritt 2 im Screen-State) wurde dafür
+um `kickoff` und den rohen `tip` ergänzt — vorher trug es nur die für
+`kontoVerlauf` gebrauchten Felder. Beim Speichern wird `tip.duell = { auf,
+typ }` nur mitgeschickt, wenn eine erneute Prüfung gegen `zulaessigeZiele` in
+diesem Moment noch zulässig ist (dasselbe Muster wie `gewichtungSicher` beim
+Ranking-Gewicht) — sonst wird das Duell verworfen statt ungeprüft übernommen.
+Ist die Ziel-Liste leer, zeigt der Screen einen Hinweistext statt einer leeren
+Auswahl (Muster `narrenGrund`/`einsatzGrund`); da `zulaessigeZiele` selbst
+keinen strukturierten Grund liefert, ist der Text bewusst allgemein gehalten
+(zählt die möglichen Ursachen auf, statt eine einzelne zu benennen).
+
+⚠️ **Offene Entscheidung, nicht im Plan festgelegt:** Sind sowohl „klau" als
+auch „block" in `rules.duell.typen` erlaubt, nutzt `duellPlan` (genauer:
+dessen `basis`-Parameter für die Abklingzeit) die Basis von „klau" — es gibt
+nur EINEN Plan je Spieler, keinen getrennt nach Art, und der Plan-Text nennt
+nur „`basis` kommt aus `basisFuer(\"duell.klau\"|\"duell.block\", rules)`"
+ohne Tie-Break-Regel für den Fall, dass beide Arten aktiv sind und
+unterschiedliche `abklingzeit`-Werte tragen.
+
+Ausdrücklich NICHT Teil dieses Schritts: `darfWiderrufen` (`jokerBasis`),
+`pruefeEinsatz`/`pruefeKlassen` (`limitKlassen`) — deren Zeilen in der Tabelle
+oben stehen weiterhin auf **0**.

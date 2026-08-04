@@ -13,6 +13,7 @@ import { spieltagOeffnen } from "./spieltagOeffnen";
 import { withSaisonPunkte } from "./saisonBoard";
 import { withDrehradPunkte } from "./drehradBoard";
 import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
+import { einsaetzeAusTipps } from "./duellJoker";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -259,7 +260,14 @@ export function createMockStore() {
       // hier stand vorher `rules.aufholen?.enabled`, und mit der Saisonform war
       // das still falsch.
       if (brauchtVerlauf(rules)) {
-        const h = scoreLeaderboardHistory(entries, rules);
+        // `einsaetzeAusTipps` braucht `matchId` für den Gleichstand-Fall
+        // (zwei Duell-Einsätze am selben Spieltag mit identischem Kickoff,
+        // z. B. zwei zeitgleich angepfiffene Bundesliga-Spiele) — `entries`
+        // (aus `eintragVon`) trägt das Feld nicht, `roundTips` schon
+        // (`match_id`), deshalb hier separat angereichert statt `entries`
+        // selbst zu verändern.
+        const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
+        const h = scoreLeaderboardHistory(entries, rules, einsaetze);
         board = h.length ? h[h.length - 1].board : [];
       } else {
         board = scoreLeaderboard(entries, rules);
@@ -316,7 +324,8 @@ export function createMockStore() {
     async getLeaderboardHistory(roundId) {
       const round = rounds.get(roundId);
       const roundTips = tips.filter((t) => t.round_id === roundId);
-      return scoreLeaderboardHistory(roundTips.map(eintragVon), round?.rules ?? DEFAULT_RULES);
+      const entries = roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id }));
+      return scoreLeaderboardHistory(entries, round?.rules ?? DEFAULT_RULES, einsaetzeAusTipps(entries));
     },
   };
 }

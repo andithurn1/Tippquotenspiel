@@ -429,6 +429,75 @@ export function waehleSpiele(spieleDesZiels = [], basis, gewaehlteIds = []) {
   return gueltig;
 }
 
+// ── Einsätze aus rohen Tipps ableiten ───────────────────────
+// Übersetzt die roh gespeicherten Tipps (`tip.duell`, gesetzt in
+// `Tippabgabe.jsx`) in die Form, die `applyDuellJoker` als drittes Argument
+// erwartet. Baut hier NUR die vier Basisfelder (`spieltag`, `vonUserId`,
+// `aufUserId`, `typ`) — `spielIds`/`basis` sind die SPÄTERE Verfeinerung auf
+// Spiel-Ebene (Abschnitt 8b (b) des Plans); fehlt `basis`, behandelt
+// `applyDuellJoker` das bereits korrekt als „ganzer Spieltag zählt".
+//
+// `tipps` = Roh-Einträge mit `userId`, `matchday`, `kickoff` und `tip` (dem
+// `jsonb`-Feld) — dieselbe Form wie `eintragVon(...)` in den Stores. Für den
+// Gleichstand-Fall unten (siehe dort) sollten die Einträge zusätzlich um
+// `matchId` ergänzt sein, wie es `eintragVon` in `getRoundEntries` bereits
+// tut. Ein gültiger Einsatz braucht `tip.duell.auf` (das Ziel), einen
+// `tip.duell.typ` aus `DUELL_TYPEN` und `auf !== userId` (kein Selbstziel).
+//
+// `spieltagVon` ist reserviert: ist er gesetzt, zählen nur Einsätze mit
+// `spieltag >= spieltagVon` — frühere Tipps werden ignoriert. `null` (Vorgabe)
+// schränkt nichts ein.
+export function einsaetzeAusTipps(tipps = [], { spieltagVon = null } = {}) {
+  const liste = Array.isArray(tipps) ? tipps : [];
+
+  const gueltig = liste.filter((t) => {
+    const d = t?.tip?.duell;
+    if (!d || d.auf == null) return false;
+    if (!DUELL_TYPEN.some((x) => x.key === d.typ)) return false;
+    if (d.auf === t.userId) return false;
+    if (spieltagVon != null && Number(t.matchday) < spieltagVon) return false;
+    return true;
+  });
+
+  // Je Spieler (`userId`) UND Spieltag (`matchday`) höchstens EIN Einsatz.
+  // Bei mehreren Kandidaten gewinnt der mit dem frühesten `kickoff`; bei
+  // Gleichstand die kleinere `matchId`. Bewusst NICHT „der erste Eintrag in
+  // der Liste gewinnt" — sonst hinge das Ergebnis an der Reihenfolge, in der
+  // die Tipps aus der Datenbank kommen, statt an ihren eigenen Daten.
+  // Dieselbe Regel wie beim Gleichstand in `streichIndizes` (saisonform.js)
+  // und `waehleSpiele` (oben in dieser Datei).
+  const jeSpielerUndTag = new Map(); // `${userId}|${matchday}` -> bester Kandidat
+  for (const t of gueltig) {
+    const key = `${t.userId}|${t.matchday}`;
+    const bisher = jeSpielerUndTag.get(key);
+    if (!bisher) {
+      jeSpielerUndTag.set(key, t);
+      continue;
+    }
+    const kickoffNeu = new Date(t.kickoff ?? NaN).getTime();
+    const kickoffAlt = new Date(bisher.kickoff ?? NaN).getTime();
+    if (kickoffNeu < kickoffAlt) {
+      jeSpielerUndTag.set(key, t);
+    } else if (kickoffNeu === kickoffAlt
+      && t.matchId != null && bisher.matchId != null && t.matchId < bisher.matchId) {
+      jeSpielerUndTag.set(key, t);
+    }
+  }
+
+  const einsaetze = [...jeSpielerUndTag.values()].map((t) => ({
+    spieltag: t.matchday,
+    vonUserId: t.userId,
+    aufUserId: t.tip.duell.auf,
+    typ: t.tip.duell.typ,
+  }));
+
+  // Chronologisch nach `spieltag` sortiert: `applyDuellJoker` deckelt
+  // `maxProSaison` chronologisch (siehe dortiger Kommentar „damit
+  // `maxProSaison` die SPÄTEREN Einsätze deckelt") — die Reihenfolge der
+  // Rückgabe ist also bedeutungstragend, nicht nur kosmetisch.
+  return einsaetze.sort((a, b) => (a.spieltag ?? 0) - (b.spieltag ?? 0));
+}
+
 // ── Anbindung an den Verlauf ────────────────────────────────
 // `verlauf` = [{ wettbewerb, matchday, board }] (kumulativ, chronologisch),
 // exakt wie `applySaisonform`. `einsaetze` = die tatsächlich gesetzten

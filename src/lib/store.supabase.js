@@ -11,6 +11,7 @@ import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
 import { withDrehradPunkte } from "./drehradBoard";
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
+import { einsaetzeAusTipps } from "./duellJoker";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -242,7 +243,14 @@ export function createSupabaseStore() {
       // falsch.
       let board;
       if (brauchtVerlauf(rules)) {
-        const h = scoreLeaderboardHistory(entries, rules);
+        // `einsaetzeAusTipps` braucht `matchId` für den Gleichstand-Fall
+        // (zwei Duell-Einsätze am selben Spieltag mit identischem Kickoff,
+        // z. B. zwei zeitgleich angepfiffene Bundesliga-Spiele) — `entries`
+        // (aus `eintragVon`) trägt das Feld nicht, `tips` (roh) schon
+        // (`match_id`), deshalb hier separat angereichert statt `entries`
+        // selbst zu verändern.
+        const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
+        const h = scoreLeaderboardHistory(entries, rules, einsaetze);
         board = h.length ? h[h.length - 1].board : [];
       } else {
         board = scoreLeaderboard(entries, rules);
@@ -301,8 +309,8 @@ export function createSupabaseStore() {
       ]);
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
-      const entries = tips.map((t) => eintragVon(t, nameOf, matchOf));
-      return scoreLeaderboardHistory(entries, round?.rules ?? DEFAULT_RULES);
+      const entries = tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id }));
+      return scoreLeaderboardHistory(entries, round?.rules ?? DEFAULT_RULES, einsaetzeAusTipps(entries));
     },
   };
 }

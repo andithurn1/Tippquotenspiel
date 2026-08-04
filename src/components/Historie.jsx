@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { DEFAULT_RULES, scoreLeaderboardHistory, scoreTip } from "@/lib/engine";
+import { einsaetzeAusTipps } from "@/lib/duellJoker";
 import { computeRecords, matchdayDeltas } from "@/lib/records";
 import { PRESETS } from "@/lib/presets";
 import { C, MONO, SERIES } from "@/lib/theme";
@@ -130,7 +131,10 @@ export default function Historie() {
   const { history, records } = useMemo(() => {
     if (!entries?.length) return { history: [], records: [] };
     const rules = gewaehlt.rules;
-    const history = scoreLeaderboardHistory(entries, rules);
+    // `entries` kommt aus `getRoundEntries` und trägt `matchId` bereits
+    // (siehe store.mock.js/store.supabase.js) — keine separate Anreicherung
+    // nötig wie bei den anderen vier Aufrufern von `scoreLeaderboardHistory`.
+    const history = scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries));
     const scored = entries.filter((e) => e.result).map((e) => {
       const s = scoreTip(e.tip, e.result, e.snapshot, rules);
       return { userId: e.userId, name: e.name, matchday: e.matchday, total: s.total, ebene: s.ebene };

@@ -4,7 +4,9 @@ import {
   DUELL_LIMITS, DEFAULT_DUELL, EMPFEHLUNG,
   sanitizeDuellJoker, fensterVon, duellPlan, zulaessigeZiele,
   applyDuellJoker, beschreibeDuell, konflikte, waehleSpiele,
+  einsaetzeAusTipps,
 } from "./duellJoker";
+import { scoreLeaderboardHistory, DEFAULT_RULES, createMockOddsSource } from "./engine";
 
 // ── Kataloge ────────────────────────────────────────────────
 
@@ -422,6 +424,91 @@ describe("beschreibeDuell", () => {
 
   it("ausgeschaltet: klarer Hinweistext", () => {
     expect(beschreibeDuell({ ...DEFAULT_DUELL, enabled: false })).toBe("Keine Duell-Joker in dieser Runde.");
+  });
+});
+
+// ── einsaetzeAusTipps (design/kontaktstellen.md Abschnitt 5 Punkt 4) ──
+
+describe("einsaetzeAusTipps", () => {
+  const kickoffFrueh = "2026-08-01T15:00:00Z";
+  const kickoffSpaet = "2026-08-01T18:00:00Z";
+
+  it("findet einen gültigen Einsatz aus einer Liste roher Tipps", () => {
+    const tipps = [
+      { userId: "a", matchday: 3, kickoff: kickoffFrueh, tip: { duell: { auf: "b", typ: "klau" } } },
+    ];
+    expect(einsaetzeAusTipps(tipps)).toEqual([
+      { spieltag: 3, vonUserId: "a", aufUserId: "b", typ: "klau" },
+    ]);
+  });
+
+  it("ungültige Einträge werden verworfen: kein tip.duell.auf, unbekannter typ, Selbstziel", () => {
+    const tipps = [
+      { userId: "a", matchday: 1, kickoff: kickoffFrueh, tip: {} }, // kein duell
+      { userId: "a", matchday: 2, kickoff: kickoffFrueh, tip: { duell: { auf: "b" } } }, // kein typ
+      { userId: "a", matchday: 3, kickoff: kickoffFrueh, tip: { duell: { auf: "b", typ: "quatsch" } } }, // unbekannter typ
+      { userId: "a", matchday: 4, kickoff: kickoffFrueh, tip: { duell: { auf: "a", typ: "klau" } } }, // Selbstziel
+      { userId: "a", matchday: 5, kickoff: kickoffFrueh, tip: { duell: { auf: "b", typ: "block" } } }, // gültig
+    ];
+    expect(einsaetzeAusTipps(tipps)).toEqual([
+      { spieltag: 5, vonUserId: "a", aufUserId: "b", typ: "block" },
+    ]);
+  });
+
+  it("zwei Duelle desselben Spielers am selben Spieltag: nur EINES bleibt übrig — das mit dem frühesten kickoff", () => {
+    // Bewusst NICHT „der erste Eintrag in der Liste gewinnt": zwei
+    // Bundesliga-Spiele desselben Spieltags pfeifen oft zeitgleich an — wessen
+    // Datensatz zuerst aus der Datenbank kommt, ist Zufall, darf das Ergebnis
+    // also nicht bestimmen. Deshalb hier auch die Gegenprobe mit gedrehter
+    // Eingabereihenfolge.
+    const frueh = { userId: "a", matchday: 5, matchId: 20, kickoff: kickoffFrueh, tip: { duell: { auf: "b", typ: "klau" } } };
+    const spaet = { userId: "a", matchday: 5, matchId: 10, kickoff: kickoffSpaet, tip: { duell: { auf: "c", typ: "block" } } };
+
+    const r1 = einsaetzeAusTipps([frueh, spaet]);
+    const r2 = einsaetzeAusTipps([spaet, frueh]); // gedrehte Eingabereihenfolge
+
+    const erwartet = [{ spieltag: 5, vonUserId: "a", aufUserId: "b", typ: "klau" }];
+    expect(r1).toEqual(erwartet);
+    expect(r2).toEqual(erwartet); // Reihenfolge der Eingabe ändert nichts am Ergebnis
+  });
+
+  it("Rückgabe ist chronologisch nach spieltag sortiert", () => {
+    const tipps = [
+      { userId: "a", matchday: 10, kickoff: kickoffFrueh, tip: { duell: { auf: "b", typ: "klau" } } },
+      { userId: "a", matchday: 2, kickoff: kickoffFrueh, tip: { duell: { auf: "b", typ: "klau" } } },
+      { userId: "a", matchday: 6, kickoff: kickoffFrueh, tip: { duell: { auf: "b", typ: "klau" } } },
+    ];
+    expect(einsaetzeAusTipps(tipps).map((e) => e.spieltag)).toEqual([2, 6, 10]);
+  });
+
+  // ── Gegenprobe (design/kontaktstellen.md Abschnitt 5) ──────
+  // Beweis, dass `applyDuellJoker` in der ECHTEN Kette kein No-op mehr ist,
+  // sobald echte Tipp-Daten durchgereicht werden: derselbe Verlauf, einmal
+  // MIT den aus `einsaetzeAusTipps` abgeleiteten Einsätzen gerechnet, einmal
+  // OHNE (Parameter weggelassen) — die Endstände der beteiligten Spieler
+  // müssen sich messbar unterscheiden.
+  it("Gegenprobe: scoreLeaderboardHistory liefert mit echten Einsätzen andere Endstände als ohne", () => {
+    const odds = createMockOddsSource();
+    const snap = odds.getSnapshot("JOR-ESP");
+    const result = odds.getResult("JOR-ESP");
+    const entries = [
+      // a setzt einen Klau-Joker auf b, beide tippen exakt (positive Punkte
+      // bei b nötig — aus einem Minus lässt sich nichts klauen).
+      { userId: "a", name: "A", tip: { home: 5, away: 1, duell: { auf: "b", typ: "klau" } }, snapshot: snap, result, matchday: 1 },
+      { userId: "b", name: "B", tip: { home: 5, away: 1 }, snapshot: snap, result, matchday: 1 },
+    ];
+    const rules = {
+      ...DEFAULT_RULES,
+      duell: { ...DEFAULT_DUELL, enabled: true, klau: { anteil: 0.5, modus: "nullsumme" } },
+    };
+
+    const ohne = scoreLeaderboardHistory(entries, rules); // dritter Parameter weggelassen -> No-op
+    const mitEinsaetzen = scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries));
+
+    const totalIn = (history, userId) => history[history.length - 1].board.find((z) => z.userId === userId).total;
+
+    expect(totalIn(mitEinsaetzen, "a")).toBeGreaterThan(totalIn(ohne, "a"));
+    expect(totalIn(mitEinsaetzen, "b")).toBeLessThan(totalIn(ohne, "b"));
   });
 });
 

@@ -12,8 +12,9 @@ import { zeitachse, rundenSchluessel } from "@/lib/zeitachse";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
 import { darfJokerSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
-import { pruefeJokerEinsatz } from "@/lib/jokerBasis";
+import { pruefeJokerEinsatz, basisFuer } from "@/lib/jokerBasis";
 import { kontoVerlauf, perioden, preisFuer, kannBezahlen, sanitizeBudget, istNarrenKauf } from "@/lib/jokerBudget";
+import { duellPlan, zulaessigeZiele, einsaetzeAusTipps, DUELL_TYPEN } from "@/lib/duellJoker";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -113,6 +114,11 @@ export default function Tippabgabe({ matchId }) {
   // Gewichtung dieses Spiels: Flag (Modus „einzel") bzw. Faktor (Modus „ranking").
   const [joker, setJoker] = useState(false);
   const [gewicht, setGewicht] = useState(1);
+  // Duell-Joker (design/duell-joker.md, design/kontaktstellen.md Abschnitt 5
+  // Punkt 4): gewähltes Ziel (`userId`) und gewählte Art ("klau"/"block").
+  // `null` = keine Auswahl = kein Duell — kein Zwang, siehe dortiger Plan.
+  const [duellZiel, setDuellZiel] = useState(null);
+  const [duellTypGewaehlt, setDuellTypGewaehlt] = useState(null);
   // Hat der Spieler den Einsatz selbst angefasst (oder lag schon einer vor)?
   // Solange nicht, gilt der berechnete Vorschlag statt des rohen `gewicht`.
   // ⚠️ Muss HIER stehen, vor dem frühen `return` weiter unten — die Rechnung
@@ -180,7 +186,11 @@ export default function Tippabgabe({ matchId }) {
       setBoard(lb);
       setLeaderboardHistory(history);
       // Wettbewerb mit anreichern — der Gewichte-Schlüssel ist wettbewerb+matchday.
-      const infoOf = new Map(ms.map((m) => [m.id, { matchday: m.matchday ?? null, wettbewerb: wettbewerbVon(m) }]));
+      // `kickoff` zusätzlich für `einsaetzeAusTipps` (Gleichstand-Fall bei
+      // zeitgleich angepfiffenen Spielen desselben Spieltags).
+      const infoOf = new Map(ms.map((m) => [m.id, {
+        matchday: m.matchday ?? null, wettbewerb: wettbewerbVon(m), kickoff: m.kickoff ?? null,
+      }]));
       const eigene = tips
         .filter((t) => t.user_id === user.id)
         .map((t) => ({
@@ -195,12 +205,17 @@ export default function Tippabgabe({ matchId }) {
       setMeineTips(eigene);
       // Käufe ALLER Spieler, angereichert um `matchday`/`matchId` — Grundlage
       // für `kontoVerlauf` (design/kontaktstellen.md Abschnitt 5 Punkt 2).
+      // `kickoff` und der rohe `tip` zusätzlich für `einsaetzeAusTipps`
+      // (design/kontaktstellen.md Abschnitt 5 Punkt 4) — dieselbe Liste
+      // bedient jetzt beide Zwecke, statt einer zweiten Anreicherung.
       setAlleTipps(tips.map((t) => ({
         userId: t.user_id,
         matchId: t.match_id,
         matchday: infoOf.get(t.match_id)?.matchday ?? null,
+        kickoff: infoOf.get(t.match_id)?.kickoff ?? null,
         gewicht: t.tip?.gewicht,
         joker: t.tip?.joker === true,
+        tip: t.tip,
       })));
       setAlleMatches(ms);
       getStore().getRoundEntries(roundId)
@@ -210,6 +225,11 @@ export default function Tippabgabe({ matchId }) {
       if (dieser?.tip?.joker === true) setJoker(true);
       // Ein bereits abgegebener Einsatz gewinnt immer gegen den Vorschlag.
       if (Number.isFinite(dieser?.tip?.gewicht)) { setGewicht(dieser.tip.gewicht); setEinsatzBeruehrt(true); }
+      // Schon gesetzter Duell-Joker dieses Tipps vorbelegen.
+      if (dieser?.tip?.duell?.auf != null) {
+        setDuellZiel(dieser.tip.duell.auf);
+        setDuellTypGewaehlt(dieser.tip.duell.typ ?? null);
+      }
     }).catch(() => {});
     return () => { live = false; };
   }, [roundId, user, matchId]);
@@ -341,6 +361,35 @@ export default function Tippabgabe({ matchId }) {
     plan, gutschriften, tipps: meineTips, userId: user?.id,
     bisSpieltag: spieltag.matchday, wettbewerb: spieltag.wettbewerb,
   });
+
+  // Duell-Joker (design/duell-joker.md, design/kontaktstellen.md Abschnitt 5
+  // Punkt 4): nur relevant, wenn `rules.duell.enabled` UND dieser Spieltag
+  // laut `duellPlan` für DIESEN Spieler ein Duell-Spieltag ist.
+  // `basis` kommt aus `basisFuer("duell.klau"|"duell.block", rules)`
+  // (dieselbe Wahl wie bei `pruefeJokerEinsatz`) — `duellPlan` selbst kennt
+  // keine Art, es gibt nur EINEN Plan je Spieler; ist „klau" erlaubt, zählt
+  // dessen Abklingzeit, sonst die von „block".
+  const duellTypenErlaubt = (RULES.duell?.typen ?? []).filter((t) => DUELL_TYPEN.some((d) => d.key === t));
+  const duellBasisArt = duellTypenErlaubt.includes("klau") ? "duell.klau" : "duell.block";
+  const duellBasis = basisFuer(duellBasisArt, RULES);
+  const duellPlanErgebnis = RULES.duell?.enabled && user
+    ? duellPlan({
+        spieltage: SPIELTAGE, duell: RULES.duell, basis: duellBasis,
+        seed: roundId ?? "", userIds: board.map((b) => b.userId),
+      })
+    : null;
+  const istDuellSpieltag = !!(RULES.duell?.enabled && user
+    && duellPlanErgebnis?.proSpieler?.[user.id]?.includes(spieltag.matchday));
+  // `bisherigeEinsaetze` aus den rohen Tipps ALLER Spieler abgeleitet
+  // (`alleTipps`, dieselbe Liste wie beim Narren-Kontostand oben) —
+  // `zulaessigeZiele` filtert selbst auf den eigenen Nutzer.
+  const bisherigeDuellEinsaetze = einsaetzeAusTipps(alleTipps);
+  const duellZulaessig = istDuellSpieltag
+    ? zulaessigeZiele(board, user?.id, RULES.duell, {
+        bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: spieltag.matchday,
+      })
+    : [];
+
   // Ranking: welche Gewichte hat der Nutzer an DIESEM Spieltag schon vergeben?
   // Der eigene Tipp ist ausgenommen (man stellt ihn ja gerade ein).
   const belegung = rankingModus
@@ -515,10 +564,28 @@ export default function Tippabgabe({ matchId }) {
       // inzwischen anderweitig belegt ist, wird auf neutral zurückgesetzt.
       let gewichtungSicher = gewichtung;
       if (rankingModus && gewicht !== 1 && gewichtBelegtVon(gewicht)) gewichtungSicher = { gewicht: 1 };
+      // Duell-Joker: dieselbe Absicherung gegen veralteten Zustand — erneute
+      // Prüfung gegen `zulaessigeZiele` im Moment des Speicherns. Ist das
+      // gewählte Ziel jetzt nicht mehr zulässig (z. B. weil zwischenzeitlich
+      // ein anderer Tipp dasselbe Ziel schon belegt hat), wird das Duell
+      // verworfen statt ungeprüft übernommen.
+      let duellSicher = null;
+      if (istDuellSpieltag && !gesperrt && duellZiel && duellTypGewaehlt) {
+        const zulaessigJetzt = zulaessigeZiele(board, user.id, RULES.duell, {
+          bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: spieltag.matchday,
+        });
+        if (zulaessigJetzt.includes(duellZiel) && duellTypenErlaubt.includes(duellTypGewaehlt)) {
+          duellSicher = { auf: duellZiel, typ: duellTypGewaehlt };
+        }
+      }
       await getStore().saveTip({
         roundId, matchId: SNAP.matchId, userId: user.id,
         // Gewichtung nur mitschicken, wenn sie erlaubt UND noch nicht gesperrt ist.
-        tip: { home: h, away: a, goals, ...(jokerAktiv && !gesperrt ? gewichtungSicher : {}) },
+        tip: {
+          home: h, away: a, goals,
+          ...(jokerAktiv && !gesperrt ? gewichtungSicher : {}),
+          ...(duellSicher ? { duell: duellSicher } : {}),
+        },
         snapshot: SNAP,
       });
       setSaveState("saved");
@@ -893,6 +960,72 @@ export default function Tippabgabe({ matchId }) {
                 {gesperrt && (
                   <p style={{ fontSize: 11, color: C.coral, marginTop: 8, lineHeight: 1.4 }}>
                     Angepfiffen — die Gewichtung ist eingefroren.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Duell-Joker (nur an einem Duell-Spieltag DIESES Spielers, siehe
+                `istDuellSpieltag` oben) — dasselbe Chip-Muster wie beim
+                Ranking-Gewicht/Joker oben, nur in Coral statt Gold, damit der
+                dritte Joker-Topf optisch als eigener erkennbar bleibt. */}
+            {istDuellSpieltag && (
+              <div style={{
+                marginTop: 18, background: `${C.coral}0E`, border: `1px solid ${C.coral}33`,
+                borderRadius: 14, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
+              }}>
+                <div style={{ fontSize: 11, color: C.coral, textTransform: "uppercase", letterSpacing: 1 }}>
+                  Duell-Joker
+                </div>
+                {duellZulaessig.length === 0 ? (
+                  <p style={{ fontSize: 11.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
+                    Aktuell kein zulässiges Ziel — z.&nbsp;B. weil niemand infrage kommt,
+                    dein Immun-Fenster noch läuft oder du das Ziel-Limit schon erreicht hast.
+                  </p>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                      {duellZulaessig.map((zielId) => {
+                        const name = board.find((b) => b.userId === zielId)?.name ?? zielId;
+                        const on = duellZiel === zielId;
+                        return (
+                          <button key={zielId} disabled={gesperrt}
+                            onClick={() => setDuellZiel(on ? null : zielId)} style={{
+                              cursor: gesperrt ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                              padding: "8px 14px", borderRadius: 999,
+                              background: on ? `${C.coral}22` : C.surface,
+                              color: on ? C.coral : C.muted,
+                              border: `1px solid ${on ? C.coral + "77" : C.line}`,
+                            }}>{name}</button>
+                        );
+                      })}
+                    </div>
+                    {duellZiel && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                        {duellTypenErlaubt.map((typKey) => {
+                          const info = DUELL_TYPEN.find((d) => d.key === typKey);
+                          const on = duellTypGewaehlt === typKey;
+                          return (
+                            <button key={typKey} disabled={gesperrt}
+                              onClick={() => setDuellTypGewaehlt(on ? null : typKey)} style={{
+                                cursor: gesperrt ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                                padding: "8px 14px", borderRadius: 999,
+                                background: on ? `${C.coral}22` : C.surface,
+                                color: on ? C.coral : C.muted,
+                                border: `1px solid ${on ? C.coral + "77" : C.line}`,
+                              }}>{info?.label ?? typKey}</button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <p style={{ fontSize: 10.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
+                      Wähle ein Ziel und eine Art — keine Auswahl heißt kein Duell an diesem Spieltag.
+                    </p>
+                  </>
+                )}
+                {gesperrt && (
+                  <p style={{ fontSize: 11, color: C.coral, marginTop: 8, lineHeight: 1.4 }}>
+                    Angepfiffen — der Duell-Joker ist eingefroren.
                   </p>
                 )}
               </div>
