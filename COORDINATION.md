@@ -104,6 +104,82 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-05 · **ÜBERGABE an ein frisches Fenster** — Verkabelung komplett, keine Null mehr im Inventar
+
+> **👉 Frische Session: DAS ist dein Einstieg.** Alles darunter ist Historie.
+> Arbeitsordner ist **`C:\Dev\Tippquotenspiel`** — die Kopie unter
+> `OneDrive\Tippprojekt` ist eine veraltete Dublette und soll verschwinden.
+
+`main` bei `6c248ca` · **1707 Tests grün** (Sessionstart: 1671) · Build sauber ·
+Arbeitskopie leer · 5 Commits.
+
+#### ✅ Was fertig ist: `design/kontaktstellen.md` Abschnitt 5, alle vier Punkte
+
+Das Inventar zählte **neun Prüffunktionen ohne Aufrufer im Spielbetrieb**. Alle
+neun sind verkabelt, in fünf Schritten, jeder einzeln vermessen:
+
+| Commit | Inhalt |
+|---|---|
+| `ae95ddb` | `darfEinsetzen` + `erfuelltBedingung` prüfen den Joker in der Tippabgabe |
+| `fd75f36` | `kontoVerlauf` — der **Narren-Kontostand ist echt**, `kannBezahlen` deckt ab |
+| `00dfc78` | `drehradBoard` — das Rad zieht deterministisch und zahlt Punkte aus |
+| `ef522de` | Duell-Einsätze über `tip.duell`, `applyDuellJoker` ist kein No-op mehr |
+| `6c248ca` | `pruefeEinsatz` + `darfWiderrufen`, keine Null mehr in der Tabelle |
+
+**Damit ist der Vorlauf frei, den die letzte Übergabe als wichtigsten Punkt
+nannte:** ohne eine Stelle, an der ein Joker GESETZT wird, konnte `balanceSim`
+diese Ebenen prinzipiell nicht messen.
+
+#### 🔴 „Keine Null" heißt NICHT „alles wirkt"
+
+Fünf Teil-Wirkungen stehen einzeln in `kontaktstellen.md`. Wer sie übersieht,
+hält das Gehäuse für fertiger als es ist:
+
+1. Rad-Felder mit **Joker-, Narren- oder Modifikator-Belohnung** zahlen nicht aus
+2. Bei gleichzeitig erlaubtem `klau` UND `block` bekommt `duellPlan` die Klau-Basis
+3. `adminFreigaben` hat keinen Speicherort — der Modus lehnt konsequent ab
+4. `letzteEinsaetze` erreicht das Rad nicht (Abklingzeit dort ohne Wirkung)
+5. `standAmTag` schlüsselt nur über `matchday`, nicht über den Wettbewerb
+
+#### 🔴 Neu in `CLAUDE.md`: die zweite Hälfte des Baukasten-Grundsatzes
+
+Der Nutzer hat ausdrücklich nachgeschärft: **Tiefe UND Einfachheit**, nicht
+„möglichst viele Regler". Jede neue Einstellung muss durch die drei
+Komplexitätsstufen gedacht werden — kommt sie in Stufe 1 vor, unter welchem
+Klartext-Regler in Stufe 2, und erst dann das Profi-Gehäuse. **Eine Einstellung,
+die nur in Stufe 3 existiert, gilt als nicht fertig.**
+
+#### 📌 Was diese Sitzung methodisch gezeigt hat
+
+**Der `executor` hat dreimal Fehler in MEINEN Vorgaben gefunden**, statt sie
+glattzubügeln — jeder hätte eine Kontaktstelle halb tot gelassen:
+`gewicht` statt `gewichtEffektiv` (der häufigste Speicherfall wäre ungeprüft
+durchgelaufen) · `basisFuer("drehrad", …)` (hätte den eigenen `wer`-Regler des
+Rads tot gelegt) · eine „fehlende" Leaderboard-Historie, die es gibt.
+
+**Und umgekehrt: fünfmal habe ich selbst eine Datenform falsch angenommen** —
+`preise: {}`, verschachtelte statt flacher Tipps, `takt: "n"` (gibt es nicht),
+`anteil` statt `klau.anteil`, `maxProSaison` als vermeintlicher Bug. Jedes Mal
+sah es nach totem Code aus. **Erst messen, dann melden.**
+
+**Kein einziger ernster Fund kam aus den Tests.** Alle aus eigenen Rechnungen
+oder dem Browser. Die Tests waren jedes Mal grün.
+
+#### 🟡 Offen, nach Wert sortiert
+
+1. **Münz-Takt** (`wettmodus.md` 3) — klein, macht den Wettmodus rund.
+   ⚠️ `TAKTE` aus `jokerBudget.js` wiederverwenden, nicht duplizieren.
+2. **Regel-Abstimmung + Verfassung** (`abstimmung-verfassung.md`) — eigenes
+   Modul, NICHT in `voting.js` (das ist die Joker-Abstimmung, andere Frage).
+3. **Glücksrad als SVG** (`drehrad.md` 3c) — prozedural, keine Clips.
+4. Die fünf Teil-Wirkungen oben.
+5. L3/L4/L6 · die 16 Auslöser.
+6. **Balance-Messung** — jetzt erst möglich. `balanceSim.js` braucht dafür
+   Formkurven je Tipper; ein Simulator mit konstant starken Tippern kann eine
+   ganze Fehlerklasse nicht sehen (Beleg: Sitzung vom 30.07.).
+
+---
+
 ### 2026-08-03 (II) · **ÜBERGABE** — der Wettmodus ist bedienbar, vier Specs warten
 
 > **👉 Frische Session: DAS ist dein Einstieg.** Alles darunter ist Historie.

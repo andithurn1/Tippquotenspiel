@@ -52,6 +52,42 @@ Stärke, Häufigkeit und Kombination kommen später, wenn das Gehäuse steht. We
 ein Admin sich eine kaputte Runde bauen will, soll er das dürfen. Was geprüft
 wird, ist ob die Einstellung GREIFT, nicht ob sie klug ist.
 
+#### 🔴 Die zweite Hälfte: Tiefe UND Einfachheit (Andi, 05.08.2026)
+
+Der Grundsatz oben wird gern als „möglichst viele Regler" gelesen. **Das ist nur
+die halbe Ansage.** Beides gilt gleichzeitig, für JEDE Einstellung:
+
+- **Nach unten offen.** Wer in die Tiefe will, findet jeden Einzelwert.
+- **Nach oben verdeckt.** Wer nicht will, sieht ihn nie und bekommt trotzdem
+  eine stimmige Runde.
+
+Der Mechanismus dafür ist **gebaut und darf nicht umgangen werden**: die drei
+Komplexitätsstufen (`charaktere.js` → Stufe 1, `einfachRegler.js` → Stufe 2,
+Profi-Ansicht → Stufe 3). Sie sind eine ANSICHT auf dasselbe `rules`-Objekt,
+kein zweites Datenmodell — beim Wechsel geht nichts verloren.
+
+**Für jede neue Einstellung heißt das drei Fragen, in dieser Reihenfolge:**
+
+1. **Kommt sie in Stufe 1 überhaupt vor?** Meist nein — dann muss ein
+   Runden-Charakter sie sinnvoll mitsetzen, ohne sie zu zeigen.
+2. **Wenn sie in Stufe 2 gehört: unter welchem KLARTEXT-Regler?** Nicht der
+   Feldname, sondern die Frage, die ein Spieler stellt („Wie viel soll nebenbei
+   passieren?"). Ein Regler in Stufe 2 fasst oft mehrere Profi-Werte zusammen.
+3. **In Stufe 3: Regler, Zahlenfeld, Preset und Live-Vorschau** — was der Wert
+   konkret bewirkt, in einem Satz.
+
+⚠️ **Eine Einstellung, die nur in Stufe 3 auftaucht und in Stufe 1/2 gar nicht
+vorkommt, ist nicht fertig.** Sie zwingt jeden, der sie nutzen will, in die
+Profi-Ansicht — genau davor sollen die Stufen schützen. Gehört sie wirklich nur
+ins Profi-Gehäuse, ist das ausdrücklich zu BEGRÜNDEN, statt sie stillschweigend
+dort abzulegen.
+
+**Die Live-Vorschau ist kein Komfort, sondern die Betreuung.** „50 % Mischung"
+sagt niemandem etwas, „ein einzelner Tipp verschiebt eine Quote um 0,24 %"
+schon. Dieselbe Rolle haben `anteile()` bei den Wettbewerbs-Gewichten und
+`beschreibeSaisonform()` / `beschreibeTippEinfluss()` bei ihren Modulen — dort
+abschauen, statt Neues zu erfinden.
+
 ### Arbeitsweise, die Andi ausdrücklich will
 
 - **Möglichst wenig Rückfragen.** Andi schaut nur gelegentlich rüber. Aufgaben
