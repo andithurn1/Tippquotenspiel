@@ -52,10 +52,31 @@ Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
 **Wer diese Liste als „fertig" liest, baut auf Sand.**
 
 **Nur Spec, noch nichts gebaut:** Regel-Abstimmung samt Verfassung
-(`design/abstimmung-verfassung.md`) · Münz-Takt (`wettmodus.md` 3) ·
-Glücksrad als SVG (`drehrad.md` 3c).
+(`design/abstimmung-verfassung.md`) · Glücksrad als SVG (`drehrad.md` 3c).
 
-Test-Stand: **1671 grün**, Build sauber (Stand 2026-08-03).
+### Dazugekommen 04.08. (Account 1)
+
+- **Münz-Takt** ✅ (`src/lib/muenzTakt.js`, `wettmodus.md` 3) — WIE OFT der
+  Wettmodus Münzen ausschüttet. Gebaut als Schlüssel-Funktion über den
+  Spieltags-Schlüssel (Bauart `rundenSchluessel`), dadurch gelten Budget,
+  Höchsteinsatz und Deckungsrechnung automatisch für die Periode, ohne dass
+  die Einsatz-Logik angefasst wurde. Katalog + Perioden aus `jokerBudget.js`,
+  Saison-Fenster aus `duellJoker.js` — nichts dupliziert.
+  Verkabelt in `muenzstand.js`, `Tippabgabe.jsx`, `Waehrungen.jsx`,
+  `Spielerstellung.jsx`.
+- 🔴 **Dabei aufgefallen: der WETTMODUS SELBST kam in Stufe 1 und 2 gar nicht
+  vor.** Kein Charakter und keine Klartext-Stufe hat ihn je gesetzt — nur die
+  Profi-Ansicht kannte ihn. Nachgezogen: Charakter „Wettbüro" (Stufe 1) und
+  zwei Stufen an der Joker-Frage (Stufe 2). **Wer eine neue Ebene baut, prüft
+  bitte beide Stufen mit** — die Profi-Ansicht wächst von allein, die anderen
+  beiden nicht.
+- Zwei Fehler aus dem Nachrechnen, nicht aus den Tests: die Konflikt-Prüfung
+  maß gegen einen Spieltag statt gegen die Periode (ein echter Konflikt wäre
+  nicht gemeldet worden), und der Warntext sagte danach „im Spieltag", während
+  die Zahl vier zählte.
+
+Test-Stand: **1741 grün**, Build sauber (Stand 2026-08-04).
+Vorher **1671 grün** (Stand 2026-08-03).
 Vorher stand hier **933 grün (28.07.)** — über eine Woche still, während die
 Suite um 738 Tests gewachsen ist. Genau die Drift, vor der der Kasten unten
 zweimal warnt; diesmal ist sie mir selbst passiert.

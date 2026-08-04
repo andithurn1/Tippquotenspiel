@@ -42,7 +42,7 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
-| 1 (Andi) | **Münz-Takt** (`wettmodus.md` 3, offene Liste Punkt 1) — neu `src/lib/muenzTakt.js` + Test, dazu `engine.js` (nur `sanitizeJoker`/`DEFAULT_RULES.joker`/`RULE_LIMITS.joker`, additiv), `muenzstand.js`, `Tippabgabe.jsx`, `Spielerstellung.jsx`, `einfachRegler.js`, `charaktere.js`. ⚠️ Liegt auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, nicht auf `main`. | läuft | 2026-08-04 |
+| 1 (Andi) | ~~**Münz-Takt** (`wettmodus.md` 3)~~ — `muenzTakt.js` + Verkabelung + alle drei Komplexitätsstufen, 1741 Tests grün, Build sauber. ⚠️ Liegt auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** auf `main`. | fertig | 2026-08-04 |
 | 2 (Andre) | ~~Joker-Baukasten: zehn Module + fünf Oberflächen-Bausteine~~ — alles auf `main`, 1472 Tests grün | fertig | 2026-08-02 |
 | 2 (Andre) | **NÄCHSTE AUFGABE: Blindstellen-Durchgang `balanceSim.js`.** Sieht der Simulator die sechs neuen Ebenen? Nach Stand 31.07. nein — null Verweise. Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-31 |
 | 2 (Andre) | ~~Joker-Ökonomie: sechs Module + Einhängen + Creator-Code~~ — alles auf `main`, 1359 Tests grün | fertig | 2026-07-31 |
@@ -104,6 +104,85 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-08-04 · Münz-Takt fertig — und ein Loch in Stufe 1 und 2, das größer war als die Aufgabe
+
+> ⚠️ **Diese Arbeit liegt auf dem Branch `claude/koordinierte-arbeitsweise-fe6w1v`,
+> nicht auf `main`.** Wer als Account 2 weiterarbeitet: erst holen.
+
+**1741 Tests grün** (Sessionstart 1707) · Build sauber · drei Commits.
+
+#### ✅ Punkt 1 der offenen Liste: Münz-Takt (`wettmodus.md` 3)
+
+Neu `src/lib/muenzTakt.js` — WIE OFT der Wettmodus Münzen ausschüttet.
+Gebaut als **Schlüssel-Funktion**, nicht als zweites Datenmodell: dieselbe
+Bauart wie `rundenSchluessel` in `zeitachse.js`, nur eine Ebene höher. Dadurch
+gelten Budget, Höchsteinsatz und Deckungsrechnung automatisch für die Periode,
+**ohne dass die Einsatz-Logik in `engine.js` angefasst wurde**. Beim
+Vorgabe-Takt gibt er die übergebene Funktion unverändert zurück — kein stiller
+Regelwechsel. `TAKTE` und `perioden()` kommen wie verlangt aus
+`jokerBudget.js`, das Saison-Fenster aus `duellJoker.js`.
+
+`engine.js` nur additiv: Vorgaben, Grenzen, `sanitizeJoker` delegiert, und
+`invalidEinsatzMatchdays` trägt den Gruppen-Schlüssel als `key` mit — ohne den
+zeigt der Treffer-Test des Aufrufers ins Leere, sobald mehrere Spieltage in
+einer Periode liegen.
+
+#### 🔴 Der eigentliche Fund: der WETTMODUS fehlte in Stufe 1 und Stufe 2 ganz
+
+Beim Durchgehen der drei Komplexitätsstufen (`CLAUDE.md`, „Die zweite Hälfte"):
+**kein Runden-Charakter und keine Klartext-Stufe hat `joker.modus: "einsatz"`
+je gesetzt.** Eine ganze Spielart war ausschließlich über die Profi-Ansicht
+erreichbar — nach dem Grundsatz also nicht fertig, und niemand hat es gemerkt,
+weil die Profi-Ansicht beim Bauen von allein mitwächst und die anderen beiden
+nicht. Nachgezogen: Charakter „Wettbüro" (Stufe 1), zwei Stufen an der Frage
+„Zählt jedes Spiel gleich viel?" (Stufe 2), Takt-Karten samt Live-Vorschau
+(Stufe 3). Dazu zwei Tests, die den Zustand festhalten.
+
+**Bitte bei jeder neuen Ebene mitprüfen.** Das ist keine Formalie: `merkmale()`
+in `charaktere.js` kannte nur zwei Joker-Modi und hätte dem Spieler „1 Joker
+pro Spieltag" auf eine Wettbüro-Karte geschrieben.
+
+#### 📌 Wieder kein ernster Fund aus den Tests
+
+Alle vier aus eigenen Rechnungen an einem echten Admin-Satz:
+
+1. Die Live-Vorschau schrieb „im Schnitt 33.3 je Spieltag" — englischer
+   Dezimalpunkt. Der Test prüfte „enthält die Zahl", und „33.3" ist ein
+   genauso gültiger Textbestandteil wie „33,3".
+2. Die Konflikt-Prüfung in der Spielerstellung maß gegen die Spiele EINES
+   Spieltags statt gegen die, die sich ein Budget teilen — bei „alle 4
+   Spieltage" wäre ein echter Konflikt nicht gemeldet worden.
+3. Direkt daraus der nächste: der Warntext sagte danach „Bei 36 Spielen **im
+   Spieltag** … mehr, als **ein Spieltag** hergibt". Zahl richtig, Satz falsch.
+   `einsatzKonflikte` nimmt jetzt die Zeitraum-Länge nur für den Wortlaut.
+4. Die Stufen-Leiste in `EinfacheRegler.jsx` hatte kein `flexWrap` — fünf
+   Knöpfe auf 400 px sind 70 px breit, dort zerfällt „Münzen auf Vorrat" in
+   vier Zeilen.
+
+**Der Umsetzer hat zweimal Fehler in meinen Vorgaben gemeldet statt sie
+glattzubügeln** (ein fehlender Import, den ein anderer Absatz derselben Vorgabe
+verlangte; ein Test, den ich anzupassen bat, den es nicht gab) und Fund 3
+unabhängig von mir ebenfalls gefunden.
+
+#### 🔴 Eine neue Kopplung, die man kennen muss
+
+**`TAKTE` in `jokerBudget.js` ist jetzt DOPPELT genutzt** — Narren-Zuteilung
+UND Münz-Takt. `uiTexte.test.js` verbietet in diesem Katalog das Wort „Münzen"
+(Zwei-Währungen-Regel). Beides zusammen heißt: **Takt-Beschriftungen müssen
+währungsneutral bleiben.** Wer dort eine Währung hineinschreibt, bricht
+entweder den Test oder den anderen Aufrufer.
+
+#### 🟡 Offen, unverändert nach Wert sortiert
+
+1. **Regel-Abstimmung + Verfassung** (`abstimmung-verfassung.md`) — eigenes
+   Modul, NICHT in `voting.js`.
+2. **Glücksrad als SVG** (`drehrad.md` 3c).
+3. Die fünf Teil-Wirkungen aus `kontaktstellen.md`.
+4. L3/L4/L6 · die 16 Auslöser.
+5. **Balance-Messung** — `balanceSim.js` braucht Formkurven je Tipper.
+
+---
 
 ### 2026-08-05 · **ÜBERGABE an ein frisches Fenster** — Verkabelung komplett, keine Null mehr im Inventar
 
