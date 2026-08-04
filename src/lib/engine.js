@@ -1176,7 +1176,15 @@ export function einsatzUsageForMatchday(tips = [], spieltag, rules = DEFAULT_RUL
 // als Satz im Text, genau wie es `jokerBudget.js` schon macht.
 // Texte: normales Deutsch, keine Bezeichner, keine Dateinamen, Einheit
 // "Münzen" (design/einsatz-joker.md 3.1), nie "Budget".
-export function einsatzKonflikte(rules = DEFAULT_RULES, spieleImSpieltag = null) {
+// 🔴 Nachtrag Münz-Takt (design/wettmodus.md 3): `spieleImSpieltag` sind seit
+// dem Takt die Spiele, die sich EIN Budget teilen — bei „alle 4 Spieltage"
+// also die von vier Spieltagen. Der dritte Parameter sagt, über wie viele
+// Spieltage das geht, und zwar AUSSCHLIESSLICH für den Text. Ohne ihn stand
+// dort „Bei 36 Spielen im Spieltag … mehr, als ein Spieltag hergibt" — die
+// ZAHL war richtig, der Satz behauptete einen einzelnen Spieltag. Aufgefallen
+// beim Nachrechnen an einem echten Admin-Satz, nicht in den Tests: die prüfen
+// den Schlüssel des Funds, nicht seinen Wortlaut.
+export function einsatzKonflikte(rules = DEFAULT_RULES, spieleImSpieltag = null, spieltageJeZeitraum = 1) {
   const j = rules?.joker || DEFAULT_RULES.joker;
   const minAnteil = Number.isFinite(j.minAnteilProSpiel) ? j.minAnteilProSpiel : DEFAULT_RULES.joker.minAnteilProSpiel;
   const maxAnteil = Number.isFinite(j.maxAnteilProSpiel) ? j.maxAnteilProSpiel : DEFAULT_RULES.joker.maxAnteilProSpiel;
@@ -1200,9 +1208,16 @@ export function einsatzKonflikte(rules = DEFAULT_RULES, spieleImSpieltag = null)
   const n = resolveSpieleImSpieltag(spieleImSpieltag, null);
   if (!skippenErlaubt && n != null && minAnteil * n > 1) {
     const prozent = Math.round(minAnteil * n * 100);
+    // Zwei Spielarten desselben Funds. Der Zeitraum-Fall nennt zusätzlich eine
+    // dritte Korrektur, die es ohne Takt gar nicht gab: Münzen häufiger
+    // ausgeben. Genau die ist hier oft die richtige — der Fund entsteht ja
+    // erst dadurch, dass ein Budget vier Spieltage tragen soll.
+    const tage = Math.max(1, Math.round(Number(spieltageJeZeitraum) || 1));
     out.push({
       key: "einsatz-mindest-uebersteigt-budget",
-      text: `Bei ${n} Spielen im Spieltag verlangen die Mindesteinsätze zusammen ${prozent} % der Münzen — mehr, als ein Spieltag hergibt. Ohne „Skippen erlaubt“ könnte der Spieltag gar nicht regelkonform getippt werden. Mindesteinsatz senken oder Skippen wieder erlauben.`,
+      text: tage > 1
+        ? `Bei ${n} Spielen in einem Münz-Zeitraum von ${tage} Spieltagen verlangen die Mindesteinsätze zusammen ${prozent} % der Münzen — mehr, als der Zeitraum hergibt. Ohne „Skippen erlaubt“ könnten diese Spieltage gar nicht regelkonform getippt werden. Mindesteinsatz senken, Skippen wieder erlauben — oder Münzen häufiger ausgeben.`
+        : `Bei ${n} Spielen im Spieltag verlangen die Mindesteinsätze zusammen ${prozent} % der Münzen — mehr, als ein Spieltag hergibt. Ohne „Skippen erlaubt“ könnte der Spieltag gar nicht regelkonform getippt werden. Mindesteinsatz senken oder Skippen wieder erlauben.`,
     });
   }
 

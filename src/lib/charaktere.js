@@ -80,6 +80,32 @@ export const CHARAKTERE = [
     }),
   },
   {
+    // 🔴 Der Wettmodus (`joker.modus: "einsatz"`) kam in Stufe 1 bisher gar
+    // nicht vor — er war nur über die Profi-Ansicht erreichbar. Genau der
+    // Zustand, den der Baukasten-Grundsatz ausschließt: wer die einfachste
+    // Stufe benutzt, hat von einer ganzen Spielart nie erfahren.
+    key: "wettbuero",
+    label: "Wettbüro",
+    tagline: "Du entscheidest, welches Spiel dir wie viel wert ist.",
+    desc: "Jeden Spieltag bekommt jeder denselben Vorrat an Münzen und verteilt ihn auf die Spiele — auf ein sicheres Gefühl mehr, auf ein Rätselspiel wenig oder gar nichts. Gewonnen werden Punkte, nie neue Münzen: der Vorrat ist jede Woche derselbe, damit niemand durch einen guten Start uneinholbar wird.",
+    emoji: "🪙",
+    fuer: "Runden, die lieber abwägen als raten",
+    rules: sanitizeRules({
+      ...preset("standard"),
+      name: "Wettbüro",
+      joker: {
+        enabled: true, modus: "einsatz", abstimmung: false,
+        einsatzProSpieltag: 100, maxAnteilProSpiel: 0.4, minAnteilProSpiel: 0,
+        skippenErlaubt: true,
+        // Der empfohlene Takt, ohne ihn zu zeigen: jede Woche frische Münzen
+        // (design/wettmodus.md 1 — Münzen sind ein Spieltags-Werkzeug, kein
+        // Vermögen). Genau das meint „ein Charakter setzt sie sinnvoll mit".
+        einsatzTakt: "spieltag",
+      },
+      saison: saison("klassisch"),
+    }),
+  },
+  {
     key: "nebenbei",
     label: "Nur nebenbei",
     tagline: "Mitspielen, ohne dass es Arbeit wird.",
@@ -106,7 +132,12 @@ export function merkmale(charakter) {
   const m = [];
 
   if (r.joker?.enabled) {
-    m.push(r.joker.modus === "ranking" ? "Gewichte verteilen" : "1 Joker pro Spieltag");
+    // ⚠️ Drei Modi, nicht zwei. Solange hier eine Ternary stand, hätte der
+    // Wettmodus „1 Joker pro Spieltag" auf die Karte geschrieben — eine
+    // Beschreibung, die dem Spieler das Falsche verspricht.
+    m.push(r.joker.modus === "ranking" ? "Gewichte verteilen"
+      : r.joker.modus === "einsatz" ? "Münzen verteilen"
+      : "1 Joker pro Spieltag");
     if (r.joker.heimat?.enabled) m.push("Heimatbonus");
     if (r.joker.mut?.enabled) m.push("Mut-Bonus");
   } else {

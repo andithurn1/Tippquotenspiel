@@ -17,6 +17,9 @@ import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/l
 import { alleVereine, vereineVon, LIGEN } from "@/lib/ligen";
 import { wettbewerbLabel } from "@/lib/wettbewerbe";
 import { beschreibeVerteilung } from "@/lib/jokerPlan";
+import { TAKTE, perioden } from "@/lib/jokerBudget";
+import { PHASEN, DUELL_LIMITS } from "@/lib/duellJoker";
+import { beschreibeMuenzTakt, muenzTaktKonflikte } from "@/lib/muenzTakt";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -380,13 +383,42 @@ export default function Spielerstellung() {
   const te = rules.tippEinfluss || DEFAULT_RULES.tippEinfluss;
   const ve = rules.versaeumnis || DEFAULT_RULES.versaeumnis;
   const bg = rules.bigGame || DEFAULT_RULES.bigGame;
+  // Wie viele Runden-Spieltage teilen sich EIN Münz-Budget? Über `perioden()`
+  // aus jokerBudget.js gerechnet, damit es dieselbe eine Quelle ist wie in
+  // muenzTakt.js — nicht per Hand nach Takt-Namen unterschieden.
+  const spieltageGesamt = aufwandKontext.spieleJeSpieltag.length || 34;
+  const muenzPeriode = j.modus === "einsatz"
+    ? perioden(j.einsatzTakt, { n: j.einsatzTaktN, fenster: j.einsatzFenster }, spieltageGesamt)[0] ?? null
+    : null;
+  const spieltageJePeriode = muenzPeriode ? muenzPeriode.bis - muenzPeriode.von + 1 : 1;
   // Typische Spieltagsgröße für den Einsatz-Modus (L2, Konflikt 2.1 Fall 2):
   // dieselbe Rechnung wie `aufwandKontext` oben fürs AufwandPanel — hier gibt
   // es keinen konkreten Spieltag, nur eine plausible Größe aus der aktuellen
   // Spielauswahl. `einsatzKonflikte` bekommt sie ausdrücklich als „typisch"
   // markiert (Text unten), verbindlich prüft erst die Tippabgabe.
   const einsatzSpieleTypisch = aufwandKontext.spieleJeSpieltag[0] ?? null;
-  const einsatzKonfliktListe = j.modus === "einsatz" ? einsatzKonflikte(rules, einsatzSpieleTypisch) : [];
+  // ⚠️ Die Konflikt-Prüfung misst gegen die Spiele, die sich EIN Budget
+  // teilen — seit dem Münz-Takt ist das nicht mehr der einzelne Spieltag,
+  // sondern die ganze Periode (z. B. "alle 4 Spieltage"). Wer hier weiter die
+  // Spieltagsgröße allein übergäbe, prüfte bei einem mehrspieltägigen Takt nur
+  // gegen ein Viertel der wirklichen Spielzahl und meldete einen echten
+  // Konflikt nicht.
+  const einsatzSpieleJePeriode = einsatzSpieleTypisch != null
+    ? einsatzSpieleTypisch * spieltageJePeriode : null;
+  const einsatzKonfliktListe = j.modus === "einsatz"
+    // Dritter Parameter: über wie viele Spieltage die Zahl geht — nur für den
+    // Wortlaut. Ohne ihn meldete der Text „Bei 36 Spielen im Spieltag", obwohl
+    // 36 die Spiele von vier Spieltagen sind.
+    ? [...einsatzKonflikte(rules, einsatzSpieleJePeriode, spieltageJePeriode), ...muenzTaktKonflikte(rules)]
+    : [];
+  // Beschriftungen im Einsatz-Block hängen am Takt: "je Spieltag" stimmt nur,
+  // solange sich eine Münz-Periode nicht über mehrere Spieltage erstreckt.
+  const muenzZeitraum = (j.einsatzTakt ?? "spieltag") === "spieltag" ? "Spieltag" : "Periode";
+  // `einsatzFenster` ist dieselbe Form wie `rules.duell`/`budget.fenster` —
+  // `patchJoker` patcht nur FLACH, deshalb hier explizit mit dem bisherigen
+  // Fenster mergen statt es zu ersetzen (dasselbe Muster wie `patchAufholen`
+  // & Co. für andere verschachtelte Regelblöcke).
+  const setzeFenster = (teil) => patchJoker({ einsatzFenster: { ...j.einsatzFenster, ...teil } });
   // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
   const auStufe = STAERKE_STUFEN.find((s) => s.staerke === au.staerke && s.schwelle === au.schwelle)?.key ?? "custom";
 
@@ -1061,13 +1093,94 @@ export default function Spielerstellung() {
                   angezeigt werden aber Münzen, weil der Admin in Münzen denkt. */}
               {j.modus === "einsatz" && (
                 <>
-                  <Slider label="Münzen je Spieltag" value={j.einsatzProSpieltag}
+                  {/* ⚠️ Beschriftung takt-abhängig (`muenzZeitraum`): das Feld
+                      heißt weiter `einsatzProSpieltag` (Bezeichner bleiben),
+                      aber sobald eine Münz-Periode mehrere Spieltage
+                      zusammenfasst, ist "je Spieltag" nicht mehr wahr — der
+                      Betrag muss dann für die ganze Periode reichen. */}
+                  <Slider label={`Münzen je ${muenzZeitraum}`} value={j.einsatzProSpieltag}
                     {...L.joker.einsatzProSpieltag}
                     onChange={(v) => patchJoker({ einsatzProSpieltag: v })}
                     fmt={(x) => `${zahl(x)} Münzen`}
-                    hint="Was jeder Spieler an diesem Spieltag zu verteilen hat." />
-                  <Zahl label="Münzen je Spieltag" wert={j.einsatzProSpieltag} limits={L.joker.einsatzProSpieltag}
+                    hint={muenzZeitraum === "Spieltag"
+                      ? "Was jeder Spieler an diesem Spieltag zu verteilen hat."
+                      : "Was jeder Spieler in dieser Periode insgesamt zu verteilen hat — wie oft eine Periode beginnt, legt der Takt unten fest."} />
+                  <Zahl label={`Münzen je ${muenzZeitraum}`} wert={j.einsatzProSpieltag} limits={L.joker.einsatzProSpieltag}
                     onChange={(v) => patchJoker({ einsatzProSpieltag: v })} />
+
+                  {/* WIE OFT es Münzen gibt — Münz-Takt (`muenzTakt.js`). Der
+                      Katalog `TAKTE` kommt aus jokerBudget.js (dieselbe Quelle
+                      wie beim Narren-Budget in JokerOekonomie.jsx), hier nur
+                      zweitgenutzt — unmittelbar neben "wie viel", weil der
+                      Takt die Frage "wie oft" zu genau diesem Betrag beantwortet. */}
+                  <Field label="Wie oft gibt es Münzen?">
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {TAKTE.map((t) => {
+                        const an = (j.einsatzTakt ?? "spieltag") === t.key;
+                        return (
+                          <button key={t.key} title={t.desc} onClick={() => patchJoker({ einsatzTakt: t.key })} style={{
+                            flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
+                            borderRadius: 11, textAlign: "left",
+                            background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
+                            border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                          }}>
+                            <div style={{ fontSize: 12, fontWeight: 700 }}>{t.label}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Field>
+
+                  {j.einsatzTakt === "alleNSpieltage" && (
+                    <Zahl label="Alle wie viele Spieltage?" wert={j.einsatzTaktN} limits={L.joker.einsatzTaktN}
+                      breite={150} marginTop={8} onChange={(v) => patchJoker({ einsatzTaktN: v })} />
+                  )}
+
+                  {j.einsatzTakt === "phase" && (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Saison-Fenster</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {PHASEN.map((p) => {
+                          const an = (j.einsatzFenster?.phase ?? "letztesDrittel") === p.key;
+                          return (
+                            <button key={p.key} onClick={() => setzeFenster({ phase: p.key })} style={{
+                              textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
+                              background: an ? `${C.gold}18` : C.surface,
+                              border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                              borderRadius: 12, padding: "9px 12px",
+                            }}>
+                              <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.gold : C.text }}>{p.label}</div>
+                              <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {j.einsatzFenster?.phase === "schlussspurt" && (
+                        <div style={{ marginTop: 8, maxWidth: 200 }}>
+                          <Zahl label="Länge (Spieltage)" wert={j.einsatzFenster?.schlussLaenge} limits={DUELL_LIMITS.schlussLaenge}
+                            onChange={(v) => setzeFenster({ schlussLaenge: v })} />
+                        </div>
+                      )}
+                      {j.einsatzFenster?.phase === "manuell" && (
+                        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                          <Zahl label="Von Spieltag" wert={j.einsatzFenster?.abSpieltag ?? ""} limits={DUELL_LIMITS.abSpieltag} leerErlaubt leerText="Vorgabe"
+                            onChange={(v) => setzeFenster({ abSpieltag: v })} />
+                          <Zahl label="Bis Spieltag" wert={j.einsatzFenster?.bisSpieltag ?? ""} limits={DUELL_LIMITS.bisSpieltag} leerErlaubt leerText="Vorgabe"
+                            onChange={(v) => setzeFenster({ bisSpieltag: v })} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Live-Vorschau. ⚠️ Bewusst `einsatzSpieleTypisch` (Spiele je
+                      SPIELTAG) übergeben, NICHT `einsatzSpieleJePeriode` —
+                      `beschreibeMuenzTakt` rechnet die Periode selbst aus
+                      Spieltag-Anzahl hoch. Die bereits hochgerechnete Zahl
+                      hier einzusetzen würde sie ein zweites Mal mit der
+                      Periodenlänge multiplizieren. */}
+                  <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                    {beschreibeMuenzTakt(rules, { spieltage: spieltageGesamt, spieleJeSpieltag: einsatzSpieleTypisch })}
+                  </p>
 
                   {/* ⚠️ Kein `reglerSchritt` hier: `maxAnteilProSpiel` ist laut
                       RULE_LIMITS-Kommentar ausdrücklich NICHT Teil der
@@ -1111,9 +1224,11 @@ export default function Spielerstellung() {
                   </p>
 
                   {/* Konflikt-Hinweise (design/einsatz-joker.md 2.1). Fall 2
-                      hängt an der Spieltagsgröße, die hier nicht sicher bekannt
-                      ist — deshalb ausdrücklich als typische Größe markiert;
-                      verbindlich prüft erst die Tippabgabe. */}
+                      hängt an der Zahl der Spiele, die sich EINE Münz-Periode
+                      teilt — bei mehrspieltägigem Takt mehr als die eines
+                      einzelnen Spieltags (Schritt 2 oben). Die Größe ist hier
+                      nicht sicher bekannt — deshalb ausdrücklich als typische
+                      Größe markiert; verbindlich prüft erst die Tippabgabe. */}
                   {einsatzKonfliktListe.length > 0 && (
                     <div style={{
                       background: `${C.gold}12`, border: `1px solid ${C.gold}33`, borderRadius: 12,
@@ -1126,8 +1241,13 @@ export default function Spielerstellung() {
                       ))}
                       {einsatzSpieleTypisch != null && (
                         <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
-                          Angenommen bei etwa {einsatzSpieleTypisch} Spielen je Spieltag — eure tatsächliche
-                          Zahl hängt von der Spielauswahl oben ab und wird beim Tippen verbindlich geprüft.
+                          {spieltageJePeriode > 1
+                            ? <>Angenommen bei etwa {einsatzSpieleTypisch} Spielen je Spieltag, macht das rund{" "}
+                                {einsatzSpieleJePeriode} Spiele über die {spieltageJePeriode} Spieltage einer
+                                Münz-Periode hinweg — eure tatsächliche Zahl hängt von der Spielauswahl oben ab
+                                und wird beim Tippen verbindlich geprüft.</>
+                            : <>Angenommen bei etwa {einsatzSpieleTypisch} Spielen je Spieltag — eure tatsächliche
+                                Zahl hängt von der Spielauswahl oben ab und wird beim Tippen verbindlich geprüft.</>}
                         </div>
                       )}
                     </div>

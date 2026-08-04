@@ -98,6 +98,27 @@ describe("Die Stufen tun wirklich etwas", () => {
     expect(aus.joker.enabled).toBe(false);
   });
 
+  // 🔴 Baukasten-Grundsatz: der Wettmodus war nur über die Profi-Ansicht
+  // erreichbar. Diese beiden Tests halten fest, dass Stufe 2 ihn anbietet —
+  // und dass der Münz-Takt dabei als KLARTEXT-Wahl vorkommt, nicht nur als
+  // Regler eine Ebene höher.
+  it("der Wettmodus ist über Stufe 2 erreichbar", () => {
+    const wetten = anwenden(DEFAULT_RULES, "joker", "wetten");
+    expect(wetten.joker.enabled).toBe(true);
+    expect(wetten.joker.modus).toBe("einsatz");
+    expect(wetten.joker.einsatzProSpieltag).toBeGreaterThan(0);
+  });
+
+  it("die beiden Wett-Stufen unterscheiden sich im Münz-Takt", () => {
+    const jeden = anwenden(DEFAULT_RULES, "joker", "wetten");
+    const vorrat = anwenden(DEFAULT_RULES, "joker", "wetten-vorrat");
+    expect(jeden.joker.einsatzTakt).toBe("spieltag");
+    expect(vorrat.joker.einsatzTakt).toBe("alleNSpieltage");
+    // Und sie müssen auseinanderzuhalten sein — sonst erkennt `erkenneStufe`
+    // die zweite als die erste und die Auswahl springt beim Öffnen zurück.
+    expect(erkenneStufe(vorrat, "joker")).toBe("wetten-vorrat");
+  });
+
   it("Saison-Stufen setzen unterschiedlich viele Wetten", () => {
     const wuerze = anwenden(DEFAULT_RULES, "saison", "wuerze");
     const spuerbar = anwenden(DEFAULT_RULES, "saison", "spuerbar");

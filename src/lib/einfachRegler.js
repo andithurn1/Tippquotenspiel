@@ -95,9 +95,16 @@ export const REGLER = [
     ],
   },
   {
+    // 🔴 Der Wettmodus (`joker.modus: "einsatz"`) war bis hierher NUR in der
+    // Profi-Ansicht erreichbar — kein Charakter und keine Stufe-2-Stufe hat ihn
+    // je gesetzt. Nach dem Baukasten-Grundsatz („eine Einstellung, die nur in
+    // Stufe 3 existiert, ist nicht fertig") gehört er hierher, und zwar unter
+    // dieselbe Klartext-Frage: es ist dieselbe Frage — zählt jedes Spiel gleich
+    // viel, und wenn nicht, wer entscheidet das? Deshalb kein eigener Regler,
+    // sondern zwei weitere Stufen an diesem.
     key: "joker",
-    label: "Gibt es Joker?",
-    hint: "Ein Spiel pro Spieltag höher gewichten — oder ganz darauf verzichten.",
+    label: "Zählt jedes Spiel gleich viel?",
+    hint: "Ob ihr einzelne Spiele hervorheben könnt — vom einen Joker bis zum eigenen Münz-Einsatz.",
     stufen: [
       {
         key: "aus", label: "Kein Joker",
@@ -113,6 +120,35 @@ export const REGLER = [
         key: "ranking", label: "Gewichte verteilen",
         beschreibung: "Du verteilst Gewichte über den Spieltag — jeder Wert nur einmal.",
         werte: { joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1.2, 1], abstimmung: false } },
+      },
+      {
+        // Der Wettmodus mit dem empfohlenen Takt: jeden Spieltag frische
+        // Münzen (design/wettmodus.md 1 — Münzen sind ein Spieltags-Werkzeug,
+        // kein Vermögen). Der Takt wird hier bewusst MITGESETZT und nicht
+        // gezeigt: „nach oben verdeckt", wer ihn anders will, findet ihn in
+        // der Profi-Ansicht oder nimmt die Stufe darunter.
+        key: "wetten", label: "Münzen setzen",
+        beschreibung: "Jeden Spieltag 100 Münzen, die du frei auf die Spiele verteilst — höchstens 40 auf eines. Gewonnen werden Punkte, nie neue Münzen.",
+        werte: {
+          joker: {
+            enabled: true, modus: "einsatz", abstimmung: false,
+            einsatzProSpieltag: 100, maxAnteilProSpiel: 0.4, minAnteilProSpiel: 0,
+            skippenErlaubt: true, einsatzTakt: "spieltag",
+          },
+        },
+      },
+      {
+        // Dieselbe Ebene, anderer Takt — damit der Münz-Takt auch in Stufe 2
+        // als KLARTEXT-Wahl vorkommt und nicht nur als Profi-Regler.
+        key: "wetten-vorrat", label: "Münzen auf Vorrat",
+        beschreibung: "Alle vier Spieltage 100 Münzen. Sie müssen für vier Spieltage reichen — wer früh alles setzt, tippt den Rest ohne Einsatz.",
+        werte: {
+          joker: {
+            enabled: true, modus: "einsatz", abstimmung: false,
+            einsatzProSpieltag: 100, maxAnteilProSpiel: 0.4, minAnteilProSpiel: 0,
+            skippenErlaubt: true, einsatzTakt: "alleNSpieltage", einsatzTaktN: 4,
+          },
+        },
       },
     ],
   },

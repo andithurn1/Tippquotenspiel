@@ -204,10 +204,14 @@ export function muenzTaktStatus({ matches = [], rules, schluessel = spieltagKey,
 // Kurzer Anzeigetext für eine Periode, als Ersatz für „Spieltag N" dort, wo
 // mehrere Spieltage zu einer Münz-Periode gehören. `null` heißt: nichts
 // Besonderes zu sagen, die Oberfläche zeigt weiter den einzelnen Spieltag.
+// ⚠️ „die ganze Saison" mit Artikel, nicht „ganze Saison": der Text steht
+// sowohl als Überschrift („🪙 Münzen — die ganze Saison") als auch mitten im
+// Satz („… Münzen für die ganze Saison verteilt") — ohne Artikel liest sich
+// der Satzfall falsch. „Spieltage 5–8" braucht ihn in beiden Stellungen nicht.
 export function periodeLabel(status, folgeLaenge) {
   if (!status?.aktiv) return null;
   if (status.spieltageInPeriode === 1) return null;
-  if (status.von === 1 && status.bis === folgeLaenge) return "ganze Saison";
+  if (status.von === 1 && status.bis === folgeLaenge) return "die ganze Saison";
   return `Spieltage ${status.von}–${status.bis}`;
 }
 

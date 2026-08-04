@@ -20,8 +20,20 @@ import { zahl } from "@/lib/format";
 // wird nur angezeigt, wenn ihr Stand aus echten Daten stammt") → das jeweilige
 // Feld bleibt einfach weg, keine erfundene Null. Sind BEIDE leer, rendert die
 // Komponente NULL, keine leere Hülle.
+//
+// `stand.aktiv === false` (Münz-TAKT, design/wettmodus.md 3): der Wettmodus
+// läuft, aber an DIESEM Spieltag gibt es keine Münzen (Takt „Saison-Fenster"
+// außerhalb des Fensters) — dann NUR `stand.grund` zeigen, keine Zahl/Balken
+// (0 von 0 wäre eine erfundene Null) und in der kompakten Fassung den
+// Münz-Teil ganz weglassen statt „🪙 0 von 0".
 export default function Waehrungen({ stand, narren, kompakt = false }) {
+  // Ein Münz-Stand ohne Münzen an diesem Spieltag (`aktiv === false`) trägt in
+  // der kompakten Fassung nichts bei — dort gibt es ohnehin keine Zahl zu
+  // zeigen (siehe unten). In der vollen Fassung bleibt er dagegen relevant:
+  // die Überschrift + der Grund-Satz sind dort die Aussage.
+  const muenzenKompaktZeigen = !!stand && stand.aktiv !== false;
   if (!stand && narren == null) return null;
+  if (kompakt && !muenzenKompaktZeigen && narren == null) return null;
 
   if (kompakt) {
     return (
@@ -29,7 +41,7 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
         display: "flex", alignItems: "center", gap: 10,
         fontFamily: MONO, fontSize: 11, color: C.muted,
       }}>
-        {stand && (
+        {muenzenKompaktZeigen && (
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <span>🪙</span>
             <span style={{ color: C.gold, fontWeight: 700 }}>{zahl(stand.frei)}</span>
@@ -55,21 +67,29 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
-              🪙 Münzen — Spieltag {stand.spieltag?.matchday ?? "?"}
+              🪙 Münzen — {stand.periodeLabel ?? `Spieltag ${stand.spieltag?.matchday ?? "?"}`}
             </span>
-            <span style={{ fontFamily: MONO, fontSize: 13, color: C.gold }}>
-              {zahl(stand.frei)} frei
-            </span>
+            {stand.aktiv !== false && (
+              <span style={{ fontFamily: MONO, fontSize: 13, color: C.gold }}>
+                {zahl(stand.frei)} frei
+              </span>
+            )}
           </div>
-          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>
-            {zahl(stand.verteilt)} von {zahl(stand.budget)} Münzen verteilt
-          </div>
-          <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>
-            <div style={{
-              position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: 999, background: C.gold,
-              width: `${anteil}%`,
-            }} />
-          </div>
+          {stand.aktiv === false ? (
+            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>{stand.grund}</div>
+          ) : (
+            <>
+              <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>
+                {zahl(stand.verteilt)} von {zahl(stand.budget)} Münzen verteilt
+              </div>
+              <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>
+                <div style={{
+                  position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: 999, background: C.gold,
+                  width: `${anteil}%`,
+                }} />
+              </div>
+            </>
+          )}
         </div>
       )}
       {narren != null && (

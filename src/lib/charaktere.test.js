@@ -57,6 +57,21 @@ describe("Die Charaktere unterscheiden sich wirklich", () => {
     expect(new Set(zustaende).size).toBeGreaterThanOrEqual(2);
   });
 
+  // 🔴 Baukasten-Grundsatz: eine Spielart, die nur die Profi-Ansicht kennt,
+  // ist nicht fertig. Der Wettmodus war genau das — bis hierher hat ihn kein
+  // einziger Charakter gesetzt. Dieser Test hält den Zustand fest.
+  it("mindestens einer spielt im Wettmodus, samt gesetztem Münz-Takt", () => {
+    const wett = CHARAKTERE.filter((c) => c.rules.joker.enabled && c.rules.joker.modus === "einsatz");
+    expect(wett.length).toBeGreaterThanOrEqual(1);
+    for (const c of wett) {
+      // Der Takt muss MITGESETZT sein — ein Charakter ist eine ganze
+      // Runden-Idee, keine halbe.
+      expect(c.rules.joker.einsatzTakt).toBeTruthy();
+      expect(c.rules.joker.einsatzProSpieltag).toBeGreaterThan(0);
+      expect(merkmale(c)).toContain("Münzen verteilen");
+    }
+  });
+
   it("mindestens einer kommt ganz ohne Joker aus", () => {
     expect(CHARAKTERE.some((c) => !c.rules.joker.enabled)).toBe(true);
   });

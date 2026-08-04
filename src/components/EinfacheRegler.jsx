@@ -27,14 +27,20 @@ export default function EinfacheRegler({ rules, onChange }) {
               {regler.hint}
             </div>
 
-            <div style={{ display: "flex", gap: 6, marginTop: 9 }}>
+            {/* ⚠️ `flexWrap` ist nicht kosmetisch: die Joker-Frage hat seit dem
+                Wettmodus fünf Stufen, und fünf `flex: 1`-Knöpfe nebeneinander
+                sind auf der Handy-Breite (max. 400 px) rund 70 px breit — dort
+                bricht „Münzen auf Vorrat" in vier Zeilen um. Mit einer
+                Mindestbreite laufen sie stattdessen in eine zweite Reihe.
+                Dieselbe Machart wie die Takt-Karten in JokerOekonomie.jsx. */}
+            <div style={{ display: "flex", gap: 6, marginTop: 9, flexWrap: "wrap" }}>
               {regler.stufen.map((stufe) => {
                 const an = aktiv === stufe.key;
                 return (
                   <button key={stufe.key}
                     onClick={() => onChange(anwenden(rules, regler.key, stufe.key))}
                     style={{
-                      flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "9px 6px",
+                      flex: "1 1 92px", cursor: "pointer", fontFamily: "inherit", padding: "9px 6px",
                       borderRadius: 11, fontSize: 12.5, fontWeight: 700,
                       background: an ? `${C.gold}22` : C.surface,
                       color: an ? C.gold : C.muted,

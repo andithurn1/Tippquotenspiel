@@ -13,11 +13,22 @@
 //  Seite (jetzt echt verkabelt, design/kontaktstellen.md Abschnitt 5 Punkt 2)
 //  hat ihren eigenen Geschwister-Vorbau: `narrenstand.js`. Beide teilen sich
 //  `naechstesOffenesSpiel` (hier exportiert) für „welcher Spieltag ist jetzt".
+//
+//  ── Münz-TAKT (design/wettmodus.md 3, `muenzTakt.js`) ──
+//  Der Einsatz-Modus verteilt Münzen nicht zwingend JE Spieltag — der Admin
+//  kann mehrere Spieltage zu einer Münz-PERIODE zusammenfassen. Deshalb wird
+//  die Einsatz-Rechnung unten nicht mehr über den Spieltags-Schlüssel `schl`
+//  gruppiert, sondern über `muenzSchluessel(...)`: bei Vorgabe-Takt ist das
+//  derselbe Schlüssel wie bisher, bei einem eingestellten Takt gruppiert er
+//  über die ganze Periode. Außerhalb eines Münz-Fensters (Takt „Saison-
+//  Fenster") gibt es an diesem Spieltag GAR KEINE Münzen — das ist eine
+//  eigene Aussage (`aktiv: false`), kein Rückfall auf `null`.
 // ============================================================
 
 import { einsatzPlanung, spieltagKey } from "./engine";
 import { zeitachse, rundenSchluessel } from "./zeitachse";
 import { wettbewerbVon } from "./wettbewerbe";
+import { muenzSchluessel, muenzTaktStatus, periodeLabel, spieltagsFolge } from "./muenzTakt";
 
 // Der „aktuelle" Spieltag: der des FRÜHESTEN Spiels, dessen Anpfiff noch in
 // der Zukunft liegt. Ein früherer, ungetippter Spieltag zählt nicht — der ist
@@ -56,7 +67,35 @@ export function muenzStand({ rules, matches = [], tips = [], userId, jetzt = new
     wettbewerb: wettbewerbVon(fruehstesOffenes),
     matchday: fruehstesOffenes.matchday ?? null,
   };
-  const spieleImSpieltag = matches.filter((m) => schl(m) === schl(spieltag)).length;
+
+  // Münz-Takt: der Schlüssel für die Einsatz-Rechnung (`muenzSchl`, siehe
+  // Kopfkommentar) und der Status DIESES Spieltags im Takt — beide über
+  // denselben Spieltags-Schlüssel `schl`, damit `muenzSchl` bei Vorgabe-Takt
+  // exakt `schl` selbst ist (keine Map, kein Umweg).
+  const muenzSchl = muenzSchluessel({ matches, rules, schluessel: schl });
+  const status = muenzTaktStatus({ matches, rules, schluessel: schl, spieltag });
+
+  // ⚠️ `null` heißt in dieser Datei „es gibt hier gar keinen Wettmodus"
+  // (siehe Kopfkommentar, `rules?.joker?.modus !== "einsatz"` oben). Liegt
+  // der aktuelle Spieltag außerhalb eines Münz-Fensters (nur beim Takt
+  // „Saison-Fenster" möglich), gibt es den Wettmodus SEHR WOHL — nur an
+  // DIESEM Spieltag keine Münzen. Das ist eine Aussage, die die Oberfläche
+  // treffen können muss (`design/waehrungen.md` 4), deshalb ein Objekt mit
+  // `aktiv: false` statt eines stillschweigenden `null`.
+  if (status.aktiv === false) {
+    return {
+      spieltag,
+      spieleInPeriode: status.spieleInPeriode,
+      budget: 0,
+      verteilt: 0,
+      frei: 0,
+      minJeSpiel: 0,
+      maxJeSpiel: 0,
+      aktiv: false,
+      grund: status.grund,
+      periodeLabel: null,
+    };
+  }
 
   // Tipps des Nutzers auf DIESEN Spieltag einschränken. Die Roh-Zeilen aus
   // `listTips` tragen kein `matchday`/`wettbewerb` — aus dem Match-Katalog
@@ -71,17 +110,22 @@ export function muenzStand({ rules, matches = [], tips = [], userId, jetzt = new
       gewicht: t.tip?.gewicht,
     }));
 
+  const spieleInPeriode = status.spieleInPeriode;
   const planung = einsatzPlanung({
-    tips: meineTips, spieltag, spieleImSpieltag, rules, schluessel: schl,
+    tips: meineTips, spieltag, spieleImSpieltag: spieleInPeriode, rules, schluessel: muenzSchl,
   });
 
   return {
     spieltag,
-    spieleImSpieltag,
+    spieleInPeriode,
     budget: planung.budget,
     verteilt: planung.verteilt,
     frei: planung.frei,
     minJeSpiel: planung.minJeSpiel,
     maxJeSpiel: planung.maxJeSpiel,
+    aktiv: true,
+    grund: null,
+    takt: status.takt,
+    periodeLabel: periodeLabel(status, spieltagsFolge(matches, schl).length),
   };
 }

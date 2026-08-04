@@ -9,6 +9,7 @@ import {
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
 import { zeitachse, rundenSchluessel } from "@/lib/zeitachse";
+import { muenzSchluessel, muenzTaktStatus, periodeLabel, spieltagsFolge } from "@/lib/muenzTakt";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
 import { darfJokerSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
@@ -326,7 +327,21 @@ export default function Tippabgabe({ matchId }) {
   const spieltag = { wettbewerb: wettbewerbVon(match), matchday: match.matchday ?? null };
   const jokerAktiv = jokerGiltFuerSpieltag(RULES, spieltag, votes);
   const rankingModus = RULES.joker?.modus === "ranking";
-  const einsatzModus = RULES.joker?.modus === "einsatz";
+  // ⚠️ Zwei verschiedene Fragen, zwei verschiedene Konstanten
+  // (design/wettmodus.md Abschnitt 3) — vorher gab es nur EINE, und die
+  // beantwortete beides zugleich:
+  //   - `einsatzRegelwerk`: spielt diese RUNDE überhaupt im Wettmodus? Eine
+  //     Regelwerks-Frage, unabhängig vom Spieltag — entscheidet, ob es in
+  //     dieser Runde je einen Narren-Kontostand/-Kauf gibt (den gibt es im
+  //     Wettmodus grundsätzlich nicht, design/waehrungen.md Abschnitt 1).
+  //   - `einsatzModus`: gibt es an DIESEM Spieltag tatsächlich Münzen? Eine
+  //     Takt-Frage — beim Münz-Takt „Saison-Fenster" ist das nicht an jedem
+  //     Spieltag der Fall (`muenzTakt.aktiv === false`).
+  // Beide Stellen, an denen die alte einzelne Konstante „diese Runde
+  // benutzt keine Narren" bedeutete, stehen jetzt auf `einsatzRegelwerk` —
+  // sonst tauchte auf einem münzlosen Spieltag plötzlich ein Narren-
+  // Kontostand samt Kaufprüfung auf, die es im Wettmodus gar nicht gibt.
+  const einsatzRegelwerk = RULES.joker?.modus === "einsatz";
   // Spieltagsgröße für den Einsatz-Modus (design/einsatz-joker.md Abschnitt 1):
   // die Bezugsgröße ist die Zahl der Spiele IM Spieltag, nicht die der
   // getippten. `schluessel` (RUNDEN-Spieltag) fällt auf `spieltagKey` zurück,
@@ -335,7 +350,26 @@ export default function Tippabgabe({ matchId }) {
   // (Hook-Regel, siehe dortiger Kommentar) — ein einfaches `const` über eine
   // Liste kostet hier nichts.
   const schl = schluessel ?? spieltagKey;
+  // `spieleImSpieltag` bleibt bestehen und behält seine bisherige Bedeutung:
+  // `alleGetippt` weiter unten braucht den echten LIGA-/RUNDEN-SPIELTAG (ist
+  // wirklich JEDES Spiel dieses einen Spieltags getippt?), nicht die Münz-
+  // PERIODE — die beiden sind bei einem gesetzten Münz-Takt verschieden groß.
+  // Nur die Einsatz-Rechnung selbst wechselt unten auf `spieleInPeriode`.
   const spieleImSpieltag = alleMatches.filter((m) => schl(m) === schl(spieltag)).length;
+
+  // Münz-Takt (design/wettmodus.md Abschnitt 3, `muenzTakt.js`): der Schlüssel
+  // für die Einsatz-Rechnung (bei Vorgabe-Takt identisch mit `schl`) und der
+  // Status DIESES Spieltags im Takt — daraus ergibt sich `einsatzModus` oben.
+  const muenzSchl = muenzSchluessel({ matches: alleMatches, rules: RULES, schluessel: schl });
+  const muenzTakt = muenzTaktStatus({ matches: alleMatches, rules: RULES, schluessel: schl, spieltag });
+  const einsatzModus = einsatzRegelwerk && muenzTakt.aktiv;
+  const spieleInPeriode = muenzTakt.aktiv ? muenzTakt.spieleInPeriode : spieleImSpieltag;
+  // Anzeigetext für den Münz-Zeitraum (design/wettmodus.md 3): „diesen
+  // Spieltag" ist der Rückfall bei Vorgabe-Takt (`periodeLabel` liefert dann
+  // `null`, siehe dortiger Kommentar) — sonst „Spieltage X–Y"/„die ganze
+  // Saison". Ein Satz, der „Spieltag" sagt, während das Budget für mehrere
+  // gilt, wäre schlicht falsch.
+  const muenzZeitraum = periodeLabel(muenzTakt, spieltagsFolge(alleMatches, schl).length) ?? "diesen Spieltag";
 
   // Kontext für `pruefeJokerEinsatz` (design/kontaktstellen.md Abschnitt 5
   // Punkt 1) — hängt an `spieltag`/`schl`, die beide `match` voraussetzen und
@@ -451,14 +485,17 @@ export default function Tippabgabe({ matchId }) {
     ? weightUsageForMatchday(meineTips, spieltag, RULES, matchId, schluessel)
     : null;
   const gewichtBelegtVon = (g) => belegung?.belegt.find((b) => b.gewicht === g)?.matchId ?? null;
-  // Einsatz-Modus: Deckungsrechnung fürs Verteilen des Spieltags-Budgets
-  // (design/einsatz-joker.md Abschnitt 3). `aktuellesSpiel` zählt immer als
-  // offen, auch wenn dafür schon ein Tipp vorliegt — der Spieler bearbeitet
-  // ihn ja gerade (siehe Kopfkommentar von `einsatzPlanung`).
+  // Einsatz-Modus: Deckungsrechnung fürs Verteilen des Budgets über die
+  // Münz-PERIODE (design/einsatz-joker.md Abschnitt 3, design/wettmodus.md
+  // Abschnitt 3). `spieleInPeriode`/`muenzSchl` statt `spieleImSpieltag`/`schl`
+  // — bei einem gesetzten Münz-Takt gilt Budget + Deckungsrechnung für die
+  // ganze Periode, nicht nur diesen einen Spieltag. `aktuellesSpiel` zählt
+  // immer als offen, auch wenn dafür schon ein Tipp vorliegt — der Spieler
+  // bearbeitet ihn ja gerade (siehe Kopfkommentar von `einsatzPlanung`).
   const planung = einsatzModus
     ? einsatzPlanung({
-        tips: meineTips, spieltag, spieleImSpieltag, rules: RULES,
-        aktuellesSpiel: matchId, schluessel: schl,
+        tips: meineTips, spieltag, spieleImSpieltag: spieleInPeriode, rules: RULES,
+        aktuellesSpiel: matchId, schluessel: muenzSchl,
       })
     : null;
   // Gewichtung fließt in die Vorschau ein, damit man sofort sieht, was sie bringt.
@@ -536,8 +573,14 @@ export default function Tippabgabe({ matchId }) {
           // nicht gespeichert wird.
           { match_id: matchId, matchday: spieltag.matchday, wettbewerb: spieltag.wettbewerb, gewicht: gewichtEffektiv },
         ];
-        const fehlerhaft = invalidEinsatzMatchdays(tipsFuerPruefung, RULES, schl, spieleImSpieltag)
-          .some((f) => f.wettbewerb === spieltag.wettbewerb && f.matchday === spieltag.matchday);
+        // ⚠️ Über den Münz-Schlüssel geprüft (`muenzSchl`), nicht über
+        // `wettbewerb`/`matchday` — fasst der Takt mehrere Spieltage zu einer
+        // Periode zusammen, trägt der gemeldete Eintrag irgendeinen Spieltag
+        // der Gruppe (`key`, genau dafür trägt `invalidEinsatzMatchdays`
+        // dieses Feld seit dem letzten Schritt), und der alte Vergleich über
+        // `wettbewerb`/`matchday` des AKTUELLEN Spieltags ginge dann ins Leere.
+        const fehlerhaft = invalidEinsatzMatchdays(tipsFuerPruefung, RULES, muenzSchl, spieleInPeriode)
+          .some((f) => f.key === muenzSchl(spieltag));
         if (fehlerhaft) {
           // ⚠️ Die Meldung muss den GRUND nennen, nicht nur „ungültig".
           // `invalidEinsatzMatchdays` gibt nur zurück, WELCHER Spieltag
@@ -546,13 +589,16 @@ export default function Tippabgabe({ matchId }) {
           // einem Verstoß, der keine Unterdeckung ist, stand dort „dir fehlen
           // 0 Münzen" — eine Zahl, die nichts erklärt.
           const e = einsatzAktuell;
+          // ⚠️ Beide Sätze nennen den Münz-ZEITRAUM (`muenzZeitraum`), nicht
+          // fest „diesen Spieltag" — ein Satz, der „Spieltag" sagt, während
+          // das Budget für mehrere gilt, ist schlicht falsch.
           const grund = e > 0 && e < planung.minJeSpiel - 1e-9
             ? `dein Einsatz liegt unter dem Mindesteinsatz von ${zahl(planung.minJeSpiel)} Münzen`
             : e <= 0 && !skippenErlaubt
             ? "in dieser Runde darf kein Spiel ausgelassen werden — setz mindestens den Mindesteinsatz"
             : planung.fehlbetrag > 0
-            ? `dir fehlen ${zahl(planung.fehlbetrag)} Münzen für die Mindesteinsätze dieses Spieltags`
-            : "deine Münzen gehen an diesem Spieltag nicht auf — nimm auf einem Spiel zurück";
+            ? `dir fehlen ${zahl(planung.fehlbetrag)} Münzen, um die Mindesteinsätze für ${muenzZeitraum} zu decken`
+            : `deine Münzen gehen für ${muenzZeitraum} nicht auf — nimm auf einem Spiel zurück`;
           setEinsatzGrund(grund);
           setSaveState("einsatzUngueltig");
           return;
@@ -593,7 +639,12 @@ export default function Tippabgabe({ matchId }) {
         // — über `perioden()` (exportiert), keine zweite Perioden-Rechnung.
         // Kauf-Erkennung über `istNarrenKauf` (exportiert aus jokerBudget.js)
         // — EIN Ort für „was zählt als Narren-Kauf", keine zweite Ternary.
-        if (!einsatzModus) {
+        // ⚠️ `einsatzRegelwerk`, nicht `einsatzModus`: das ist eine Frage des
+        // REGELWERKS (gibt es in dieser Runde je Narren?), keine des
+        // Münz-Takts — sonst tauchte auf einem münzlosen Spieltag
+        // (`muenzTakt.aktiv === false`) plötzlich eine Narren-Kaufprüfung
+        // auf, die es im Wettmodus grundsätzlich nicht gibt.
+        if (!einsatzRegelwerk) {
           const budgetCfg = sanitizeBudget(RULES.budget);
           const perioden_ = perioden(budgetCfg.takt, { n: budgetCfg.n, fenster: budgetCfg.fenster }, SPIELTAGE);
           const periodeVon = perioden_.find((p) => spieltag.matchday >= p.von && spieltag.matchday <= p.bis)?.von
@@ -637,10 +688,12 @@ export default function Tippabgabe({ matchId }) {
       // (neu: kein Joker) gar nicht erst betreten. „Vorher keiner, jetzt
       // einer" ist KEIN Widerruf — dafür sorgt der `vorherGesetzt &&`-Wächter
       // unten, dieser Fall bleibt beim Block oben (`pruefeJokerEinsatz`).
-      // `einsatzModus` bleibt draußen: dort ist `gewicht` ein Münz-Einsatz,
-      // kein Joker (design/waehrungen.md Abschnitt 1) — derselbe Ausschluss
+      // `einsatzRegelwerk` bleibt draußen (nicht `einsatzModus`): dort ist
+      // `gewicht` grundsätzlich ein Münz-Einsatz, kein Joker
+      // (design/waehrungen.md Abschnitt 1) — das gilt für die ganze RUNDE,
+      // nicht nur an Spieltagen mit aktivem Münz-Takt. Derselbe Ausschluss
       // wie bei der Narren-Deckung und der Kontingent-Prüfung oben.
-      if (jokerAktiv && !einsatzModus) {
+      if (jokerAktiv && !einsatzRegelwerk) {
         const jokerArtFuerWiderruf = rankingModus ? "joker.ranking" : "joker.einzel";
         const vorherGesetzt = rankingModus ? urspruenglich.gewicht !== 1 : urspruenglich.joker === true;
         const jetztGesetzt = rankingModus ? gewichtEffektiv !== 1 : joker === true;
@@ -955,20 +1008,30 @@ export default function Tippabgabe({ matchId }) {
                 borderRadius: 14, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
               }}>
                 <div style={{ fontSize: 11, color: C.gold, textTransform: "uppercase", letterSpacing: 1 }}>
-                  {einsatzModus ? "Einsatz dieses Spiels" : rankingModus ? "Gewicht dieses Spiels" : "Joker"}
+                  {einsatzRegelwerk ? "Einsatz dieses Spiels" : rankingModus ? "Gewicht dieses Spiels" : "Joker"}
                 </div>
                 {/* Narren-Kontostand (design/waehrungen.md Abschnitt 3.1) —
-                    NUR in den Modi „einzel"/„ranking": im Modus „einsatz"
-                    entstehen hier keine Narren-Ausgaben (siehe oben), ein
-                    Kontostand wäre dort ohne Aussage. Nur echte Daten
-                    anzeigen (Abschnitt 4) — `narrenKontostand == null`
-                    (Budget aus/kein Spieler) zeigt nichts an. */}
-                {!einsatzModus && narrenKontostand != null && (
+                    NUR in den Modi „einzel"/„ranking": im REGELWERK „einsatz"
+                    entstehen hier grundsätzlich keine Narren-Ausgaben (siehe
+                    oben), ein Kontostand wäre dort ohne Aussage — auch an
+                    einem münzlosen Spieltag, denn Narren gibt es in dieser
+                    Runde so oder so nicht. Nur echte Daten anzeigen
+                    (Abschnitt 4) — `narrenKontostand == null` (Budget aus/
+                    kein Spieler) zeigt nichts an. */}
+                {!einsatzRegelwerk && narrenKontostand != null && (
                   <div style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, marginTop: 4 }}>
                     🃏 <span style={{ color: C.gold, fontWeight: 700 }}>{zahl(narrenKontostand)}</span> Narren
                   </div>
                 )}
-                {einsatzModus ? (
+                {/* Einsatz-Regelwerk, aber an DIESEM Spieltag keine Münzen
+                    (Münz-Takt „Saison-Fenster" außerhalb des Fensters,
+                    design/wettmodus.md Abschnitt 3): ohne diesen Zweig fiele
+                    die Kette unten bis zum Joker-Knopf durch und böte einen
+                    Joker an, den das Regelwerk in diesem Modus gar nicht
+                    kennt (`rankingModus`/`joker` sind hier beide falsch). */}
+                {einsatzRegelwerk && !muenzTakt.aktiv ? (
+                  <p style={{ fontSize: 11, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>{muenzTakt.grund}</p>
+                ) : einsatzModus ? (
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
                       <input type="range" min={0} max={Math.max(0, planung.maxJetztSetzbar)} step={1}
@@ -1000,7 +1063,7 @@ export default function Tippabgabe({ matchId }) {
                         Balken wandert beim Schieben mit, was er soll. */}
                     <div style={{ marginTop: 12 }}>
                       <div style={{ fontSize: 11.5, color: C.muted }}>
-                        {zahl(planung.verteilt + einsatzAktuell)} von {zahl(planung.budget)} Münzen für diesen Spieltag verteilt
+                        {zahl(planung.verteilt + einsatzAktuell)} von {zahl(planung.budget)} Münzen für {muenzZeitraum} verteilt
                       </div>
                       <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>
                         <div style={{

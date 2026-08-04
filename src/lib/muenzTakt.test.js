@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   sanitizeMuenzTakt, DEFAULT_MUENZ_TAKT, MUENZ_TAKT_LIMITS,
   spieltagsFolge, muenzPerioden, muenzSchluessel, muenzTaktStatus,
-  beschreibeMuenzTakt, muenzTaktKonflikte,
+  beschreibeMuenzTakt, muenzTaktKonflikte, periodeLabel,
 } from "./muenzTakt";
 import { sanitizeRules, invalidEinsatzMatchdays } from "./engine";
 import { spieltagKey } from "./spieltag";
@@ -128,6 +128,25 @@ describe("muenzTaktStatus", () => {
     const handAusgezaehlt = MATCHES.filter((m) => m.matchday === 1 || m.matchday === 2).length;
     expect(handAusgezaehlt).toBe(6);
     expect(status.spieleInPeriode).toBe(handAusgezaehlt);
+  });
+});
+
+describe("periodeLabel", () => {
+  // 🔴 Der Text steht sowohl als Überschrift ("🪙 Münzen — die ganze Saison")
+  // als auch mitten im Satz ("… Münzen für die ganze Saison verteilt") — ohne
+  // Artikel liest sich der Satzfall an einer der beiden Stellen falsch.
+  it("nennt bei einer Periode über die ganze Folge 'die ganze Saison' MIT Artikel", () => {
+    const rules = sanitizeRules({ joker: { modus: "einsatz", einsatzTakt: "saison" } });
+    const folge = spieltagsFolge(MATCHES);
+    const status = muenzTaktStatus({ matches: MATCHES, rules, spieltag: { wettbewerb: "bl", matchday: 1 } });
+    expect(periodeLabel(status, folge.length)).toBe("die ganze Saison");
+  });
+
+  it("bleibt bei 'Spieltage X–Y' ohne Artikel", () => {
+    const rules = sanitizeRules({ joker: { modus: "einsatz", einsatzTakt: "alleNSpieltage", einsatzTaktN: 2 } });
+    const folge = spieltagsFolge(MATCHES);
+    const status = muenzTaktStatus({ matches: MATCHES, rules, spieltag: { wettbewerb: "bl", matchday: 1 } });
+    expect(periodeLabel(status, folge.length)).toBe("Spieltage 1–2");
   });
 });
 

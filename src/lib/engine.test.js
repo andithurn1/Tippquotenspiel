@@ -991,6 +991,27 @@ describe("einsatzKonflikte (design/einsatz-joker.md Abschnitt 2.1)", () => {
     expect(einsatzKonflikte(rules, 9)).toEqual([]);
     expect(einsatzKonflikte(sanitizeRules({}))).toEqual([]);
   });
+
+  // 🔴 Münz-Takt (design/wettmodus.md 3): die übergebene Spielzahl ist seit
+  // dem Takt die einer ganzen Münz-PERIODE. Der Wortlaut muss mitziehen —
+  // „Bei 36 Spielen im Spieltag" wäre bei „alle 4 Spieltage" schlicht falsch.
+  // Beim Nachrechnen an einem echten Admin-Satz aufgefallen, nicht hier: die
+  // Tests darüber prüfen den Schlüssel des Funds, nie seinen Text.
+  it("der Warntext nennt den Zeitraum, wenn sich mehrere Spieltage ein Budget teilen", () => {
+    const rules = sanitizeRules({ joker: { modus: "einsatz", minAnteilProSpiel: 0.1, skippenErlaubt: false } });
+    const einTag = einsatzKonflikte(rules, 36).find((f) => f.key === "einsatz-mindest-uebersteigt-budget");
+    const vierTage = einsatzKonflikte(rules, 36, 4).find((f) => f.key === "einsatz-mindest-uebersteigt-budget");
+    expect(einTag.text).toContain("im Spieltag");
+    expect(vierTage.text).toContain("4 Spieltagen");
+    expect(vierTage.text).not.toContain("im Spieltag");
+    // Und die dritte Korrektur, die es ohne Takt gar nicht gibt.
+    expect(vierTage.text).toContain("häufiger");
+  });
+
+  it("ohne den dritten Parameter bleibt alles wie bisher", () => {
+    const rules = sanitizeRules({ joker: { minAnteilProSpiel: 0.15, skippenErlaubt: false } });
+    expect(einsatzKonflikte(rules, 9)).toEqual(einsatzKonflikte(rules, 9, 1));
+  });
 });
 
 describe("einsatzPlanung (design/einsatz-joker.md Abschnitt 3, ⭐ maxJetztSetzbar)", () => {
