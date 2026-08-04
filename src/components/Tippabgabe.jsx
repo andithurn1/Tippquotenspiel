@@ -12,9 +12,12 @@ import { zeitachse, rundenSchluessel } from "@/lib/zeitachse";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
 import { darfJokerSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
-import { pruefeJokerEinsatz, basisFuer } from "@/lib/jokerBasis";
-import { kontoVerlauf, perioden, preisFuer, kannBezahlen, sanitizeBudget, istNarrenKauf } from "@/lib/jokerBudget";
+import { pruefeJokerEinsatz, basisFuer, darfWiderrufen } from "@/lib/jokerBasis";
+import {
+  kontoVerlauf, perioden, preisFuer, kannBezahlen, sanitizeBudget, istNarrenKauf, einsaetzeAllerArten,
+} from "@/lib/jokerBudget";
 import { duellPlan, zulaessigeZiele, einsaetzeAusTipps, DUELL_TYPEN } from "@/lib/duellJoker";
+import { pruefeEinsatz } from "@/lib/limitKlassen";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -99,7 +102,9 @@ export default function Tippabgabe({ matchId }) {
   const scorer = RULES.markets.goals;
   const [picks, setPicks] = useState(null);
   const [done, setDone] = useState(false);
-  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error | einsatzUngueltig | jokerUngueltig | narrenUngueltig
+  // idle | saving | saved | guest | error | einsatzUngueltig | jokerUngueltig
+  // | narrenUngueltig | klasseUngueltig | widerrufUngueltig
+  const [saveState, setSaveState] = useState("idle");
   // Nur befüllt, wenn `saveState === "einsatzUngueltig"` — der ausformulierte
   // Grund, warum der Spieltag die Einsatz-Regeln verletzt.
   const [einsatzGrund, setEinsatzGrund] = useState("");
@@ -111,6 +116,15 @@ export default function Tippabgabe({ matchId }) {
   // Grund, warum `kannBezahlen` (design/kontaktstellen.md Abschnitt 5 Punkt 2)
   // diesen Joker-Kauf abgelehnt hat.
   const [narrenGrund, setNarrenGrund] = useState("");
+  // Nur befüllt, wenn `saveState === "klasseUngueltig"` — der ausformulierte
+  // Grund, warum `pruefeEinsatz` (design/kontaktstellen.md Abschnitt 5
+  // Punkt 5, limitKlassen.js) diesen Joker- oder Duell-Einsatz abgelehnt hat.
+  const [klasseGrund, setKlasseGrund] = useState("");
+  // Nur befüllt, wenn `saveState === "widerrufUngueltig"` — der ausformulierte
+  // Grund, warum `darfWiderrufen` (design/kontaktstellen.md Abschnitt 5
+  // Punkt 5, jokerBasis.js) das Entfernen/Verändern eines zuvor gesetzten
+  // Jokers oder Duells abgelehnt hat.
+  const [widerrufGrund, setWiderrufGrund] = useState("");
   // Gewichtung dieses Spiels: Flag (Modus „einzel") bzw. Faktor (Modus „ranking").
   const [joker, setJoker] = useState(false);
   const [gewicht, setGewicht] = useState(1);
@@ -119,6 +133,12 @@ export default function Tippabgabe({ matchId }) {
   // `null` = keine Auswahl = kein Duell — kein Zwang, siehe dortiger Plan.
   const [duellZiel, setDuellZiel] = useState(null);
   const [duellTypGewaehlt, setDuellTypGewaehlt] = useState(null);
+  // Schnappschuss dessen, was beim Laden BEREITS gespeichert war — Grundlage
+  // für `darfWiderrufen` (design/kontaktstellen.md Abschnitt 5 Punkt 5,
+  // jokerBasis.js): nur ein VORHER gesetzter Joker/Duell, der jetzt entfernt
+  // oder verändert wird, ist ein Widerruf. „Vorher keiner, jetzt einer" ist
+  // keiner — dafür bleibt dieser Schnappschuss unangetastet auf der Vorgabe.
+  const [urspruenglich, setUrspruenglich] = useState({ joker: false, gewicht: 1, duellZiel: null, duellTyp: null });
   // Hat der Spieler den Einsatz selbst angefasst (oder lag schon einer vor)?
   // Solange nicht, gilt der berechnete Vorschlag statt des rohen `gewicht`.
   // ⚠️ Muss HIER stehen, vor dem frühen `return` weiter unten — die Rechnung
@@ -230,6 +250,15 @@ export default function Tippabgabe({ matchId }) {
         setDuellZiel(dieser.tip.duell.auf);
         setDuellTypGewaehlt(dieser.tip.duell.typ ?? null);
       }
+      // Schnappschuss des GELADENEN Zustands für `darfWiderrufen` (siehe
+      // Kommentar bei `urspruenglich` oben) — unabhängig davon, was der
+      // Spieler danach an den Reglern ändert.
+      setUrspruenglich({
+        joker: dieser?.tip?.joker === true,
+        gewicht: Number.isFinite(dieser?.tip?.gewicht) ? dieser.tip.gewicht : 1,
+        duellZiel: dieser?.tip?.duell?.auf ?? null,
+        duellTyp: dieser?.tip?.duell?.typ ?? null,
+      });
     }).catch(() => {});
     return () => { live = false; };
   }, [roundId, user, matchId]);
@@ -349,6 +378,32 @@ export default function Tippabgabe({ matchId }) {
   });
   const meinKonto = user ? kontoAlle.proSpieler[user.id] : null;
   const narrenKontostand = meinKonto?.find((v) => v.matchday === spieltag.matchday)?.kontostand ?? null;
+
+  // Kontingent-Historie für `pruefeEinsatz` (design/kontaktstellen.md
+  // Abschnitt 5 Punkt 5, limitKlassen.js): alle bereits gesetzten Joker- UND
+  // Duell-Einsätze der Saison, OHNE den hier gerade entstehenden — der Tipp
+  // zu DIESEM `matchId` ist der, der gerade geprüft wird, und darf sich
+  // nicht selbst im Weg stehen (dasselbe Ausschluss-Muster wie
+  // `tipsFuerPruefung` im Einsatz-Modus weiter unten).
+  const alleTippsOhneAktuellenTipp = alleTipps.filter((t) => t.matchId !== matchId);
+  const einsatzHistorie = einsaetzeAllerArten(alleTippsOhneAktuellenTipp, RULES);
+  // `budgetStand`: Schnappschuss `{ [userId]: kontostand }` zum betreffenden
+  // Spieltag, aus dem Kontoverlauf abgeleitet (`kontoAlle`, oben bereits für
+  // den Narren-Kontostand berechnet) — dieselbe Quelle, kein zweiter Weg.
+  const budgetStand = Object.fromEntries(
+    Object.entries(kontoAlle.proSpieler).map(([uid, verlauf]) => [
+      uid, verlauf.find((v) => v.matchday === spieltag.matchday)?.kontostand ?? 0,
+    ]),
+  );
+  // `ausgeloesteEreignisse`: aus den eigenen `gutschriften` (oben bereits
+  // über `erspielteJoker` berechnet) abgeleitet — `pruefeEinsatz` fragt hier
+  // nur nach dem eingeloggten Spieler selbst (`klasseAktiv`s "nachEreignis"
+  // filtert ohnehin nach `userId`), ein Speicherort für ANDERE Spieler ist
+  // dafür nicht nötig.
+  const ausgeloesteEreignisse = user
+    ? gutschriften.map((g) => ({ userId: user.id, ereignisKey: g.key, spieltag: g.matchday }))
+    : [];
+  const klassenKontext = { spieltage: SPIELTAGE, board, budgetStand, ausgeloesteEreignisse };
 
   // Kontingent aus BEIDEN Töpfen: zugeteilt (Plan) + erspielt (Ereignisse).
   // Ohne diese Zusammenführung wäre ein erspielter Joker eine Zahl ohne Wirkung.
@@ -557,6 +612,47 @@ export default function Tippabgabe({ matchId }) {
             setSaveState("narrenUngueltig");
             return;
           }
+          // Kontingent-Klassen prüfen (design/kontaktstellen.md Abschnitt 5
+          // Punkt 5, limitKlassen.js): dieselbe Bedingung wie die Narren-
+          // Deckung direkt darüber — außerhalb des Einsatz-Modus, weil dort
+          // `gewichtEffektiv` ein Münz-Einsatz ist, kein Joker-Einsatz
+          // (`einsaetzeAllerArten` erzeugt für diesen Modus konsequent auch
+          // keinen Historie-Eintrag, siehe jokerBudget.js).
+          const klassenPruef = pruefeEinsatz(
+            { spieltag: spieltag.matchday, jokerArt, vonUserId: user.id, aufUserId: null },
+            RULES.limitKlassen, einsatzHistorie, klassenKontext,
+          );
+          if (!klassenPruef.erlaubt) {
+            setKlasseGrund(klassenPruef.gruende.map((g) => g.grund).join(" "));
+            setSaveState("klasseUngueltig");
+            return;
+          }
+        }
+      }
+      // Widerruf prüfen (design/kontaktstellen.md Abschnitt 5 Punkt 5,
+      // `darfWiderrufen` aus jokerBasis.js): nur wenn ein VORHER gesetzter
+      // Joker jetzt ENTFERNT oder VERÄNDERT wird — unabhängig vom Block oben,
+      // denn dessen Bedingung verlangt einen AKTIVEN neuen Joker
+      // (`joker === true || gewichtEffektiv !== 1`) und würde eine Entfernung
+      // (neu: kein Joker) gar nicht erst betreten. „Vorher keiner, jetzt
+      // einer" ist KEIN Widerruf — dafür sorgt der `vorherGesetzt &&`-Wächter
+      // unten, dieser Fall bleibt beim Block oben (`pruefeJokerEinsatz`).
+      // `einsatzModus` bleibt draußen: dort ist `gewicht` ein Münz-Einsatz,
+      // kein Joker (design/waehrungen.md Abschnitt 1) — derselbe Ausschluss
+      // wie bei der Narren-Deckung und der Kontingent-Prüfung oben.
+      if (jokerAktiv && !einsatzModus) {
+        const jokerArtFuerWiderruf = rankingModus ? "joker.ranking" : "joker.einzel";
+        const vorherGesetzt = rankingModus ? urspruenglich.gewicht !== 1 : urspruenglich.joker === true;
+        const jetztGesetzt = rankingModus ? gewichtEffektiv !== 1 : joker === true;
+        const veraendertOderEntfernt = vorherGesetzt
+          && (!jetztGesetzt || (rankingModus && gewichtEffektiv !== urspruenglich.gewicht));
+        if (veraendertOderEntfernt) {
+          const basisWiderruf = basisFuer(jokerArtFuerWiderruf, RULES);
+          if (!darfWiderrufen(basisWiderruf, Date.now(), new Date(SNAP.kickoff).getTime())) {
+            setWiderrufGrund("dieser Joker ist nicht mehr widerrufbar — die erlaubte Frist ist vorbei");
+            setSaveState("widerrufUngueltig");
+            return;
+          }
         }
       }
       const goals = goalsAusPicks(picks, scorer);
@@ -569,12 +665,43 @@ export default function Tippabgabe({ matchId }) {
       // gewählte Ziel jetzt nicht mehr zulässig (z. B. weil zwischenzeitlich
       // ein anderer Tipp dasselbe Ziel schon belegt hat), wird das Duell
       // verworfen statt ungeprüft übernommen.
+      // Duell-Widerruf (design/kontaktstellen.md Abschnitt 5 Punkt 5,
+      // `darfWiderrufen`): dieselbe Unterscheidung wie beim Joker oben — nur
+      // ein VORHER gesetztes Duell, das jetzt entfernt oder auf ein anderes
+      // Ziel/eine andere Art geändert wird, ist ein Widerruf. Die rohe
+      // UI-Auswahl (`duellZiel`/`duellTypGewaehlt`) genügt hier — eine
+      // ENTFERNUNG (`duellZiel === null`) muss unabhängig von einer erneuten
+      // `zulaessigeZiele`-Prüfung erkannt werden, die weiter unten erst für
+      // ein NEUES Ziel läuft.
+      if (RULES.duell?.enabled && urspruenglich.duellZiel != null
+        && (duellZiel !== urspruenglich.duellZiel || duellTypGewaehlt !== urspruenglich.duellTyp)) {
+        const duellArtVorher = urspruenglich.duellTyp === "block" ? "duell.block" : "duell.klau";
+        const basisWiderruf = basisFuer(duellArtVorher, RULES);
+        if (!darfWiderrufen(basisWiderruf, Date.now(), new Date(SNAP.kickoff).getTime())) {
+          setWiderrufGrund("dieser Duell-Joker ist nicht mehr widerrufbar — die erlaubte Frist ist vorbei");
+          setSaveState("widerrufUngueltig");
+          return;
+        }
+      }
       let duellSicher = null;
       if (istDuellSpieltag && !gesperrt && duellZiel && duellTypGewaehlt) {
         const zulaessigJetzt = zulaessigeZiele(board, user.id, RULES.duell, {
           bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: spieltag.matchday,
         });
         if (zulaessigJetzt.includes(duellZiel) && duellTypenErlaubt.includes(duellTypGewaehlt)) {
+          // Kontingent-Klassen prüfen (design/kontaktstellen.md Abschnitt 5
+          // Punkt 5, limitKlassen.js) — dieselbe Bedingung: nur wenn hier
+          // tatsächlich ein Duell gesetzt wird.
+          const duellJokerArt = duellTypGewaehlt === "block" ? "duell.block" : "duell.klau";
+          const klassenPruef = pruefeEinsatz(
+            { spieltag: spieltag.matchday, jokerArt: duellJokerArt, vonUserId: user.id, aufUserId: duellZiel },
+            RULES.limitKlassen, einsatzHistorie, klassenKontext,
+          );
+          if (!klassenPruef.erlaubt) {
+            setKlasseGrund(klassenPruef.gruende.map((g) => g.grund).join(" "));
+            setSaveState("klasseUngueltig");
+            return;
+          }
           duellSicher = { auf: duellZiel, typ: duellTypGewaehlt };
         }
       }
@@ -1052,6 +1179,7 @@ export default function Tippabgabe({ matchId }) {
             snap={SNAP} h={h} a={a} winner={winner} csQuote={csQuote}
             kickoffLabel={kickoffLabel} picks={picks} teams={teams} saveState={saveState}
             einsatzGrund={einsatzGrund} jokerGrund={jokerGrund} narrenGrund={narrenGrund}
+            klasseGrund={klasseGrund} widerrufGrund={widerrufGrund}
             roundName={roundName}
             onEdit={() => { setSaveState("idle"); setDone(false); }}
           />
@@ -1121,15 +1249,20 @@ const SAVE_HINT = {
   error:  { text: "Speichern fehlgeschlagen — später erneut versuchen", col: C.coral },
 };
 
-function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState, einsatzGrund, jokerGrund, narrenGrund, roundName, onEdit }) {
+function Confirmation({
+  snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState,
+  einsatzGrund, jokerGrund, narrenGrund, klasseGrund, widerrufGrund, roundName, onEdit,
+}) {
   // Einsatz-Modus: nicht gespeichert, weil der Spieltag die Einsatz-Regeln
   // verletzt (design/einsatz-joker.md 3.2). Der GRUND wird beim Absenden
-  // ausformuliert und hier nur eingesetzt — es gibt vier verschiedene, und
+  // ausformuliert und hier nur eingesetzt — es gibt mehrere verschiedene, und
   // „ungültig" allein sagt dem Spieler nicht, was er tun soll.
   // Joker-Grundform: derselbe Aufbau, nur mit dem Grund aus
   // `pruefeJokerEinsatz` (design/kontaktstellen.md Abschnitt 5 Punkt 1).
   // Narren-Zahlungsfähigkeit: derselbe Aufbau, Grund aus `kannBezahlen`
   // (design/kontaktstellen.md Abschnitt 5 Punkt 2).
+  // Kontingent-Klassen/Widerruf: derselbe Aufbau, Gründe aus `pruefeEinsatz`
+  // bzw. `darfWiderrufen` (design/kontaktstellen.md Abschnitt 5 Punkt 5).
   const hint = saveState === "saved"
     ? { text: `✓ gespeichert in „${roundName ?? "deiner Runde"}"`, col: C.mint }
     : saveState === "einsatzUngueltig"
@@ -1138,6 +1271,10 @@ function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams,
     ? { text: `nicht gespeichert — ${jokerGrund}`, col: C.coral }
     : saveState === "narrenUngueltig"
     ? { text: `nicht gespeichert — ${narrenGrund}`, col: C.coral }
+    : saveState === "klasseUngueltig"
+    ? { text: `nicht gespeichert — ${klasseGrund}`, col: C.coral }
+    : saveState === "widerrufUngueltig"
+    ? { text: `nicht gespeichert — ${widerrufGrund}`, col: C.coral }
     : SAVE_HINT[saveState];
   return (
     <div style={{ position: "relative", padding: "30px 22px 24px" }}>

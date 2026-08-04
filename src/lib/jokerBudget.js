@@ -47,7 +47,7 @@
 //  Reine Funktionen, UI-frei.
 // ============================================================
 
-import { sanitizeDuellJoker, fensterVon } from "./duellJoker";
+import { sanitizeDuellJoker, fensterVon, einsaetzeAusTipps } from "./duellJoker";
 
 // ── Kataloge ────────────────────────────────────────────────
 
@@ -409,6 +409,59 @@ export function kannBezahlen(kontostand, preis) {
 // Unterscheidung schon für `letzteEinsaetze` in Tippabgabe.jsx getroffen.)
 export function istNarrenKauf(modus, t) {
   return modus === "ranking" ? (t?.gewicht != null && t.gewicht !== 1) : t?.joker === true;
+}
+
+// ── EIN Satz aller Einsätze — Grundlage für `limitKlassen.js`s `historie` ──
+// design/kontaktstellen.md Abschnitt 5 Punkt 5 (Schritt 5): `pruefeEinsatz`
+// erwartet die HISTORIE bereits gesetzter Einsätze über ALLE Joker-Arten,
+// `einsaetzeAusTipps` (duellJoker.js) liefert dafür bisher nur die Duelle.
+// Diese Funktion vereinigt beide Quellen zu EINER Liste in derselben Form.
+//
+// ⚠️ HIER statt in `duellJoker.js`, obwohl der Plan dort zuerst nachsieht:
+// die Joker-Erkennung braucht `istNarrenKauf` (oben in dieser Datei), und
+// `jokerBudget.js` importiert bereits `duellJoker.js` (`sanitizeDuellJoker`,
+// `fensterVon`) — ein Import in die andere Richtung (`duellJoker.js` →
+// `jokerBudget.js`) erzeugte einen Zyklus, dieselbe Falle, vor der der
+// Kopfkommentar von `duellJoker.js` bei `jokerBasis.js` bereits warnt. Diese
+// Datei importiert stattdessen `einsaetzeAusTipps` aus `duellJoker.js` —
+// dieselbe Richtung, die ohnehin schon besteht.
+//
+// `tipps` = dieselbe Roh-Form wie bei `kontoVerlauf`/`einsaetzeAusTipps`:
+// `{ userId, matchday, kickoff, joker, gewicht, tip }` — `Tippabgabe.jsx`
+// baut `alleTipps` bereits in genau dieser Form für beide Zwecke.
+//
+// Modus "einsatz" erzeugt KEINEN Joker-Einsatz (`tip.gewicht` ist dort ein
+// Münz-Einsatz, kein Narren-Kauf — design/waehrungen.md Abschnitt 1); Duelle
+// sind davon unabhängig und bleiben in jedem Modus erhalten.
+export function einsaetzeAllerArten(tipps = [], rules = {}) {
+  const liste = Array.isArray(tipps) ? tipps : [];
+  const modus = rules?.joker?.modus;
+
+  const jokerEinsaetze = modus === "einsatz" ? [] : liste
+    .filter((t) => istNarrenKauf(modus, t))
+    .map((t) => ({
+      spieltag: Number(t.matchday),
+      jokerArt: modus === "ranking" ? "joker.ranking" : "joker.einzel",
+      vonUserId: t.userId ?? t.user_id ?? null,
+      aufUserId: null,
+    }))
+    .filter((e) => e.vonUserId != null && Number.isFinite(e.spieltag));
+
+  // `einsaetzeAusTipps` liefert `typ` als "klau"/"block" (DUELL_TYPEN) — die
+  // Limitierungsklassen schlüsseln aber über die JOKER_ARTEN-Form
+  // "duell.klau"/"duell.block", genau wie `mitglieder` in limitKlassen.js.
+  const duellEinsaetze = einsaetzeAusTipps(liste).map((e) => ({
+    spieltag: e.spieltag,
+    jokerArt: e.typ === "block" ? "duell.block" : "duell.klau",
+    vonUserId: e.vonUserId,
+    aufUserId: e.aufUserId,
+  }));
+
+  // Chronologisch nach `spieltag`, dieselbe Regel wie in `einsaetzeAusTipps`:
+  // `pruefeEinsatz`s Zählung ist zeitraumbasiert, nicht ordnungsabhängig,
+  // aber eine stabile Reihenfolge macht die Rückgabe deterministisch
+  // testbar, statt von der Objektreihenfolge der Eingabe abzuhängen.
+  return [...jokerEinsaetze, ...duellEinsaetze].sort((a, b) => (a.spieltag ?? 0) - (b.spieltag ?? 0));
 }
 
 // ── Der Kontoverlauf (Zufluss minus tatsächliche Käufe) ─────

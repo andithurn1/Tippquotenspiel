@@ -29,8 +29,8 @@ Dazu die Gegenprobe, welche Bezeichner `engine.js` aus den vier neuen Modulen
 |---|---|---|:--:|
 | `darfEinsetzen` | `jokerBasis` | `wer`, „kein Joker ohne Tipp", `abklingzeit` | **2** (`pruefeJokerEinsatz` → `Tippabgabe.jsx`; `drehradBoard.js` → `store.mock.js`/`store.supabase.js`) |
 | `erfuelltBedingung` | `jokerBasis` | `minQuote`/`maxQuote`, `wettbewerbe`, `phasen` (L15) | **1** (`pruefeJokerEinsatz` → `Tippabgabe.jsx`) |
-| `darfWiderrufen` | `jokerBasis` | `widerruf`, `widerrufStunden` | **0** |
-| `pruefeEinsatz` · `pruefeKlassen` | `limitKlassen` | Kontingente, `wirkung`, acht Aktivierungen | **0** |
+| `darfWiderrufen` | `jokerBasis` | `widerruf`, `widerrufStunden` | **2** (`Tippabgabe.jsx`: einmal für Joker/Ranking, einmal für den Duell-Joker, beide beim Speichern) |
+| `pruefeEinsatz` · `pruefeKlassen` | `limitKlassen` | Kontingente, `wirkung`, acht Aktivierungen | **2** (`pruefeEinsatz` → `Tippabgabe.jsx`, zweimal — Joker und Duell — beim Speichern) · `pruefeKlassen` → **1** (`LimitKlassen.jsx`, zeigt die verworfenen Klassen) |
 | `kannBezahlen` | `jokerBudget` | Narrenstand darf nie unters Guthaben fallen | **1** (`Tippabgabe.jsx`, vor dem Speichern) |
 | `budgetVerlauf` | `jokerBudget` | Narrenstand, Quellen, Takt, Verfall (Zufluss-Seite) | **1** (`kontoVerlauf` — darüber `Tippabgabe.jsx`, `narrenstand.js` → `RundenHub.jsx`/`Hauptmenu.jsx`) |
 | `ziehe` · `auswerten` | `drehrad` | die Ziehung und `maxPunkteProSaison` | **1** (`drehradBoard.js` → `store.mock.js`/`store.supabase.js`) |
@@ -325,3 +325,85 @@ unterschiedliche `abklingzeit`-Werte tragen.
 Ausdrücklich NICHT Teil dieses Schritts: `darfWiderrufen` (`jokerBasis`),
 `pruefeEinsatz`/`pruefeKlassen` (`limitKlassen`) — deren Zeilen in der Tabelle
 oben stehen weiterhin auf **0**.
+
+**2026-08-04, Schritt 5 aus Abschnitt 5 umgesetzt: Kontingente und Widerruf —
+die letzte Zeile der Tabelle.**
+
+`jokerBudget.js` bekam `einsaetzeAllerArten(tipps, rules)` — vereinigt die
+Joker-Käufe (`istNarrenKauf`, dieselbe Unterscheidung wie in `kontoVerlauf`)
+mit den Duell-Einsätzen aus `einsaetzeAusTipps` (`duellJoker.js`) zu EINER
+Liste in der Form, die `pruefeEinsatz`s `historie` erwartet. Bewusst NICHT in
+`duellJoker.js` gebaut, wie der Plan zuerst vorschlug: `jokerBudget.js`
+importiert bereits `duellJoker.js` (`sanitizeDuellJoker`, `fensterVon`), ein
+Import in die Gegenrichtung erzeugte denselben Zyklus, vor dem der
+Kopfkommentar von `duellJoker.js` beim Verhältnis zu `jokerBasis.js` bereits
+warnt. `istNarrenKauf` liegt ohnehin in `jokerBudget.js` — die Funktion dort
+zu bauen bedeutete keinen neuen Import, nur den bereits bestehenden in
+gewohnter Richtung genutzt.
+
+Verkabelt in `Tippabgabe.jsx`, an ZWEI Stellen im `submit()`, jeweils nur in
+denselben Fällen, in denen die vorangehenden Prüfungen aus Schritt 1/2 auch
+laufen: einmal für den Joker (direkt nach der Narren-Deckung, außerhalb des
+Einsatz-Modus — `einsaetzeAllerArten` erzeugt dort ohnehin keinen Eintrag),
+einmal für den Duell-Joker (nachdem `zulaessigeZiele` das Ziel im Moment des
+Speicherns erneut bestätigt hat). `historie` ist `einsaetzeAllerArten`
+angewandt auf `alleTipps`, OHNE den Tipp zu diesem `matchId` — das ist der
+Einsatz, der hier gerade geprüft wird, er darf sich nicht selbst im Weg
+stehen. `kontext.board`/`.budgetStand`/`.ausgeloesteEreignisse`: `board` liegt
+seit Schritt 1 vor, `budgetStand` wird aus dem Kontoverlauf (`kontoVerlauf`,
+Schritt 2) für den betreffenden Spieltag abgeleitet — NICHT aus
+`budgetVerlauf`, wie `joker-oekonomie.md` an der Stelle noch sagt (der
+Planauftrag zu diesem Schritt weist ausdrücklich auf den Kontoverlauf, der
+den tatsächlichen Stand nach Käufen zeigt, nicht nur den rohen Zufluss).
+`ausgeloesteEreignisse` kommt aus den ohnehin schon geladenen `gutschriften`
+(`erspielteJoker`) des eingeloggten Spielers — kein neuer Speicherort nötig,
+weil `pruefeEinsatz`s `nachEreignis`-Aktivierung ohnehin nur nach `userId`
+filtert und hier nur der eigene Nutzer geprüft wird. Bei Ablehnung: neuer
+`saveState`-Wert `"klasseUngueltig"` mit `klasseGrund` (alle Gründe aus
+`gruende` zusammengefasst), exakt nach dem Muster von `jokerUngueltig`/
+`narrenUngueltig`.
+
+`darfWiderrufen` bekam zwei eigene, von den obigen UNABHÄNGIGE Prüfblöcke in
+`submit()` — unabhängig deshalb, weil deren Bedingung einen AKTIVEN neuen
+Joker verlangt (`joker === true || gewichtEffektiv !== 1`) und eine
+ENTFERNUNG (neuer Zustand: kein Joker) dort nie ankäme. Dafür merkt sich ein
+neuer Screen-Zustand `urspruenglich` (befüllt beim Laden des Tipps, aus
+`dieser?.tip?.joker`/`.gewicht`/`.duell`), was beim Öffnen bereits gespeichert
+war. Ein Widerruf liegt vor, wenn dieser ursprüngliche Zustand aktiv war UND
+der neue Zustand entweder inaktiv ist ODER (nur Ranking) ein ANDERES Gewicht
+trägt — „vorher keiner, jetzt einer" erfüllt den `vorherGesetzt`-Wächter
+nicht und bleibt unangetastet, dafür bleibt weiterhin nur `pruefeJokerEinsatz`
+zuständig. `basis` kommt aus `basisFuer(jokerArt, rules)` mit der VORHERIGEN
+Art (bei Duell: `urspruenglich.duellTyp`, nicht der neu gewählte), `jetzt` =
+`Date.now()`, `anpfiff` = `SNAP.kickoff`. Bei Ablehnung: `saveState`
+`"widerrufUngueltig"` mit `widerrufGrund`, dasselbe Meldungs-Muster.
+
+**Mit diesem Schritt steht in der Tabelle oben keine Null mehr.** Alle sieben
+ursprünglich toten Kontaktstellen aus Abschnitt 2 sind verkabelt. Trotzdem
+bleibt offen, was schon in den vorherigen Schritten ausdrücklich als
+Einschränkung benannt wurde und durch Schritt 5 nicht behoben wird:
+
+- **Rad-Felder mit Joker-, Narren- oder Modifikator-Belohnung** (Schritt 3):
+  `withDrehradPunkte` zahlt weiterhin nur `belohnung.typ === "punkte"` aus.
+  Ein Rad-Feld mit einer anderen Belohnungsart wird gezogen und taucht in
+  `auswerten()`s `gutschriften` auf, wirkt sich im Spiel aber nicht aus.
+- **Die `klau`/`block`-Basiswahl aus Schritt 4:** Sind beide Duell-Arten
+  aktiv, nutzt `duellPlan` weiterhin ausschließlich die Basis von „klau" für
+  die Abklingzeit des Plans — eine Festlegung ohne Tie-Break-Regel im
+  ursprünglichen Plan-Text, siehe die „Offene Entscheidung" oben in diesem
+  Abschnitt.
+- **`kontext.adminFreigaben`** (Schritt 1): weiterhin immer leer, mangels
+  Speicherort für Admin-Freigaben — `wer: "adminFreigabe"` lehnt an JEDER
+  Kontaktstelle konsequent ab, die diesen Kontext nutzt (Joker, Rad).
+- **`letzteEinsaetze` fürs Rad** (Schritt 3, Nachtrag): weiterhin immer leer
+  — ein `abklingzeit`-Wert am Rad bleibt wirkungslos, obwohl er für echte
+  Joker längst greift.
+- **`stand`/`standAmTag` schlüsseln nur über `matchday`** (Schritt 2): bei
+  kollidierenden Spieltag-Nummern über mehrere Wettbewerbe hinweg mischt
+  `budgetStand` (wie schon `kontoVerlauf`) die Tabellenstände — dieselbe,
+  unverändert bestehende Einschränkung.
+
+Keine dieser fünf Lücken ist eine tote Kontaktstelle im Sinn dieses Dokuments
+— jede der betroffenen Funktionen hat echte Aufrufer. Es sind bekannte,
+bereits an ihrer jeweiligen Stelle benannte Teil-Wirkungen, keine neuen
+Funde.

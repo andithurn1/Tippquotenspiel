@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   BUDGET_LIMITS, DEFAULT_BUDGET,
   sanitizeBudget, budgetVerlauf, kontoVerlauf, preisFuer, kannBezahlen, konflikte,
+  einsaetzeAllerArten,
 } from "./jokerBudget";
 
 // ── Quellen — einzeln und kombiniert ───────────────────────
@@ -413,5 +414,56 @@ describe("kontoVerlauf", () => {
     expect(vorgabe.proSpieler.a[0].kontostand).toBe(245);
     expect(anschlag.proSpieler.a[0].kontostand).toBe(250 - BUDGET_LIMITS.preis.max);
     expect(anschlag.proSpieler.a[0].kontostand).not.toBe(vorgabe.proSpieler.a[0].kontostand);
+  });
+});
+
+// ── einsaetzeAllerArten (design/kontaktstellen.md Abschnitt 5 Punkt 5) ──
+
+describe("einsaetzeAllerArten", () => {
+  it("Modus 'einzel': tip.joker === true wird als joker.einzel-Einsatz erfasst", () => {
+    const tipps = [{ userId: "a", matchday: 3, joker: true }];
+    const r = einsaetzeAllerArten(tipps, { joker: { modus: "einzel" } });
+    expect(r).toEqual([{ spieltag: 3, jokerArt: "joker.einzel", vonUserId: "a", aufUserId: null }]);
+  });
+
+  it("Modus 'ranking': tip.gewicht !== 1 wird als joker.ranking-Einsatz erfasst", () => {
+    const tipps = [{ userId: "a", matchday: 4, gewicht: 2 }];
+    const r = einsaetzeAllerArten(tipps, { joker: { modus: "ranking" } });
+    expect(r).toEqual([{ spieltag: 4, jokerArt: "joker.ranking", vonUserId: "a", aufUserId: null }]);
+  });
+
+  it("Modus 'ranking': gewicht === 1 (neutral) ist KEIN Einsatz", () => {
+    const tipps = [{ userId: "a", matchday: 4, gewicht: 1 }];
+    expect(einsaetzeAllerArten(tipps, { joker: { modus: "ranking" } })).toEqual([]);
+  });
+
+  it("Modus 'einsatz' erzeugt KEINEN Joker-Einsatz — dort ist gewicht ein Münz-Einsatz", () => {
+    const tipps = [{ userId: "a", matchday: 4, gewicht: 5, joker: true }];
+    expect(einsaetzeAllerArten(tipps, { joker: { modus: "einsatz" } })).toEqual([]);
+  });
+
+  it("Duelle kommen mit, unabhängig vom Joker-Modus — 'klau' wird zu jokerArt 'duell.klau'", () => {
+    const tipps = [
+      { userId: "a", matchday: 6, kickoff: "2026-01-01T10:00:00Z", tip: { duell: { auf: "b", typ: "klau" } } },
+    ];
+    const r = einsaetzeAllerArten(tipps, { joker: { modus: "einsatz" } });
+    expect(r).toEqual([{ spieltag: 6, jokerArt: "duell.klau", vonUserId: "a", aufUserId: "b" }]);
+  });
+
+  it("Duell-Typ 'block' wird auf jokerArt 'duell.block' übersetzt", () => {
+    const tipps = [
+      { userId: "a", matchday: 6, kickoff: "2026-01-01T10:00:00Z", tip: { duell: { auf: "b", typ: "block" } } },
+    ];
+    expect(einsaetzeAllerArten(tipps, {})[0].jokerArt).toBe("duell.block");
+  });
+
+  it("Ergebnis ist chronologisch nach Spieltag sortiert, Joker- und Duell-Einsätze gemischt", () => {
+    const tipps = [
+      { userId: "a", matchday: 10, joker: true },
+      { userId: "b", matchday: 2, kickoff: "2026-01-01T10:00:00Z", tip: { duell: { auf: "a", typ: "klau" } } },
+      { userId: "a", matchday: 5, joker: true },
+    ];
+    const r = einsaetzeAllerArten(tipps, { joker: { modus: "einzel" } });
+    expect(r.map((e) => e.spieltag)).toEqual([2, 5, 10]);
   });
 });
