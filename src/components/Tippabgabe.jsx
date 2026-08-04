@@ -13,6 +13,7 @@ import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
 import { darfJokerSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
 import { pruefeJokerEinsatz } from "@/lib/jokerBasis";
+import { kontoVerlauf, perioden, preisFuer, kannBezahlen, sanitizeBudget, istNarrenKauf } from "@/lib/jokerBudget";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -45,6 +46,11 @@ const risk = (q) =>
 // in dem nicht nach Heim und Gast getrennt wird. Die Reihenfolge bleibt
 // Heim-vor-Gast, damit die Auswahl nicht bei jedem Rendern springt.
 const alleSpieler = (snap) => ({ ...snap.players.home, ...snap.players.away });
+
+// Dieselbe Vorgabe wie in Drehrad.jsx/JokerVerteilung.jsx/LimitKlassen.jsx —
+// für `kontoVerlauf` (design/kontaktstellen.md Abschnitt 5 Punkt 2), das
+// selbst keine echte Saisonlänge kennt.
+const SPIELTAGE = 34;
 
 // Löst den Anfangs-Pick je Torschützen-Slot.
 //
@@ -92,7 +98,7 @@ export default function Tippabgabe({ matchId }) {
   const scorer = RULES.markets.goals;
   const [picks, setPicks] = useState(null);
   const [done, setDone] = useState(false);
-  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error | einsatzUngueltig | jokerUngueltig
+  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | guest | error | einsatzUngueltig | jokerUngueltig | narrenUngueltig
   // Nur befüllt, wenn `saveState === "einsatzUngueltig"` — der ausformulierte
   // Grund, warum der Spieltag die Einsatz-Regeln verletzt.
   const [einsatzGrund, setEinsatzGrund] = useState("");
@@ -100,6 +106,10 @@ export default function Tippabgabe({ matchId }) {
   // Grund, warum `pruefeJokerEinsatz` (design/kontaktstellen.md Abschnitt 5
   // Punkt 1) den Einsatz abgelehnt hat.
   const [jokerGrund, setJokerGrund] = useState("");
+  // Nur befüllt, wenn `saveState === "narrenUngueltig"` — der ausformulierte
+  // Grund, warum `kannBezahlen` (design/kontaktstellen.md Abschnitt 5 Punkt 2)
+  // diesen Joker-Kauf abgelehnt hat.
+  const [narrenGrund, setNarrenGrund] = useState("");
   // Gewichtung dieses Spiels: Flag (Modus „einzel") bzw. Faktor (Modus „ranking").
   const [joker, setJoker] = useState(false);
   const [gewicht, setGewicht] = useState(1);
@@ -111,6 +121,12 @@ export default function Tippabgabe({ matchId }) {
   // Andere Tipps des Nutzers in dieser Runde — für „welche Gewichte am selben
   // Spieltag sind schon vergeben" (Ranking-Modus).
   const [meineTips, setMeineTips] = useState([]);
+  // Tipps ALLER Spieler der Runde, für `kontoVerlauf` angereichert um
+  // `matchday` (design/kontaktstellen.md Abschnitt 5 Punkt 2) — `meineTips`
+  // reicht dafür nicht: `spielerInPeriode` (Preis „knappheit") braucht die
+  // Käufe der ANDEREN Spieler. `listTips({ roundId })` liefert ohnehin schon
+  // alle, `meineTips` ist nur die gefilterte Teilmenge davon.
+  const [alleTipps, setAlleTipps] = useState([]);
   // Eigene Roh-Einträge der Runde — Grundlage für die ERSPIELTEN Joker
   // (ereignisse.js rechnet aus Tipps + Ergebnissen).
   const [meineEintraege, setMeineEintraege] = useState([]);
@@ -119,6 +135,11 @@ export default function Tippabgabe({ matchId }) {
   // Tabellenstand der Runde — für die `wer`-Modi `abPlatz`/`abRueckstand`
   // aus jokerBasis.js (design/kontaktstellen.md Abschnitt 5 Punkt 1).
   const [board, setBoard] = useState([]);
+  // Spieltag-für-Spieltag-Historie des Leaderboards — für die Budget-Quellen
+  // `rueckstand`/`platzierung` in `kontoVerlauf` (design/kontaktstellen.md
+  // Abschnitt 5 Punkt 2). `[{ matchday, board }]`, exakt die Form, die
+  // `budgetVerlauf` als `stand` erwartet.
+  const [leaderboardHistory, setLeaderboardHistory] = useState([]);
 
   useEffect(() => {
     let live = true;
@@ -152,11 +173,12 @@ export default function Tippabgabe({ matchId }) {
     let live = true;
     Promise.all([
       getStore().listTips({ roundId }), getStore().listMatches(), getStore().listVotes({ roundId }),
-      getStore().getLeaderboard(roundId),
-    ]).then(([tips, ms, vs, lb]) => {
+      getStore().getLeaderboard(roundId), getStore().getLeaderboardHistory(roundId),
+    ]).then(([tips, ms, vs, lb, history]) => {
       if (!live) return;
       setVotes(vs);
       setBoard(lb);
+      setLeaderboardHistory(history);
       // Wettbewerb mit anreichern — der Gewichte-Schlüssel ist wettbewerb+matchday.
       const infoOf = new Map(ms.map((m) => [m.id, { matchday: m.matchday ?? null, wettbewerb: wettbewerbVon(m) }]));
       const eigene = tips
@@ -171,6 +193,15 @@ export default function Tippabgabe({ matchId }) {
           joker: t.tip?.joker === true,
         }));
       setMeineTips(eigene);
+      // Käufe ALLER Spieler, angereichert um `matchday`/`matchId` — Grundlage
+      // für `kontoVerlauf` (design/kontaktstellen.md Abschnitt 5 Punkt 2).
+      setAlleTipps(tips.map((t) => ({
+        userId: t.user_id,
+        matchId: t.match_id,
+        matchday: infoOf.get(t.match_id)?.matchday ?? null,
+        gewicht: t.tip?.gewicht,
+        joker: t.tip?.joker === true,
+      })));
       setAlleMatches(ms);
       getStore().getRoundEntries(roundId)
         .then((alle) => { if (live) setMeineEintraege(alle.filter((x) => x.userId === user.id)); })
@@ -283,6 +314,21 @@ export default function Tippabgabe({ matchId }) {
     alleGetippt,
     letzteEinsaetze,
   };
+
+  // Narren-Kontostand (design/kontaktstellen.md Abschnitt 5 Punkt 2) —
+  // braucht die Tipps ALLER Spieler (`alleTipps`, nicht `meineTips`), weil
+  // `spielerInPeriode` (Preis „knappheit") die Käufe anderer Spieler
+  // mitzählt. `board` liefert die Spielerliste (`userIds`),
+  // `leaderboardHistory` (`getStore().getLeaderboardHistory`) den echten
+  // Spieltag-für-Spieltag-Tabellenstand für die Budget-Quellen
+  // `rueckstand`/`platzierung` — das zusätzliche `wettbewerb`-Feld je Eintrag
+  // stört `kontoVerlauf`/`budgetVerlauf` nicht, sie lesen nur `matchday`/`board`.
+  const kontoAlle = kontoVerlauf({
+    rules: RULES, tipps: alleTipps, spieltage: SPIELTAGE, stand: leaderboardHistory,
+    userIds: board.map((b) => b.userId),
+  });
+  const meinKonto = user ? kontoAlle.proSpieler[user.id] : null;
+  const narrenKontostand = meinKonto?.find((v) => v.matchday === spieltag.matchday)?.kontostand ?? null;
 
   // Kontingent aus BEIDEN Töpfen: zugeteilt (Plan) + erspielt (Ereignisse).
   // Ohne diese Zusammenführung wäre ein erspielter Joker eine Zahl ohne Wirkung.
@@ -433,6 +479,35 @@ export default function Tippabgabe({ matchId }) {
           setJokerGrund(pruef.grund);
           setSaveState("jokerUngueltig");
           return;
+        }
+        // Narren-Zahlungsfähigkeit prüfen (design/kontaktstellen.md
+        // Abschnitt 5 Punkt 2) — NICHT im Modus „einsatz": dort ist
+        // `gewichtEffektiv` ein Münz-Einsatz (`einsatzPlanung`), kein
+        // Narren-Kauf (design/waehrungen.md Abschnitt 1). Preis über
+        // `preisFuer`, dieselben Zähler wie in `kontoVerlauf`
+        // (`bisherInPeriode`/`spielerInPeriode`, chronologisch je Periode)
+        // — über `perioden()` (exportiert), keine zweite Perioden-Rechnung.
+        // Kauf-Erkennung über `istNarrenKauf` (exportiert aus jokerBudget.js)
+        // — EIN Ort für „was zählt als Narren-Kauf", keine zweite Ternary.
+        if (!einsatzModus) {
+          const budgetCfg = sanitizeBudget(RULES.budget);
+          const perioden_ = perioden(budgetCfg.takt, { n: budgetCfg.n, fenster: budgetCfg.fenster }, SPIELTAGE);
+          const periodeVon = perioden_.find((p) => spieltag.matchday >= p.von && spieltag.matchday <= p.bis)?.von
+            ?? spieltag.matchday;
+          const kaeufeInPeriode = alleTipps.filter((t) => {
+            if (!istNarrenKauf(RULES.joker?.modus, t)) return false;
+            const von = perioden_.find((p) => t.matchday >= p.von && t.matchday <= p.bis)?.von ?? t.matchday;
+            return von === periodeVon;
+          });
+          const bisherInPeriode = kaeufeInPeriode.filter((t) => t.userId === user.id).length;
+          const spielerInPeriode = new Set(kaeufeInPeriode.map((t) => t.userId)).size;
+          const preis = preisFuer(jokerArt, RULES.budget, { bisherInPeriode, spielerInPeriode });
+          const verfuegbar = narrenKontostand ?? 0;
+          if (!kannBezahlen(verfuegbar, preis)) {
+            setNarrenGrund(`dieser Joker kostet ${zahl(preis)} Narren, du hast nur ${zahl(verfuegbar)} verfügbar`);
+            setSaveState("narrenUngueltig");
+            return;
+          }
         }
       }
       const goals = goalsAusPicks(picks, scorer);
@@ -688,6 +763,17 @@ export default function Tippabgabe({ matchId }) {
                 <div style={{ fontSize: 11, color: C.gold, textTransform: "uppercase", letterSpacing: 1 }}>
                   {einsatzModus ? "Einsatz dieses Spiels" : rankingModus ? "Gewicht dieses Spiels" : "Joker"}
                 </div>
+                {/* Narren-Kontostand (design/waehrungen.md Abschnitt 3.1) —
+                    NUR in den Modi „einzel"/„ranking": im Modus „einsatz"
+                    entstehen hier keine Narren-Ausgaben (siehe oben), ein
+                    Kontostand wäre dort ohne Aussage. Nur echte Daten
+                    anzeigen (Abschnitt 4) — `narrenKontostand == null`
+                    (Budget aus/kein Spieler) zeigt nichts an. */}
+                {!einsatzModus && narrenKontostand != null && (
+                  <div style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, marginTop: 4 }}>
+                    🃏 <span style={{ color: C.gold, fontWeight: 700 }}>{zahl(narrenKontostand)}</span> Narren
+                  </div>
+                )}
                 {einsatzModus ? (
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
@@ -832,7 +918,7 @@ export default function Tippabgabe({ matchId }) {
           <Confirmation
             snap={SNAP} h={h} a={a} winner={winner} csQuote={csQuote}
             kickoffLabel={kickoffLabel} picks={picks} teams={teams} saveState={saveState}
-            einsatzGrund={einsatzGrund} jokerGrund={jokerGrund}
+            einsatzGrund={einsatzGrund} jokerGrund={jokerGrund} narrenGrund={narrenGrund}
             roundName={roundName}
             onEdit={() => { setSaveState("idle"); setDone(false); }}
           />
@@ -902,19 +988,23 @@ const SAVE_HINT = {
   error:  { text: "Speichern fehlgeschlagen — später erneut versuchen", col: C.coral },
 };
 
-function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState, einsatzGrund, jokerGrund, roundName, onEdit }) {
+function Confirmation({ snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState, einsatzGrund, jokerGrund, narrenGrund, roundName, onEdit }) {
   // Einsatz-Modus: nicht gespeichert, weil der Spieltag die Einsatz-Regeln
   // verletzt (design/einsatz-joker.md 3.2). Der GRUND wird beim Absenden
   // ausformuliert und hier nur eingesetzt — es gibt vier verschiedene, und
   // „ungültig" allein sagt dem Spieler nicht, was er tun soll.
   // Joker-Grundform: derselbe Aufbau, nur mit dem Grund aus
   // `pruefeJokerEinsatz` (design/kontaktstellen.md Abschnitt 5 Punkt 1).
+  // Narren-Zahlungsfähigkeit: derselbe Aufbau, Grund aus `kannBezahlen`
+  // (design/kontaktstellen.md Abschnitt 5 Punkt 2).
   const hint = saveState === "saved"
     ? { text: `✓ gespeichert in „${roundName ?? "deiner Runde"}"`, col: C.mint }
     : saveState === "einsatzUngueltig"
     ? { text: `nicht gespeichert — ${einsatzGrund}`, col: C.coral }
     : saveState === "jokerUngueltig"
     ? { text: `nicht gespeichert — ${jokerGrund}`, col: C.coral }
+    : saveState === "narrenUngueltig"
+    ? { text: `nicht gespeichert — ${narrenGrund}`, col: C.coral }
     : SAVE_HINT[saveState];
   return (
     <div style={{ position: "relative", padding: "30px 22px 24px" }}>

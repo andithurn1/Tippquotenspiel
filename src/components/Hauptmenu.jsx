@@ -9,6 +9,7 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import { getStore } from "@/lib/store";
 import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "@/lib/roundStatus";
 import { muenzStand } from "@/lib/muenzstand";
+import { narrenStand } from "@/lib/narrenstand";
 import Waehrungen from "@/components/Waehrungen";
 import { C, MONO } from "@/lib/theme";
 
@@ -38,9 +39,12 @@ export default function Hauptmenu() {
       const withStatus = await Promise.all(myRounds.map(async (r) => {
         const relevant = filterMatchesByTeams(matches, r.team_filter);
         const { total, open } = computeMatchStatus(relevant);
-        const tips = await getStore().listTips({ roundId: r.id });
+        const [tips, history] = await Promise.all([
+          getStore().listTips({ roundId: r.id }), getStore().getLeaderboardHistory(r.id),
+        ]);
         const stand = muenzStand({ rules: r.rules, matches: relevant, tips, userId: user.id });
-        return { ...r, status: { total, open, tippedByMe: countTippedByUser(tips, user.id) }, stand };
+        const narren = narrenStand({ rules: r.rules, matches: relevant, tips, userId: user.id, stand: history });
+        return { ...r, status: { total, open, tippedByMe: countTippedByUser(tips, user.id) }, stand, narren };
       }));
       if (live) setRounds(withStatus);
     });
@@ -95,9 +99,9 @@ export default function Hauptmenu() {
                   <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginTop: 5 }}>
                     {r.status.total} Spiele · {r.status.open} offen · {r.status.tippedByMe} von dir getippt
                   </div>
-                  {r.stand && (
+                  {(r.stand || r.narren != null) && (
                     <div style={{ marginTop: 5 }}>
-                      <Waehrungen stand={r.stand} kompakt />
+                      <Waehrungen stand={r.stand} narren={r.narren?.kontostand ?? null} kompakt />
                     </div>
                   )}
                 </button>

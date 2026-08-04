@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   BUDGET_LIMITS, DEFAULT_BUDGET,
-  sanitizeBudget, budgetVerlauf, preisFuer, kannBezahlen, konflikte,
+  sanitizeBudget, budgetVerlauf, kontoVerlauf, preisFuer, kannBezahlen, konflikte,
 } from "./jokerBudget";
 
 // ── Quellen — einzeln und kombiniert ───────────────────────
@@ -245,5 +245,173 @@ describe("konflikte", () => {
     const rules = { budget: { enabled: true, quellen: [{ typ: "gleich", betrag: 300 }], verfall: "deckel" } };
     const k = konflikte(rules);
     expect(k.find((x) => x.key === "budget-nie-schluss-salve")).toBeUndefined();
+  });
+});
+
+// ── kontoVerlauf — der echte Kontostand (Zufluss minus Käufe) ────────────
+// design/kontaktstellen.md Abschnitt 5 Punkt 2.
+
+describe("kontoVerlauf", () => {
+  it("ohne Käufe stimmt der Kontostand mit budgetVerlauf überein", () => {
+    const rules = {
+      joker: { modus: "ranking" },
+      budget: { enabled: true, quellen: [{ typ: "gleich", betrag: 10 }], takt: "spieltag", verfall: "nie" },
+    };
+    const zufluss = budgetVerlauf({
+      quellen: [{ typ: "gleich", betrag: 10 }], takt: "spieltag", verfall: "nie",
+      spieltage: 3, userIds: ["a"],
+    });
+    const konto = kontoVerlauf({ rules, tipps: [], spieltage: 3, userIds: ["a"] });
+    expect(konto.proSpieler.a.map((v) => v.kontostand)).toEqual(zufluss.proSpieler.a.map((v) => v.kontostand));
+    expect(konto.proSpieler.a.every((v) => v.ausgaben === 0)).toBe(true);
+  });
+
+  it("ein Kauf senkt den Kontostand ab genau dem Spieltag des Kaufs — vorher unverändert", () => {
+    const rules = {
+      joker: { modus: "ranking" },
+      budget: {
+        enabled: true, quellen: [{ typ: "gleich", betrag: 10 }], takt: "spieltag", verfall: "nie",
+        preise: { "joker.ranking": 5 }, preisModus: "fix",
+      },
+    };
+    // Gewicht 2 an Spieltag 2 ist ein Kauf (Modus "ranking": gewicht !== 1).
+    const tipps = [{ userId: "a", matchday: 2, gewicht: 2 }];
+    const { proSpieler } = kontoVerlauf({ rules, tipps, spieltage: 3, userIds: ["a"] });
+    // Zufluss wäre [10, 20, 30] — Spieltag 1 bleibt unangetastet, ab
+    // Spieltag 2 fehlen die 5 Narren des Kaufs.
+    expect(proSpieler.a[0].kontostand).toBe(10);
+    expect(proSpieler.a[1].kontostand).toBe(15);
+    expect(proSpieler.a[2].kontostand).toBe(25);
+  });
+
+  it("zwei Käufe desselben Spielers summieren sich", () => {
+    const rules = {
+      joker: { modus: "ranking" },
+      budget: {
+        enabled: true, quellen: [{ typ: "gleich", betrag: 10 }], takt: "spieltag", verfall: "nie",
+        preise: { "joker.ranking": 5 }, preisModus: "fix",
+      },
+    };
+    const tipps = [
+      { userId: "a", matchday: 1, gewicht: 2 },
+      { userId: "a", matchday: 2, gewicht: 3 },
+    ];
+    const { proSpieler } = kontoVerlauf({ rules, tipps, spieltage: 3, userIds: ["a"] });
+    expect(proSpieler.a[0].kontostand).toBe(5);   // 10 - 5
+    expect(proSpieler.a[1].kontostand).toBe(10);  // 20 - (5+5)
+    expect(proSpieler.a[2].kontostand).toBe(20);  // 30 - (5+5)
+  });
+
+  it("der Kontostand geht nie unter 0", () => {
+    const rules = {
+      joker: { modus: "ranking" },
+      budget: {
+        enabled: true, quellen: [{ typ: "gleich", betrag: 1 }], takt: "spieltag", verfall: "nie",
+        preise: { "joker.ranking": 100 }, preisModus: "fix",
+      },
+    };
+    const tipps = [{ userId: "a", matchday: 1, gewicht: 2 }];
+    const { proSpieler } = kontoVerlauf({ rules, tipps, spieltage: 3, userIds: ["a"] });
+    expect(proSpieler.a.every((v) => v.kontostand >= 0)).toBe(true);
+    expect(proSpieler.a.map((v) => v.kontostand)).toEqual([0, 0, 0]);
+  });
+
+  // Gegenprobe nach design/kontaktstellen.md Abschnitt 5: `stand` (echte
+  // Leaderboard-Historie, `getStore().getLeaderboardHistory`) muss bei den
+  // Budget-Quellen "rueckstand"/"platzierung" ein messbar HÖHERES Ergebnis
+  // liefern als ohne — sonst wäre diese Quelle trotz `kontoVerlauf` eine tote
+  // Kontaktstelle (ein zu niedriger Kontostand wäre schlimmer als keiner,
+  // design/waehrungen.md Abschnitt 4).
+  it("'rueckstand'-Quelle MIT stand liefert einen höheren Zufluss als ohne stand", () => {
+    const rules = {
+      joker: { modus: "ranking" },
+      budget: {
+        enabled: true, quellen: [{ typ: "rueckstand", proPunktRueckstand: 0.5, deckel: 0 }],
+        takt: "saison", verfall: "deckel", maxAnsparen: 100,
+      },
+    };
+    // Zusätzliches `wettbewerb`-Feld wie bei `getStore().getLeaderboardHistory` —
+    // darf `kontoVerlauf`/`budgetVerlauf` nicht stören.
+    const stand = [{ wettbewerb: "bl", matchday: 1, board: [{ userId: "a", total: 0 }, { userId: "b", total: 20 }] }];
+
+    const ohneStand = kontoVerlauf({ rules, tipps: [], spieltage: 2, userIds: ["a", "b"] });
+    const mitStand = kontoVerlauf({ rules, tipps: [], spieltage: 2, stand, userIds: ["a", "b"] });
+
+    expect(ohneStand.proSpieler.a.map((v) => v.kontostand)).toEqual([0, 0]);
+    expect(mitStand.proSpieler.a[0].kontostand).toBe(10);
+    expect(mitStand.proSpieler.a[0].kontostand).toBeGreaterThan(ohneStand.proSpieler.a[0].kontostand);
+  });
+
+  // 🔴 Zwei Währungen (design/waehrungen.md Abschnitt 1): im Modus "einsatz"
+  // ist `tip.gewicht` ein Münz-Einsatz, kein Narren-Kauf. Derselbe Tipp darf
+  // im Modus "einsatz" deshalb keine Narren kosten — sonst zöge man
+  // demselben Spieler zweimal etwas ab, in zwei verschiedenen Währungen.
+  it("Modus 'einsatz' kostet KEINE Narren — identischer Tipp, nur in 'ranking' entstehen Ausgaben", () => {
+    const budget = {
+      enabled: true, quellen: [{ typ: "gleich", betrag: 10 }], takt: "spieltag", verfall: "nie",
+      preise: { "joker.ranking": 5, "joker.einzel": 5 }, preisModus: "fix",
+    };
+    const tipps = [{ userId: "a", matchday: 1, gewicht: 2 }];
+
+    const ranking = kontoVerlauf({
+      rules: { joker: { modus: "ranking" }, budget }, tipps, spieltage: 2, userIds: ["a"],
+    });
+    const einsatz = kontoVerlauf({
+      rules: { joker: { modus: "einsatz" }, budget }, tipps, spieltage: 2, userIds: ["a"],
+    });
+
+    expect(ranking.proSpieler.a[0].ausgaben).toBeGreaterThan(0);
+    expect(einsatz.proSpieler.a.every((v) => v.ausgaben === 0)).toBe(true);
+    // Im Modus "einsatz" bleibt der Kontostand der reine Zufluss.
+    expect(einsatz.proSpieler.a.map((v) => v.kontostand)).toEqual([10, 20]);
+  });
+
+  it("preisModus 'steigend' macht den ZWEITEN Kauf teurer als den ersten", () => {
+    const rules = {
+      joker: { modus: "ranking" },
+      budget: {
+        enabled: true, quellen: [{ typ: "gleich", betrag: 100 }], takt: "alleNSpieltage", n: 10, verfall: "nie",
+        preise: { "joker.ranking": 10 }, preisModus: "steigend", steigerung: 2,
+      },
+    };
+    // Beide Käufe fallen in dieselbe Periode (alleNSpieltage, n=10, Spieltage 1-5).
+    const tipps = [
+      { userId: "a", matchday: 1, gewicht: 2 },
+      { userId: "a", matchday: 3, gewicht: 2 },
+    ];
+    const { proSpieler } = kontoVerlauf({ rules, tipps, spieltage: 5, userIds: ["a"] });
+    const ersterPreis = proSpieler.a[0].ausgaben;
+    const zweiterPreis = proSpieler.a[2].ausgaben;
+    expect(ersterPreis).toBe(10);
+    expect(zweiterPreis).toBe(20);
+    expect(zweiterPreis).toBeGreaterThan(ersterPreis);
+  });
+
+  // Gegenprobe nach design/kontaktstellen.md Abschnitt 5: eine Einstellung
+  // auf Anschlag (hier: der maximale Preis, BUDGET_LIMITS.preis.max) muss ein
+  // messbar anderes Ergebnis liefern als die Vorgabe — sonst wäre diese
+  // Kontaktstelle nur scheinbar verkabelt.
+  it("Preis auf Anschlag (BUDGET_LIMITS.preis.max) liefert ein messbar anderes Ergebnis als die Vorgabe", () => {
+    const basis = {
+      enabled: true, quellen: [{ typ: "gleich", betrag: 250 }], takt: "saison", verfall: "nie",
+      preisModus: "fix",
+    };
+    const tipps = [{ userId: "a", matchday: 1, gewicht: 2 }];
+
+    const vorgabe = kontoVerlauf({
+      rules: { joker: { modus: "ranking" }, budget: { ...basis, preise: { "joker.ranking": 5 } } },
+      tipps, spieltage: 1, userIds: ["a"],
+    });
+    const anschlag = kontoVerlauf({
+      rules: {
+        joker: { modus: "ranking" },
+        budget: { ...basis, preise: { "joker.ranking": BUDGET_LIMITS.preis.max } },
+      },
+      tipps, spieltage: 1, userIds: ["a"],
+    });
+
+    expect(vorgabe.proSpieler.a[0].kontostand).toBe(245);
+    expect(anschlag.proSpieler.a[0].kontostand).toBe(250 - BUDGET_LIMITS.preis.max);
+    expect(anschlag.proSpieler.a[0].kontostand).not.toBe(vorgabe.proSpieler.a[0].kontostand);
   });
 });

@@ -8,12 +8,11 @@
 //  Diese Datei ist nur der Vorbau davor: „welcher Spieltag, welche Tipps,
 //  welches Regelwerk" — reine Logik, UI-frei.
 //
-//  ⚠️ Münzen sind heute schon ECHT (design/waehrungen.md 4): sie folgen aus
-//  dem Spieltag und den abgegebenen Tipps. Narren (der Shop-Kontostand) sind
-//  es nicht — `kannBezahlen`/`budgetVerlauf` haben null Aufrufer im Spiel-
-//  betrieb (design/kontaktstellen.md). Diese Datei liefert deshalb NUR die
-//  Münzen-Seite. Kein Narren-Feld, auch nicht als `null` — das wäre schon die
-//  Andeutung einer Zahl, die es nicht gibt.
+//  ⚠️ Münzen ≠ Narren (design/waehrungen.md 1) — diese Datei liefert bewusst
+//  NUR die Münzen-Seite, kein Narren-Feld, auch nicht als `null`. Die Narren-
+//  Seite (jetzt echt verkabelt, design/kontaktstellen.md Abschnitt 5 Punkt 2)
+//  hat ihren eigenen Geschwister-Vorbau: `narrenstand.js`. Beide teilen sich
+//  `naechstesOffenesSpiel` (hier exportiert) für „welcher Spieltag ist jetzt".
 // ============================================================
 
 import { einsatzPlanung, spieltagKey } from "./engine";
@@ -24,7 +23,10 @@ import { wettbewerbVon } from "./wettbewerbe";
 // der Zukunft liegt. Ein früherer, ungetippter Spieltag zählt nicht — der ist
 // vorbei, dort gibt es nichts mehr zu verteilen (anders als beim Tippen
 // EINES Spiels, wo der Spieltag durch das Spiel selbst feststeht).
-function naechstesOffenesSpiel(matches, jetzt) {
+// Exportiert: `narrenstand.js` (design/kontaktstellen.md Abschnitt 5 Punkt 2)
+// braucht denselben „aktuellen Spieltag" für die Narren-Anzeige — keine
+// zweite Berechnung daneben.
+export function naechstesOffenesSpiel(matches, jetzt) {
   let bestes = null;
   let besteZeit = Infinity;
   for (const m of matches) {

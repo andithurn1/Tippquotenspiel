@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "@/lib/roundStatus";
 import { muenzStand } from "@/lib/muenzstand";
+import { narrenStand } from "@/lib/narrenstand";
 import Waehrungen from "@/components/Waehrungen";
 import { C, MONO } from "@/lib/theme";
 
@@ -39,11 +40,15 @@ export default function RundenHub() {
   const [abstimmung, setAbstimmung] = useState(false);
   const [saison, setSaison] = useState(false);
   const [stand, setStand] = useState(null); // Münzstand dieser Runde, siehe muenzstand.js
+  const [narren, setNarren] = useState(null); // Narren-Kontostand dieser Runde, siehe narrenstand.js
 
   useEffect(() => {
     let live = true;
-    Promise.all([getStore().getRound(roundId), getStore().listMatches(), getStore().listTips({ roundId })])
-      .then(([round, matches, tips]) => {
+    Promise.all([
+      getStore().getRound(roundId), getStore().listMatches(), getStore().listTips({ roundId }),
+      getStore().getLeaderboardHistory(roundId),
+    ])
+      .then(([round, matches, tips, history]) => {
         if (!live) return;
         setRoundName(round?.name ?? null);
         setAbstimmung(round?.rules?.joker?.enabled === true && round?.rules?.joker?.abstimmung === true);
@@ -52,6 +57,7 @@ export default function RundenHub() {
         const { total, open } = computeMatchStatus(relevant);
         setStatus({ total, open, tippedByMe: countTippedByUser(tips, user?.id) });
         setStand(muenzStand({ rules: round?.rules, matches: relevant, tips, userId: user?.id }));
+        setNarren(narrenStand({ rules: round?.rules, matches: relevant, tips, userId: user?.id, stand: history }));
       }).catch(() => {});
     return () => { live = false; };
   }, [roundId, user]);
@@ -79,12 +85,12 @@ export default function RundenHub() {
             : "Status lädt …"}
         </div>
 
-        {stand && (
+        {(stand || narren != null) && (
           <div style={{
             background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16,
             padding: "14px 16px", marginBottom: 16,
           }}>
-            <Waehrungen stand={stand} />
+            <Waehrungen stand={stand} narren={narren?.kontostand ?? null} />
           </div>
         )}
 

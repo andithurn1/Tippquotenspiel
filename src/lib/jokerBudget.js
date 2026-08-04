@@ -38,10 +38,11 @@
 //
 //  ── Reine Rechnung, kein Zustand ──
 //  `budgetVerlauf` berechnet nur die ZUFLUSS-Seite (Einnahmen mit Verfall) —
-//  wie viel WÄRE verfügbar, wenn noch nichts ausgegeben wurde. Das Verbuchen
-//  tatsächlicher Käufe (Kontostand minus Preis) ist Sache des Aufrufers;
-//  `kannBezahlen` ist dafür der einzige Baustein hier, dieselbe Trennung wie
-//  zwischen `jokerPlan` (Regel) und Store/UI (Durchsetzung).
+//  wie viel WÄRE verfügbar, wenn noch nichts ausgegeben wurde. `kontoVerlauf`
+//  (weiter unten) verbucht zusätzlich die tatsächlichen Käufe, abgeleitet aus
+//  den Tipps — erst damit gibt es einen echten Kontostand
+//  (design/kontaktstellen.md Abschnitt 5 Punkt 2, löst dort die Zeile
+//  `kannBezahlen · budgetVerlauf` von 0 Aufrufern).
 //
 //  Reine Funktionen, UI-frei.
 // ============================================================
@@ -227,7 +228,9 @@ export function sanitizeBudget(partial = {}) {
 // Liefert die Zeiträume, an deren ANFANG die periodischen Quellen (`gleich`,
 // `rueckstand`, `platzierung`) zahlen. Bei `takt: "phase"` ist das ganze
 // Fenster EIN Zeitraum — `fensterVon` liefert die Grenzen, nicht neu gebaut.
-function perioden(takt, { n, fenster }, spieltage) {
+// Exportiert, damit `kontoVerlauf` (weiter unten) und Aufrufer außerhalb
+// dieser Datei dieselbe Perioden-Rechnung nutzen, statt sie nachzubauen.
+export function perioden(takt, { n, fenster }, spieltage) {
   const N = Number.isFinite(spieltage) && spieltage > 0 ? Math.floor(spieltage) : 34;
   if (takt === "saison") return [{ von: 1, bis: N }];
   if (takt === "alleNSpieltage") {
@@ -316,6 +319,8 @@ function creditsFuerTag(userId, t, quellen, periodenStart, stand) {
 // ── Der Verlauf ─────────────────────────────────────────────
 // Je Spieler und Spieltag der verfügbare Kontostand — reine Zufluss-Rechnung
 // (Einnahmen + Verfall), OHNE Abzug tatsächlicher Käufe (siehe Kopfkommentar).
+// `kontoVerlauf` (weiter unten) baut auf diesem Ergebnis auf und zieht die
+// tatsächlichen Käufe ab — DAS ist der echte Kontostand.
 // `stand` = `[{ matchday, board }]`, dieselbe Form wie in `applySaisonform`.
 // `userIds` — dieselbe Bauart wie `jokerPlan({ …, userIds })`: die
 // ausdrückliche Spielerliste. Sie wird mit den aus `stand`/
@@ -392,6 +397,124 @@ export function kannBezahlen(kontostand, preis) {
   const p = Number(preis);
   if (!Number.isFinite(k) || !Number.isFinite(p) || p < 0) return false;
   return k >= p;
+}
+
+// Liegt in `t` ein tatsächlicher Narren-Kauf vor? EIN Ort für diese
+// Unterscheidung — exportiert, damit weder `kontoVerlauf` noch ein Aufrufer
+// wie `Tippabgabe.jsx` sie ein zweites Mal hinschreibt. Eine Verwechslung
+// wäre hier teuer: im Modus "einsatz" darf das niemals anschlagen (Münzen ≠
+// Narren, design/waehrungen.md Abschnitt 1).
+// Modus "einzel": `tip.joker === true`. Modus "ranking": `tip.gewicht !== 1`.
+// (design/kontaktstellen.md Abschnitt 5 Punkt 2 — Schritt 1 hat dieselbe
+// Unterscheidung schon für `letzteEinsaetze` in Tippabgabe.jsx getroffen.)
+export function istNarrenKauf(modus, t) {
+  return modus === "ranking" ? (t?.gewicht != null && t.gewicht !== 1) : t?.joker === true;
+}
+
+// ── Der Kontoverlauf (Zufluss minus tatsächliche Käufe) ─────
+//
+// `budgetVerlauf` (siehe Kopfkommentar der Datei) rechnet ausdrücklich NUR
+// den Zufluss — wie viel WÄRE verfügbar, wenn nie etwas ausgegeben würde.
+// Damit gibt es keinen echten Kontostand, nur eine obere Schranke. Diese
+// Funktion schließt die Lücke: Zufluss über `budgetVerlauf` (nicht neu
+// gerechnet), Käufe aus den abgegebenen Tipps abgeleitet, Preis über
+// `preisFuer`. Erst mit dieser Buchführung gibt es einen Narren-Kontostand,
+// den man dem Spieler zeigen darf (design/waehrungen.md Abschnitt 4).
+//
+// 🔴 Münzen ≠ Narren (design/waehrungen.md Abschnitt 1). Im Modus "einsatz"
+// ist `tip.gewicht` ein Wetteinsatz in MÜNZEN (`rules.joker.einsatzProSpieltag`,
+// `einsatzPlanung` in engine.js) — mit dem Narren-Shop hat das nichts zu tun.
+// Ein Tipp im Modus "einsatz" kostet hier deshalb NIEMALS Narren; wer die
+// beiden Töpfe verwechselt, zieht demselben Spieler zweimal etwas ab, in
+// zwei verschiedenen Währungen. Nur die Modi "einzel" und "ranking" kaufen
+// Joker mit Narren.
+//
+// `tipps` erwartet je Eintrag `{ userId, matchday, joker, gewicht }` — der
+// Aufrufer reichert die Roh-Tipps (typischerweise `user_id`, kein `matchday`)
+// dafür an, genau wie `meineTips` in Tippabgabe.jsx das für sich selbst tut.
+//
+// Preis-Zähler (`bisherInPeriode`/`spielerInPeriode`) laufen CHRONOLOGISCH
+// über alle Käufer gemeinsam, je Periode (`perioden()`, dieselbe Funktion
+// wie in `budgetVerlauf`) — sonst hinge `preisModus: "steigend"`/"knappheit"
+// von der Reihenfolge im Array statt vom Spieltag ab.
+export function kontoVerlauf({ rules, tipps = [], spieltage = 34, stand = null, userIds = [] } = {}) {
+  const modus = rules?.joker?.modus;
+  const cfg = sanitizeBudget(rules?.budget);
+  const N = Number.isFinite(spieltage) && spieltage > 0 ? Math.floor(spieltage) : 34;
+
+  // Zufluss immer über `budgetVerlauf` — nicht neu implementiert.
+  const zufluss = budgetVerlauf({
+    quellen: cfg.quellen, takt: cfg.takt, n: cfg.n, fenster: cfg.fenster,
+    verfall: cfg.verfall, maxAnsparen: cfg.maxAnsparen, spieltage: N, stand, userIds,
+  });
+
+  // Modus "einsatz" ODER kein Budget aktiv: kein Narren-Kauf möglich (siehe
+  // Kopfkommentar oben) — reiner Zufluss, `ausgaben` bleibt bei 0.
+  if (modus === "einsatz" || !cfg.enabled) {
+    const proSpieler = {};
+    for (const [id, verlauf] of Object.entries(zufluss.proSpieler)) {
+      proSpieler[id] = verlauf.map((v) => ({
+        matchday: v.matchday, zufluss: v.kontostand, ausgaben: 0, kontostand: v.kontostand,
+      }));
+    }
+    return { proSpieler };
+  }
+
+  const jokerArt = modus === "ranking" ? "joker.ranking" : "joker.einzel";
+
+  const kaeufe = (Array.isArray(tipps) ? tipps : [])
+    .filter((t) => istNarrenKauf(modus, t))
+    .map((t) => ({ userId: t.userId ?? t.user_id ?? null, matchday: Number(t.matchday) }))
+    .filter((k) => k.userId != null && Number.isFinite(k.matchday))
+    .sort((a, b) => a.matchday - b.matchday);
+
+  const perioden_ = perioden(cfg.takt, { n: cfg.n, fenster: cfg.fenster }, N);
+  const periodeVon = (t) => perioden_.find((p) => t >= p.von && t <= p.bis)?.von ?? t;
+
+  // Chronologisch über ALLE Käufer: `spielerInPeriode` zählt verschiedene
+  // Spieler, `bisherInPeriode` denselben Spieler — beide je Periode, beide
+  // VOR dem jeweiligen Kauf (der Kauf selbst zählt erst danach mit).
+  const bisherJeSpielerUndPeriode = new Map(); // `${periodeVon}|${userId}` -> Anzahl
+  const spielerJePeriode = new Map();          // periodeVon -> Set(userId)
+  const ausgabenJeSpielerUndTag = new Map();   // `${userId}|${matchday}` -> Summe
+
+  for (const k of kaeufe) {
+    const pVon = periodeVon(k.matchday);
+    const spielerKey = `${pVon}|${k.userId}`;
+    const bisherInPeriode = bisherJeSpielerUndPeriode.get(spielerKey) ?? 0;
+    const spielerSet = spielerJePeriode.get(pVon) ?? new Set();
+    const spielerInPeriode = spielerSet.size;
+
+    const preis = preisFuer(jokerArt, cfg, { bisherInPeriode, spielerInPeriode });
+
+    const tagKey = `${k.userId}|${k.matchday}`;
+    ausgabenJeSpielerUndTag.set(tagKey, (ausgabenJeSpielerUndTag.get(tagKey) ?? 0) + preis);
+
+    bisherJeSpielerUndPeriode.set(spielerKey, bisherInPeriode + 1);
+    spielerSet.add(k.userId);
+    spielerJePeriode.set(pVon, spielerSet);
+  }
+
+  // Roster: Zufluss-Spieler VEREINIGT mit Käufern — dieselbe Kulanz wie in
+  // `budgetVerlauf` für `stand`/`ausgeloest` (dortiger Kopfkommentar), sonst
+  // verschwindet ein Käufer ohne eigene Zufluss-Quelle spurlos aus der Liste.
+  const spielerIds = new Set(Object.keys(zufluss.proSpieler));
+  for (const k of kaeufe) spielerIds.add(k.userId);
+
+  const proSpieler = {};
+  for (const id of spielerIds) {
+    const zuflussVerlauf = zufluss.proSpieler[id]
+      ?? Array.from({ length: N }, (_, i) => ({ matchday: i + 1, kontostand: 0 }));
+    let kumuliert = 0;
+    proSpieler[id] = zuflussVerlauf.map((v) => {
+      const ausgabenTag = ausgabenJeSpielerUndTag.get(`${id}|${v.matchday}`) ?? 0;
+      kumuliert += ausgabenTag;
+      // Kein Schuldenmodell: nie unter 0 (Kopfkommentar der Datei).
+      const kontostand = Math.max(0, +(v.kontostand - kumuliert).toFixed(2));
+      return { matchday: v.matchday, zufluss: v.kontostand, ausgaben: +ausgabenTag.toFixed(2), kontostand };
+    });
+  }
+  return { proSpieler };
 }
 
 // ── Konflikte mit anderen Regeln ────────────────────────────
