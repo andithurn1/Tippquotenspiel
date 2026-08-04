@@ -42,6 +42,7 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
+| 1 (Andi) | **Münz-Takt** (`wettmodus.md` 3, offene Liste Punkt 1) — neu `src/lib/muenzTakt.js` + Test, dazu `engine.js` (nur `sanitizeJoker`/`DEFAULT_RULES.joker`/`RULE_LIMITS.joker`, additiv), `muenzstand.js`, `Tippabgabe.jsx`, `Spielerstellung.jsx`, `einfachRegler.js`, `charaktere.js`. ⚠️ Liegt auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, nicht auf `main`. | läuft | 2026-08-04 |
 | 2 (Andre) | ~~Joker-Baukasten: zehn Module + fünf Oberflächen-Bausteine~~ — alles auf `main`, 1472 Tests grün | fertig | 2026-08-02 |
 | 2 (Andre) | **NÄCHSTE AUFGABE: Blindstellen-Durchgang `balanceSim.js`.** Sieht der Simulator die sechs neuen Ebenen? Nach Stand 31.07. nein — null Verweise. Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-31 |
 | 2 (Andre) | ~~Joker-Ökonomie: sechs Module + Einhängen + Creator-Code~~ — alles auf `main`, 1359 Tests grün | fertig | 2026-07-31 |
