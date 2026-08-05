@@ -304,22 +304,41 @@ export default function Tippabgabe({ matchId }) {
   //    Wettbewerbe mehr Runden-Spieltage (gemessen: 42) — die letzten acht
   //    fielen weg, und die Skala stimmte ohnehin nicht.
   // Beides ist dieselbe Fehlerklasse wie im Store und in `MeinRad.jsx`.
+  // 🔴 DIESELBEN Tipps, aber im RUNDEN-Spieltag.
+  //
+  // `alleTipps` trägt den LIGA-Spieltag (so kommt er aus `matches`). Alles,
+  // was in diesem Screen „einmal pro Spieltag" meint — Narren-Konto und seine
+  // Perioden, Limitierungsklassen, Duell-Plan, Rad —, rechnet aber über
+  // Runden-Spieltage 1…N. In einer Runde über fünf Wettbewerbe sind das zwei
+  // verschiedene Zahlen, und „Spieltag 5" gibt es dort fünfmal: ein Kauf am
+  // CL-Spieltag 5 landete in derselben Periode wie einer am BL-Spieltag 5,
+  // und ein Bundesliga-Spieltag 20 wurde gegen den Runden-Spieltag 20
+  // geprüft statt gegen 27. Genau die Fehlerklasse aus dem Zeitachsen-Absatz
+  // in CLAUDE.md.
+  //
+  // Umgerechnet wird EINMAL, hier; darunter arbeitet der ganze Screen mit
+  // dieser Liste. Fällt ein Spiel nicht auf die Achse (Demo-Länderspiel),
+  // bleibt der Liga-Spieltag stehen — besser eine Zahl als keine.
+  const alleTippsRunde = useMemo(() => {
+    const mVon = new Map(alleMatches.map((m) => [m.id, m]));
+    return alleTipps.map((t) => ({
+      ...t,
+      matchday: mVon.has(t.matchId)
+        ? (rundenSpieltagVon(achse, mVon.get(t.matchId)) ?? t.matchday)
+        : t.matchday,
+    }));
+  }, [alleTipps, alleMatches, achse]);
   const radKontext = useMemo(() => {
     if (!user) return null;
-    const mVon = new Map(alleMatches.map((m) => [m.id, m]));
     return {
       board,
-      // ⚠️ RUNDEN-Spieltag: `alleTipps` trägt den LIGA-Spieltag, `drehradPlan`
-      // verteilt über Runden-Spieltage. Ohne die Umrechnung prüft „kein Rad
-      // ohne Tipp" den falschen Tag.
-      tipps: alleTipps.map((t) => ({
-        userId: t.userId, matchId: t.matchId,
-        matchday: mVon.has(t.matchId) ? rundenSpieltagVon(achse, mVon.get(t.matchId)) : null,
+      tipps: alleTippsRunde.map((t) => ({
+        userId: t.userId, matchId: t.matchId, matchday: t.matchday,
       })),
       adminFreigaben,
       letzteEinsaetze: [],
     };
-  }, [user, board, alleTipps, alleMatches, achse, adminFreigaben]);
+  }, [user, board, alleTippsRunde, adminFreigaben]);
   const radBelohnungen = useMemo(
     () => (user ? drehradBelohnungen({
       rules: RULES, rundenId: roundId, userIds: [user.id],
@@ -443,6 +462,10 @@ export default function Tippabgabe({ matchId }) {
   // CL-Spieltag 5 hätte den Bundesliga-Spieltag 5 blockiert. Und die
   // Admin-Freigaben unten stehen ohnehin in Runden-Spieltagen (schema.sql).
   const meinRundenSpieltag = rundenSpieltagVon(achse, spieltag);
+  // Mit Rückfall auf den Liga-Spieltag: das Demo-Länderspiel liegt auf keiner
+  // Achse, und ein `null` als Spieltag ließe jede Perioden- und Plan-Prüfung
+  // ins Leere laufen.
+  const meinSpieltagRunde = meinRundenSpieltag ?? spieltag.matchday;
   const rundenSpieltagFuer = (t) => rundenSpieltagVon(achse, t) ?? t?.matchday ?? null;
   const letzteEinsaetze = meineTips
     .filter((t) => t.joker === true || (t.gewicht != null && t.gewicht !== 1))
@@ -486,7 +509,7 @@ export default function Tippabgabe({ matchId }) {
   // Alles drei läuft jetzt über den RUNDEN-Spieltag; der ist eindeutig.
   const spieltageDerRunde = achse.length || SPIELTAGE;
   const kontoAlle = kontoVerlauf({
-    rules: RULES, tipps: alleTipps, spieltage: spieltageDerRunde,
+    rules: RULES, tipps: alleTippsRunde, spieltage: spieltageDerRunde,
     stand: verlaufNachRundenSpieltag(leaderboardHistory, achse),
     userIds: board.map((b) => b.userId),
     // Narren vom Rad — eine feste Gutschrift, keine Quelle mit Takt und
@@ -503,14 +526,14 @@ export default function Tippabgabe({ matchId }) {
   // zu DIESEM `matchId` ist der, der gerade geprüft wird, und darf sich
   // nicht selbst im Weg stehen (dasselbe Ausschluss-Muster wie
   // `tipsFuerPruefung` im Einsatz-Modus weiter unten).
-  const alleTippsOhneAktuellenTipp = alleTipps.filter((t) => t.matchId !== matchId);
+  const alleTippsOhneAktuellenTipp = alleTippsRunde.filter((t) => t.matchId !== matchId);
   const einsatzHistorie = einsaetzeAllerArten(alleTippsOhneAktuellenTipp, RULES);
   // `budgetStand`: Schnappschuss `{ [userId]: kontostand }` zum betreffenden
   // Spieltag, aus dem Kontoverlauf abgeleitet (`kontoAlle`, oben bereits für
   // den Narren-Kontostand berechnet) — dieselbe Quelle, kein zweiter Weg.
   const budgetStand = Object.fromEntries(
     Object.entries(kontoAlle.proSpieler).map(([uid, verlauf]) => [
-      uid, verlauf.find((v) => v.matchday === spieltag.matchday)?.kontostand ?? 0,
+      uid, verlauf.find((v) => v.matchday === meinSpieltagRunde)?.kontostand ?? 0,
     ]),
   );
   // `ausgeloesteEreignisse`: aus den eigenen `gutschriften` (oben bereits
@@ -521,7 +544,7 @@ export default function Tippabgabe({ matchId }) {
   const ausgeloesteEreignisse = user
     ? gutschriften.map((g) => ({ userId: user.id, ereignisKey: g.key, spieltag: g.matchday }))
     : [];
-  const klassenKontext = { spieltage: SPIELTAGE, board, budgetStand, ausgeloesteEreignisse };
+  const klassenKontext = { spieltage: spieltageDerRunde, board, budgetStand, ausgeloesteEreignisse };
 
   // Kontingent aus BEIDEN Töpfen: zugeteilt (Plan) + erspielt (Ereignisse).
   // Ohne diese Zusammenführung wäre ein erspielter Joker eine Zahl ohne Wirkung.
@@ -549,19 +572,19 @@ export default function Tippabgabe({ matchId }) {
   const duellBasis = duellBasisVon(RULES);
   const duellPlanErgebnis = RULES.duell?.enabled && user
     ? duellPlan({
-        spieltage: SPIELTAGE, duell: RULES.duell, basis: duellBasis,
+        spieltage: spieltageDerRunde, duell: RULES.duell, basis: duellBasis,
         seed: roundId ?? "", userIds: board.map((b) => b.userId),
       })
     : null;
   const istDuellSpieltag = !!(RULES.duell?.enabled && user
-    && duellPlanErgebnis?.proSpieler?.[user.id]?.includes(spieltag.matchday));
+    && duellPlanErgebnis?.proSpieler?.[user.id]?.includes(meinSpieltagRunde));
   // `bisherigeEinsaetze` aus den rohen Tipps ALLER Spieler abgeleitet
   // (`alleTipps`, dieselbe Liste wie beim Narren-Kontostand oben) —
   // `zulaessigeZiele` filtert selbst auf den eigenen Nutzer.
-  const bisherigeDuellEinsaetze = einsaetzeAusTipps(alleTipps);
+  const bisherigeDuellEinsaetze = einsaetzeAusTipps(alleTippsRunde);
   const duellZulaessig = istDuellSpieltag
     ? zulaessigeZiele(board, user?.id, RULES.duell, {
-        bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: spieltag.matchday,
+        bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
       })
     : [];
 
@@ -732,10 +755,10 @@ export default function Tippabgabe({ matchId }) {
         // auf, die es im Wettmodus grundsätzlich nicht gibt.
         if (!einsatzRegelwerk) {
           const budgetCfg = sanitizeBudget(RULES.budget);
-          const perioden_ = perioden(budgetCfg.takt, { n: budgetCfg.n, fenster: budgetCfg.fenster }, SPIELTAGE);
-          const periodeVon = perioden_.find((p) => spieltag.matchday >= p.von && spieltag.matchday <= p.bis)?.von
-            ?? spieltag.matchday;
-          const kaeufeInPeriode = alleTipps.filter((t) => {
+          const perioden_ = perioden(budgetCfg.takt, { n: budgetCfg.n, fenster: budgetCfg.fenster }, spieltageDerRunde);
+          const periodeVon = perioden_.find((p) => meinSpieltagRunde >= p.von && meinSpieltagRunde <= p.bis)?.von
+            ?? meinSpieltagRunde;
+          const kaeufeInPeriode = alleTippsRunde.filter((t) => {
             if (!istNarrenKauf(RULES.joker?.modus, t)) return false;
             const von = perioden_.find((p) => t.matchday >= p.von && t.matchday <= p.bis)?.von ?? t.matchday;
             return von === periodeVon;
@@ -756,7 +779,7 @@ export default function Tippabgabe({ matchId }) {
           // (`einsaetzeAllerArten` erzeugt für diesen Modus konsequent auch
           // keinen Historie-Eintrag, siehe jokerBudget.js).
           const klassenPruef = pruefeEinsatz(
-            { spieltag: spieltag.matchday, jokerArt, vonUserId: user.id, aufUserId: null },
+            { spieltag: meinSpieltagRunde, jokerArt, vonUserId: user.id, aufUserId: null },
             RULES.limitKlassen, einsatzHistorie, klassenKontext,
           );
           if (!klassenPruef.erlaubt) {
@@ -825,7 +848,7 @@ export default function Tippabgabe({ matchId }) {
       let duellSicher = null;
       if (istDuellSpieltag && !gesperrt && duellZiel && duellTypGewaehlt) {
         const zulaessigJetzt = zulaessigeZiele(board, user.id, RULES.duell, {
-          bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: spieltag.matchday,
+          bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
         });
         if (zulaessigJetzt.includes(duellZiel) && duellTypenErlaubt.includes(duellTypGewaehlt)) {
           // Kontingent-Klassen prüfen (design/kontaktstellen.md Abschnitt 5
@@ -833,7 +856,7 @@ export default function Tippabgabe({ matchId }) {
           // tatsächlich ein Duell gesetzt wird.
           const duellJokerArt = duellTypGewaehlt === "block" ? "duell.block" : "duell.klau";
           const klassenPruef = pruefeEinsatz(
-            { spieltag: spieltag.matchday, jokerArt: duellJokerArt, vonUserId: user.id, aufUserId: duellZiel },
+            { spieltag: meinSpieltagRunde, jokerArt: duellJokerArt, vonUserId: user.id, aufUserId: duellZiel },
             RULES.limitKlassen, einsatzHistorie, klassenKontext,
           );
           if (!klassenPruef.erlaubt) {
