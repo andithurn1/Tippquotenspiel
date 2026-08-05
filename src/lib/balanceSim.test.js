@@ -271,3 +271,54 @@ describe("bewerten — Ampel danach, WER gewinnt", () => {
     }
   });
 });
+
+// 🔴 Blindstellen-Gegenprobe nach dem Muster aus
+// `design/blindstellen-balancesim.md` Abschnitt 4: „ein Regelwerk, das die
+// Ebene auf Anschlag dreht, MUSS ein messbar anderes Ergebnis liefern als
+// eines ohne. Sonst ist die Ebene weiterhin blind, nur unsichtbarer als
+// vorher."
+//
+// Die Saisonform war genau das: `applySaisonform` wurde nie aufgerufen, ohne
+// Aufhol-Bonus gab es gar keinen Verlauf, und den Verlaufszeilen fehlte
+// `gewertet` — mit `nurGetippte: true` (Vorgabe) griffen Streichresultate
+// deshalb NIE.
+describe("Saisonform — wird sie überhaupt gemessen? (Blindstellen-Regression)", () => {
+  const BASIS = PRESETS[0].rules;
+  const mit = (saisonform) => simulateBalance(
+    sanitizeRules({ ...BASIS, saisonform: { ...BASIS.saisonform, ...saisonform } }),
+    { seasons: 40, seed: 20260805 });
+
+  it("Streichresultate verändern das Ergebnis messbar", () => {
+    const ohne = mit({ kurve: "flach", streich: 0 });
+    const viele = mit({ kurve: "flach", streich: 8 });
+    const kenner = (r) => r.profile.find((p) => p.key === "kenner");
+    // Gestrichen wird der schlechteste Spieltag — die Punktsumme MUSS sinken.
+    expect(kenner(viele).punkteSchnitt).toBeLessThan(kenner(ohne).punkteSchnitt);
+    // Und die Siegquote darf sich nicht einfach gleich verhalten.
+    expect(kenner(viele).siegquote).not.toBe(kenner(ohne).siegquote);
+  });
+
+  it("mehr Streicher wirken stärker als wenige — die Richtung stimmt", () => {
+    const kenner = (r) => r.profile.find((p) => p.key === "kenner").punkteSchnitt;
+    const wenige = kenner(mit({ kurve: "flach", streich: 2 }));
+    const viele = kenner(mit({ kurve: "flach", streich: 8 }));
+    const ohne = kenner(mit({ kurve: "flach", streich: 0 }));
+    expect(wenige).toBeLessThan(ohne);
+    expect(viele).toBeLessThan(wenige);
+  });
+
+  it("eine Gewichtungs-Kurve wirkt ebenfalls, auch ohne Streicher", () => {
+    const flach = mit({ kurve: "flach", streich: 0 });
+    const endspurt = mit({ kurve: "endspurt", streich: 0 });
+    const quoten = (r) => r.profile.map((p) => p.siegquote).join("|");
+    expect(quoten(endspurt)).not.toBe(quoten(flach));
+  });
+
+  it("ohne aktive Saisonform bleibt alles exakt wie bisher", () => {
+    // Der Normalfall darf sich durch die Verkabelung NICHT verschoben haben —
+    // sonst wäre jede frühere Messung entwertet.
+    const a = mit({ kurve: "flach", streich: 0 });
+    const b = simulateBalance(sanitizeRules(BASIS), { seasons: 40, seed: 20260805 });
+    expect(a.profile.map((p) => p.punkteSchnitt)).toEqual(b.profile.map((p) => p.punkteSchnitt));
+  });
+});

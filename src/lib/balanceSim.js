@@ -23,6 +23,11 @@ import { scoreTip, maxTotalModifier, maxJokerFactor } from "./engine";
 import { archetypeSnapshots } from "./rulePreview";
 import { ARCHETYPE_FREQ } from "./bundesligaStats";
 import { applyCatchup } from "./catchup";
+// 🔴 Blindstelle 3.1 aus design/blindstellen-balancesim.md: `applySaisonform`
+// wurde nie aufgerufen. Gewichtung und Streichresultate waren im Simulator
+// damit UNSICHTBAR — ein Regelwerk konnte sie auf Anschlag drehen, und die
+// Kennzahlen änderten sich nicht.
+import { applySaisonform, sanitizeSaisonform } from "./saisonform";
 import { sanitizeTippEinfluss, mischeRaster } from "./tippEinfluss";
 
 // Kleiner, schneller Zufallsgenerator mit Seed (mulberry32) — reproduzierbar.
@@ -306,6 +311,10 @@ export function simulateBalance(rules, {
   const dabei = new Array(n).fill(0);
   // Aufhol-Mechanismus: nur messen, wenn er aktiv ist (spart Verlaufsführung).
   const aufholenAktiv = rules?.aufholen?.enabled === true;
+  // Dieselbe Frage wie `brauchtVerlauf` in engine.js sie für die Saisonform
+  // stellt: eine flache Kurve ohne Streicher ist ein No-op.
+  const sfCfg = sanitizeSaisonform(rules?.saisonform);
+  const saisonformAktiv = sfCfg.kurve !== "flach" || sfCfg.streich > 0;
   let aufholFlips = 0;   // Saisons, in denen der Bonus den Sieger geändert hat
 
   for (let s = 0; s < seasons; s++) {
@@ -314,9 +323,17 @@ export function simulateBalance(rules, {
     // Wellen nicht im Gleichtakt laufen. Wären alle gleichzeitig gut drauf,
     // höbe sich die Form gegenseitig auf und wäre wieder unsichtbar.
     const formPhase = PROFILE.map(() => [rand(), rand()]);
-    // Kumulativer Stand je Spieltag — Grundlage, um den Aufhol-Bonus zu prüfen
-    // (er hängt am Stand VOR dem jeweiligen Spieltag).
-    const verlauf = aufholenAktiv ? [] : null;
+    // Kumulativer Stand je Spieltag — Grundlage für den Aufhol-Bonus (er hängt
+    // am Stand VOR dem jeweiligen Spieltag) UND für die Saisonform.
+    // ⚠️ Vorher stand hier `aufholenAktiv ? [] : null`: ohne Aufhol-Bonus gab es
+    // gar keinen Verlauf, und damit konnte die Saisonform prinzipiell nicht
+    // gemessen werden (Blindstelle 3.1, Punkt 2).
+    const verlauf = (aufholenAktiv || saisonformAktiv) ? [] : null;
+    // Wie viele Wertungen hat jeder bis hierher bekommen? `applySaisonform`
+    // liest daran ab, ob an einem Spieltag überhaupt getippt wurde — fehlt das
+    // Feld, gilt JEDER Spieltag als nicht getippt, und mit `nurGetippte: true`
+    // (Vorgabe) greifen Streichresultate NIE (Blindstelle 3.1, Punkt 3).
+    const gewertet = new Array(n).fill(0);
     for (let md = 0; md < matchdays; md++) {
       const arten = [];
       for (let m = 0; m < perMatchday; m++) arten.push(pickArt(rand()));
@@ -446,6 +463,7 @@ export function simulateBalance(rules, {
 
           const punkte = scoreTip(tipp, actual, snapFuerMich, rules).total;
           saison[pi] += punkte;
+          gewertet[pi] += 1;
           summeMit += punkte;
           summeOhne += scoreTip(tipp, actual, snapFuerMich, ohneMod).total;
         }
@@ -454,21 +472,41 @@ export function simulateBalance(rules, {
       if (verlauf) {
         verlauf.push({
           matchday: md + 1,
-          board: PROFILE.map((p, pi) => ({ userId: p.key, name: p.label, total: saison[pi] })),
+          board: PROFILE.map((p, pi) => ({
+            userId: p.key, name: p.label, total: saison[pi], gewertet: gewertet[pi],
+          })),
         });
       }
     }
-    // Saisonsieger OHNE Aufholen (nach reinen Punkten).
+    // 🔴 Saisonsieger OHNE Aufholen, aber MIT Saisonform.
+    //
+    // Vorher kam er aus den rohen Punkten. Das war zweimal falsch, sobald die
+    // Saisonform aktiv ist (Blindstelle 3.1, Punkt 4): der ausgewiesene Sieger
+    // war nicht der, den die Regeln der Runde küren — und dieselbe Referenz
+    // speist `aufholFlipQuote`, die Kennzahl schriebe also dem Aufhol-Bonus
+    // zu, was die GEWICHTUNG getan hat.
+    //
+    // Reihenfolge wie in `scoreLeaderboardHistory`: erst Saisonform, dann
+    // Aufholen. Ohne Saisonform bleibt `endstand` die rohe Summe — der
+    // Normalfall verhält sich damit exakt wie bisher.
+    const geformt = (verlauf && saisonformAktiv) ? applySaisonform(verlauf, rules) : verlauf;
+    const endstand = geformt
+      ? geformt[geformt.length - 1].board
+      : PROFILE.map((p, pi) => ({ userId: p.key, total: saison[pi] }));
+    const punkteVon = new Map(endstand.map((e) => [e.userId, e.total]));
+
     let best = 0;
-    for (let pi = 1; pi < n; pi++) if (saison[pi] > saison[best]) best = pi;
+    for (let pi = 1; pi < n; pi++) {
+      if ((punkteVon.get(PROFILE[pi].key) ?? 0) > (punkteVon.get(PROFILE[best].key) ?? 0)) best = pi;
+    }
     siege[best] += 1;
-    for (let pi = 0; pi < n; pi++) punkteGesamt[pi] += saison[pi];
+    for (let pi = 0; pi < n; pi++) punkteGesamt[pi] += punkteVon.get(PROFILE[pi].key) ?? 0;
 
     // Sieger MIT Aufholen: kippt der Bonus den Sieg weg vom stärksten Tipper?
     // Jeder Wechsel bedeutet, dass ein SCHWÄCHERER Tipper durch die Hilfe
     // gewinnt — genau die Grenze, an der gutes Tippen entwertet würde.
-    if (verlauf) {
-      const mitBonus = applyCatchup(verlauf, rules);
+    if (geformt && aufholenAktiv) {
+      const mitBonus = applyCatchup(geformt, rules);
       const board = mitBonus[mitBonus.length - 1].board;
       const siegerKey = board[0].userId;
       if (siegerKey !== PROFILE[best].key) aufholFlips += 1;

@@ -73,6 +73,42 @@ nicht ein Mittelwert darüber.
 
 ## 3. Die Einzelbefunde
 
+### 3.1 `saisonform` — ✅ BEHOBEN (05.08.2026), und die Gegenprobe hat gesessen
+
+Alle vier Gründe sind weg: `applySaisonform` wird aufgerufen, der Verlauf wird
+auch OHNE Aufhol-Bonus gebaut (`aufholenAktiv || saisonformAktiv`), die
+Verlaufszeilen tragen `gewertet`, und der Saisonsieger kommt aus dem
+GEFORMTEN Endstand. Reihenfolge wie in `scoreLeaderboardHistory`: erst
+Saisonform, dann Aufholen — sonst schriebe `aufholFlipQuote` dem Bonus zu, was
+die Gewichtung getan hat.
+
+🔴 **Und der Fund, den die Blindstelle verdeckt hat.** Gegenprobe über 60
+Saisons auf dem Standard-Preset:
+
+| Saisonform | Kenner | Zocker |
+|---|---|---|
+| aus (flach, 0 Streicher) | **0,633** | 0,067 |
+| 4 Streicher | 0,517 | 0,233 |
+| **8 Streicher** | **0,333** | **0,467** |
+| Endspurt-Kurve | 0,583 | 0,067 |
+
+**Bei acht Streichern gewinnt der ZOCKER vor dem Kenner.** Das ist genau die
+Grenze, die der ganze Balance-Durchgang bewachen soll — und sie war nicht
+sichtbar, weil die Ebene blind war. Plausibel ist es sofort: Streicher nehmen
+die schlechtesten Spieltage heraus, und davon hat der Zocker die meisten. Die
+Gewichtungs-Kurve dagegen bewegt kaum etwas (0,583 gegen 0,633).
+
+⚠️ **Das ist ein Messergebnis, keine Korrektur.** Balance ist nicht Sache
+dieses Durchgangs (`CLAUDE.md`); ob acht Streicher erlaubt bleiben sollen,
+entscheidet der Nutzer. Was hier zählt: man kann es jetzt SEHEN. Vier
+Regressionstests in `balanceSim.test.js` halten fest, dass die Ebene messbar
+bleibt — inklusive einer, die prüft, dass sich der Normalfall (Saisonform aus)
+durch die Verkabelung NICHT verschoben hat.
+
+---
+
+#### Der ursprüngliche Befund
+
 ### 3.1 `saisonform` — vier Gründe (unverändert seit dem 31.07. früh)
 
 1. `applySaisonform` wird nie aufgerufen (`:25` importiert nur `applyCatchup`,
@@ -134,8 +170,8 @@ gebaut (`design/joker-inventar.md` 3, „geschätzt, nicht gemessen").
 
 ## 4. Empfohlene Reihenfolge
 
-1. **`saisonform`** — kleinster Aufwand, und Punkt 2 (Verlauf immer bauen) ist
-   Voraussetzung für alles Weitere.
+1. ~~**`saisonform`**~~ ✅ **erledigt am 05.08.2026** — Punkt 2 (Verlauf immer
+   bauen) ist damit auch für alles Weitere erfüllt.
 2. **`jokerBasis`** — erste echte neue Messung, ohne Verhaltensmodell.
 3. **`budget` + `limitKlassen`** — Buchführung. Mit der Erwartung, dass
    `presets.balance.test.js` anschlägt.
