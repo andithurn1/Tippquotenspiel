@@ -154,6 +154,28 @@ zweimal warnt; diesmal ist sie mir selbst passiert.
 
 ## Offen
 
+### 🔴 Reihenfolge, vom Nutzer festgelegt (05.08.2026)
+
+Gewichtung und Balance kommen **zuletzt**. Davor, in dieser Folge:
+
+1. **Baukasten vollständig** — jede Einstellung in allen drei Stufen, und sie
+   greift.
+2. **Alle Anzeigen WÄHREND der Runde** — nicht nur die Admin-Ansicht beim
+   Anlegen.
+3. **Jeder erzeugte Wert wird in JEDER Anzeige wahrheitsgemäß ausgegeben** —
+   derselbe Wert darf in Aufschlüsselung, Verlauf, Leaderboard, Vorschau und
+   Rundenansicht nicht verschieden dastehen. Das ist eine Vollständigkeits-,
+   keine Balance-Frage.
+4. **Dann Gewichtung, bewusst grob** — Stufen von 2 % / 5 % nach oben (eine Liga
+   ~20 % höher, ein Joker nach Anzahl abgedeckter Spiele, ein Ereignis-Spieltag
+   mit besonderen Quoten). Die Quoten kommen aus den Spielständen.
+
+⚠️ „Gewinnt der Kenner?" ist damit **kein Abnahmekriterium** mehr für neue
+Bausteine. Der Simulator bleibt für die Frage „**sieht er die Ebene
+überhaupt**" — greift die Einstellung messbar. Blindstellen 3–5 sind
+zurückgestellt. Begründung im Nachrichten-Log von `COORDINATION.md`,
+Eintrag 2026-08-05 (IV).
+
 ### ⏰ Echte Spielpläne vor dem Launch — HARTE FRIST, Bundesliga ✅ erledigt
 **Der einzige Punkt mit einem Datum: 28.08.2026.**
 

@@ -123,6 +123,44 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-05 (IV) · 🔴 **RICHTUNGSENTSCHEIDUNG des Nutzers: Gewichtung kommt ZULETZT**
+
+> **👉 Frische Session: das hier zuerst, dann der Eintrag darunter.**
+> Diese Nachricht ändert die REIHENFOLGE der offenen Arbeit, nicht ihren Inhalt.
+
+**Wortlaut (Andi, 05.08.2026):** „die gewichtungen machen wir sowieso erst ganz
+am ende wenn der baukasten und alle anzeigen während der runde fertig sind und
+jede erzeugte Werte auch so in den verschiedenen Anzeige-Möglichkeiten
+wahrheitsgemäß korrekt ausgegeben wird". Dazu ausdrücklich: das permanente
+Aufrechnen von **Kenner gegen Zocker** („für eine angebliche Balance")
+**braucht es vorher überhaupt nicht.**
+
+**Damit gilt diese Reihenfolge:**
+
+1. **Baukasten vollständig.** Jede Einstellung existiert in allen drei Stufen
+   und GREIFT. (Der Baukasten-Grundsatz in `CLAUDE.md`, unverändert.)
+2. **Alle Anzeigen WÄHREND der Runde.** Nicht nur die Admin-Oberfläche beim
+   Anlegen — die Ansichten, die ein Spieler im Lauf der Saison sieht.
+3. **Jeder erzeugte Wert wird in JEDER Anzeige-Möglichkeit wahrheitsgemäß
+   ausgegeben.** Derselbe Wert darf in Aufschlüsselung, Verlauf, Leaderboard,
+   Vorschau und Rundenansicht nicht verschieden dastehen. Das ist die eigentliche
+   Prüffrage der nächsten Etappe — und sie ist eine Vollständigkeits-, keine
+   Balance-Frage.
+4. **Erst danach Gewichtung.** Und zwar bewusst GROB: Stufen-Schritte von 2 %
+   oder 5 % nach oben, damit ein Admin z. B. eine Liga um ~20 % höher gewichtet,
+   einen Joker nach Anzahl der abgedeckten Spiele, oder einem Ereignis-Spieltag
+   besondere Quoten gibt. Die Quoten kommen aus den Spielständen — es braucht
+   keine feinjustierte Kurve, um das Gehäuse zu bauen.
+
+⚠️ **Was das für `balanceSim.js` heißt:** der Simulator bleibt, er ist nicht
+falsch. Aber „gewinnt der Kenner?" ist ab jetzt KEIN Abnahmekriterium mehr für
+neue Bausteine. Was der Blindstellen-Durchgang wirklich geliefert hat, ist die
+Vollständigkeits-Antwort — **sieht der Simulator die Ebene überhaupt** —, und
+genau die bleibt nützlich. Wer eine neue Ebene baut, prüft weiter, ob sie
+messbar ANKOMMT; er stimmt sie nicht mehr aus.
+Die noch offenen Blindstellen 3 (`budget` + `limitKlassen`), 4 (`duell`) und 5
+(Achsenmodell) sind damit **zurückgestellt**, nicht gestrichen.
+
 ### 2026-08-05 (III) · **ÜBERGABE** — Münz-Takt und Mitbestimmung fertig, zwei Punkte der Liste abgeräumt
 
 > **👉 Frische Session: DAS ist dein Einstieg.**
