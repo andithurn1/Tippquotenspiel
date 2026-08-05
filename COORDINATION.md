@@ -131,8 +131,8 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 > ⚠️ **Nutzer-Aufgabe: `supabase/schema.sql` erneut im SQL-Editor ausführen**
 > (idempotent, komplett laufen lassen) — sonst fehlen live zwei Tabellen.
 
-**1864 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
-18 Commits.
+**1868 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
+20 Commits.
 
 #### ✅ Abgeräumt: die komplette offene Liste bis auf die Balance-Messung
 
@@ -226,12 +226,34 @@ gar nichts getippt haben muss. „Kein Rad ohne Tipp" prüfte den falschen Tag.
 Dazu `spieltage: 34` fest verdrahtet bei 42 Runden-Spieltagen — die letzten
 acht bekamen nie eine Drehung.
 
-**Das ist der dritte Fund derselben Familie** (Joker, Zeitachse, Rad). Wo eine
-Zahl „Spieltag" heißt, gehört die Frage dazu: LIGA oder RUNDE?
+#### 🔴🔴 Die Fehlerfamilie, die diese Sitzung VIERMAL gefunden hat
+
+Wo eine Zahl „Spieltag" heißt, gibt es zwei mögliche Bedeutungen — den
+LIGA-Spieltag und den RUNDEN-Spieltag. In einer Runde über fünf Wettbewerbe
+sind das verschiedene Zahlen (Bundesliga-Spieltag 20 liegt auf
+Runden-Spieltag 27), und sie kollidieren auch noch (Bundesliga-Spieltag 5 und
+CL-Spieltag 5). Gefunden in dieser Sitzung:
+
+| Wo | Was passiert wäre |
+|---|---|
+| **Zeitachse** (`mitPausen`) | ganze Saison hinter dem Taktgeber = EIN Spieltag; drei Joker statt achtunddreißig |
+| **Rad** (beide Stores) | „kein Rad ohne Tipp" prüfte den falschen Tag; letzte acht Spieltage ohne Drehung |
+| **Narren-Konto** (`standAmTag` über Tippabgabe) | Rückstands-Bonus auf einen Tabellenstand, den es noch nicht gab — **Zukunftswissen** |
+| **Beschlüsse** (`regelnFuer`) | wäre entstanden, wenn man den Liga-Spieltag genommen hätte — deshalb von Anfang an über die Achse |
+
+**Kein einziger davon kam aus den Tests.** Alle vier aus eigenem Nachrechnen
+an echten Katalog-Daten. Wer hier weiterbaut: bei jeder Spieltags-Zahl die
+Frage stellen, und im Zweifel `rundenSpieltagVon`/`rundenSchluessel` nehmen.
+`verlaufNachRundenSpieltag` (neu in `zeitachse.js`) schlüsselt einen
+Leaderboard-Verlauf um.
 
 #### 🟡 Offen, nach Wert sortiert
 
-1. Die fünf Teil-Wirkungen aus `kontaktstellen.md`.
+1. **Vier der fünf Teil-Wirkungen aus `kontaktstellen.md`** — die fünfte
+   (`standAmTag`) ist behoben, siehe oben. Offen bleiben: Rad-Felder mit
+   Joker-/Narren-/Modifikator-Belohnung zahlen nicht aus · die
+   `klau`/`block`-Basiswahl · `adminFreigaben` ohne Speicherort ·
+   `letzteEinsaetze` fürs Rad.
 2. L3/L4/L6 · die 16 Auslöser.
 3. **Balance-Messung** — `balanceSim.js` braucht Formkurven je Tipper.
 
