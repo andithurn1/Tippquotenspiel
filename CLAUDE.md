@@ -52,6 +52,17 @@ Stärke, Häufigkeit und Kombination kommen später, wenn das Gehäuse steht. We
 ein Admin sich eine kaputte Runde bauen will, soll er das dürfen. Was geprüft
 wird, ist ob die Einstellung GREIFT, nicht ob sie klug ist.
 
+🔴 **Und deshalb beantwortet `balanceSim.js` die falsche Frage, solange gebaut
+wird.** „Gewinnt der Kenner?" ist eine Aussage über EIN Regelwerk — sie gilt
+nach der nächsten Mechanik nicht mehr und muss neu gemessen werden. Das ist
+Arbeit, die sich selbst auffrisst; sie ist in dieser Sitzung mehrfach gemacht
+und mehrfach wertlos geworden. Die Frage, die trägt, ist die andere:
+**SIEHT der Simulator die Ebene überhaupt?** Wenn eine neue Mechanik seine
+Kennzahlen nicht bewegt, ist sie nicht angeschlossen — das ist ein
+Vollständigkeits-Befund und bleibt gültig, egal wie die Runde später
+eingestellt wird. Balance-Zahlen erst am Ende, mit Beispielparametern je
+Admin-Einstellung (Andi, 05.08.2026).
+
 #### 🔴 Die zweite Hälfte: Tiefe UND Einfachheit (Andi, 05.08.2026)
 
 Der Grundsatz oben wird gern als „möglichst viele Regler" gelesen. **Das ist nur
@@ -202,6 +213,36 @@ abschauen, statt Neues zu erfinden.
    auswertungs-statistik }`), damit Basketball etc. später ohne Engine-Umbau reinpasst.
 4. **Anker immer auf der Quote des REALEN Ergebnisses**, nie auf der getippten —
    sonst wird die Nähe-Belohnung farmbar.
+5. 🔴 **Die Runden-Schicht: vier Fragen, je EINE Stelle.** Siehe unten.
+
+### 🔴 Die Runden-Schicht — vier Fragen, die kein Screen selbst beantwortet
+
+**Der teuerste Befund dieses Projekts, in einem Satz:** von 17 Fehlern, die am
+05.08.2026 in einem Durchgang gefunden wurden, war KEINER ein Rechenfehler.
+Alle waren dieselbe Sache — eine Oberfläche hat einen Wert selbst nachgerechnet
+und dabei eine andere Grundlage benutzt als die Wertung. Kein einziger kam aus
+den Tests, weil beide Seiten für sich genommen richtig rechneten.
+
+Es gibt genau VIER Fragen, an denen das passiert. Sie haben je eine Antwort,
+und die steht im STORE — nicht im Screen:
+
+| Frage | Antwort | ⚠️ Falsch wäre |
+|---|---|---|
+| **Welche Spiele gehören zur Runde?** | `getStore().listRoundMatches(roundId)` | `listMatches()` — der Katalog trägt sechs Wettbewerbe. Der „Meister" einer Bundesliga-Runde war dadurch der FC Barcelona. |
+| **Welcher Spieltag ist das?** | `zeitachse(rundenSpiele)` → `rundenSpieltagVon` | Der LIGA-Spieltag. Über fünf Wettbewerbe gibt es „Spieltag 5" fünfmal, und der Joker-Plan vergab 27 statt 11 Joker. |
+| **Welches Regelwerk gilt?** | `getStore().getRegelnFuer(roundId)` → `regelnFuer(spiel)` | `round.rules` — das ist der Stand VOR jedem Beschluss. |
+| **Was hat wer gutgeschrieben bekommen?** | `getDrehradZiehungen` / `getDrehradBelohnungen` | Selbst nachrechnen. Ein Screen zeigte 270 Narren, wo die Wertung 30 vergibt. |
+
+**Die Regel daraus, für jede neue Mechanik:** wenn ein Screen eine Zahl zeigt,
+die auch in der Wertung vorkommt, **fragt er sie ab — er rechnet sie nicht
+nach.** Fehlt die Store-Methode, wird sie gebaut; das ist billiger als die
+zweite Wahrheit. Ein Screen darf rechnen, was NUR er zeigt (Vorschauen,
+Was-wäre-wenn) — dann aber mit den vier Antworten oben als Eingabe.
+
+**Abnahme statt Test:** `npm run anzeige` vergleicht dieselbe Zahl über alle
+Anzeige-Wege. Ein Test fragt „ist es kaputt", diese Messung fragt „wie weit
+auseinander" — und genau das ist die Frage, an der die 17 Funde hingen. Wer
+eine Mechanik ergänzt, hängt dort eine Zeile an.
 
 ## Scoring-Kurzreferenz
 
