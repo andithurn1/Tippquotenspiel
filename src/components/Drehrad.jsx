@@ -7,6 +7,7 @@ import {
   sanitizeDrehrad, pruefeFelder, wahrscheinlichkeiten, drehradPlan, beschreibeDrehrad,
 } from "@/lib/drehrad";
 import { PHASEN } from "@/lib/duellJoker";
+import Gluecksrad from "@/components/Gluecksrad";
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { WER } from "@/lib/jokerBasis";
 import { Zahl } from "@/components/Eingaben";
@@ -164,6 +165,19 @@ export default function Drehrad({ rules, onChange }) {
           </span>
         </span>
       </button>
+
+      {/* ── Das Rad selbst (design/drehrad.md 3c) ──
+          Prozedural aus der Feldliste, kein vorgerenderter Clip: Anzahl,
+          Beschriftung und Gewicht schreibt der Admin, die Kombinationsmenge
+          ist also nicht endlich — und ein Clip würde den Text einbacken.
+          Hier im Editor ohne Ergebnis, es ist die LIVE-VORSCHAU: wer ein
+          Gewicht ändert, sieht das Segment sofort wandern. Beide Ansichten
+          lesen dieselbe Zahl aus `wahrscheinlichkeiten` — der Balken bleibt
+          daneben, weil er kleine Anteile zeigt, die im Rad nur ein Strich
+          wären. */}
+      <div style={{ margin: "6px 0 2px" }}>
+        <Gluecksrad felder={felder} anteile={anteile} />
+      </div>
 
       {/* ── Der Proportionalbalken: die Draufsicht aufs Rad ── */}
       <Balken felder={felder} anteile={anteile} />

@@ -207,7 +207,7 @@ auswerten(drehrad, ziehungen) -> { gutschriften, gedeckelt }
   erklären — dieselbe Regel wie bei `gestrichen` in `saisonform.js`.
 - `maxPunkteProSaison: 0` heißt **kein Deckel**, nicht „keine Punkte".
 
-## 3c. Die Darstellung — prozedural, nicht vorgerendert (03.08.)
+## 3c. Die Darstellung — prozedural, nicht vorgerendert (03.08.) ✅ GEBAUT (05.08.)
 
 Frage des Nutzers: kann sich das Rad je nach Admin-Einstellung visuell
 anpassen, und ginge das über **vorher erzeugte Clips**, aus denen nach dem
@@ -249,6 +249,29 @@ bestätigt: die Felder sollen unterschiedlich groß sein.
 ⚠️ **Die Animation ist nie die Wahrheit.** Ein Neuladen mitten in der Drehung
 zeigt dasselbe Ergebnis; wer sie überspringt, verliert nichts. Und
 `prefers-reduced-motion` schaltet sie ab — dann steht das Ergebnis einfach da.
+
+### ✅ Was daraus geworden ist (05.08.2026)
+
+- **`src/lib/radGeometrie.js` + 10 Tests** — die Winkel sind LOGIK und liegen
+  deshalb nicht in der Komponente (Architektur-Regel 1). `segmente()` rechnet
+  `anteil × 360°` aus `wahrscheinlichkeiten()`; eine zweite Wahrheit über die
+  Feldgrößen entsteht nirgends.
+- **`src/components/Gluecksrad.jsx`** — reines SVG, in der Spielerstellung als
+  LIVE-VORSCHAU neben dem Proportionalbalken. Wer ein Gewicht ändert, sieht
+  das Segment sofort wandern. Der Balken bleibt daneben, weil er kleine
+  Anteile zeigt, die im Rad nur ein Strich wären.
+- **`segmentUnterZeiger()` ist die Umkehrung von `zielWinkel()`** und wird
+  nicht zum Zeichnen gebraucht, sondern zum PRÜFEN: erst damit lässt sich
+  zeigen, dass unter dem Zeiger wirklich das gezogene Feld landet und nicht
+  der Nachbar. Ein vertauschtes Vorzeichen fiele sonst erst auf, wenn jemand
+  fragt, warum die Auszahlung nicht zum Bild passt. Der Test prüft es für
+  JEDES Segment, auch für ein 0,36° schmales.
+- **Ein Feld mit Gewicht 0 wird gar nicht gezeichnet** (statt als
+  hauchdünner Strich) — es fällt nie, und im Rad zu erscheinen wäre die
+  Behauptung, es könnte doch drankommen. Wie viele fehlen, steht darunter.
+- `prefers-reduced-motion` lässt die vollen Umdrehungen weg: dasselbe
+  Ergebnis, sofort. Ein Test hält fest, dass beide Winkel auf dasselbe Feld
+  zeigen — die Umdrehungen sind Schmuck.
 
 ### Wo Clips doch hingehören
 
