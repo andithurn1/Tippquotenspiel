@@ -122,7 +122,14 @@ Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
   ⚠️ **Nutzer-Aufgabe:** `supabase/schema.sql` erneut ausführen
   (`admin_freigaben` ist dazugekommen).
 
-Test-Stand: **1888 grün**, Build sauber (Stand 2026-08-05).
+- **Balance-Simulator sieht zwei bisher blinde Ebenen** ✅
+  (`design/blindstellen-balancesim.md` 3.1 + 3.2): Saisonform und
+  Joker-Grundform. 🔴 Zwei Messergebnisse daraus: **acht Streichresultate
+  lassen den Zocker vor dem Kenner gewinnen**, und die Quoten-Bedingung am
+  Joker ist eine Klippe, kein Regler — dosieren lässt er sich über die
+  Abklingzeit.
+
+Test-Stand: **1897 grün**, Build sauber (Stand 2026-08-05).
 Vorher **1671 grün** (Stand 2026-08-03).
 Vorher stand hier **933 grün (28.07.)** — über eine Woche still, während die
 Suite um 738 Tests gewachsen ist. Genau die Drift, vor der der Kasten unten

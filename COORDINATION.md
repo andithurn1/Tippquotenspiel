@@ -131,8 +131,8 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 > ⚠️ **Nutzer-Aufgabe: `supabase/schema.sql` erneut im SQL-Editor ausführen**
 > (idempotent, komplett laufen lassen) — sonst fehlen live zwei Tabellen.
 
-**1888 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
-27 Commits.
+**1897 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
+30 Commits.
 
 #### ✅ Abgeräumt: die komplette offene Liste bis auf die Balance-Messung
 
@@ -249,10 +249,39 @@ Leaderboard-Verlauf um.
 
 #### 🟡 Offen, nach Wert sortiert
 
-1. **L3/L4/L6 · die 16 Auslöser** — die größte verbliebene Baustelle.
-2. **Balance-Messung** — `balanceSim.js` braucht Formkurven je Tipper. Ein
-   Simulator mit konstant starken Tippern kann eine ganze Fehlerklasse nicht
-   sehen (Beleg: Sitzung vom 30.07.).
+1. **Balance-Messung, Schritte 3–5** (`design/blindstellen-balancesim.md`):
+   `budget` + `limitKlassen` (Buchführung, mit der Erwartung, dass
+   `presets.balance.test.js` anschlägt) · `duell` (mit mehreren
+   Zielstrategien) · Achsenmodell. Schritte 1 und 2 sind erledigt.
+2. **L3/L4/L6 · die 16 Auslöser** — die größte verbliebene Baustelle.
+   ⚠️ L3 (Streichresultat als Spielerentscheidung) braucht eine eigene
+   Tabelle; siehe die Messung unten, bevor jemand das baut.
+
+#### 🔴🔴 Zwei Messergebnisse, die der Nutzer sehen sollte
+
+Der Simulator war für zwei Ebenen BLIND — jetzt nicht mehr, und beide Male
+kam etwas heraus, das man vorher nicht wissen konnte:
+
+**1. Streichresultate kippen die Balance.** 60 Saisons, Standard-Preset:
+
+| Saisonform | Kenner | Zocker |
+|---|---|---|
+| aus | **0,633** | 0,067 |
+| 4 Streicher | 0,517 | 0,233 |
+| **8 Streicher** | **0,333** | **0,467** |
+
+Bei acht Streichern gewinnt der ZOCKER. Plausibel, sobald man es sieht:
+Streicher nehmen die schlechtesten Spieltage heraus, und davon hat der Zocker
+die meisten. **Das ist ein Messergebnis, keine Korrektur** — ob acht Streicher
+erlaubt bleiben, entscheidet der Nutzer (Balance ist laut `CLAUDE.md` nicht
+Sache des Durchgangs).
+
+**2. Die Quoten-Bedingung am Joker ist eine Klippe, kein Regler.** Das
+Blindstellen-Papier fragte, wie stark der Modifikator-Anteil sinkt, wenn Joker
+nur auf Spiele über Quote X gelten. Gemessene Antwort: **fast gar nicht** —
+solange ein Spiel passt, legt der Spieler den Joker eben dorthin (0,052 → 0,054
+bei „ab Quote 12"). Erst wenn KEIN Spiel passt, fällt er auf 0.
+**Wer dosieren will, nimmt die Abklingzeit** (0,052 → 0,019 bei 3) oder `wer`.
 
 > ⚠️ **Nutzer-Aufgabe: `supabase/schema.sql` NOCHMAL ausführen.** Seit dem
 > letzten Lauf ist `admin_freigaben` dazugekommen. Idempotent, komplett laufen
