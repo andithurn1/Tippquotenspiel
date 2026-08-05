@@ -8,7 +8,7 @@ import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboard
 // design/abstimmung-verfassung.md). `regelnFuerSpieltag` liefert dafür die
 // Funktion, die die Engine als `regelnFuer` erwartet.
 import { regelnFuerSpieltag } from "./beschluss";
-import { zeitachse } from "./zeitachse";
+import { zeitachse, rundenSpieltagVon } from "./zeitachse";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { generateJoinCode } from "./joinCode";
 import { alleMatches } from "./ligen";
@@ -111,7 +111,7 @@ export function createMockStore() {
   // Beschluss-Lage einer Runde: `regelnFuer` je Spieltag und das Regelwerk am
   // Saisonende. EINE Stelle für beide Leaderboard-Wege, sonst rechnet der
   // Verlauf mit anderen Regeln als der Endstand.
-  const beschlussLage = (roundId, rules) => regelnFuerSpieltag({
+  const beschlussLage = (roundId, rules, achse = null) => regelnFuerSpieltag({
     rules,
     antraege: antraege.filter((a) => a.round_id === roundId).map((a) => ({
       ...a,
@@ -120,7 +120,7 @@ export function createMockStore() {
     })),
     mitglieder: members.filter((m) => m.round_id === roundId)
       .map((m) => ({ userId: m.user_id, istAdmin: m.role === "admin" })),
-    achse: zeitachse([...matches.values()], rules?.zeitachse),
+    achse: achse ?? zeitachse([...matches.values()], rules?.zeitachse),
   });
 
   return {
@@ -337,7 +337,10 @@ export function createMockStore() {
       const rules = round?.rules ?? DEFAULT_RULES;
       const roundTips = tips.filter((t) => t.round_id === roundId);
       const entries = roundTips.map(eintragVon);
-      const { regelnFuer, amEnde } = beschlussLage(roundId, rules);
+      // Die Zeitachse EINMAL bauen: sie wird gleich dreimal gebraucht
+      // (Beschluss-Lage, Drehrad-Plan, Runden-Spieltag der Tipps).
+      const achse = zeitachse([...matches.values()], rules?.zeitachse);
+      const { regelnFuer, amEnde } = beschlussLage(roundId, rules, achse);
       let board;
       // Verlaufsabhängige Regeln (Aufhol-Bonus, Saisonform) brauchen den ganzen
       // Verlauf. WELCHE das sind, entscheidet die Engine an einer Stelle —
@@ -388,16 +391,34 @@ export function createMockStore() {
       // keinen Speicherort für Admin-Freigaben (siehe Schritt 1) und keine
       // eigene Abklingzeit-Historie fürs Rad — ein am `jokerBasis.standard`
       // gesetzter `abklingzeit`-Wert bliebe dadurch für das Rad wirkungslos.
+      //
+      // 🔴 `matchday` ist hier der RUNDEN-Spieltag, nicht der Liga-Spieltag.
+      // `drehradPlan` verteilt die Drehungen über RUNDEN-Spieltage (1…N);
+      // `kontextFuer` in drehradBoard.js vergleicht `t.matchday === spieltag`
+      // direkt damit. Mit dem Liga-Spieltag wären das zwei verschiedene
+      // Skalen: „kein Rad ohne Tipp" hätte in einer Runde über fünf
+      // Wettbewerbe den falschen Tag geprüft — dieselbe Fehlerklasse, die bei
+      // den Jokern schon einmal fünf Joker pro Woche ergeben hätte
+      // (siehe Zeitachse in CLAUDE.md).
       const kontext = {
         board,
-        tipps: roundTips.map((t) => ({
-          userId: t.user_id, matchId: t.match_id,
-          matchday: matches.get(t.match_id)?.matchday ?? null,
-        })),
+        tipps: roundTips.map((t) => {
+          const m = matches.get(t.match_id);
+          return {
+            userId: t.user_id, matchId: t.match_id,
+            matchday: m ? rundenSpieltagVon(achse, m) : null,
+          };
+        }),
         adminFreigaben: [],
         letzteEinsaetze: [],
       };
-      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage: SPIELTAGE, nameOf, kontext });
+      // ⚠️ Und die LÄNGE ebenso: die feste 34 wäre die Liga-Saison. Eine Runde
+      // über mehrere Wettbewerbe hat mehr Runden-Spieltage (gemessen: 42) —
+      // mit 34 bekämen die letzten acht nie eine Drehung.
+      return withDrehradPunkte({
+        board, rules, rundenId: roundId,
+        spieltage: achse.length || SPIELTAGE, nameOf, kontext,
+      });
     },
 
     // Roh-Einträge einer Runde (Tipp + Snapshot + Ergebnis + matchday, ohne

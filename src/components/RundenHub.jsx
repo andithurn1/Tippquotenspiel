@@ -42,6 +42,7 @@ export default function RundenHub() {
   // (voting.js), `regelWahl` sind Änderungen AM REGELWERK
   // (design/abstimmung-verfassung.md). Getrennte Zustände, getrennte Karten.
   const [regelWahl, setRegelWahl] = useState(false);
+  const [rad, setRad] = useState(false);   // Glücksrad dieser Runde (drehrad.js)
   const [saison, setSaison] = useState(false);
   const [stand, setStand] = useState(null); // Münzstand dieser Runde, siehe muenzstand.js
   const [narren, setNarren] = useState(null); // Narren-Kontostand dieser Runde, siehe narrenstand.js
@@ -57,6 +58,7 @@ export default function RundenHub() {
         setRoundName(round?.name ?? null);
         setAbstimmung(round?.rules?.joker?.enabled === true && round?.rules?.joker?.abstimmung === true);
         setRegelWahl(round?.rules?.regelAbstimmung?.enabled === true);
+        setRad(round?.rules?.drehrad?.enabled === true);
         setSaison(round?.rules?.saison?.enabled === true);
         const relevant = filterMatchesByTeams(matches, round?.team_filter);
         const { total, open } = computeMatchStatus(relevant);
@@ -127,6 +129,21 @@ export default function RundenHub() {
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Änderungen am Regelwerk vorschlagen und darüber abstimmen.
+              </div>
+            </Link>
+          )}
+          {rad && (
+            <Link href="/rad" style={{
+              textDecoration: "none", color: C.text,
+              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
+              border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 18px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.sky, boxShadow: `0 0 12px ${C.sky}` }} />
+                <span style={{ fontSize: 16, fontWeight: 700 }}>🎡 Dein Glücksrad</span>
+              </div>
+              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+                Was für dich gefallen ist — und wann sich das Rad das nächste Mal dreht.
               </div>
             </Link>
           )}

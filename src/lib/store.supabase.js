@@ -7,7 +7,7 @@ import { DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules
 // Beschlossene Regeländerungen wirken ab IHREM Spieltag (Schritt 5 von
 // design/abstimmung-verfassung.md) — dieselbe Anbindung wie im Mock-Store.
 import { regelnFuerSpieltag } from "./beschluss";
-import { zeitachse } from "./zeitachse";
+import { zeitachse, rundenSpieltagVon } from "./zeitachse";
 import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
@@ -50,12 +50,12 @@ const eintragVon = (t, nameOf, matchOf) => {
 // Beschluss-Lage einer Runde: `regelnFuer` je Spieltag und das Regelwerk am
 // Saisonende. EINE Stelle für beide Leaderboard-Wege, sonst rechnet der
 // Verlauf mit anderen Regeln als der Endstand.
-function beschlussLage({ rules, antraege, members, matches }) {
+function beschlussLage({ rules, antraege, members, matches, achse = null }) {
   return regelnFuerSpieltag({
     rules,
     antraege,
     mitglieder: (members ?? []).map((m) => ({ userId: m.user_id, istAdmin: m.role === "admin" })),
-    achse: zeitachse(matches ?? [], rules?.zeitachse),
+    achse: achse ?? zeitachse(matches ?? [], rules?.zeitachse),
   });
 }
 
@@ -310,7 +310,10 @@ export function createSupabaseStore() {
       // WELCHE das sind, entscheidet die Engine an einer Stelle — hier stand
       // vorher `rules.aufholen?.enabled`, und mit der Saisonform war das still
       // falsch.
-      const { regelnFuer, amEnde } = beschlussLage({ rules, antraege, members, matches });
+      // Die Zeitachse EINMAL bauen: Beschluss-Lage, Drehrad-Plan und der
+      // Runden-Spieltag der Tipps brauchen sie alle drei.
+      const achse = zeitachse(matches, rules?.zeitachse);
+      const { regelnFuer, amEnde } = beschlussLage({ rules, antraege, members, matches, achse });
       let board;
       // ⚠️ BEIDE fragen: `brauchtVerlauf` liest sonst nur das ANGELEGTE
       // Regelwerk. Beschließt eine Runde den Anschluss-Bonus erst an Spieltag
@@ -351,16 +354,29 @@ export function createSupabaseStore() {
       // Speicherort für Admin-Freigaben (siehe Schritt 1) und keine eigene
       // Abklingzeit-Historie fürs Rad — ein am `jokerBasis.standard`
       // gesetzter `abklingzeit`-Wert bliebe dadurch für das Rad wirkungslos.
+      //
+      // 🔴 `matchday` ist hier der RUNDEN-Spieltag, nicht der Liga-Spieltag —
+      // dieselbe Begründung wie im Mock-Store: `drehradPlan` verteilt über
+      // Runden-Spieltage, und `kontextFuer` vergleicht direkt damit. Mit dem
+      // Liga-Spieltag wären das zwei Skalen, und „kein Rad ohne Tipp" prüfte
+      // den falschen Tag.
       const kontext = {
         board,
-        tipps: tips.map((t) => ({
-          userId: t.user_id, matchId: t.match_id,
-          matchday: matchOf(t.match_id)?.matchday ?? null,
-        })),
+        tipps: tips.map((t) => {
+          const m = matchOf(t.match_id);
+          return {
+            userId: t.user_id, matchId: t.match_id,
+            matchday: m ? rundenSpieltagVon(achse, m) : null,
+          };
+        }),
         adminFreigaben: [],
         letzteEinsaetze: [],
       };
-      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage: SPIELTAGE, nameOf, kontext });
+      // ⚠️ Und die LÄNGE ebenso — die feste 34 wäre die Liga-Saison.
+      return withDrehradPunkte({
+        board, rules, rundenId: roundId,
+        spieltage: achse.length || SPIELTAGE, nameOf, kontext,
+      });
     },
 
     async getRoundEntries(roundId) {

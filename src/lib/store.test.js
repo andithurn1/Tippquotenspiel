@@ -3,6 +3,7 @@ import { createMockStore } from "./store.mock";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules } from "./engine";
 import { zeitachse, rundenSpieltagVon } from "./zeitachse";
+import { drehradZiehungen } from "./drehradBoard";
 
 describe("Mock-Store — Seed & Schnittstelle", () => {
   it("liefert das Demo-Match JOR-ESP mit Snapshot und Ergebnis", async () => {
@@ -420,5 +421,61 @@ describe("Beschlossene Regeländerungen wirken ab ihrem Spieltag — und nur ab 
     await s.saveAntragStimme({ antragId: a.id, userId: "u2", ja: false });
     const nachher = await s.getLeaderboardHistory(runde.id);
     expect(nachher.map((h) => h.board[0].total)).toEqual(vorher.map((h) => h.board[0].total));
+  });
+});
+
+// 🔴 Zwei Skalen, die nicht verwechselt werden dürfen: `drehradPlan` verteilt
+// die Drehungen über RUNDEN-Spieltage, `kontextFuer` in drehradBoard.js
+// vergleicht `t.matchday === spieltag` direkt damit. Der Store hat dort lange
+// den LIGA-Spieltag hineingereicht — in einer Runde über fünf Wettbewerbe sind
+// das zwei verschiedene Zahlen, und „kein Rad ohne Tipp" prüfte den falschen
+// Tag. Dieselbe Fehlerklasse wie beim Joker (siehe Zeitachse in CLAUDE.md).
+describe("Drehrad: der Store reicht den RUNDEN-Spieltag, nicht den Liga-Spieltag", () => {
+  it("die Drehung liegt auf dem Spieltag, an dem wirklich getippt wurde", async () => {
+    const s = createMockStore();
+    const alle = await s.listMatches();
+    const achse = zeitachse(alle, DEFAULT_RULES.zeitachse);
+    const spiel = alle.find((m) => m.wettbewerb === "bl" && m.matchday === 20 && m.result);
+    const rundenSpieltag = rundenSpieltagVon(achse, spiel);
+
+    // Die beiden Skalen müssen für diesen Test auseinanderliegen — sonst
+    // bewiese er nichts.
+    expect(rundenSpieltag).not.toBe(spiel.matchday);
+
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      drehrad: {
+        enabled: true, frequenz: 1, phase: "ganze",
+        felder: [
+          { id: "f1", label: "Nichts", gewicht: 1, belohnung: { typ: "nichts" } },
+          { id: "f2", label: "Punkte", gewicht: 1, belohnung: { typ: "punkte", punkte: 50 } },
+        ],
+      },
+    });
+    const basis = { rules, rundenId: "r1", userIds: ["u1"], spieltage: achse.length };
+    const kontextMit = (matchday) => ({
+      board: [{ userId: "u1", total: 0, rank: 1 }],
+      tipps: [{ userId: "u1", matchId: spiel.id, matchday }],
+      adminFreigaben: [], letzteEinsaetze: [],
+    });
+
+    // Richtig: der Runden-Spieltag → dort wird gedreht.
+    const richtig = drehradZiehungen({ ...basis, kontext: kontextMit(rundenSpieltag) });
+    expect(richtig.map((z) => z.spieltag)).toEqual([rundenSpieltag]);
+
+    // Falsch (die alte Verkabelung): der Liga-Spieltag → die Drehung landet
+    // auf einem ganz anderen Tag, an dem gar nicht getippt wurde.
+    const falsch = drehradZiehungen({ ...basis, kontext: kontextMit(spiel.matchday) });
+    expect(falsch.map((z) => z.spieltag)).toEqual([spiel.matchday]);
+    expect(falsch[0].spieltag).not.toBe(rundenSpieltag);
+  });
+
+  it("der Plan deckt die ganze Runde ab, nicht nur 34 Spieltage", async () => {
+    const s = createMockStore();
+    const alle = await s.listMatches();
+    const achse = zeitachse(alle, DEFAULT_RULES.zeitachse);
+    // Gemessen: der Katalog ergibt mehr Runden-Spieltage als eine Liga-Saison.
+    // Mit der früheren festen 34 bekämen die letzten nie eine Drehung.
+    expect(achse.length).toBeGreaterThan(34);
   });
 });

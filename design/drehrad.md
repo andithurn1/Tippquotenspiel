@@ -273,6 +273,35 @@ zeigt dasselbe Ergebnis; wer sie überspringt, verliert nichts. Und
   Ergebnis, sofort. Ein Test hält fest, dass beide Winkel auf dasselbe Feld
   zeigen — die Umdrehungen sind Schmuck.
 
+### ✅ Das Rad im Spielbetrieb (05.08.2026)
+
+`src/components/MeinRad.jsx`, Route `/rad`, Karte im Runden-Hub. Bis dahin gab
+es das Rad NUR in der Admin-Oberfläche: der Creator konnte eine Feldtabelle
+schreiben, die Punkte landeten still im Leaderboard — wo der Spieler seine
+eigene Drehung sieht, gab es nicht.
+
+- **Kein Knopf „drehen".** Der Ausgang steht fest, sobald der Spieltag da ist
+  (2.5, deterministisch). Ein Knopf behauptete, der Spieler entscheide den
+  Zeitpunkt. Die Ansicht rechnet nach, sie löst nichts aus.
+- **Dieselbe Rechnung wie das Leaderboard** (`drehradZiehungen`), mit
+  denselben Eingaben — sonst zeigte der Screen eine andere Ziehung als die,
+  die zählt.
+- **Angezeigt wird der GEKÜRZTE Betrag** aus `auswerten`, nicht der
+  Wunschwert des Feldes: sonst rechnet der Spieler mit Punkten, die der
+  Saison-Deckel nie ausgezahlt hat. Gemessen: Deckel 120, vier Punkte-Treffer
+  à 50 → 50/50/20/0, zwei davon als gekürzt gemeldet.
+
+🔴 **Zwei Skalen, die beim Bauen aufgefallen sind** (Fund, kein Feature):
+`drehradPlan` verteilt die Drehungen über RUNDEN-Spieltage, `kontextFuer` in
+`drehradBoard.js` vergleicht `t.matchday === spieltag` direkt damit — und
+BEIDE Stores reichten dort den LIGA-Spieltag hinein. In einer Runde über fünf
+Wettbewerbe sind das verschiedene Zahlen: gemessen liegt Bundesliga-Spieltag
+20 auf Runden-Spieltag 27, die Drehung landete also auf Spieltag 20, an dem
+der Spieler gar nichts getippt haben muss. „Kein Rad ohne Tipp" prüfte den
+falschen Tag. Dazu stand `spieltage: 34` fest verdrahtet, während die Runde 42
+Runden-Spieltage hat — die letzten acht bekamen nie eine Drehung. Beides
+behoben, beides als Test in `store.test.js` festgehalten.
+
 ### Wo Clips doch hingehören
 
 Nicht ans Rad, sondern an die **Reaktion auf das Ergebnis** — und dort ist die
