@@ -148,11 +148,77 @@ Vergleich, den `presetMerge` und die Teilbibliotheken bereits zeigen.
 
 ## 7. Reihenfolge
 
-1. `regelAbstimmung.js` — Datenform, `sanitize*`, `zaehleAus`,
-   `verstoesstGegenVerfassung`. Reine Funktionen, wie `voting.js`.
+1. ✅ **GEBAUT (05.08.2026)** — `src/lib/regelAbstimmung.js` + 64 Tests.
+   Datenform, `sanitize*`, `zaehleAus`, `wirktAb`,
+   `verstoesstGegenVerfassung`, `konflikte`. Reine Funktionen, wie `voting.js`.
 2. Store: Anträge und Stimmen ablegen (Muster `saveVote`/`listVotes`).
 3. Verfassung in der Spielerstellung (Profi-Stufe).
 4. Antrags- und Abstimmungs-Screen.
 5. ⚠️ **Erst danach die Wirkung**: ein angenommener Antrag ändert das Regelwerk
    der Runde zum berechneten Spieltag. Das ist der Schritt, der die
    Snapshot-Kante berührt — getrennt halten und einzeln prüfen.
+
+---
+
+## 8. Was beim Bauen von Schritt 1 entschieden wurde
+
+**Die Blöcke heißen `rules.verfassung` und `rules.regelAbstimmung`** — bewusst
+NICHT `rules.abstimmung`: `rules.joker.abstimmung` gibt es schon (die
+Joker-Abstimmung), und zwei fast gleich heißende Felder für die zwei
+unvereinbaren Fragen wären genau die Verwechslung, vor der ganz oben gewarnt
+wird.
+
+**Die Datei importiert NICHTS.** `engine.js` braucht sie, und alles, was sie
+bräuchte, liegt hinter `engine.js` (`RULE_LIMITS` dort selbst, die ASPEKTE in
+`presetMerge.js`, das seinerseits `engine.js` importiert) — jeder Weg wäre ein
+Import-Kreis, dieselbe Falle wie bei `spieltag.js`. Harte Grenzen und
+Aspekt-Katalog kommen deshalb als Parameter herein.
+
+🔴 **Das hat die Zusicherung aus Abschnitt 2 sogar verbessert.** „Nur verengen,
+nie erweitern" hängt jetzt nicht am SPEICHERN, sondern am LESEN: jeder Zugriff
+läuft über `effektiveGrenzen`, und das schneidet immer gegen die harte Grenze.
+Gemessen mit einem feindlichen Band — gespeichert 0 bis 10 auf `joker.faktor`,
+wirksam bleibt 1 bis 2. Ein Band, das auf irgendeinem Weg in die Daten gelangt,
+kann damit gar nichts aufmachen.
+
+**`gestelltAm` ist ein RUNDEN-SPIELTAG, kein Datum.** Damit bleibt das Modul
+uhrenfrei wie `voting.js`, und Dauer, Frist und Sperrfrist stehen in derselben
+Einheit. Wer dort ein Datum hineinlegt, bekommt Unsinn.
+
+**`aenderbar: []` heißt „alles außer `gesperrt`".** Eine Verfassung
+einzuschalten darf nicht als Nebenwirkung alles sperren — dasselbe Muster wie
+`fensterVon` in `duellJoker.js`.
+
+**Ein zehnter Aspekt `mitbestimmung`** in `presetMerge.js` trägt beide Blöcke,
+sonst fielen sie aus dem Creator-Code (der Abdeckungstest schlägt an). Er ist
+der einzige Aspekt, über den nie abgestimmt werden kann (Abschnitt 6) — das
+setzt `regelAbstimmung.js` durch, nicht der Katalog: beim Mischen und Teilen
+soll er ganz normal mitwandern. Dazu gehört eine kuratierte Teilbibliothek mit
+vier Einträgen.
+
+### Die drei Komplexitätsstufen
+
+- **Stufe 1 (Charaktere): kommt bewusst NICHT vor.** Ein Charakter ist eine
+  Runden-Idee („wie fühlt sich das Spiel an"); wie eine Gruppe ihre Regeln
+  beschließt, ist keine Frage des Spielgefühls und kommt erst auf, wenn eine
+  Runde schon läuft. Alle Charaktere lassen die Abstimmung aus — das ist die
+  kuratierte Wahl, ausdrücklich begründet (Kommentar in `charaktere.js`).
+- **Stufe 2:** der Regler „Wer darf die Regeln ändern?" mit drei Stufen —
+  „Der Admin" · „Die Runde stimmt ab" · „Nur mit großer Mehrheit" (die
+  schützt zusätzlich die Wertung selbst per Verfassung).
+- **Stufe 3: steht noch aus** — das ist Schritt 3 der Reihenfolge oben.
+
+### Ein Fund aus dem Nachmessen
+
+Die Verstoß-Meldung schrieb JEDE Grenze der Verfassung zu, auch dann, wenn das
+Verfassungs-Band längst auf die harte Grenze beschnitten war. Der Admin hätte
+in der Verfassung nach einer Schranke gesucht, die dort gar nicht steht. Sie
+nennt jetzt die richtige Quelle.
+
+### Kleine offene Kante
+
+Ein `grenzen`-Eintrag auf einen Pfad, den `RULE_LIMITS` nicht kennt, überlebt
+das Speichern und reist im Creator-Code mit, kann aber nie etwas bewirken
+(`effektiveGrenzen` liefert dort `null`). Das ist Absicht — geraten wird
+nichts —, aber es ist totes Gewicht. Wenn die Profi-Oberfläche entsteht, sollte
+sie solche Pfade gar nicht erst anbieten.

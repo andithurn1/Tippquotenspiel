@@ -5,6 +5,8 @@ import {
 import { DEFAULT_RULES, sanitizeRules, RULE_LIMITS } from "@/lib/engine";
 import { simulateBalance } from "@/lib/balanceSim";
 import { PRESETS } from "@/lib/presets";
+import { konflikte } from "@/lib/regelAbstimmung";
+import { ASPEKT_KEYS } from "@/lib/presetMerge";
 
 // Basis fuer die Balance-Pruefung ist das Standard-PRESET, nicht DEFAULT_RULES:
 // DEFAULT_RULES ist der technische Fallback OHNE Balance-Daempfung (dort
@@ -117,6 +119,33 @@ describe("Die Stufen tun wirklich etwas", () => {
     // Und sie müssen auseinanderzuhalten sein — sonst erkennt `erkenneStufe`
     // die zweite als die erste und die Auswahl springt beim Öffnen zurück.
     expect(erkenneStufe(vorrat, "joker")).toBe("wetten-vorrat");
+  });
+
+  // 🔴 Baukasten-Grundsatz, zweite Anwendung: die Mitbestimmung hat in der
+  // Profi-Ebene ein ganzes Gehäuse (Verfassung, Quorum, Mehrheit, Fristen).
+  // Wer sie nicht bis dorthin verfolgen will, muss trotzdem eine stimmige
+  // Runde bekommen — genau dafür sind diese drei Stufen da.
+  it("die Mitbestimmung ist über Stufe 2 erreichbar", () => {
+    const admin = anwenden(DEFAULT_RULES, "mitbestimmung", "admin");
+    expect(admin.regelAbstimmung.enabled).toBe(false);
+
+    const runde = anwenden(DEFAULT_RULES, "mitbestimmung", "runde");
+    expect(runde.regelAbstimmung.enabled).toBe(true);
+    expect(runde.regelAbstimmung.mehrheit).toBe("einfach");
+
+    const gross = anwenden(DEFAULT_RULES, "mitbestimmung", "grosseMehrheit");
+    expect(gross.regelAbstimmung.mehrheit).toBe("zweidrittel");
+    expect(gross.regelAbstimmung.quorum).toBeGreaterThan(runde.regelAbstimmung.quorum);
+    // Die höchste Stufe schützt zusätzlich die Wertung selbst.
+    expect(gross.verfassung.enabled).toBe(true);
+    expect(gross.verfassung.gesperrt).toContain("naehe");
+  });
+
+  it("keine Stufe der Mitbestimmung erzeugt einen Konflikt", () => {
+    for (const stufe of REGLER_KEY.mitbestimmung.stufen) {
+      const r = anwenden(DEFAULT_RULES, "mitbestimmung", stufe.key);
+      expect(konflikte(r, ASPEKT_KEYS), stufe.key).toEqual([]);
+    }
   });
 
   it("Saison-Stufen setzen unterschiedlich viele Wetten", () => {

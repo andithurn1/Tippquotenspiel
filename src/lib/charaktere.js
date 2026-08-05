@@ -25,6 +25,14 @@ import { SAISON_PRESETS } from "./saisonwetten";
 const preset = (key) => PRESETS.find((p) => p.key === key)?.rules ?? PRESETS[0].rules;
 const saison = (key) => SAISON_PRESETS.find((p) => p.key === key)?.saison ?? { enabled: false, gewicht: 1, wetten: [] };
 
+// ⚠️ Zur MITBESTIMMUNG (`design/abstimmung-verfassung.md`) sagt hier bewusst
+// kein Charakter etwas: alle fünf lassen die Regel-Abstimmung aus, und das ist
+// die kuratierte Wahl, nicht eine Lücke. Ein Charakter ist eine Runden-IDEE
+// („wie fühlt sich das Spiel an"), und wie eine Gruppe ihre Regeln beschließt,
+// ist keine Frage des Spielgefühls — sie kommt erst auf, wenn eine Runde schon
+// läuft. Erreichbar ist sie über Stufe 2 („Wer darf die Regeln ändern?").
+// Das ist die Antwort auf Frage 1 des Baukasten-Grundsatzes, ausdrücklich
+// begründet statt stillschweigend ausgelassen.
 export const CHARAKTERE = [
   {
     key: "klassisch",

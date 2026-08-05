@@ -51,8 +51,7 @@ Spielbetrieb**. Die Module sind gebaut, getestet und einstellbar; im laufenden
 Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
 **Wer diese Liste als „fertig" liest, baut auf Sand.**
 
-**Nur Spec, noch nichts gebaut:** Regel-Abstimmung samt Verfassung
-(`design/abstimmung-verfassung.md`) · Glücksrad als SVG (`drehrad.md` 3c).
+**Nur Spec, noch nichts gebaut:** Glücksrad als SVG (`drehrad.md` 3c).
 
 ### Dazugekommen 04.08. (Account 1)
 
@@ -75,7 +74,20 @@ Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
   nicht gemeldet worden), und der Warntext sagte danach „im Spieltag", während
   die Zahl vier zählte.
 
-Test-Stand: **1741 grün**, Build sauber (Stand 2026-08-04).
+- **Regel-Abstimmung & Verfassung** ✅ Schritt 1 von 5
+  (`src/lib/regelAbstimmung.js`, `design/abstimmung-verfassung.md`) — die
+  Runde beschließt Änderungen AM REGELWERK, der Admin legt mit der Verfassung
+  den Rahmen fest, den auch eine Mehrheit nicht bricht. Reine Logik:
+  `zaehleAus`, `wirktAb`, `verstoesstGegenVerfassung`, `konflikte`.
+  Eingebunden in `engine.js` (Vorgaben + `sanitizeRules`), `presetMerge.js`
+  (zehnter Aspekt `mitbestimmung`) und `teilbibliothek.js`.
+  Stufe 2 („Wer darf die Regeln ändern?") steht, Stufe 1 ist ausdrücklich
+  begründet ausgelassen.
+  ⚠️ **Offen bleiben Schritt 2–5:** Store, Profi-Oberfläche, Antrags- und
+  Abstimmungs-Screen und ZULETZT die Wirkung — der Schritt, der die
+  Snapshot-Kante berührt und einzeln geprüft gehört.
+
+Test-Stand: **1818 grün**, Build sauber (Stand 2026-08-05).
 Vorher **1671 grün** (Stand 2026-08-03).
 Vorher stand hier **933 grün (28.07.)** — über eine Woche still, während die
 Suite um 738 Tests gewachsen ist. Genau die Drift, vor der der Kasten unten

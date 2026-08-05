@@ -183,6 +183,50 @@ export const REGLER = [
     ],
   },
   {
+    // Stufe 2 für die Mitbestimmung (`design/abstimmung-verfassung.md`). Die
+    // Profi-Ebene hat dort ein ganzes Gehäuse — Verfassung, Quorum, Mehrheit,
+    // Fristen. Die Frage, die ein Spieler wirklich stellt, ist aber eine
+    // einzige, und die steht hier. Die drei Stufen setzen jeweils ein ganzes
+    // stimmiges Bündel, keinen Einzelwert.
+    // ⚠️ Keine Stufe setzt `sperrfrist: 0` — ohne Sperrfrist wird derselbe
+    // Antrag zur Dauerschleife (siehe `konflikte` in regelAbstimmung.js).
+    key: "mitbestimmung",
+    label: "Wer darf die Regeln ändern?",
+    hint: "Ob die Runde gemeinsam über Regeländerungen entscheidet — und wie hoch die Hürde dafür liegt.",
+    stufen: [
+      {
+        key: "admin", label: "Der Admin",
+        beschreibung: "Die Regeln stehen fest, wie sie angelegt wurden. Am einfachsten — und niemand muss sich um Anträge kümmern.",
+        werte: {
+          regelAbstimmung: { enabled: false },
+          verfassung: { enabled: false },
+        },
+      },
+      {
+        key: "runde", label: "Die Runde stimmt ab",
+        beschreibung: "Jeder darf eine Änderung vorschlagen, die einfache Mehrheit entscheidet — mindestens die Hälfte muss sich beteiligen. Sie gilt ab dem nächsten Spieltag, nie rückwirkend.",
+        werte: {
+          regelAbstimmung: {
+            enabled: true, wer: "alle", mehrheit: "einfach", quorum: 0.5,
+            antragsrecht: "alle", sperrfrist: 4, wirkungAb: "naechsterSpieltag",
+          },
+          verfassung: { enabled: false },
+        },
+      },
+      {
+        key: "grosseMehrheit", label: "Nur mit großer Mehrheit",
+        beschreibung: "Zwei Drittel müssen dafür sein, drei Viertel sich beteiligen — und die Wertung selbst bleibt unantastbar. Hier ändert sich selten etwas, dafür trägt es dann alle.",
+        werte: {
+          regelAbstimmung: {
+            enabled: true, wer: "nurAktive", mehrheit: "zweidrittel", quorum: 0.75,
+            antragsrecht: "alle", sperrfrist: 6, wirkungAb: "vorlauf", wirkungVorlauf: 2,
+          },
+          verfassung: { enabled: true, gesperrt: ["naehe", "kombi", "underdog"] },
+        },
+      },
+    ],
+  },
+  {
     key: "saison",
     label: "Laufen Saison-Wetten nebenbei?",
     hint: "Langzeit-Tipps wie Meister oder Torschützenkönig, einmal vor der Saison.",
