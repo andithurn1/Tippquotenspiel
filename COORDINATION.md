@@ -123,6 +123,53 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-05 (V) · Punkt 3 begonnen — vier Anzeigen logen, keine davon fiel je einem Test auf
+
+> **👉 Was ich hier gemacht habe und wo der nächste anfängt.**
+> Alles auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`.
+
+Die neue Reihenfolge (Eintrag darunter) hat als Punkt 3: **jeder erzeugte Wert
+wird in JEDER Anzeige wahrheitsgemäß ausgegeben.** Das ist keine Fleißaufgabe,
+es ist die ergiebigste Fehlerquelle, die dieses Projekt bisher hatte.
+
+**Neues Kommando: `npm run anzeige`** (`scripts/anzeige-durchgang.mjs`).
+Vergleicht fünf Wege für denselben Tipp — Wertung, Aufschlüsselung,
+Nachbar-Tabelle, Tipp-Vorschau, Leaderboard/Verlauf — über 1600 Tipps je
+Regelwerk. Bewusst KEIN Test: ein Test fragt „ist es kaputt", die Messung
+fragt „wie weit auseinander".
+
+**Vier Funde, alle gemessen:**
+
+1. **Die Aufschlüsselung kam nicht auf ihre eigene Endsumme.** In 16–39 % aller
+   Tipps, bei „Underdog-Party" um bis zu **273 Punkte**. Drei Ursachen:
+   Faktoren mit nur einer Nachkommastelle (×3,5 statt ×3,47, multipliziert mit
+   einem vierstelligen Grundwert), der Deckel als durchgestrichene Info-Zeile
+   neben einer Kette, die weiter auf den ungedeckelten Wert zeigte, und ein
+   verschluckter Rundungsrest. ⚠️ **Die Selbstkontrolle `stimmt` hatte 3 %
+   Toleranz — 273 von 9000 liegen darin.** Sie fragt jetzt wörtlich: rundet
+   die addierte Spalte auf die angezeigte Zahl?
+2. **`MeinRad.jsx` rechnete die Ziehung selbst nach**, mit `adminFreigaben: []`
+   und dem Board INKLUSIVE der Rad-Punkte. In einer Runde mit „nur nach
+   Freigabe" stand dort „keine Drehung vorgesehen", während im Leaderboard
+   Punkte dafür standen. Beide Stores haben jetzt `getDrehradZiehungen`.
+3. **`Tippabgabe.jsx` zeigte 270 Narren, wo die Wertung 30 vergibt** — die
+   Rad-Belohnungen liefen ohne `kontext` (also ohne „kein Rad ohne Tipp") und
+   über 34 statt 42 Spieltage. Die Narren gehen in `kontoVerlauf`, also stand
+   der ganze angezeigte Kontostand auf einer erfundenen Zahl.
+4. **Und derselbe Screen rechnete durchweg in LIGA-Spieltagen**, wo
+   Runden-Spieltage gemeint sind — Konto, Perioden, Klassen, Duell. Gemessen
+   am Duell-Joker: 78 vermeintliche Duell-Spieltage gegen 58 richtige, nur 19
+   gemeinsam. Behoben mit EINER Umrechnung (`alleTippsRunde`,
+   `meinSpieltagRunde`).
+
+**Für den nächsten: die Frage taugt weiter.** Nimm einen Screen, such den Wert,
+den er anzeigt, und finde die Stelle, die denselben Wert für die Wertung
+rechnet. Sind es zwei Rechnungen, sind es zwei Wahrheiten. Noch nicht
+durchgesehen: `Konto.jsx`, `Historie.jsx` (rechnet `scoreLeaderboardHistory`
+selbst), `SaisonTipps.jsx`, `Ranking.jsx`/`RankingVerlauf.jsx`, `Ereignisse.jsx`.
+
+Stand: 1903 Tests grün, Build sauber.
+
 ### 2026-08-05 (IV) · 🔴 **RICHTUNGSENTSCHEIDUNG des Nutzers: Gewichtung kommt ZULETZT**
 
 > **👉 Frische Session: das hier zuerst, dann der Eintrag darunter.**
@@ -278,8 +325,11 @@ CL-Spieltag 5). Gefunden in dieser Sitzung:
 | **Rad** (beide Stores) | „kein Rad ohne Tipp" prüfte den falschen Tag; letzte acht Spieltage ohne Drehung |
 | **Narren-Konto** (`standAmTag` über Tippabgabe) | Rückstands-Bonus auf einen Tabellenstand, den es noch nicht gab — **Zukunftswissen** |
 | **Beschlüsse** (`regelnFuer`) | wäre entstanden, wenn man den Liga-Spieltag genommen hätte — deshalb von Anfang an über die Achse |
+| **Duell-Joker** (`Tippabgabe.jsx`) | gemessen über 1636 Spiele: 78 Spiele galten als Duell-Spieltag, richtig sind 58, gemeinsam nur 19 — an 59 Tagen angeboten, an denen er nicht fällig war |
+| **Narren-Kauf-Perioden** (`Tippabgabe.jsx`) | ein Kauf am CL-Spieltag 5 fiel in dieselbe Periode wie einer am BL-Spieltag 5; Perioden über 34 statt 42 |
+| **Rad-Belohnungen** (`Tippabgabe.jsx`) | ohne `kontext` und mit 34: gemessen 270 Narren angezeigt, wo die Wertung 30 vergibt |
 
-**Kein einziger davon kam aus den Tests.** Alle vier aus eigenem Nachrechnen
+**Kein einziger davon kam aus den Tests.** Alle aus eigenem Nachrechnen
 an echten Katalog-Daten. Wer hier weiterbaut: bei jeder Spieltags-Zahl die
 Frage stellen, und im Zweifel `rundenSpieltagVon`/`rundenSchluessel` nehmen.
 `verlaufNachRundenSpieltag` (neu in `zeitachse.js`) schlüsselt einen
