@@ -114,15 +114,16 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 > ⚠️ **Nutzer-Aufgabe: `supabase/schema.sql` erneut im SQL-Editor ausführen**
 > (idempotent, komplett laufen lassen) — sonst fehlen live zwei Tabellen.
 
-**1845 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
-10 Commits.
+**1855 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
+12 Commits.
 
-#### ✅ Abgeräumt: Punkt 1 und Punkt 2 der offenen Liste
+#### ✅ Abgeräumt: Punkt 1, 2 und 3 der offenen Liste
 
 | | Inhalt |
 |---|---|
 | **Münz-Takt** (`wettmodus.md` 3) | `muenzTakt.js` + Verkabelung in `muenzstand`, `Tippabgabe`, `Waehrungen`, `Spielerstellung` + alle drei Komplexitätsstufen |
 | **Regel-Abstimmung & Verfassung** | Alle fünf Schritte der Spec: `regelAbstimmung.js` · Store + Schema · `Mitbestimmung.jsx` (Profi) · `/regeln` (Screen) · `beschluss.js` (Wirkung) |
+| **Glücksrad als SVG** (`drehrad.md` 3c) | `radGeometrie.js` (die Winkel, geprüft) + `Gluecksrad.jsx`, als Live-Vorschau in der Spielerstellung |
 
 #### 🔴 Zwei Bauweisen, die sich beide bewährt haben
 
@@ -178,8 +179,13 @@ Spieltag"), den ein Test auf „enthält die Zahl" nicht sehen kann.
 1. **Regel-Abstimmung: das Einhängen in die Wertung.** Die Auswertung liest
    weiterhin `round.rules`; der Scoring-Pfad müsste den Runden-Spieltag
    durchreichen. `regelwerkAmSpieltag` steht bereit und hat schon einen
-   Aufrufer. **Das ist der Schritt, der die Snapshot-Kante wirklich berührt.**
-2. **Glücksrad als SVG** (`drehrad.md` 3c) — prozedural, keine Clips.
+   Aufrufer. **Das ist der Schritt, der die Snapshot-Kante wirklich berührt —
+   bewusst NICHT nebenbei erledigt, er gehört in eine eigene Sitzung mit
+   ungeteilter Aufmerksamkeit.**
+2. **Das Rad im Spielbetrieb.** `Gluecksrad.jsx` nimmt bereits eine
+   `ergebnisId` und dreht darauf; im Editor gibt es noch keine, weil dort
+   nichts gezogen wird. Wer den Dreh-Moment für den Spieler baut, reicht das
+   Ergebnis aus `ziehe`/`drehradBoard` durch — mehr ist es nicht.
 3. Die fünf Teil-Wirkungen aus `kontaktstellen.md`.
 4. L3/L4/L6 · die 16 Auslöser.
 5. **Balance-Messung** — `balanceSim.js` braucht Formkurven je Tipper.

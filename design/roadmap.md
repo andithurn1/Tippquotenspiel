@@ -51,7 +51,7 @@ Spielbetrieb**. Die Module sind gebaut, getestet und einstellbar; im laufenden
 Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
 **Wer diese Liste als „fertig" liest, baut auf Sand.**
 
-**Nur Spec, noch nichts gebaut:** Glücksrad als SVG (`drehrad.md` 3c).
+**Nur Spec, noch nichts gebaut:** — (die Liste ist abgearbeitet).
 
 ### Dazugekommen 04.08. (Account 1)
 
@@ -98,7 +98,15 @@ Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
   ⚠️ **Nutzer-Aufgabe:** `supabase/schema.sql` erneut ausführen (idempotent),
   sonst fehlen live zwei Tabellen.
 
-Test-Stand: **1845 grün**, Build sauber (Stand 2026-08-05).
+- **Glücksrad als SVG** ✅ (`src/lib/radGeometrie.js`, `Gluecksrad.jsx`,
+  `drehrad.md` 3c) — prozedural aus der Feldliste, keine vorgerenderten Clips.
+  Die Winkel liegen im Lib und sind geprüft: `segmentUnterZeiger` ist die
+  Umkehrung von `zielWinkel` und existiert allein, um zu BEWEISEN, dass unter
+  dem Zeiger das gezogene Feld landet und nicht der Nachbar.
+  ⚠️ Offen: der Dreh-Moment für den Spieler — die Komponente nimmt schon eine
+  `ergebnisId`, es fehlt nur der Ort, der sie aus `ziehe` durchreicht.
+
+Test-Stand: **1855 grün**, Build sauber (Stand 2026-08-05).
 Vorher **1671 grün** (Stand 2026-08-03).
 Vorher stand hier **933 grün (28.07.)** — über eine Woche still, während die
 Suite um 738 Tests gewachsen ist. Genau die Drift, vor der der Kasten unten
