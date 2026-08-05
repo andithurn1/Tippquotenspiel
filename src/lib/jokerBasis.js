@@ -371,6 +371,35 @@ export function basisFuer(jokerArt, rules) {
   return mergeBasis(karte, jokerArt);
 }
 
+// ── Die EINE Basis für den Duell-Plan ───────────────────────
+// 🔴 `duellPlan` (duellJoker.js) baut EINEN Plan je Spieler, nicht einen je
+// Duell-Art — er liest aus der Basis nur `abklingzeit`. Sind „klau" UND
+// „block" erlaubt und tragen VERSCHIEDENE Abklingzeiten, war bisher offen,
+// welche gilt; genommen wurde einfach die von „klau" (design/kontaktstellen.md,
+// „Offene Entscheidung"). Das ist keine Regel, sondern eine Reihenfolge.
+//
+// Die Entscheidung: **es gilt die LÄNGERE.** Der Plan ist gemeinsam — an einem
+// Plan-Spieltag darf der Spieler JEDE erlaubte Art einsetzen. Nähme man die
+// kürzere, könnte er die strengere Art häufiger spielen, als ihre eigene
+// Einstellung erlaubt; die Einstellung liefe damit ins Leere. Die längere
+// verschenkt umgekehrt höchstens Gelegenheiten der lockereren Art — das ist
+// die harmlose Richtung, und dieselbe Wahl trifft `wirktAb` in
+// `regelAbstimmung.js` beim Zweifel über den Wirkungs-Spieltag.
+//
+// ⚠️ Die übrigen Felder kommen von der ERSTEN erlaubten Art. Sie werden von
+// `duellPlan` nicht gelesen; wer das ändert, muss hier weiterdenken.
+export function duellBasis(rules) {
+  const erlaubt = (rules?.duell?.typen ?? [])
+    .filter((t) => t === "klau" || t === "block")
+    .map((t) => `duell.${t}`);
+  if (!erlaubt.length) return basisFuer("duell.klau", rules);
+
+  const basen = erlaubt.map((art) => basisFuer(art, rules));
+  const laengste = basen.reduce(
+    (max, b) => Math.max(max, Number(b?.abklingzeit) || 0), 0);
+  return { ...basen[0], abklingzeit: laengste };
+}
+
 // ── wer darf einsetzen ──────────────────────────────────────
 // `kontext = { board, aktuellerSpieltag, adminFreigaben, hatGetippt,
 // letzteEinsaetze }`. `board` = Snapshot der Tabelle, `[{ userId, total, … }]`,

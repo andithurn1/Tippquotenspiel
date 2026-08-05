@@ -314,7 +314,11 @@ Auswahl (Muster `narrenGrund`/`einsatzGrund`); da `zulaessigeZiele` selbst
 keinen strukturierten Grund liefert, ist der Text bewusst allgemein gehalten
 (zählt die möglichen Ursachen auf, statt eine einzelne zu benennen).
 
-⚠️ **Offene Entscheidung, nicht im Plan festgelegt:** Sind sowohl „klau" als
+✅ **Entschieden am 05.08.2026** (siehe unten, Liste der Teil-Wirkungen):
+es gilt die LÄNGERE Abklingzeit, umgesetzt in `duellBasis(rules)`.
+Der ursprüngliche Text der offenen Frage:
+
+⚠️ ~~**Offene Entscheidung, nicht im Plan festgelegt:**~~ Sind sowohl „klau" als
 auch „block" in `rules.duell.typen` erlaubt, nutzt `duellPlan` (genauer:
 dessen `basis`-Parameter für die Abklingzeit) die Basis von „klau" — es gibt
 nur EINEN Plan je Spieler, keinen getrennt nach Art, und der Plan-Text nennt
@@ -406,11 +410,15 @@ Einschränkung benannt wurde und durch Schritt 5 nicht behoben wird:
   Gemessen: ein Rad mit Joker- und Narren-Feldern über 42 Spieltage ergibt
   1 erspielten Joker im Vorrat und hebt den Narren-Stand von 84 auf 144
   (zweimal 30). Tests in `drehradBoard.test.js` und `jokerBudget.test.js`.
-- **Die `klau`/`block`-Basiswahl aus Schritt 4:** Sind beide Duell-Arten
-  aktiv, nutzt `duellPlan` weiterhin ausschließlich die Basis von „klau" für
-  die Abklingzeit des Plans — eine Festlegung ohne Tie-Break-Regel im
-  ursprünglichen Plan-Text, siehe die „Offene Entscheidung" oben in diesem
-  Abschnitt.
+- ~~**Die `klau`/`block`-Basiswahl aus Schritt 4**~~ ✅ **ENTSCHIEDEN
+  (05.08.2026):** neu `duellBasis(rules)` in `jokerBasis.js` — **es gilt die
+  LÄNGERE Abklingzeit.** Begründung: der Plan ist GEMEINSAM, an einem
+  Plan-Spieltag darf der Spieler jede erlaubte Art einsetzen. Nähme man die
+  kürzere, könnte er die strengere Art häufiger spielen, als ihre eigene
+  Einstellung erlaubt — die Einstellung liefe ins Leere. Die längere
+  verschenkt höchstens Gelegenheiten der lockereren Art; das ist die harmlose
+  Richtung, dieselbe Wahl wie bei `wirktAb` in `regelAbstimmung.js`.
+  Die alte Regel („klau zuerst") war keine Regel, sondern eine Reihenfolge.
 - **`kontext.adminFreigaben`** (Schritt 1): weiterhin immer leer, mangels
   Speicherort für Admin-Freigaben — `wer: "adminFreigabe"` lehnt an JEDER
   Kontaktstelle konsequent ab, die diesen Kontext nutzt (Joker, Rad).

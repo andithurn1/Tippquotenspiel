@@ -14,7 +14,7 @@ import { muenzSchluessel, muenzTaktStatus, periodeLabel, spieltagsFolge } from "
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
 import { darfJokerSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
-import { pruefeJokerEinsatz, basisFuer, darfWiderrufen } from "@/lib/jokerBasis";
+import { pruefeJokerEinsatz, basisFuer, darfWiderrufen, duellBasis as duellBasisVon } from "@/lib/jokerBasis";
 import {
   kontoVerlauf, perioden, preisFuer, kannBezahlen, sanitizeBudget, istNarrenKauf, einsaetzeAllerArten,
 } from "@/lib/jokerBudget";
@@ -494,13 +494,15 @@ export default function Tippabgabe({ matchId }) {
   // Duell-Joker (design/duell-joker.md, design/kontaktstellen.md Abschnitt 5
   // Punkt 4): nur relevant, wenn `rules.duell.enabled` UND dieser Spieltag
   // laut `duellPlan` für DIESEN Spieler ein Duell-Spieltag ist.
-  // `basis` kommt aus `basisFuer("duell.klau"|"duell.block", rules)`
-  // (dieselbe Wahl wie bei `pruefeJokerEinsatz`) — `duellPlan` selbst kennt
-  // keine Art, es gibt nur EINEN Plan je Spieler; ist „klau" erlaubt, zählt
-  // dessen Abklingzeit, sonst die von „block".
+  // `basis` kommt aus `duellBasis(rules)` (jokerBasis.js) — `duellPlan` selbst
+  // kennt keine Art, es gibt nur EINEN Plan je Spieler. Sind beide Arten
+  // erlaubt, gilt die LÄNGERE Abklingzeit; die Begründung steht dort.
   const duellTypenErlaubt = (RULES.duell?.typen ?? []).filter((t) => DUELL_TYPEN.some((d) => d.key === t));
-  const duellBasisArt = duellTypenErlaubt.includes("klau") ? "duell.klau" : "duell.block";
-  const duellBasis = basisFuer(duellBasisArt, RULES);
+  // ⚠️ Nicht mehr „klau zuerst": sind beide Arten erlaubt, gilt die LÄNGERE
+  // Abklingzeit (`duellBasis` in jokerBasis.js, dort steht die Begründung).
+  // Die alte Reihenfolge war keine Regel, sondern eine Reihenfolge — und sie
+  // ließ die strengere Einstellung ins Leere laufen.
+  const duellBasis = duellBasisVon(RULES);
   const duellPlanErgebnis = RULES.duell?.enabled && user
     ? duellPlan({
         spieltage: SPIELTAGE, duell: RULES.duell, basis: duellBasis,

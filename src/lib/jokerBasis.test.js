@@ -4,8 +4,9 @@ import {
   BASIS_LIMITS, DEFAULT_BASIS,
   sanitizeBasis, sanitizeJokerBasisKarte, basisFuer,
   darfEinsetzen, erfuelltBedingung, darfWiderrufen, pruefeJokerEinsatz,
-  beschreibeBasis, konflikte,
+  beschreibeBasis, konflikte, duellBasis,
 } from "./jokerBasis";
+import { sanitizeRules } from "./engine";
 
 // ── Kataloge ────────────────────────────────────────────────
 
@@ -596,5 +597,38 @@ describe("beschreibeBasis", () => {
     expect(t).toContain("Wandert");
     expect(t).toContain("12");
     expect(t).toContain("2");
+  });
+});
+
+// 🔴 `design/kontaktstellen.md` führte das als „Offene Entscheidung": sind
+// „klau" UND „block" erlaubt und tragen verschiedene Abklingzeiten, nahm
+// `duellPlan` einfach die von „klau". Das war eine Reihenfolge, keine Regel.
+describe("duellBasis — die LÄNGERE Abklingzeit gewinnt", () => {
+  const regeln = (typen, klau, block) => sanitizeRules({
+    duell: { enabled: true, typen },
+    // Die Karte trägt die Art-Abweichungen DIREKT unter dem Art-Schlüssel
+    // (siehe `sanitizeJokerBasisKarte`) — kein `arten`-Zwischenobjekt.
+    jokerBasis: {
+      standard: { abklingzeit: 0 },
+      "duell.klau": { abklingzeit: klau },
+      "duell.block": { abklingzeit: block },
+    },
+  });
+
+  it("bei beiden Arten zählt die strengere Einstellung", () => {
+    // Nähme man die kürzere, könnte der Spieler die strengere Art häufiger
+    // setzen, als ihre eigene Einstellung erlaubt — sie liefe ins Leere.
+    expect(duellBasis(regeln(["klau", "block"], 2, 5)).abklingzeit).toBe(5);
+    expect(duellBasis(regeln(["klau", "block"], 6, 3)).abklingzeit).toBe(6);
+  });
+
+  it("bei nur einer Art gilt genau deren Wert", () => {
+    expect(duellBasis(regeln(["klau"], 2, 5)).abklingzeit).toBe(2);
+    expect(duellBasis(regeln(["block"], 2, 5)).abklingzeit).toBe(5);
+  });
+
+  it("ohne erlaubte Art bleibt es bei der Klau-Basis", () => {
+    // Kein Sonderfall-Absturz: `duellPlan` bekommt weiterhin eine Basis.
+    expect(duellBasis(regeln([], 2, 5))).toBeTruthy();
   });
 });
