@@ -398,10 +398,25 @@ Einschränkung benannt wurde und durch Schritt 5 nicht behoben wird:
 - **`letzteEinsaetze` fürs Rad** (Schritt 3, Nachtrag): weiterhin immer leer
   — ein `abklingzeit`-Wert am Rad bleibt wirkungslos, obwohl er für echte
   Joker längst greift.
-- **`stand`/`standAmTag` schlüsseln nur über `matchday`** (Schritt 2): bei
-  kollidierenden Spieltag-Nummern über mehrere Wettbewerbe hinweg mischt
-  `budgetStand` (wie schon `kontoVerlauf`) die Tabellenstände — dieselbe,
-  unverändert bestehende Einschränkung.
+- ~~**`stand`/`standAmTag` schlüsseln nur über `matchday`**~~ ✅ **BEHOBEN
+  (05.08.2026)** — und der Schaden war größer als hier beschrieben.
+  Neu: `verlaufNachRundenSpieltag(verlauf, achse)` in `zeitachse.js`
+  schlüsselt den Leaderboard-Verlauf auf RUNDEN-Spieltage um; die sind über
+  alle Wettbewerbe eindeutig, die Kollision ist damit weg. Fallen mehrere
+  Liga-Spieltage in denselben Runden-Spieltag, gewinnt der LETZTE — der
+  Verlauf ist kumulativ, der erste wäre ein Zwischenstand mitten im Tag.
+  🔴 **Beim Nachmessen kam heraus, dass es nicht nur eine Kollision war,
+  sondern ZUKUNFTSWISSEN:** `kontoVerlauf` fragt `standAmTag(stand, t)` mit
+  t als Spieltag 1…N. Trug `stand` Liga-Spieltage, fand die Suche bei t=4 den
+  Bundesliga-Spieltag 3 — der in Runden-Spieltagen aber erst bei 6 liegt. Die
+  Budget-Quelle „Rückstand" zahlte also auf Basis eines Tabellenstands, den es
+  zu diesem Zeitpunkt gar nicht gab. Gemessen: 18 Narren an einem Spieltag,
+  an dem es 0 sein müssen. Genau das, was der Kopfkommentar von `standAmTag`
+  ausdrücklich ausschließen will. Test in `zeitachse.test.js`.
+  Dazu in `Tippabgabe.jsx` zwei weitere Werte derselben Familie korrigiert:
+  `spieltage` stand fest auf 34 (die Liga-Saison) statt auf der Länge der
+  Runde, und der Narren-Kontostand wurde über den Liga-Spieltag
+  nachgeschlagen.
 
 Keine dieser fünf Lücken ist eine tote Kontaktstelle im Sinn dieses Dokuments
 — jede der betroffenen Funktionen hat echte Aufrufer. Es sind bekannte,

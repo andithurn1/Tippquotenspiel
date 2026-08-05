@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   zeitachse, sanitizeZeitachse, ankerWettbewerb, achsenLabel, rundenSpieltagVon,
-  rundenSchluessel, warnungen, DEFAULT_ZEITACHSE, ZEITACHSE_LIMITS,
+  rundenSchluessel, warnungen, verlaufNachRundenSpieltag, DEFAULT_ZEITACHSE, ZEITACHSE_LIMITS,
 } from "./zeitachse";
 import { invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday } from "./engine";
+import { sanitizeRules } from "./engine";
+import { kontoVerlauf } from "./jokerBudget";
 
 const TAG = 24 * 3600 * 1000;
 const WOCHE = 7 * TAG;
@@ -392,4 +394,98 @@ describe("Ein kurzer Taktgeber darf nicht die halbe Saison verschlucken", () => 
     const achse = zeitachse(KURZ_UND_LANG, { modus: "anker", pause: "anhaengen" });
     expect(achse.length).toBe(3);
   });
+});
+
+// 🔴 `standAmTag` (jokerBudget.js) vergleicht Spieltags-ZAHLEN. Bekommt es
+// einen Verlauf mit LIGA-Spieltagen und eine Anfrage in RUNDEN-Spieltagen,
+// sind das zwei Skalen — und über mehrere Wettbewerbe kollidieren die Zahlen
+// zusätzlich. Diese Umschlüsselung ist die Antwort darauf.
+describe("verlaufNachRundenSpieltag", () => {
+  const WOCHE = 7 * 24 * 3600 * 1000;
+  const START = Date.UTC(2026, 7, 28);
+  const MATCHES = [
+    ...Array.from({ length: 6 }, (_, i) => ({
+      id: `b${i}`, wettbewerb: "bl", matchday: i + 1,
+      kickoff: new Date(START + i * WOCHE).toISOString(),
+    })),
+    // Ein CL-Spieltag MITTEN in der Bundesliga-Woche 3 — dieselbe Zahl wie
+    // BL-Spieltag 3, aber ein anderer Tag.
+    { id: "c3", wettbewerb: "cl", matchday: 3, kickoff: new Date(START + 2 * WOCHE + 2 * 24 * 3600 * 1000).toISOString() },
+  ];
+
+  const verlauf = [
+    { wettbewerb: "bl", matchday: 1, board: [{ userId: "a", total: 10 }] },
+    { wettbewerb: "bl", matchday: 3, board: [{ userId: "a", total: 30 }] },
+    { wettbewerb: "cl", matchday: 3, board: [{ userId: "a", total: 45 }] },
+    { wettbewerb: "bl", matchday: 5, board: [{ userId: "a", total: 70 }] },
+  ];
+
+  it("schlüsselt auf Runden-Spieltage um und macht die Zahlen eindeutig", () => {
+    const achse = zeitachse(MATCHES, { modus: "anker" });
+    const neu = verlaufNachRundenSpieltag(verlauf, achse);
+    // Die zwei „Spieltag 3" fallen jetzt nicht mehr zusammen, weil beide über
+    // ihren Runden-Spieltag laufen — die Zahlen sind aufsteigend und eindeutig.
+    const nummern = neu.map((v) => v.matchday);
+    expect(new Set(nummern).size).toBe(nummern.length);
+    expect([...nummern].sort((a, b) => a - b)).toEqual(nummern);
+  });
+
+  it("bei mehreren Liga-Spieltagen im selben Runden-Spieltag gewinnt der LETZTE", () => {
+    // Der Verlauf ist kumulativ: der Stand nach dem letzten Spiel des Tages
+    // ist der Stand dieses Tages, der erste wäre ein Zwischenstand.
+    const achse = zeitachse(MATCHES, { modus: "anker" });
+    const neu = verlaufNachRundenSpieltag(verlauf, achse);
+    const zusammen = neu.filter((v) => v.ligaSpieltag === 3);
+    for (const v of zusammen) {
+      const kandidaten = verlauf.filter((x) => rundenSpieltagVon(achse, x) === v.matchday);
+      expect(v.board[0].total).toBe(kandidaten[kandidaten.length - 1].board[0].total);
+    }
+  });
+
+  it("ohne Achse kommt der Verlauf unverändert zurück", () => {
+    expect(verlaufNachRundenSpieltag(verlauf, [])).toBe(verlauf);
+  });
+
+  // 🔴 Warum das überhaupt gebaut wurde, an einer echten Auswirkung gemessen:
+  // die Budget-Quelle „Rückstand" fragt `standAmTag(stand, t)` mit t als
+  // Spieltag 1…N. Trägt `stand` LIGA-Spieltage, findet sie bei t=4 den
+  // Bundesliga-Spieltag 3 — der in Runden-Spieltagen aber erst bei 6 liegt.
+  // Sie zahlte also einen Rückstands-Bonus auf Basis eines Tabellenstands,
+  // den es zu diesem Zeitpunkt noch gar nicht gab: Zukunftswissen, genau das,
+  // was der Kopfkommentar von `standAmTag` ausschließen will.
+  it("verhindert, dass eine Budget-Quelle auf einen künftigen Stand zahlt", () => {
+    // Eigene Spiele: ein KURZER Taktgeber, der zwei Wochen früher anfängt —
+    // dadurch fallen Liga- und Runden-Spieltag auseinander, und genau darum
+    // geht es hier. (Im echten Katalog macht das die MLS.)
+    const mitVorlauf = [
+      ...Array.from({ length: 2 }, (_, i) => ({
+        id: `v${i}`, wettbewerb: "mls", matchday: i + 1,
+        kickoff: new Date(START - (2 - i) * WOCHE).toISOString(),
+      })),
+      ...MATCHES,
+    ];
+    const achse = zeitachse(mitVorlauf, { modus: "anker" });
+    const rules = sanitizeRules({
+      budget: {
+        enabled: true, takt: "spieltag",
+        quellen: [{ typ: "rueckstand", proPunktRueckstand: 0.1, deckel: 0 }],
+      },
+    });
+    // Der früheste Eintrag des Verlaufs liegt auf einem späteren
+    // Runden-Spieltag, als seine Liga-Zahl vermuten lässt.
+    const frueheste = rundenSpieltagVon(achse, verlauf[0]);
+    expect(frueheste).toBeGreaterThan(verlauf[0].matchday);
+
+    const kontoBei = (stand, t) => kontoVerlauf({
+      rules, tipps: [], spieltage: achse.length, stand, userIds: ["a", "b"],
+    }).proSpieler.b.find((v) => v.matchday === t)?.kontostand ?? 0;
+
+    // VOR dem ersten wirklichen Stand darf nichts fließen.
+    const davor = verlauf[0].matchday + 1;
+    expect(davor).toBeLessThan(frueheste);
+    expect(kontoBei(verlaufNachRundenSpieltag(verlauf, achse), davor)).toBe(0);
+    // Mit dem rohen Verlauf floss dort bereits etwas — das ist der Fehler.
+    expect(kontoBei(verlauf, davor)).toBeGreaterThan(0);
+  });
+
 });

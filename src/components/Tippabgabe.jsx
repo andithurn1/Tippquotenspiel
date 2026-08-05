@@ -8,7 +8,7 @@ import {
 } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
-import { zeitachse, rundenSchluessel } from "@/lib/zeitachse";
+import { zeitachse, rundenSchluessel, rundenSpieltagVon, verlaufNachRundenSpieltag } from "@/lib/zeitachse";
 import { muenzSchluessel, muenzTaktStatus, periodeLabel, spieltagsFolge } from "@/lib/muenzTakt";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
@@ -279,10 +279,14 @@ export default function Tippabgabe({ matchId }) {
   // Liga — sonst ließe er sich in einer Runde über fünf Wettbewerbe fünfmal pro
   // Woche ausgeben. Dieselbe Quelle wie in der Spielwahl, damit beide Screens
   // dieselben Gewichte als belegt sehen.
-  const schluessel = useMemo(
-    () => rundenSchluessel(zeitachse(alleMatches, RULES.zeitachse)) ?? undefined,
+  // Die Zeitachse EINMAL bauen — sie wird weiter unten noch dreimal gebraucht
+  // (Narren-Konto, Münz-Takt, Runden-Spieltag dieses Spiels). Als Hook muss
+  // sie VOR dem frühen Return stehen, deshalb hier oben.
+  const achse = useMemo(
+    () => zeitachse(alleMatches, RULES.zeitachse),
     [alleMatches, RULES.zeitachse],
   );
+  const schluessel = useMemo(() => rundenSchluessel(achse) ?? undefined, [achse]);
 
   if (!match || !picks) {
     return (
@@ -406,12 +410,26 @@ export default function Tippabgabe({ matchId }) {
   // Spieltag-für-Spieltag-Tabellenstand für die Budget-Quellen
   // `rueckstand`/`platzierung` — das zusätzliche `wettbewerb`-Feld je Eintrag
   // stört `kontoVerlauf`/`budgetVerlauf` nicht, sie lesen nur `matchday`/`board`.
+  //
+  // 🔴 Drei Werte, die in DERSELBEN Skala stehen müssen — bis hierher taten
+  // sie es nicht (design/kontaktstellen.md, fünfte Teil-Wirkung):
+  //  • `kontoVerlauf` rechnet über Spieltage 1…N und fragt `standAmTag` mit
+  //    genau dieser Zahl,
+  //  • `leaderboardHistory` trug aber LIGA-Spieltage — und über mehrere
+  //    Wettbewerbe kollidieren die (Bundesliga-Spieltag 5 und CL-Spieltag 5
+  //    sind zwei Tage mit derselben Zahl),
+  //  • und `SPIELTAGE` war die feste Liga-Saison 34, während die Runde über
+  //    fünf Wettbewerbe mehr Runden-Spieltage hat (gemessen: 42).
+  // Alles drei läuft jetzt über den RUNDEN-Spieltag; der ist eindeutig.
+  const spieltageDerRunde = achse.length || SPIELTAGE;
+  const meinRundenSpieltag = rundenSpieltagVon(achse, spieltag);
   const kontoAlle = kontoVerlauf({
-    rules: RULES, tipps: alleTipps, spieltage: SPIELTAGE, stand: leaderboardHistory,
+    rules: RULES, tipps: alleTipps, spieltage: spieltageDerRunde,
+    stand: verlaufNachRundenSpieltag(leaderboardHistory, achse),
     userIds: board.map((b) => b.userId),
   });
   const meinKonto = user ? kontoAlle.proSpieler[user.id] : null;
-  const narrenKontostand = meinKonto?.find((v) => v.matchday === spieltag.matchday)?.kontostand ?? null;
+  const narrenKontostand = meinKonto?.find((v) => v.matchday === meinRundenSpieltag)?.kontostand ?? null;
 
   // Kontingent-Historie für `pruefeEinsatz` (design/kontaktstellen.md
   // Abschnitt 5 Punkt 5, limitKlassen.js): alle bereits gesetzten Joker- UND

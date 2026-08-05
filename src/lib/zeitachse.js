@@ -363,6 +363,38 @@ export function rundenSchluessel(achse = []) {
   };
 }
 
+// ── Einen Verlauf auf RUNDEN-Spieltage umschlüsseln ─────────
+// `scoreLeaderboardHistory` liefert `[{ wettbewerb, matchday, board }]` mit
+// LIGA-Spieltagen. Wer damit „wie stand es an Spieltag N?" fragt und N als
+// Runden-Spieltag meint, vergleicht zwei verschiedene Skalen — und über
+// mehrere Wettbewerbe kollidieren die Zahlen zusätzlich (Bundesliga-Spieltag 5
+// und Champions-League-Spieltag 5 sind zwei verschiedene Tage mit derselben
+// Zahl). Genau das ist die in `design/kontaktstellen.md` benannte
+// Einschränkung von `standAmTag`.
+//
+// Diese Funktion schlüsselt den Verlauf um: `matchday` ist danach der
+// RUNDEN-Spieltag, und der ist über alle Wettbewerbe hinweg eindeutig.
+//
+// ⚠️ Fallen mehrere Liga-Spieltage in denselben Runden-Spieltag, gewinnt der
+// LETZTE. Der Verlauf ist kumulativ — der Stand nach dem letzten Spiel dieses
+// Runden-Spieltags ist der Stand dieses Runden-Spieltags. Der erste wäre ein
+// Zwischenstand mitten im Tag.
+//
+// Ohne Achse kommt der Verlauf unverändert zurück: kein stiller Regelwechsel
+// für Aufrufer, die (noch) keine haben.
+export function verlaufNachRundenSpieltag(verlauf = [], achse = []) {
+  if (!Array.isArray(verlauf) || !verlauf.length || !achse.length) return verlauf;
+  const proRunde = new Map();
+  for (const stufe of verlauf) {
+    const nummer = rundenSpieltagVon(achse, stufe);
+    if (nummer == null) continue;
+    proRunde.set(nummer, { ...stufe, matchday: nummer, ligaSpieltag: stufe.matchday });
+  }
+  return [...proRunde.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, stufe]) => stufe);
+}
+
 // Die Übersetzung in Worten: „Spieltag 5 · Bundesliga 3 · Premier League 5".
 // Genau das, was ohne Achse niemand im Kopf hat.
 export function achsenLabel(eintrag, { kurz = false } = {}) {
