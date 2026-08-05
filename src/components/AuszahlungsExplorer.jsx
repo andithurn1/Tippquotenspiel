@@ -1,13 +1,25 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { createMockOddsSource, scoreResult, scoreGoals, applyCombo, DEFAULT_RULES } from "@/lib/engine";
+import { useState, useMemo, useEffect } from "react";
+import { createMockOddsSource, scoreResult, scoreGoals, applyCombo, sanitizeRules, DEFAULT_RULES } from "@/lib/engine";
+import { getStore } from "@/lib/store";
+import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { C, MONO } from "@/lib/theme";
 
 
 // ── Eine Quelle: Engine liefert Quoten, Regeln und Scoring ──
-const RULES = DEFAULT_RULES;
+//
+// 🔴 Das Regelwerk kommt aus DER RUNDE, nicht aus `DEFAULT_RULES`. Hier stand
+// bis 05.08.2026 die Vorgabe fest im Modul — der Explorer zeigte damit
+// Auszahlungen, die in einer Runde mit eigenem Regelwerk schlicht nicht
+// stimmen. Und er wird zum Planen benutzt: eine falsche Zahl hier ist ein
+// falsch gesetzter Tipp dort.
+//
+// Die Begegnung bleibt bewusst das Demo-Spiel: der Explorer ist ein
+// Lern-Werkzeug für die WERTUNG, kein Match-Screen. Was der eigene Tipp im
+// echten Spiel zahlt, steht in der Tippabgabe (`NaheErgebnisse`). Damit das
+// niemand verwechselt, sagt die Kopfzeile jetzt, welches Spiel gezeigt wird.
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
 const SIDES = ["home", "away"];
@@ -17,13 +29,22 @@ const braceBtn = (on) => ({ fontFamily: MONO, fontSize: 11, cursor: "pointer", p
   background: on ? `${C.gold}22` : C.surface2, color: on ? C.gold : C.muted, border: `1px solid ${on ? C.gold + "66" : C.line}` });
 
 // Ein hypothetischer Endstand {h,a}: Engine wertet, Kombi-Regel obendrauf.
-function scoreOutcome(tip, r, withScorer, scorerNet) {
+function scoreOutcome(tip, r, withScorer, scorerNet, RULES) {
   const res = scoreResult({ home: tip.h, away: tip.a }, { home: r.h, away: r.a }, SNAP, RULES);
   const total = withScorer ? applyCombo(res.resultPart, res.ebene, scorerNet, RULES) : res.resultPart;
   return { total, ...res };
 }
 
 export default function AuszahlungsExplorer() {
+  const { roundId } = useCurrentRound();
+  const [RULES, setRules] = useState(DEFAULT_RULES);
+  useEffect(() => {
+    let live = true;
+    getStore().getRound(roundId)
+      .then((r) => { if (live) setRules(sanitizeRules(r?.rules ?? DEFAULT_RULES)); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [roundId]);
   const [tip, setTip] = useState({ h: 4, a: 1 });
   const [withScorer, setWithScorer] = useState(true);
   const [aroundOnly, setAroundOnly] = useState(false);
@@ -42,20 +63,20 @@ export default function AuszahlungsExplorer() {
       : null; // null = Engine nimmt an: jeder trifft, Doppel-Pick trifft 2×
     const { net, detail } = scoreGoals(goals, SNAP, RULES, assumed);
     return { net, braces: detail.filter((d) => d.type === "double") };
-  }, [goals, braceGoals]);
+  }, [goals, braceGoals, RULES]);
 
   const grid = useMemo(() => {
     const cells = []; let max = 0;
     for (let h = 0; h <= 5; h++) for (let a = 0; a <= 5; a++) {
-      const s = scoreOutcome(tip, { h, a }, withScorer, sc.net);
+      const s = scoreOutcome(tip, { h, a }, withScorer, sc.net, RULES);
       const near = Math.abs(tip.h - h) + Math.abs(tip.a - a) <= 2;
       if (!aroundOnly || near) max = Math.max(max, s.total);
       cells.push({ h, a, s, near });
     }
     return { cells, max };
-  }, [tip, withScorer, aroundOnly, sc.net]);
+  }, [tip, withScorer, aroundOnly, sc.net, RULES]);
 
-  const selScore = scoreOutcome(tip, sel, withScorer, sc.net);
+  const selScore = scoreOutcome(tip, sel, withScorer, sc.net, RULES);
   const step = (key, d) => setTip((t) => ({ ...t, [key]: Math.max(0, Math.min(5, t[key] + d)) }));
   const setGoal = (side, i, v) => setGoals((prev) => ({ ...prev, [side]: prev[side].map((p, j) => (j === i ? v : p)) }));
 
@@ -81,6 +102,13 @@ export default function AuszahlungsExplorer() {
         </div>
         <div style={{ fontSize: 17, fontWeight: 700, marginTop: 6 }}>
           {SNAP.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {SNAP.away}
+        </div>
+        {/* Sagen, WORAN gerechnet wird. Ohne diesen Satz liest sich der
+            Explorer wie eine Aussage über das nächste eigene Spiel — er zeigt
+            aber ein Beispiel-Spiel, nur eben unter den Regeln DIESER Runde. */}
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+          Beispiel-Begegnung, gerechnet mit dem Regelwerk dieser Runde. Was dein
+          Tipp im echten Spiel zahlt, steht beim Tippen.
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
