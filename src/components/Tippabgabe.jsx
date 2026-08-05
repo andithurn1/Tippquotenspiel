@@ -312,9 +312,21 @@ export default function Tippabgabe({ matchId }) {
     () => zeitachse(alleMatches, RULES.zeitachse),
     [alleMatches, RULES.zeitachse],
   );
+  // 🔴 Der Joker-Plan verteilt über RUNDEN-Spieltage, nicht über 34 Liga-Tage.
+  //
+  // Gemessen am 05.08.2026 über den ganzen Katalog: der Plan sah 11 Joker in
+  // der Saison vor — tatsächlich galten 27 von 42 Runden-Spieltagen als
+  // Joker-Spieltag. Ursache waren zwei Skalen auf einmal: der Plan lief über
+  // die feste 34, und `hatJoker` bekam den LIGA-Spieltag. Dadurch war ein
+  // Plan-Tag „4" gleichzeitig Bundesliga-4, Premier-League-4, La-Liga-4,
+  // Serie-A-4 und CL-4 — fünf verschiedene Wochen.
+  //
+  // Genau davor warnt der Zeitachsen-Absatz in CLAUDE.md namentlich („Joker"),
+  // und `drehradPlan` rechnet längst so. Hier war es nie angekommen.
   const plan = useMemo(() => jokerPlan({
+    spieltage: achse.length || SPIELTAGE,
     verteilung: RULES.joker?.verteilung, seed: roundId ?? "", userIds: user ? [user.id] : [],
-  }), [RULES.joker?.verteilung, roundId, user]);
+  }), [RULES.joker?.verteilung, roundId, user, achse]);
   // 🔴 Erspielte Joker kommen aus ZWEI Quellen: den Ereignissen
   // (`erspielteJoker`) UND dem Glücksrad. Ein Rad-Feld mit Joker-Belohnung
   // wurde bisher gezogen und wirkte sich nicht aus — als Einschränkung in
@@ -349,6 +361,21 @@ export default function Tippabgabe({ matchId }) {
   // Umgerechnet wird EINMAL, hier; darunter arbeitet der ganze Screen mit
   // dieser Liste. Fällt ein Spiel nicht auf die Achse (Demo-Länderspiel),
   // bleibt der Liga-Spieltag stehen — besser eine Zahl als keine.
+  // Die EIGENEN Tipps im Runden-Spieltag, für Joker-Plan und Kontingent.
+  // ⚠️ `wettbewerb: null` gehört dazu: `verbrauch`/`darfJokerSetzen` schlüsseln
+  // über `spieltagKey`, und mit einem Wettbewerb daran wäre „Runden-Spieltag 5"
+  // fünfmal verschieden — genau die Skala, die wir gerade verlassen.
+  const meineTipsRunde = useMemo(() => {
+    const mVon = new Map(alleMatches.map((m) => [m.id, m]));
+    return meineTips.map((t) => {
+      const m = mVon.get(t.match_id ?? t.matchId);
+      return {
+        ...t, wettbewerb: null,
+        matchday: m ? (rundenSpieltagVon(achse, m) ?? t.matchday) : t.matchday,
+      };
+    });
+  }, [meineTips, alleMatches, achse]);
+
   const alleTippsRunde = useMemo(() => {
     const mVon = new Map(alleMatches.map((m) => [m.id, m]));
     return alleTipps.map((t) => ({
@@ -358,13 +385,24 @@ export default function Tippabgabe({ matchId }) {
         : t.matchday,
     }));
   }, [alleTipps, alleMatches, achse]);
+  // ⚠️ BEIDE Quellen im RUNDEN-Spieltag. `erspielteJoker` liest `eintraege` aus
+  // `getRoundEntries` und gibt den LIGA-Spieltag zurück; das Rad liefert schon
+  // Runden-Spieltage. Ungleich gemischt vergleicht `erspieltBis` (matchday <=
+  // bisSpieltag) zwei verschiedene Skalen gegeneinander.
   const gutschriften = useMemo(
-    () => [
-      ...erspielteJoker({ eintraege: meineEintraege, rules: RULES }),
+    () => {
+      // Eine Gutschrift trägt `{ key, wettbewerb, matchday, belohnung }` — kein
+      // Spiel. `rundenSpieltagVon` schlägt deshalb über Wettbewerb + Spieltag
+      // nach, genau dafür nimmt es auch eine solche Form entgegen.
+      const ereignis = erspielteJoker({ eintraege: meineEintraege, rules: RULES })
+        .map((g) => {
+          const runde = rundenSpieltagVon(achse, { wettbewerb: g.wettbewerb, matchday: g.matchday });
+          return runde == null ? g : { ...g, matchday: runde };
+        });
       // Nur die eigenen: der Store liefert die Belohnungen ALLER Spieler.
-      ...radBelohnungen.joker.filter((g) => g.userId === user?.id),
-    ],
-    [meineEintraege, RULES, radBelohnungen, user]);
+      return [...ereignis, ...radBelohnungen.joker.filter((g) => g.userId === user?.id)];
+    },
+    [meineEintraege, RULES, radBelohnungen, user, achse]);
   // Der Ranglisten-Pool wird einmal je RUNDEN-Spieltag vergeben, nicht einmal je
   // Liga — sonst ließe er sich in einer Runde über fünf Wettbewerbe fünfmal pro
   // Woche ausgeben. Dieselbe Quelle wie in der Spielwahl, damit beide Screens
@@ -563,13 +601,16 @@ export default function Tippabgabe({ matchId }) {
   // Kontingent aus BEIDEN Töpfen: zugeteilt (Plan) + erspielt (Ereignisse).
   // Ohne diese Zusammenführung wäre ein erspielter Joker eine Zahl ohne Wirkung.
   // `plan` und `gutschriften` sind oben berechnet (Hook-Regel, siehe dort).
+  // ⚠️ Alles im RUNDEN-Spieltag und ohne `wettbewerb` — siehe `plan` oben.
+  // Mit dem Wettbewerb liefe wieder der alte „ein Plan je Liga"-Weg, und der
+  // vergibt in einer Runde über fünf Wettbewerbe das Fünffache.
   const jokerErlaubnis = darfJokerSetzen({
-    plan, gutschriften, tipps: meineTips, userId: user?.id, spieltag,
-    wettbewerb: spieltag.wettbewerb,
+    plan, gutschriften, tipps: meineTipsRunde, userId: user?.id,
+    spieltag: meinSpieltagRunde,
   });
   const jokerStand = kontingent({
-    plan, gutschriften, tipps: meineTips, userId: user?.id,
-    bisSpieltag: spieltag.matchday, wettbewerb: spieltag.wettbewerb,
+    plan, gutschriften, tipps: meineTipsRunde, userId: user?.id,
+    bisSpieltag: meinSpieltagRunde,
   });
 
   // Duell-Joker (design/duell-joker.md, design/kontaktstellen.md Abschnitt 5

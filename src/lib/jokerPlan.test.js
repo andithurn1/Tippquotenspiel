@@ -5,6 +5,8 @@ import {
   uebersicht, sichtbareSpieltage, beschreibeVerteilung,
 } from "@/lib/jokerPlan";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
+import { alleMatches } from "@/lib/ligen";
+import { zeitachse, rundenSpieltagVon } from "@/lib/zeitachse";
 
 const SPIELER = ["u1", "u2", "u3", "u4", "u5"];
 const plan = (verteilung, extra = {}) =>
@@ -187,5 +189,54 @@ describe("Beschreibung", () => {
 
   it("beschreibt „frei“ ohne Zahlen", () => {
     expect(beschreibeVerteilung({ modus: "frei" })).toContain("jedem Spieltag");
+  });
+});
+
+// 🔴 Der Fund vom 05.08.2026 — die sechste Stelle derselben Fehlerklasse, und
+// die einzige, vor der CLAUDE.md namentlich warnt („Joker").
+//
+// `Tippabgabe.jsx` baute den Plan über die feste 34 und fragte `hatJoker` mit
+// dem LIGA-Spieltag. Ein Plan-Tag „4" war damit gleichzeitig Bundesliga-4,
+// Premier-League-4, La-Liga-4, Serie-A-4 und CL-4 — fünf verschiedene Wochen.
+// Gemessen über den ganzen Katalog: der Plan sah 11 Joker in der Saison vor,
+// tatsächlich galten 27 von 42 Runden-Spieltagen als Joker-Spieltag.
+describe("Der Joker-Plan zählt in RUNDEN-Spieltagen", () => {
+  const MATCHES = alleMatches().map((m) => ({ ...m, id: m.matchId }));
+  const ACHSE = zeitachse(MATCHES, DEFAULT_RULES.zeitachse);
+  const VERTEILUNG = { modus: "gleich", frequenz: 4, sichtbarkeit: "offen" };
+
+  // Wie viele verschiedene Runden-Spieltage tragen laut `hatJoker` einen Joker?
+  const jokerTage = (plan_, keyVon) => {
+    const tage = new Set();
+    for (const m of MATCHES) {
+      const rs = rundenSpieltagVon(ACHSE, m);
+      if (rs == null) continue;
+      if (hatJoker(plan_, "u1", keyVon(m, rs))) tage.add(rs);
+    }
+    return tage.size;
+  };
+
+  it("über die Runden-Spieltage kommen genau so viele Joker heraus wie geplant", () => {
+    const p = jokerPlan({
+      spieltage: ACHSE.length, verteilung: VERTEILUNG, seed: "r1", userIds: ["u1"],
+    });
+    expect(jokerTage(p, (m, rs) => rs)).toBe(p.anzahl);
+  });
+
+  it("über den Liga-Spieltag werden es deutlich mehr — das war der Fehler", () => {
+    const alt = jokerPlan({ verteilung: VERTEILUNG, seed: "r1", userIds: ["u1"] });   // 34
+    const neu = jokerPlan({
+      spieltage: ACHSE.length, verteilung: VERTEILUNG, seed: "r1", userIds: ["u1"],
+    });
+    const zuViele = jokerTage(alt, (m) => m.matchday);
+    expect(zuViele).toBeGreaterThan(neu.anzahl * 2);
+  });
+
+  it("die Achse ist länger als eine Liga-Saison — die feste 34 verliert das Ende", () => {
+    expect(ACHSE.length).toBeGreaterThan(34);
+    const p = jokerPlan({
+      spieltage: ACHSE.length, verteilung: VERTEILUNG, seed: "r1", userIds: ["u1"],
+    });
+    expect(Math.max(...p.alle)).toBeGreaterThan(34);
   });
 });
