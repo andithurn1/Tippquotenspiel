@@ -230,7 +230,10 @@ export default function Tippabgabe({ matchId }) {
     if (!user) return;
     let live = true;
     Promise.all([
-      getStore().listTips({ roundId }), getStore().listMatches(), getStore().listVotes({ roundId }),
+      // ⚠️ `listRoundMatches`, nicht `listMatches`: die Zeitachse unten muss
+      // dieselbe sein wie im Store, sonst tragen Joker, Budget-Perioden und
+      // Freigaben hier andere Runden-Spieltage als in der Wertung.
+      getStore().listTips({ roundId }), getStore().listRoundMatches(roundId), getStore().listVotes({ roundId }),
       getStore().getLeaderboard(roundId), getStore().getLeaderboardHistory(roundId),
       getStore().listAdminFreigaben({ roundId }),
     ]).then(([tips, ms, vs, lb, history, freigaben]) => {

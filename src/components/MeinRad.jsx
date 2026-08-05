@@ -50,7 +50,10 @@ export default function MeinRad() {
   useEffect(() => {
     let live = true;
     Promise.all([
-      getStore().getRound(roundId), getStore().listMatches(),
+      getStore().getRound(roundId),
+      // ⚠️ Die Spiele DIESER Runde: die Zeitachse unten muss dieselbe sein wie
+      // im Store, sonst liegt die Drehung auf einem anderen Runden-Spieltag.
+      getStore().listRoundMatches(roundId),
       getStore().getDrehradZiehungen(roundId),
     ]).then(([round, ms, rad]) => {
       if (!live) return;

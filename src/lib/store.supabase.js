@@ -13,6 +13,7 @@ import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
+import { filterMatchesByTeams } from "./roundStatus";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
@@ -69,6 +70,12 @@ export function createSupabaseStore() {
   const orThrow = ({ data, error }) => { if (error) throw error; return data; };
 
   return {
+    // 🔴 Die Spiele DIESER RUNDE — Begründung im Mock-Store.
+    async listRoundMatches(roundId) {
+      const [round, matches] = await Promise.all([this.getRound(roundId), this.listMatches()]);
+      return filterMatchesByTeams(matches, round?.team_filter);
+    },
+
     async listMatches() {
       const data = orThrow(await sb.from("matches").select("*").order("kickoff"));
       return data.map(mapMatch);
@@ -357,7 +364,10 @@ export function createSupabaseStore() {
       // falsch.
       // Die Zeitachse EINMAL bauen: Beschluss-Lage, Drehrad-Plan und der
       // Runden-Spieltag der Tipps brauchen sie alle drei.
-      const achse = zeitachse(matches, rules?.zeitachse);
+      // ⚠️ Über die Spiele DIESER Runde, nicht über den Katalog — siehe
+      // `listRoundMatches`.
+      const rundenSpiele = filterMatchesByTeams(matches, round?.team_filter);
+      const achse = zeitachse(rundenSpiele, rules?.zeitachse);
       const { regelnFuer, amEnde } = beschlussLage({ rules, antraege, members, matches, achse, adminId: round?.admin_id ?? null });
       let board;
       // ⚠️ BEIDE fragen: `brauchtVerlauf` liest sonst nur das ANGELEGTE
@@ -449,7 +459,12 @@ export function createSupabaseStore() {
       ]);
       const rules = round?.rules ?? DEFAULT_RULES;
       const antraege = await this.listAntraege({ roundId });
-      return beschlussLage({ rules, antraege, members, matches, adminId: round?.admin_id ?? null });
+      // Über die Spiele DIESER Runde — sonst käme ein anderer Runden-Spieltag
+      // heraus als im Leaderboard.
+      return beschlussLage({
+        rules, antraege, members, adminId: round?.admin_id ?? null,
+        matches: filterMatchesByTeams(matches, round?.team_filter),
+      });
     },
 
     async getLeaderboardHistory(roundId) {
@@ -464,7 +479,10 @@ export function createSupabaseStore() {
       const entries = tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id }));
       const rules = round?.rules ?? DEFAULT_RULES;
       const antraege = await this.listAntraege({ roundId });
-      const { regelnFuer } = beschlussLage({ rules, antraege, members, matches, adminId: round?.admin_id ?? null });
+      const { regelnFuer } = beschlussLage({
+        rules, antraege, members, adminId: round?.admin_id ?? null,
+        matches: filterMatchesByTeams(matches, round?.team_filter),
+      });
       return scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries), regelnFuer);
     },
   };

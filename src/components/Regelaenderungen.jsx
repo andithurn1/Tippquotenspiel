@@ -47,7 +47,10 @@ export default function Regelaenderungen() {
 
   const laden = async () => {
     const [round, ms, leute, liste] = await Promise.all([
-      getStore().getRound(roundId), getStore().listMatches(),
+      getStore().getRound(roundId),
+      // ⚠️ Die Spiele DIESER Runde: der Wirkungs-Spieltag eines Beschlusses zählt
+      // über die Zeitachse der Runde (siehe `listRoundMatches`).
+      getStore().listRoundMatches(roundId),
       getStore().listMembers(roundId), getStore().listAntraege({ roundId }),
     ]);
     setRules(sanitizeRules(round?.rules ?? DEFAULT_RULES));

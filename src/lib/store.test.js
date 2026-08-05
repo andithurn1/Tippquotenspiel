@@ -518,6 +518,45 @@ describe("Drehrad: der Store reicht den RUNDEN-Spieltag, nicht den Liga-Spieltag
     expect(ziehungen.length).toBeGreaterThan(0);
   });
 
+  // 🔴 Die dritte Prüffrage (05.08.2026): rechnet eine Stelle über die Spiele
+  // DIESER RUNDE oder über den ganzen Katalog? Die Zeitachse ist der Ort, an
+  // dem das am meisten wehtut — sie definiert den Runden-Spieltag selbst.
+  // Gemessen: über den Katalog liegt der Bundesliga-Spieltag 20 auf
+  // Runden-Spieltag 27, über die Spiele der Runde auf 26. Beide Zahlen waren
+  // gleichzeitig im Umlauf (Spielwahl und Narrenstand rechneten gefiltert,
+  // Store und Tippabgabe ungefiltert).
+  it("die Zeitachse des Stores ist die der RUNDE, nicht die des Katalogs", async () => {
+    const s = createMockStore();
+    const alle = await s.listMatches();
+    // Eine Runde über einen Ausschnitt: die Vereine von zwei Bundesliga-Spielen.
+    const zwei = alle.filter((m) => m.wettbewerb === "bl").slice(0, 2);
+    const teams = [...new Set(zwei.flatMap((m) => [m.home, m.away]))];
+    const runde = await s.createRound({
+      name: "Ausschnitt", adminId: "u-du", rules: DEFAULT_RULES, teamFilter: teams,
+    });
+
+    const rundenSpiele = await s.listRoundMatches(runde.id);
+    expect(rundenSpiele.length).toBeGreaterThan(0);
+    expect(rundenSpiele.length).toBeLessThan(alle.length);   // wirklich gefiltert
+    for (const m of rundenSpiele) {
+      expect(teams.some((t) => t === m.home || t === m.away)).toBe(true);
+    }
+
+    // Der Store muss dieselbe Achse benutzen wie ein Screen, der
+    // `listRoundMatches` lädt — sonst tragen beide verschiedene
+    // Runden-Spieltage.
+    const achse = zeitachse(rundenSpiele, DEFAULT_RULES.zeitachse);
+    const { spieltage } = await s.getDrehradZiehungen(runde.id);
+    expect(spieltage).toBe(achse.length);
+    // Gegenprobe: die Achse des ganzen Katalogs ist eine ANDERE Aussage.
+    const katalogAchse = zeitachse(alle, DEFAULT_RULES.zeitachse);
+    const spiel = rundenSpiele.find((m) => m.wettbewerb === "bl" && m.matchday === 20);
+    if (spiel) {
+      expect(rundenSpieltagVon(achse, spiel))
+        .not.toBe(rundenSpieltagVon(katalogAchse, spiel));
+    }
+  });
+
   it("der Plan deckt die ganze Runde ab, nicht nur 34 Spieltage", async () => {
     const s = createMockStore();
     const alle = await s.listMatches();

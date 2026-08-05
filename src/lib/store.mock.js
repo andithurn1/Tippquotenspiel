@@ -19,6 +19,7 @@ import { withSaisonPunkte } from "./saisonBoard";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
+import { filterMatchesByTeams } from "./roundStatus";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -128,7 +129,13 @@ export function createMockStore() {
     })),
     mitglieder: members.filter((m) => m.round_id === roundId)
       .map((m) => ({ userId: m.user_id, istAdmin: m.user_id === rounds.get(roundId)?.admin_id })),
-    achse: achse ?? zeitachse([...matches.values()], rules?.zeitachse),
+    // Ohne mitgegebene Achse selbst bauen — ebenfalls über die Spiele DIESER
+    // Runde, sonst kämen zwei verschiedene Runden-Spieltage heraus, je nachdem
+    // wer `beschlussLage` aufruft.
+    achse: achse ?? zeitachse(
+      filterMatchesByTeams([...matches.values()], rounds.get(roundId)?.team_filter),
+      rules?.zeitachse,
+    ),
   });
 
   // Der Stand VOR dem Rad — Grundlage von `getLeaderboard` UND
@@ -142,7 +149,10 @@ export function createMockStore() {
     const entries = roundTips.map(eintragVon);
     // Die Zeitachse EINMAL bauen: sie wird gleich dreimal gebraucht
     // (Beschluss-Lage, Drehrad-Plan, Runden-Spieltag der Tipps).
-    const achse = zeitachse([...matches.values()], rules?.zeitachse);
+    // ⚠️ Über die Spiele DIESER Runde, nicht über den Katalog — siehe
+    // `listRoundMatches`.
+    const rundenSpiele = filterMatchesByTeams([...matches.values()], round?.team_filter);
+    const achse = zeitachse(rundenSpiele, rules?.zeitachse);
     const { regelnFuer, amEnde } = beschlussLage(roundId, rules, achse);
     let board;
     // Verlaufsabhängige Regeln (Aufhol-Bonus, Saisonform) brauchen den ganzen
@@ -226,6 +236,24 @@ export function createMockStore() {
 
   return {
     async listMatches() { return [...matches.values()]; },
+
+    // 🔴 Die Spiele DIESER RUNDE — der ganze Katalog ist etwas anderes.
+    //
+    // `matches` trägt alle Wettbewerbe. Eine Runde hat aber einen
+    // `team_filter`, und alles, was „Spieltag der Runde" heißt, muss über IHRE
+    // Spiele gerechnet werden: die Zeitachse, und damit Joker-Verteilung,
+    // Budget-Perioden, Admin-Freigaben, Rad-Tage.
+    //
+    // Gemessen am 05.08.2026: über den Katalog gerechnet liegt der
+    // Bundesliga-Spieltag 20 auf Runden-Spieltag 27, über die Spiele der Runde
+    // auf 26 — und 7 von 42 Runden-Spieltagen enthielten gar kein Spiel dieser
+    // Runde. Beide Zahlen waren gleichzeitig im Umlauf: Spielwahl, Münz- und
+    // Narrenstand rechneten über die gefilterten Spiele, Store, Tippabgabe,
+    // Rad und Freigaben über den Katalog.
+    async listRoundMatches(roundId) {
+      const round = rounds.get(roundId);
+      return filterMatchesByTeams([...matches.values()], round?.team_filter);
+    },
     async getMatch(id) { return matches.get(id) ?? null; },
 
     // Spieltag öffnen = den Zustand EINFRIEREN (aktuell: das Big Game).

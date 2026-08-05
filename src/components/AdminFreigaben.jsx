@@ -44,7 +44,10 @@ export default function AdminFreigaben() {
 
   const laden = async () => {
     const [round, ms, leute, fg] = await Promise.all([
-      getStore().getRound(roundId), getStore().listMatches(),
+      getStore().getRound(roundId),
+      // ⚠️ Die Spiele DIESER Runde — eine Freigabe gilt für einen Runden-Spieltag,
+      // und der zählt über die Spiele der Runde (siehe `listRoundMatches`).
+      getStore().listRoundMatches(roundId),
       getStore().listMembers(roundId), getStore().listAdminFreigaben({ roundId }),
     ]);
     setRules(sanitizeRules(round?.rules ?? DEFAULT_RULES));
