@@ -131,8 +131,8 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 > ⚠️ **Nutzer-Aufgabe: `supabase/schema.sql` erneut im SQL-Editor ausführen**
 > (idempotent, komplett laufen lassen) — sonst fehlen live zwei Tabellen.
 
-**1868 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
-20 Commits.
+**1883 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
+25 Commits.
 
 #### ✅ Abgeräumt: die komplette offene Liste bis auf die Balance-Messung
 
@@ -249,13 +249,32 @@ Leaderboard-Verlauf um.
 
 #### 🟡 Offen, nach Wert sortiert
 
-1. **Vier der fünf Teil-Wirkungen aus `kontaktstellen.md`** — die fünfte
-   (`standAmTag`) ist behoben, siehe oben. Offen bleiben: Rad-Felder mit
-   Joker-/Narren-/Modifikator-Belohnung zahlen nicht aus · die
-   `klau`/`block`-Basiswahl · `adminFreigaben` ohne Speicherort ·
-   `letzteEinsaetze` fürs Rad.
+1. **`adminFreigaben` — die LETZTE der fünf Teil-Wirkungen.** Vier sind
+   behoben (siehe unten), diese nicht: `wer: "adminFreigabe"` lehnt an JEDER
+   Kontaktstelle ab, weil es keinen Speicherort gibt. Sie braucht vier Teile,
+   und ohne den vierten bleibt sie tot:
+   1. Tabelle `admin_freigaben` (`round_id`, `user_id`, `matchday`) samt RLS —
+      ⚠️ **schreiben darf nur der Admin der Runde**, sonst gibt sich jeder
+      selbst frei. ⚠️ Das heißt: `schema.sql` muss der Nutzer NOCHMAL laufen
+      lassen.
+   2. Store: `listAdminFreigaben({ roundId })` ·
+      `setAdminFreigabe({ roundId, userId, matchday, an })`, Mock + Supabase.
+   3. Verkabelung: in `Tippabgabe.jsx` und im Drehrad-`kontext` beider Stores
+      statt des heutigen `adminFreigaben: []`.
+      ⚠️ **`matchday` ist der RUNDEN-Spieltag** — siehe die Fehlerfamilie oben.
+   4. Eine Admin-Oberfläche zum Erteilen. Ohne sie ist die Einstellung weiter
+      unerreichbar, und der Baukasten-Grundsatz wäre wieder verletzt.
 2. L3/L4/L6 · die 16 Auslöser.
 3. **Balance-Messung** — `balanceSim.js` braucht Formkurven je Tipper.
+
+#### ✅ Vier der fünf Teil-Wirkungen aus `kontaktstellen.md` sind weg
+
+| Teil-Wirkung | Was daraus wurde |
+|---|---|
+| `standAmTag` schlüsselt nur über `matchday` | war nicht nur eine Kollision, sondern **Zukunftswissen** — `verlaufNachRundenSpieltag` in `zeitachse.js` |
+| Rad zahlt nur Punkte aus | `drehradBelohnungen()` — Joker in denselben Vorrat, Narren über `zusatz` in `kontoVerlauf`; Modifikator **gemeldet**, nicht verrechnet |
+| `letzteEinsaetze` fürs Rad leer | brauchte keine Ablage: die eigene Dreh-Historie IST sie. Abklingzeit 4 → 3 statt 12 Drehungen |
+| `klau`/`block`-Basiswahl offen | entschieden: **die LÄNGERE Abklingzeit gewinnt** (`duellBasis`) — die kürzere ließe die strengere Einstellung ins Leere laufen |
 
 ---
 

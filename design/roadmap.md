@@ -115,7 +115,7 @@ Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
   des RUNDEN-Spieltags; „kein Rad ohne Tipp" prüfte damit den falschen Tag,
   und `spieltage: 34` ließ die letzten acht Runden-Spieltage ohne Drehung.
 
-Test-Stand: **1864 grün**, Build sauber (Stand 2026-08-05).
+Test-Stand: **1883 grün**, Build sauber (Stand 2026-08-05).
 Vorher **1671 grün** (Stand 2026-08-03).
 Vorher stand hier **933 grün (28.07.)** — über eine Woche still, während die
 Suite um 738 Tests gewachsen ist. Genau die Drift, vor der der Kasten unten
