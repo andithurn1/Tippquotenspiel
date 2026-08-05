@@ -198,9 +198,33 @@ Vergleich, den `presetMerge` und die Teilbibliotheken bereits zeigen.
    früh bricht Abschnitt 1.
    Verdeckte Sichtbarkeit gilt nur, SOLANGE die Abstimmung läuft — danach
    wird gezeigt, sonst könnte niemand das Ergebnis nachvollziehen.
-5. ⚠️ **Erst danach die Wirkung**: ein angenommener Antrag ändert das Regelwerk
-   der Runde zum berechneten Spieltag. Das ist der Schritt, der die
-   Snapshot-Kante berührt — getrennt halten und einzeln prüfen.
+5. ✅ **GEBAUT (05.08.2026), bis auf das Einhängen in die Wertung** —
+   `src/lib/beschluss.js` + 16 Tests.
+   🔴 **Die FORM ist die halbe Sicherung.** Es gibt bewusst kein
+   `wendeBeschluesseAn(rules)`, das ein Regelwerk „aktualisiert", sondern
+   `regelwerkAmSpieltag(...)`: die Frage lautet immer **„welches Regelwerk gilt
+   an Spieltag N?"**. Damit ist die Rückwirkung aus Abschnitt 1 **strukturell
+   unmöglich** statt nur verboten — wer einen vergangenen Spieltag nachrechnet,
+   fragt nach genau diesem Spieltag und bekommt das damalige Regelwerk. Ein
+   „aktuelles" Regelwerk, das man versehentlich auf alte Tipps anwendet, gibt
+   es gar nicht. Dieselbe Idee wie beim eingefrorenen Quoten-Snapshot.
+   Weitere Punkte:
+   - **Chronologisch angewandt** (Wirkungs-Spieltag, dann Antragszeitpunkt,
+     dann Id). Zwei Beschlüsse auf denselben Bereich überschreiben einander —
+     ohne feste Reihenfolge hinge das Ergebnis daran, wie die Datenbank die
+     Zeilen zurückgibt, und zwei Spieler sähen verschiedene Regelwerke.
+   - **Die Verfassung wird beim ANWENDEN erneut geprüft**, nicht nur beim
+     Stellen: sie ist der Rahmen, den auch eine Mehrheit nicht bricht, und der
+     Admin kann sie zwischenzeitlich geändert haben. Ein so verworfener
+     Beschluss verschwindet aber NICHT still — er steht in `verworfen`, mit
+     Grund, und der Screen zeigt ihn. Eine Runde, die abgestimmt hat, muss
+     erfahren, warum nichts passiert ist.
+   - **Angewandt über `mergePresets`**, kein zweiter Weg (Abschnitt 4).
+   ⚠️ **Wirklich offen bleibt nur noch eines:** die Auswertung liest weiterhin
+   `round.rules`. `regelwerkAmSpieltag` hat schon einen echten Aufrufer (der
+   Screen zeigt „Stand der Regeln"), aber der Scoring-Pfad müsste den
+   Runden-Spieltag durchreichen. Das ist der Schritt, der die Snapshot-Kante
+   wirklich berührt — getrennt halten und einzeln prüfen.
 
 ---
 

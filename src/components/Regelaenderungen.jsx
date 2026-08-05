@@ -14,6 +14,7 @@ import {
   darfBeantragen, darfStimmen, zaehleAus, wirktAb,
   verstoesstGegenVerfassung, beschreibeMitbestimmung,
 } from "@/lib/regelAbstimmung";
+import { regelwerkAmSpieltag, beschreibeBeschluesse } from "@/lib/beschluss";
 import { C, MONO } from "@/lib/theme";
 
 // ── Schritt 4: Anträge stellen und darüber abstimmen ────────
@@ -27,9 +28,11 @@ import { C, MONO } from "@/lib/theme";
 // Wer freier bauen will, macht das in der Spielerstellung und teilt einen
 // Teil-Code — derselbe Weg, kein zweiter.
 //
-// ⚠️ Diese Ansicht STELLT und ZÄHLT nur. Ein angenommener Antrag ändert das
-// Regelwerk hier NICHT — das ist Schritt 5 der Spec und berührt die
-// Snapshot-Kante („nie rückwirkend"), deshalb ausdrücklich getrennt.
+// ⚠️ Diese Ansicht STELLT, ZÄHLT und ZEIGT den Stand — sie ändert die WERTUNG
+// nicht. `regelwerkAmSpieltag` (beschluss.js) beantwortet unten, welches
+// Regelwerk heute gilt; die Auswertung liest weiterhin `round.rules`. Das
+// Einhängen in den Auswertungs-Pfad berührt die Snapshot-Kante („nie
+// rückwirkend") und bleibt deshalb ausdrücklich ein eigener Schritt.
 export default function Regelaenderungen() {
   const { user } = useAuth();
   const { roundId } = useCurrentRound();
@@ -115,6 +118,17 @@ export default function Regelaenderungen() {
       await laden();
     } finally { setBusy(null); }
   };
+
+  // Schritt 5 der Spec: welches Regelwerk gilt HEUTE, nachdem Beschlüsse
+  // gegriffen haben? Bewusst über `regelwerkAmSpieltag` und nicht über ein
+  // „aktualisiertes" Regelwerk — die Frage lautet immer „an welchem
+  // Spieltag", dadurch ist eine Rückwirkung strukturell ausgeschlossen.
+  // ⚠️ Noch eine ANZEIGE: die Wertung selbst liest weiterhin `round.rules`.
+  // Das Einhängen in den Auswertungs-Pfad ist der letzte offene Schritt und
+  // steht ausdrücklich getrennt (er berührt die Snapshot-Kante).
+  const stand = regelwerkAmSpieltag({
+    rules, antraege, mitglieder: leute, spieltag: aktuellerSpieltag,
+  });
 
   return (
     <div style={{
@@ -290,10 +304,25 @@ export default function Regelaenderungen() {
               )}
             </div>
 
+            {/* Was ist bis heute wirklich wirksam geworden? */}
+            <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 16, paddingTop: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Stand der Regeln</div>
+              <p style={{ fontSize: 11.5, color: C.muted, margin: "4px 0 0", lineHeight: 1.45 }}>
+                {beschreibeBeschluesse(stand)}
+                {aktuellerSpieltag != null && ` Gerechnet für Spieltag ${aktuellerSpieltag}.`}
+              </p>
+              {stand.verworfen.map((v) => (
+                <p key={v.id} style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+                  {ASPEKTE.find((x) => x.key === v.aspekt)?.label ?? v.aspekt}: {v.grund}
+                </p>
+              ))}
+            </div>
+
             <p style={{ fontSize: 10.5, color: C.muted, marginTop: 14, lineHeight: 1.45 }}>
-              Ein angenommener Antrag wird hier noch nicht automatisch übernommen — das
-              ist der nächste Schritt. Ein Beschluss wirkt nie rückwirkend: ein bereits
-              abgegebener Tipp wird immer so gewertet, wie er beim Abgeben gezählt hätte.
+              Die Wertung selbst rechnet noch mit dem Regelwerk, mit dem die Runde
+              angelegt wurde — das Einhängen ist der letzte offene Schritt. Ein Beschluss
+              wirkt nie rückwirkend: ein bereits abgegebener Tipp wird immer so gewertet,
+              wie er beim Abgeben gezählt hätte.
             </p>
           </>
         )}
