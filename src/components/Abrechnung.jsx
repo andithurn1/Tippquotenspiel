@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { createMockOddsSource, scoreTip, toDisplay } from "@/lib/engine";
+import { createMockOddsSource, scoreTip, DEFAULT_RULES } from "@/lib/engine";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -19,25 +19,41 @@ import { C, MONO } from "@/lib/theme";
 
 
 // ── Eine Quelle: Engine rechnet, Store liefert das Leaderboard ──
-// Demo-Spieltag: kühner Tipp Jordanien 4:1 gegen Spanien, real 5:1.
-// Der Tipp von „Du" ist identisch zum Seed im Mock-Store, damit
-// Hero-Zahl und Tabellenplatz konsistent sind (alles Display-Punkte).
+//
+// 🔴 Diese Zahl ist die auffälligste der ganzen App — und sie stand bis
+// 05.08.2026 auf DEMO-Daten: ein fest verdrahteter Tipp, gewertet unter
+// `DEFAULT_RULES`, während die Tabelle darunter aus dem Store kam und unter
+// dem Regelwerk DER RUNDE gerechnet war. In jeder Runde, die nicht die
+// Vorgabe fährt, standen Hero-Zahl und Tabellenzeile desselben Spielers auf
+// verschiedenen Regeln. Dasselbe galt für die Aufschlüsselung darunter, der
+// gar kein `rules` übergeben wurde.
+//
+// Jetzt wird der ZULETZT GEWERTETE EIGENE TIPP gezeigt, unter dem Regelwerk,
+// das an dessen Spieltag galt (`getRegelnFuer`) — dieselbe Rechnung, die im
+// Leaderboard steht. Der Demo-Fall bleibt als Rückfall für eine Runde ohne
+// jeden gewerteten Tipp; ohne ihn stünde beim ersten Öffnen eine leere Fläche.
 const odds = createMockOddsSource();
-const snap = odds.getSnapshot("JOR-ESP");
-const result = odds.getResult("JOR-ESP");
-const DU_TIP = { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal", ""] } };
-const me = scoreTip(DU_TIP, result, snap);
-const TIP_REACTION = tipScenario(me);   // GIF nach Tipp-Genauigkeit (hier: „Hauchdünn")
-
-const DATA = {
-  spieltag: 14,
-  home: snap.home,
-  away: snap.away,
-  tippHome: DU_TIP.home, tippAway: DU_TIP.away,
-  realHome: result.home, realAway: result.away,
-  total: me.total,                              // Display-Punkte (skaliert)
-  dist: me.dist,
+const DEMO = {
+  snapshot: odds.getSnapshot("JOR-ESP"),
+  result: odds.getResult("JOR-ESP"),
+  tip: { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal", ""] } },
+  matchday: 14,
+  rules: DEFAULT_RULES,
 };
+
+// Ein Satz zur Wertung, ABGELEITET statt behauptet. Hier stand einmal fest
+// „Das reale 5:1 war ein Freak-Ergebnis … du warst nur ein Tor daneben" —
+// bei jedem anderen Tipp war das schlicht falsch.
+function wertungsSatz(s, actual) {
+  if (s.ebene === "exakt") return "Exakt getroffen — die volle Quote dieses Endstands.";
+  if (s.dist === 1) {
+    return `Beim ${actual.home}:${actual.away} warst du ein Tor daneben — die Nähe zahlt fast so viel `
+      + "wie ein exakter Treffer.";
+  }
+  if (s.ebene === "abstand") return "Die Sieghöhe stimmte — dafür zahlt die Abstands-Ebene.";
+  if (s.ebene === "tendenz") return "Sieger richtig, Ergebnis daneben — der Sieger-Boden trägt.";
+  return "Diesmal war nichts dabei. Die Quote des realen Ergebnisses hat niemand bezahlt.";
+}
 
 function useCountUp(target, run, ms = 1100) {
   const [v, setV] = useState(0);
@@ -70,6 +86,8 @@ export default function Abrechnung() {
   const [fair, setFair] = useState(false);  // Ranking-Toggle
   const [board, setBoard] = useState(null); // Leaderboard aus dem Store
   const [roundName, setRoundName] = useState(null);
+  // Der zuletzt gewertete eigene Tipp — samt dem Regelwerk seines Spieltags.
+  const [eigener, setEigener] = useState(null);
 
   useEffect(() => {
     let live = true;
@@ -79,8 +97,41 @@ export default function Abrechnung() {
     getStore().getRound(roundId)
       .then((r) => { if (live) setRoundName(r?.name ?? null); })
       .catch(() => {});
+    Promise.all([
+      getStore().getRoundEntries(roundId),
+      getStore().getRegelnFuer?.(roundId) ?? Promise.resolve(null),
+      getStore().getRound(roundId),
+    ]).then(([entries, lage, round]) => {
+      if (!live) return;
+      // Der JÜNGSTE gewertete Tipp — chronologisch, nicht nach Spieltags-Zahl:
+      // über mehrere Wettbewerbe sagt die Zahl nichts über die Reihenfolge.
+      const meine = (entries ?? [])
+        .filter((e) => e.userId === meId && e.result && e.snapshot)
+        .sort((a, b) => new Date(a.kickoff ?? 0) - new Date(b.kickoff ?? 0));
+      const letzter = meine[meine.length - 1] ?? null;
+      setEigener(letzter ? {
+        snapshot: letzter.snapshot, result: letzter.result, tip: letzter.tip,
+        matchday: letzter.matchday,
+        // Das Regelwerk, das an DIESEM Spieltag galt — dieselbe Quelle wie im
+        // Leaderboard. Ohne sie wäre eine beschlossene Änderung hier unsichtbar.
+        rules: (lage?.regelnFuer ? lage.regelnFuer(letzter) : null) ?? round?.rules ?? DEFAULT_RULES,
+      } : null);
+    }).catch(() => {});
     return () => { live = false; };
-  }, [roundId]);
+  }, [roundId, meId]);
+
+  const gezeigt = eigener ?? DEMO;
+  const me = scoreTip(gezeigt.tip, gezeigt.result, gezeigt.snapshot, gezeigt.rules);
+  const TIP_REACTION = tipScenario(me);   // GIF nach Tipp-Genauigkeit
+  const DATA = {
+    spieltag: gezeigt.matchday,
+    home: gezeigt.snapshot.home,
+    away: gezeigt.snapshot.away,
+    tippHome: gezeigt.tip.home, tippAway: gezeigt.tip.away,
+    realHome: gezeigt.result.home, realAway: gezeigt.result.away,
+    total: me.total,                              // Display-Punkte (skaliert)
+    dist: me.dist,
+  };
 
   useEffect(() => {
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -193,13 +244,13 @@ export default function Abrechnung() {
                 gezeigte Chips haben genau das fälschlich suggeriert. */}
             {lvl !== "aus" && (
               <div style={{ textAlign: "left" }}>
-                <Ertragsquellen tip={DU_TIP} actual={result} snap={snap} stufe={lvl} />
+                <Ertragsquellen tip={gezeigt.tip} actual={gezeigt.result} snap={gezeigt.snapshot}
+                  rules={gezeigt.rules} stufe={lvl} />
               </div>
             )}
             {lvl !== "aus" && (
               <p style={{ fontSize: 12.5, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
-                Das reale {DATA.realHome}:{DATA.realAway} war ein Freak-Ergebnis mit riesiger Quote. Du warst nur
-                ein Tor daneben — die Nähe zahlt fast so viel wie ein exakter Treffer.
+                {wertungsSatz(me, gezeigt.result)}
               </p>
             )}
           </div>
