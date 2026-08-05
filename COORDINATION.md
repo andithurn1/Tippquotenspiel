@@ -185,13 +185,38 @@ weitere Funde, alle dieselbe Frage:
 Gegenprobe: `grep "scoreTip(\|projectTip(\|toDisplay(" src/components/` — jeder
 Aufruf übergibt jetzt ein Regelwerk, und zwar das der Runde bzw. des Spieltags.
 
-**Für den nächsten: die Frage taugt weiter.** Zwei Formen hat sie:
-(a) rechnet der Screen denselben Wert ein zweites Mal? (b) rechnet er ihn mit
-DEM RICHTIGEN Regelwerk? Noch nicht durchgesehen: `Spielwahl.jsx` (nutzt die
-Runden-Regeln, aber nicht `regelnFuer` je Spieltag), `RundenHub.jsx`,
-`SaisonTipps.jsx`.
+**Dritter Durchgang: die restlichen Screens.** Vier weitere:
 
-Stand: 1903 Tests grün, Build sauber, 10 Commits.
+11. **`narrenstand.js`** (Runden-Hub + Schnellmenü) hatte genau die Fehler, die
+    in der Tippabgabe gerade behoben waren — Liga-Spieltage in Tipps, Verlauf
+    und Nachschlagen, dazu `kontoVerlauf` ohne `spieltage` (also 34 statt 42).
+    **Gemessen am Saisonende: Hub 340 Narren, Tippabgabe 420.** Die Rad-Narren
+    fehlten dort außerdem ganz. Neuer Test `narrenstand.test.js`.
+12. **Der Rad-Kontext wurde an DREI Stellen gebaut** (Store, Tippabgabe,
+    Hub). Beide Stores liefern ihn jetzt über **`getDrehradBelohnungen`** —
+    zusammen mit `getDrehradZiehungen` und `getRegelnFuer` die drei neuen
+    Store-Methoden dieser Runde. Wer einen Wert anzeigt, den die Wertung auch
+    kennt, fragt ihn ab statt ihn nachzubauen.
+13. **`Spielwahl.jsx`** zeigte Tipp-Fenster und Topspiel-Aufschlag über die
+    ganze Saison mit dem Regelwerk VOR jedem Beschluss. Jetzt `regelnVon(m)`
+    je Spiel; die Übersichtszahlen darüber bleiben beim Runden-Regelwerk (sie
+    zählen, sie werten nicht).
+14. 🔴 **`SaisonTipps.jsx` fragte den ungefilterten Katalog.** Der trägt sechs
+    Wettbewerbe mit Startterminen Wochen auseinander — **MLS 31.07.,
+    Bundesliga 28.08.** In einer reinen Bundesliga-Runde galt die Saison damit
+    am 05.08. schon als GESTARTET, und alle fensterlosen Saison-Wetten waren
+    drei Wochen vor dem ersten Spieltag eingefroren. Der Spieltags-Stand
+    ebenso: Katalog `{mls: 1}`, die Runde selbst bei 0. Die Rechnung ist als
+    **`saisonLage(matches, jetzt)`** nach `wettbewerbe.js` gewandert — sie
+    stand als Logik in einer Komponente und war dadurch nicht prüfbar.
+
+**Für den nächsten: die Frage taugt weiter.** Drei Formen hat sie:
+(a) rechnet der Screen denselben Wert ein zweites Mal? (b) rechnet er ihn mit
+DEM RICHTIGEN Regelwerk? (c) rechnet er über die Spiele DIESER RUNDE oder über
+den ganzen Katalog? Die dritte ist neu und hat sofort Fund 14 gebracht — es
+lohnt, sie auf die übrigen Screens anzuwenden.
+
+Stand: 1911 Tests grün, Build sauber, 15 Commits.
 
 ### 2026-08-05 (IV) · 🔴 **RICHTUNGSENTSCHEIDUNG des Nutzers: Gewichtung kommt ZULETZT**
 
