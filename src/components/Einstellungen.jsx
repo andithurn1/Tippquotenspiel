@@ -1,26 +1,45 @@
 "use client";
 
-import { createMockOddsSource, scoreTip, toDisplay, projectTip } from "@/lib/engine";
+import { useEffect, useMemo, useState } from "react";
+import { createMockOddsSource, scoreTip, toDisplay, projectTip, sanitizeRules, DEFAULT_RULES } from "@/lib/engine";
 import { usePrefs } from "@/components/PrefsProvider";
+import { getStore } from "@/lib/store";
+import { useCurrentRound } from "@/components/RoundProvider";
 import { PREF_META, LEVELS, LEVEL_LABEL, START_SCREENS, START_SCREEN_LABEL } from "@/lib/prefs";
 import BackLink from "@/components/BackLink";
 import { C, MONO } from "@/lib/theme";
 
 
-// Demo-Daten für die Live-Vorschau (dieselbe Engine wie überall).
+// Beispiel-Begegnung für die Live-Vorschau (dieselbe Engine wie überall).
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
 const RESULT = odds.getResult("JOR-ESP");
 const DEMO_TIP = { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal", ""] } };
-const ME = scoreTip(DEMO_TIP, RESULT, SNAP);
-const PROJ = projectTip({ home: 3, away: 1, goals: { home: ["Al-Naimat"], away: [] } }, SNAP);
-const ABR = {
-  total: ME.total, rank: 2,
-  boden: toDisplay(ME.parts.tendBoden), naehe: toDisplay(ME.parts.ergNaehe), tore: toDisplay(ME.goals.net),
-};
 
 export default function Einstellungen() {
   const { prefs, setPref } = usePrefs();
+  // 🔴 Auch die Vorschau rechnet mit dem Regelwerk DER RUNDE. Sie zeigt, wie
+  // die eigene Abrechnung gleich aussehen wird — mit `DEFAULT_RULES` standen
+  // dort Punktzahlen, die es in dieser Runde nicht gibt.
+  const { roundId } = useCurrentRound();
+  const [rules, setRules] = useState(DEFAULT_RULES);
+  useEffect(() => {
+    let live = true;
+    getStore().getRound(roundId)
+      .then((r) => { if (live) setRules(sanitizeRules(r?.rules ?? DEFAULT_RULES)); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [roundId]);
+
+  const ME = useMemo(() => scoreTip(DEMO_TIP, RESULT, SNAP, rules), [rules]);
+  const PROJ = useMemo(
+    () => projectTip({ home: 3, away: 1, goals: { home: ["Al-Naimat"], away: [] } }, SNAP, rules), [rules]);
+  const ABR = useMemo(() => ({
+    total: ME.total, rank: 2,
+    boden: toDisplay(ME.parts.tendBoden, rules),
+    naehe: toDisplay(ME.parts.ergNaehe, rules),
+    tore: toDisplay(ME.goals.net, rules),
+  }), [ME, rules]);
 
   return (
     <div style={{
@@ -46,12 +65,12 @@ export default function Einstellungen() {
           </p>
 
           <PrefSection meta={PREF_META.abrechnung} value={prefs.abrechnung} onChange={(v) => setPref("abrechnung", v)} />
-          <AbrechnungPreview lvl={prefs.abrechnung} />
+          <AbrechnungPreview lvl={prefs.abrechnung} abr={ABR} />
 
           <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
 
           <PrefSection meta={PREF_META.vorschau} value={prefs.vorschau} onChange={(v) => setPref("vorschau", v)} />
-          <VorschauPreview lvl={prefs.vorschau} />
+          <VorschauPreview lvl={prefs.vorschau} proj={PROJ} />
 
           <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
 
@@ -111,21 +130,24 @@ function PreviewFrame({ label, children }) {
   );
 }
 
-function AbrechnungPreview({ lvl }) {
+// `abr`/`proj` kommen als Prop herein, nicht aus einem Modul-Konstantenblock:
+// die Zahlen hängen jetzt am Regelwerk der Runde und entstehen deshalb erst
+// im Screen.
+function AbrechnungPreview({ lvl, abr }) {
   return (
     <PreviewFrame label="Abrechnung">
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>gewertet</div>
         <div style={{ fontFamily: MONO, fontWeight: 700, color: C.gold, fontSize: 40, lineHeight: 1.1, textShadow: `0 0 24px ${C.gold}55` }}>
-          +{ABR.total}
+          +{abr.total}
         </div>
-        <div style={{ fontFamily: MONO, fontSize: 13, color: C.mint, marginTop: 2 }}>Rang #{ABR.rank}</div>
+        <div style={{ fontFamily: MONO, fontSize: 13, color: C.mint, marginTop: 2 }}>Rang #{abr.rank}</div>
       </div>
       {lvl === "voll" && (
         <div style={{ marginTop: 10, display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
-          <MiniChip>Sieger-Boden +{ABR.boden}</MiniChip>
-          <MiniChip tone={C.coral}>Nähebonus +{ABR.naehe}</MiniChip>
-          {ABR.tore > 0 && <MiniChip tone={C.mint}>Tore +{ABR.tore}</MiniChip>}
+          <MiniChip>Sieger-Boden +{abr.boden}</MiniChip>
+          <MiniChip tone={C.coral}>Nähebonus +{abr.naehe}</MiniChip>
+          {abr.tore > 0 && <MiniChip tone={C.mint}>Tore +{abr.tore}</MiniChip>}
         </div>
       )}
       {lvl !== "aus" && (
@@ -142,7 +164,7 @@ function AbrechnungPreview({ lvl }) {
   );
 }
 
-function VorschauPreview({ lvl }) {
+function VorschauPreview({ lvl, proj }) {
   if (lvl === "aus") {
     return (
       <PreviewFrame label="Tippen">
@@ -156,23 +178,23 @@ function VorschauPreview({ lvl }) {
     <PreviewFrame label="Tippen">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Wenn exakt (Tipp 3:1)</span>
-        <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: C.gold }}>+{PROJ.points}</span>
+        <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: C.gold }}>+{proj.points}</span>
       </div>
       <div style={{ marginTop: 6 }}>
         <span style={{ fontSize: 11, color: C.gold, border: `1px solid ${C.gold}55`, borderRadius: 999, padding: "2px 8px" }}>
-          Mutig · Quote {PROJ.exaktQuote?.toFixed(1)}
+          Mutig · Quote {proj.exaktQuote?.toFixed(1)}
         </span>
       </div>
       {lvl === "voll" && (
         <div style={{ marginTop: 10, fontSize: 11.5, color: C.muted, lineHeight: 1.7 }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>Ergebnis-Nähe (roh)</span><span style={{ fontFamily: MONO }}>{PROJ.ergNaehe.toFixed(1)}</span>
+            <span>Ergebnis-Nähe (roh)</span><span style={{ fontFamily: MONO }}>{proj.ergNaehe.toFixed(1)}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>Tor-Potenzial (roh)</span><span style={{ fontFamily: MONO }}>+{PROJ.goalsNet.toFixed(1)}</span>
+            <span>Tor-Potenzial (roh)</span><span style={{ fontFamily: MONO }}>+{proj.goalsNet.toFixed(1)}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>Kombi bei exakt</span><span style={{ fontFamily: MONO }}>×{PROJ.combo}</span>
+            <span>Kombi bei exakt</span><span style={{ fontFamily: MONO }}>×{proj.combo}</span>
           </div>
         </div>
       )}
