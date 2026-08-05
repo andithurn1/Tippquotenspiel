@@ -151,7 +151,19 @@ Vergleich, den `presetMerge` und die Teilbibliotheken bereits zeigen.
 1. ✅ **GEBAUT (05.08.2026)** — `src/lib/regelAbstimmung.js` + 64 Tests.
    Datenform, `sanitize*`, `zaehleAus`, `wirktAb`,
    `verstoesstGegenVerfassung`, `konflikte`. Reine Funktionen, wie `voting.js`.
-2. Store: Anträge und Stimmen ablegen (Muster `saveVote`/`listVotes`).
+2. ✅ **GEBAUT (05.08.2026)** — Store: `createAntrag` · `listAntraege` ·
+   `saveAntragStimme` · `setAntragStatus`, in Mock und Supabase, dazu
+   `rule_proposals`/`rule_proposal_votes` samt RLS in `supabase/schema.sql`.
+   ⚠️ **Der Nutzer muss `schema.sql` erneut im SQL-Editor ausführen** (es ist
+   idempotent, einfach komplett laufen lassen), sonst fehlen die Tabellen live.
+   Zwei Entscheidungen dabei:
+   - **`listAntraege` liefert die Stimmen gleich mit** (`antrag.stimmen`), weil
+     `zaehleAus` genau diese Form erwartet — sonst setzte sie jeder Screen neu
+     zusammen.
+   - **`status`/`veto` ändert KEINE Policy.** Ein Abschluss gehört
+     serverseitig gesetzt; sonst erklärte jedes Mitglied den eigenen Antrag
+     für angenommen. RLS ist die Zugangs-, nicht die Spielregel — wer
+     beantragen darf, entscheidet `regelAbstimmung.js`.
 3. Verfassung in der Spielerstellung (Profi-Stufe).
 4. Antrags- und Abstimmungs-Screen.
 5. ⚠️ **Erst danach die Wirkung**: ein angenommener Antrag ändert das Regelwerk

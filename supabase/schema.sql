@@ -137,6 +137,43 @@ create table if not exists public.season_tips (
 
 create index if not exists season_tips_round_idx on public.season_tips (round_id);
 
+-- ── Regel-Abstimmung: Anträge und Stimmen ──────────────────
+-- ⚠️ NICHT zu verwechseln mit `votes` weiter oben. Dort stimmt die Runde ab,
+-- an welchen Spieltagen es einen Joker gibt (voting.js). Hier geht es um
+-- Änderungen AM REGELWERK (design/abstimmung-verfassung.md) — eine andere
+-- Frage, deshalb eigene Tabellen.
+--
+-- `aspekt`   = Aspekt-Schlüssel aus presetMerge.ASPEKTE. Zur Abstimmung steht
+--              immer ein GANZER Aspekt, nie ein Einzelfeld.
+-- `werte`    = die Felder genau dieses Aspekts (wie ein Teilbibliotheks-Eintrag).
+-- `gestellt_am` / `laeuft_bis` = RUNDEN-Spieltage, keine Zeitstempel. Die Frist
+--              wird beim Anlegen EINGEFROREN: eine später geänderte Dauer darf
+--              eine laufende Abstimmung nicht verschieben.
+create table if not exists public.rule_proposals (
+  id          uuid primary key default gen_random_uuid(),
+  round_id    uuid not null references public.rounds(id) on delete cascade,
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  aspekt      text not null,
+  werte       jsonb not null default '{}'::jsonb,
+  gestellt_am int,
+  laeuft_bis  int,
+  status      text not null default 'offen',
+  veto        boolean not null default false,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists rule_proposals_round_idx on public.rule_proposals (round_id);
+
+-- Eine Stimme je Nutzer und Antrag — dieselbe Regel wie bei der
+-- Joker-Abstimmung, hier über den Primärschlüssel erzwungen.
+create table if not exists public.rule_proposal_votes (
+  antrag_id  uuid not null references public.rule_proposals(id) on delete cascade,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  ja         boolean not null,
+  created_at timestamptz not null default now(),
+  primary key (antrag_id, user_id)
+);
+
 -- ── Kurzcode-Presets (Content-Creator-Codes) ───────────────
 -- Ein geteiltes Regelwerk unter einem kurzen, merkbaren Code — statt des
 -- langen Text-Creator-Codes. rules = per sanitizeRules() gültiges Regelwerk.
@@ -189,6 +226,8 @@ alter table public.tips          enable row level security;
 alter table public.presets       enable row level security;
 alter table public.votes         enable row level security;
 alter table public.season_tips   enable row level security;
+alter table public.rule_proposals      enable row level security;
+alter table public.rule_proposal_votes enable row level security;
 
 -- Profile: jeder Eingeloggte darf lesen; eigenes Profil schreiben.
 drop policy if exists "profiles_read"        on public.profiles;
@@ -308,4 +347,49 @@ create policy "season_tips_insert_self" on public.season_tips for insert to auth
                 where m.round_id = season_tips.round_id and m.user_id = auth.uid())
   );
 create policy "season_tips_update_self" on public.season_tips for update to authenticated
+  using (user_id = auth.uid());
+
+-- Regel-Anträge: sichtbar für Mitglieder derselben Runde — eine Abstimmung,
+-- die man nicht sehen kann, gibt es nicht. Stellen darf nur, wer Mitglied ist
+-- und in eigenem Namen; WER stellen darf (Antragsrecht, Verfassung,
+-- Sperrfrist) entscheidet regelAbstimmung.js, nicht die Datenbank — RLS ist
+-- die Zugangs-, nicht die Spielregel.
+-- ⚠️ `status`/`veto` ändert absichtlich NIEMAND über diese Policies: das ist
+-- ein Abschluss und gehört serverseitig (service_role) gesetzt, sonst könnte
+-- jedes Mitglied den eigenen Antrag für angenommen erklären.
+drop policy if exists "rule_proposals_read_same_round" on public.rule_proposals;
+drop policy if exists "rule_proposals_insert_self"     on public.rule_proposals;
+create policy "rule_proposals_read_same_round" on public.rule_proposals for select to authenticated
+  using (
+    exists (select 1 from public.round_members m
+            where m.round_id = rule_proposals.round_id and m.user_id = auth.uid())
+  );
+create policy "rule_proposals_insert_self" on public.rule_proposals for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and exists (select 1 from public.round_members m
+                where m.round_id = rule_proposals.round_id and m.user_id = auth.uid())
+  );
+
+-- Stimmen zu einem Antrag: lesbar für Mitglieder derselben Runde (die
+-- VERDECKTE Auszählung ist eine Anzeige-Entscheidung der Oberfläche, keine
+-- Zugangsfrage — sonst könnte niemand mehr auszählen). Abgeben und Ändern nur
+-- die eigene Stimme, und nur als Mitglied der Runde des Antrags.
+drop policy if exists "rule_proposal_votes_read_same_round" on public.rule_proposal_votes;
+drop policy if exists "rule_proposal_votes_insert_self"     on public.rule_proposal_votes;
+drop policy if exists "rule_proposal_votes_update_self"     on public.rule_proposal_votes;
+create policy "rule_proposal_votes_read_same_round" on public.rule_proposal_votes for select to authenticated
+  using (
+    exists (select 1 from public.rule_proposals p
+            join public.round_members m on m.round_id = p.round_id
+            where p.id = rule_proposal_votes.antrag_id and m.user_id = auth.uid())
+  );
+create policy "rule_proposal_votes_insert_self" on public.rule_proposal_votes for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and exists (select 1 from public.rule_proposals p
+                join public.round_members m on m.round_id = p.round_id
+                where p.id = rule_proposal_votes.antrag_id and m.user_id = auth.uid())
+  );
+create policy "rule_proposal_votes_update_self" on public.rule_proposal_votes for update to authenticated
   using (user_id = auth.uid());

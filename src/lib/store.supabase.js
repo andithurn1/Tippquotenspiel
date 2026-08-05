@@ -210,6 +210,58 @@ export function createSupabaseStore() {
       return orThrow(await sb.from("votes").select("*").eq("round_id", roundId));
     },
 
+    // ── Regel-Abstimmung: Anträge und Stimmen ───────────────
+    // ⚠️ Nicht `votes` — das ist die Joker-Abstimmung. Hier geht es um
+    // Änderungen am Regelwerk (design/abstimmung-verfassung.md), eigene
+    // Tabellen `rule_proposals` / `rule_proposal_votes`.
+    //
+    // `laeuft_bis` wird beim Anlegen EINGEFROREN (siehe Mock-Store und
+    // `wirktAb` in regelAbstimmung.js) — eine später geänderte Dauer
+    // verschiebt keine laufende Abstimmung.
+    async createAntrag({ roundId, userId, aspekt, werte, gestelltAm, laeuftBis }) {
+      return orThrow(await sb
+        .from("rule_proposals")
+        .insert({
+          round_id: roundId, user_id: userId, aspekt,
+          werte: werte ?? {},
+          gestellt_am: gestelltAm ?? null,
+          laeuft_bis: laeuftBis ?? null,
+        })
+        .select().single());
+    },
+
+    // Anträge samt Stimmen in EINER Abfrage — `zaehleAus` erwartet
+    // `antrag.stimmen`, das soll nicht jeder Screen selbst zusammensetzen.
+    async listAntraege({ roundId, status = null }) {
+      let q = sb.from("rule_proposals")
+        .select("*, rule_proposal_votes(user_id, ja)")
+        .eq("round_id", roundId);
+      if (status) q = q.eq("status", status);
+      const rows = orThrow(await q);
+      return (rows ?? []).map((r) => {
+        const { rule_proposal_votes: stimmen, ...rest } = r;
+        return { ...rest, stimmen: (stimmen ?? []).map((s) => ({ userId: s.user_id, ja: s.ja })) };
+      });
+    },
+
+    // Eine Stimme je Nutzer und Antrag (unique-Constraint) → upsert.
+    async saveAntragStimme({ antragId, userId, ja }) {
+      return orThrow(await sb
+        .from("rule_proposal_votes")
+        .upsert({ antrag_id: antragId, user_id: userId, ja: ja === true },
+          { onConflict: "antrag_id,user_id" })
+        .select().single());
+    },
+
+    async setAntragStatus({ antragId, status, veto }) {
+      const patch = {};
+      if (status != null) patch.status = status;
+      if (veto != null) patch.veto = veto === true;
+      if (!Object.keys(patch).length) return null;
+      return orThrow(await sb
+        .from("rule_proposals").update(patch).eq("id", antragId).select().single());
+    },
+
     // ── Saison-Wetten abgeben ───────────────────────────────
     // Ein Tipp je (Runde, Nutzer, Wette) → upsert auf dem Unique-Key.
     async saveSeasonTip({ roundId, userId, wettenId, wert }) {

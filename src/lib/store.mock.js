@@ -75,6 +75,12 @@ export function createMockStore() {
     user_id: t.userId, tip: t.tip, snapshot: SNAP,
   }));
   const votes = [];   // Joker-Abstimmung: { round_id, matchday, user_id, ja }
+  // Regel-Abstimmung (design/abstimmung-verfassung.md) — eine ANDERE Frage
+  // als `votes`: dort geht es um Joker-Spieltage, hier um Änderungen AM
+  // REGELWERK. Zwei Listen, damit sie sich nie vermischen.
+  const antraege = [];      // { id, round_id, user_id, aspekt, werte, gestellt_am, laeuft_bis, status, veto }
+  const antragStimmen = []; // { antrag_id, user_id, ja }
+  let antragZaehler = 0;
   const seasonTips = [];   // Saison-Wetten: { round_id, user_id, wetten_id, wert }
 
   const nameOf = (userId) => members.find((m) => m.user_id === userId)?.name ?? userId;
@@ -231,6 +237,63 @@ export function createMockStore() {
     },
     async listVotes({ roundId }) {
       return votes.filter((v) => v.round_id === roundId);
+    },
+
+    // ── Regel-Abstimmung: Anträge und Stimmen ───────────────
+    // ⚠️ Nicht `saveVote`/`listVotes` — das ist die Joker-Abstimmung. Hier geht
+    // es um Änderungen am Regelwerk (design/abstimmung-verfassung.md).
+    //
+    // `laeuftBis` wird beim Anlegen EINGEFROREN und nicht laufend nachgerechnet:
+    // ändert der Admin die Dauer, während eine Abstimmung läuft, darf sich
+    // deren Ende nicht mitten im Verfahren verschieben. `wirktAb` in
+    // regelAbstimmung.js liest genau dieses Feld.
+    async createAntrag({ roundId, userId, aspekt, werte, gestelltAm, laeuftBis }) {
+      const row = {
+        id: `antrag-${++antragZaehler}`,
+        round_id: roundId, user_id: userId, aspekt,
+        werte: werte ?? {},
+        gestellt_am: gestelltAm ?? null,
+        laeuft_bis: laeuftBis ?? null,
+        status: "offen",
+        veto: false,
+      };
+      antraege.push(row);
+      return row;
+    },
+
+    // Anträge samt ihren Stimmen — `zaehleAus` in regelAbstimmung.js erwartet
+    // `antrag.stimmen`, also wird die Liste hier schon zusammengesetzt statt in
+    // jedem Screen erneut.
+    async listAntraege({ roundId, status = null }) {
+      return antraege
+        .filter((a) => a.round_id === roundId && (!status || a.status === status))
+        .map((a) => ({
+          ...a,
+          stimmen: antragStimmen
+            .filter((s) => s.antrag_id === a.id)
+            .map((s) => ({ userId: s.user_id, ja: s.ja })),
+        }));
+    },
+
+    // Eine Stimme je Nutzer und Antrag; erneutes Abstimmen überschreibt —
+    // dieselbe Regel wie bei der Joker-Abstimmung.
+    async saveAntragStimme({ antragId, userId, ja }) {
+      const existing = antragStimmen.find((s) => s.antrag_id === antragId && s.user_id === userId);
+      if (existing) { existing.ja = ja === true; return existing; }
+      const row = { antrag_id: antragId, user_id: userId, ja: ja === true };
+      antragStimmen.push(row);
+      return row;
+    },
+
+    // Abschluss oder Veto. Der Store entscheidet NICHT, ob ein Antrag
+    // angenommen ist — das rechnet `zaehleAus`; hier wird nur festgehalten,
+    // was entschieden wurde.
+    async setAntragStatus({ antragId, status, veto }) {
+      const a = antraege.find((x) => x.id === antragId);
+      if (!a) return null;
+      if (status != null) a.status = status;
+      if (veto != null) a.veto = veto === true;
+      return a;
     },
 
     // ── Saison-Wetten abgeben ───────────────────────────────

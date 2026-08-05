@@ -326,6 +326,18 @@ describe("wirktAb", () => {
     expect(r.rundenSpieltag).toBeGreaterThan(14);
   });
 
+  // 🔴 Die Frist gehört eingefroren: ändert der Admin die Dauer, während eine
+  // Abstimmung läuft, darf sich deren Ende nicht mitten im Verfahren
+  // verschieben. Dieselbe Kante wie beim Quoten-Snapshot.
+  it("eine eingefrorene Frist schlägt die aktuelle Dauer", () => {
+    // gestellt an 5, gespeicherte Frist bis 8 — die Runde stellt danach auf
+    // Dauer 10 um. Ohne das Einfrieren käme 16 heraus statt 9.
+    const antrag = { gestelltAm: 5, laeuftBis: 8 };
+    expect(wirktAb(antrag, a({ dauer: 10 })).rundenSpieltag).toBe(9);
+    // Ohne gespeicherte Frist gilt die aktuelle Dauer.
+    expect(wirktAb({ gestelltAm: 5 }, a({ dauer: 10 })).rundenSpieltag).toBe(16);
+  });
+
   it("jenseits des Saisonendes gibt es kein Ergebnis, sondern einen Satz", () => {
     const r = wirktAb({ gestelltAm: 33 }, a(), { spieltage: 34 });
     expect(r.rundenSpieltag).toBeNull();

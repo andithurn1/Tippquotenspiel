@@ -396,7 +396,14 @@ export function wirktAb(antrag, abstimmung = DEFAULT_REGEL_ABSTIMMUNG, { spielta
     return { rundenSpieltag: null, grund: "Ohne Zeitpunkt des Antrags lässt sich nicht sagen, ab wann die Änderung gilt." };
   }
 
-  const ende = Math.round(start) + a.dauer;
+  // 🔴 Die Frist wird beim Stellen EINGEFROREN, nicht laufend nachgerechnet.
+  // Ändert der Admin `dauer`, während eine Abstimmung läuft, verschöbe sich
+  // sonst deren Ende mitten im Verfahren — dieselbe Kante wie beim
+  // Quoten-Snapshot und bei der eingefrorenen Gewichtung. `laeuftBis` legt der
+  // Store beim Anlegen ab; fehlt es (Altdaten, Vorschau vor dem Anlegen),
+  // wird es aus der aktuellen Dauer errechnet.
+  const gefroren = Number(antrag?.laeuftBis);
+  const ende = Number.isFinite(gefroren) ? Math.round(gefroren) : Math.round(start) + a.dauer;
   let ziel = a.wirkungAb === "vorlauf" ? ende + a.wirkungVorlauf : ende + 1;
 
   // 🔴 Die harte Kante (Spec Abschnitt 1): ein bereits GEÖFFNETER Spieltag

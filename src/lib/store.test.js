@@ -274,3 +274,79 @@ describe("Saison-Wetten (saveSeasonTip / listSeasonTips + Leaderboard)", () => {
     expect(board.map((b) => b.userId)).toEqual(["u-lena"]);
   });
 });
+
+// ⚠️ Nicht zu verwechseln mit `saveVote`/`listVotes` — das ist die
+// Joker-Abstimmung (welche Spieltage einen Joker haben). Hier geht es um
+// Anträge auf Änderungen AM REGELWERK (design/abstimmung-verfassung.md).
+describe("Regel-Abstimmung (createAntrag / listAntraege / saveAntragStimme)", () => {
+  const antragDaten = {
+    roundId: DEMO_ROUND_ID, userId: "u1", aspekt: "modifikatoren",
+    werte: { modCap: 2 }, gestelltAm: 5, laeuftBis: 8,
+  };
+
+  it("ein Antrag wird angelegt und kommt mit leerer Stimmliste zurück", async () => {
+    const s = createMockStore();
+    const angelegt = await s.createAntrag(antragDaten);
+    expect(angelegt.id).toBeTruthy();
+    expect(angelegt.status).toBe("offen");
+    expect(angelegt.veto).toBe(false);
+
+    const liste = await s.listAntraege({ roundId: DEMO_ROUND_ID });
+    expect(liste).toHaveLength(1);
+    expect(liste[0].aspekt).toBe("modifikatoren");
+    expect(liste[0].werte).toEqual({ modCap: 2 });
+    expect(liste[0].stimmen).toEqual([]);
+  });
+
+  // Die Frist wird beim Anlegen eingefroren — `wirktAb` liest genau dieses
+  // Feld, damit eine später geänderte Dauer keine laufende Abstimmung
+  // verschiebt.
+  it("die Frist wird mitgespeichert, nicht laufend nachgerechnet", async () => {
+    const s = createMockStore();
+    await s.createAntrag(antragDaten);
+    const [a] = await s.listAntraege({ roundId: DEMO_ROUND_ID });
+    expect(a.gestellt_am).toBe(5);
+    expect(a.laeuft_bis).toBe(8);
+  });
+
+  it("Stimmen hängen am Antrag, und die letzte je Nutzer gilt", async () => {
+    const s = createMockStore();
+    const a = await s.createAntrag(antragDaten);
+    await s.saveAntragStimme({ antragId: a.id, userId: "u1", ja: true });
+    await s.saveAntragStimme({ antragId: a.id, userId: "u2", ja: false });
+    // Dieselbe Person stimmt um.
+    await s.saveAntragStimme({ antragId: a.id, userId: "u2", ja: true });
+
+    const [geladen] = await s.listAntraege({ roundId: DEMO_ROUND_ID });
+    expect(geladen.stimmen).toHaveLength(2);
+    expect(geladen.stimmen.find((v) => v.userId === "u2").ja).toBe(true);
+  });
+
+  it("Stimmen eines Antrags landen nicht bei einem anderen", async () => {
+    const s = createMockStore();
+    const a = await s.createAntrag(antragDaten);
+    const b = await s.createAntrag({ ...antragDaten, aspekt: "saison" });
+    await s.saveAntragStimme({ antragId: a.id, userId: "u1", ja: true });
+
+    const liste = await s.listAntraege({ roundId: DEMO_ROUND_ID });
+    expect(liste.find((x) => x.id === a.id).stimmen).toHaveLength(1);
+    expect(liste.find((x) => x.id === b.id).stimmen).toHaveLength(0);
+  });
+
+  it("der Abschluss lässt sich festhalten und filtern", async () => {
+    const s = createMockStore();
+    const a = await s.createAntrag(antragDaten);
+    await s.createAntrag({ ...antragDaten, aspekt: "saison" });
+    await s.setAntragStatus({ antragId: a.id, status: "angenommen" });
+
+    expect(await s.listAntraege({ roundId: DEMO_ROUND_ID, status: "angenommen" })).toHaveLength(1);
+    expect(await s.listAntraege({ roundId: DEMO_ROUND_ID, status: "offen" })).toHaveLength(1);
+    expect(await s.listAntraege({ roundId: DEMO_ROUND_ID })).toHaveLength(2);
+  });
+
+  it("ein Antrag einer anderen Runde taucht nicht auf", async () => {
+    const s = createMockStore();
+    await s.createAntrag({ ...antragDaten, roundId: "andere-runde" });
+    expect(await s.listAntraege({ roundId: DEMO_ROUND_ID })).toHaveLength(0);
+  });
+});
