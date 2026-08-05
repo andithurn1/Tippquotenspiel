@@ -100,7 +100,26 @@ export default function Tippabgabe({ matchId }) {
   const [h, setH] = useState(2);
   const [a, setA] = useState(1);
   const [roundName, setRoundName] = useState(null);
-  const [RULES, setRules] = useState(DEFAULT_RULES);
+  // 🔴 Das Regelwerk DIESES Spieltags, nicht das der Runde.
+  //
+  // Beschlossene Regeländerungen wirken ab ihrem Spieltag — die Wertung nimmt
+  // sie über `regelnFuer` (siehe `scoreLeaderboard`). Dieser Screen las
+  // dagegen `round.rules`, also den Stand vor jedem Beschluss: der Spieler
+  // plante seinen Tipp unter Regeln, unter denen er nicht gewertet wird, und
+  // die Vorschau nannte eine Punktzahl, die es nicht gibt.
+  //
+  // Der ganze Screen dreht sich um EIN Spiel, deshalb gilt hier durchgehend
+  // das Regelwerk von dessen Spieltag — nicht nur für die Vorschau, sondern
+  // auch für Joker-Prüfung, Budget und Klassen, die derselben Wertung
+  // vorgreifen.
+  const [rundenRegeln, setRules] = useState(DEFAULT_RULES);
+  const [beschlussLage, setBeschlussLage] = useState(null);
+  const RULES = useMemo(() => {
+    if (!beschlussLage?.regelnFuer || !match) return rundenRegeln;
+    return beschlussLage.regelnFuer({
+      wettbewerb: wettbewerbVon(match), matchday: match.matchday ?? null,
+    }) ?? rundenRegeln;
+  }, [beschlussLage, match, rundenRegeln]);
   const scorer = RULES.markets.goals;
   const [picks, setPicks] = useState(null);
   const [done, setDone] = useState(false);
@@ -193,6 +212,9 @@ export default function Tippabgabe({ matchId }) {
       setRoundName(r?.name ?? null);
       setRules(r?.rules ?? DEFAULT_RULES);
     }).catch(() => {});
+    (getStore().getRegelnFuer?.(roundId) ?? Promise.resolve(null))
+      .then((lage) => { if (live) setBeschlussLage(lage ?? null); })
+      .catch(() => {});
     return () => { live = false; };
   }, [roundId]);
 
