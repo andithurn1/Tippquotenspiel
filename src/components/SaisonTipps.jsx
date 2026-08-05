@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { getStore } from "@/lib/store";
+import { filterMatchesByTeams } from "@/lib/roundStatus";
 import { freigabeStatus } from "@/lib/saisonwetten";
-import { aktuellerSpieltag, istEchterWettbewerb, wettbewerbVon } from "@/lib/wettbewerbe";
+import { saisonLage } from "@/lib/wettbewerbe";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
@@ -27,7 +28,16 @@ export default function SaisonTipps() {
     Promise.all([getStore().getRound(roundId), getStore().listMatches()]).then(([round, ms]) => {
       if (!live) return;
       setSaison(round?.rules?.saison ?? { enabled: false, wetten: [] });
-      setMatches(ms);
+      // 🔴 NUR die Spiele DIESER Runde. Der Katalog enthält alle Wettbewerbe,
+      // und sie starten Wochen auseinander — gemessen am 05.08.2026: die MLS
+      // hat am 31.07. angefangen, die Bundesliga fängt am 28.08. an. Ungefiltert
+      // war `gestartet` in einer reinen Bundesliga-Runde deshalb schon jetzt
+      // `true`, und ALLE fensterlosen Saison-Wetten waren drei Wochen vor dem
+      // ersten Spieltag eingefroren. Genau die Falle, vor der der Kommentar
+      // weiter unten beim Demo-Länderspiel warnt — nur eine Ebene höher.
+      // Auch `aktuellerSpieltag` betraf es: ganzer Katalog `{mls: 1}`, die
+      // Runde selbst steht bei 0.
+      setMatches(filterMatchesByTeams(ms, round?.team_filter));
     });
     return () => { live = false; };
   }, [roundId]);
@@ -55,18 +65,11 @@ export default function SaisonTipps() {
     return [...s].sort((a, b) => a.localeCompare(b));
   }, [matches]);
 
-  // Saisonstart = erster Anpfiff in einem ECHTEN Wettbewerb. Wetten OHNE
-  // Freischalt-Fenster sind danach zu — sie gehören vor die Saison.
-  // Die Einschränkung auf echte Wettbewerbe ist nicht kosmetisch: das
-  // Demo-Länderspiel JOR-ESP liegt in der Vergangenheit und steckt in JEDEM
-  // Match-Katalog, auch im Seed der Live-DB. Ohne sie wären alle fensterlosen
-  // Saison-Wetten von Anfang an eingefroren — auch in einer frischen Runde,
-  // deren Bundesliga erst in Wochen anfängt.
-  const gestartet = matches.some((m) => istEchterWettbewerb(wettbewerbVon(m)) && new Date(m.kickoff) <= Date.now());
-  // Wetten MIT Fenster richten sich nach dem Spieltag ihres Wettbewerbs: „Wer
-  // gewinnt die Champions League?" öffnet erst, wenn die Ligaphase weit genug
-  // ist, und schließt wieder — sonst wüsste, wer später tippt, schlicht mehr.
-  const stand = useMemo(() => aktuellerSpieltag(matches), [matches]);
+  // Saisonstart und Spieltags-Stand kommen aus EINER Funktion (`saisonLage` in
+  // wettbewerbe.js) — die Begründungen stehen dort. Kurz: gerechnet wird über
+  // die Spiele DIESER Runde, das Demo-Länderspiel und fremde Wettbewerbe
+  // zählen nicht mit.
+  const { gestartet, stand } = useMemo(() => saisonLage(matches), [matches]);
   const statusVon = (w) => (w.abSpieltag == null
     ? { offen: !gestartet, zustand: gestartet ? "vorbei" : "immer",
         text: gestartet ? "Saison läuft — vor dem 1. Spieltag abzugeben" : "jederzeit abgebbar" }

@@ -126,3 +126,29 @@ export function aktuellerSpieltag(matches = [], jetzt = Date.now()) {
   out.default = hoechster;
   return out;
 }
+
+// ── Die Lage der SAISON aus Sicht einer RUNDE ───────────────
+//
+// Zwei Werte, die zusammengehören und beide dieselbe Voraussetzung haben:
+// gerechnet wird über die Spiele DIESER RUNDE, nicht über den Katalog.
+//
+// 🔴 Gemessen am 05.08.2026: der Katalog trägt sechs Wettbewerbe, die Wochen
+// auseinander starten (MLS 31.07., Bundesliga 28.08.). `SaisonTipps.jsx` fragte
+// den ungefilterten Katalog — in einer reinen Bundesliga-Runde galt die Saison
+// damit als GESTARTET, und alle fensterlosen Wetten waren drei Wochen vor dem
+// ersten Spieltag eingefroren. Dieselbe Falle wie beim Demo-Länderspiel unten,
+// nur eine Ebene höher: dort ein fremdes Spiel, hier ein fremder Wettbewerb.
+//
+// `matches` muss deshalb bereits auf die Runde gefiltert sein
+// (`filterMatchesByTeams` mit `rounds.team_filter`).
+export function saisonLage(matches = [], jetzt = Date.now()) {
+  const echte = (Array.isArray(matches) ? matches : [])
+    .filter((m) => istEchterWettbewerb(wettbewerbVon(m)));
+  return {
+    // Saisonstart = erster Anpfiff in einem ECHTEN Wettbewerb der Runde.
+    // Wetten OHNE Freischalt-Fenster sind danach zu — sie gehören davor.
+    gestartet: echte.some((m) => new Date(m.kickoff) <= jetzt),
+    // Wetten MIT Fenster richten sich nach dem Spieltag IHRES Wettbewerbs.
+    stand: aktuellerSpieltag(matches),
+  };
+}

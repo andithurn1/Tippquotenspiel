@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   WETTBEWERBE, PHASEN, wettbewerbLabel, phasenLabel, istKo,
-  wettbewerbVon, phaseVon, wettbewerbeIn, verteilung, istEchterWettbewerb,
+  wettbewerbVon, phaseVon, wettbewerbeIn, verteilung, istEchterWettbewerb, saisonLage,
 } from "./wettbewerbe";
 
 describe("Wettbewerbs-Katalog", () => {
@@ -71,5 +71,49 @@ describe("wettbewerbeIn & verteilung", () => {
 
   it("leere Liste ergibt keine Verteilung (keine Division durch null)", () => {
     expect(verteilung([])).toEqual([]);
+  });
+});
+
+// 🔴 Der Befund vom 05.08.2026: `SaisonTipps.jsx` fragte den UNGEFILTERTEN
+// Match-Katalog. Der trägt sechs Wettbewerbe, die Wochen auseinander starten —
+// gemessen: MLS am 31.07., Bundesliga am 28.08. In einer reinen
+// Bundesliga-Runde galt die Saison damit schon als gestartet, und ALLE
+// fensterlosen Saison-Wetten waren drei Wochen vor dem ersten Spieltag
+// eingefroren.
+describe("saisonLage — die Saison DIESER Runde, nicht die des Katalogs", () => {
+  const spiel = (wettbewerb, kickoff, matchday = 1) => ({
+    id: `${wettbewerb}-${matchday}`, wettbewerb, matchday, kickoff,
+    home: "A", away: "B",
+  });
+  const JETZT = new Date("2026-08-05T12:00:00Z").getTime();
+
+  const MLS = spiel("mls", "2026-07-31T23:00:00Z");
+  const BL = spiel("bl", "2026-08-28T18:30:00Z");
+
+  it("ein fremder Wettbewerb startet die Saison NICHT mit", () => {
+    // Beide zusammen (so kam der Katalog herein): sieht gestartet aus.
+    expect(saisonLage([MLS, BL], JETZT).gestartet).toBe(true);
+    // Nur die Spiele der Runde: die Bundesliga hat noch nicht angefangen.
+    expect(saisonLage([BL], JETZT).gestartet).toBe(false);
+  });
+
+  it("das Demo-Länderspiel zählt nicht als Saisonstart", () => {
+    // `wettbewerb: "demo"` ist kein echter Wettbewerb — es liegt in jedem
+    // Katalog und in der Vergangenheit.
+    const demo = spiel("demo", "2024-01-01T18:00:00Z");
+    expect(saisonLage([demo, BL], JETZT).gestartet).toBe(false);
+  });
+
+  it("der Spieltags-Stand zählt je Wettbewerb und nur über die Runde", () => {
+    const mitMls = saisonLage([MLS, BL], JETZT).stand;
+    expect(mitMls.mls).toBe(1);
+    // Ohne die MLS steht die Runde bei 0 — es hat noch nichts stattgefunden.
+    const nurBl = saisonLage([BL], JETZT).stand;
+    expect(nurBl.mls).toBeUndefined();
+    expect(nurBl.bl ?? nurBl.default).toBe(0);
+  });
+
+  it("ohne Spiele gilt die Saison als nicht gestartet", () => {
+    expect(saisonLage([], JETZT).gestartet).toBe(false);
   });
 });
