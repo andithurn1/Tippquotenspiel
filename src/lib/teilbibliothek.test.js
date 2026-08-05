@@ -24,6 +24,9 @@ const AENDERUNGEN = {
   saison: { saison: { ...DEFAULT_RULES.saison, enabled: true, gewicht: 1.5 } },
   maerkte: { oddsMode: "average" },
   anzeige: { displayScale: 20 },
+  mitbestimmung: {
+    regelAbstimmung: { ...DEFAULT_RULES.regelAbstimmung, enabled: true, mehrheit: "zweidrittel" },
+  },
 };
 
 // Alle Top-Level-Felder aus DEFAULT_RULES außer „name" (das gehört zu keinem

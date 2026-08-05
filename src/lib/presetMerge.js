@@ -107,6 +107,22 @@ export const ASPEKTE = [
     // ebenso auf `k`, `m` und die Kombi-Stufen, die in anderen Aspekten liegen.
     keys: ["displayScale", "perGameCap", "reglerFeinheit"],
   },
+  {
+    key: "mitbestimmung",
+    label: "Mitbestimmung",
+    hint: "Ob die Runde über Regeländerungen abstimmt — und welchen Rahmen die Verfassung dafür setzt.",
+    // 🔴 Dieser Aspekt ist der EINZIGE, über den nie abgestimmt werden kann
+    // (design/abstimmung-verfassung.md Abschnitt 6: „Abstimmung über die
+    // Verfassung selbst — dann ist sie keine"). Durchgesetzt wird das in
+    // `regelAbstimmung.js` über `MITBESTIMMUNG_ASPEKT`, nicht hier: hier ist
+    // er ein ganz normaler Aspekt, damit er beim Mischen wandert und im
+    // Creator-Code mitreist. Ein Creator teilt seine ganze Runden-Idee, und
+    // „wie entscheidet ihr" gehört dazu.
+    // Beide Blöcke zusammen, weil sie sich gegenseitig bedingen: eine
+    // Verfassung ohne Abstimmung regelt nichts, eine Abstimmung ohne
+    // Verfassung hat keinen Rahmen.
+    keys: ["verfassung", "regelAbstimmung"],
+  },
 ];
 
 export const ASPEKT_KEYS = ASPEKTE.map((a) => a.key);

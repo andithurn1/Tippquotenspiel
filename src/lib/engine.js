@@ -13,6 +13,10 @@ import { sanitizeMuenzTakt, DEFAULT_MUENZ_TAKT, MUENZ_TAKT_LIMITS } from "./muen
 import { sanitizeLimitKlassen, DEFAULT_LIMIT_KLASSEN } from "./limitKlassen";
 import { sanitizeJokerBasisKarte, DEFAULT_BASIS } from "./jokerBasis";
 import { sanitizeDrehrad, DEFAULT_DREHRAD } from "./drehrad";
+import {
+  sanitizeVerfassung, sanitizeRegelAbstimmung,
+  DEFAULT_VERFASSUNG, DEFAULT_REGEL_ABSTIMMUNG,
+} from "./regelAbstimmung";
 
 
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
@@ -284,6 +288,16 @@ export const DEFAULT_RULES = {
   // Drehrad zieht aus einer Tabelle, die der Admin selbst schreibt. Katalog +
   // Ziehung in drehrad.js. Standard aus.
   drehrad: { ...DEFAULT_DREHRAD },
+
+  // ── Mitbestimmung: Verfassung + Regel-Abstimmung ──
+  // Die Runde beschließt Änderungen AM REGELWERK, der Admin legt mit der
+  // Verfassung den Rahmen fest, den auch eine Mehrheit nicht bricht.
+  // ⚠️ Nicht zu verwechseln mit `joker.abstimmung` — das ist die
+  // Joker-Abstimmung (an welchen Spieltagen es einen Joker gibt, voting.js),
+  // eine ganz andere Frage. Katalog + Auszählung in regelAbstimmung.js.
+  // Beide Standard aus.
+  verfassung: { ...DEFAULT_VERFASSUNG },
+  regelAbstimmung: { ...DEFAULT_REGEL_ABSTIMMUNG },
 
   // ── Limitierungsklassen: benannte Kontingente über mehrere Joker-Arten ──
   // Eine Klasse fasst Joker-Arten zu einem gemeinsamen Deckel zusammen, mit
@@ -575,6 +589,8 @@ export function sanitizeRules(partial = {}) {
     limitKlassen: sanitizeLimitKlassen(src.limitKlassen),
     jokerBasis: sanitizeJokerBasisKarte(src.jokerBasis),
     drehrad: sanitizeDrehrad(src.drehrad),
+    verfassung: sanitizeVerfassung(src.verfassung),
+    regelAbstimmung: sanitizeRegelAbstimmung(src.regelAbstimmung),
   };
 }
 

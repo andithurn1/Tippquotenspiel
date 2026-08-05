@@ -422,4 +422,56 @@ export const TEILBIBLIOTHEKEN = [
       },
     ],
   },
+  {
+    // ⚠️ Die Einträge setzen bewusst BEIDE Blöcke gemeinsam, wo sie
+    // zusammengehören: eine Verfassung ohne Abstimmung regelt nichts, eine
+    // Abstimmung ohne Verfassung hat keinen Rahmen. Und keiner setzt
+    // `sperrfrist: 0` — ohne Sperrfrist wird derselbe Antrag zur Dauerschleife
+    // (siehe `konflikte` in regelAbstimmung.js).
+    aspekt: "mitbestimmung",
+    eintraege: [
+      {
+        key: "adminEntscheidet", label: "Der Admin entscheidet",
+        desc: "Über die Regeln wird nicht abgestimmt — sie stehen fest, wie der Admin sie angelegt hat. Der einfachste Fall.",
+        werte: {
+          regelAbstimmung: { enabled: false },
+          verfassung: { enabled: false },
+        },
+      },
+      {
+        key: "alleStimmenAb", label: "Alle stimmen ab",
+        desc: "Jeder darf vorschlagen, die einfache Mehrheit entscheidet — mindestens die Hälfte muss sich beteiligen. Eine Änderung gilt ab dem nächsten Spieltag.",
+        werte: {
+          regelAbstimmung: {
+            enabled: true, wer: "alle", mehrheit: "einfach", quorum: 0.5,
+            antragsrecht: "alle", sperrfrist: 4,
+          },
+          verfassung: { enabled: false },
+        },
+      },
+      {
+        key: "kernGeschuetzt", label: "Der Kern ist geschützt",
+        desc: "Abgestimmt werden darf, aber die Wertung selbst bleibt unangetastet — nur was drumherum passiert, steht zur Wahl.",
+        werte: {
+          regelAbstimmung: {
+            enabled: true, wer: "alle", mehrheit: "einfach", quorum: 0.5,
+            antragsrecht: "alle", sperrfrist: 4,
+          },
+          verfassung: { enabled: true, gesperrt: ["naehe", "kombi", "underdog"] },
+        },
+      },
+      {
+        key: "hoheHuerde", label: "Hohe Hürde",
+        desc: "Zwei Drittel müssen dafür sein, drei Viertel müssen sich beteiligen, und eine Änderung wirkt erst mit Vorlauf. Regeln ändern sich hier selten — dafür trägt sie dann wirklich die Runde.",
+        werte: {
+          regelAbstimmung: {
+            enabled: true, wer: "nurAktive", mehrheit: "zweidrittel", quorum: 0.75,
+            antragsrecht: "alle", sperrfrist: 6,
+            wirkungAb: "vorlauf", wirkungVorlauf: 2,
+          },
+          verfassung: { enabled: false },
+        },
+      },
+    ],
+  },
 ];
