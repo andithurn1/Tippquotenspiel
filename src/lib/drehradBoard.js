@@ -138,16 +138,36 @@ export function drehradZiehungen({ rules, rundenId, userIds = [], spieltage = 34
     // Spielers, die Reihenfolge muss deshalb stimmen.
     const eigeneSpieltage = [...(plan.proSpieler?.[userId] ?? [])].sort((a, b) => a - b);
     const bisherige = []; // Feld-Ids dieses Spielers, neueste zuerst
+    // 🔴 Die eigene Dreh-Historie IST die Abklingzeit-Historie des Rads
+    // (design/kontaktstellen.md, vierte Teil-Wirkung). Sie wurde bisher von
+    // außen erwartet und war überall leer — ein am `jokerBasis.standard`
+    // gesetzter `abklingzeit`-Wert blieb fürs Rad damit wirkungslos, obwohl er
+    // für echte Joker längst greift.
+    //
+    // Bauen muss man sie nicht: dieser Loop erzeugt sie gerade. Die Drehungen
+    // laufen chronologisch (`sort` oben), also steht beim Prüfen von Spieltag N
+    // genau das drin, was davor gefallen ist — und nichts aus der Zukunft.
+    //
+    // ⚠️ Ein von außen mitgegebener `letzteEinsaetze`-Eintrag wird NICHT
+    // verworfen, sondern ergänzt: der Aufrufer kann eine Historie aus einer
+    // anderen Quelle beisteuern (etwa aus einer echten Ablage), und beide
+    // zusammen sind die Wahrheit.
+    const eigeneDrehungen = []; // [{ jokerArt, spieltag }], für die Abklingzeit
     for (const spieltag of eigeneSpieltage) {
       if (kontext) {
-        const ctx = kontextFuer(kontext, userId, spieltag, proSpieltag);
+        const ctx = kontextFuer(
+          { ...kontext, letzteEinsaetze: [...(kontext.letzteEinsaetze ?? []), ...eigeneDrehungen] },
+          userId, spieltag, proSpieltag,
+        );
         const erlaubnis = darfEinsetzen(basis, userId, ctx, DREHRAD_JOKER_ART);
-        if (!erlaubnis.erlaubt) continue; // wer/hatGetippt lehnt ab — hier wird nicht gezogen
+        if (!erlaubnis.erlaubt) continue; // wer/hatGetippt/Abklingzeit lehnt ab
       }
       const feld = ziehe(rules.drehrad, { rundenId, userId, spieltag, bisherige });
       if (!feld) continue; // kein gültiges Rad — nichts zu ziehen
       ziehungen.push({ userId, spieltag, feldId: feld.id });
       bisherige.unshift(feld.id);
+      // Diese Drehung zählt ab jetzt für die Abklingzeit der nächsten.
+      eigeneDrehungen.push({ userId, jokerArt: DREHRAD_JOKER_ART, spieltag });
     }
   }
   return ziehungen;

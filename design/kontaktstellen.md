@@ -414,9 +414,16 @@ Einschränkung benannt wurde und durch Schritt 5 nicht behoben wird:
 - **`kontext.adminFreigaben`** (Schritt 1): weiterhin immer leer, mangels
   Speicherort für Admin-Freigaben — `wer: "adminFreigabe"` lehnt an JEDER
   Kontaktstelle konsequent ab, die diesen Kontext nutzt (Joker, Rad).
-- **`letzteEinsaetze` fürs Rad** (Schritt 3, Nachtrag): weiterhin immer leer
-  — ein `abklingzeit`-Wert am Rad bleibt wirkungslos, obwohl er für echte
-  Joker längst greift.
+- ~~**`letzteEinsaetze` fürs Rad**~~ ✅ **BEHOBEN (05.08.2026).** Der Fehler
+  war die Frage: die Historie musste gar nicht von außen kommen — **die eigene
+  Dreh-Historie IST die Abklingzeit-Historie des Rads**, und `drehradZiehungen`
+  erzeugt sie gerade. Die Drehungen laufen chronologisch, beim Prüfen von
+  Spieltag N steht also genau das drin, was davor gefallen ist, und nichts aus
+  der Zukunft. Ein von außen mitgegebener Eintrag wird nicht verworfen,
+  sondern ergänzt.
+  Gemessen an einem Rad, das ohne Bremse an jedem Spieltag dreht:
+  Abklingzeit 0 → 12 Drehungen, 2 → 6 (jeder zweite), 4 → 3 (jeder vierte).
+  Vorher waren es immer 12.
 - ~~**`stand`/`standAmTag` schlüsseln nur über `matchday`**~~ ✅ **BEHOBEN
   (05.08.2026)** — und der Schaden war größer als hier beschrieben.
   Neu: `verlaufNachRundenSpieltag(verlauf, achse)` in `zeitachse.js`

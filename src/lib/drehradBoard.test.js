@@ -295,3 +295,50 @@ describe("drehradBelohnungen — was das Rad AUSSER Punkten auszahlt", () => {
       .toEqual({ joker: [], narren: [], modifikatoren: [] });
   });
 });
+
+// 🔴 `design/kontaktstellen.md`, vierte Teil-Wirkung: `letzteEinsaetze` fürs
+// Rad war immer leer, ein `abklingzeit`-Wert am `jokerBasis.standard` blieb
+// dadurch wirkungslos — obwohl er für echte Joker längst greift. Die eigene
+// Dreh-Historie IST diese Historie; sie muss nicht von außen kommen.
+describe("Abklingzeit des Rads — die eigene Historie zählt", () => {
+  const FELDER = [
+    { id: "f1", label: "A", gewicht: 1, belohnung: { typ: "nichts" } },
+    { id: "f2", label: "B", gewicht: 1, belohnung: { typ: "punkte", betrag: 10 } },
+  ];
+  // `frequenz: 1` + `kontingent` heißt: ohne Bremse an JEDEM Spieltag eine
+  // Drehung. Was dann noch fehlt, kann nur die Abklingzeit sein.
+  const regeln = (abklingzeit) => sanitizeRules({
+    ...DEFAULT_RULES,
+    drehrad: { enabled: true, frequenz: 1, modus: "kontingent", phase: "ganze", felder: FELDER },
+    jokerBasis: { standard: { abklingzeit } },
+  });
+  // Getippt wird überall, damit „kein Rad ohne Tipp" nicht mitbremst.
+  const KONTEXT = {
+    board: [{ userId: "u1", total: 0, rank: 1 }],
+    tipps: Array.from({ length: 12 }, (_, i) => ({ userId: "u1", matchId: `m${i}`, matchday: i + 1 })),
+    adminFreigaben: [], letzteEinsaetze: [],
+  };
+  const tage = (abklingzeit) => drehradZiehungen({
+    rules: regeln(abklingzeit), rundenId: "r1", userIds: ["u1"], spieltage: 12, kontext: KONTEXT,
+  }).map((z) => z.spieltag);
+
+  it("ohne Abklingzeit dreht es an jedem Spieltag", () => {
+    expect(tage(0)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  });
+
+  it("mit Abklingzeit 2 nur noch an jedem zweiten — von Hand nachgezählt", () => {
+    expect(tage(2)).toEqual([1, 3, 5, 7, 9, 11]);
+  });
+
+  it("mit Abklingzeit 4 an jedem vierten", () => {
+    expect(tage(4)).toEqual([1, 5, 9]);
+  });
+
+  it("ohne Kontext bleibt alles wie bisher — kein stiller Regelwechsel", () => {
+    // Die Abklingzeit hängt an `darfEinsetzen`, und das läuft nur MIT Kontext.
+    const ohne = drehradZiehungen({
+      rules: regeln(4), rundenId: "r1", userIds: ["u1"], spieltage: 12,
+    });
+    expect(ohne).toHaveLength(12);
+  });
+});
