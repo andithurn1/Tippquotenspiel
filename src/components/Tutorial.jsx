@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import BackLink from "@/components/BackLink";
 import Begriff from "@/components/Begriff";
-import { createMockOddsSource, scoreTip, DEFAULT_RULES } from "@/lib/engine";
+import { createMockOddsSource, scoreTip, sanitizeRules, DEFAULT_RULES } from "@/lib/engine";
 import { previewArchetypes } from "@/lib/rulePreview";
+import { getStore } from "@/lib/store";
+import { useCurrentRound } from "@/components/RoundProvider";
 import { C, MONO } from "@/lib/theme";
 
 // Ein echtes Rechenbeispiel (Engine, nicht ausgedacht): JOR-ESP real 5:1,
@@ -11,15 +14,32 @@ import { C, MONO } from "@/lib/theme";
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
 const RESULT = odds.getResult("JOR-ESP");
-const EX_HAUCH = scoreTip({ home: 4, away: 1, goals: { home: [], away: [] } }, RESULT, SNAP, DEFAULT_RULES);
-const EX_EXAKT = scoreTip({ home: 5, away: 1, goals: { home: [], away: [] } }, RESULT, SNAP, DEFAULT_RULES);
 
-// Beispiel-Ausgänge fürs aufklappbare Fenster (echte Punkte mit Standard-Regeln).
-const ARCHE = previewArchetypes(DEFAULT_RULES);
-// Admin-Beispiel: derselbe Datensatz mit aktivem Favoriten-Malus.
-const ARCHE_MALUS = previewArchetypes({ ...DEFAULT_RULES, favFlopPenalty: 12 });
-
+// 🔴 Gerechnet wird mit dem Regelwerk DER RUNDE, nicht mit `DEFAULT_RULES`.
+// Die Zahlen hier lesen sich als „so viel bekommst du" — in einer Runde mit
+// eigenem Regelwerk waren sie schlicht falsch, und zwar an der Stelle, an der
+// jemand das Spiel gerade erst versteht.
 export default function Tutorial() {
+  const { roundId } = useCurrentRound();
+  const [rules, setRules] = useState(DEFAULT_RULES);
+  useEffect(() => {
+    let live = true;
+    getStore().getRound(roundId)
+      .then((r) => { if (live) setRules(sanitizeRules(r?.rules ?? DEFAULT_RULES)); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [roundId]);
+
+  const EX_HAUCH = useMemo(
+    () => scoreTip({ home: 4, away: 1, goals: { home: [], away: [] } }, RESULT, SNAP, rules), [rules]);
+  const EX_EXAKT = useMemo(
+    () => scoreTip({ home: 5, away: 1, goals: { home: [], away: [] } }, RESULT, SNAP, rules), [rules]);
+  const ARCHE = useMemo(() => previewArchetypes(rules), [rules]);
+  // Admin-Beispiel: DERSELBE Datensatz, nur mit eingeschaltetem Favoriten-Malus.
+  // Bewusst gegen das Regelwerk der Runde gestellt, nicht gegen die Vorgabe —
+  // sonst zeigte der Vergleich zwei Unterschiede statt einem.
+  const ARCHE_MALUS = useMemo(() => previewArchetypes({ ...rules, favFlopPenalty: 12 }), [rules]);
+
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
