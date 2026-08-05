@@ -13,7 +13,7 @@ import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
-import { withDrehradPunkte, drehradZiehungen } from "./drehradBoard";
+import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
 
@@ -431,6 +431,15 @@ export function createSupabaseStore() {
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
       return tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id }));
+    },
+
+    // Was das Rad ausser Punkten auszahlt — siehe Mock-Store.
+    async getDrehradBelohnungen(roundId) {
+      const { board, rules, kontext, spieltage } = await this.standVorDemRad(roundId);
+      if (!rules?.drehrad?.enabled) return { joker: [], narren: [], modifikatoren: [] };
+      return drehradBelohnungen({
+        rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext,
+      });
     },
 
     // Beschluss-Lage als Funktion — siehe Mock-Store, gleiche Begründung.

@@ -16,7 +16,7 @@ import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { spieltagOeffnen } from "./spieltagOeffnen";
 import { withSaisonPunkte } from "./saisonBoard";
-import { withDrehradPunkte, drehradZiehungen } from "./drehradBoard";
+import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
 
@@ -502,6 +502,19 @@ export function createMockStore() {
     // ⚠️ Nur für die EIGENE Runde sinnvoll. Wer ein fremdes Preset durchrechnet
     // („was wäre gewesen"), darf sie NICHT anwenden — dort gab es diese
     // Beschlüsse nie.
+    // 🔴 Was das Rad AUSSER Punkten auszahlt (Joker, Narren, Modifikatoren) —
+    // aus DERSELBEN Vorbereitung wie das Leaderboard. Zwei Screens brauchen
+    // das (`Tippabgabe.jsx` fürs Joker-Kontingent und den Narren-Zufluss,
+    // `RundenHub.jsx` für den angezeigten Kontostand), und beide bauten sich
+    // den Kontext bisher selbst — mit unterschiedlichem Ergebnis.
+    async getDrehradBelohnungen(roundId) {
+      const { board, rules, kontext, spieltage } = await standVorDemRad(roundId);
+      if (!rules?.drehrad?.enabled) return { joker: [], narren: [], modifikatoren: [] };
+      return drehradBelohnungen({
+        rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext,
+      });
+    },
+
     async getRegelnFuer(roundId) {
       const round = rounds.get(roundId);
       const rules = round?.rules ?? DEFAULT_RULES;

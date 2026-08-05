@@ -56,8 +56,10 @@ export default function RundenHub() {
     Promise.all([
       getStore().getRound(roundId), getStore().listMatches(), getStore().listTips({ roundId }),
       getStore().getLeaderboardHistory(roundId),
+      // Narren vom Glücksrad — dieselbe Quelle wie in der Tippabgabe.
+      getStore().getDrehradBelohnungen?.(roundId) ?? Promise.resolve(null),
     ])
-      .then(([round, matches, tips, history]) => {
+      .then(([round, matches, tips, history, rad]) => {
         if (!live) return;
         setRoundName(round?.name ?? null);
         setAbstimmung(round?.rules?.joker?.enabled === true && round?.rules?.joker?.abstimmung === true);
@@ -70,7 +72,10 @@ export default function RundenHub() {
         const { total, open } = computeMatchStatus(relevant);
         setStatus({ total, open, tippedByMe: countTippedByUser(tips, user?.id) });
         setStand(muenzStand({ rules: round?.rules, matches: relevant, tips, userId: user?.id }));
-        setNarren(narrenStand({ rules: round?.rules, matches: relevant, tips, userId: user?.id, stand: history }));
+        setNarren(narrenStand({
+          rules: round?.rules, matches: relevant, tips, userId: user?.id,
+          stand: history, zusatz: rad?.narren ?? [],
+        }));
       }).catch(() => {});
     return () => { live = false; };
   }, [roundId, user]);

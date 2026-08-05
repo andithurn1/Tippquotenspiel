@@ -39,11 +39,17 @@ export default function Hauptmenu() {
       const withStatus = await Promise.all(myRounds.map(async (r) => {
         const relevant = filterMatchesByTeams(matches, r.team_filter);
         const { total, open } = computeMatchStatus(relevant);
-        const [tips, history] = await Promise.all([
+        const [tips, history, rad] = await Promise.all([
           getStore().listTips({ roundId: r.id }), getStore().getLeaderboardHistory(r.id),
+          // Narren vom Glücksrad — dieselbe Quelle wie in der Tippabgabe.
+          // Ohne sie zahlte ein Rad-Feld „30 Narren" hier nichts aus, dort schon.
+          getStore().getDrehradBelohnungen?.(r.id) ?? Promise.resolve(null),
         ]);
         const stand = muenzStand({ rules: r.rules, matches: relevant, tips, userId: user.id });
-        const narren = narrenStand({ rules: r.rules, matches: relevant, tips, userId: user.id, stand: history });
+        const narren = narrenStand({
+          rules: r.rules, matches: relevant, tips, userId: user.id,
+          stand: history, zusatz: rad?.narren ?? [],
+        });
         return { ...r, status: { total, open, tippedByMe: countTippedByUser(tips, user.id) }, stand, narren };
       }));
       if (live) setRounds(withStatus);
