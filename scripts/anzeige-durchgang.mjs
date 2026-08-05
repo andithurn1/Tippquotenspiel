@@ -20,6 +20,12 @@
 //    C Nachbar-Tabelle        — `nearPayouts`, Zeile „exakt so ausgegangen"
 //    D Tipp-Vorschau          — `projectTip`, wenn der Tipp eintrifft
 //    E Leaderboard/Verlauf    — Summe über alle Tipps vs. Verlaufs-Endstand
+//
+//  TEIL 2 vergleicht die RUNDEN-Werte: dieselbe Zahl, wie sie der Runden-Hub
+//  zeigt, wie sie die Tippabgabe zeigt und wie sie das Leaderboard verrechnet.
+//  Das ist die Ebene, auf der die schwersten Funde lagen (Narren 340 gegen 420,
+//  Rad-Belohnungen 270 gegen 30) — sie entstehen nicht im Scoring, sondern
+//  darin, WELCHE Spiele und WELCHER Spieltag gemeint sind.
 // ============================================================
 import { alleMatches } from "../src/lib/ligen.js";
 import { PRESETS } from "../src/lib/presets.js";
@@ -202,4 +208,102 @@ if (alleBeispiele.length) {
     console.log(`     ergibt ${b.kette}, angezeigt wird ${b.gesamt}`);
   }
 }
+console.log();
+
+// ============================================================
+//  TEIL 2 — die Runden-Werte
+// ============================================================
+const { createMockStore } = await import("../src/lib/store.mock.js");
+const { narrenStand } = await import("../src/lib/narrenstand.js");
+const { kontoVerlauf } = await import("../src/lib/jokerBudget.js");
+const { naechstesOffenesSpiel } = await import("../src/lib/muenzstand.js");
+const { auswerten } = await import("../src/lib/drehrad.js");
+const { zeitachse, rundenSpieltagVon, verlaufNachRundenSpieltag } = await import("../src/lib/zeitachse.js");
+const { LIGEN } = await import("../src/lib/ligen.js");
+
+console.log(`\n${"=".repeat(94)}`);
+console.log("  TEIL 2 — Runden-Werte: Hub gegen Tippabgabe gegen Leaderboard");
+console.log(`${"=".repeat(94)}`);
+
+const store = createMockStore();
+const blTeams = Object.keys(LIGEN.find((l) => l.key === "bl").ratings);
+const rundenRegeln = sanitizeRules({
+  ...DEFAULT_RULES,
+  joker: { enabled: true, modus: "einzel", faktor: 1.5 },
+  budget: { enabled: true, quellen: [{ typ: "gleich", betrag: 10 }], takt: "spieltag", verfall: "nie" },
+  drehrad: {
+    enabled: true, frequenz: 4, phase: "ganze",
+    felder: [
+      { id: "n", label: "30 Narren", gewicht: 1, belohnung: { typ: "budget", betrag: 30 } },
+      { id: "p", label: "50 Punkte", gewicht: 1, belohnung: { typ: "punkte", betrag: 50 } },
+    ],
+  },
+});
+const runde = await store.createRound({
+  name: "Messrunde", adminId: "u-du", rules: rundenRegeln, teamFilter: blTeams,
+});
+const rundenSpiele = await store.listRoundMatches(runde.id);
+// Ein paar Spieltage tippen, damit überhaupt etwas entsteht.
+for (const m of rundenSpiele.filter((x) => x.wettbewerb === "bl" && x.result).slice(0, 27)) {
+  await store.saveTip({
+    roundId: runde.id, matchId: m.id, userId: "u-du",
+    tip: { home: 1, away: 1, goals: { home: [], away: [] } }, snapshot: m.snapshot,
+  });
+}
+
+const achseR = zeitachse(rundenSpiele, rundenRegeln.zeitachse);
+// ⚠️ SPÄT in der Saison messen. Am 1. Spieltag fallen Liga- und Runden-Spieltag
+// zusammen und die Achse ist kurz — dort stimmt auch eine falsche Rechnung.
+// Genau deshalb ist der Narren-Fund (340 gegen 420) erst am Saisonende
+// aufgefallen.
+const letztesSpiel = [...rundenSpiele].filter((m) => m.wettbewerb === "bl")
+  .sort((a_, b_) => new Date(a_.kickoff) - new Date(b_.kickoff)).at(-3);
+const jetzt = new Date(new Date(letztesSpiel.kickoff).getTime() - 36e5);
+const offenesSpiel = naechstesOffenesSpiel(rundenSpiele, jetzt);
+const jetztRunde = offenesSpiel ? rundenSpieltagVon(achseR, offenesSpiel) : null;
+const rundenTipps = await store.listTips({ roundId: runde.id });
+const verlauf = await store.getLeaderboardHistory(runde.id);
+const rad = await store.getDrehradBelohnungen(runde.id);
+const board = await store.getLeaderboard(runde.id);
+
+// (1) Narren: Hub-Weg (`narrenStand`) gegen Tippabgabe-Weg (`kontoVerlauf`).
+const hubNarren = narrenStand({
+  rules: rundenRegeln, matches: rundenSpiele, tips: rundenTipps,
+  userId: "u-du", stand: verlauf, zusatz: rad.narren, jetzt,
+})?.kontostand ?? null;
+
+const matchVon = new Map(rundenSpiele.map((m) => [m.id, m]));
+const tippabgabeNarren = kontoVerlauf({
+  rules: rundenRegeln,
+  tipps: rundenTipps.map((t) => {
+    const m = matchVon.get(t.match_id);
+    return {
+      userId: t.user_id, matchId: t.match_id,
+      matchday: m ? rundenSpieltagVon(achseR, m) : null,
+      gewicht: t.tip?.gewicht, joker: t.tip?.joker === true,
+    };
+  }),
+  spieltage: achseR.length,
+  stand: verlaufNachRundenSpieltag(verlauf, achseR),
+  userIds: board.map((b) => b.userId),
+  zusatz: rad.narren,
+}).proSpieler["u-du"]?.find((v) => v.matchday === jetztRunde)?.kontostand ?? null;
+
+// (2) Rad-Punkte: was `MeinRad` zeigt gegen das, was im Board steht.
+const { ziehungen } = await store.getDrehradZiehungen(runde.id);
+const { gutschriften } = auswerten(rundenRegeln.drehrad, ziehungen);
+const radPunkteAnzeige = gutschriften
+  .filter((g) => g.userId === "u-du" && g.belohnung?.typ === "punkte")
+  .reduce((s_, g) => s_ + g.belohnung.betrag, 0);
+const radPunkteBoard = board.find((b) => b.userId === "u-du")?.drehrad ?? 0;
+
+const zeile = (name, a, b) => {
+  const ok = a === b ? "  ✓" : "  ✗ AUSEINANDER";
+  console.log(`    ${name.padEnd(38)} ${String(a).padStart(8)} | ${String(b).padStart(8)}${ok}`);
+};
+console.log(`\n  Runde über ${rundenSpiele.length} Spiele · Achse ${achseR.length} Runden-Spieltage `
+  + `· jetzt Runden-Spieltag ${jetztRunde}`);
+console.log("                                              Hub/Anzeige |  Wertung");
+zeile("Narren-Kontostand", hubNarren, tippabgabeNarren);
+zeile("Rad-Punkte", radPunkteAnzeige, radPunkteBoard);
 console.log();
