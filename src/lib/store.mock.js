@@ -16,7 +16,7 @@ import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { spieltagOeffnen } from "./spieltagOeffnen";
 import { withSaisonPunkte } from "./saisonBoard";
-import { withDrehradPunkte } from "./drehradBoard";
+import { withDrehradPunkte, drehradZiehungen } from "./drehradBoard";
 import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
 
@@ -130,6 +130,99 @@ export function createMockStore() {
       .map((m) => ({ userId: m.user_id, istAdmin: m.user_id === rounds.get(roundId)?.admin_id })),
     achse: achse ?? zeitachse([...matches.values()], rules?.zeitachse),
   });
+
+  // Der Stand VOR dem Rad — Grundlage von `getLeaderboard` UND
+  // `getDrehradZiehungen`. Bewusst eine Funktion und nicht zweimal
+  // hingeschrieben: sobald die Rad-Ansicht ihren Kontext selbst baut, baut
+  // sie ihn anders (genau das war der Befund oben).
+  async function standVorDemRad(roundId) {
+    const round = rounds.get(roundId);
+    const rules = round?.rules ?? DEFAULT_RULES;
+    const roundTips = tips.filter((t) => t.round_id === roundId);
+    const entries = roundTips.map(eintragVon);
+    // Die Zeitachse EINMAL bauen: sie wird gleich dreimal gebraucht
+    // (Beschluss-Lage, Drehrad-Plan, Runden-Spieltag der Tipps).
+    const achse = zeitachse([...matches.values()], rules?.zeitachse);
+    const { regelnFuer, amEnde } = beschlussLage(roundId, rules, achse);
+    let board;
+    // Verlaufsabhängige Regeln (Aufhol-Bonus, Saisonform) brauchen den ganzen
+    // Verlauf. WELCHE das sind, entscheidet die Engine an einer Stelle —
+    // hier stand vorher `rules.aufholen?.enabled`, und mit der Saisonform war
+    // das still falsch.
+    // ⚠️ BEIDE fragen: `brauchtVerlauf` entscheidet, ob überhaupt über den
+    // Verlauf gerechnet wird, und es liest sonst nur das ANGELEGTE
+    // Regelwerk. Beschließt eine Runde den Anschluss-Bonus erst an Spieltag
+    // 20, ist er in `round.rules` aus — der Verlauf würde gar nicht gebaut
+    // und der Bonus fiele still aus. Genau die halbe Verkabelung, die
+    // design/kontaktstellen.md auflistet.
+    if (brauchtVerlauf(rules) || brauchtVerlauf(amEnde)) {
+      // `einsaetzeAusTipps` braucht `matchId` für den Gleichstand-Fall
+      // (zwei Duell-Einsätze am selben Spieltag mit identischem Kickoff,
+      // z. B. zwei zeitgleich angepfiffene Bundesliga-Spiele) — `entries`
+      // (aus `eintragVon`) trägt das Feld nicht, `roundTips` schon
+      // (`match_id`), deshalb hier separat angereichert statt `entries`
+      // selbst zu verändern.
+      const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
+      const h = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
+      board = h.length ? h[h.length - 1].board : [];
+    } else {
+      board = scoreLeaderboard(entries, rules, regelnFuer);
+    }
+    // Saison-Punkte drauf (und reine Saison-Tipper ergänzen) — siehe
+    // saisonBoard.js. Der Mock hält die Saison-Tipps ALLER Runden in einer
+    // Liste, deshalb hier nach Runde filtern.
+    board = withSaisonPunkte({
+      board, rules, matches: [...matches.values()], nameOf,
+      seasonTips: seasonTips.filter((s) => s.round_id === roundId),
+    });
+    // Drehrad-Punkte drauf (drehradBoard.js) — ERST Saison, DANN Rad: beide
+    // sortieren und ranken das Board neu, der jeweils letzte Aufruf gewinnt.
+    // Es darf nur EINE Reihenfolge geben, sonst hängt die Rangfolge am
+    // Aufrufort statt an der Regel. Saison zuerst, weil Saison-Wetten auch
+    // Spieler neu ins Board aufnehmen (reine Saison-Tipper) — das Rad zahlt
+    // bewusst NUR an, wer schon im Board steht (siehe drehradBoard.js), muss
+    // also NACH dieser Ergänzung laufen, sonst verpasst ein reiner
+    // Saison-Tipper seine Rad-Ziehung.
+    //
+    // `kontext` macht `wer`/`werWert` UND die 5.0-Invariante („kein Rad ohne
+    // Tipp") scharf (Nachtrag zu design/kontaktstellen.md, 2026-08-04) —
+    // ohne ihn zöge jeder im Board, unabhängig von diesen Einstellungen.
+    // `board` ist der bereits fertige (Saison-)Stand von oben — dieselbe
+    // Wahl wie in `Tippabgabe.jsx`s `pruefeJokerEinsatz`. `tipps` kommt aus
+    // `roundTips`, das hier schon vorliegt, nur um `matchId`/`matchday`
+    // ergänzt. `adminFreigaben`/`letzteEinsaetze` bleiben leer: es gibt noch
+    // keinen Speicherort für Admin-Freigaben (siehe Schritt 1) und keine
+    // eigene Abklingzeit-Historie fürs Rad — ein am `jokerBasis.standard`
+    // gesetzter `abklingzeit`-Wert bliebe dadurch für das Rad wirkungslos.
+    //
+    // 🔴 `matchday` ist hier der RUNDEN-Spieltag, nicht der Liga-Spieltag.
+    // `drehradPlan` verteilt die Drehungen über RUNDEN-Spieltage (1…N);
+    // `kontextFuer` in drehradBoard.js vergleicht `t.matchday === spieltag`
+    // direkt damit. Mit dem Liga-Spieltag wären das zwei verschiedene
+    // Skalen: „kein Rad ohne Tipp" hätte in einer Runde über fünf
+    // Wettbewerbe den falschen Tag geprüft — dieselbe Fehlerklasse, die bei
+    // den Jokern schon einmal fünf Joker pro Woche ergeben hätte
+    // (siehe Zeitachse in CLAUDE.md).
+    const kontext = {
+      board,
+      tipps: roundTips.map((t) => {
+        const m = matches.get(t.match_id);
+        return {
+          userId: t.user_id, matchId: t.match_id,
+          matchday: m ? rundenSpieltagVon(achse, m) : null,
+        };
+      }),
+      // Admin-Freigaben aus der Ablage statt einer leeren Liste — sonst
+      // lehnt `wer: "adminFreigabe"` hier weiter konsequent ab.
+      adminFreigaben: freigaben.filter((f) => f.round_id === roundId)
+        .map((f) => ({ userId: f.user_id, spieltag: f.matchday })),
+      letzteEinsaetze: [],
+    };
+    // ⚠️ Und die LÄNGE ebenso: die feste 34 wäre die Liga-Saison. Eine Runde
+    // über mehrere Wettbewerbe hat mehr Runden-Spieltage (gemessen: 42) —
+    // mit 34 bekämen die letzten acht nie eine Drehung.
+    return { board, rules, kontext, spieltage: achse.length || SPIELTAGE };
+  }
 
   return {
     async listMatches() { return [...matches.values()]; },
@@ -363,96 +456,31 @@ export function createMockStore() {
     // über den Verlauf gehen (der Bonus hängt am Stand vor jedem Spieltag) und
     // den Endstand nehmen — scoreLeaderboardHistory wendet applyCatchup an.
     async getLeaderboard(roundId) {
-      const round = rounds.get(roundId);
-      const rules = round?.rules ?? DEFAULT_RULES;
-      const roundTips = tips.filter((t) => t.round_id === roundId);
-      const entries = roundTips.map(eintragVon);
-      // Die Zeitachse EINMAL bauen: sie wird gleich dreimal gebraucht
-      // (Beschluss-Lage, Drehrad-Plan, Runden-Spieltag der Tipps).
-      const achse = zeitachse([...matches.values()], rules?.zeitachse);
-      const { regelnFuer, amEnde } = beschlussLage(roundId, rules, achse);
-      let board;
-      // Verlaufsabhängige Regeln (Aufhol-Bonus, Saisonform) brauchen den ganzen
-      // Verlauf. WELCHE das sind, entscheidet die Engine an einer Stelle —
-      // hier stand vorher `rules.aufholen?.enabled`, und mit der Saisonform war
-      // das still falsch.
-      // ⚠️ BEIDE fragen: `brauchtVerlauf` entscheidet, ob überhaupt über den
-      // Verlauf gerechnet wird, und es liest sonst nur das ANGELEGTE
-      // Regelwerk. Beschließt eine Runde den Anschluss-Bonus erst an Spieltag
-      // 20, ist er in `round.rules` aus — der Verlauf würde gar nicht gebaut
-      // und der Bonus fiele still aus. Genau die halbe Verkabelung, die
-      // design/kontaktstellen.md auflistet.
-      if (brauchtVerlauf(rules) || brauchtVerlauf(amEnde)) {
-        // `einsaetzeAusTipps` braucht `matchId` für den Gleichstand-Fall
-        // (zwei Duell-Einsätze am selben Spieltag mit identischem Kickoff,
-        // z. B. zwei zeitgleich angepfiffene Bundesliga-Spiele) — `entries`
-        // (aus `eintragVon`) trägt das Feld nicht, `roundTips` schon
-        // (`match_id`), deshalb hier separat angereichert statt `entries`
-        // selbst zu verändern.
-        const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
-        const h = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
-        board = h.length ? h[h.length - 1].board : [];
-      } else {
-        board = scoreLeaderboard(entries, rules, regelnFuer);
-      }
-      // Saison-Punkte drauf (und reine Saison-Tipper ergänzen) — siehe
-      // saisonBoard.js. Der Mock hält die Saison-Tipps ALLER Runden in einer
-      // Liste, deshalb hier nach Runde filtern.
-      board = withSaisonPunkte({
-        board, rules, matches: [...matches.values()], nameOf,
-        seasonTips: seasonTips.filter((s) => s.round_id === roundId),
-      });
-      // Drehrad-Punkte drauf (drehradBoard.js) — ERST Saison, DANN Rad: beide
-      // sortieren und ranken das Board neu, der jeweils letzte Aufruf gewinnt.
-      // Es darf nur EINE Reihenfolge geben, sonst hängt die Rangfolge am
-      // Aufrufort statt an der Regel. Saison zuerst, weil Saison-Wetten auch
-      // Spieler neu ins Board aufnehmen (reine Saison-Tipper) — das Rad zahlt
-      // bewusst NUR an, wer schon im Board steht (siehe drehradBoard.js), muss
-      // also NACH dieser Ergänzung laufen, sonst verpasst ein reiner
-      // Saison-Tipper seine Rad-Ziehung.
-      //
-      // `kontext` macht `wer`/`werWert` UND die 5.0-Invariante („kein Rad ohne
-      // Tipp") scharf (Nachtrag zu design/kontaktstellen.md, 2026-08-04) —
-      // ohne ihn zöge jeder im Board, unabhängig von diesen Einstellungen.
-      // `board` ist der bereits fertige (Saison-)Stand von oben — dieselbe
-      // Wahl wie in `Tippabgabe.jsx`s `pruefeJokerEinsatz`. `tipps` kommt aus
-      // `roundTips`, das hier schon vorliegt, nur um `matchId`/`matchday`
-      // ergänzt. `adminFreigaben`/`letzteEinsaetze` bleiben leer: es gibt noch
-      // keinen Speicherort für Admin-Freigaben (siehe Schritt 1) und keine
-      // eigene Abklingzeit-Historie fürs Rad — ein am `jokerBasis.standard`
-      // gesetzter `abklingzeit`-Wert bliebe dadurch für das Rad wirkungslos.
-      //
-      // 🔴 `matchday` ist hier der RUNDEN-Spieltag, nicht der Liga-Spieltag.
-      // `drehradPlan` verteilt die Drehungen über RUNDEN-Spieltage (1…N);
-      // `kontextFuer` in drehradBoard.js vergleicht `t.matchday === spieltag`
-      // direkt damit. Mit dem Liga-Spieltag wären das zwei verschiedene
-      // Skalen: „kein Rad ohne Tipp" hätte in einer Runde über fünf
-      // Wettbewerbe den falschen Tag geprüft — dieselbe Fehlerklasse, die bei
-      // den Jokern schon einmal fünf Joker pro Woche ergeben hätte
-      // (siehe Zeitachse in CLAUDE.md).
-      const kontext = {
-        board,
-        tipps: roundTips.map((t) => {
-          const m = matches.get(t.match_id);
-          return {
-            userId: t.user_id, matchId: t.match_id,
-            matchday: m ? rundenSpieltagVon(achse, m) : null,
-          };
-        }),
-        // Admin-Freigaben aus der Ablage statt einer leeren Liste — sonst
-        // lehnt `wer: "adminFreigabe"` hier weiter konsequent ab.
-        adminFreigaben: freigaben.filter((f) => f.round_id === roundId)
-          .map((f) => ({ userId: f.user_id, spieltag: f.matchday })),
-        letzteEinsaetze: [],
-      };
-      // ⚠️ Und die LÄNGE ebenso: die feste 34 wäre die Liga-Saison. Eine Runde
-      // über mehrere Wettbewerbe hat mehr Runden-Spieltage (gemessen: 42) —
-      // mit 34 bekämen die letzten acht nie eine Drehung.
-      return withDrehradPunkte({
-        board, rules, rundenId: roundId,
-        spieltage: achse.length || SPIELTAGE, nameOf, kontext,
-      });
+      const { board, rules, kontext, spieltage } = await standVorDemRad(roundId);
+      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext });
     },
+
+    // 🔴 Die Ziehungen, die das Leaderboard tatsächlich verrechnet hat.
+    //
+    // `MeinRad.jsx` hat sie bis zum 05.08.2026 selbst nachgerechnet — mit
+    // ANDEREN Eingaben: `adminFreigaben: []` statt der echten Freigaben, und
+    // als `board` den FERTIGEN Stand inklusive der Rad-Punkte statt des
+    // Standes davor. In einer Runde mit „nur nach Freigabe" zeigte der Spieler
+    // damit „keine Drehung vorgesehen", während im Leaderboard Punkte dafür
+    // standen; bei `abPlatz`/`abRueckstand` konnte die Bedingung an einem
+    // anderen Platz geprüft werden als in der Wertung.
+    // Es gibt jetzt EINE Rechnung, und der Screen fragt sie ab.
+    async getDrehradZiehungen(roundId) {
+      const { board, rules, kontext, spieltage } = await standVorDemRad(roundId);
+      if (!rules?.drehrad?.enabled) return { ziehungen: [], spieltage };
+      return {
+        ziehungen: drehradZiehungen({
+          rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext,
+        }),
+        spieltage,
+      };
+    },
+
 
     // Roh-Einträge einer Runde (Tipp + Snapshot + Ergebnis + matchday, ohne
     // Scoring). Damit lassen sich Leaderboard, Verlauf und Rekorde unter EINEM

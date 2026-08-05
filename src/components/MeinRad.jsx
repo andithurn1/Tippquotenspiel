@@ -9,8 +9,7 @@ import Gluecksrad from "@/components/Gluecksrad";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { zeitachse, rundenSpieltagVon } from "@/lib/zeitachse";
 import { naechstesOffenesSpiel } from "@/lib/muenzstand";
-import { wahrscheinlichkeiten, auswerten, beschreibeDrehrad, BELOHNUNGS_TYPEN } from "@/lib/drehrad";
-import { drehradZiehungen } from "@/lib/drehradBoard";
+import { wahrscheinlichkeiten, auswerten, beschreibeDrehrad, drehradPlan, BELOHNUNGS_TYPEN } from "@/lib/drehrad";
 import { C, MONO } from "@/lib/theme";
 import { zahl } from "@/lib/format";
 
@@ -31,25 +30,34 @@ import { zahl } from "@/lib/format";
 // Liga-Spieltag ist eine andere Zahl (in einer Runde über fünf Wettbewerbe
 // weit auseinander) — genau die Verwechslung, die im Store schon einmal die
 // Drehung auf den falschen Tag gelegt hat.
+//
+// 🔴 Und deshalb rechnet dieser Screen die Ziehung NICHT selbst nach, sondern
+// fragt sie beim Store ab (`getDrehradZiehungen`). Bis 05.08.2026 tat er es
+// doch — mit anderen Eingaben als die Wertung: `adminFreigaben: []` statt der
+// echten Freigaben, und als Tabellenstand den FERTIGEN Stand inklusive der
+// Rad-Punkte statt des Standes davor. In einer Runde mit „nur nach Freigabe"
+// stand hier „keine Drehung vorgesehen", während im Leaderboard Punkte dafür
+// gutgeschrieben waren. Zwei Rechnungen für denselben Wert sind zwei
+// Wahrheiten — die eine davon steht im Ranking, die andere liest der Spieler.
 export default function MeinRad() {
   const { user } = useAuth();
   const { roundId } = useCurrentRound();
   const [rules, setRules] = useState(DEFAULT_RULES);
   const [matches, setMatches] = useState(null);
-  const [tips, setTips] = useState([]);
-  const [board, setBoard] = useState([]);
+  const [ziehungen, setZiehungen] = useState([]);
+  const [spieltage, setSpieltage] = useState(34);
 
   useEffect(() => {
     let live = true;
     Promise.all([
       getStore().getRound(roundId), getStore().listMatches(),
-      getStore().listTips({ roundId }), getStore().getLeaderboard(roundId),
-    ]).then(([round, ms, ts, brd]) => {
+      getStore().getDrehradZiehungen(roundId),
+    ]).then(([round, ms, rad]) => {
       if (!live) return;
       setRules(sanitizeRules(round?.rules ?? DEFAULT_RULES));
       setMatches(ms);
-      setTips(ts ?? []);
-      setBoard(brd ?? []);
+      setZiehungen(rad?.ziehungen ?? []);
+      if (Number.isFinite(rad?.spieltage)) setSpieltage(rad.spieltage);
     }).catch(() => {});
     return () => { live = false; };
   }, [roundId]);
@@ -63,38 +71,41 @@ export default function MeinRad() {
   const naechstes = naechstesOffenesSpiel(matches ?? [], new Date());
   const jetzt = naechstes ? rundenSpieltagVon(achse, naechstes) : null;
 
-  // Dieselben Eingaben wie im Store, damit die Anzeige nicht eine andere
-  // Ziehung zeigt als die, die im Leaderboard zählt — es gibt nur EINE
-  // Rechnung, `drehradZiehungen`.
-  const matchVon = new Map((matches ?? []).map((m) => [m.id, m]));
-  const kontext = user ? {
-    board,
-    tipps: (tips ?? []).map((t) => {
-      const m = matchVon.get(t.match_id);
-      return { userId: t.user_id, matchId: t.match_id, matchday: m ? rundenSpieltagVon(achse, m) : null };
-    }),
-    adminFreigaben: [],
-    letzteEinsaetze: [],
-  } : null;
-
-  const meine = (aktiv && user && matches)
-    ? drehradZiehungen({
-      rules, rundenId: roundId, userIds: [user.id],
-      spieltage: achse.length || 34, kontext,
-    })
-    : [];
-
-  // `auswerten` setzt den Saison-Deckel durch — die Anzeige muss denselben
-  // Wert zeigen wie die Gutschrift, nicht den ungedeckelten Wunschbetrag.
-  const { gutschriften, gedeckelt } = auswerten(cfg, meine);
+  // Die eigenen Drehungen aus der EINEN Rechnung des Stores herausfiltern.
+  // ⚠️ Der Deckel wird auf ALLEN Ziehungen der Runde ausgewertet und erst
+  // danach gefiltert: `auswerten` setzt den Saison-Deckel je Spieler durch,
+  // und wer nur die eigenen Ziehungen hineinreicht, bekommt dasselbe Ergebnis
+  // — aber nur, solange der Deckel je Spieler zählt. Auf der ganzen Liste zu
+  // rechnen ist die Form, die auch dann noch stimmt, wenn er das einmal nicht
+  // mehr tut.
+  const meine = user ? ziehungen.filter((z) => z.userId === user.id) : [];
+  const { gutschriften: alle, gedeckelt: alleGedeckelt } = auswerten(cfg, ziehungen);
+  const gutschriften = user ? alle.filter((g) => g.userId === user.id) : [];
+  const gedeckelt = user ? alleGedeckelt.filter((g) => g.userId === user.id) : [];
   const gutschriftVon = new Map(gutschriften.map((g) => [`${g.spieltag}`, g]));
   const feldVon = new Map(felder.map((f) => [f.id, f]));
 
   // Vergangene und kommende Drehungen trennen: das Rad oben zeigt die
   // JÜNGSTE bereits gefallene, denn eine kommende ist noch keine Aussage.
   const gefallen = jetzt == null ? meine : meine.filter((z) => z.spieltag <= jetzt);
-  const kommend = jetzt == null ? [] : meine.filter((z) => z.spieltag > jetzt);
   const letzte = gefallen[gefallen.length - 1] ?? null;
+
+  // 🔴 Die KOMMENDEN Drehungen stehen NICHT in `ziehungen` — und zwar nie.
+  // Eine Ziehung entsteht erst, wenn der Spieler den Spieltag getippt hat
+  // („kein Rad ohne Tipp", die 5.0-Invariante); für einen künftigen Spieltag
+  // ist das per Definition noch nicht der Fall. Der Screen fragte trotzdem
+  // `meine.filter(z => z.spieltag > jetzt)` ab und bekam immer eine leere
+  // Liste — der Hinweis „die nächste steht an Spieltag X an" war unerreichbar.
+  //
+  // Die Antwort steht im PLAN, nicht in der Ziehung: `drehradPlan` ist rein
+  // aus (Regelwerk, Runden-Id, Spieltage) bestimmt und braucht keinen Tipp.
+  // Deshalb entsteht hier auch keine zweite Wahrheit — der Plan sagt WANN
+  // gedreht werden KANN, die Ziehung sagt, WAS herauskam.
+  const geplant = (aktiv && user)
+    ? (drehradPlan({ spieltage, drehrad: cfg, seed: roundId, userIds: [user.id] })
+      .proSpieler?.[user.id] ?? [])
+    : [];
+  const kommend = jetzt == null ? [] : geplant.filter((t) => t > jetzt);
 
   return (
     <div style={{
@@ -149,7 +160,7 @@ export default function MeinRad() {
             {!letzte && (
               <Kasten>
                 {kommend.length
-                  ? `Für dich ist noch keine Drehung gefallen — die nächste steht an Spieltag ${kommend[0].spieltag} an.`
+                  ? `Für dich ist noch keine Drehung gefallen — die nächste ist für Spieltag ${kommend[0]} vorgesehen. Sie fällt nur, wenn du diesen Spieltag tippst.`
                   : "Für dich ist in dieser Runde keine Drehung vorgesehen. Woran das liegt, steht oben: "
                     + "wer drehen darf und wie oft, entscheidet der Admin — und ohne Tipp gibt es keine Drehung."}
               </Kasten>
@@ -189,8 +200,8 @@ export default function MeinRad() {
 
             {kommend.length > 0 && (
               <p style={{ fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
-                Nächste Drehung an Spieltag {kommend[0].spieltag}. Was dabei herauskommt,
-                steht erst fest, wenn der Spieltag da ist.
+                Nächste Drehung an Spieltag {kommend[0]} — vorausgesetzt, du tippst
+                ihn. Was dabei herauskommt, steht erst fest, wenn der Spieltag da ist.
               </p>
             )}
           </>

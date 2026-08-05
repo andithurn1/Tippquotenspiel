@@ -13,7 +13,7 @@ import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
-import { withDrehradPunkte } from "./drehradBoard";
+import { withDrehradPunkte, drehradZiehungen } from "./drehradBoard";
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
 
@@ -317,6 +317,27 @@ export function createSupabaseStore() {
     },
 
     async getLeaderboard(roundId) {
+      const { board, rules, kontext, spieltage, nameOf } = await this.standVorDemRad(roundId);
+      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext });
+    },
+
+    // 🔴 Die Ziehungen, die das Leaderboard tatsächlich verrechnet hat —
+    // damit `MeinRad.jsx` sie nicht mit anderen Eingaben nachrechnet.
+    // Begründung ausführlich im Mock-Store.
+    async getDrehradZiehungen(roundId) {
+      const { board, rules, kontext, spieltage } = await this.standVorDemRad(roundId);
+      if (!rules?.drehrad?.enabled) return { ziehungen: [], spieltage };
+      return {
+        ziehungen: drehradZiehungen({
+          rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext,
+        }),
+        spieltage,
+      };
+    },
+
+    // Der Stand VOR dem Rad. Eine Stelle für beide Aufrufer — sobald die
+    // Rad-Ansicht ihren Kontext selbst baut, baut sie ihn anders.
+    async standVorDemRad(roundId) {
       const [round, members, tips, matches, seasonTips] = await Promise.all([
         this.getRound(roundId),
         this.listMembers(roundId),
@@ -398,10 +419,7 @@ export function createSupabaseStore() {
         letzteEinsaetze: [],
       };
       // ⚠️ Und die LÄNGE ebenso — die feste 34 wäre die Liga-Saison.
-      return withDrehradPunkte({
-        board, rules, rundenId: roundId,
-        spieltage: achse.length || SPIELTAGE, nameOf, kontext,
-      });
+      return { board, rules, kontext, nameOf, spieltage: achse.length || SPIELTAGE };
     },
 
     async getRoundEntries(roundId) {

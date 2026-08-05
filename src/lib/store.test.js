@@ -4,6 +4,7 @@ import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules } from "./engine";
 import { zeitachse, rundenSpieltagVon } from "./zeitachse";
 import { drehradZiehungen } from "./drehradBoard";
+import { auswerten } from "./drehrad";
 import { darfEinsetzen, basisFuer } from "./jokerBasis";
 
 describe("Mock-Store — Seed & Schnittstelle", () => {
@@ -469,6 +470,52 @@ describe("Drehrad: der Store reicht den RUNDEN-Spieltag, nicht den Liga-Spieltag
     const falsch = drehradZiehungen({ ...basis, kontext: kontextMit(spiel.matchday) });
     expect(falsch.map((z) => z.spieltag)).toEqual([spiel.matchday]);
     expect(falsch[0].spieltag).not.toBe(rundenSpieltag);
+  });
+
+  // 🔴 Anzeige und Wertung müssen aus DERSELBEN Rechnung kommen.
+  // `MeinRad.jsx` hat die Ziehung bis 05.08.2026 selbst nachgerechnet, mit
+  // `adminFreigaben: []` und dem Board INKLUSIVE der Rad-Punkte. In einer
+  // Runde mit „nur nach Freigabe" stand dort „keine Drehung vorgesehen",
+  // während im Leaderboard Punkte dafür gutgeschrieben waren.
+  it("getDrehradZiehungen liefert genau die Ziehungen, die das Leaderboard verrechnet", async () => {
+    const s = createMockStore();
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      drehrad: {
+        enabled: true, frequenz: 1, phase: "ganze", maxPunkteProSaison: 0,
+        // ⚠️ Das Feld heißt `betrag` (siehe `sanitizeBelohnung` in drehrad.js).
+        // Mit `punkte` sanitized es still auf 0 — der Test liefe grün durch,
+        // ohne je einen Punkt zu vergeben.
+        felder: [{ id: "f1", label: "Punkte", gewicht: 1, belohnung: { typ: "punkte", betrag: 50 } }],
+      },
+    });
+    const runde = await s.createRound({ name: "Rad-Runde", adminId: "u-du", rules });
+    // Ein Tipp, damit „kein Rad ohne Tipp" erfüllt ist und jemand im Board
+    // steht. ⚠️ NICHT auf JOR-ESP: das Demo-Länderspiel gehört zu keinem
+    // echten Wettbewerb und hat deshalb gar keinen Runden-Spieltag
+    // (`rundenSpieltagVon` liefert `null`) — es könnte nie eine Drehung tragen.
+    const spiel = (await s.listMatches()).find((m) => m.wettbewerb === "bl" && m.result);
+    await s.saveTip({
+      roundId: runde.id, matchId: spiel.id, userId: "u-du",
+      tip: { home: 2, away: 1, goals: { home: [], away: [] } }, snapshot: spiel.snapshot,
+    });
+
+    const board = await s.getLeaderboard(runde.id);
+    const { ziehungen } = await s.getDrehradZiehungen(runde.id);
+
+    // Aus den Ziehungen dieselbe Punktzahl bilden, die das Board ausweist.
+    const { gutschriften } = auswerten(rules.drehrad, ziehungen);
+    const erwartet = new Map();
+    for (const g of gutschriften) {
+      if (g.belohnung?.typ !== "punkte") continue;
+      erwartet.set(g.userId, (erwartet.get(g.userId) ?? 0) + g.belohnung.betrag);
+    }
+    expect(board.length).toBeGreaterThan(0);
+    for (const zeile of board) {
+      expect(zeile.drehrad ?? 0).toBe(erwartet.get(zeile.userId) ?? 0);
+    }
+    // Und es wurde überhaupt gedreht — sonst prüfte der Test nur zwei Nullen.
+    expect(ziehungen.length).toBeGreaterThan(0);
   });
 
   it("der Plan deckt die ganze Runde ab, nicht nur 34 Spieltage", async () => {
