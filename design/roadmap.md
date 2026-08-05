@@ -74,7 +74,8 @@ Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
   nicht gemeldet worden), und der Warntext sagte danach „im Spieltag", während
   die Zahl vier zählte.
 
-- **Regel-Abstimmung & Verfassung** ✅ Schritt 1 von 5
+- **Regel-Abstimmung & Verfassung** ✅ Schritte 1–5 (nur das Einhängen in die
+  Wertung fehlt)
   (`src/lib/regelAbstimmung.js`, `design/abstimmung-verfassung.md`) — die
   Runde beschließt Änderungen AM REGELWERK, der Admin legt mit der Verfassung
   den Rahmen fest, den auch eine Mehrheit nicht bricht. Reine Logik:
@@ -83,11 +84,21 @@ Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
   (zehnter Aspekt `mitbestimmung`) und `teilbibliothek.js`.
   Stufe 2 („Wer darf die Regeln ändern?") steht, Stufe 1 ist ausdrücklich
   begründet ausgelassen.
-  ⚠️ **Offen bleiben Schritt 2–5:** Store, Profi-Oberfläche, Antrags- und
-  Abstimmungs-Screen und ZULETZT die Wirkung — der Schritt, der die
-  Snapshot-Kante berührt und einzeln geprüft gehört.
+  Dazu: Store (`createAntrag`/`listAntraege`/`saveAntragStimme`, Tabellen
+  `rule_proposals`/`rule_proposal_votes` samt RLS), Profi-Ansicht
+  (`Mitbestimmung.jsx`), Antrags- und Abstimmungs-Screen (`/regeln`) und
+  `src/lib/beschluss.js` für die Wirkung.
+  🔴 **Der Kniff bei der Wirkung:** es gibt kein „Regelwerk aktualisieren",
+  sondern `regelwerkAmSpieltag(...)` — die Frage lautet immer „welches
+  Regelwerk gilt an Spieltag N?". Damit ist die Rückwirkung STRUKTURELL
+  unmöglich statt nur verboten.
+  ⚠️ **Wirklich offen bleibt eines:** die Auswertung liest weiterhin
+  `round.rules`; der Scoring-Pfad müsste den Runden-Spieltag durchreichen.
+  Das ist der Schritt, der die Snapshot-Kante wirklich berührt.
+  ⚠️ **Nutzer-Aufgabe:** `supabase/schema.sql` erneut ausführen (idempotent),
+  sonst fehlen live zwei Tabellen.
 
-Test-Stand: **1818 grün**, Build sauber (Stand 2026-08-05).
+Test-Stand: **1845 grün**, Build sauber (Stand 2026-08-05).
 Vorher **1671 grün** (Stand 2026-08-03).
 Vorher stand hier **933 grün (28.07.)** — über eine Woche still, während die
 Suite um 738 Tests gewachsen ist. Genau die Drift, vor der der Kasten unten

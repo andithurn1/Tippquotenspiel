@@ -42,7 +42,8 @@ noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
-| 1 (Andi) | ~~**Münz-Takt** (`wettmodus.md` 3)~~ — `muenzTakt.js` + Verkabelung + alle drei Komplexitätsstufen, 1741 Tests grün, Build sauber. ⚠️ Liegt auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** auf `main`. | fertig | 2026-08-04 |
+| 1 (Andi) | ~~**Regel-Abstimmung & Verfassung** (`abstimmung-verfassung.md`)~~ — alle fünf Schritte der Spec; offen bleibt allein das Einhängen in die Wertung. ⚠️ Branch, nicht `main`. ⚠️ `schema.sql` muss der Nutzer ausführen. | fertig | 2026-08-05 |
+| 1 (Andi) | ~~**Münz-Takt** (`wettmodus.md` 3)~~ — `muenzTakt.js` + Verkabelung + alle drei Komplexitätsstufen, Build sauber. ⚠️ Liegt auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** auf `main`. | fertig | 2026-08-04 |
 | 2 (Andre) | ~~Joker-Baukasten: zehn Module + fünf Oberflächen-Bausteine~~ — alles auf `main`, 1472 Tests grün | fertig | 2026-08-02 |
 | 2 (Andre) | **NÄCHSTE AUFGABE: Blindstellen-Durchgang `balanceSim.js`.** Sieht der Simulator die sechs neuen Ebenen? Nach Stand 31.07. nein — null Verweise. Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-31 |
 | 2 (Andre) | ~~Joker-Ökonomie: sechs Module + Einhängen + Creator-Code~~ — alles auf `main`, 1359 Tests grün | fertig | 2026-07-31 |
@@ -104,6 +105,86 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-08-05 (III) · **ÜBERGABE** — Münz-Takt und Mitbestimmung fertig, zwei Punkte der Liste abgeräumt
+
+> **👉 Frische Session: DAS ist dein Einstieg.**
+> ⚠️ **Alles liegt auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, NICHT
+> auf `main`.** Erst holen, dann arbeiten.
+> ⚠️ **Nutzer-Aufgabe: `supabase/schema.sql` erneut im SQL-Editor ausführen**
+> (idempotent, komplett laufen lassen) — sonst fehlen live zwei Tabellen.
+
+**1845 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
+10 Commits.
+
+#### ✅ Abgeräumt: Punkt 1 und Punkt 2 der offenen Liste
+
+| | Inhalt |
+|---|---|
+| **Münz-Takt** (`wettmodus.md` 3) | `muenzTakt.js` + Verkabelung in `muenzstand`, `Tippabgabe`, `Waehrungen`, `Spielerstellung` + alle drei Komplexitätsstufen |
+| **Regel-Abstimmung & Verfassung** | Alle fünf Schritte der Spec: `regelAbstimmung.js` · Store + Schema · `Mitbestimmung.jsx` (Profi) · `/regeln` (Screen) · `beschluss.js` (Wirkung) |
+
+#### 🔴 Zwei Bauweisen, die sich beide bewährt haben
+
+1. **Der Münz-Takt ist eine SCHLÜSSEL-Funktion**, kein zweites Datenmodell —
+   dieselbe Bauart wie `rundenSchluessel` in `zeitachse.js`, nur eine Ebene
+   höher. Budget, Höchsteinsatz und Deckungsrechnung gelten dadurch
+   automatisch für die Periode, **ohne dass die Einsatz-Logik angefasst
+   wurde**. Beim Vorgabe-Takt gibt er die übergebene Funktion unverändert
+   zurück: kein stiller Regelwechsel.
+2. **Die Wirkung eines Beschlusses ist eine FRAGE, kein Zustand.** Kein
+   „Regelwerk aktualisieren", sondern `regelwerkAmSpieltag(...)`. Damit ist
+   die Rückwirkung strukturell unmöglich statt nur verboten — wer einen alten
+   Spieltag nachrechnet, bekommt das damalige Regelwerk. **Das Muster taugt
+   überall dort, wo eine Regel sich über die Saison ändern darf.**
+
+#### 🔴 Der Befund, der über diese Aufgaben hinausgeht
+
+**Der Wettmodus kam in Stufe 1 und Stufe 2 überhaupt nicht vor.** Kein
+Charakter, keine Klartext-Stufe hat ihn je gesetzt — eine ganze Spielart war
+nur über die Profi-Ansicht erreichbar. Niemand hat es gemerkt, weil **die
+Profi-Ansicht beim Bauen von allein mitwächst und die anderen beiden nicht.**
+
+Deshalb bitte bei JEDER neuen Ebene beide Stufen mitprüfen. Das ist keine
+Formalie: `merkmale()` in `charaktere.js` kannte nur zwei Joker-Modi und hätte
+einem Wettbüro-Charakter „1 Joker pro Spieltag" auf die Karte geschrieben.
+Wo eine Stufe bewusst leer bleibt (Mitbestimmung in Stufe 1), steht die
+Begründung jetzt im Code statt als stillschweigende Lücke.
+
+#### 📌 Zum dritten Mal in Folge: kein einziger ernster Fund aus den Tests
+
+Acht Funde, alle aus eigenem Nachrechnen oder aus dem Durchlesen des eigenen
+Codes. Die drei lehrreichsten:
+
+- **Die Konflikt-Prüfung maß gegen einen Spieltag statt gegen die Periode** —
+  bei „alle 4 Spieltage" wäre ein echter Konflikt nicht gemeldet worden. Und
+  gleich hinterher: der Warntext sagte „im Spieltag", während die Zahl vier
+  zählte. Zahl richtig, Satz falsch — kein Test prüft Wortlaute.
+- **Das Entfernen des letzten freigegebenen Bereichs kippte die Verfassung ins
+  Gegenteil.** Eine leere Freigabeliste heißt „alles außer den
+  festgeschriebenen": aus „gar nichts abstimmbar" wäre durch einen Klick
+  „alles abstimmbar" geworden, ohne Meldung.
+- **`zuletztGeoeffnet` war um eins zu früh.** Ein Spieltag wird zum Tippen
+  GEÖFFNET, bevor er angepfiffen wird — ein Beschluss hätte auf einem bereits
+  getippten Spieltag greifen können. Gerundet wird jetzt in die harmlose
+  Richtung: eine Woche zu spät kostet eine Woche, eine zu früh bricht die
+  Kante.
+
+Dazu ein englischer Dezimalpunkt in deutschem Anzeigetext („33.3 je
+Spieltag"), den ein Test auf „enthält die Zahl" nicht sehen kann.
+
+#### 🟡 Offen, nach Wert sortiert
+
+1. **Regel-Abstimmung: das Einhängen in die Wertung.** Die Auswertung liest
+   weiterhin `round.rules`; der Scoring-Pfad müsste den Runden-Spieltag
+   durchreichen. `regelwerkAmSpieltag` steht bereit und hat schon einen
+   Aufrufer. **Das ist der Schritt, der die Snapshot-Kante wirklich berührt.**
+2. **Glücksrad als SVG** (`drehrad.md` 3c) — prozedural, keine Clips.
+3. Die fünf Teil-Wirkungen aus `kontaktstellen.md`.
+4. L3/L4/L6 · die 16 Auslöser.
+5. **Balance-Messung** — `balanceSim.js` braucht Formkurven je Tipper.
+
+---
 
 ### 2026-08-05 (II) · Regel-Abstimmung & Verfassung — Schritte 1 bis 3 von 5
 
