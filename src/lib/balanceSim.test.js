@@ -322,3 +322,56 @@ describe("Saisonform — wird sie überhaupt gemessen? (Blindstellen-Regression)
     expect(a.profile.map((p) => p.punkteSchnitt)).toEqual(b.profile.map((p) => p.punkteSchnitt));
   });
 });
+
+// 🔴 Blindstellen-Gegenprobe 3.2: die Joker-GRUNDFORM war unsichtbar.
+// `bedingung.minQuote`, `maxQuote`, `abklingzeit` und `wer` konnten beliebig
+// stehen — der Simulator setzte den Joker trotzdem auf jedes Spiel.
+describe("Joker-Grundform — wird sie überhaupt gemessen? (Blindstellen-Regression)", () => {
+  const BASIS = sanitizeRules({
+    ...PRESETS.find((p) => p.key === "standard").rules,
+    joker: { enabled: true, modus: "einzel", faktor: 1.5 },
+  });
+  const mit = (standard) => simulateBalance(
+    sanitizeRules({ ...BASIS, jokerBasis: { standard } }),
+    { seasons: 40, seed: 20260805 });
+
+  it("eine Bedingung, die KEIN Spiel erfüllt, schaltet den Joker ab", () => {
+    // Die Außenseiter-Quoten der Archetypen liegen zwischen 2,75 und 14,38
+    // (gemessen). Eine Untergrenze darüber lässt nichts übrig.
+    const unmoeglich = mit({ bedingung: { minQuote: 20 } });
+    expect(unmoeglich.modifikatorAnteil).toBe(0);
+    const ohne = mit({});
+    expect(ohne.modifikatorAnteil).toBeGreaterThan(0);
+  });
+
+  it("eine Obergrenze unter allen Quoten ebenso", () => {
+    expect(mit({ bedingung: { maxQuote: 2.5 } }).modifikatorAnteil).toBe(0);
+  });
+
+  // 🔴 Das eigentliche Messergebnis, und es widerspricht der Erwartung im
+  // Blindstellen-Papier („wie stark SINKT der Anteil?"): solange auch nur ein
+  // Spiel die Bedingung erfüllt, sinkt der Anteil praktisch nicht — der
+  // Spieler legt den Joker einfach auf ein anderes Spiel. Die Quoten-Bedingung
+  // ist eine Klippe, kein Regler.
+  it("solange ein Spiel passt, verschiebt die Bedingung den Joker, statt ihn zu dosieren", () => {
+    const ohne = mit({}).modifikatorAnteil;
+    const streng = mit({ bedingung: { minQuote: 12 } }).modifikatorAnteil;
+    expect(streng).toBeGreaterThan(0);
+    // Höchstens ein Zehntel Unterschied — praktisch derselbe Anteil.
+    expect(Math.abs(streng - ohne)).toBeLessThan(ohne * 0.1);
+  });
+
+  it("die Abklingzeit dosiert dagegen wirklich", () => {
+    const ohne = mit({}).modifikatorAnteil;
+    const gebremst = mit({ abklingzeit: 3 }).modifikatorAnteil;
+    expect(gebremst).toBeGreaterThan(0);
+    expect(gebremst).toBeLessThan(ohne / 2);
+  });
+
+  it("`wer` greift ebenfalls", () => {
+    const alle = mit({}).modifikatorAnteil;
+    const nurHinten = mit({ wer: "abRueckstand", werWert: 200 }).modifikatorAnteil;
+    expect(nurHinten).toBeLessThan(alle);
+    expect(nurHinten).toBeGreaterThan(0);
+  });
+});

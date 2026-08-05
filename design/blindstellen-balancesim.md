@@ -124,6 +124,45 @@ durch die Verkabelung NICHT verschoben hat.
 
 **Aufwand: klein.** Verkabelung plus `gewertet` im Board plus Sieger-Referenz.
 
+### 3.2 `jokerBasis` — ✅ BEHOBEN (05.08.2026), mit einem unerwarteten Ergebnis
+
+`jokerIdx` hängt jetzt an `darfEinsetzen` (`wer`, `abklingzeit`) UND an
+`erfuelltBedingung` (`minQuote`/`maxQuote`). Vorher setzte der Simulator den
+Joker auf jedes Spiel, egal was in der Grundform stand.
+
+⚠️ **Eine Modell-Annahme, ausdrücklich benannt:** bei `wer: "adminFreigabe"`
+gilt jeder als freigegeben. Der Simulator misst den JOKER, nicht die
+Bereitschaft eines Admins — ohne die Annahme wäre die Ebene schlicht aus, und
+die Messung sagte nichts über die Einstellung aus, nur über den Admin.
+
+🔴 **Die Frage oben lautete „wie stark SINKT der Modifikator-Anteil, wenn Joker
+nur auf Spiele über Quote X gelten?" — die gemessene Antwort ist: fast gar
+nicht.** Die Außenseiter-Quoten der fünf Archetypen sind 14,38 · 7,05 · 2,79 ·
+2,78 · 2,75. Damit:
+
+| Grundform | Modifikator-Anteil |
+|---|---|
+| ohne Bedingung | 0,052 |
+| erst ab Quote 3 | 0,053 |
+| erst ab Quote 12 | 0,054 |
+| **erst ab Quote 20** (kein Spiel passt) | **0** |
+| **nur bis Quote 2,5** (kein Spiel passt) | **0** |
+| **Abklingzeit 3** | **0,019** |
+| nur ab Rückstand 200 | 0,030 |
+
+**Eine Quoten-Bedingung dosiert den Joker nicht — sie VERSCHIEBT ihn.** Solange
+auch nur ein Spiel passt, legt der Spieler den Joker eben dorthin, und der
+Anteil bleibt gleich. Erst wenn KEIN Spiel mehr passt, fällt er auf 0. Das ist
+eine Klippe, kein Regler.
+
+**Fürs Empfehlungsband heißt das:** wer den Joker-Einfluss dosieren will, nimmt
+die **Abklingzeit** (0,052 → 0,019 bei 3) oder `wer`, nicht die
+Quoten-Bedingung. Fünf Regressionstests in `balanceSim.test.js` halten das fest.
+
+---
+
+#### Der ursprüngliche Befund
+
 ### 3.2 `jokerBasis` — der billigste Einstieg von den vieren
 
 Braucht **keine** neue Interaktion, nur eine Frage an der richtigen Stelle:
@@ -172,7 +211,8 @@ gebaut (`design/joker-inventar.md` 3, „geschätzt, nicht gemessen").
 
 1. ~~**`saisonform`**~~ ✅ **erledigt am 05.08.2026** — Punkt 2 (Verlauf immer
    bauen) ist damit auch für alles Weitere erfüllt.
-2. **`jokerBasis`** — erste echte neue Messung, ohne Verhaltensmodell.
+2. ~~**`jokerBasis`**~~ ✅ **erledigt am 05.08.2026** — mit dem Ergebnis, dass
+   die Quoten-Bedingung eine Klippe ist und kein Regler (siehe 3.2).
 3. **`budget` + `limitKlassen`** — Buchführung. Mit der Erwartung, dass
    `presets.balance.test.js` anschlägt.
 4. **`duell`** — mit mehreren Zielstrategien, nicht einer.

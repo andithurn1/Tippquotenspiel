@@ -28,6 +28,10 @@ import { applyCatchup } from "./catchup";
 // damit UNSICHTBAR — ein Regelwerk konnte sie auf Anschlag drehen, und die
 // Kennzahlen änderten sich nicht.
 import { applySaisonform, sanitizeSaisonform } from "./saisonform";
+// 🔴 Blindstelle 3.2: die Joker-GRUNDFORM war unsichtbar. `bedingung.minQuote`,
+// `maxQuote` und `wer` konnten beliebig stehen — der Simulator setzte den
+// Joker trotzdem auf jedes Spiel. Eine Einstellung ohne messbare Wirkung.
+import { basisFuer, darfEinsetzen, erfuelltBedingung } from "./jokerBasis";
 import { sanitizeTippEinfluss, mischeRaster } from "./tippEinfluss";
 
 // Kleiner, schneller Zufallsgenerator mit Seed (mulberry32) — reproduzierbar.
@@ -313,6 +317,9 @@ export function simulateBalance(rules, {
   const aufholenAktiv = rules?.aufholen?.enabled === true;
   // Dieselbe Frage wie `brauchtVerlauf` in engine.js sie für die Saisonform
   // stellt: eine flache Kurve ohne Streicher ist ein No-op.
+  // Die Grundform des klassischen Jokers — EINE Auflösung je Lauf, nicht je
+  // Spieltag: sie hängt nur am Regelwerk.
+  const jokerBasisEinzel = basisFuer("joker.einzel", rules);
   const sfCfg = sanitizeSaisonform(rules?.saisonform);
   const saisonformAktiv = sfCfg.kurve !== "flach" || sfCfg.streich > 0;
   let aufholFlips = 0;   // Saisons, in denen der Bonus den Sieger geändert hat
@@ -334,6 +341,8 @@ export function simulateBalance(rules, {
     // Feld, gilt JEDER Spieltag als nicht getippt, und mit `nurGetippte: true`
     // (Vorgabe) greifen Streichresultate NIE (Blindstelle 3.1, Punkt 3).
     const gewertet = new Array(n).fill(0);
+    // Gesetzte Joker je Spieler, für die Abklingzeit in `darfEinsetzen`.
+    const jokerHistorie = PROFILE.map(() => []);
     for (let md = 0; md < matchdays; md++) {
       const arten = [];
       for (let m = 0; m < perMatchday; m++) arten.push(pickArt(rand()));
@@ -389,10 +398,40 @@ export function simulateBalance(rules, {
       const wahlPublikum = publikum.map((p) => spiele.map((sp) => p.aussenseiter(sp.ueberraschung, rand, 1)));
       // Joker: jeder setzt ihn auf sein erstes Außenseiter-Spiel (dort ist am
       // meisten zu holen), sonst aufs erste Spiel.
-      const jokerIdx = wahl.map((w) => {
+      //
+      // 🔴 Neu: nur auf ein Spiel, das die GRUNDFORM zulässt
+      // (`erfuelltBedingung` — `minQuote`/`maxQuote`), und nur, wenn der
+      // Spieler überhaupt einsetzen darf (`darfEinsetzen` — `wer`). Vorher
+      // wurde beides ignoriert: ein Regelwerk konnte „nur ab Außenseiter-Quote
+      // 4,0" verlangen, und der Simulator setzte trotzdem überall.
+      //
+      // ⚠️ Modell-Annahme, ausdrücklich: bei `wer: "adminFreigabe"` gilt jeder
+      // als freigegeben. Der Simulator misst den JOKER, nicht die Bereitschaft
+      // eines Admins — ohne diese Annahme wäre die Ebene schlicht aus, und die
+      // Messung sagte nichts über die Einstellung aus, nur über den Admin.
+      const jokerIdx = wahl.map((w, pi) => {
         if (!hatModifikator || rankingPool) return -1;
-        const i = w.indexOf(true);
-        return i >= 0 ? i : 0;
+        const erlaubnis = darfEinsetzen(jokerBasisEinzel, PROFILE[pi].key, {
+          board: PROFILE.map((p, k) => ({ userId: p.key, name: p.label, total: saison[k] }))
+            .sort((a, b) => b.total - a.total),
+          aktuellerSpieltag: md + 1,
+          adminFreigaben: PROFILE.map((p) => ({ userId: p.key, spieltag: md + 1 })),
+          hatGetippt: true,
+          alleGetippt: true,
+          letzteEinsaetze: jokerHistorie[pi],
+        }, "joker.einzel");
+        if (!erlaubnis.erlaubt) return -1;
+        // Erst unter den Spielen suchen, die die Bedingung erfüllen.
+        const moeglich = spiele
+          .map((sp, i) => (erfuelltBedingung(jokerBasisEinzel, sp.snap).erlaubt ? i : -1))
+          .filter((i) => i >= 0);
+        if (!moeglich.length) return -1;
+        const aussenseiter = moeglich.find((i) => w[i]);
+        return aussenseiter != null ? aussenseiter : moeglich[0];
+      });
+      // Für die Abklingzeit: an welchen Spieltagen hat dieser Spieler gesetzt?
+      jokerIdx.forEach((i, pi) => {
+        if (i >= 0) jokerHistorie[pi].push({ jokerArt: "joker.einzel", spieltag: md + 1 });
       });
 
       // ── Ranglisten-Modus: der Pool wird VERTEILT ──────────
