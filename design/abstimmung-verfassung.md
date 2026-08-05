@@ -164,7 +164,22 @@ Vergleich, den `presetMerge` und die Teilbibliotheken bereits zeigen.
      serverseitig gesetzt; sonst erklärte jedes Mitglied den eigenen Antrag
      für angenommen. RLS ist die Zugangs-, nicht die Spielregel — wer
      beantragen darf, entscheidet `regelAbstimmung.js`.
-3. Verfassung in der Spielerstellung (Profi-Stufe).
+3. ✅ **GEBAUT (05.08.2026)** — `src/components/Mitbestimmung.jsx`, in der
+   Spielerstellung nur bei Stufe „profi". Regler UND Zahleneingabe fürs
+   Quorum, Karten für die Kataloge, die Verfassung als Liste der ASPEKTE
+   (nie einzelner Regler), dazu `beschreibeMitbestimmung` als Live-Vorschau
+   und die Konflikt-Meldungen.
+   ⚠️ Zwei Fallen, die beim Bauen aufgefallen sind:
+   - **Der Quorum-Regler läuft NICHT über `reglerSchritt`.** Der erkennt
+     die Multiplikator-Familie generisch an `step === 0.05`; das Quorum hat
+     diesen Schritt, ist aber ein Anteil und kein Modifikator. Gleiche Lage
+     und gleiche Behandlung wie `maxAnteilProSpiel`.
+   - **Das Entfernen des LETZTEN freigegebenen Bereichs kippte die
+     Bedeutung ins Gegenteil.** Eine leere Freigabeliste heißt „alles außer
+     den festgeschriebenen" — wer den letzten Haken entfernt, hätte statt
+     „gar nichts abstimmbar" plötzlich „alles abstimmbar" bekommen, durch
+     einen Klick und ohne Hinweis. Jetzt werden in diesem Fall alle
+     Bereiche festgeschrieben; `konflikte` meldet den Zustand ordentlich.
 4. Antrags- und Abstimmungs-Screen.
 5. ⚠️ **Erst danach die Wirkung**: ein angenommener Antrag ändert das Regelwerk
    der Runde zum berechneten Spieltag. Das ist der Schritt, der die

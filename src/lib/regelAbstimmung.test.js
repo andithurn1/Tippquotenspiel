@@ -5,7 +5,7 @@ import {
   MITBESTIMMUNG_ASPEKT,
   sanitizeVerfassung, sanitizeRegelAbstimmung, effektiveGrenzen,
   aspektAenderbar, darfStimmen, darfBeantragen, zaehleAus, wirktAb,
-  verstoesstGegenVerfassung, konflikte,
+  verstoesstGegenVerfassung, konflikte, beschreibeMitbestimmung,
 } from "./regelAbstimmung";
 import { RULE_LIMITS } from "./engine";
 import { ASPEKT_KEYS } from "./presetMerge";
@@ -402,6 +402,35 @@ describe("verstoesstGegenVerfassung", () => {
     const funde = verstoesstGegenVerfassung({ joker: { faktor: 1.8 } }, vj, "modifikatoren", RULE_LIMITS);
     expect(funde).toHaveLength(1);
     expect(funde[0].feld).toBe("joker.faktor");
+  });
+});
+
+describe("beschreibeMitbestimmung — die Live-Vorschau", () => {
+  it("sagt bei ausgeschalteter Abstimmung, dass die Regeln feststehen", () => {
+    const t = beschreibeMitbestimmung({ regelAbstimmung: { enabled: false } });
+    expect(t).toContain("nicht abgestimmt");
+  });
+
+  it("rechnet das Quorum in Köpfe um, wenn die Mitgliederzahl bekannt ist", () => {
+    const rules = anRules({ quorum: 0.5 });
+    // Von Hand: 0,5 von 11 sind 5,5 — abstimmen müssen also 6, nicht 5.
+    // Abrunden hieße, ein Quorum durchgehen zu lassen, das nicht erfüllt ist.
+    expect(beschreibeMitbestimmung(rules, { mitglieder: 11 })).toContain("6 von 11");
+    // Ohne Mitgliederzahl wird nichts geraten, dann bleibt es bei Prozent.
+    expect(beschreibeMitbestimmung(rules)).toContain("50 %");
+  });
+
+  it("nennt, wie viele Bereiche die Verfassung freigibt", () => {
+    const rules = anRules({}, { enabled: true, gesperrt: ["naehe", "kombi"] });
+    const t = beschreibeMitbestimmung(rules, { aspektKeys: ASPEKT_KEYS });
+    // Ohne die Mitbestimmung selbst, minus die zwei gesperrten.
+    const waehlbar = ASPEKT_KEYS.filter((k) => k !== "mitbestimmung").length;
+    expect(t).toContain(`${waehlbar - 2} von ${waehlbar}`);
+  });
+
+  it("verschweigt das Veto nicht", () => {
+    expect(beschreibeMitbestimmung(anRules({ vetoAdmin: true }))).toContain("kippen");
+    expect(beschreibeMitbestimmung(anRules({ vetoAdmin: false }))).not.toContain("kippen");
   });
 });
 

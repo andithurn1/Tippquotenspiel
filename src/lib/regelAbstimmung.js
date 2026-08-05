@@ -465,6 +465,53 @@ export function verstoesstGegenVerfassung(werte, verfassung, aspekt = null, hart
   return out;
 }
 
+// ── Die Live-Vorschau ────────────────────────────────────────
+// Ein bis zwei Sätze in Alltagsdeutsch, mit AUSGERECHNETEN Zahlen statt
+// Vokabeln: „Quorum 0,75" sagt niemandem etwas, „von 12 Mitgliedern müssen 9
+// abstimmen" schon. Vorbild: `beschreibeBudget` (jokerBudget.js) und
+// `anteilHinweis` (wettbewerbGewicht.js) — dort steht auch, warum die
+// Betreuung durch konkrete Zahlen kein Komfort ist, sondern der Punkt.
+//
+// `mitglieder` ist die ZAHL der Mitglieder (optional). Ohne sie bleibt es bei
+// Prozenten — geraten wird nichts.
+export function beschreibeMitbestimmung(rules, { mitglieder = null, aspektKeys = [] } = {}) {
+  const a = sanitizeRegelAbstimmung(rules?.regelAbstimmung);
+  const v = sanitizeVerfassung(rules?.verfassung);
+
+  if (!a.enabled) {
+    return "Über die Regeln wird nicht abgestimmt — sie bleiben, wie der Admin sie angelegt hat.";
+  }
+
+  const mehrheitText = a.mehrheit === "einstimmig"
+    ? "ohne eine einzige Gegenstimme"
+    : a.mehrheit === "zweidrittel" ? "mit zwei Dritteln der abgegebenen Stimmen"
+      : "mit einfacher Mehrheit";
+
+  const n = Number(mitglieder);
+  const quorumText = Number.isFinite(n) && n > 0
+    // Aufgerundet: 0,5 von 11 sind 5,5 — abstimmen müssen dann 6, nicht 5.
+    ? `mindestens ${Math.ceil(a.quorum * n)} von ${n} müssen abstimmen`
+    : `mindestens ${Math.round(a.quorum * 100)} % müssen abstimmen`;
+
+  const wirkung = a.wirkungAb === "vorlauf"
+    ? `${a.wirkungVorlauf} Spieltage nach dem Ende der Abstimmung`
+    : "am Spieltag nach dem Ende der Abstimmung";
+
+  let text = `Ein Antrag läuft ${a.dauer} ${a.dauer === 1 ? "Spieltag" : "Spieltage"} und geht durch, `
+    + `wenn er ${mehrheitText} angenommen wird — ${quorumText}. Wirksam wird er ${wirkung}, `
+    + "nie rückwirkend.";
+
+  if (v.enabled) {
+    const alle = (Array.isArray(aspektKeys) ? aspektKeys : []).filter((k) => k !== MITBESTIMMUNG_ASPEKT);
+    const offen = alle.filter((k) => aspektAenderbar(k, v).erlaubt).length;
+    text += alle.length
+      ? ` Die Verfassung gibt ${offen} von ${alle.length} Bereichen zur Abstimmung frei.`
+      : " Dazu setzt die Verfassung einen festen Rahmen.";
+  }
+  if (a.vetoAdmin) text += " Der Admin kann jeden Beschluss kippen.";
+  return text;
+}
+
 // ── Konflikte ───────────────────────────────────────────────
 // Form wie `einsatzKonflikte` in `engine.js`: `{ key, text }`, die Korrektur
 // steht als Satz IM Text. `aspektKeys` kommt von außen (`ASPEKT_KEYS` aus

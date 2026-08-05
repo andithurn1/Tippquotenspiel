@@ -38,6 +38,7 @@ import BalanceAmpel from "@/components/BalanceAmpel";
 import ProfiWarnungen from "@/components/ProfiWarnungen";
 import JokerVerteilung from "@/components/JokerVerteilung";
 import JokerOekonomie from "@/components/JokerOekonomie";
+import Mitbestimmung from "@/components/Mitbestimmung";
 import Bausteine from "@/components/Bausteine";
 import LimitKlassen from "@/components/LimitKlassen";
 import JokerGrundform from "@/components/JokerGrundform";
@@ -709,6 +710,20 @@ export default function Spielerstellung() {
             <>
               <SectionTitle>Joker-Ökonomie</SectionTitle>
               <JokerOekonomie rules={rules} stufe={stufe} onChange={patchOekonomie} />
+            </>
+          )}
+
+          {/* Mitbestimmung: Regel-Abstimmung + Verfassung
+              (design/abstimmung-verfassung.md). Nur in der Profi-Stufe — bei
+              „anpassen" beantwortet die Klartext-Frage „Wer darf die Regeln
+              ändern?" dasselbe in drei Bündeln, und bei „einfach" entscheidet
+              der Charakter. Wer Quorum, Fristen und eine Verfassung je Bereich
+              einzeln stellen will, ist genau hier richtig. */}
+          {stufe === "profi" && (
+            <>
+              <SectionTitle>Mitbestimmung</SectionTitle>
+              <Mitbestimmung rules={rules}
+                onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
             </>
           )}
 
