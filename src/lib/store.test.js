@@ -5,6 +5,8 @@ import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules } from "./engine";
 import { zeitachse, rundenSpieltagVon } from "./zeitachse";
 import { drehradZiehungen } from "./drehradBoard";
 import { auswerten } from "./drehrad";
+import { WETT_TYP } from "./saisonwetten";
+import { filterMatchesByTeams } from "./roundStatus";
 import { darfEinsetzen, basisFuer } from "./jokerBasis";
 
 describe("Mock-Store — Seed & Schnittstelle", () => {
@@ -555,6 +557,46 @@ describe("Drehrad: der Store reicht den RUNDEN-Spieltag, nicht den Liga-Spieltag
       expect(rundenSpieltagVon(achse, spiel))
         .not.toBe(rundenSpieltagVon(katalogAchse, spiel));
     }
+  });
+
+  // 🔴 Dieselbe Frage bei den Saison-Wetten: `tabelle()` baut eine Tabelle über
+  // ALLE übergebenen Spiele. Gemessen am 05.08.2026 über den ganzen Katalog:
+  // „Meister" einer Bundesliga-Runde = FC Barcelona, „Meiste Tore" ebenfalls,
+  // Torschützenkönig ein Spieler aus einer anderen Liga.
+  it("Saison-Wetten werden über die Spiele DER RUNDE ausgewertet", async () => {
+    const s = createMockStore();
+    const alle = await s.listMatches();
+    const blTeams = [...new Set(alle.filter((m) => m.wettbewerb === "bl")
+      .flatMap((m) => [m.home, m.away]))];
+    const katalogMeister = WETT_TYP.meister.ermitteln(alle, { key: "meister" })[0];
+    const rundenMeister = WETT_TYP.meister
+      .ermitteln(filterMatchesByTeams(alle, blTeams), { key: "meister" })[0];
+    // Die beiden müssen auseinanderliegen, sonst bewiese der Test nichts.
+    expect(rundenMeister).not.toBe(katalogMeister);
+
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      saison: {
+        enabled: true, gewicht: 1,
+        wetten: [{ key: "meister", punkte: 300 }],
+      },
+    });
+    const runde = await s.createRound({
+      name: "BL", adminId: "u-du", rules, teamFilter: blTeams,
+    });
+    const jor = await s.getMatch("JOR-ESP");
+    await s.saveTip({
+      roundId: runde.id, matchId: "JOR-ESP", userId: "u-du",
+      tip: { home: 5, away: 1, goals: { home: [], away: [] } }, snapshot: jor.snapshot,
+    });
+    // Auf den Meister DER RUNDE getippt → Punkte. Auf den des Katalogs → keine.
+    await s.saveSeasonTip({ roundId: runde.id, userId: "u-du", wettenId: "meister", wert: rundenMeister });
+    const board = await s.getLeaderboard(runde.id);
+    expect(board.find((b) => b.userId === "u-du")?.saison).toBe(300);
+
+    await s.saveSeasonTip({ roundId: runde.id, userId: "u-du", wettenId: "meister", wert: katalogMeister });
+    const board2 = await s.getLeaderboard(runde.id);
+    expect(board2.find((b) => b.userId === "u-du")?.saison).toBe(0);
   });
 
   it("der Plan deckt die ganze Runde ab, nicht nur 34 Spieltage", async () => {

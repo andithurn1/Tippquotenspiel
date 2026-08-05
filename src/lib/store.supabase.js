@@ -389,7 +389,10 @@ export function createSupabaseStore() {
       }
       // Saison-Punkte drauf, inkl. der reinen Saison-Tipper (saisonBoard.js).
       // `seasonTips` ist hier schon auf die Runde gefiltert.
-      board = withSaisonPunkte({ board, rules, matches, seasonTips, nameOf });
+      // 🔴 `rundenSpiele`, nicht `matches` — siehe Mock-Store: über den ganzen
+      // Katalog gerechnet ist der „Meister" einer Bundesliga-Runde der FC
+      // Barcelona.
+      board = withSaisonPunkte({ board, rules, matches: rundenSpiele, seasonTips, nameOf });
       // Drehrad-Punkte drauf (drehradBoard.js) — ERST Saison, DANN Rad: beide
       // sortieren und ranken das Board neu, der jeweils letzte Aufruf gewinnt.
       // Es darf nur EINE Reihenfolge geben, sonst hängt die Rangfolge am

@@ -181,8 +181,13 @@ export function createMockStore() {
     // Saison-Punkte drauf (und reine Saison-Tipper ergänzen) — siehe
     // saisonBoard.js. Der Mock hält die Saison-Tipps ALLER Runden in einer
     // Liste, deshalb hier nach Runde filtern.
+    // 🔴 Über die Spiele DIESER Runde, nicht über den Katalog. Gemessen am
+    // 05.08.2026: über den ganzen Katalog gerechnet ist der „Meister" einer
+    // Bundesliga-Runde der FC Barcelona — `tabelle()` baut eine Tabelle über
+    // ALLE übergebenen Spiele, und der Katalog trägt fünf Wettbewerbe.
+    // Torschützenkönig und beste Offensive genauso.
     board = withSaisonPunkte({
-      board, rules, matches: [...matches.values()], nameOf,
+      board, rules, matches: rundenSpiele, nameOf,
       seasonTips: seasonTips.filter((s) => s.round_id === roundId),
     });
     // Drehrad-Punkte drauf (drehradBoard.js) — ERST Saison, DANN Rad: beide

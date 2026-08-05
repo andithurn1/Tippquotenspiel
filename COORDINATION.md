@@ -210,13 +210,43 @@ Aufruf übergibt jetzt ein Regelwerk, und zwar das der Runde bzw. des Spieltags.
     **`saisonLage(matches, jetzt)`** nach `wettbewerbe.js` gewandert — sie
     stand als Logik in einer Komponente und war dadurch nicht prüfbar.
 
+**Vierter Durchgang: Frage (c) auf den ganzen Datenpfad.** Zwei Funde, beide
+schwerer als alles davor:
+
+15. 🔴 **Der Runden-Spieltag war zwei verschiedene Zahlen.** Die Zeitachse wurde
+    an manchen Stellen über die Spiele der Runde gebaut (Spielwahl, Münz- und
+    Narrenstand), an anderen über den ganzen Katalog (beide Stores, Tippabgabe,
+    Rad, Freigaben, Regeländerungen). Gemessen: Bundesliga-Spieltag 20 liegt
+    über den Katalog auf Runden-Spieltag **27**, über die Runde auf **26**;
+    7 von 42 Runden-Spieltagen der Katalog-Achse enthielten gar kein Spiel der
+    Runde. An der Achse hängen Joker-Verteilung, Budget-Perioden,
+    Admin-Freigaben, Rad-Tage und der Wirkungs-Spieltag eines Beschlusses.
+    → Beide Stores haben jetzt **`listRoundMatches(roundId)`** und bauen ihre
+    Achse darüber; fünf Screens laden darüber. Die Screens der Runden-ERSTELLUNG
+    bleiben beim vollen Katalog (dort gibt es noch keine Runde).
+16. 🔴 **Der „Meister" einer Bundesliga-Runde war der FC Barcelona.**
+    `withSaisonPunkte` bekam den ganzen Katalog, und `tabelle()` baut eine
+    Tabelle über ALLE übergebenen Spiele. Gemessen: Meister „FC Barcelona"
+    statt „FC Bayern München", beste Offensive dasselbe, Torschützenkönig ein
+    Spieler aus einer anderen Liga. → Beide Stores werten jetzt über
+    `rundenSpiele` aus, ein Test hält es fest.
+
+⚠️ **Offen geblieben, bewusst nicht entschieden:** ein `team_filter` zieht die
+CL-Spiele der gefilterten Klubs mit herein. Der „Meister" einer
+Bundesliga-Runde ist dadurch über Liga + Champions League gerechnet — gemessen
+kommt „FC Bayern München" heraus statt „VfB Stuttgart" (nur Liga). Eine
+Saison-Wette trägt ein `wettbewerb`-Feld, `ermitteln()` benutzt es aber nicht.
+**Das ist eine Entwurfsfrage, keine Panne:** soll „Meister" die Liga meinen
+oder alles, was die Runde umfasst? Wer sie beantwortet, ändert `WETT_TYP`,
+nicht den Store.
+
 **Für den nächsten: die Frage taugt weiter.** Drei Formen hat sie:
 (a) rechnet der Screen denselben Wert ein zweites Mal? (b) rechnet er ihn mit
 DEM RICHTIGEN Regelwerk? (c) rechnet er über die Spiele DIESER RUNDE oder über
 den ganzen Katalog? Die dritte ist neu und hat sofort Fund 14 gebracht — es
 lohnt, sie auf die übrigen Screens anzuwenden.
 
-Stand: 1911 Tests grün, Build sauber, 15 Commits.
+Stand: 1913 Tests grün, Build sauber, 18 Commits.
 
 ### 2026-08-05 (IV) · 🔴 **RICHTUNGSENTSCHEIDUNG des Nutzers: Gewichtung kommt ZULETZT**
 
