@@ -35,6 +35,8 @@ export default function Spielwahl() {
   const [teamFilter, setTeamFilter] = useState(null);
   const [tippedIds, setTippedIds] = useState(new Set());
   const [rules, setRules] = useState(DEFAULT_RULES);
+  // Beschluss-Lage der Runde — siehe `regelnVon` weiter unten.
+  const [beschlussLage, setBeschlussLage] = useState(null);
   const [meineTips, setMeineTips] = useState([]);   // { match_id, wettbewerb, matchday, gewicht }
   const [votes, setVotes] = useState([]);           // Joker-Abstimmung der Runde
   const [adminId, setAdminId] = useState(null);     // wer darf einen Spieltag öffnen
@@ -45,6 +47,9 @@ export default function Spielwahl() {
 
   useEffect(() => {
     let live = true;
+    (getStore().getRegelnFuer?.(roundId) ?? Promise.resolve(null))
+      .then((lage) => { if (live) setBeschlussLage(lage ?? null); })
+      .catch(() => {});
     Promise.all([getStore().getRound(roundId), getStore().listMatches(), getStore().listVotes({ roundId })]).then(([round, ms, vs]) => {
       if (!live) return;
       setTeamFilter(round?.team_filter ?? null);
@@ -85,6 +90,18 @@ export default function Spielwahl() {
     });
     return () => { live = false; };
   }, [roundId, user]);
+
+  // 🔴 Das Regelwerk je SPIELTAG, nicht nur das der Runde. Beschlossene
+  // Regeländerungen wirken ab ihrem Spieltag; diese Liste zeigt Spiele über die
+  // ganze Saison, also auch welche vor und nach einem Beschluss. Ohne
+  // `regelnFuer` stünde am Spiel von Spieltag 30 das Tipp-Fenster und der
+  // Topspiel-Aufschlag von vor der Änderung — dieselbe Frage wie in der
+  // Tippabgabe, nur über viele Spieltage auf einmal.
+  // Fällt nichts an (keine Beschlüsse, nichts geladen), bleibt es beim
+  // Regelwerk der Runde — kein stiller Wechsel.
+  const regelnVon = (m) => (beschlussLage?.regelnFuer
+    ? beschlussLage.regelnFuer({ wettbewerb: wettbewerbVon(m), matchday: m?.matchday ?? null }) ?? rules
+    : rules);
 
   const rankingModus = rules.joker?.enabled === true && rules.joker?.modus === "ranking";
   const istAdmin = Boolean(user && adminId && user.id === adminId);
@@ -141,13 +158,13 @@ export default function Spielwahl() {
   const [alleZeigen, setAlleZeigen] = useState(false);
   const stand = uebersicht(matches ?? [], rules, now);
   const naechste = naechsteOeffnung(matches ?? [], rules, now);
-  const offeneUndGelaufene = (matches ?? []).filter((m) => tippStatus(m, rules, now).zustand !== "zu");
+  const offeneUndGelaufene = (matches ?? []).filter((m) => tippStatus(m, regelnVon(m), now).zustand !== "zu");
   // Wenn gerade NICHTS tippbar ist (typisch in der Sommerpause), wäre die
   // Liste leer — ein leerer Screen ist immer die schlechteste Antwort. Dann
   // zeigen wir die nächsten anstehenden Spiele, deutlich als „noch nicht
   // tippbar" markiert, statt den Spieler vor eine weiße Fläche zu setzen.
   const naechsteVorschau = (matches ?? [])
-    .filter((m) => tippStatus(m, rules, now).zustand === "zu")
+    .filter((m) => tippStatus(m, regelnVon(m), now).zustand === "zu")
     .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))
     .slice(0, 9);
   const sichtbar = alleZeigen
@@ -338,8 +355,8 @@ export default function Spielwahl() {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {g.spiele.map((m) => (
-                  <MatchRow key={m.id} match={m} status={tippStatus(m, rules, now)}
-                    tipped={tippedIds.has(m.id)} gewicht={gewichtVon(m.id)} rules={rules} />
+                  <MatchRow key={m.id} match={m} status={tippStatus(m, regelnVon(m), now)}
+                    tipped={tippedIds.has(m.id)} gewicht={gewichtVon(m.id)} rules={regelnVon(m)} />
                 ))}
               </div>
             </div>
