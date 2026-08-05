@@ -162,13 +162,36 @@ fragt „wie weit auseinander".
    gemeinsam. Behoben mit EINER Umrechnung (`alleTippsRunde`,
    `meinSpieltagRunde`).
 
-**Für den nächsten: die Frage taugt weiter.** Nimm einen Screen, such den Wert,
-den er anzeigt, und finde die Stelle, die denselben Wert für die Wertung
-rechnet. Sind es zwei Rechnungen, sind es zwei Wahrheiten. Noch nicht
-durchgesehen: `Konto.jsx`, `Historie.jsx` (rechnet `scoreLeaderboardHistory`
-selbst), `SaisonTipps.jsx`, `Ranking.jsx`/`RankingVerlauf.jsx`, `Ereignisse.jsx`.
+**Danach der zweite Durchgang: WELCHES Regelwerk rechnet ein Screen?** Sechs
+weitere Funde, alle dieselbe Frage:
 
-Stand: 1903 Tests grün, Build sauber.
+5. **`Historie.jsx`** rechnete Verlauf und Rekorde ohne `regelnFuer` — für die
+   eigene Runde also ohne ihre Beschlüsse. Beide Stores liefern die
+   Beschluss-Lage jetzt über **`getRegelnFuer(roundId)`**; angewandt wird sie
+   NUR auf „Diese Runde", nie auf ein durchgerechnetes fremdes Preset.
+6. **`Abrechnung.jsx`** — die auffälligste Zahl der App — stand auf einem fest
+   verdrahteten Demo-Tipp unter `DEFAULT_RULES`, während die Tabelle darunter
+   aus dem Store kam. Zeigt jetzt den zuletzt gewerteten EIGENEN Tipp unter dem
+   Regelwerk seines Spieltags. (Demo-Runde: 1010 = 1010, unverändert.)
+7. **`Tippabgabe.jsx`** las `round.rules` statt der Regeln des Spieltags — der
+   Spieler plante unter Regeln, unter denen er nicht gewertet wird.
+8. **`AuszahlungsExplorer.jsx`** hatte `const RULES = DEFAULT_RULES` fest im
+   Modul. Der Explorer wird zum PLANEN benutzt.
+9. **`Tutorial.jsx`** rechnete seine Beispiele mit der Vorgabe — falsche Zahlen
+   genau dort, wo jemand das Spiel erst versteht.
+10. **`Einstellungen.jsx`** zeigte in der Anzeige-Vorschau Punkte aus einer
+    anderen Runde.
+
+Gegenprobe: `grep "scoreTip(\|projectTip(\|toDisplay(" src/components/` — jeder
+Aufruf übergibt jetzt ein Regelwerk, und zwar das der Runde bzw. des Spieltags.
+
+**Für den nächsten: die Frage taugt weiter.** Zwei Formen hat sie:
+(a) rechnet der Screen denselben Wert ein zweites Mal? (b) rechnet er ihn mit
+DEM RICHTIGEN Regelwerk? Noch nicht durchgesehen: `Spielwahl.jsx` (nutzt die
+Runden-Regeln, aber nicht `regelnFuer` je Spieltag), `RundenHub.jsx`,
+`SaisonTipps.jsx`.
+
+Stand: 1903 Tests grün, Build sauber, 10 Commits.
 
 ### 2026-08-05 (IV) · 🔴 **RICHTUNGSENTSCHEIDUNG des Nutzers: Gewichtung kommt ZULETZT**
 
