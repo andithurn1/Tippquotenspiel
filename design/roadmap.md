@@ -109,10 +109,13 @@ Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
   Die Winkel liegen im Lib und sind geprüft: `segmentUnterZeiger` ist die
   Umkehrung von `zielWinkel` und existiert allein, um zu BEWEISEN, dass unter
   dem Zeiger das gezogene Feld landet und nicht der Nachbar.
-  ⚠️ Offen: der Dreh-Moment für den Spieler — die Komponente nimmt schon eine
-  `ergebnisId`, es fehlt nur der Ort, der sie aus `ziehe` durchreicht.
+  ✅ **Auch der Spieler sieht es jetzt** (`MeinRad.jsx`, Route `/rad`): kein
+  Knopf „drehen", der Ausgang steht ohnehin fest — die Ansicht rechnet nach.
+  🔴 **Dabei ein Fund:** beide Stores reichten dem Rad den LIGA-Spieltag statt
+  des RUNDEN-Spieltags; „kein Rad ohne Tipp" prüfte damit den falschen Tag,
+  und `spieltage: 34` ließ die letzten acht Runden-Spieltage ohne Drehung.
 
-Test-Stand: **1862 grün**, Build sauber (Stand 2026-08-05).
+Test-Stand: **1864 grün**, Build sauber (Stand 2026-08-05).
 Vorher **1671 grün** (Stand 2026-08-03).
 Vorher stand hier **933 grün (28.07.)** — über eine Woche still, während die
 Suite um 738 Tests gewachsen ist. Genau die Drift, vor der der Kasten unten
