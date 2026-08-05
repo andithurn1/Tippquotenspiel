@@ -231,6 +231,26 @@ schwerer als alles davor:
     Spieler aus einer anderen Liga. → Beide Stores werten jetzt über
     `rundenSpiele` aus, ein Test hält es fest.
 
+17. 🔴 **Der Joker-Plan sah 11 Joker vor, es gab sie an 27 von 42 Spieltagen.**
+    Die sechste Stelle derselben Fehlerklasse — und die einzige, vor der
+    CLAUDE.md namentlich warnt („Joker"). `Tippabgabe.jsx` baute `jokerPlan`
+    ohne `spieltage` (also über 34) und fragte `hatJoker` mit dem LIGA-Spieltag;
+    ein Plan-Tag „4" war dadurch gleichzeitig BL-4, PL-4, PD-4, SA-4 und CL-4.
+    Dazu `kontingent`/`darfJokerSetzen` mit `wettbewerb: spieltag.wettbewerb`,
+    was den alten „ein Plan je Liga"-Weg scharf hielt. Nach der Umstellung: 11.
+    Mitgezogen: erspielte Joker aus Ereignissen trugen den Liga-Spieltag, die
+    vom Rad den Runden-Spieltag — `erspieltBis` verglich zwei Skalen.
+    `drehradPlan`, das Geschwister dieses Plans, rechnet längst richtig; hier
+    war es nie angekommen.
+
+**Und der erste Punkt-2-Baustein: `/joker` „Deine Joker".** Die Verteilung war
+nur in der Admin-Vorschau und als halber Satz in der Tippabgabe sichtbar.
+`jokerPlan.js` hatte `sichtbareSpieltage`, `fortschritt` und `uebersicht`
+längst — keine Oberfläche benutzte sie. Der Screen zeigt Stand, eigene
+Joker-Spieltage (bei verdeckter Reihenfolge nur die gespielten) und im Modus
+`kontingent` die Mitspieler-Übersicht, damit ein ungleicher Zwischenstand nicht
+nach Bevorzugung aussieht.
+
 ⚠️ **Offen geblieben, bewusst nicht entschieden:** ein `team_filter` zieht die
 CL-Spiele der gefilterten Klubs mit herein. Der „Meister" einer
 Bundesliga-Runde ist dadurch über Liga + Champions League gerechnet — gemessen
@@ -246,7 +266,7 @@ DEM RICHTIGEN Regelwerk? (c) rechnet er über die Spiele DIESER RUNDE oder über
 den ganzen Katalog? Die dritte ist neu und hat sofort Fund 14 gebracht — es
 lohnt, sie auf die übrigen Screens anzuwenden.
 
-Stand: 1913 Tests grün, Build sauber, 18 Commits.
+Stand: 1916 Tests grün, Build sauber, 21 Commits.
 
 ### 2026-08-05 (IV) · 🔴 **RICHTUNGSENTSCHEIDUNG des Nutzers: Gewichtung kommt ZULETZT**
 
