@@ -294,6 +294,37 @@ describe("drehradBelohnungen — was das Rad AUSSER Punkten auszahlt", () => {
     expect(drehradBelohnungen({ rules: aus, rundenId: "r1", userIds: ["u1"] }))
       .toEqual({ joker: [], narren: [], modifikatoren: [] });
   });
+
+  // 🔴 Der Grund, warum ein AUFRUFER ohne `kontext` ein Anzeige-Fehler ist.
+  // `Tippabgabe.jsx` hat die Rad-Belohnungen bis 05.08.2026 ohne Kontext und
+  // mit der festen 34 gerechnet und dem Spieler damit Joker und Narren
+  // angezeigt, die das Leaderboard nie vergeben hat. Gemessen an einem
+  // Spieler, der genau EINEN Runden-Spieltag getippt hatte: 270 Narren auf
+  // dem Bildschirm gegen 30 in der Wertung.
+  //
+  // Ohne Kontext bleibt das Verhalten bewusst unverändert (kein stiller
+  // Regelwechsel für Aufrufer, die keinen liefern können) — dieser Test hält
+  // deshalb den UNTERSCHIED fest, nicht ein Verbot.
+  it("ohne kontext zahlt das Rad an JEDEM geplanten Spieltag, mit kontext nur an getippten", () => {
+    const rules = radRules([
+      { id: "f1", label: "30 Narren", gewicht: 1, belohnung: { typ: "budget", betrag: 30 } },
+    ]);
+    const basis = { rules, rundenId: "r1", userIds: ["u1"], spieltage: 42 };
+    const ohne = drehradBelohnungen(basis);
+    const mit = drehradBelohnungen({
+      ...basis,
+      kontext: {
+        board: [{ userId: "u1", total: 0, rank: 1 }],
+        // Getippt wurde genau ein Spieltag.
+        tipps: [{ userId: "u1", matchId: "m1", matchday: 5 }],
+        adminFreigaben: [], letzteEinsaetze: [],
+      },
+    });
+    const summe = (x) => x.narren.reduce((s, g) => s + g.betrag, 0);
+    expect(summe(ohne)).toBeGreaterThan(summe(mit));
+    // Und zwar genau die Spieltage, an denen wirklich getippt wurde.
+    expect(mit.narren.every((g) => g.spieltag === 5)).toBe(true);
+  });
 });
 
 // 🔴 `design/kontaktstellen.md`, vierte Teil-Wirkung: `letzteEinsaetze` fürs

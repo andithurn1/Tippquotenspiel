@@ -275,6 +275,13 @@ export default function Tippabgabe({ matchId }) {
   // übersprungen und der Screen stürzte beim ersten Datensatz mit „change in
   // the order of Hooks" ab. Sie brauchen deshalb Fallbacks für den Zustand
   // „noch nichts geladen".
+  // Die Zeitachse EINMAL bauen — sie wird unten mehrfach gebraucht
+  // (Rad-Belohnungen, Narren-Konto, Münz-Takt, Runden-Spieltag dieses Spiels).
+  // Als Hook muss sie VOR dem frühen Return stehen, deshalb hier oben.
+  const achse = useMemo(
+    () => zeitachse(alleMatches, RULES.zeitachse),
+    [alleMatches, RULES.zeitachse],
+  );
   const plan = useMemo(() => jokerPlan({
     verteilung: RULES.joker?.verteilung, seed: roundId ?? "", userIds: user ? [user.id] : [],
   }), [RULES.joker?.verteilung, roundId, user]);
@@ -287,11 +294,38 @@ export default function Tippabgabe({ matchId }) {
   // Zusammengeführt wird in DERSELBEN Gutschrift-Liste, kein zweiter Topf:
   // `kontingent` unten rechnet damit unverändert weiter, und die Regel
   // „wirkt ab dem Spieltag, an dem er verdient wurde" gilt automatisch mit.
+  //
+  // 🔴 UND MIT DENSELBEN EINGABEN wie die Wertung. Bis 05.08.2026 stand hier
+  // weder ein `kontext` noch die richtige Länge:
+  //  • ohne `kontext` prüft `drehradZiehungen` weder `wer`/`werWert` noch die
+  //    5.0-Invariante „kein Rad ohne Tipp" — dieser Screen schrieb dem Spieler
+  //    also Joker und Narren gut, die das Leaderboard nie vergeben hat;
+  //  • `SPIELTAGE` ist die feste Liga-Saison 34, die Runde hat über mehrere
+  //    Wettbewerbe mehr Runden-Spieltage (gemessen: 42) — die letzten acht
+  //    fielen weg, und die Skala stimmte ohnehin nicht.
+  // Beides ist dieselbe Fehlerklasse wie im Store und in `MeinRad.jsx`.
+  const radKontext = useMemo(() => {
+    if (!user) return null;
+    const mVon = new Map(alleMatches.map((m) => [m.id, m]));
+    return {
+      board,
+      // ⚠️ RUNDEN-Spieltag: `alleTipps` trägt den LIGA-Spieltag, `drehradPlan`
+      // verteilt über Runden-Spieltage. Ohne die Umrechnung prüft „kein Rad
+      // ohne Tipp" den falschen Tag.
+      tipps: alleTipps.map((t) => ({
+        userId: t.userId, matchId: t.matchId,
+        matchday: mVon.has(t.matchId) ? rundenSpieltagVon(achse, mVon.get(t.matchId)) : null,
+      })),
+      adminFreigaben,
+      letzteEinsaetze: [],
+    };
+  }, [user, board, alleTipps, alleMatches, achse, adminFreigaben]);
   const radBelohnungen = useMemo(
     () => (user ? drehradBelohnungen({
-      rules: RULES, rundenId: roundId, userIds: [user.id], spieltage: SPIELTAGE,
+      rules: RULES, rundenId: roundId, userIds: [user.id],
+      spieltage: achse.length || SPIELTAGE, kontext: radKontext,
     }) : { joker: [], narren: [], modifikatoren: [] }),
-    [RULES, roundId, user]);
+    [RULES, roundId, user, achse, radKontext]);
   const gutschriften = useMemo(
     () => [
       ...erspielteJoker({ eintraege: meineEintraege, rules: RULES }),
@@ -302,13 +336,6 @@ export default function Tippabgabe({ matchId }) {
   // Liga — sonst ließe er sich in einer Runde über fünf Wettbewerbe fünfmal pro
   // Woche ausgeben. Dieselbe Quelle wie in der Spielwahl, damit beide Screens
   // dieselben Gewichte als belegt sehen.
-  // Die Zeitachse EINMAL bauen — sie wird weiter unten noch dreimal gebraucht
-  // (Narren-Konto, Münz-Takt, Runden-Spieltag dieses Spiels). Als Hook muss
-  // sie VOR dem frühen Return stehen, deshalb hier oben.
-  const achse = useMemo(
-    () => zeitachse(alleMatches, RULES.zeitachse),
-    [alleMatches, RULES.zeitachse],
-  );
   const schluessel = useMemo(() => rundenSchluessel(achse) ?? undefined, [achse]);
 
   if (!match || !picks) {
