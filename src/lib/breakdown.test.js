@@ -208,13 +208,18 @@ describe("Der Team-Topf wird aufgeschlüsselt, nicht zusammengeworfen", () => {
 });
 
 describe("Deckel je Spiel", () => {
-  it("wird als Info gezeigt, wenn er greift", () => {
+  // ⚠️ Der Deckel ist ein ABZUG, keine Fußnote: als `info`-Zeile stand er neben
+  // einer Kette, die weiter auf den ungedeckelten Wert zeigte.
+  it("kürzt die Kette auf den Deckel und benennt den Ausgangswert", () => {
     const rules = sanitizeRules({ ...DEFAULT_RULES, perGameCap: 50 });
     const b = breakdown(tipp(5, 1, { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal"] }), RESULT, SNAP, rules);
     const deckel = b.posten.find((p) => p.key === "deckel");
     expect(deckel).toBeDefined();
-    expect(deckel.hinweis).toContain("Ohne Deckel");
+    expect(deckel.art).toBe("summe");
+    expect(deckel.wert).toBeLessThan(0);
+    expect(deckel.hinweis).toContain("ohne Deckel wären es");
     expect(b.gesamt).toBe(50);
+    expect(b.stimmt).toBe(true);
   });
 
   it("fehlt, wenn er nicht greift", () => {
@@ -242,5 +247,58 @@ describe("Robustheit", () => {
           .toBe(scoreTip(t, RESULT, SNAP, DEFAULT_RULES).total);
       }
     }
+  });
+});
+
+// 🔴 Der eigentliche Wahrheitsgehalt der Aufschlüsselung: kommt der Spieler,
+// der die Spalte von oben nach unten addiert, unten bei `Gesamt` an?
+//
+// Bis 05.08.2026 nicht. Gemessen mit `npm run anzeige` über 1600 Tipps je
+// Regelwerk: 16–39 % der Aufschlüsselungen liefen an ihrer eigenen Endsumme
+// vorbei, bei „Underdog-Party" um bis zu 273 Punkte. Kein Test hat das
+// gemeldet, weil `stimmt` 3 % Toleranz hatte — und 273 von 9000 sind 3 %.
+// Deshalb ist die Prüfung hier EXAKT und rechnet die Kette selbst nach,
+// statt `stimmt` zu glauben.
+describe("Die angezeigte Spalte addiert sich auf die angezeigte Summe", () => {
+  const kette = (posten) => {
+    let w = 0;
+    for (const p of posten) {
+      if (p.art === "summe") w += p.wert;
+      else if (p.art === "faktor") w *= p.wert;
+    }
+    return w;
+  };
+
+  const regelwerke = [
+    ["Vorgabe", DEFAULT_RULES],
+    ["mit Deckel", sanitizeRules({ ...DEFAULT_RULES, perGameCap: 50 })],
+    ["große Anzeige-Skala", sanitizeRules({ ...DEFAULT_RULES, displayScale: 50 })],
+  ];
+
+  for (const [name, rules] of regelwerke) {
+    it(`geht bei jedem Endstand auf: ${name}`, () => {
+      for (let h = 0; h <= 5; h++) {
+        for (let a = 0; a <= 5; a++) {
+          const t = tipp(h, a, { home: ["Al-Naimat"], away: ["Yamal"] });
+          const b = breakdown(t, RESULT, SNAP, rules);
+          expect(Math.round(kette(b.posten))).toBe(b.gesamt);
+          expect(b.stimmt).toBe(true);
+        }
+      }
+    });
+  }
+
+  it("weist den Rundungsrest aus, statt ihn zu verschlucken", () => {
+    // Ein Fall mit Torschützen UND Kombi — dort vervielfacht der Faktor den
+    // Rundungsrest der Summen-Posten, und genau dann entsteht die Zeile.
+    const t = tipp(5, 1, { home: ["Al-Naimat"], away: [] });
+    const b = breakdown(t, RESULT, SNAP, DEFAULT_RULES);
+    const rundung = b.posten.find((p) => p.key === "rundung");
+    if (rundung) {
+      expect(rundung.art).toBe("summe");
+      expect(Math.abs(rundung.wert)).toBeLessThan(3);
+      expect(rundung.hinweis).toContain("gerundet");
+    }
+    expect(Math.round(kette(b.posten))).toBe(b.gesamt);
   });
 });

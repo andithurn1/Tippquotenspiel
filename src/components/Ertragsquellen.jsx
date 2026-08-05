@@ -52,6 +52,15 @@ export default function Ertragsquellen({ tip, actual, snap, rules, stufe = "voll
   );
 }
 
+// 🔴 Der Posten wird EXAKT so gezeigt, wie `breakdown.js` ihn abgelegt hat —
+// nur mit deutschem Komma. Kein `zahl()`, das auf zwei Stellen kürzt: die
+// Aufschlüsselung verspricht, dass die addierte Spalte unten bei `Gesamt`
+// ankommt, und dieses Versprechen bricht in dem Moment, in dem die Anzeige
+// eine andere Zahl zeigt als die, mit der gerechnet wurde. Ein
+// Außenseiter-Faktor 3,472 als „×3,47" darzustellen macht die
+// darunterstehende `Rundung`-Zeile zur Falschaussage.
+const wieGespeichert = (v) => String(v).replace(".", ",");
+
 function Zeile({ p, zeigeHinweis }) {
   const istInfo = p.art === "info";
   const istFaktor = p.art === "faktor";
@@ -59,8 +68,8 @@ function Zeile({ p, zeigeHinweis }) {
 
   const farbe = istInfo ? C.muted : negativ ? C.coral : istFaktor ? C.sky : C.text;
   const text = istFaktor
-    ? `×${p.wert}`
-    : p.wert > 0 ? `+${p.wert}` : String(p.wert);
+    ? `×${wieGespeichert(p.wert)}`
+    : p.wert > 0 ? `+${wieGespeichert(p.wert)}` : wieGespeichert(p.wert);
 
   return (
     <div style={{ padding: "5px 0", opacity: istInfo ? 0.55 : 1 }}>

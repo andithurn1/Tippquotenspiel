@@ -33,7 +33,21 @@ import { bigGameAufschlag } from "./bigGame";
 import { wettbewerbAufschlag } from "./wettbewerbGewicht";
 import { wettbewerbLabel, phasenLabel, wettbewerbVon, phaseVon, istKo } from "./wettbewerbe";
 
+// ⚠️ Wie genau ein FAKTOR angezeigt wird, ist keine Geschmacksfrage — er
+// multipliziert alles darüber, sein Rundungsfehler wächst also mit der
+// Punktzahl mit. Gemessen am 05.08.2026 (`npm run anzeige`, 1600 Tipps je
+// Regelwerk):
+//   eine Stelle  → die Kette lief bei „Underdog-Party" um bis zu 273 Punkte
+//                  an der eigenen Endsumme vorbei (×3,5 statt ×3,47)
+//   zwei Stellen → höchstens 19,4 Punkte
+//   drei Stellen → höchstens 3,0 Punkte
+// Deshalb: BERECHNETE Faktoren (Außenseiter, Modifikator-Bündel) mit drei
+// Stellen, EINGESTELLTE mit zwei — die Kombi-Stufe hat der Admin selbst
+// getippt, „×2,300" wäre dort nur Lärm. Summen-Posten bleiben ganzzahlig,
+// der Rest steht als eigene `Rundung`-Zeile darunter.
 const r1 = (v) => Math.round(v * 10) / 10;
+const r2 = (v) => Math.round(v * 100) / 100;
+const r3 = (v) => Math.round(v * 1000) / 1000;
 
 // Die Quelle des Grundwerts — welcher der konkurrierenden Teile gewonnen hat.
 const GRUND_LABEL = {
@@ -100,7 +114,7 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
       key: "underdog",
       label: "Außenseiter-Bonus",
       art: "faktor",
-      wert: r1(s.underdogMult),
+      wert: r3(s.underdogMult),
       hinweis: "Das reale Ergebnis war eine Überraschung.",
     });
   }
@@ -126,7 +140,7 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
         key: "kombi",
         label: `Kombi (${s.ebene})`,
         art: "faktor",
-        wert: r1(rules.combo[s.ebene] ?? 1),
+        wert: r2(rules.combo[s.ebene] ?? 1),
         hinweis: "Wirkt auf Ergebnis UND Tore zusammen.",
       });
     }
@@ -154,7 +168,7 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
       key: "modifikator",
       label: "Modifikatoren",
       art: "faktor",
-      wert: r1(mod.faktor),
+      wert: r3(mod.faktor),
       hinweis: mod.gedeckelt
         ? "Gedeckelt — die Aufschläge werden addiert, nicht multipliziert."
         : "Aufschläge werden addiert, nicht multipliziert.",
@@ -164,8 +178,8 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
         key: `mod-${typ.key}`,
         label: typ.label,
         art: "info",
-        wert: r1(typ.aufschlag),
-        hinweis: `Aufschlag +${r1(typ.aufschlag)} (oben eingerechnet)`,
+        wert: r2(typ.aufschlag),
+        hinweis: `Aufschlag +${r2(typ.aufschlag)} (oben eingerechnet)`,
       });
     }
     // ⚠️ Der „Team"-Topf sind in Wahrheit DREI verschiedene Aussagen: Verein/
@@ -184,8 +198,8 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
           key: "mod-team",
           label: "Team / Derby",
           art: "info",
-          wert: r1(teamRest),
-          hinweis: `Aufschlag +${r1(teamRest)} (oben eingerechnet)`,
+          wert: r2(teamRest),
+          hinweis: `Aufschlag +${r2(teamRest)} (oben eingerechnet)`,
         });
       }
       if (bigGame > 0) {
@@ -193,13 +207,13 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
           key: "mod-biggame",
           label: "Spiel des Spieltags",
           art: "info",
-          wert: r1(bigGame),
+          wert: r2(bigGame),
           // Der Grund wurde beim Öffnen des Spieltags mit eingefroren. Ohne ihn
           // wirkt die Auswahl willkürlich — und genau daran stirbt das Vertrauen
           // in einen Automatismus, der Punkte verteilt.
           hinweis: snap?.bigGameGrund
-            ? `${snap.bigGameGrund} · Aufschlag +${r1(bigGame)} (oben eingerechnet)`
-            : `Aufschlag +${r1(bigGame)} (oben eingerechnet)`,
+            ? `${snap.bigGameGrund} · Aufschlag +${r2(bigGame)} (oben eingerechnet)`
+            : `Aufschlag +${r2(bigGame)} (oben eingerechnet)`,
         });
       }
       if (wettbewerb > 0) {
@@ -208,23 +222,60 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
           key: "mod-wettbewerb",
           label: "Wettbewerbs-Gewicht",
           art: "info",
-          wert: r1(wettbewerb),
+          wert: r2(wettbewerb),
           hinweis: `${wettbewerbLabel(wettbewerbVon(snap))}${istKo(phase) ? ` · ${phasenLabel(phase)}` : ""}`
-            + ` · Aufschlag +${r1(wettbewerb)} (oben eingerechnet)`,
+            + ` · Aufschlag +${r2(wettbewerb)} (oben eingerechnet)`,
         });
       }
     }
   }
 
   // ── 6) Deckel je Spiel ────────────────────────────────────
+  // ⚠️ Der Deckel ist ein ABZUG, keine Fußnote. Als `info`-Zeile (durchgestrichen
+  // dargestellt) stand er neben einer Kette, die weiter auf den ungedeckelten
+  // Wert zeigte — die Aufschlüsselung behauptete also eine Zahl, die nie
+  // ausgezahlt wurde. Jetzt trägt er die Differenz und die Spalte kommt unten an.
   const ungedeckelt = Math.round(s.raw * skala);
   if (rules.perGameCap != null && ungedeckelt > rules.perGameCap) {
     posten.push({
       key: "deckel",
       label: "Deckel je Spiel",
-      art: "info",
-      wert: rules.perGameCap,
-      hinweis: `Ohne Deckel wären es ${ungedeckelt} gewesen.`,
+      art: "summe",
+      wert: -(ungedeckelt - rules.perGameCap),
+      hinweis: `Mehr als ${rules.perGameCap} zahlt ein Spiel nicht — ohne Deckel wären es ${ungedeckelt} gewesen.`,
+    });
+  }
+
+  // ── 7) Rundung ────────────────────────────────────────────
+  // 🔴 Die Zeile, die aus einer Aufschlüsselung eine Abrechnung macht.
+  //
+  // Jeder Posten oben wird EINZELN gerundet, und die Faktoren darunter
+  // vervielfachen diesen Rundungsrest. Gemessen (`npm run anzeige`,
+  // 05.08.2026): in 16–39 % aller Tipps kam die angezeigte Kette nicht auf die
+  // angezeigte Endsumme — wer nachrechnete, bekam eine andere Zahl als die,
+  // die im Leaderboard stand. Ein Test mit Toleranz hat das nie gemeldet.
+  //
+  // Der Rest wird deshalb ausgewiesen, nicht versteckt: der Spieler soll die
+  // Spalte von oben nach unten addieren können und unten genau `gesamt`
+  // herausbekommen. `gesamt` bleibt unverändert die Zahl aus `scoreTip` —
+  // die Anzeige rechnet nichts schön, sie benennt ihre eigene Rundung.
+  //
+  // Die Zeile erscheint nur, wenn sie etwas ändert: solange die addierte Spalte
+  // AUF die angezeigte Zahl rundet, ist sie überflüssiger Lärm. Gemessen ohne
+  // diese Schranke stand sie bei 28 % aller Tipps da, meist wegen 0,2 Punkten.
+  // ⚠️ Auf eine Nachkommastelle gerundet VERGLEICHEN, nicht roh: 3025 × 2,3
+  // ergibt in Gleitkomma 6957,499999999999, auf dem Papier aber 6957,5. Ohne
+  // diese Stelle bekommt der Rechner recht und der Spieler unrecht — und die
+  // halbe Stelle fällt genau dort an, wo sie sichtbar wird.
+  const kette = r1(ketteSumme(posten));
+  const rest = r2(s.total - kette);
+  if (Math.round(kette) !== s.total) {
+    posten.push({
+      key: "rundung",
+      label: "Rundung",
+      art: "summe",
+      wert: rest,
+      hinweis: "Die Posten oben sind einzeln gerundet — das ist der Rest zur tatsächlichen Wertung.",
     });
   }
 
@@ -234,24 +285,28 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
     roh: s.raw,
     ebene: s.ebene,
     // Selbstkontrolle: rechnet die Kette auf die Endzahl auf?
-    stimmt: pruefeKette(posten, s, rules),
+    stimmt: pruefeKette(posten, s),
   };
 }
 
-// Rechnet die Posten nach: Summen addieren, Faktoren multiplizieren.
-// Nur zur Selbstkontrolle (und als Test-Anker) — die UI zeigt einfach an.
-function pruefeKette(posten, s, rules) {
-  const skala = rules.displayScale ?? 1;
+// Die Kette so, wie ein Spieler sie auf dem Bildschirm liest: von oben nach
+// unten, Summen addieren, Faktoren multiplizieren, Info-Zeilen überspringen
+// (die stehen durchgestrichen da).
+function ketteSumme(posten) {
   let wert = 0;
   for (const post of posten) {
     if (post.art === "summe") wert += post.wert;
     else if (post.art === "faktor") wert *= post.wert;
   }
-  const erwartet = rules.perGameCap != null
-    ? Math.min(Math.round(s.raw * skala), rules.perGameCap)
-    : Math.round(s.raw * skala);
-  // Rundungsspielraum: jeder Posten wird einzeln gerundet.
-  return Math.abs(wert - erwartet) <= Math.max(2, Math.abs(erwartet) * 0.03);
+  return wert;
+}
+
+// Rechnet die Posten nach. ⚠️ Die Prüfung ist STRENG geworden: früher stand
+// hier eine Toleranz von 3 % — und genau die hat den Befund oben zugedeckt,
+// weil 273 Punkte bei 9000 Gesamtpunkten innerhalb von 3 % liegen. Die Frage
+// lautet jetzt wörtlich: rundet die addierte Spalte auf die angezeigte Zahl?
+function pruefeKette(posten, s) {
+  return Math.round(r1(ketteSumme(posten))) === s.total;
 }
 
 // Wichtige Zusicherung für die Anzeige: Sieger-Boden und Favoriten-Reinfall
