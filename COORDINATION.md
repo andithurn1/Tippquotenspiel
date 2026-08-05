@@ -27,12 +27,29 @@
 Quoten-gewichtetes Fußball-Tippspiel (Next.js + React, Supabase, live auf Vercel).
 **Erst `CLAUDE.md` lesen.** Stand `main` beim Anlegen dieser Datei: `7301100`.
 
-**⚠️ Offener DB-Schritt (Nutzer-Aufgabe, blockiert Live-Test):** `supabase/schema.sql`
-muss vom Nutzer im Supabase-SQL-Editor **erneut** ausgeführt werden. Inzwischen enthält
-es NICHT nur den RLS-Fix für den Runden-Beitritt (`rounds_read`, `members_read_same_round`),
-sondern auch die neue `presets`-Tabelle und die `team_filter`-Spalte (von Account 2).
-Schema ist idempotent → einfach komplett neu ausführen. Stand 2026-07-24 laut Nutzer
-noch NICHT erneut ausgeführt (Policy hieß noch `members_read_self`).
+**✅ DB-Schritt erledigt (05.08.2026).** Der Nutzer hat `supabase/schema.sql`
+im SQL-Editor erneut ausgeführt — gegengeprüft über `information_schema.tables`:
+`rule_proposals` und `rule_proposal_votes` sind angelegt. Damit sind auch die
+älteren Nachträge drin, die hier lange als offen standen (RLS-Fix für den
+Runden-Beitritt `rounds_read`/`members_read_same_round`, die `presets`-Tabelle
+und die `team_filter`-Spalte) — sie liegen alle in derselben Datei.
+
+⚠️ **Was beim nächsten Mal zusätzlich zu prüfen ist:** die RLS-Policies stehen
+am ENDE der Datei, die Tabellen in der Mitte. Eine vorhandene Tabelle beweist
+also nicht, dass die Ausführung bis zum Schluss durchlief — und eine fehlende
+Policy meldet keinen Fehler, sie liefert live einfach keine Zeilen. Die
+Gegenprobe dafür:
+
+```sql
+select tablename, policyname from pg_policies
+where schemaname = 'public'
+  and tablename in ('rule_proposals', 'rule_proposal_votes');
+```
+Fünf Zeilen erwartet (zwei für `rule_proposals`, drei für
+`rule_proposal_votes`).
+
+Schema bleibt idempotent → bei jedem künftigen Nachtrag einfach komplett neu
+ausführen.
 
 ---
 

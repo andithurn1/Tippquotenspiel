@@ -42,6 +42,28 @@ nur die eigene Zeile zeigen.
 RLS-Policies auf den aktuellen Stand. Ohne den Re-Run würde „Runde beitreten"
 in der Live-DB keine fremde Runde finden.
 
+### Nach einem Re-Run: nicht nur auf die Tabellen schauen
+
+Die Tabellen entstehen in der MITTE der Datei, die RLS-Policies am ENDE. Eine
+vorhandene Tabelle beweist also nicht, dass die Ausführung durchgelaufen ist —
+und eine fehlende Policy meldet keinen Fehler, sie liefert live einfach keine
+Zeilen. Das ist der stille Fall, den man sonst erst im Betrieb bemerkt.
+Deshalb nach jedem Re-Run beides prüfen:
+
+```sql
+-- 1) Sind die Tabellen da?
+select table_name from information_schema.tables
+where table_schema = 'public';
+
+-- 2) Und die Policies? (Beispiel für die zwei jüngsten Tabellen)
+select tablename, policyname from pg_policies
+where schemaname = 'public'
+  and tablename in ('rule_proposals', 'rule_proposal_votes');
+```
+
+**Stand 05.08.2026:** ausgeführt, `rule_proposals` und `rule_proposal_votes`
+(Regel-Abstimmung, `design/abstimmung-verfassung.md`) sind angelegt.
+
 ## Einrichtung in 5 Schritten
 
 1. **Projekt anlegen** auf [supabase.com](https://supabase.com) (kostenlose Stufe reicht fürs MVP).
