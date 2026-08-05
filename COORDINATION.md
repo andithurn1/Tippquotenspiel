@@ -114,16 +114,17 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 > ⚠️ **Nutzer-Aufgabe: `supabase/schema.sql` erneut im SQL-Editor ausführen**
 > (idempotent, komplett laufen lassen) — sonst fehlen live zwei Tabellen.
 
-**1855 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
-12 Commits.
+**1862 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
+14 Commits.
 
-#### ✅ Abgeräumt: Punkt 1, 2 und 3 der offenen Liste
+#### ✅ Abgeräumt: die komplette offene Liste bis auf die Balance-Messung
 
 | | Inhalt |
 |---|---|
 | **Münz-Takt** (`wettmodus.md` 3) | `muenzTakt.js` + Verkabelung in `muenzstand`, `Tippabgabe`, `Waehrungen`, `Spielerstellung` + alle drei Komplexitätsstufen |
 | **Regel-Abstimmung & Verfassung** | Alle fünf Schritte der Spec: `regelAbstimmung.js` · Store + Schema · `Mitbestimmung.jsx` (Profi) · `/regeln` (Screen) · `beschluss.js` (Wirkung) |
 | **Glücksrad als SVG** (`drehrad.md` 3c) | `radGeometrie.js` (die Winkel, geprüft) + `Gluecksrad.jsx`, als Live-Vorschau in der Spielerstellung |
+| **Beschlüsse in der Wertung** | `regelnFuer` durch `scoreLeaderboard`/`scoreLeaderboardHistory`/`applyCatchup` und beide Stores — der Schritt, der die Snapshot-Kante berührt |
 
 #### 🔴 Zwei Bauweisen, die sich beide bewährt haben
 
@@ -174,15 +175,31 @@ Codes. Die drei lehrreichsten:
 Dazu ein englischer Dezimalpunkt in deutschem Anzeigetext („33.3 je
 Spieltag"), den ein Test auf „enthält die Zahl" nicht sehen kann.
 
+#### 🔴🔴 DER WICHTIGSTE FUND DER SITZUNG: die Zeitachse verschluckte die halbe Saison
+
+Beim Nachmessen der Beschluss-Wirkung fiel auf, dass Liga-Spieltag 2 und 12 auf
+DENSELBEN Runden-Spieltag fielen. Ursache: der automatische Taktgeber ist die
+Liga, die ZUERST anfängt — im Katalog ist das die **MLS mit drei Spieltagen**
+(31 Spiele aus dem Quotenabruf, 31.07.–17.08.). Hinter ihrem letzten
+Ankerpunkt lief der Rhythmus nicht weiter, und die restlichen **acht Monate
+über fünf Wettbewerbe fielen in EINEN Runden-Spieltag**. Die ganze Achse hatte
+drei Einträge.
+
+**Das ist keine Anzeige-Frage.** „Einmal pro Runden-Spieltag" gilt für den
+Joker, den Ranglisten-Pool, den Münz-Takt und die Beschlüsse — ein Tipper hätte
+**drei Joker pro Saison bekommen statt achtunddreißig.** Der Fehler lag lange
+da, war durch keinen Test sichtbar, und wäre bei Saisonstart in einer echten
+Runde aufgeschlagen.
+
+Behoben: `mitPausen` füllt jetzt auch den SCHWANZ hinter dem letzten
+Ankerpunkt auf. Gegenprobe: 42 statt 3 Einträge, Bundesliga-Spieltage monoton
+verteilt, Median 39 Spiele je Runden-Spieltag — **genau die Zahl, die
+`CLAUDE.md` als normale Woche über vier Ligen nennt.** Die eigene
+Dokumentation bestätigt die Korrektur unabhängig. Steht jetzt auch dort.
+
 #### 🟡 Offen, nach Wert sortiert
 
-1. **Regel-Abstimmung: das Einhängen in die Wertung.** Die Auswertung liest
-   weiterhin `round.rules`; der Scoring-Pfad müsste den Runden-Spieltag
-   durchreichen. `regelwerkAmSpieltag` steht bereit und hat schon einen
-   Aufrufer. **Das ist der Schritt, der die Snapshot-Kante wirklich berührt —
-   bewusst NICHT nebenbei erledigt, er gehört in eine eigene Sitzung mit
-   ungeteilter Aufmerksamkeit.**
-2. **Das Rad im Spielbetrieb.** `Gluecksrad.jsx` nimmt bereits eine
+1. **Das Rad im Spielbetrieb.** `Gluecksrad.jsx` nimmt bereits eine
    `ergebnisId` und dreht darauf; im Editor gibt es noch keine, weil dort
    nichts gezogen wird. Wer den Dreh-Moment für den Spieler baut, reicht das
    Ergebnis aus `ziehe`/`drehradBoard` durch — mehr ist es nicht.

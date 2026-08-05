@@ -335,7 +335,19 @@ Ranglisten-Pool). `invalidJokerMatchdays`, `invalidWeightMatchdays` und
 bleibt es beim Liga-Spieltag, es gibt also keinen stillen Regelwechsel. Über
 den Liga-Spieltag geschlüsselt bekäme ein Tipper in einer Runde mit fünf
 Wettbewerben fünf Joker pro Woche statt einem. Bei nur einem Wettbewerb sind
-beide Schlüssel deckungsgleich. Vier Punkte, die nicht brechen dürfen: (1) zugeordnet wird immer
+beide Schlüssel deckungsgleich. 🔴 **Und der Fehler, der genau das kaputt gemacht hat (gefunden 05.08.2026):**
+der automatische Taktgeber ist die Liga, die ZUERST anfängt — im Katalog war
+das die MLS mit drei Spieltagen (aus dem Quotenabruf). Hinter ihrem letzten
+Ankerpunkt lief der Rhythmus nicht weiter, und die restlichen acht Monate über
+fünf Wettbewerbe fielen in EINEN Runden-Spieltag; die ganze Achse hatte drei
+Einträge. Ein Tipper hätte drei Joker pro Saison bekommen statt achtunddreißig.
+`mitPausen` füllt jetzt auch den SCHWANZ hinter dem letzten Ankerpunkt auf
+(bis zum letzten Spiel des Katalogs). Gegenprobe: 42 statt 3 Einträge, Median
+39 Spiele je Runden-Spieltag — genau die Zahl, die weiter unten als normale
+Woche über vier Ligen steht. **Wer am Taktgeber etwas ändert, misst die
+Achsenlänge nach; ein grüner Test sieht diesen Fehler nicht.**
+
+Fünf Punkte, die nicht brechen dürfen: (1) zugeordnet wird immer
 ein GANZER Liga-Spieltag (`spieltagKey`), dorthin wo sein erstes Spiel liegt —
 ein BL-Spieltag läuft Fr–So und läge sonst links und rechts eines Ankerpunkts;
 ein halber Spieltag ist der Punkt, an dem aus einer Anzeige- eine Fairness-Frage

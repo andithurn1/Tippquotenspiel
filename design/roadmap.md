@@ -92,9 +92,15 @@ Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
   sondern `regelwerkAmSpieltag(...)` — die Frage lautet immer „welches
   Regelwerk gilt an Spieltag N?". Damit ist die Rückwirkung STRUKTURELL
   unmöglich statt nur verboten.
-  ⚠️ **Wirklich offen bleibt eines:** die Auswertung liest weiterhin
-  `round.rules`; der Scoring-Pfad müsste den Runden-Spieltag durchreichen.
-  Das ist der Schritt, der die Snapshot-Kante wirklich berührt.
+  ✅ **Auch in der Wertung angekommen:** `regelnFuer` läuft durch
+  `scoreLeaderboard`, `scoreLeaderboardHistory`, `applyCatchup` und beide
+  Stores. Nachgemessen durch den ganzen Weg (Test in `store.test.js`).
+  🔴 **Dabei ein Fund, der schwerer wiegt als die ganze Aufgabe:** die
+  Zeitachse fiel über den echten Katalog auf DREI Runden-Spieltage zusammen —
+  der automatische Taktgeber (MLS, drei Spieltage) endete, und der Rhythmus
+  lief nicht weiter. Joker, Ranglisten-Pool und Münz-Takt hätten dreimal pro
+  Saison gegriffen statt achtunddreißigmal. Behoben in `zeitachse.js`, samt
+  Eintrag in `CLAUDE.md`.
   ⚠️ **Nutzer-Aufgabe:** `supabase/schema.sql` erneut ausführen (idempotent),
   sonst fehlen live zwei Tabellen.
 
@@ -106,7 +112,7 @@ Spiel fragt sie niemand ab. Das ist der Vorlauf für jede Balance-Messung.
   ⚠️ Offen: der Dreh-Moment für den Spieler — die Komponente nimmt schon eine
   `ergebnisId`, es fehlt nur der Ort, der sie aus `ziehe` durchreicht.
 
-Test-Stand: **1855 grün**, Build sauber (Stand 2026-08-05).
+Test-Stand: **1862 grün**, Build sauber (Stand 2026-08-05).
 Vorher **1671 grün** (Stand 2026-08-03).
 Vorher stand hier **933 grün (28.07.)** — über eine Woche still, während die
 Suite um 738 Tests gewachsen ist. Genau die Drift, vor der der Kasten unten
