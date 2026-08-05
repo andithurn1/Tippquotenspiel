@@ -9,7 +9,6 @@ import {
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
 import { zeitachse, rundenSchluessel, rundenSpieltagVon, verlaufNachRundenSpieltag } from "@/lib/zeitachse";
-import { drehradBelohnungen } from "@/lib/drehradBoard";
 import { muenzSchluessel, muenzTaktStatus, periodeLabel, spieltagsFolge } from "@/lib/muenzTakt";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
@@ -190,6 +189,9 @@ export default function Tippabgabe({ matchId }) {
   // Admin-Freigaben der Runde, `[{ userId, spieltag }]` mit RUNDEN-Spieltag —
   // die Form, die `darfEinsetzen` als `kontext.adminFreigaben` erwartet.
   const [adminFreigaben, setAdminFreigaben] = useState([]);
+  // Was das Rad ausser Punkten auszahlt (Joker, Narren) — aus dem Store,
+  // damit es genau die Belohnungen sind, die auch das Leaderboard kennt.
+  const [radBelohnungen, setRadBelohnungen] = useState({ joker: [], narren: [], modifikatoren: [] });
 
   useEffect(() => {
     let live = true;
@@ -214,6 +216,9 @@ export default function Tippabgabe({ matchId }) {
     }).catch(() => {});
     (getStore().getRegelnFuer?.(roundId) ?? Promise.resolve(null))
       .then((lage) => { if (live) setBeschlussLage(lage ?? null); })
+      .catch(() => {});
+    (getStore().getDrehradBelohnungen?.(roundId) ?? Promise.resolve(null))
+      .then((r) => { if (live && r) setRadBelohnungen(r); })
       .catch(() => {});
     return () => { live = false; };
   }, [roundId]);
@@ -317,15 +322,15 @@ export default function Tippabgabe({ matchId }) {
   // `kontingent` unten rechnet damit unverändert weiter, und die Regel
   // „wirkt ab dem Spieltag, an dem er verdient wurde" gilt automatisch mit.
   //
-  // 🔴 UND MIT DENSELBEN EINGABEN wie die Wertung. Bis 05.08.2026 stand hier
-  // weder ein `kontext` noch die richtige Länge:
-  //  • ohne `kontext` prüft `drehradZiehungen` weder `wer`/`werWert` noch die
-  //    5.0-Invariante „kein Rad ohne Tipp" — dieser Screen schrieb dem Spieler
-  //    also Joker und Narren gut, die das Leaderboard nie vergeben hat;
-  //  • `SPIELTAGE` ist die feste Liga-Saison 34, die Runde hat über mehrere
-  //    Wettbewerbe mehr Runden-Spieltage (gemessen: 42) — die letzten acht
-  //    fielen weg, und die Skala stimmte ohnehin nicht.
-  // Beides ist dieselbe Fehlerklasse wie im Store und in `MeinRad.jsx`.
+  // 🔴 UND MIT DENSELBEN EINGABEN wie die Wertung — deshalb kommen sie aus dem
+  // STORE (`getDrehradBelohnungen`) und werden hier nicht nachgerechnet. Bis
+  // 05.08.2026 stand hier ein eigener Aufruf ohne `kontext` und mit der festen
+  // 34: ohne `kontext` prüft `drehradZiehungen` weder `wer`/`werWert` noch die
+  // 5.0-Invariante „kein Rad ohne Tipp", der Screen schrieb dem Spieler also
+  // Joker und Narren gut, die das Leaderboard nie vergeben hat (gemessen: 270
+  // Narren gegen 30). Danach stand der Kontext hier richtig, aber ein DRITTES
+  // Mal — im Store, hier und im Runden-Hub. Jetzt baut ihn nur noch der Store.
+
   // 🔴 DIESELBEN Tipps, aber im RUNDEN-Spieltag.
   //
   // `alleTipps` trägt den LIGA-Spieltag (so kommt er aus `matches`). Alles,
@@ -350,29 +355,13 @@ export default function Tippabgabe({ matchId }) {
         : t.matchday,
     }));
   }, [alleTipps, alleMatches, achse]);
-  const radKontext = useMemo(() => {
-    if (!user) return null;
-    return {
-      board,
-      tipps: alleTippsRunde.map((t) => ({
-        userId: t.userId, matchId: t.matchId, matchday: t.matchday,
-      })),
-      adminFreigaben,
-      letzteEinsaetze: [],
-    };
-  }, [user, board, alleTippsRunde, adminFreigaben]);
-  const radBelohnungen = useMemo(
-    () => (user ? drehradBelohnungen({
-      rules: RULES, rundenId: roundId, userIds: [user.id],
-      spieltage: achse.length || SPIELTAGE, kontext: radKontext,
-    }) : { joker: [], narren: [], modifikatoren: [] }),
-    [RULES, roundId, user, achse, radKontext]);
   const gutschriften = useMemo(
     () => [
       ...erspielteJoker({ eintraege: meineEintraege, rules: RULES }),
-      ...radBelohnungen.joker,
+      // Nur die eigenen: der Store liefert die Belohnungen ALLER Spieler.
+      ...radBelohnungen.joker.filter((g) => g.userId === user?.id),
     ],
-    [meineEintraege, RULES, radBelohnungen]);
+    [meineEintraege, RULES, radBelohnungen, user]);
   // Der Ranglisten-Pool wird einmal je RUNDEN-Spieltag vergeben, nicht einmal je
   // Liga — sonst ließe er sich in einer Runde über fünf Wettbewerbe fünfmal pro
   // Woche ausgeben. Dieselbe Quelle wie in der Spielwahl, damit beide Screens
