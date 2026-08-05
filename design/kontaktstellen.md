@@ -419,9 +419,27 @@ Einschränkung benannt wurde und durch Schritt 5 nicht behoben wird:
   verschenkt höchstens Gelegenheiten der lockereren Art; das ist die harmlose
   Richtung, dieselbe Wahl wie bei `wirktAb` in `regelAbstimmung.js`.
   Die alte Regel („klau zuerst") war keine Regel, sondern eine Reihenfolge.
-- **`kontext.adminFreigaben`** (Schritt 1): weiterhin immer leer, mangels
-  Speicherort für Admin-Freigaben — `wer: "adminFreigabe"` lehnt an JEDER
-  Kontaktstelle konsequent ab, die diesen Kontext nutzt (Joker, Rad).
+- ~~**`kontext.adminFreigaben`**~~ ✅ **BEHOBEN (05.08.2026) — damit sind ALLE
+  fünf Teil-Wirkungen erledigt.** Vier Teile, und ohne den vierten wäre sie
+  wieder tot gewesen:
+  1. Tabelle `admin_freigaben` samt RLS. ⚠️ **Lesen dürfen alle Mitglieder,
+     SCHREIBEN nur der Admin der Runde** — sonst gäbe sich jeder selbst frei.
+     Die Policy hängt an `rounds.admin_id`, nicht an einer Rolle am Mitglied:
+     `round_members` hat gar keine (siehe unten).
+  2. Store: `listAdminFreigaben` · `setAdminFreigabe` (Schalter, kein Zähler),
+     Mock + Supabase.
+  3. Verkabelt in `Tippabgabe.jsx` und im Drehrad-`kontext` beider Stores.
+  4. `AdminFreigaben.jsx`, Route `/freigaben`, Karte im Hub — **nur sichtbar,
+     wenn in dieser Runde überhaupt eine Joker-Art an einer Freigabe hängt.**
+
+  Gemessen: ohne Freigabe abgelehnt (mit Begründung), mit Freigabe erlaubt, an
+  einem anderen Spieltag wieder abgelehnt, Zurücknahme wirkt.
+
+  🔴 **Ein eigener Fehler, dabei gefunden:** an drei Stellen stand
+  `m.role === "admin"`, um den Admin zu erkennen — `round_members` hat aber
+  gar keine `role`-Spalte. `istAdmin` war damit IMMER falsch, ohne dass etwas
+  fehlschlug; ein `antragsrecht: "nurAdmin"` hätte auch den Admin abgewiesen.
+  Der Admin steht in `rounds.admin_id`.
 - ~~**`letzteEinsaetze` fürs Rad**~~ ✅ **BEHOBEN (05.08.2026).** Der Fehler
   war die Frage: die Historie musste gar nicht von außen kommen — **die eigene
   Dreh-Historie IST die Abklingzeit-Historie des Rads**, und `drehradZiehungen`
@@ -451,6 +469,8 @@ Einschränkung benannt wurde und durch Schritt 5 nicht behoben wird:
   `spieltage` stand fest auf 34 (die Liga-Saison) statt auf der Länge der
   Runde, und der Narren-Kontostand wurde über den Liga-Spieltag
   nachgeschlagen.
+
+✅ **Stand 05.08.2026: alle fünf sind erledigt.** Der ursprüngliche Text:
 
 Keine dieser fünf Lücken ist eine tote Kontaktstelle im Sinn dieses Dokuments
 — jede der betroffenen Funktionen hat echte Aufrufer. Es sind bekannte,

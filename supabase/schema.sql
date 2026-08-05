@@ -174,6 +174,25 @@ create table if not exists public.rule_proposal_votes (
   primary key (antrag_id, user_id)
 );
 
+-- ── Admin-Freigaben ────────────────────────────────────────
+-- `jokerBasis.wer: "adminFreigabe"` heißt: einsetzen darf nur, wen der Admin
+-- für diesen Spieltag freigegeben hat. Ohne Speicherort lehnte die Prüfung an
+-- JEDER Stelle ab — die Einstellung war über die Oberfläche wählbar und ohne
+-- jede Wirkung (design/kontaktstellen.md, letzte Teil-Wirkung).
+--
+-- ⚠️ `matchday` ist der RUNDEN-Spieltag, nicht der Liga-Spieltag: `darfEinsetzen`
+-- vergleicht ihn mit `kontext.aktuellerSpieltag`, und der zählt rundenweit.
+-- (Dieselbe Verwechslung hat in diesem Projekt schon viermal zugeschlagen.)
+create table if not exists public.admin_freigaben (
+  round_id   uuid not null references public.rounds(id) on delete cascade,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  matchday   int  not null,
+  created_at timestamptz not null default now(),
+  primary key (round_id, user_id, matchday)
+);
+
+create index if not exists admin_freigaben_round_idx on public.admin_freigaben (round_id);
+
 -- ── Kurzcode-Presets (Content-Creator-Codes) ───────────────
 -- Ein geteiltes Regelwerk unter einem kurzen, merkbaren Code — statt des
 -- langen Text-Creator-Codes. rules = per sanitizeRules() gültiges Regelwerk.
@@ -228,6 +247,7 @@ alter table public.votes         enable row level security;
 alter table public.season_tips   enable row level security;
 alter table public.rule_proposals      enable row level security;
 alter table public.rule_proposal_votes enable row level security;
+alter table public.admin_freigaben     enable row level security;
 
 -- Profile: jeder Eingeloggte darf lesen; eigenes Profil schreiben.
 drop policy if exists "profiles_read"        on public.profiles;
@@ -393,3 +413,27 @@ create policy "rule_proposal_votes_insert_self" on public.rule_proposal_votes fo
   );
 create policy "rule_proposal_votes_update_self" on public.rule_proposal_votes for update to authenticated
   using (user_id = auth.uid());
+
+-- Admin-Freigaben: LESEN dürfen alle Mitglieder der Runde (man muss sehen
+-- können, ob man freigegeben ist). SCHREIBEN darf ausschließlich der Admin
+-- der Runde — sonst gäbe sich jeder selbst frei, und die ganze Einstellung
+-- wäre eine Zierde. Deshalb hängt die Policy an `rounds.admin_id`, nicht an
+-- einer Rolle am Mitglied: `round_members` hat gar keine.
+drop policy if exists "admin_freigaben_read_same_round" on public.admin_freigaben;
+drop policy if exists "admin_freigaben_write_admin"     on public.admin_freigaben;
+drop policy if exists "admin_freigaben_delete_admin"    on public.admin_freigaben;
+create policy "admin_freigaben_read_same_round" on public.admin_freigaben for select to authenticated
+  using (
+    exists (select 1 from public.round_members m
+            where m.round_id = admin_freigaben.round_id and m.user_id = auth.uid())
+  );
+create policy "admin_freigaben_write_admin" on public.admin_freigaben for insert to authenticated
+  with check (
+    exists (select 1 from public.rounds r
+            where r.id = admin_freigaben.round_id and r.admin_id = auth.uid())
+  );
+create policy "admin_freigaben_delete_admin" on public.admin_freigaben for delete to authenticated
+  using (
+    exists (select 1 from public.rounds r
+            where r.id = admin_freigaben.round_id and r.admin_id = auth.uid())
+  );

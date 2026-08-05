@@ -50,11 +50,14 @@ const eintragVon = (t, nameOf, matchOf) => {
 // Beschluss-Lage einer Runde: `regelnFuer` je Spieltag und das Regelwerk am
 // Saisonende. EINE Stelle für beide Leaderboard-Wege, sonst rechnet der
 // Verlauf mit anderen Regeln als der Endstand.
-function beschlussLage({ rules, antraege, members, matches, achse = null }) {
+// ⚠️ `adminId` kommt aus `rounds.admin_id` — `round_members` hat KEINE
+// `role`-Spalte (siehe schema.sql). Eine erste Fassung fragte `m.role`; das
+// war immer falsch, ohne dass etwas fehlschlug.
+function beschlussLage({ rules, antraege, members, matches, achse = null, adminId = null }) {
   return regelnFuerSpieltag({
     rules,
     antraege,
-    mitglieder: (members ?? []).map((m) => ({ userId: m.user_id, istAdmin: m.role === "admin" })),
+    mitglieder: (members ?? []).map((m) => ({ userId: m.user_id, istAdmin: m.user_id === adminId })),
     achse: achse ?? zeitachse(matches ?? [], rules?.zeitachse),
   });
 }
@@ -269,6 +272,26 @@ export function createSupabaseStore() {
         .select().single());
     },
 
+    // ── Admin-Freigaben ─────────────────────────────────────
+    // Schreiben darf laut RLS nur der Admin der Runde — die Prüfung liegt
+    // bewusst in der Datenbank und nicht hier, sonst hinge sie am Client.
+    async listAdminFreigaben({ roundId }) {
+      const rows = orThrow(await sb.from("admin_freigaben")
+        .select("user_id, matchday").eq("round_id", roundId));
+      return (rows ?? []).map((f) => ({ userId: f.user_id, spieltag: f.matchday }));
+    },
+
+    async setAdminFreigabe({ roundId, userId, matchday, an = true }) {
+      if (!an) {
+        return orThrow(await sb.from("admin_freigaben").delete()
+          .eq("round_id", roundId).eq("user_id", userId).eq("matchday", matchday));
+      }
+      return orThrow(await sb.from("admin_freigaben")
+        .upsert({ round_id: roundId, user_id: userId, matchday },
+          { onConflict: "round_id,user_id,matchday" })
+        .select().single());
+    },
+
     async setAntragStatus({ antragId, status, veto }) {
       const patch = {};
       if (status != null) patch.status = status;
@@ -302,6 +325,7 @@ export function createSupabaseStore() {
         this.listSeasonTips({ roundId }),
       ]);
       const antraege = await this.listAntraege({ roundId });
+      const freigaben = await this.listAdminFreigaben({ roundId });
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
       const rules = round?.rules ?? DEFAULT_RULES;
@@ -313,7 +337,7 @@ export function createSupabaseStore() {
       // Die Zeitachse EINMAL bauen: Beschluss-Lage, Drehrad-Plan und der
       // Runden-Spieltag der Tipps brauchen sie alle drei.
       const achse = zeitachse(matches, rules?.zeitachse);
-      const { regelnFuer, amEnde } = beschlussLage({ rules, antraege, members, matches, achse });
+      const { regelnFuer, amEnde } = beschlussLage({ rules, antraege, members, matches, achse, adminId: round?.admin_id ?? null });
       let board;
       // ⚠️ BEIDE fragen: `brauchtVerlauf` liest sonst nur das ANGELEGTE
       // Regelwerk. Beschließt eine Runde den Anschluss-Bonus erst an Spieltag
@@ -369,7 +393,8 @@ export function createSupabaseStore() {
             matchday: m ? rundenSpieltagVon(achse, m) : null,
           };
         }),
-        adminFreigaben: [],
+        // Aus der Ablage statt einer leeren Liste (siehe Mock-Store).
+        adminFreigaben: freigaben,
         letzteEinsaetze: [],
       };
       // ⚠️ Und die LÄNGE ebenso — die feste 34 wäre die Liga-Saison.
@@ -402,7 +427,7 @@ export function createSupabaseStore() {
       const entries = tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id }));
       const rules = round?.rules ?? DEFAULT_RULES;
       const antraege = await this.listAntraege({ roundId });
-      const { regelnFuer } = beschlussLage({ rules, antraege, members, matches });
+      const { regelnFuer } = beschlussLage({ rules, antraege, members, matches, adminId: round?.admin_id ?? null });
       return scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries), regelnFuer);
     },
   };

@@ -4,6 +4,7 @@ import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules } from "./engine";
 import { zeitachse, rundenSpieltagVon } from "./zeitachse";
 import { drehradZiehungen } from "./drehradBoard";
+import { darfEinsetzen, basisFuer } from "./jokerBasis";
 
 describe("Mock-Store — Seed & Schnittstelle", () => {
   it("liefert das Demo-Match JOR-ESP mit Snapshot und Ergebnis", async () => {
@@ -477,5 +478,61 @@ describe("Drehrad: der Store reicht den RUNDEN-Spieltag, nicht den Liga-Spieltag
     // Gemessen: der Katalog ergibt mehr Runden-Spieltage als eine Liga-Saison.
     // Mit der früheren festen 34 bekämen die letzten nie eine Drehung.
     expect(achse.length).toBeGreaterThan(34);
+  });
+});
+
+// 🔴 Die LETZTE Teil-Wirkung aus `design/kontaktstellen.md`:
+// `jokerBasis.wer: "adminFreigabe"` lehnte an JEDER Kontaktstelle ab, weil es
+// keinen Speicherort für Freigaben gab — die Einstellung war über die
+// Profi-Oberfläche wählbar und ohne jede Wirkung.
+describe("Admin-Freigaben (setAdminFreigabe / listAdminFreigaben)", () => {
+  const rules = sanitizeRules({
+    ...DEFAULT_RULES,
+    joker: { enabled: true, modus: "einzel", faktor: 1.5 },
+    jokerBasis: { standard: { wer: "adminFreigabe" } },
+  });
+  const basis = basisFuer("joker.einzel", rules);
+  const ctx = (adminFreigaben, aktuellerSpieltag = 7) => ({
+    board: [], aktuellerSpieltag, adminFreigaben,
+    hatGetippt: true, alleGetippt: false, letzteEinsaetze: [],
+  });
+
+  it("ohne Freigabe wird abgelehnt — mit Begründung", () => {
+    const p = darfEinsetzen(basis, "u1", ctx([]), "joker.einzel");
+    expect(p.erlaubt).toBe(false);
+    expect(p.grund.length).toBeGreaterThan(10);
+  });
+
+  it("mit Freigabe darf gesetzt werden — und NUR an ihrem Spieltag", async () => {
+    const s = createMockStore();
+    await s.setAdminFreigabe({ roundId: DEMO_ROUND_ID, userId: "u1", matchday: 7 });
+    const fg = await s.listAdminFreigaben({ roundId: DEMO_ROUND_ID });
+    expect(fg).toEqual([{ userId: "u1", spieltag: 7 }]);
+
+    expect(darfEinsetzen(basis, "u1", ctx(fg, 7), "joker.einzel").erlaubt).toBe(true);
+    // Ein anderer Spieltag bleibt gesperrt — eine Freigabe ist kein Freibrief.
+    expect(darfEinsetzen(basis, "u1", ctx(fg, 8), "joker.einzel").erlaubt).toBe(false);
+    // Und sie gilt nur für DIESEN Spieler.
+    expect(darfEinsetzen(basis, "u2", ctx(fg, 7), "joker.einzel").erlaubt).toBe(false);
+  });
+
+  it("eine Freigabe lässt sich zurücknehmen", async () => {
+    const s = createMockStore();
+    await s.setAdminFreigabe({ roundId: DEMO_ROUND_ID, userId: "u1", matchday: 7 });
+    await s.setAdminFreigabe({ roundId: DEMO_ROUND_ID, userId: "u1", matchday: 7, an: false });
+    expect(await s.listAdminFreigaben({ roundId: DEMO_ROUND_ID })).toEqual([]);
+  });
+
+  it("zweimal freigeben legt keinen zweiten Eintrag an", async () => {
+    const s = createMockStore();
+    await s.setAdminFreigabe({ roundId: DEMO_ROUND_ID, userId: "u1", matchday: 7 });
+    await s.setAdminFreigabe({ roundId: DEMO_ROUND_ID, userId: "u1", matchday: 7 });
+    expect(await s.listAdminFreigaben({ roundId: DEMO_ROUND_ID })).toHaveLength(1);
+  });
+
+  it("Freigaben anderer Runden tauchen nicht auf", async () => {
+    const s = createMockStore();
+    await s.setAdminFreigabe({ roundId: "andere", userId: "u1", matchday: 7 });
+    expect(await s.listAdminFreigaben({ roundId: DEMO_ROUND_ID })).toEqual([]);
   });
 });

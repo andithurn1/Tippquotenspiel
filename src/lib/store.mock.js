@@ -86,6 +86,9 @@ export function createMockStore() {
   const antraege = [];      // { id, round_id, user_id, aspekt, werte, gestellt_am, laeuft_bis, status, veto }
   const antragStimmen = []; // { antrag_id, user_id, ja }
   let antragZaehler = 0;
+  // Admin-Freigaben: { round_id, user_id, matchday } — `matchday` ist der
+  // RUNDEN-Spieltag (siehe schema.sql).
+  const freigaben = [];
   const seasonTips = [];   // Saison-Wetten: { round_id, user_id, wetten_id, wert }
 
   const nameOf = (userId) => members.find((m) => m.user_id === userId)?.name ?? userId;
@@ -111,6 +114,11 @@ export function createMockStore() {
   // Beschluss-Lage einer Runde: `regelnFuer` je Spieltag und das Regelwerk am
   // Saisonende. EINE Stelle für beide Leaderboard-Wege, sonst rechnet der
   // Verlauf mit anderen Regeln als der Endstand.
+  // ⚠️ Der Admin steht in `rounds.admin_id` — `round_members` hat KEINE
+  // `role`-Spalte (siehe schema.sql). Eine erste Fassung fragte hier
+  // `m.role === "admin"`; das war immer falsch, ohne dass etwas fehlschlug:
+  // `istAdmin` blieb überall `false`, und ein `antragsrecht: "nurAdmin"` hätte
+  // AUCH den Admin abgewiesen. Beim Nachsehen aufgefallen, nicht im Test.
   const beschlussLage = (roundId, rules, achse = null) => regelnFuerSpieltag({
     rules,
     antraege: antraege.filter((a) => a.round_id === roundId).map((a) => ({
@@ -119,7 +127,7 @@ export function createMockStore() {
         .map((v) => ({ userId: v.user_id, ja: v.ja })),
     })),
     mitglieder: members.filter((m) => m.round_id === roundId)
-      .map((m) => ({ userId: m.user_id, istAdmin: m.role === "admin" })),
+      .map((m) => ({ userId: m.user_id, istAdmin: m.user_id === rounds.get(roundId)?.admin_id })),
     achse: achse ?? zeitachse([...matches.values()], rules?.zeitachse),
   });
 
@@ -305,6 +313,28 @@ export function createMockStore() {
       return row;
     },
 
+    // ── Admin-Freigaben ─────────────────────────────────────
+    // `jokerBasis.wer: "adminFreigabe"` braucht sie; ohne Speicherort lehnte
+    // die Prüfung überall ab. ⚠️ `matchday` ist der RUNDEN-Spieltag.
+    async listAdminFreigaben({ roundId }) {
+      return freigaben.filter((f) => f.round_id === roundId)
+        .map((f) => ({ userId: f.user_id, spieltag: f.matchday }));
+    },
+
+    // Ein Schalter, kein Zähler: `an: false` nimmt die Freigabe zurück.
+    async setAdminFreigabe({ roundId, userId, matchday, an = true }) {
+      const idx = freigaben.findIndex((f) => f.round_id === roundId
+        && f.user_id === userId && f.matchday === matchday);
+      if (!an) {
+        if (idx >= 0) freigaben.splice(idx, 1);
+        return null;
+      }
+      if (idx >= 0) return freigaben[idx];
+      const row = { round_id: roundId, user_id: userId, matchday };
+      freigaben.push(row);
+      return row;
+    },
+
     // Abschluss oder Veto. Der Store entscheidet NICHT, ob ein Antrag
     // angenommen ist — das rechnet `zaehleAus`; hier wird nur festgehalten,
     // was entschieden wurde.
@@ -409,7 +439,10 @@ export function createMockStore() {
             matchday: m ? rundenSpieltagVon(achse, m) : null,
           };
         }),
-        adminFreigaben: [],
+        // Admin-Freigaben aus der Ablage statt einer leeren Liste — sonst
+        // lehnt `wer: "adminFreigabe"` hier weiter konsequent ab.
+        adminFreigaben: freigaben.filter((f) => f.round_id === roundId)
+          .map((f) => ({ userId: f.user_id, spieltag: f.matchday })),
         letzteEinsaetze: [],
       };
       // ⚠️ Und die LÄNGE ebenso: die feste 34 wäre die Liga-Saison. Eine Runde

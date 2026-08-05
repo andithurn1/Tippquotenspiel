@@ -168,6 +168,9 @@ export default function Tippabgabe({ matchId }) {
   // Abschnitt 5 Punkt 2). `[{ matchday, board }]`, exakt die Form, die
   // `budgetVerlauf` als `stand` erwartet.
   const [leaderboardHistory, setLeaderboardHistory] = useState([]);
+  // Admin-Freigaben der Runde, `[{ userId, spieltag }]` mit RUNDEN-Spieltag —
+  // die Form, die `darfEinsetzen` als `kontext.adminFreigaben` erwartet.
+  const [adminFreigaben, setAdminFreigaben] = useState([]);
 
   useEffect(() => {
     let live = true;
@@ -202,11 +205,13 @@ export default function Tippabgabe({ matchId }) {
     Promise.all([
       getStore().listTips({ roundId }), getStore().listMatches(), getStore().listVotes({ roundId }),
       getStore().getLeaderboard(roundId), getStore().getLeaderboardHistory(roundId),
-    ]).then(([tips, ms, vs, lb, history]) => {
+      getStore().listAdminFreigaben({ roundId }),
+    ]).then(([tips, ms, vs, lb, history, freigaben]) => {
       if (!live) return;
       setVotes(vs);
       setBoard(lb);
       setLeaderboardHistory(history);
+      setAdminFreigaben(freigaben ?? []);
       // Wettbewerb mit anreichern — der Gewichte-Schlüssel ist wettbewerb+matchday.
       // `kickoff` zusätzlich für `einsaetzeAusTipps` (Gleichstand-Fall bei
       // zeitgleich angepfiffenen Spielen desselben Spieltags).
@@ -403,19 +408,32 @@ export default function Tippabgabe({ matchId }) {
   // Aus den eigenen Tipps: alle mit gesetztem Joker (Modus „einzel") oder
   // einem Gewicht ungleich neutral (Modi „ranking"/„einsatz") — das sind die
   // Einsätze, an denen `pruefeAbklingzeit` in jokerBasis.js misst.
+  //
+  // 🔴 Der ganze Kontext rechnet in RUNDEN-Spieltagen. Vorher war es der
+  // Liga-Spieltag: für die Abklingzeit ging das gerade noch auf (beide Seiten
+  // lagen in derselben falschen Skala), aber in einer Runde über fünf
+  // Wettbewerbe gibt es „Spieltag 5" fünfmal — ein Einsatz am
+  // CL-Spieltag 5 hätte den Bundesliga-Spieltag 5 blockiert. Und die
+  // Admin-Freigaben unten stehen ohnehin in Runden-Spieltagen (schema.sql).
+  const meinRundenSpieltag = rundenSpieltagVon(achse, spieltag);
+  const rundenSpieltagFuer = (t) => rundenSpieltagVon(achse, t) ?? t?.matchday ?? null;
   const letzteEinsaetze = meineTips
     .filter((t) => t.joker === true || (t.gewicht != null && t.gewicht !== 1))
-    .map((t) => ({ jokerArt: rankingModus ? "joker.ranking" : "joker.einzel", spieltag: t.matchday }));
+    .map((t) => ({
+      jokerArt: rankingModus ? "joker.ranking" : "joker.einzel",
+      spieltag: rundenSpieltagFuer(t),
+    }));
   const kontext = {
     // Der Tipp, der hier gerade gespeichert wird, IST der Tipp DIESES
     // Spieltags — die Invariante „kein Joker ohne Tipp" (jokerBasis.js,
     // Abschnitt 5.0) ist damit in diesem Screen immer erfüllt.
     hatGetippt: true,
     board,
-    aktuellerSpieltag: spieltag.matchday,
-    // Es gibt derzeit keinen Speicherort für Admin-Freigaben — der Modus
-    // `adminFreigabe` lehnt deshalb konsequent ab, statt still durchzulassen.
-    adminFreigaben: [],
+    aktuellerSpieltag: meinRundenSpieltag,
+    // Aus der Ablage statt einer leeren Liste: `wer: "adminFreigabe"` lehnte
+    // vorher konsequent ab, weil es keinen Speicherort gab
+    // (design/kontaktstellen.md, letzte Teil-Wirkung).
+    adminFreigaben,
     alleGetippt,
     letzteEinsaetze,
   };
@@ -440,7 +458,6 @@ export default function Tippabgabe({ matchId }) {
   //    fünf Wettbewerbe mehr Runden-Spieltage hat (gemessen: 42).
   // Alles drei läuft jetzt über den RUNDEN-Spieltag; der ist eindeutig.
   const spieltageDerRunde = achse.length || SPIELTAGE;
-  const meinRundenSpieltag = rundenSpieltagVon(achse, spieltag);
   const kontoAlle = kontoVerlauf({
     rules: RULES, tipps: alleTipps, spieltage: spieltageDerRunde,
     stand: verlaufNachRundenSpieltag(leaderboardHistory, achse),

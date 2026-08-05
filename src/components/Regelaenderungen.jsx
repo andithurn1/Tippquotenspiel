@@ -40,6 +40,7 @@ export default function Regelaenderungen() {
   const [matches, setMatches] = useState(null);
   const [mitglieder, setMitglieder] = useState([]);
   const [antraege, setAntraege] = useState([]);
+  const [adminId, setAdminId] = useState(null);
   const [busy, setBusy] = useState(null);
   const [gewaehlterAspekt, setGewaehlterAspekt] = useState(null);
   const [meldung, setMeldung] = useState(null);
@@ -50,6 +51,7 @@ export default function Regelaenderungen() {
       getStore().listMembers(roundId), getStore().listAntraege({ roundId }),
     ]);
     setRules(sanitizeRules(round?.rules ?? DEFAULT_RULES));
+    setAdminId(round?.admin_id ?? null);
     setMatches(ms);
     setMitglieder(leute ?? []);
     setAntraege(liste ?? []);
@@ -71,9 +73,13 @@ export default function Regelaenderungen() {
   // Ansicht (noch) nicht — sie bräuchte die Tipps der letzten Spieltage; bis
   // dahin gilt jeder als aktiv, was NIEMANDEN ausschließt und damit die
   // harmlose Richtung ist.
+  // ⚠️ Der Admin steht in `rounds.admin_id`, NICHT als Rolle am Mitglied —
+  // `round_members` hat keine solche Spalte. Eine erste Fassung fragte
+  // `m.role`; damit war `istAdmin` immer falsch, und ein
+  // `antragsrecht: "nurAdmin"` hätte auch den Admin selbst abgewiesen.
   const leute = mitglieder.map((m) => ({
     userId: m.user_id ?? m.userId ?? m.id,
-    istAdmin: (m.role ?? m.rolle) === "admin",
+    istAdmin: (m.user_id ?? m.userId ?? m.id) === adminId,
   }));
 
   const stellen = async (aspekt, eintrag) => {
