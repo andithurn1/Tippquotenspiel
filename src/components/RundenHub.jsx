@@ -44,6 +44,8 @@ export default function RundenHub() {
   // (design/abstimmung-verfassung.md). Getrennte Zustände, getrennte Karten.
   const [regelWahl, setRegelWahl] = useState(false);
   const [rad, setRad] = useState(false);   // Glücksrad dieser Runde (drehrad.js)
+  // Joker der Runde — die Karte „Deine Joker" ist ohne ihn gegenstandslos.
+  const [joker, setJoker] = useState(false);
   // Hängt in dieser Runde irgendeine Joker-Art an einer Admin-Freigabe?
   // Nur dann ist der Freigabe-Screen überhaupt eine Aussage.
   const [freigaben, setFreigaben] = useState(false);
@@ -65,6 +67,7 @@ export default function RundenHub() {
         setAbstimmung(round?.rules?.joker?.enabled === true && round?.rules?.joker?.abstimmung === true);
         setRegelWahl(round?.rules?.regelAbstimmung?.enabled === true);
         setRad(round?.rules?.drehrad?.enabled === true);
+        setJoker(round?.rules?.joker?.enabled === true);
         setFreigaben(["joker.einzel", "joker.ranking", "duell.klau", "duell.block", "drehrad"]
           .some((art) => basisFuer(art, round?.rules)?.wer === "adminFreigabe"));
         setSaison(round?.rules?.saison?.enabled === true);
@@ -155,6 +158,21 @@ export default function RundenHub() {
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Wer an welchem Spieltag einsetzen darf — erteilt der Admin.
+              </div>
+            </Link>
+          )}
+          {joker && (
+            <Link href="/joker" style={{
+              textDecoration: "none", color: C.text,
+              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
+              border: `1px solid ${C.gold}44`, borderRadius: 18, padding: "16px 18px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.gold, boxShadow: `0 0 12px ${C.gold}` }} />
+                <span style={{ fontSize: 16, fontWeight: 700 }}>🃏 Deine Joker</span>
+              </div>
+              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+                Wie viele du hast, welche Spieltage sie tragen, wie weit du bist.
               </div>
             </Link>
           )}
