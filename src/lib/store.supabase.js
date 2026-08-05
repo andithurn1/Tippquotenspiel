@@ -7,7 +7,7 @@ import { DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules
 // Beschlossene Regeländerungen wirken ab IHREM Spieltag (Schritt 5 von
 // design/abstimmung-verfassung.md) — dieselbe Anbindung wie im Mock-Store.
 import { regelnFuerSpieltag } from "./beschluss";
-import { zeitachse, rundenSpieltagVon } from "./zeitachse";
+import { zeitachse, rundenSpieltagVon, bespielteSpieltage } from "./zeitachse";
 import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
@@ -324,19 +324,19 @@ export function createSupabaseStore() {
     },
 
     async getLeaderboard(roundId) {
-      const { board, rules, kontext, spieltage, nameOf } = await this.standVorDemRad(roundId);
-      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext });
+      const { board, rules, kontext, spieltage, nameOf, bespielt } = await this.standVorDemRad(roundId);
+      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext, bespielt });
     },
 
     // 🔴 Die Ziehungen, die das Leaderboard tatsächlich verrechnet hat —
     // damit `MeinRad.jsx` sie nicht mit anderen Eingaben nachrechnet.
     // Begründung ausführlich im Mock-Store.
     async getDrehradZiehungen(roundId) {
-      const { board, rules, kontext, spieltage } = await this.standVorDemRad(roundId);
+      const { board, rules, kontext, spieltage, bespielt } = await this.standVorDemRad(roundId);
       if (!rules?.drehrad?.enabled) return { ziehungen: [], spieltage };
       return {
         ziehungen: drehradZiehungen({
-          rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext,
+          rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext, bespielt,
         }),
         spieltage,
       };
@@ -432,7 +432,7 @@ export function createSupabaseStore() {
         letzteEinsaetze: [],
       };
       // ⚠️ Und die LÄNGE ebenso — die feste 34 wäre die Liga-Saison.
-      return { board, rules, kontext, nameOf, spieltage: achse.length || SPIELTAGE };
+      return { board, rules, kontext, nameOf, spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse) };
     },
 
     async getRoundEntries(roundId) {
@@ -448,10 +448,10 @@ export function createSupabaseStore() {
 
     // Was das Rad ausser Punkten auszahlt — siehe Mock-Store.
     async getDrehradBelohnungen(roundId) {
-      const { board, rules, kontext, spieltage } = await this.standVorDemRad(roundId);
+      const { board, rules, kontext, spieltage, bespielt } = await this.standVorDemRad(roundId);
       if (!rules?.drehrad?.enabled) return { joker: [], narren: [], modifikatoren: [] };
       return drehradBelohnungen({
-        rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext,
+        rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext, bespielt,
       });
     },
 

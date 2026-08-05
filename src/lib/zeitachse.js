@@ -397,6 +397,20 @@ export function verlaufNachRundenSpieltag(verlauf = [], achse = []) {
 
 // Die Übersetzung in Worten: „Spieltag 5 · Bundesliga 3 · Premier League 5".
 // Genau das, was ohne Achse niemand im Kopf hat.
+// 🔴 Welche Runden-Spieltage tragen überhaupt ein Spiel?
+//
+// `mitPausen` füllt den Rhythmus durch Länderspielpausen hindurch auf, damit
+// „Spieltag 12" auch dann existiert, wenn zwei Wochen nichts läuft. Für die
+// ANZEIGE ist das richtig — für alles, was auf einen Spieltag GELEGT wird
+// (Joker, Rad-Drehung), nicht: gemessen am 05.08.2026 trugen 7 von 42
+// Runden-Spieltagen einer Bundesliga-Runde kein Spiel, und einer davon bekam
+// einen Joker. Der ist unbenutzbar.
+//
+// Wer etwas verteilt, filtert damit vorher — siehe `jokerPlan`s `bespielt`.
+export function bespielteSpieltage(achse = []) {
+  return achse.filter((e) => (e.spiele?.length ?? 0) > 0).map((e) => e.nummer);
+}
+
 export function achsenLabel(eintrag, { kurz = false } = {}) {
   if (!eintrag) return "";
   const teile = Object.entries(eintrag.ligen).map(([key, tage]) => {

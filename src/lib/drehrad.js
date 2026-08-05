@@ -346,7 +346,13 @@ export function wahrscheinlichkeiten(felder = []) {
 // Muster `duellPlan` in duellJoker.js: erst das Saison-Fenster über
 // `fensterVon`, dann `jokerPlan` NUR auf die Breite dieses Fensters, danach
 // die relativen Spieltage zurück in absolute umrechnen.
-export function drehradPlan({ spieltage = 34, drehrad = DEFAULT_DREHRAD, seed = "", userIds = [] } = {}) {
+// `bespielt` (optional): nur diese Runden-Spieltage tragen ein Spiel. Ohne die
+// Einschränkung fällt eine Drehung auf einen Spieltag, an dem niemand tippt —
+// und „kein Rad ohne Tipp" (5.0-Invariante) verwirft sie dann stillschweigend.
+// Der Spieler verliert eine Drehung, ohne dass irgendwo etwas fehlschlägt.
+export function drehradPlan({
+  spieltage = 34, drehrad = DEFAULT_DREHRAD, seed = "", userIds = [], bespielt = null,
+} = {}) {
   const cfg = sanitizeDrehrad(drehrad);
   const fenster = fensterVon(cfg, spieltage);
   const breite = fenster.bis - fenster.von + 1;
@@ -357,11 +363,17 @@ export function drehradPlan({ spieltage = 34, drehrad = DEFAULT_DREHRAD, seed = 
     return { von: fenster.von, bis: fenster.bis, proSpieler: Object.fromEntries(userIds.map((id) => [id, []])) };
   }
 
+  // Innerhalb des Fensters wird RELATIV gezählt (1…breite), deshalb müssen die
+  // bespielten Tage denselben Bezug bekommen — und danach zurückgerechnet.
+  const bespieltRelativ = Array.isArray(bespielt)
+    ? bespielt.filter((t) => t >= fenster.von && t <= fenster.bis).map((t) => t - fenster.von + 1)
+    : null;
   const plan = jokerPlan({
     spieltage: breite,
     verteilung: { modus: cfg.modus, frequenz: cfg.frequenz },
     seed,
     userIds,
+    bespielt: bespieltRelativ,
   });
 
   const proSpieler = {};

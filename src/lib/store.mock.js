@@ -8,7 +8,7 @@ import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboard
 // design/abstimmung-verfassung.md). `regelnFuerSpieltag` liefert dafür die
 // Funktion, die die Engine als `regelnFuer` erwartet.
 import { regelnFuerSpieltag } from "./beschluss";
-import { zeitachse, rundenSpieltagVon } from "./zeitachse";
+import { zeitachse, rundenSpieltagVon, bespielteSpieltage } from "./zeitachse";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { generateJoinCode } from "./joinCode";
 import { alleMatches } from "./ligen";
@@ -236,7 +236,7 @@ export function createMockStore() {
     // ⚠️ Und die LÄNGE ebenso: die feste 34 wäre die Liga-Saison. Eine Runde
     // über mehrere Wettbewerbe hat mehr Runden-Spieltage (gemessen: 42) —
     // mit 34 bekämen die letzten acht nie eine Drehung.
-    return { board, rules, kontext, spieltage: achse.length || SPIELTAGE };
+    return { board, rules, kontext, spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse) };
   }
 
   return {
@@ -489,8 +489,8 @@ export function createMockStore() {
     // über den Verlauf gehen (der Bonus hängt am Stand vor jedem Spieltag) und
     // den Endstand nehmen — scoreLeaderboardHistory wendet applyCatchup an.
     async getLeaderboard(roundId) {
-      const { board, rules, kontext, spieltage } = await standVorDemRad(roundId);
-      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext });
+      const { board, rules, kontext, spieltage, bespielt } = await standVorDemRad(roundId);
+      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext, bespielt });
     },
 
     // 🔴 Die Ziehungen, die das Leaderboard tatsächlich verrechnet hat.
@@ -504,11 +504,11 @@ export function createMockStore() {
     // anderen Platz geprüft werden als in der Wertung.
     // Es gibt jetzt EINE Rechnung, und der Screen fragt sie ab.
     async getDrehradZiehungen(roundId) {
-      const { board, rules, kontext, spieltage } = await standVorDemRad(roundId);
+      const { board, rules, kontext, spieltage, bespielt } = await standVorDemRad(roundId);
       if (!rules?.drehrad?.enabled) return { ziehungen: [], spieltage };
       return {
         ziehungen: drehradZiehungen({
-          rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext,
+          rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext, bespielt,
         }),
         spieltage,
       };
@@ -541,10 +541,10 @@ export function createMockStore() {
     // `RundenHub.jsx` für den angezeigten Kontostand), und beide bauten sich
     // den Kontext bisher selbst — mit unterschiedlichem Ergebnis.
     async getDrehradBelohnungen(roundId) {
-      const { board, rules, kontext, spieltage } = await standVorDemRad(roundId);
+      const { board, rules, kontext, spieltage, bespielt } = await standVorDemRad(roundId);
       if (!rules?.drehrad?.enabled) return { joker: [], narren: [], modifikatoren: [] };
       return drehradBelohnungen({
-        rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext,
+        rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext, bespielt,
       });
     },
 

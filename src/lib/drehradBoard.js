@@ -125,10 +125,15 @@ function kontextFuer(kontext, userId, spieltag, proSpieltag) {
 // — lehnt sie ab, wird an diesem Spieltag für diesen Spieler NICHT gezogen
 // (kein Eintrag in `ziehungen`, `bisherige` bleibt unverändert, weil nichts
 // gezogen wurde).
-export function drehradZiehungen({ rules, rundenId, userIds = [], spieltage = 34, kontext = null } = {}) {
+export function drehradZiehungen({
+  rules, rundenId, userIds = [], spieltage = 34, kontext = null, bespielt = null,
+} = {}) {
   if (!rules?.drehrad?.enabled || !userIds.length) return [];
 
-  const plan = drehradPlan({ spieltage, drehrad: rules.drehrad, seed: rundenId, userIds });
+  // `bespielt`: nur Runden-Spieltage, an denen es Spiele gibt. Ohne die
+  // Einschränkung fällt eine Drehung in eine Länderspielpause, und „kein Rad
+  // ohne Tipp" verwirft sie danach stillschweigend — der Spieler verliert sie.
+  const plan = drehradPlan({ spieltage, drehrad: rules.drehrad, seed: rundenId, userIds, bespielt });
   const basis = kontext ? drehradBasis(rules) : null;
   const proSpieltag = kontext ? spieleJeMatchday(kontext.tipps ?? []) : null;
 
@@ -203,11 +208,13 @@ export function drehradZiehungen({ rules, rundenId, userIds = [], spieltage = 34
 //
 // ⚠️ Gerechnet wird auf `auswerten()`s `gutschriften`, nicht auf den rohen
 // Ziehungen: nur die tragen den bereits gedeckelten Betrag.
-export function drehradBelohnungen({ rules, rundenId, userIds = [], spieltage = 34, kontext = null } = {}) {
+export function drehradBelohnungen({
+  rules, rundenId, userIds = [], spieltage = 34, kontext = null, bespielt = null,
+} = {}) {
   const leer = { joker: [], narren: [], modifikatoren: [] };
   if (!rules?.drehrad?.enabled || !userIds.length) return leer;
 
-  const ziehungen = drehradZiehungen({ rules, rundenId, userIds, spieltage, kontext });
+  const ziehungen = drehradZiehungen({ rules, rundenId, userIds, spieltage, kontext, bespielt });
   const { gutschriften } = auswerten(rules.drehrad, ziehungen);
 
   const out = { joker: [], narren: [], modifikatoren: [] };
@@ -227,7 +234,9 @@ export function drehradBelohnungen({ rules, rundenId, userIds = [], spieltage = 
   return out;
 }
 
-export function withDrehradPunkte({ board = [], rules, rundenId, spieltage = 34, nameOf, kontext = null } = {}) {
+export function withDrehradPunkte({
+  board = [], rules, rundenId, spieltage = 34, nameOf, kontext = null, bespielt = null,
+} = {}) {
   if (!rules?.drehrad?.enabled) return board;
 
   // Anders als bei den Saison-Wetten (`withSaisonPunkte`) werden hier KEINE
@@ -240,7 +249,7 @@ export function withDrehradPunkte({ board = [], rules, rundenId, spieltage = 34,
   // `withSaisonPunkte` (dieselben bereits vorliegenden Werte, an derselben
   // Stelle).
   const userIds = board.map((e) => e.userId);
-  const ziehungen = drehradZiehungen({ rules, rundenId, userIds, spieltage, kontext });
+  const ziehungen = drehradZiehungen({ rules, rundenId, userIds, spieltage, kontext, bespielt });
   const { gutschriften } = auswerten(rules.drehrad, ziehungen);
 
   // Nur Punkte-Belohnungen zählen hier (Festlegung 2 oben) — je Spieler

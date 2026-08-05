@@ -6,7 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
-import { zeitachse, rundenSpieltagVon, achsenLabel } from "@/lib/zeitachse";
+import { zeitachse, rundenSpieltagVon, achsenLabel, bespielteSpieltage } from "@/lib/zeitachse";
 import { naechstesOffenesSpiel } from "@/lib/muenzstand";
 import {
   jokerPlan, sichtbareSpieltage, fortschritt, uebersicht, beschreibeVerteilung,
@@ -82,7 +82,11 @@ export default function MeineJoker() {
 
   const userIds = board.map((b) => b.userId);
   const nameVon = (id) => board.find((b) => b.userId === id)?.name ?? id;
-  const plan = jokerPlan({ spieltage, verteilung, seed: roundId ?? "", userIds });
+  // `bespielt`: ein Joker in der Länderspielpause wäre unbenutzbar.
+  const plan = jokerPlan({
+    spieltage, bespielt: bespielteSpieltage(achse),
+    verteilung, seed: roundId ?? "", userIds,
+  });
 
   // Dieselben Umrechnungen wie in der Tippabgabe: Tipps und Gutschriften im
   // RUNDEN-Spieltag, sonst zählt `kontingent` gegen die falsche Skala.

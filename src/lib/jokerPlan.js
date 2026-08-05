@@ -115,28 +115,51 @@ function bloecke(spieltage, anzahl) {
 
 // Die Joker-Spieltage EINES Spielers (oder der ganzen Runde im Modus
 // `gleich`). `salz` unterscheidet die Spieler voneinander.
-function spieltageFuer(spieltage, anzahl, seed, salz) {
-  return bloecke(spieltage, anzahl).map(([von, bis], i) => {
+// 🔴 `bespielt` ist die Liste der Spieltage, an denen es überhaupt Spiele gibt.
+//
+// Ohne sie verteilt der Plan blind über 1…N — und N enthält die
+// Runden-Spieltage, die `zeitachse.mitPausen` durch Länderspielpausen hindurch
+// aufgefüllt hat. Gemessen am 05.08.2026 an einer Bundesliga-Runde: 7 von 42
+// Runden-Spieltagen tragen KEIN Spiel, und einer davon bekam einen Joker.
+// Der ist unbenutzbar — der Spieler verliert einen von elf, ohne es zu merken.
+// Genau der Fall, den der Baukasten-Grundsatz ausschließt: „Wenn der Regler auf
+// Spieltag 12 steht, muss der Joker an Spieltag 12 existieren."
+//
+// Gewählt wird deshalb aus der Liste, nicht aus dem Zahlenraum: die Blöcke
+// laufen über die INDIZES der bespielten Tage, gezogen wird derselbe
+// deterministische Wert. Ohne `bespielt` bleibt alles wie bisher.
+function spieltageFuer(spieltage, anzahl, seed, salz, bespielt = null) {
+  const tage = Array.isArray(bespielt) && bespielt.length
+    ? [...new Set(bespielt)].filter((t) => Number.isFinite(t)).sort((x, y) => x - y)
+    : null;
+  const n = tage ? tage.length : spieltage;
+  return bloecke(n, anzahl).map(([von, bis], i) => {
     const breite = bis - von + 1;
     const r = seeded(`${seed}|${salz}|${i}`);
-    return von + Math.floor(r * breite);
+    const gewaehlt = von + Math.floor(r * breite);
+    return tage ? tage[gewaehlt - 1] : gewaehlt;
   });
 }
 
 // ── Der Plan ────────────────────────────────────────────────
 // Gibt für jeden Spieler die Spieltage zurück, an denen er einen Joker setzen
 // darf. Im Modus `frei` ist der Plan leer — dort gilt „an jedem Spieltag".
+// `bespielt` (optional): nur diese Spieltage kommen in Frage — siehe
+// `spieltageFuer`. Der Aufrufer kennt die Spiele, dieses Modul nicht.
 export function jokerPlan({
-  spieltage = 34, verteilung = DEFAULT_VERTEILUNG, seed = "", userIds = [],
+  spieltage = 34, verteilung = DEFAULT_VERTEILUNG, seed = "", userIds = [], bespielt = null,
 } = {}) {
   const v = sanitizeVerteilung(verteilung);
+  // ⚠️ Die HÄUFIGKEIT bezieht sich auf die Länge der Runde, nicht auf die Zahl
+  // der bespielten Tage: „etwa jeder 4. Spieltag" meint den Kalender. Nur die
+  // AUSWAHL wird auf die bespielten Tage eingeschränkt.
   const anzahl = kontingent(spieltage, v.frequenz);
 
   if (v.modus === "frei") {
     return { modus: "frei", spieltage, anzahl: spieltage, proSpieler: {}, alle: null };
   }
   if (v.modus === "gleich") {
-    const tage = spieltageFuer(spieltage, anzahl, seed, "runde");
+    const tage = spieltageFuer(spieltage, anzahl, seed, "runde", bespielt);
     return {
       modus: "gleich", spieltage, anzahl, alle: tage,
       proSpieler: Object.fromEntries(userIds.map((id) => [id, tage])),
@@ -145,7 +168,7 @@ export function jokerPlan({
   return {
     modus: "kontingent", spieltage, anzahl, alle: null,
     proSpieler: Object.fromEntries(
-      userIds.map((id) => [id, spieltageFuer(spieltage, anzahl, seed, id)])),
+      userIds.map((id) => [id, spieltageFuer(spieltage, anzahl, seed, id, bespielt)])),
   };
 }
 

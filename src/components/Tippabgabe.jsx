@@ -8,7 +8,7 @@ import {
 } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
-import { zeitachse, rundenSchluessel, rundenSpieltagVon, verlaufNachRundenSpieltag } from "@/lib/zeitachse";
+import { zeitachse, rundenSchluessel, rundenSpieltagVon, verlaufNachRundenSpieltag, bespielteSpieltage } from "@/lib/zeitachse";
 import { muenzSchluessel, muenzTaktStatus, periodeLabel, spieltagsFolge } from "@/lib/muenzTakt";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
@@ -325,6 +325,9 @@ export default function Tippabgabe({ matchId }) {
   // und `drehradPlan` rechnet längst so. Hier war es nie angekommen.
   const plan = useMemo(() => jokerPlan({
     spieltage: achse.length || SPIELTAGE,
+    // Nur Spieltage, an denen es Spiele gibt: ein Joker in der
+    // Länderspielpause ist unbenutzbar (siehe `bespielteSpieltage`).
+    bespielt: bespielteSpieltage(achse),
     verteilung: RULES.joker?.verteilung, seed: roundId ?? "", userIds: user ? [user.id] : [],
   }), [RULES.joker?.verteilung, roundId, user, achse]);
   // 🔴 Erspielte Joker kommen aus ZWEI Quellen: den Ereignissen

@@ -232,6 +232,53 @@ describe("Der Joker-Plan zählt in RUNDEN-Spieltagen", () => {
     expect(zuViele).toBeGreaterThan(neu.anzahl * 2);
   });
 
+  // 🔴 Gefunden am 05.08.2026 beim Bau des Saison-Fahrplans: `zeitachse` füllt
+  // den Rhythmus durch Länderspielpausen hindurch auf, damit „Spieltag 12" auch
+  // dann existiert, wenn nichts läuft. Gemessen an einer Bundesliga-Runde:
+  // 7 von 42 Runden-Spieltagen tragen KEIN Spiel — und einer davon bekam einen
+  // Joker. Der ist unbenutzbar, der Spieler verliert einen von elf.
+  describe("`bespielt` hält Joker von leeren Spieltagen fern", () => {
+    const LEER = [6, 7, 20];
+    const BESPIELT = Array.from({ length: 42 }, (_, i) => i + 1).filter((t) => !LEER.includes(t));
+
+    it("kein Joker fällt auf einen Spieltag ohne Spiele", () => {
+      for (const modus of ["gleich", "kontingent"]) {
+        const p = jokerPlan({
+          spieltage: 42, bespielt: BESPIELT,
+          verteilung: { modus, frequenz: 4 }, seed: "r1", userIds: SPIELER,
+        });
+        const tage = p.modus === "gleich" ? p.alle : Object.values(p.proSpieler).flat();
+        for (const t of tage) expect(LEER).not.toContain(t);
+      }
+    });
+
+    it("ohne `bespielt` bleibt alles wie bisher — kein stiller Regelwechsel", () => {
+      const ohne = jokerPlan({
+        spieltage: 42, verteilung: { modus: "gleich", frequenz: 4 }, seed: "r1", userIds: ["u1"],
+      });
+      const auch = jokerPlan({
+        spieltage: 42, bespielt: null,
+        verteilung: { modus: "gleich", frequenz: 4 }, seed: "r1", userIds: ["u1"],
+      });
+      expect(auch.alle).toEqual(ohne.alle);
+    });
+
+    it("die ANZAHL bleibt an der Länge der Runde hängen, nicht an den bespielten Tagen", () => {
+      // „Etwa jeder 4. Spieltag" meint den Kalender. Würde die Häufigkeit auf
+      // die bespielten Tage bezogen, bekäme eine Runde mit vielen Pausen
+      // weniger Joker — ohne dass der Admin etwas anders eingestellt hätte.
+      const mit = jokerPlan({
+        spieltage: 42, bespielt: BESPIELT,
+        verteilung: { modus: "gleich", frequenz: 4 }, seed: "r1", userIds: ["u1"],
+      });
+      const ohne = jokerPlan({
+        spieltage: 42, verteilung: { modus: "gleich", frequenz: 4 }, seed: "r1", userIds: ["u1"],
+      });
+      expect(mit.anzahl).toBe(ohne.anzahl);
+      expect(mit.alle).toHaveLength(ohne.alle.length);
+    });
+  });
+
   it("die Achse ist länger als eine Liga-Saison — die feste 34 verliert das Ende", () => {
     expect(ACHSE.length).toBeGreaterThan(34);
     const p = jokerPlan({
