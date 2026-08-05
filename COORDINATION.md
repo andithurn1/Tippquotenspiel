@@ -105,6 +105,65 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-05 (II) · Regel-Abstimmung & Verfassung — Schritte 1 bis 3 von 5
+
+> ⚠️ **Alles auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, nicht auf
+> `main`.** Und: **`supabase/schema.sql` muss der Nutzer erneut ausführen**
+> (idempotent, komplett laufen lassen) — sonst fehlen live zwei Tabellen.
+
+**1829 Tests grün** (Sessionstart 1707) · Build sauber.
+
+#### ✅ Was liegt
+
+| Schritt | Inhalt |
+|---|---|
+| 1 | `src/lib/regelAbstimmung.js` + 68 Tests — `zaehleAus`, `wirktAb`, `verstoesstGegenVerfassung`, `konflikte`, `beschreibeMitbestimmung` |
+| 2 | Store: `createAntrag`/`listAntraege`/`saveAntragStimme`/`setAntragStatus` in Mock + Supabase, Tabellen `rule_proposals`/`rule_proposal_votes` samt RLS |
+| 3 | `src/components/Mitbestimmung.jsx` — Profi-Ansicht, plus Stufe 2 („Wer darf die Regeln ändern?") |
+
+**Offen: Schritt 4** (Antrags- und Abstimmungs-Screen) und **Schritt 5** (die
+Wirkung — der Schritt, der die Snapshot-Kante berührt und einzeln geprüft
+gehört).
+
+#### 🔴 Drei Dinge, die man kennen muss, bevor man daran weiterbaut
+
+1. **`rules.regelAbstimmung`, nicht `rules.abstimmung`.** `rules.joker.abstimmung`
+   gibt es schon (Joker-Abstimmung, `voting.js`) — andere Frage, anderes Modul.
+2. **`regelAbstimmung.js` importiert NICHTS.** `engine.js` braucht sie, und
+   alles, was sie bräuchte, liegt dahinter — jeder Weg wäre ein Import-Kreis
+   (dieselbe Falle wie bei `spieltag.js`). Harte Grenzen und Aspekt-Katalog
+   kommen als Parameter herein. **Das hat die Zusicherung „eine Verfassung
+   kann nur verengen" sogar verbessert:** sie hängt jetzt am LESEN
+   (`effektiveGrenzen`), nicht am Speichern — gemessen mit einem feindlichen
+   Band, gespeichert 0–10 auf `joker.faktor`, wirksam bleibt 1–2.
+3. **Ein zehnter Aspekt `mitbestimmung`** in `presetMerge.js`. Er ist der
+   einzige, über den nie abgestimmt werden kann — durchgesetzt in
+   `regelAbstimmung.js`, nicht im Katalog. Ein neuer Aspekt zieht immer eine
+   kuratierte Teilbibliothek nach sich (Test erzwingt es).
+
+#### 📌 Wieder kein einziger ernster Fund aus den Tests
+
+Alle aus eigenen Rechnungen oder dem Durchlesen des eigenen Codes:
+
+- Der Quorum-Regler hätte über `reglerSchritt` laufen können — der erkennt die
+  Multiplikator-Familie generisch an `step === 0.05`, und das Quorum hat den
+  Schritt, ist aber ein Anteil. Gleiche Lage wie `maxAnteilProSpiel`.
+- **Das Entfernen des letzten freigegebenen Bereichs kippte die Verfassung ins
+  Gegenteil** (leere Freigabeliste heißt „alles außer den festgeschriebenen"):
+  aus „gar nichts abstimmbar" wäre durch einen Klick „alles abstimmbar"
+  geworden, ohne Meldung.
+- Die Verstoß-Meldung schrieb JEDE Grenze der Verfassung zu, auch die aus dem
+  Regelwerk — der Admin hätte dort nach einer Schranke gesucht, die es nicht
+  gibt.
+- Die Frist einer laufenden Abstimmung wurde nachgerechnet statt eingefroren;
+  eine geänderte Dauer hätte das Ende mitten im Verfahren verschoben.
+
+#### ⚠️ Zum Arbeiten mit Unter-Agenten
+
+Ein Umsetzer-Lauf ist an einem **Konto-Limit** gescheitert und hat nichts
+hinterlassen (Arbeitsverzeichnis blieb sauber). Wer so arbeitet: nach einem
+Abbruch `git status` prüfen, bevor man neu ansetzt.
+
 ### 2026-08-04 · Münz-Takt fertig — und ein Loch in Stufe 1 und 2, das größer war als die Aufgabe
 
 > ⚠️ **Diese Arbeit liegt auf dem Branch `claude/koordinierte-arbeitsweise-fe6w1v`,
