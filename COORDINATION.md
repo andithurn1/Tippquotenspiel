@@ -131,8 +131,8 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 > ⚠️ **Nutzer-Aufgabe: `supabase/schema.sql` erneut im SQL-Editor ausführen**
 > (idempotent, komplett laufen lassen) — sonst fehlen live zwei Tabellen.
 
-**1862 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
-14 Commits.
+**1864 Tests grün** (Sessionstart: 1707) · Build sauber · Arbeitskopie leer ·
+18 Commits.
 
 #### ✅ Abgeräumt: die komplette offene Liste bis auf die Balance-Messung
 
@@ -142,6 +142,7 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 | **Regel-Abstimmung & Verfassung** | Alle fünf Schritte der Spec: `regelAbstimmung.js` · Store + Schema · `Mitbestimmung.jsx` (Profi) · `/regeln` (Screen) · `beschluss.js` (Wirkung) |
 | **Glücksrad als SVG** (`drehrad.md` 3c) | `radGeometrie.js` (die Winkel, geprüft) + `Gluecksrad.jsx`, als Live-Vorschau in der Spielerstellung |
 | **Beschlüsse in der Wertung** | `regelnFuer` durch `scoreLeaderboard`/`scoreLeaderboardHistory`/`applyCatchup` und beide Stores — der Schritt, der die Snapshot-Kante berührt |
+| **Das Rad im Spielbetrieb** | `MeinRad.jsx`, Route `/rad`, Karte im Hub — kein Knopf „drehen", der Ausgang steht ohnehin fest |
 
 #### 🔴 Zwei Bauweisen, die sich beide bewährt haben
 
@@ -214,15 +215,25 @@ verteilt, Median 39 Spiele je Runden-Spieltag — **genau die Zahl, die
 `CLAUDE.md` als normale Woche über vier Ligen nennt.** Die eigene
 Dokumentation bestätigt die Korrektur unabhängig. Steht jetzt auch dort.
 
+#### 🔴 Ein zweiter Skalen-Fehler derselben Familie (Rad, gefunden 05.08.)
+
+Beim Bauen des Spieler-Screens fürs Rad: `drehradPlan` verteilt die Drehungen
+über RUNDEN-Spieltage, `kontextFuer` (drehradBoard.js) vergleicht
+`t.matchday === spieltag` direkt damit — und **beide Stores reichten dort den
+LIGA-Spieltag hinein.** Gemessen: Bundesliga-Spieltag 20 liegt auf
+Runden-Spieltag 27; die Drehung landete auf Spieltag 20, an dem der Spieler
+gar nichts getippt haben muss. „Kein Rad ohne Tipp" prüfte den falschen Tag.
+Dazu `spieltage: 34` fest verdrahtet bei 42 Runden-Spieltagen — die letzten
+acht bekamen nie eine Drehung.
+
+**Das ist der dritte Fund derselben Familie** (Joker, Zeitachse, Rad). Wo eine
+Zahl „Spieltag" heißt, gehört die Frage dazu: LIGA oder RUNDE?
+
 #### 🟡 Offen, nach Wert sortiert
 
-1. **Das Rad im Spielbetrieb.** `Gluecksrad.jsx` nimmt bereits eine
-   `ergebnisId` und dreht darauf; im Editor gibt es noch keine, weil dort
-   nichts gezogen wird. Wer den Dreh-Moment für den Spieler baut, reicht das
-   Ergebnis aus `ziehe`/`drehradBoard` durch — mehr ist es nicht.
-3. Die fünf Teil-Wirkungen aus `kontaktstellen.md`.
-4. L3/L4/L6 · die 16 Auslöser.
-5. **Balance-Messung** — `balanceSim.js` braucht Formkurven je Tipper.
+1. Die fünf Teil-Wirkungen aus `kontaktstellen.md`.
+2. L3/L4/L6 · die 16 Auslöser.
+3. **Balance-Messung** — `balanceSim.js` braucht Formkurven je Tipper.
 
 ---
 
