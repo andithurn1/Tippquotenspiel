@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { drehradZiehungen, withDrehradPunkte } from "./drehradBoard";
+import { drehradZiehungen, withDrehradPunkte, drehradBelohnungen } from "./drehradBoard";
 import { auswerten, DEFAULT_DREHRAD, DREHRAD_LIMITS } from "./drehrad";
+import { sanitizeRules, DEFAULT_RULES } from "./engine";
+import { kontingent } from "./jokerKontingent";
 
 // Die eine Stelle, an der Drehrad-Punkte aufs Leaderboard kommen — für BEIDE
 // Stores. Geprüft wird hier NUR, dass die Einstellungen greifen (Vorbild
@@ -229,5 +231,67 @@ describe("withDrehradPunkte", () => {
     const spieltageGezogen = ziehungen.map((z) => z.spieltag).sort((a, b) => a - b);
 
     expect(spieltageGezogen).toEqual([1, 3, 4]); // Spieltag 2 fehlt — nicht getippt, nicht gezogen
+  });
+});
+
+// 🔴 `design/kontaktstellen.md` führte als offene Teil-Wirkung: Rad-Felder mit
+// Joker-, Narren- oder Modifikator-Belohnung werden gezogen, wirken sich aber
+// nicht aus. Nach dem Baukasten-Grundsatz ist das nicht erlaubt — „eine
+// Einstellung, die ins Leere läuft, ist kein Baukastenteil".
+describe("drehradBelohnungen — was das Rad AUSSER Punkten auszahlt", () => {
+  const radRules = (felder) => sanitizeRules({
+    ...DEFAULT_RULES,
+    joker: { enabled: true, modus: "einzel", faktor: 1.5 },
+    drehrad: { enabled: true, frequenz: 5, phase: "ganze", felder },
+  });
+
+  it("Joker kommen in DERSELBEN Gutschrift-Form wie erspielte Ereignisse", () => {
+    const rules = radRules([
+      { id: "f1", label: "Nichts", gewicht: 1, belohnung: { typ: "nichts" } },
+      { id: "f2", label: "Ein Joker", gewicht: 9, belohnung: { typ: "joker", art: "joker.einzel", anzahl: 1 } },
+    ]);
+    const b = drehradBelohnungen({ rules, rundenId: "r1", userIds: ["u1"], spieltage: 42 });
+    expect(b.joker.length).toBeGreaterThan(0);
+    for (const g of b.joker) {
+      // Genau die Form, die `kontingent` erwartet — kein zweiter Topf.
+      expect(g).toHaveProperty("userId");
+      expect(g).toHaveProperty("matchday");
+      expect(g.belohnung).toBeGreaterThan(0);
+    }
+    // Und sie landen wirklich im Vorrat.
+    const k = kontingent({
+      plan: { modus: "frei" }, gutschriften: b.joker, tipps: [], userId: "u1", bisSpieltag: 42,
+    });
+    expect(k.erspielt.gesamt).toBe(b.joker.reduce((s, g) => s + g.belohnung, 0));
+  });
+
+  it("Narren kommen als fester Betrag, nicht als Ereignis-Anzahl", () => {
+    const rules = radRules([
+      { id: "f1", label: "Nichts", gewicht: 1, belohnung: { typ: "nichts" } },
+      { id: "f2", label: "30 Narren", gewicht: 9, belohnung: { typ: "budget", betrag: 30 } },
+    ]);
+    const b = drehradBelohnungen({ rules, rundenId: "r1", userIds: ["u1"], spieltage: 42 });
+    expect(b.narren.length).toBeGreaterThan(0);
+    // Der Betrag steht so auf dem Feld — er wird NICHT durch eine Rate
+    // geschickt (siehe Kopfkommentar von `kontoVerlauf`s `zusatz`).
+    for (const g of b.narren) expect(g.betrag).toBe(30);
+  });
+
+  it("Modifikatoren werden gemeldet, nicht still verschluckt", () => {
+    const rules = radRules([
+      { id: "f1", label: "Nichts", gewicht: 1, belohnung: { typ: "nichts" } },
+      { id: "f2", label: "Doppelt", gewicht: 9, belohnung: { typ: "modifikator", faktor: 1.5, spieltage: 1 } },
+    ]);
+    const b = drehradBelohnungen({ rules, rundenId: "r1", userIds: ["u1"], spieltage: 42 });
+    // Noch nicht verrechnet (das ist der Wertungs-Pfad), aber ausgewiesen —
+    // wer sie baut, findet sie hier.
+    expect(b.modifikatoren.length).toBeGreaterThan(0);
+    expect(b.modifikatoren[0].faktor).toBe(1.5);
+  });
+
+  it("ohne Rad kommt nichts", () => {
+    const aus = sanitizeRules({ ...DEFAULT_RULES, drehrad: { enabled: false } });
+    expect(drehradBelohnungen({ rules: aus, rundenId: "r1", userIds: ["u1"] }))
+      .toEqual({ joker: [], narren: [], modifikatoren: [] });
   });
 });

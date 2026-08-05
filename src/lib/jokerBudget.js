@@ -490,7 +490,17 @@ export function einsaetzeAllerArten(tipps = [], rules = {}) {
 // über alle Käufer gemeinsam, je Periode (`perioden()`, dieselbe Funktion
 // wie in `budgetVerlauf`) — sonst hinge `preisModus: "steigend"`/"knappheit"
 // von der Reihenfolge im Array statt vom Spieltag ab.
-export function kontoVerlauf({ rules, tipps = [], spieltage = 34, stand = null, userIds = [] } = {}) {
+// 🔴 Nachtrag 05.08.2026: `zusatz` — direkte Narren-Gutschriften.
+// Bisher konnte Narren NUR über die `quellen` fließen. Das Glücksrad zahlt
+// aber einen FESTEN Betrag pro Feld („30 Narren"), und den durch die
+// `leistung`-Quelle zu schicken wäre falsch: die multipliziert eine ANZAHL mit
+// `proEreignis`, es käme also eine andere Zahl heraus als auf dem Feld steht.
+// Deshalb ein eigener, sehr schmaler Eingang: `[{ userId, spieltag, betrag }]`.
+// Er wird wie ein Zufluss behandelt, nicht wie eine Quelle — er hat keinen
+// Takt, keinen Verfall und keine Kurve, sondern ist genau einmal da.
+// ⚠️ Er unterliegt trotzdem der Grundregel der Datei: kein Schuldenmodell,
+// nie unter 0.
+export function kontoVerlauf({ rules, tipps = [], spieltage = 34, stand = null, userIds = [], zusatz = [] } = {}) {
   const modus = rules?.joker?.modus;
   const cfg = sanitizeBudget(rules?.budget);
   const N = Number.isFinite(spieltage) && spieltage > 0 ? Math.floor(spieltage) : 34;
@@ -501,14 +511,40 @@ export function kontoVerlauf({ rules, tipps = [], spieltage = 34, stand = null, 
     verfall: cfg.verfall, maxAnsparen: cfg.maxAnsparen, spieltage: N, stand, userIds,
   });
 
+  // Direkte Gutschriften (Rad) je Spieler und Spieltag — siehe Kopfkommentar.
+  const zusatzJeTag = new Map();   // `${userId}|${matchday}` -> Summe
+  const zusatzSpieler = new Set();
+  for (const z of Array.isArray(zusatz) ? zusatz : []) {
+    const id = z?.userId ?? null;
+    const tag = Number(z?.spieltag ?? z?.matchday);
+    const betrag = Number(z?.betrag);
+    if (id == null || !Number.isFinite(tag) || !Number.isFinite(betrag) || betrag <= 0) continue;
+    zusatzJeTag.set(`${id}|${tag}`, (zusatzJeTag.get(`${id}|${tag}`) ?? 0) + betrag);
+    zusatzSpieler.add(id);
+  }
+  // Kumulativ bis zu einem Spieltag — der Zufluss-Verlauf ist ebenfalls
+  // kumulativ, beide müssen dieselbe Lesart haben.
+  const zusatzBis = (id, matchday) => {
+    let summe = 0;
+    for (const [key, betrag] of zusatzJeTag) {
+      const [kid, ktag] = key.split("|");
+      if (kid === String(id) && Number(ktag) <= matchday) summe += betrag;
+    }
+    return summe;
+  };
+
   // Modus "einsatz" ODER kein Budget aktiv: kein Narren-Kauf möglich (siehe
   // Kopfkommentar oben) — reiner Zufluss, `ausgaben` bleibt bei 0.
   if (modus === "einsatz" || !cfg.enabled) {
     const proSpieler = {};
-    for (const [id, verlauf] of Object.entries(zufluss.proSpieler)) {
-      proSpieler[id] = verlauf.map((v) => ({
-        matchday: v.matchday, zufluss: v.kontostand, ausgaben: 0, kontostand: v.kontostand,
-      }));
+    const ids = new Set([...Object.keys(zufluss.proSpieler), ...zusatzSpieler]);
+    for (const id of ids) {
+      const verlauf = zufluss.proSpieler[id]
+        ?? Array.from({ length: N }, (_, i) => ({ matchday: i + 1, kontostand: 0 }));
+      proSpieler[id] = verlauf.map((v) => {
+        const kontostand = +(v.kontostand + zusatzBis(id, v.matchday)).toFixed(2);
+        return { matchday: v.matchday, zufluss: kontostand, ausgaben: 0, kontostand };
+      });
     }
     return { proSpieler };
   }
@@ -553,6 +589,7 @@ export function kontoVerlauf({ rules, tipps = [], spieltage = 34, stand = null, 
   // verschwindet ein Käufer ohne eigene Zufluss-Quelle spurlos aus der Liste.
   const spielerIds = new Set(Object.keys(zufluss.proSpieler));
   for (const k of kaeufe) spielerIds.add(k.userId);
+  for (const id of zusatzSpieler) spielerIds.add(id);
 
   const proSpieler = {};
   for (const id of spielerIds) {
@@ -562,9 +599,10 @@ export function kontoVerlauf({ rules, tipps = [], spieltage = 34, stand = null, 
     proSpieler[id] = zuflussVerlauf.map((v) => {
       const ausgabenTag = ausgabenJeSpielerUndTag.get(`${id}|${v.matchday}`) ?? 0;
       kumuliert += ausgabenTag;
+      const zuflussTag = +(v.kontostand + zusatzBis(id, v.matchday)).toFixed(2);
       // Kein Schuldenmodell: nie unter 0 (Kopfkommentar der Datei).
-      const kontostand = Math.max(0, +(v.kontostand - kumuliert).toFixed(2));
-      return { matchday: v.matchday, zufluss: v.kontostand, ausgaben: +ausgabenTag.toFixed(2), kontostand };
+      const kontostand = Math.max(0, +(zuflussTag - kumuliert).toFixed(2));
+      return { matchday: v.matchday, zufluss: zuflussTag, ausgaben: +ausgabenTag.toFixed(2), kontostand };
     });
   }
   return { proSpieler };

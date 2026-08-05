@@ -153,6 +153,60 @@ export function drehradZiehungen({ rules, rundenId, userIds = [], spieltage = 34
   return ziehungen;
 }
 
+
+// ── Was das Rad AUSSER Punkten auszahlt ─────────────────────
+// 🔴 `withDrehradPunkte` zahlt nur `belohnung.typ === "punkte"` aus — das war
+// als Einschränkung in `design/kontaktstellen.md` benannt: ein Rad-Feld mit
+// Joker-, Narren- oder Modifikator-Belohnung wurde gezogen, tauchte in
+// `auswerten()`s `gutschriften` auf und wirkte sich im Spiel nicht aus.
+//
+// Nach dem Baukasten-Grundsatz ist genau das nicht erlaubt: „eine Einstellung,
+// die ins Leere läuft, ist kein Baukastenteil." Diese Funktion übersetzt die
+// Ziehungen deshalb in die Formen, die die BESTEHENDEN Töpfe erwarten — kein
+// neuer Kanal, keine zweite Buchführung:
+//
+//   `joker`        → dieselbe Gutschrift-Form wie `ereignisse.auswerten()`,
+//                    also `{ userId, matchday, belohnung: <anzahl> }`. Damit
+//                    landet ein erspielter Rad-Joker im selben Vorrat wie ein
+//                    erspieltes Ereignis (`kontingent` in jokerKontingent.js)
+//                    und unterliegt denselben Regeln — insbesondere „wirkt ab
+//                    dem Spieltag, an dem er verdient wurde, nie rückwirkend".
+//   `budget`       → `{ userId, spieltag, betrag }` für `kontoVerlauf`.
+//                    ⚠️ NICHT als `leistung`-Quelle: die multipliziert eine
+//                    ANZAHL mit `proEreignis`. Ein Rad-Feld nennt aber einen
+//                    festen Betrag — durch `proEreignis` geschickt käme eine
+//                    andere Zahl heraus, als auf dem Feld steht.
+//   `modifikator`  → wird hier nur GEMELDET, nicht verrechnet. Er müsste in
+//                    `totalModifier` je Spieltag einfließen, und das ist der
+//                    Wertungs-Pfad; das gehört einzeln gebaut und geprüft.
+//                    Bis dahin ist er ausgewiesen statt still verschluckt.
+//
+// ⚠️ Gerechnet wird auf `auswerten()`s `gutschriften`, nicht auf den rohen
+// Ziehungen: nur die tragen den bereits gedeckelten Betrag.
+export function drehradBelohnungen({ rules, rundenId, userIds = [], spieltage = 34, kontext = null } = {}) {
+  const leer = { joker: [], narren: [], modifikatoren: [] };
+  if (!rules?.drehrad?.enabled || !userIds.length) return leer;
+
+  const ziehungen = drehradZiehungen({ rules, rundenId, userIds, spieltage, kontext });
+  const { gutschriften } = auswerten(rules.drehrad, ziehungen);
+
+  const out = { joker: [], narren: [], modifikatoren: [] };
+  for (const g of gutschriften) {
+    const b = g.belohnung;
+    if (!b) continue;
+    if (b.typ === "joker") {
+      out.joker.push({ userId: g.userId, matchday: g.spieltag, belohnung: b.anzahl, art: b.art });
+    } else if (b.typ === "budget") {
+      out.narren.push({ userId: g.userId, spieltag: g.spieltag, betrag: b.betrag });
+    } else if (b.typ === "modifikator") {
+      out.modifikatoren.push({
+        userId: g.userId, spieltag: g.spieltag, faktor: b.faktor, spieltage: b.spieltage,
+      });
+    }
+  }
+  return out;
+}
+
 export function withDrehradPunkte({ board = [], rules, rundenId, spieltage = 34, nameOf, kontext = null } = {}) {
   if (!rules?.drehrad?.enabled) return board;
 

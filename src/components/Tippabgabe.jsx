@@ -9,6 +9,7 @@ import {
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
 import { zeitachse, rundenSchluessel, rundenSpieltagVon, verlaufNachRundenSpieltag } from "@/lib/zeitachse";
+import { drehradBelohnungen } from "@/lib/drehradBoard";
 import { muenzSchluessel, muenzTaktStatus, periodeLabel, spieltagsFolge } from "@/lib/muenzTakt";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
@@ -272,9 +273,26 @@ export default function Tippabgabe({ matchId }) {
   const plan = useMemo(() => jokerPlan({
     verteilung: RULES.joker?.verteilung, seed: roundId ?? "", userIds: user ? [user.id] : [],
   }), [RULES.joker?.verteilung, roundId, user]);
+  // 🔴 Erspielte Joker kommen aus ZWEI Quellen: den Ereignissen
+  // (`erspielteJoker`) UND dem Glücksrad. Ein Rad-Feld mit Joker-Belohnung
+  // wurde bisher gezogen und wirkte sich nicht aus — als Einschränkung in
+  // `design/kontaktstellen.md` benannt und nach dem Baukasten-Grundsatz nicht
+  // erlaubt („eine Einstellung, die ins Leere läuft, ist kein Baukastenteil").
+  //
+  // Zusammengeführt wird in DERSELBEN Gutschrift-Liste, kein zweiter Topf:
+  // `kontingent` unten rechnet damit unverändert weiter, und die Regel
+  // „wirkt ab dem Spieltag, an dem er verdient wurde" gilt automatisch mit.
+  const radBelohnungen = useMemo(
+    () => (user ? drehradBelohnungen({
+      rules: RULES, rundenId: roundId, userIds: [user.id], spieltage: SPIELTAGE,
+    }) : { joker: [], narren: [], modifikatoren: [] }),
+    [RULES, roundId, user]);
   const gutschriften = useMemo(
-    () => erspielteJoker({ eintraege: meineEintraege, rules: RULES }),
-    [meineEintraege, RULES]);
+    () => [
+      ...erspielteJoker({ eintraege: meineEintraege, rules: RULES }),
+      ...radBelohnungen.joker,
+    ],
+    [meineEintraege, RULES, radBelohnungen]);
   // Der Ranglisten-Pool wird einmal je RUNDEN-Spieltag vergeben, nicht einmal je
   // Liga — sonst ließe er sich in einer Runde über fünf Wettbewerbe fünfmal pro
   // Woche ausgeben. Dieselbe Quelle wie in der Spielwahl, damit beide Screens
@@ -427,6 +445,10 @@ export default function Tippabgabe({ matchId }) {
     rules: RULES, tipps: alleTipps, spieltage: spieltageDerRunde,
     stand: verlaufNachRundenSpieltag(leaderboardHistory, achse),
     userIds: board.map((b) => b.userId),
+    // Narren vom Rad — eine feste Gutschrift, keine Quelle mit Takt und
+    // Verfall (siehe `kontoVerlauf`). Ohne sie zahlte ein Rad-Feld
+    // „30 Narren" nichts aus.
+    zusatz: radBelohnungen.narren,
   });
   const meinKonto = user ? kontoAlle.proSpieler[user.id] : null;
   const narrenKontostand = meinKonto?.find((v) => v.matchday === meinRundenSpieltag)?.kontostand ?? null;

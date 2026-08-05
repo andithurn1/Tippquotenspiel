@@ -467,3 +467,52 @@ describe("einsaetzeAllerArten", () => {
     expect(r.map((e) => e.spieltag)).toEqual([2, 5, 10]);
   });
 });
+
+// 🔴 Direkte Gutschriften (Glücksrad). Ein Rad-Feld nennt einen FESTEN Betrag;
+// ihn durch die `leistung`-Quelle zu schicken wäre falsch, weil die eine
+// Anzahl mit `proEreignis` multipliziert — es käme eine andere Zahl heraus als
+// auf dem Feld steht.
+describe("kontoVerlauf — `zusatz`: feste Gutschriften ohne Takt und Verfall", () => {
+  const rules = { joker: { modus: "einzel" }, budget: {
+    enabled: true, takt: "spieltag", quellen: [{ typ: "gleich", betrag: 2 }], verfall: "nie",
+  } };
+
+  it("die Gutschrift kommt oben drauf, in voller Höhe", () => {
+    const ohne = kontoVerlauf({ rules, tipps: [], spieltage: 10, userIds: ["a"] });
+    const mit = kontoVerlauf({
+      rules, tipps: [], spieltage: 10, userIds: ["a"],
+      zusatz: [{ userId: "a", spieltag: 4, betrag: 30 }],
+    });
+    const st = (v, t) => v.proSpieler.a.find((x) => x.matchday === t).kontostand;
+    // Von Hand: 2 je Spieltag, ohne Verfall. An ST10 also 20 — plus 30.
+    expect(st(ohne, 10)).toBe(20);
+    expect(st(mit, 10)).toBe(50);
+  });
+
+  it("sie wirkt erst ab IHREM Spieltag, nicht rückwirkend", () => {
+    const v = kontoVerlauf({
+      rules, tipps: [], spieltage: 10, userIds: ["a"],
+      zusatz: [{ userId: "a", spieltag: 4, betrag: 30 }],
+    });
+    const st = (t) => v.proSpieler.a.find((x) => x.matchday === t).kontostand;
+    expect(st(3)).toBe(6);    // 3 × 2, noch ohne Gutschrift
+    expect(st(4)).toBe(38);   // 4 × 2 + 30
+  });
+
+  it("ein Spieler, den es nur über die Gutschrift gibt, verschwindet nicht", () => {
+    const v = kontoVerlauf({
+      rules, tipps: [], spieltage: 5, userIds: ["a"],
+      zusatz: [{ userId: "fremd", spieltag: 2, betrag: 10 }],
+    });
+    expect(v.proSpieler.fremd).toBeTruthy();
+    expect(v.proSpieler.fremd.find((x) => x.matchday === 2).kontostand).toBe(10);
+  });
+
+  it("Unfug wird ignoriert", () => {
+    const v = kontoVerlauf({
+      rules, tipps: [], spieltage: 5, userIds: ["a"],
+      zusatz: [{ userId: "a", spieltag: "x", betrag: 10 }, { userId: "a", spieltag: 2, betrag: -5 }, null],
+    });
+    expect(v.proSpieler.a.find((x) => x.matchday === 5).kontostand).toBe(10);
+  });
+});

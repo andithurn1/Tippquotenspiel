@@ -383,10 +383,29 @@ ursprünglich toten Kontaktstellen aus Abschnitt 2 sind verkabelt. Trotzdem
 bleibt offen, was schon in den vorherigen Schritten ausdrücklich als
 Einschränkung benannt wurde und durch Schritt 5 nicht behoben wird:
 
-- **Rad-Felder mit Joker-, Narren- oder Modifikator-Belohnung** (Schritt 3):
-  `withDrehradPunkte` zahlt weiterhin nur `belohnung.typ === "punkte"` aus.
-  Ein Rad-Feld mit einer anderen Belohnungsart wird gezogen und taucht in
-  `auswerten()`s `gutschriften` auf, wirkt sich im Spiel aber nicht aus.
+- ~~**Rad-Felder mit Joker-, Narren- oder Modifikator-Belohnung**~~
+  ✅ **ZWEI VON DREI BEHOBEN (05.08.2026)**, die dritte ausgewiesen.
+  Neu: `drehradBelohnungen()` in `drehradBoard.js` übersetzt die Ziehungen in
+  die Formen, die die BESTEHENDEN Töpfe erwarten — kein neuer Kanal:
+  - **Joker** → dieselbe Gutschrift-Form wie `ereignisse.auswerten()`
+    (`{ userId, matchday, belohnung }`). Ein Rad-Joker landet damit im selben
+    Vorrat wie ein erspieltes Ereignis (`kontingent`) und unterliegt derselben
+    Regel „wirkt ab dem Spieltag, an dem er verdient wurde, nie rückwirkend".
+    In `Tippabgabe.jsx` an die vorhandene `gutschriften`-Liste angehängt.
+  - **Narren** → neuer, sehr schmaler Eingang `zusatz` in `kontoVerlauf`.
+    ⚠️ Ausdrücklich NICHT über die `leistung`-Quelle: die multipliziert eine
+    ANZAHL mit `proEreignis`, ein Rad-Feld nennt aber einen FESTEN Betrag —
+    durch die Quelle geschickt käme eine andere Zahl heraus als auf dem Feld
+    steht. `zusatz` hat keinen Takt, keinen Verfall und keine Kurve; es
+    unterliegt aber weiter der Grundregel „kein Schuldenmodell".
+  - **Modifikator** → wird GEMELDET (`drehradBelohnungen(...).modifikatoren`),
+    aber nicht verrechnet. Er müsste je Spieltag in `totalModifier` fließen,
+    und das ist der Wertungs-Pfad — das gehört einzeln gebaut und geprüft.
+    Ausgewiesen statt still verschluckt: wer ihn baut, findet ihn dort.
+
+  Gemessen: ein Rad mit Joker- und Narren-Feldern über 42 Spieltage ergibt
+  1 erspielten Joker im Vorrat und hebt den Narren-Stand von 84 auf 144
+  (zweimal 30). Tests in `drehradBoard.test.js` und `jokerBudget.test.js`.
 - **Die `klau`/`block`-Basiswahl aus Schritt 4:** Sind beide Duell-Arten
   aktiv, nutzt `duellPlan` weiterhin ausschließlich die Basis von „klau" für
   die Abklingzeit des Plans — eine Festlegung ohne Tie-Break-Regel im
