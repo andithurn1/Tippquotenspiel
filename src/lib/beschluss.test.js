@@ -112,6 +112,36 @@ describe("regelwerkAmSpieltag — die Verfassung bricht auch eine Mehrheit", () 
     expect(r.verworfen).toHaveLength(1);
   });
 
+  // 🔴 Keine technische Lücke, sondern Abschnitt 1 der Spec: „ab Spieltag 20
+  // werden die zwei schlechtesten Spieltage gestrichen" lässt sich gar nicht
+  // anders lesen als rückwirkend — gestrichen würde aus ALLEN Spieltagen.
+  it("Regeln, die die ganze Saison formen, werden verworfen statt halb angewandt", () => {
+    const antraege = [{
+      id: "a1", aspekt: "fairness",
+      werte: { saisonform: { ...DEFAULT_RULES.saisonform, streich: 2 } },
+      gestellt_am: 3, laeuft_bis: 5, stimmen: dafuer(4),
+    }];
+    const r = regelwerkAmSpieltag({ rules: RUNDE, antraege, mitglieder: MITGLIEDER, spieltag: 20 });
+    expect(r.angewandt).toEqual([]);
+    expect(r.verworfen).toHaveLength(1);
+    expect(r.verworfen[0].grund).toContain("rückwirkend");
+    expect(r.rules.saisonform).toEqual(RUNDE.saisonform);
+  });
+
+  it("der Aufhol-Bonus im selben Bereich darf sehr wohl beschlossen werden", () => {
+    // `fairness` enthält beides — geprüft wird am FELD, nicht am Aspekt, sonst
+    // fiele der Anschluss-Bonus mit heraus, obwohl er je Spieltag entsteht.
+    const antraege = [{
+      id: "a1", aspekt: "fairness",
+      werte: { aufholen: { ...DEFAULT_RULES.aufholen, enabled: true, staerke: 0.2, schwelle: 0.2 } },
+      gestellt_am: 3, laeuft_bis: 5, stimmen: dafuer(4),
+    }];
+    const r = regelwerkAmSpieltag({ rules: RUNDE, antraege, mitglieder: MITGLIEDER, spieltag: 20 });
+    expect(r.verworfen).toEqual([]);
+    expect(r.angewandt).toHaveLength(1);
+    expect(r.rules.aufholen.enabled).toBe(true);
+  });
+
   it("ein unbekannter Bereich wird ignoriert", () => {
     const antraege = [{ ...antrag("a1", 3, { displayScale: 50 }), aspekt: "gibtsnicht" }];
     const r = regelwerkAmSpieltag({ rules: RUNDE, antraege, mitglieder: MITGLIEDER, spieltag: 20 });

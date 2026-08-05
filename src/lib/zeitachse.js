@@ -166,7 +166,7 @@ export function zeitachse(matches = [], cfg = DEFAULT_ZEITACHSE) {
 
   const grenzen = c.modus === "woche"
     ? wochenGrenzen(gueltig, c.tage)
-    : mitPausen(ankerPunkte(gueltig, taktgeber, c.buendeln), c);
+    : mitPausen(ankerPunkte(gueltig, taktgeber, c.buendeln), c, Math.max(...gueltig.map(zeit)));
 
   if (!grenzen.length) return [];
 
@@ -235,7 +235,24 @@ function ligaSpieltagGruppen(matches = []) {
 // gerade spielen. `anhaengen` lässt die Lücke, wo sie ist — sinnvoll bei
 // kurzen Länderspielpausen, wo ein dicker Spieltag angenehmer ist als zwei
 // dünne.
-function mitPausen(punkte, c) {
+// 🔴 Nachtrag 05.08.2026: `endeAllerSpiele` — der SCHWANZ war das größere
+// Problem als die Pausen.
+//
+// Gemessen am echten Katalog: der automatische Taktgeber ist die Liga, die
+// zuerst anfängt, und das war die MLS mit drei Spieltagen (31.07.–17.08.).
+// Danach gab es keinen Ankerpunkt mehr — und die ganze restliche Saison, acht
+// Monate über fünf Wettbewerbe, fiel in EINEN Runden-Spieltag. Die Achse hatte
+// insgesamt drei Einträge.
+//
+// Das ist keine Anzeige-Frage: „einmal pro Runden-Spieltag" gilt für den
+// Joker, den Ranglisten-Pool, den Münz-Takt und die Regel-Beschlüsse. Ein
+// Tipper hätte drei Joker pro Saison bekommen statt achtunddreißig.
+//
+// Deshalb läuft der Rhythmus jetzt weiter, bis das letzte Spiel des KATALOGS
+// gespielt ist — dieselbe Auffüll-Regel wie bei einer Pause, nur ohne
+// nächsten Ankerpunkt. `anhaengen` behält bewusst das alte Verhalten: wer
+// Lücken ausdrücklich stehen lassen will, bekommt sie auch am Ende.
+function mitPausen(punkte, c, endeAllerSpiele = null) {
   const grenzen = [];
   // ⚠️ Die Schwelle muss mit `buendeln` mitwachsen. Wer zwei Anker-Spieltage
   // bündelt, WILL Blöcke von zwei Wochen — ohne diese Anpassung sähe die
@@ -249,6 +266,13 @@ function mitPausen(punkte, c) {
     if (naechster - punkte[i].ab <= luecke) continue;
     // Aufgefüllt wird im gewählten Takt, nicht stur wöchentlich.
     for (let t = punkte[i].ab + takt; t < naechster; t += takt) grenzen.push(t);
+  }
+
+  // Der Schwanz hinter dem letzten Ankerpunkt — siehe Kopfkommentar.
+  const letzter = punkte[punkte.length - 1]?.ab;
+  if (c.pause === "auffuellen" && letzter != null
+      && Number.isFinite(endeAllerSpiele) && endeAllerSpiele - letzter > luecke) {
+    for (let t = letzter + takt; t <= endeAllerSpiele; t += takt) grenzen.push(t);
   }
   return grenzen;
 }

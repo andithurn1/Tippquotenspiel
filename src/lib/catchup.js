@@ -92,26 +92,50 @@ function berechtigte(board, betrifft, wert) {
   return board.slice(-n);
 }
 
+// Ist der Aufhol-Bonus in DIESEM Regelblock wirksam? Eine Stelle für die
+// Frage, weil sie jetzt zweimal gebraucht wird: beim frühen Ausstieg und je
+// Verlaufs-Schritt.
+function istAktiv(a) {
+  const staerke = Number.isFinite(a?.staerke) ? a.staerke : 0;
+  return a?.enabled === true && staerke > 0;
+}
+
 // Verlauf mit Aufhol-Boni anreichern.
 //  history: [{ matchday, board: [{ userId, name, total, rank, … }] }] (kumulativ)
 // Rückgabe: gleiche Struktur, `total` enthält den Bonus, zusätzlich `bonus`
 // (kumuliert) je Eintrag und neu berechnete Ränge.
-export function applyCatchup(history = [], rules) {
-  const a = rules?.aufholen;
-  if (!a?.enabled || !history.length) return history;
-
-  const staerke = Number.isFinite(a.staerke) ? a.staerke : 0;
-  const schwelle = Number.isFinite(a.schwelle) ? a.schwelle : 0;
-  if (staerke <= 0) return history;
+// 🔴 Nachtrag Regel-Abstimmung (design/abstimmung-verfassung.md): `regelnFuer`
+// ist optional und liefert je Verlaufs-Schritt das Regelwerk, das an DIESEM
+// Spieltag galt — eine beschlossene Änderung an `aufholen` greift dadurch ab
+// ihrem Spieltag und nicht rückwirkend. Ohne den Parameter verhält sich alles
+// wie bisher; das ist Absicht und dieselbe Doktrin wie beim Münz-Takt: eine
+// Vorgabe darf kein stiller Regelwechsel sein.
+// ⚠️ Deshalb steht die Prüfung „ist der Bonus überhaupt an" jetzt IM Schleifen-
+// körper und nicht mehr davor: mit `regelnFuer` kann er an Spieltag 1 aus und
+// ab Spieltag 20 an sein. Der frühe Ausstieg bleibt für den Fall OHNE
+// `regelnFuer` erhalten, damit der Normalfall keinen Umweg nimmt.
+export function applyCatchup(history = [], rules, regelnFuer = null) {
+  if (!history.length) return history;
+  // Der frühe Ausstieg gibt den Verlauf UNVERÄNDERT zurück (dieselben Objekte,
+  // ohne `bonus`-Feld) — darauf verlassen sich Aufrufer und Tests. Er greift
+  // nur ohne `regelnFuer`: sonst könnte der Bonus an einem späteren Spieltag
+  // beschlossen worden sein, und ein Ausstieg hier würde ihn verschlucken.
+  if (!regelnFuer && !istAktiv(rules?.aufholen)) return history;
 
   const bonusVon = new Map();     // userId → kumulierter Bonus
   let letzterStand = null;        // Stand NACH dem vorigen Spieltag (inkl. Bonus)
   const out = [];
 
-  for (const { matchday, board } of history) {
+  for (const schritt of history) {
+    const { board } = schritt;
+    const a = (regelnFuer ? regelnFuer(schritt) : null)?.aufholen ?? rules?.aufholen;
+    const staerke = Number.isFinite(a?.staerke) ? a.staerke : 0;
+    const schwelle = Number.isFinite(a?.schwelle) ? a.schwelle : 0;
+    const aktiv = istAktiv(a);
+
     // Bonus für DIESEN Spieltag aus dem Stand DAVOR — wer schon vorne liegt,
     // bekommt nichts, und am ersten Spieltag gibt es noch keinen Rückstand.
-    if (letzterStand && letzterStand.length > 1) {
+    if (aktiv && letzterStand && letzterStand.length > 1) {
       const spitze = letzterStand[0].total;
       if (spitze > 0) {
         for (const e of berechtigte(letzterStand, a.betrifft, a.betrifftWert)) {
@@ -133,7 +157,11 @@ export function applyCatchup(history = [], rules) {
       .map((e, i) => ({ ...e, rank: i + 1 }));
 
     letzterStand = neu;
-    out.push({ matchday, board: neu });
+    // ⚠️ Den ganzen Schritt durchreichen, nicht nur `matchday`: die frühere
+    // Fassung ließ `wettbewerb` fallen, und der Verlauf verlor damit nach der
+    // letzten Nachbearbeitung die Spieltags-Identität — „Spieltag 1" gibt es
+    // seit den fünf Wettbewerben fünfmal.
+    out.push({ ...schritt, board: neu });
   }
   return out;
 }
@@ -141,8 +169,8 @@ export function applyCatchup(history = [], rules) {
 // Endstand mit Aufhol-Boni (letzter Eintrag des angereicherten Verlaufs).
 // Gibt null zurück, wenn es keinen Verlauf gibt — der Aufrufer nutzt dann sein
 // normales Leaderboard.
-export function catchupLeaderboard(history = [], rules) {
-  if (!rules?.aufholen?.enabled) return null;
-  const angereichert = applyCatchup(history, rules);
+export function catchupLeaderboard(history = [], rules, regelnFuer = null) {
+  if (!rules?.aufholen?.enabled && !regelnFuer) return null;
+  const angereichert = applyCatchup(history, rules, regelnFuer);
   return angereichert.length ? angereichert[angereichert.length - 1].board : null;
 }

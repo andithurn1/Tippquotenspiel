@@ -1344,7 +1344,19 @@ export function projectTip(tip, snap, rules = DEFAULT_RULES) {
 // Leaderboard: aggregiert die angezeigten Punkte je Nutzer über mehrere Tipps.
 // entries: [{ userId, name, tip, snapshot, result, rules? }]. Tipps ohne Ergebnis
 // (Match noch nicht ausgewertet) zählen 0. Rückgabe absteigend sortiert mit Rang.
-export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES) {
+// 🔴 Nachtrag Regel-Abstimmung (design/abstimmung-verfassung.md): `regelnFuer`
+// ist optional und liefert je EINTRAG das Regelwerk, das an dessen Spieltag
+// galt. Damit wird ein Tipp unter den Regeln gewertet, die beim Abgeben
+// galten — die harte Kante „nie rückwirkend" ist damit im Scoring angekommen,
+// nicht nur in der Berechnung des Wirkungs-Spieltags.
+// Reihenfolge: ein ausdrücklich am Eintrag gesetztes `rules` gewinnt (das gab
+// es schon, etwa für „was wäre mit anderem Preset gewesen"), dann `regelnFuer`,
+// zuletzt das Regelwerk der Runde. Ohne den Parameter ändert sich nichts.
+// ⚠️ `mitTippEinfluss` bleibt beim RUNDEN-Regelwerk: es mischt das
+// Ergebnis-Raster aus allen Tipps eines Spiels, ist also keine Frage des
+// einzelnen Eintrags. Wer das je spieltagsweise machen will, muss zuerst
+// beantworten, welcher Spieltag bei einem gemischten Raster gemeint ist.
+export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES, regelnFuer = null) {
   const byUser = new Map();
   // Tipp-Einfluss: die Runde bewegt das Ergebnis-Raster mit. Ist die Regel aus
   // (Vorgabe), kommen die Einträge unverändert zurück — dieselben Objekte, kein
@@ -1357,7 +1369,7 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES) {
     const cur = byUser.get(e.userId) || { userId: e.userId, name: e.name, total: 0, tips: 0, gewertet: 0 };
     cur.tips += 1;
     if (e.result) {
-      cur.total += scoreTip(e.tip, e.result, e.snapshot, e.rules || rules).total;
+      cur.total += scoreTip(e.tip, e.result, e.snapshot, e.rules || (regelnFuer ? regelnFuer(e) : null) || rules).total;
       cur.gewertet += 1;
     }
     byUser.set(e.userId, cur);
@@ -1402,7 +1414,16 @@ export function brauchtVerlauf(rules = DEFAULT_RULES) {
   return sf.kurve !== "flach" || sf.streich > 0;
 }
 
-export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, einsaetze = []) {
+// `regelnFuer` wie bei `scoreLeaderboard` — hier zusätzlich an `applyCatchup`
+// weitergereicht, weil der Anschluss-Bonus je Spieltag entsteht und eine
+// beschlossene Änderung daran ab ihrem Spieltag greifen muss.
+// ⚠️ `applySaisonform` und `applyDuellJoker` bekommen ihn NICHT, und das ist
+// eine Entscheidung, keine Lücke: die Saisonform (Kurve, Streichresultate)
+// ist eine Aussage über die GANZE Saison — sie mitten darin zu ändern wäre
+// rückwirkend, also genau das, was Abschnitt 1 der Spec ausschließt. Deshalb
+// verweigert `beschluss.js` Anträge, die daran rühren, mit Begründung, statt
+// sie hier halb greifen zu lassen.
+export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, einsaetze = [], regelnFuer = null) {
   const geordnet = spieltageChronologisch(entries);
 
   // Position eines Spieltags im Verlauf — der kumulative Schnitt läuft über
@@ -1414,7 +1435,7 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
     board: scoreLeaderboard(entries.filter((e) => {
       const r = rang.get(spieltagKey(e));
       return r != null && r <= i;
-    }), rules),
+    }), rules, regelnFuer),
   }));
   // Reihenfolge der drei Nachbearbeitungen ist NICHT beliebig:
   //
@@ -1430,7 +1451,7 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
   // (oder — beim Duell-Joker — wenn keine Einsätze vorliegen, siehe
   // duellJoker.js). `einsaetze` ist heute immer leer (Store-Anbindung folgt),
   // `applyDuellJoker` bleibt bis dahin ein No-op.
-  return applyCatchup(applySaisonform(applyDuellJoker(roh, rules, einsaetze), rules), rules);
+  return applyCatchup(applySaisonform(applyDuellJoker(roh, rules, einsaetze), rules), rules, regelnFuer);
 }
 
 

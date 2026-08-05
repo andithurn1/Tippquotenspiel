@@ -35,8 +35,40 @@
 import { sanitizeRules } from "./engine";
 import { mergePresets, defaultAuswahl, ASPEKTE } from "./presetMerge";
 import { zaehleAus, wirktAb, aspektAenderbar, MITBESTIMMUNG_ASPEKT } from "./regelAbstimmung";
+import { rundenSpieltagVon } from "./zeitachse";
 
 const ASPEKT_VORHANDEN = new Set(ASPEKTE.map((a) => a.key));
+
+// 🔴 Regeln, die den GANZEN Saisonverlauf formen — und deshalb nicht mitten in
+// der Saison beschlossen werden können.
+//
+// Das ist keine technische Lücke, sondern Abschnitt 1 der Spec: die Saisonform
+// (Kurve, Streichresultate) und die Duell-Verrechnung sind Aussagen über die
+// gesamte Saison. „Ab Spieltag 20 werden die zwei schlechtesten Spieltage
+// gestrichen" lässt sich gar nicht anders lesen als rückwirkend — gestrichen
+// würde aus allen Spieltagen, auch aus den längst gespielten. Ein Beschluss,
+// der das täte, änderte die Wertung bereits abgegebener Tipps.
+//
+// Deshalb werden solche Anträge VERWORFEN und nicht halb angewandt. Ein Effekt,
+// der nur zur Hälfte landet, ist schlimmer als einer, der gar nicht landet:
+// er sieht verkabelt aus. `scoreLeaderboardHistory` reicht `regelnFuer` aus
+// demselben Grund nur an `applyCatchup` weiter — der Anschluss-Bonus entsteht
+// je Spieltag und kann deshalb ab einem Spieltag anders sein.
+const VERLAUFS_FELDER = ["saisonform", "duell"];
+
+const VERLAUFS_GRUND =
+  "Diese Regel formt die ganze Saison (Streichresultate, Saison-Kurve, "
+  + "Duell-Verrechnung). Sie mitten in der Saison zu ändern würde auch längst "
+  + "gespielte Spieltage neu bewerten — und rückwirkend gilt kein Beschluss, "
+  + "auch kein einstimmiger. Wer sie ändern will, tut das vor dem Saisonstart.";
+
+// Rührt ein Antrag an eine dieser Regeln? Geprüft wird an den FELDERN, nicht
+// am Aspekt: „Fairness" enthält auch `aufholen`, und das darf sehr wohl
+// beschlossen werden.
+function ruehrtAnVerlauf(werte) {
+  return werte && typeof werte === "object"
+    && VERLAUFS_FELDER.some((f) => Object.prototype.hasOwnProperty.call(werte, f));
+}
 
 // Felder EINES Aspekts auf ein Regelwerk legen. Genau der Weg von
 // `wendeTeilCodeAn` (teilbibliothek.js), nur ohne den Umweg über einen Code:
@@ -134,6 +166,11 @@ export function regelwerkAmSpieltag({
       verworfen.push({ id: k.id, aspekt: k.aspekt, grund: rahmen.grund });
       continue;
     }
+    // Regeln, die die ganze Saison formen — siehe `VERLAUFS_FELDER` oben.
+    if (ruehrtAnVerlauf(k.werte)) {
+      verworfen.push({ id: k.id, aspekt: k.aspekt, grund: VERLAUFS_GRUND });
+      continue;
+    }
     // Doppelte Sicherung: über die Mitbestimmung selbst wird nie abgestimmt.
     if (k.aspekt === MITBESTIMMUNG_ASPEKT) {
       verworfen.push({
@@ -147,6 +184,44 @@ export function regelwerkAmSpieltag({
   }
 
   return { rules: aktuell, angewandt, verworfen };
+}
+
+// ── Der Vorbau für die Wertung ──────────────────────────────
+// Liefert die Funktion, die `scoreLeaderboard`/`scoreLeaderboardHistory` als
+// `regelnFuer` erwarten: aus einem Eintrag oder Verlaufs-Schritt (beide tragen
+// `wettbewerb` + `matchday`) wird der RUNDEN-Spieltag und daraus das
+// Regelwerk, das dort galt.
+//
+// Gemerkt wird je Runden-Spieltag — nicht aus Geschwindigkeit, sondern damit
+// alle Einträge desselben Spieltags DASSELBE Regelwerks-Objekt bekommen. Zwei
+// gleich aussehende Objekte wären eine Einladung für spätere
+// Identitäts-Vergleiche, die dann mal stimmen und mal nicht.
+//
+// 🔴 `amEnde` ist der zweite Rückgabewert und der wichtigere Fallstrick:
+// `brauchtVerlauf` in `engine.js` entscheidet, ob das Leaderboard überhaupt
+// über den Verlauf gerechnet wird — und es fragt das ANGELEGTE Regelwerk.
+// Beschließt eine Runde den Anschluss-Bonus erst an Spieltag 20, ist er in
+// `round.rules` aus, der Verlauf würde gar nicht erst gebaut, und der Bonus
+// fiele still aus. Deshalb muss der Aufrufer BEIDE fragen. Genau die Sorte
+// halbe Verkabelung, die `design/kontaktstellen.md` auflistet.
+export function regelnFuerSpieltag({ rules, antraege = [], mitglieder = [], achse = [] } = {}) {
+  const basis = sanitizeRules(rules);
+  const spieltage = achse.length || 34;
+  const gemerkt = new Map();
+
+  const fuerRundenSpieltag = (nummer) => {
+    if (nummer == null) return basis;
+    if (gemerkt.has(nummer)) return gemerkt.get(nummer);
+    const { rules: r } = regelwerkAmSpieltag({ rules: basis, antraege, mitglieder, spieltag: nummer, spieltage });
+    gemerkt.set(nummer, r);
+    return r;
+  };
+
+  const regelnFuer = (x) => fuerRundenSpieltag(rundenSpieltagVon(achse, {
+    wettbewerb: x?.wettbewerb, matchday: x?.matchday ?? null,
+  }));
+
+  return { regelnFuer, amEnde: fuerRundenSpieltag(spieltage) };
 }
 
 // Ein Satz für die Oberfläche: was hat sich bis zu diesem Spieltag geändert?

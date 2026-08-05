@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { createMockStore } from "./store.mock";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
-import { DEFAULT_RULES, RULE_LIMITS } from "./engine";
+import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules } from "./engine";
+import { zeitachse, rundenSpieltagVon } from "./zeitachse";
 
 describe("Mock-Store — Seed & Schnittstelle", () => {
   it("liefert das Demo-Match JOR-ESP mit Snapshot und Ergebnis", async () => {
@@ -348,5 +349,76 @@ describe("Regel-Abstimmung (createAntrag / listAntraege / saveAntragStimme)", ()
     const s = createMockStore();
     await s.createAntrag({ ...antragDaten, roundId: "andere-runde" });
     expect(await s.listAntraege({ roundId: DEMO_ROUND_ID })).toHaveLength(0);
+  });
+});
+
+// 🔴 Schritt 5 der Regel-Abstimmung, durch den GANZEN Weg: Antrag → Auszählung
+// → Wirkung → Wertung. Das ist die Stelle, an der die harte Kante aus
+// design/abstimmung-verfassung.md Abschnitt 1 sitzt — ein Beschluss darf einen
+// bereits abgegebenen Tipp nicht anders bewerten.
+describe("Beschlossene Regeländerungen wirken ab ihrem Spieltag — und nur ab da", () => {
+  const aufsetzen = async () => {
+    const s = createMockStore();
+    const alle = await s.listMatches();
+    const bl = alle.filter((m) => m.wettbewerb === "bl" && m.result);
+    const frueh = bl.find((m) => m.matchday === 2);
+    const spaet = bl.find((m) => m.matchday === 20);
+    const achse = zeitachse(alle, DEFAULT_RULES.zeitachse);
+
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES, name: "Testrunde", displayScale: 15,
+      regelAbstimmung: { enabled: true, dauer: 2, quorum: 0 },
+    });
+    const runde = await s.createRound({ name: "Testrunde", rules, adminId: "u1" });
+    await s.joinRound({ roundId: runde.id, userId: "u2" });
+    for (const m of [frueh, spaet]) {
+      await s.saveTip({
+        roundId: runde.id, matchId: m.id, userId: "u1",
+        tip: { home: m.result.home, away: m.result.away, goals: { home: [], away: [] } },
+        snapshot: m.snapshot,
+      });
+    }
+    return { s, runde, gestelltAm: rundenSpieltagVon(achse, frueh) + 1 };
+  };
+
+  it("der frühere Spieltag bleibt unberührt, der spätere zählt dreifach", async () => {
+    const { s, runde, gestelltAm } = await aufsetzen();
+    const vorher = await s.getLeaderboardHistory(runde.id);
+
+    const a = await s.createAntrag({
+      roundId: runde.id, userId: "u1", aspekt: "anzeige",
+      werte: { displayScale: 45 },           // dreifach
+      gestelltAm, laeuftBis: gestelltAm + 2,
+    });
+    await s.saveAntragStimme({ antragId: a.id, userId: "u1", ja: true });
+    await s.saveAntragStimme({ antragId: a.id, userId: "u2", ja: true });
+
+    const nachher = await s.getLeaderboardHistory(runde.id);
+
+    // Der frühe Spieltag liegt VOR der Wirkung — Punkt für Punkt derselbe Wert.
+    expect(nachher[0].board[0].total).toBe(vorher[0].board[0].total);
+
+    // Der späte liegt danach. Die Stände sind KUMULATIV, also wird der Beitrag
+    // des späten Spieltags verglichen, nicht die Gesamtsumme — von Hand:
+    // (nachher − früh) muss dreimal (vorher − früh) sein.
+    const frueherStand = vorher[0].board[0].total;
+    const beitragVorher = vorher[1].board[0].total - frueherStand;
+    const beitragNachher = nachher[1].board[0].total - frueherStand;
+    expect(beitragVorher).toBeGreaterThan(0);
+    // Toleranz 1: `toDisplay` rundet je Tipp.
+    expect(Math.abs(beitragNachher - 3 * beitragVorher)).toBeLessThanOrEqual(1);
+  });
+
+  it("ein abgelehnter Antrag ändert die Wertung nicht", async () => {
+    const { s, runde, gestelltAm } = await aufsetzen();
+    const vorher = await s.getLeaderboardHistory(runde.id);
+    const a = await s.createAntrag({
+      roundId: runde.id, userId: "u1", aspekt: "anzeige",
+      werte: { displayScale: 45 }, gestelltAm, laeuftBis: gestelltAm + 2,
+    });
+    await s.saveAntragStimme({ antragId: a.id, userId: "u1", ja: false });
+    await s.saveAntragStimme({ antragId: a.id, userId: "u2", ja: false });
+    const nachher = await s.getLeaderboardHistory(runde.id);
+    expect(nachher.map((h) => h.board[0].total)).toEqual(vorher.map((h) => h.board[0].total));
   });
 });

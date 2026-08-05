@@ -349,3 +349,47 @@ describe("sanitizeZeitachse", () => {
     expect(zeitachse([], DEFAULT_ZEITACHSE)).toEqual([]);
   });
 });
+
+// 🔴 Aus einer eigenen Messung am echten Katalog, nicht aus einem grünen Test.
+// Der automatische Taktgeber ist die Liga, die ZUERST anfängt — im Katalog war
+// das die MLS mit drei Spieltagen. Danach gab es keinen Ankerpunkt mehr, und
+// die restlichen acht Monate über fünf Wettbewerbe fielen in EINEN
+// Runden-Spieltag: die ganze Achse hatte drei Einträge.
+//
+// Das ist keine Anzeige-Frage. „Einmal pro Runden-Spieltag" gilt für den
+// Joker, den Ranglisten-Pool, den Münz-Takt und die Regel-Beschlüsse — ein
+// Tipper hätte drei Joker pro Saison bekommen statt achtunddreißig.
+describe("Ein kurzer Taktgeber darf nicht die halbe Saison verschlucken", () => {
+  // Taktgeber „kurz": drei Wochen. Danach läuft „lang" noch ein halbes Jahr.
+  const KURZ_UND_LANG = [
+    ...Array.from({ length: 3 }, (_, i) => ({
+      id: `k${i}`, wettbewerb: "mls", matchday: i + 1,
+      kickoff: new Date(Date.UTC(2026, 6, 31) + i * 7 * 24 * 3600 * 1000).toISOString(),
+    })),
+    ...Array.from({ length: 26 }, (_, i) => ({
+      id: `l${i}`, wettbewerb: "bl", matchday: i + 1,
+      kickoff: new Date(Date.UTC(2026, 7, 28) + i * 7 * 24 * 3600 * 1000).toISOString(),
+    })),
+  ];
+
+  it("der Rhythmus läuft weiter, bis das letzte Spiel gespielt ist", () => {
+    const achse = zeitachse(KURZ_UND_LANG, { modus: "anker", pause: "auffuellen" });
+    // Von Hand: drei Ankerpunkte des Taktgebers, danach 26 Wochen bis zum
+    // letzten Spiel — die Achse muss deutlich mehr als eine Handvoll Einträge
+    // haben, nicht drei.
+    expect(achse.length).toBeGreaterThan(20);
+  });
+
+  it("späte Spieltage landen NICHT alle im selben Runden-Spieltag", () => {
+    const achse = zeitachse(KURZ_UND_LANG, { modus: "anker", pause: "auffuellen" });
+    const frueh = rundenSpieltagVon(achse, { wettbewerb: "bl", matchday: 1 });
+    const spaet = rundenSpieltagVon(achse, { wettbewerb: "bl", matchday: 26 });
+    expect(spaet).toBeGreaterThan(frueh);
+  });
+
+  it("„anhängen“ behält bewusst das alte Verhalten", () => {
+    // Wer Lücken ausdrücklich stehen lassen will, bekommt sie auch am Ende.
+    const achse = zeitachse(KURZ_UND_LANG, { modus: "anker", pause: "anhaengen" });
+    expect(achse.length).toBe(3);
+  });
+});

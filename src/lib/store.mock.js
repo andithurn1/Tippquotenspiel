@@ -4,6 +4,11 @@
 // jedem Prozessstart — bewusst, es ist nur eine Attrappe.
 
 import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules, brauchtVerlauf } from "./engine";
+// Beschlossene Regeländerungen wirken ab IHREM Spieltag (Schritt 5 von
+// design/abstimmung-verfassung.md). `regelnFuerSpieltag` liefert dafür die
+// Funktion, die die Engine als `regelnFuer` erwartet.
+import { regelnFuerSpieltag } from "./beschluss";
+import { zeitachse } from "./zeitachse";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { generateJoinCode } from "./joinCode";
 import { alleMatches } from "./ligen";
@@ -102,6 +107,21 @@ export function createMockStore() {
       kickoff: m?.kickoff ?? null,
     };
   };
+
+  // Beschluss-Lage einer Runde: `regelnFuer` je Spieltag und das Regelwerk am
+  // Saisonende. EINE Stelle für beide Leaderboard-Wege, sonst rechnet der
+  // Verlauf mit anderen Regeln als der Endstand.
+  const beschlussLage = (roundId, rules) => regelnFuerSpieltag({
+    rules,
+    antraege: antraege.filter((a) => a.round_id === roundId).map((a) => ({
+      ...a,
+      stimmen: antragStimmen.filter((v) => v.antrag_id === a.id)
+        .map((v) => ({ userId: v.user_id, ja: v.ja })),
+    })),
+    mitglieder: members.filter((m) => m.round_id === roundId)
+      .map((m) => ({ userId: m.user_id, istAdmin: m.role === "admin" })),
+    achse: zeitachse([...matches.values()], rules?.zeitachse),
+  });
 
   return {
     async listMatches() { return [...matches.values()]; },
@@ -317,12 +337,19 @@ export function createMockStore() {
       const rules = round?.rules ?? DEFAULT_RULES;
       const roundTips = tips.filter((t) => t.round_id === roundId);
       const entries = roundTips.map(eintragVon);
+      const { regelnFuer, amEnde } = beschlussLage(roundId, rules);
       let board;
       // Verlaufsabhängige Regeln (Aufhol-Bonus, Saisonform) brauchen den ganzen
       // Verlauf. WELCHE das sind, entscheidet die Engine an einer Stelle —
       // hier stand vorher `rules.aufholen?.enabled`, und mit der Saisonform war
       // das still falsch.
-      if (brauchtVerlauf(rules)) {
+      // ⚠️ BEIDE fragen: `brauchtVerlauf` entscheidet, ob überhaupt über den
+      // Verlauf gerechnet wird, und es liest sonst nur das ANGELEGTE
+      // Regelwerk. Beschließt eine Runde den Anschluss-Bonus erst an Spieltag
+      // 20, ist er in `round.rules` aus — der Verlauf würde gar nicht gebaut
+      // und der Bonus fiele still aus. Genau die halbe Verkabelung, die
+      // design/kontaktstellen.md auflistet.
+      if (brauchtVerlauf(rules) || brauchtVerlauf(amEnde)) {
         // `einsaetzeAusTipps` braucht `matchId` für den Gleichstand-Fall
         // (zwei Duell-Einsätze am selben Spieltag mit identischem Kickoff,
         // z. B. zwei zeitgleich angepfiffene Bundesliga-Spiele) — `entries`
@@ -330,10 +357,10 @@ export function createMockStore() {
         // (`match_id`), deshalb hier separat angereichert statt `entries`
         // selbst zu verändern.
         const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
-        const h = scoreLeaderboardHistory(entries, rules, einsaetze);
+        const h = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
         board = h.length ? h[h.length - 1].board : [];
       } else {
-        board = scoreLeaderboard(entries, rules);
+        board = scoreLeaderboard(entries, rules, regelnFuer);
       }
       // Saison-Punkte drauf (und reine Saison-Tipper ergänzen) — siehe
       // saisonBoard.js. Der Mock hält die Saison-Tipps ALLER Runden in einer
@@ -388,7 +415,9 @@ export function createMockStore() {
       const round = rounds.get(roundId);
       const roundTips = tips.filter((t) => t.round_id === roundId);
       const entries = roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id }));
-      return scoreLeaderboardHistory(entries, round?.rules ?? DEFAULT_RULES, einsaetzeAusTipps(entries));
+      const rules = round?.rules ?? DEFAULT_RULES;
+      const { regelnFuer } = beschlussLage(roundId, rules);
+      return scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries), regelnFuer);
     },
   };
 }

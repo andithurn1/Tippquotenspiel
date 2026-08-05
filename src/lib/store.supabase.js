@@ -4,6 +4,10 @@
 //    nur Rohdaten geladen/geschrieben.
 
 import { DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules, brauchtVerlauf } from "./engine";
+// Beschlossene Regeländerungen wirken ab IHREM Spieltag (Schritt 5 von
+// design/abstimmung-verfassung.md) — dieselbe Anbindung wie im Mock-Store.
+import { regelnFuerSpieltag } from "./beschluss";
+import { zeitachse } from "./zeitachse";
 import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
@@ -42,6 +46,18 @@ const eintragVon = (t, nameOf, matchOf) => {
     kickoff: m?.kickoff ?? null,
   };
 };
+
+// Beschluss-Lage einer Runde: `regelnFuer` je Spieltag und das Regelwerk am
+// Saisonende. EINE Stelle für beide Leaderboard-Wege, sonst rechnet der
+// Verlauf mit anderen Regeln als der Endstand.
+function beschlussLage({ rules, antraege, members, matches }) {
+  return regelnFuerSpieltag({
+    rules,
+    antraege,
+    mitglieder: (members ?? []).map((m) => ({ userId: m.user_id, istAdmin: m.role === "admin" })),
+    achse: zeitachse(matches ?? [], rules?.zeitachse),
+  });
+}
 
 export function createSupabaseStore() {
   const sb = getSupabaseBrowserClient();
@@ -285,6 +301,7 @@ export function createSupabaseStore() {
         this.listMatches(),
         this.listSeasonTips({ roundId }),
       ]);
+      const antraege = await this.listAntraege({ roundId });
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
       const rules = round?.rules ?? DEFAULT_RULES;
@@ -293,8 +310,13 @@ export function createSupabaseStore() {
       // WELCHE das sind, entscheidet die Engine an einer Stelle — hier stand
       // vorher `rules.aufholen?.enabled`, und mit der Saisonform war das still
       // falsch.
+      const { regelnFuer, amEnde } = beschlussLage({ rules, antraege, members, matches });
       let board;
-      if (brauchtVerlauf(rules)) {
+      // ⚠️ BEIDE fragen: `brauchtVerlauf` liest sonst nur das ANGELEGTE
+      // Regelwerk. Beschließt eine Runde den Anschluss-Bonus erst an Spieltag
+      // 20, ist er in `round.rules` aus — der Verlauf würde gar nicht gebaut
+      // und der Bonus fiele still aus.
+      if (brauchtVerlauf(rules) || brauchtVerlauf(amEnde)) {
         // `einsaetzeAusTipps` braucht `matchId` für den Gleichstand-Fall
         // (zwei Duell-Einsätze am selben Spieltag mit identischem Kickoff,
         // z. B. zwei zeitgleich angepfiffene Bundesliga-Spiele) — `entries`
@@ -302,10 +324,10 @@ export function createSupabaseStore() {
         // (`match_id`), deshalb hier separat angereichert statt `entries`
         // selbst zu verändern.
         const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
-        const h = scoreLeaderboardHistory(entries, rules, einsaetze);
+        const h = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
         board = h.length ? h[h.length - 1].board : [];
       } else {
-        board = scoreLeaderboard(entries, rules);
+        board = scoreLeaderboard(entries, rules, regelnFuer);
       }
       // Saison-Punkte drauf, inkl. der reinen Saison-Tipper (saisonBoard.js).
       // `seasonTips` ist hier schon auf die Runde gefiltert.
@@ -362,7 +384,10 @@ export function createSupabaseStore() {
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
       const entries = tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id }));
-      return scoreLeaderboardHistory(entries, round?.rules ?? DEFAULT_RULES, einsaetzeAusTipps(entries));
+      const rules = round?.rules ?? DEFAULT_RULES;
+      const antraege = await this.listAntraege({ roundId });
+      const { regelnFuer } = beschlussLage({ rules, antraege, members, matches });
+      return scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries), regelnFuer);
     },
   };
 }

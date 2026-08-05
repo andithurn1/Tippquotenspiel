@@ -220,11 +220,31 @@ Vergleich, den `presetMerge` und die Teilbibliotheken bereits zeigen.
      Grund, und der Screen zeigt ihn. Eine Runde, die abgestimmt hat, muss
      erfahren, warum nichts passiert ist.
    - **Angewandt über `mergePresets`**, kein zweiter Weg (Abschnitt 4).
-   ⚠️ **Wirklich offen bleibt nur noch eines:** die Auswertung liest weiterhin
-   `round.rules`. `regelwerkAmSpieltag` hat schon einen echten Aufrufer (der
-   Screen zeigt „Stand der Regeln"), aber der Scoring-Pfad müsste den
-   Runden-Spieltag durchreichen. Das ist der Schritt, der die Snapshot-Kante
-   wirklich berührt — getrennt halten und einzeln prüfen.
+   ✅ **Auch das Einhängen in die Wertung ist gebaut (05.08.2026).**
+   `scoreLeaderboard`/`scoreLeaderboardHistory` nehmen ein optionales
+   `regelnFuer`, beide Stores reichen es durch (`regelnFuerSpieltag` in
+   `beschluss.js`). Ohne den Parameter ändert sich nichts — eine Vorgabe darf
+   kein stiller Regelwechsel sein.
+   Drei Punkte, die dabei entschieden wurden:
+   - **`applyCatchup` bekommt `regelnFuer` mit**, weil der Anschluss-Bonus je
+     Spieltag entsteht. Die Prüfung „ist der Bonus an" steht dafür jetzt IM
+     Schleifenkörper: er kann an Spieltag 1 aus und ab 20 an sein.
+   - **`applySaisonform`/`applyDuellJoker` bekommen ihn NICHT** — und
+     `beschluss.js` VERWIRFT Anträge, die an `saisonform`/`duell` rühren, mit
+     Begründung. Das ist keine Lücke, sondern Abschnitt 1: „ab Spieltag 20
+     werden die zwei schlechtesten Spieltage gestrichen" lässt sich gar nicht
+     anders lesen als rückwirkend. Geprüft wird am FELD, nicht am Aspekt —
+     `aufholen` liegt im selben Aspekt und darf sehr wohl beschlossen werden.
+   - 🔴 **`brauchtVerlauf` muss BEIDE Regelwerke fragen.** Es entscheidet, ob
+     überhaupt über den Verlauf gerechnet wird, und las bisher nur das
+     angelegte Regelwerk. Beschließt eine Runde den Anschluss-Bonus erst an
+     Spieltag 20, ist er in `round.rules` aus — der Verlauf würde gar nicht
+     gebaut und der Bonus fiele still aus. Deshalb fragen beide Stores
+     zusätzlich das Regelwerk am Saisonende (`amEnde`).
+
+   **Nachgemessen durch den ganzen Weg** (Test in `store.test.js`): ein
+   Beschluss, der die Anzeige verdreifacht, lässt den früheren Spieltag Punkt
+   für Punkt unverändert und verdreifacht exakt den Beitrag des späteren.
 
 ---
 
