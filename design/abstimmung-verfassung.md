@@ -180,7 +180,24 @@ Vergleich, den `presetMerge` und die Teilbibliotheken bereits zeigen.
      „gar nichts abstimmbar" plötzlich „alles abstimmbar" bekommen, durch
      einen Klick und ohne Hinweis. Jetzt werden in diesem Fall alle
      Bereiche festgeschrieben; `konflikte` meldet den Zustand ordentlich.
-4. Antrags- und Abstimmungs-Screen.
+4. ✅ **GEBAUT (05.08.2026)** — `src/components/Regelaenderungen.jsx`,
+   Route `/regeln` (eigene Route neben `/abstimmung`, das ist die
+   Joker-Abstimmung), Karte im Runden-Hub.
+   🔴 **Ein Antrag wird aus einem TEILBIBLIOTHEKS-Eintrag gestellt**, nicht
+   aus einem zweiten Regel-Editor: Bereich wählen, kuratierte
+   Voreinstellung wählen, fertig. Das folgt Abschnitt 4 („ein Antrag IST
+   ein Teilbibliotheks-Eintrag") und hält die Aspekt-Regel ein, ohne einen
+   zweiten Weg zu bauen, ein Regelwerk zu verändern. Wer freier bauen will,
+   tut das in der Spielerstellung und teilt einen Teil-Code.
+   ⚠️ **Ein Fund beim Nachlesen:** `zuletztGeoeffnet` ist der AKTUELLE
+   Runden-Spieltag, nicht der davor. Ein Spieltag wird zum Tippen geöffnet,
+   BEVOR er angepfiffen wird — auf dem laufenden liegen also schon Tipps.
+   Mit „aktuell minus eins" hätte ein Beschluss genau dort greifen und eine
+   bereits getippte Wertung nachträglich ändern können. Gerundet wird in
+   die harmlose Richtung: eine Woche zu spät kostet eine Woche, eine zu
+   früh bricht Abschnitt 1.
+   Verdeckte Sichtbarkeit gilt nur, SOLANGE die Abstimmung läuft — danach
+   wird gezeigt, sonst könnte niemand das Ergebnis nachvollziehen.
 5. ⚠️ **Erst danach die Wirkung**: ein angenommener Antrag ändert das Regelwerk
    der Runde zum berechneten Spieltag. Das ist der Schritt, der die
    Snapshot-Kante berührt — getrennt halten und einzeln prüfen.
