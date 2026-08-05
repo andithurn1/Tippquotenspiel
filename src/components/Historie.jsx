@@ -108,13 +108,23 @@ export default function Historie() {
   const [roundRules, setRoundRules] = useState(DEFAULT_RULES);
   const [presetKey, setPresetKey] = useState("aktuell");
   const [kriterium, setKriterium] = useState("punkte");
+  // 🔴 Die Beschluss-Lage der Runde. Ohne sie rechnete dieser Screen den
+  // Verlauf unter dem ANGELEGTEN Regelwerk — beschlossene Regeländerungen
+  // fehlten, und der gezeigte Verlauf wich vom Ranking ab, sobald eine Runde
+  // etwas beschlossen hatte. `null`, solange nichts geladen ist; die Engine
+  // behandelt das wie „keine Beschlüsse".
+  const [regelnFuer, setRegelnFuer] = useState(null);
 
   useEffect(() => {
     let live = true;
-    Promise.all([getStore().getRoundEntries(roundId), getStore().getRound(roundId)]).then(([es, round]) => {
+    Promise.all([
+      getStore().getRoundEntries(roundId), getStore().getRound(roundId),
+      getStore().getRegelnFuer?.(roundId) ?? Promise.resolve(null),
+    ]).then(([es, round, lage]) => {
       if (!live) return;
       setEntries(es);
       setRoundRules(round?.rules ?? DEFAULT_RULES);
+      setRegelnFuer(() => lage?.regelnFuer ?? null);
     }).catch(() => { if (live) setEntries([]); });
     return () => { live = false; };
   }, [roundId]);
@@ -131,16 +141,23 @@ export default function Historie() {
   const { history, records } = useMemo(() => {
     if (!entries?.length) return { history: [], records: [] };
     const rules = gewaehlt.rules;
+    // ⚠️ Die Beschlüsse gelten NUR für die eigene Runde. Wer ein fremdes Preset
+    // durchrechnet („was wäre gewesen"), fragt nach einer anderen Welt — dort
+    // gab es diese Beschlüsse nie, und sie mitzurechnen wäre eine Mischung aus
+    // zwei Regelwerken.
+    const lage = gewaehlt.key === "aktuell" ? regelnFuer : null;
     // `entries` kommt aus `getRoundEntries` und trägt `matchId` bereits
     // (siehe store.mock.js/store.supabase.js) — keine separate Anreicherung
     // nötig wie bei den anderen vier Aufrufern von `scoreLeaderboardHistory`.
-    const history = scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries));
+    const history = scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries), lage);
     const scored = entries.filter((e) => e.result).map((e) => {
-      const s = scoreTip(e.tip, e.result, e.snapshot, rules);
+      // Auch die Rekorde unter den Regeln des jeweiligen Spieltags — sonst
+      // steht in der Bestenliste ein Wert, den es nie gab.
+      const s = scoreTip(e.tip, e.result, e.snapshot, (lage ? lage(e) : null) || rules);
       return { userId: e.userId, name: e.name, matchday: e.matchday, total: s.total, ebene: s.ebene };
     });
     return { history, records: computeRecords(history, scored) };
-  }, [entries, gewaehlt]);
+  }, [entries, gewaehlt, regelnFuer]);
 
   const series = useMemo(() => buildSeries(history, kriterium), [history, kriterium]);
   const kritInfo = KRITERIEN.find((k) => k.key === kriterium);

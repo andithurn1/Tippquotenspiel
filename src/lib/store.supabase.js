@@ -433,6 +433,16 @@ export function createSupabaseStore() {
       return tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id }));
     },
 
+    // Beschluss-Lage als Funktion — siehe Mock-Store, gleiche Begründung.
+    async getRegelnFuer(roundId) {
+      const [round, members, matches] = await Promise.all([
+        this.getRound(roundId), this.listMembers(roundId), this.listMatches(),
+      ]);
+      const rules = round?.rules ?? DEFAULT_RULES;
+      const antraege = await this.listAntraege({ roundId });
+      return beschlussLage({ rules, antraege, members, matches, adminId: round?.admin_id ?? null });
+    },
+
     async getLeaderboardHistory(roundId) {
       const [round, members, tips, matches] = await Promise.all([
         this.getRound(roundId),

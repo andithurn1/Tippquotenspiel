@@ -493,6 +493,21 @@ export function createMockStore() {
 
     // Ranking-Verlauf: gleiche Rohdaten wie getLeaderboard — die Engine
     // gruppiert daraus je Spieltag und rechnet kumulativ.
+    // 🔴 Die Beschluss-Lage einer Runde als Funktion — damit ein Screen, der
+    // etwas selbst nachrechnet, unter DENSELBEN Regeln rechnet wie die
+    // Wertung. `Historie.jsx` rief `scoreLeaderboardHistory` ohne
+    // `regelnFuer` auf: beschlossene Regeländerungen fehlten dort, der
+    // gezeigte Verlauf wich also vom Ranking ab, sobald eine Runde etwas
+    // beschlossen hatte.
+    // ⚠️ Nur für die EIGENE Runde sinnvoll. Wer ein fremdes Preset durchrechnet
+    // („was wäre gewesen"), darf sie NICHT anwenden — dort gab es diese
+    // Beschlüsse nie.
+    async getRegelnFuer(roundId) {
+      const round = rounds.get(roundId);
+      const rules = round?.rules ?? DEFAULT_RULES;
+      return beschlussLage(roundId, rules);
+    },
+
     async getLeaderboardHistory(roundId) {
       const round = rounds.get(roundId);
       const roundTips = tips.filter((t) => t.round_id === roundId);
