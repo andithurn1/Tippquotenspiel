@@ -16,6 +16,7 @@ import { C, MONO } from "@/lib/theme";
 // Landing-Karten der aktiven Runde: Tipp abgeben / Ranking / Ranking-Verlauf.
 const CARDS = [
   { href: "/tippen", title: "Tipp abgeben", desc: "Spiel wählen, Ergebnis + Torschützen tippen.", tone: C.gold },
+  { href: "/fahrplan", title: "Saison-Fahrplan", desc: "Wo die Runde steht und was als Nächstes aufgeht.", tone: C.sky },
   { href: "/ranking", title: "Ranking", desc: "Wer in dieser Runde gerade vorne liegt.", tone: C.mint },
   { href: "/historie", title: "Historie & Rekorde", desc: "Verlauf, Auszeichnungen und „was wäre mit anderem Preset gewesen?“.", tone: C.sky },
   { href: "/spott", title: "Spott verschicken", desc: "Spruch + Clip an einen Mitspieler — über deinen normalen Chat.", tone: C.coral },
