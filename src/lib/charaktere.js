@@ -60,6 +60,14 @@ export const CHARAKTERE = [
       // bevorzugt damit niemanden, der ohnehin vorn liegt. Passt zu „nichts,
       // was man erklären muss".
       ereignisse: ereignisse("dranbleiben"),
+      // 🔴 „Niemand ist nach zehn Spieltagen raus" ist die Hälfte der
+      // Empfehlung, die in die Oberfläche gehört — die andere ist „der Kenner
+      // gewinnt". Deshalb der SANFTE Bonus (ein Zehntel des Rückstands, erst
+      // ab 30 % Abstand) plus ein Streichresultat, nicht mehr: ein zu starker
+      // Ausgleich entwertet gutes Tippen, das `punkteVerhaeltnis` kippt dann
+      // Richtung 1,0 und darunter wird das Ranking beliebig.
+      aufholen: { enabled: true, staerke: 0.10, schwelle: 0.30, betrifft: "unteres-drittel" },
+      saisonform: { kurve: "flach", staerke: 1.5, streich: 1, nurGetippte: true },
     }),
   },
   {
@@ -155,6 +163,13 @@ export const CHARAKTERE = [
       // Doppelbelohnung für dasselbe. Dieselbe Überlegung, die `konflikte()`
       // für Trost-Joker + Anschluss-Bonus meldet.
       ereignisse: ereignisse("dranbleiben"),
+      // Zwei Streichresultate — das Mittel, das im Balance-Durchgang wirklich
+      // tut, was es soll, und ohne Anschluss-Bonus daneben.
+      // ⚠️ Es überschneidet sich NICHT mit der Kulanz oben: `nurGetippte`
+      // streicht nur Spieltage, an denen tatsächlich getippt wurde. Ein
+      // vergessener bleibt stehen und wird stattdessen vom Ersatz-Tipp
+      // abgefangen — sonst wäre Schwänzen zweimal kostenlos.
+      saisonform: { kurve: "flach", staerke: 1.5, streich: 2, nurGetippte: true },
     }),
   },
 ];

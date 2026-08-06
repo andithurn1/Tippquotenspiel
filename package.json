@@ -12,6 +12,7 @@
     "balance": "vite-node scripts/balance-durchgang.mjs",
     "anzeige": "vite-node scripts/anzeige-durchgang.mjs",
     "greift": "vite-node scripts/greift-durchgang.mjs",
+    "stufen": "vite-node scripts/stufen-durchgang.mjs",
     "import:spielplan": "vite-node scripts/import-spielplan.mjs",
     "odds:pruefen": "vite-node scripts/fetch-odds.mjs -- --pruefen",
     "odds:holen": "vite-node scripts/fetch-odds.mjs",

@@ -278,6 +278,48 @@ fest). Wer den nächsten ergänzen will, prüft zuerst, ob er nicht in einen
 bestehenden gehört — Stufe 2 ist eine Handvoll FRAGEN, keine kürzere
 Profi-Ansicht.
 
+### 📐 `npm run stufen` — ist jede Einstellung auch ERREICHBAR? (06.08.2026)
+
+Die dritte Messung neben `greift` („bewegt sie etwas?") und `anzeige` („steht
+überall dieselbe Zahl?"). Sie fragt: **kommt ein Admin überhaupt an sie heran,
+ohne in die Profi-Ansicht zu gehen?**
+
+🔴 **Warum das keine der beiden anderen sehen kann:** `rules.ereignisse` war
+gebaut, wirksam (greift ✓) und überall richtig angezeigt (anzeige ✓) — und
+trotzdem unfertig, weil kein Charakter und kein einfacher Regler sie je
+erwähnte. Beide Messungen stellen eine andere Frage.
+
+**Der erste Befund: 15 von 37 Regel-Feldern waren nur in der Profi-Ansicht
+erreichbar** — und niemand konnte sagen, welche davon dort hingehören und
+welche vergessen wurden. Genau das ist der Unterschied zwischen einer Lücke und
+einer Entscheidung, und deshalb gibt es jetzt beides getrennt:
+
+- `NUR_PROFI` in `stufenAbdeckung.js` — Feld → **Begründungssatz**. Sechs
+  Felder stehen dort (`displayScale`, `reglerFeinheit`, `oddsMode`, `modFloor`,
+  `zeitachse`, `spiele`), jedes mit dem Satz, warum es auf Stufe 1/2 keine
+  Frage gäbe, die ein Admin beantworten könnte.
+- Alles ohne Eintrag und ohne Anbindung ist eine **LÜCKE** und wird gezählt.
+
+⚠️ **Ein Test hält die Zahl als Sperrklinke** — sie darf sinken, nie steigen.
+Ein neuer Regelblock, der nur in der Profi-Ansicht landet, fällt damit sofort
+auf. Dazu zwei Gegenproben, die genauso zählen: eine **überholte Begründung**
+(Feld inzwischen erreichbar, Eintrag steht noch da) und eine Begründung für ein
+Feld, das es gar nicht mehr gibt.
+
+**Sofort geschlossen (15 → 13):** `aufholen` und `saisonform` unter der neuen
+Stufe-2-Frage **„Wie leicht bleibt man dran?"** (vier Stufen) plus in zwei
+Charakteren. Die beiden gehören unter EINE Frage, weil ein Spieler sie auch als
+eine stellt — und weil genau ihr Zusammenspiel die Balance trägt: doppelter
+Ausgleich presst das Feld zusammen, bis das Ranking beliebig wird. Deshalb
+überall die SANFTEN Werte, nie „stark" plus viele Streicher.
+
+**Noch offen (13):** `winnerFloor` · `perGameCap` · `favFlopPenalty` ·
+`teamMods` · `modCap` · `tippEinfluss` · `wettbewerbe` · `tippfenster` ·
+`duell` · `budget` · `limitKlassen` · `jokerBasis` · `drehrad`.
+Die letzten fünf sind der Joker-Baukasten von Account 2 und gehören
+zusammen unter eine Frage; `wettbewerbe` gehört in den Gewichtungs-Durchgang
+am Ende (Nutzer-Reihenfolge Punkt 4).
+
 ### ⏰ Echte Spielpläne vor dem Launch — HARTE FRIST, Bundesliga ✅ erledigt
 **Der einzige Punkt mit einem Datum: 28.08.2026.**
 

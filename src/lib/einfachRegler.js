@@ -252,6 +252,62 @@ export const REGLER = [
     ],
   },
   {
+    // 🔴 Zweite Lücke desselben Durchgangs: `aufholen` und `saisonform` waren
+    // beide nur in der Profi-Ansicht erreichbar — und das sind die zwei
+    // Stellschrauben hinter dem Satz, der in die Oberfläche gehört: „der
+    // Kenner gewinnt, aber niemand ist nach zehn Spieltagen raus."
+    //
+    // Sie gehören unter EINE Frage, weil ein Spieler sie auch als eine stellt.
+    // Getrennt gäbe es zwei Regler, deren Zusammenspiel niemand überblickt —
+    // und genau daran hängt hier die Balance: doppelter Ausgleich presst das
+    // Feld zusammen, bis das Ranking beliebig wird.
+    key: "dranbleiben",
+    label: "Wie leicht bleibt man dran?",
+    hint: "Ob ein schlechter Spieltag verziehen wird und ob Zurückliegende Anschluss bekommen.",
+    stufen: [
+      {
+        key: "nein", label: "Gar nicht",
+        beschreibung: "Jeder Spieltag zählt voll. Wer patzt, hat gepatzt.",
+        werte: {
+          aufholen: { enabled: false, staerke: 0.2, schwelle: 0.2, betrifft: "unteres-drittel" },
+          saisonform: { kurve: "flach", staerke: 1.5, streich: 0, nurGetippte: true },
+        },
+      },
+      {
+        key: "ausrutscher", label: "Ein Ausrutscher wird verziehen",
+        // Von den beiden Mitteln das einzige, das im Balance-Durchgang tut,
+        // was es soll: 6 Streicher senken den Vorsprung von 3,66 auf 3,45 %
+        // bei nur 1,5 Punkten weniger Können-Ausdruck (siehe saisonform.js).
+        // Kein Aufhol-Bonus — der käme oben drauf.
+        beschreibung: "Die zwei schlechtesten Spieltage werden gestrichen. Sonst ändert sich nichts.",
+        werte: {
+          aufholen: { enabled: false, staerke: 0.2, schwelle: 0.2, betrifft: "unteres-drittel" },
+          saisonform: { kurve: "flach", staerke: 1.5, streich: 2, nurGetippte: true },
+        },
+      },
+      {
+        key: "anschluss", label: "Zurückliegende holen auf",
+        beschreibung: "Wer weit hinten liegt, bekommt einen Anschluss-Bonus — und ein Streichresultat gibt es auch.",
+        werte: {
+          aufholen: { enabled: true, staerke: 0.10, schwelle: 0.30, betrifft: "unteres-drittel" },
+          saisonform: { kurve: "flach", staerke: 1.5, streich: 1, nurGetippte: true },
+        },
+      },
+      {
+        key: "stark", label: "Niemand fällt raus",
+        // ⚠️ Bewusst „mittel" und nicht „stark": ein zu starker Ausgleich
+        // entwertet gutes Tippen — das `punkteVerhaeltnis` kippt Richtung 1,0,
+        // und darunter wird das Ranking beliebig. Das Ziel ist ein KORRIDOR,
+        // kein Extrem.
+        beschreibung: "Kräftiger Anschluss-Bonus und drei Streichresultate. Bis zum Schluss offen.",
+        werte: {
+          aufholen: { enabled: true, staerke: 0.20, schwelle: 0.20, betrifft: "unteres-drittel" },
+          saisonform: { kurve: "flach", staerke: 1.5, streich: 3, nurGetippte: true },
+        },
+      },
+    ],
+  },
+  {
     // 🔴 Der Regler, den `rules.ereignisse` bis 06.08.2026 nicht hatte: die
     // ganze Ebene kam nur in der Profi-Ansicht vor. Die Frage ist bewusst in
     // KLARTEXT gestellt und nicht nach dem Feldnamen benannt — ein Regler in

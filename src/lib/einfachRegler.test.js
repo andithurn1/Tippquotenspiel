@@ -29,14 +29,22 @@ describe("Katalog", () => {
 
   it("wenige Regler — sonst wäre es die Profi-Ebene", () => {
     expect(REGLER.length).toBeGreaterThanOrEqual(3);
-    // ⚠️ Die Grenze wandert NICHT bei jedem neuen Regelblock mit. Sie stand auf
-    // 6 und ist am 06.08.2026 EINMAL auf 7 gegangen, für „Wie viel soll
-    // nebenbei passieren?" — die Ereignis-Ebene kam bis dahin nur in der
-    // Profi-Ansicht vor und war damit nach dem Baukasten-Grundsatz nicht
-    // fertig. Wer den nächsten Regler ergänzen will, prüft zuerst, ob er
-    // nicht in einen bestehenden gehört: Stufe 2 ist eine Handvoll FRAGEN,
-    // keine kürzere Profi-Ansicht. Sieben ist die Obergrenze.
-    expect(REGLER.length).toBeLessThanOrEqual(7);
+    // ⚠️ Die Grenze wandert NICHT bei jedem neuen Regelblock mit. Sie stand
+    // lange auf 6 und ist am 06.08.2026 auf 8 gegangen, für zwei Ebenen, die
+    // bis dahin NUR in der Profi-Ansicht erreichbar waren („Wie viel soll
+    // nebenbei passieren?" und „Wie leicht bleibt man dran?").
+    //
+    // Wer den nächsten ergänzen will, prüft zuerst, ob er nicht in einen
+    // bestehenden gehört. Die Probe steht im Test darunter: Stufe 2 ist eine
+    // Handvoll FRAGEN, keine kürzere Profi-Ansicht. Zwei Profi-Werte unter
+    // einer Frage sind richtig — zwei Fragen unter einem Regler nicht.
+    expect(REGLER.length).toBeLessThanOrEqual(8);
+  });
+
+  it("jeder Regler stellt eine FRAGE — das ist der Unterschied zur Profi-Ebene", () => {
+    // Ein Regler, dessen Beschriftung keine Frage ist, ist meist nach dem
+    // Feldnamen benannt statt nach dem, was ein Spieler wissen will.
+    for (const r of REGLER) expect(r.label.trim().endsWith("?"), r.key).toBe(true);
   });
 
   it("Schlüssel sind eindeutig, auch je Stufe", () => {
