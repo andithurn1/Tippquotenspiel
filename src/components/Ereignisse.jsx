@@ -7,11 +7,17 @@ import {
   sanitizeEreignisse, sanitizeAuswahl, beschreibeAuswahl, konflikte, beschreibeEreignisse,
 } from "@/lib/ereignisse";
 import { Zahl } from "@/components/Eingaben";
+import { trefferAnteil } from "@/lib/auswahl";
 
 // ── WEN trifft es? ──────────────────────────────────────────
 // Drei Modi, eine Richtung, eine Zahl — und darunter der SATZ, den ein Spieler
 // später liest. Ohne ihn steht dort „rang/unten/1", und das sagt niemandem
 // etwas; dieselbe Rolle wie `anteile()` bei den Wettbewerbs-Gewichten.
+// Die Beispielgröße für die Vorschau. Beim Einstellen ist die Runde noch
+// leer — eine Zahl aus der echten Mitgliederliste gibt es nicht. Zwölf ist
+// die Größe, mit der `auswahl.js` selbst rechnet.
+const BEISPIEL_RUNDE = 12;
+
 const MODUS_LABEL = { rang: "Feste Anzahl", perzentil: "Anteil in Prozent", mitte: "Das Mittelfeld" };
 
 function Auswahlfeld({ wert, onChange }) {
@@ -47,8 +53,26 @@ function Auswahlfeld({ wert, onChange }) {
             onChange={(v) => onChange({ ...a, prozent: v })} />
         )}
       </div>
+      {/* 🔴 Nicht nur WEN, sondern WIE VIELE. „die besten 5" klingt nach einer
+          Kleinigkeit und ist in einer Zwölfer-Runde fast die halbe Gruppe —
+          genau die Falle, für die es `anteile()` bei den Wettbewerbs-Gewichten
+          gibt. `trefferAnteil()` war dafür gebaut, getestet und hatte keinen
+          Aufrufer (gefunden über `npm run tot`).
+          ⚠️ Die Rundengröße steht beim Einstellen noch nicht fest — deshalb
+          eine ausdrücklich genannte Beispielgröße und keine erfundene Zahl. */}
       <div style={{ fontSize: 11, color: C.gold, marginTop: 5 }}>
         Trifft: {beschreibeAuswahl(a)}
+        {(() => {
+          const anteil = trefferAnteil({ modus: a.modus, n: a.n, prozent: a.prozent, mitglieder: BEISPIEL_RUNDE });
+          if (anteil == null) return null;
+          const wieViele = Math.round(anteil * BEISPIEL_RUNDE);
+          return (
+            <span style={{ color: C.muted }}>
+              {" "}— in einer Runde mit {BEISPIEL_RUNDE} Leuten etwa {wieViele}
+              {wieViele === 1 ? " Person" : " Personen"} ({Math.round(anteil * 100)} %)
+            </span>
+          );
+        })()}
       </div>
       {a.ende === "oben" && (
         <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>

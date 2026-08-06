@@ -297,6 +297,43 @@ nach RISIKO: die vier Funde waren FUNKTIONEN in Modulen, die zu einem
 `rules.*`-Block gehören. Dort heißt „ruft niemand auf" nämlich *die Einstellung
 tut nichts*; bei einer Konstante heißt es bloß *ungenutzt*. Erste Gruppe: 17.
 
+#### 🔴 Der siebte Fund: `tippfenster.anker` hatte GAR KEINE Oberfläche
+
+Nachdem der Anker wirksam war (Fund 5), die Frage danach: wo stellt man ihn
+eigentlich ein? **Nirgends.** Er stand im Regelwerk, reiste im Creator-Code
+mit, wurde von `sanitizeRules` gesäubert — und die Profi-Ansicht zeigte nur die
+Vorlaufzeit.
+
+⚠️ **Schlimmer: der Vorlauf-Knopf löschte ihn.** Er setzte
+`tippfenster: { vorlaufStunden: … }` und ersetzte damit das GANZE Objekt. Ein
+geteilter Creator-Code mit `anker: "spieltag"` verlor die Einstellung, sobald
+jemand den Vorlauf einmal anfasste — lautlos.
+
+Drei Schichten übereinander (wirkungslos · nicht einstellbar · beim Anfassen
+gelöscht), und keine davon hat sich gemeldet. Behoben; dazu zeigt die
+Profi-Ansicht jetzt `erklaereTippfenster()` — drei Fragen, die ein Spieler
+wirklich stellt („Kann ich das Sonntagsspiel schon am Freitag tippen?") statt
+einer Beschreibung der Einstellung. Auch die lag gebaut und ungenutzt da.
+
+#### Zwei Live-Vorschauen, die niemand aufrief
+
+Aus derselben Messung, beide aus der Kategorie „die Live-Vorschau ist nicht
+Komfort, sondern die Betreuung":
+
+- **`beschreibeBetrifft`** (Aufhol-Bonus): die Oberfläche zeigte die STATISCHE
+  Beschreibung der Stufe. Bei den beiden parametrierten („die letzten n", „wer
+  mehr als x % abfällt") drehte der Admin an einem Regler und las daneben
+  immer denselben Satz — nie die eingestellte Zahl.
+- **`trefferAnteil`** (WEN-Achse): sagt, WIE VIELE eine Auswahl trifft. „Die
+  besten 5" klingt nach einer Kleinigkeit und ist in einer Zwölfer-Runde fast
+  die halbe Gruppe. Genau die Falle, für die es `anteile()` bei den
+  Wettbewerbs-Gewichten gibt.
+
+**Stand der scharfen Gruppe von `npm run tot`: leer.** Drei Einträge stehen mit
+Begründung in `GEDULDET`, darunter einer mit Ablaufdatum: `istFreigeschaltet`
+ist eine ZWEITE Formulierung derselben Regel wie `freigabeStatus` und gehört
+gelöscht — sie liegt in Account 2s Bereich, deshalb erst nach dem Kanal.
+
 #### 🔴 Der sechste Fund: das Freischalt-Fenster war ein `disabled`-Attribut
 
 `saveSeasonTip` nahm **jede Wette zu jeder Zeit entgegen.** `SaisonTipps.jsx`

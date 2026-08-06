@@ -10,7 +10,7 @@ import { istTeilCode, wendeTeilCodeAn } from "@/lib/teilbibliothek";
 import { PRESETS } from "@/lib/presets";
 import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
-import { STAERKE_STUFEN, BETRIFFT } from "@/lib/catchup";
+import { STAERKE_STUFEN, BETRIFFT, beschreibeBetrifft } from "@/lib/catchup";
 import { KURVEN, KURVE, SAISONFORM_LIMITS, beschreibeSaisonform } from "@/lib/saisonform";
 import { TIPPEINFLUSS_LIMITS, beschreibeTippEinfluss } from "@/lib/tippEinfluss";
 import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
@@ -46,7 +46,7 @@ import AufwandPanel from "@/components/AufwandPanel";
 import { band } from "@/lib/reglerWarnung";
 import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } from "@/lib/spielauswahl";
-import { VORLAUF_STUFEN, beschreibeTippfenster } from "@/lib/tippfenster";
+import { VORLAUF_STUFEN, ANKER, beschreibeTippfenster, erklaereTippfenster } from "@/lib/tippfenster";
 import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
 import SpielauswahlListe from "@/components/SpielauswahlListe";
 import Zeitachse from "@/components/Zeitachse";
@@ -1514,8 +1514,15 @@ export default function Spielerstellung() {
                   })}
                 </div>
               </Field>
+              {/* 🔴 `beschreibeBetrifft` statt `.desc`: bei den beiden
+                  parametrierten Stufen („die letzten n", „wer mehr als x %
+                  abfällt") sagt die statische Beschreibung nur, WAS für eine
+                  Art Auswahl es ist — nie die eingestellte ZAHL. Der Admin
+                  drehte an einem Regler und las daneben denselben Satz.
+                  Gefunden über `npm run tot`: die Funktion lag gebaut und
+                  getestet da und hatte keinen Aufrufer. */}
               <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
-                {Object.values(BETRIFFT).find((b) => b.key === au.betrifft)?.desc}
+                {beschreibeBetrifft(au.betrifft, au.betrifftWert)}
                 {" "}Die Live-Vorschau unten zeigt, ob der Bonus zu stark wird.
               </p>
             </div>
@@ -1718,7 +1725,11 @@ export default function Spielerstellung() {
                 const an = (rules.tippfenster?.vorlaufStunden ?? 168) === st.stunden;
                 return (
                   <button key={st.stunden} title={st.hint}
-                    onClick={() => { touched(); setRules((r) => ({ ...r, tippfenster: { vorlaufStunden: st.stunden } })); }}
+                    /* ⚠️ `...r.tippfenster` mitnehmen: die frühere Fassung
+                       ersetzte das GANZE Objekt und warf damit den Anker weg.
+                       Ein Creator-Code mit `anker: "spieltag"` verlor ihn,
+                       sobald jemand den Vorlauf einmal anfasste — lautlos. */
+                    onClick={() => { touched(); setRules((r) => ({ ...r, tippfenster: { ...r.tippfenster, vorlaufStunden: st.stunden } })); }}
                     style={{
                       flex: "1 1 70px", cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
                       borderRadius: 11, fontSize: 12, fontWeight: 700,
@@ -1729,9 +1740,42 @@ export default function Spielerstellung() {
                 );
               })}
             </div>
+            {/* 🔴 Der ANKER hatte bis 06.08.2026 überhaupt keine Oberfläche.
+                Er stand im Regelwerk, war über den Creator-Code teilbar, wurde
+                von `sanitizeRules` gesäubert — und niemand konnte ihn
+                einstellen. Dazu lief er ins Leere, weil die Aufrufer die
+                `starts`-Map nicht mitgaben (siehe tippfenster.js). Drei
+                Schichten übereinander, und keine davon meldete sich. */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+              {ANKER.map((a) => {
+                const an = (rules.tippfenster?.anker ?? "spiel") === a.key;
+                return (
+                  <button key={a.key} title={a.erklaerung}
+                    onClick={() => { touched(); setRules((r) => ({ ...r, tippfenster: { ...r.tippfenster, anker: a.key } })); }}
+                    style={{
+                      flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
+                      borderRadius: 11, fontSize: 11.5, fontWeight: 700,
+                      background: an ? `${C.gold}22` : C.surface,
+                      color: an ? C.gold : C.muted,
+                      border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                    }}>{a.label}</button>
+                );
+              })}
+            </div>
             <p style={{ fontSize: 10.5, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
               {beschreibeTippfenster(rules)}
             </p>
+            {/* Die drei Fragen, die ein Spieler wirklich stellt — statt einer
+                Beschreibung der Einstellung. `erklaereTippfenster` war dafür
+                gebaut und hatte keinen Aufrufer (gefunden über `npm run tot`). */}
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
+              {erklaereTippfenster(rules).map((z) => (
+                <div key={z.frage} style={{ fontSize: 10.5, lineHeight: 1.45 }}>
+                  <span style={{ color: C.text, fontWeight: 700 }}>{z.frage}</span>{" "}
+                  <span style={{ color: C.muted }}>{z.antwort}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Zeitachse — was ein Spieltag DER RUNDE umfasst, wenn mehrere Ligen

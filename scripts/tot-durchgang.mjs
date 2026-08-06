@@ -39,6 +39,23 @@ const GEDULDET = {
     "Wird über `getStore()` in store.js ausgewählt, nicht direkt importiert.",
   createMockStore:
     "Dito — die eine Stelle, an der Mock gegen Supabase getauscht wird.",
+
+  // ── Am 06.08.2026 geprüft und stehen gelassen ─────────────
+  catchupLeaderboard:
+    "Bequemer Weg zum Endstand mit Anschluss-Bonus. Der Store nimmt statt "
+    + "dessen den letzten Eintrag von `scoreLeaderboardHistory` — beide "
+    + "rechnen über `applyCatchup`, es gibt also keine zweite Wahrheit. "
+    + "⚠️ Gehört Account 2; vor dem Löschen im Kanal abstimmen.",
+  istFreigeschaltet:
+    "🔴 ZWEITE FORMULIERUNG derselben Regel wie `freigabeStatus` (das den "
+    + "Zustand samt Begründungssatz liefert und überall benutzt wird). Steht "
+    + "auf der Abrissliste, sobald Account 2 den Kanal-Eintrag vom 06.08. "
+    + "gelesen hat — solange zwei Fassungen dastehen, können sie auseinander"
+    + "laufen.",
+  tippbareSpiele:
+    "Bequemer Weg zu „was ist JETZT tippbar\". Die Spielwahl baut ihre Liste "
+    + "selbst, weil sie zusätzlich nach Regelwerk je Spiel gruppiert. Beide "
+    + "gehen über `tippStatus`, also eine Rechnung.",
 };
 
 const LIB = "src/lib";
@@ -106,7 +123,17 @@ for (const datei of module) {
       fremde.push(f);
     }
     if (fremde.length) continue;
-    (auchTest ? nurTest : befunde).push({ name, datei });
+    // 🔴 Der Unterschied, der die Liste erst brauchbar macht: wird der Name in
+    // seiner EIGENEN Datei noch gebraucht? Dann ist er kein toter Code,
+    // sondern nur ein unnötiger Export — ärgerlich, aber harmlos. Ohne diese
+    // Trennung standen `passtSpiel`, `mischAnteil` und `muenzPerioden` in der
+    // scharfen Gruppe, obwohl sie alle drei laufen.
+    //
+    // Gezählt wird OHNE die Export-Zeile selbst; ein Vorkommen bedeutet also
+    // wirklich eine Verwendung.
+    const ohneExport = text.replace(new RegExp(`^export\\s.*\\b${name}\\b.*$`, "gm"), "");
+    const intern = (ohneExport.match(new RegExp(`\\b${name}\\b`, "g")) ?? []).length > 0;
+    (auchTest ? nurTest : befunde).push({ name, datei, intern });
   }
 }
 
@@ -127,6 +154,8 @@ const REGELMODULE = new Set(
 );
 const istKonstante = (n) => /^[A-Z0-9_]+$/.test(n);
 const rang = (b) => {
+  // Intern benutzt = läuft, nur der Export ist überflüssig. Ganz nach hinten.
+  if (b.intern) return 3;
   if (istKonstante(b.name)) return 2;
   return REGELMODULE.has(b.datei.replace(/^src\/lib\//, "")) ? 0 : 1;
 };
@@ -146,6 +175,7 @@ const gruppen = [
     alleBefunde.filter((b) => rang(b) === 0)],
   ["Funktion in einem sonstigen Modul", alleBefunde.filter((b) => rang(b) === 1)],
   ["Konstante oder Katalog — meist harmlos, aber ungenutzt", alleBefunde.filter((b) => rang(b) === 2)],
+  ["Wird INTERN benutzt — läuft also, nur der Export ist überflüssig", alleBefunde.filter((b) => rang(b) === 3)],
 ];
 
 for (const [titel, liste] of gruppen) {
