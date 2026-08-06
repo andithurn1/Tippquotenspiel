@@ -327,17 +327,29 @@ console.log("  TEIL 3 — erklärt das Ranking seine eigene Summe?");
 console.log(`${"=".repeat(94)}`);
 
 const varianten = [
-  ["ohne verlaufsabhängige Regel", {}],
+  // Der Grundfall: hier SOLL keine Ebene greifen — die Zeile prüft, dass ohne
+  // Zusatzregel nichts Unerklärtes dazukommt.
+  ["ohne verlaufsabhängige Regel", {}, { leerErwartet: true }],
   ["Aufhol-Bonus", { aufholen: { enabled: true, staerke: "mittel", schwelle: 0.1 } }],
   ["Saisonform: 2 Streicher", { saisonform: { kurve: "flach", streich: 2 } }],
   ["Saisonform: steigende Kurve", { saisonform: { kurve: "steigend", streich: 0 } }],
   ["Kurve UND Streicher", { saisonform: { kurve: "steigend", streich: 2 } }],
+  // ⚠️ OHNE Vereins-Filter: ein Versäumnis entsteht erst mit dem Anpfiff, und
+  // die Bundesliga fängt erst an. Das einzige bereits gelaufene Spiel im
+  // Katalog ist das Demo-Länderspiel — mit Filter fiele es heraus, und die
+  // Zeile stünde grün da, ohne etwas geprüft zu haben.
+  ["Versäumnis (Ersatz-Tipps)", {
+    versaeumnis: { enabled: true, strategie: "wahrscheinlich", malusProzent: 30, maxProSaison: 10 },
+  }, { ohneFilter: true }],
 ];
 
-for (const [name, extra] of varianten) {
+for (const [name, extra, opt = {}] of varianten) {
   const st = createMockStore();
   const rl = sanitizeRules({ ...DEFAULT_RULES, ...extra });
-  const rnd = await st.createRound({ name, adminId: "u-du", rules: rl, teamFilter: blTeams });
+  const rnd = await st.createRound({
+    name, adminId: "u-du", rules: rl,
+    teamFilter: opt.ohneFilter ? null : blTeams,
+  });
   const spiele = (await st.listRoundMatches(rnd.id))
     .filter((m) => m.wettbewerb === "bl" && m.result).slice(0, 45);
   for (const [i, m] of spiele.entries()) {
@@ -360,11 +372,21 @@ for (const [name, extra] of varianten) {
   for (const b of brd) {
     const erklaert = (eigene.get(b.userId) ?? 0)
       + (b.form ?? 0) + (b.bonus ?? 0) + (b.saison ?? 0) + (b.drehrad ?? 0)
+      + (b.ersatzPunkte ?? 0)
       - (b.gestrichenPunkte ?? 0);
     schlimmster = Math.max(schlimmster, Math.abs(b.total - erklaert));
   }
   const ganz = brd.every((b) => Number.isInteger(b.total));
+  // ⚠️ Ein „Rest 0" beweist nur dann etwas, wenn die Ebene überhaupt gegriffen
+  // hat. Solange die Saison nicht angefangen hat, gibt es z. B. kein einziges
+  // Versäumnis — die Zeile stünde grün da und hätte nichts geprüft. Deshalb
+  // wird mitgezählt, ob die Marke wirklich einen Wert trägt.
+  const marken = ["form", "bonus", "saison", "drehrad", "ersatzPunkte", "gestrichenPunkte"];
+  const gegriffen = marken.filter((k) => brd.some((b) => Number.isFinite(b[k]) && b[k] !== 0));
   console.log(`    ${name.padEnd(30)} unerklärter Rest: ${String(schlimmster).padStart(5)}`
-    + `   ·   ganzzahlig: ${ganz ? "ja" : "NEIN"}`);
+    + `   ·   ganzzahlig: ${ganz ? "ja" : "NEIN"}`
+    + "   ·   " + (gegriffen.length
+      ? "wirksam: " + gegriffen.join("+")
+      : (opt.leerErwartet ? "keine Ebene aktiv (so erwartet)" : "⚠️ NICHTS GEGRIFFEN")));
 }
 console.log();

@@ -104,6 +104,16 @@ export default function Ranking() {
                     border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 7px",
                   }}>−{b.gestrichen} gestrichen</span>
                 )}
+                {/* Ersatz-Tipps (Versäumnis). Kulanz der Runde, keine eigene
+                    Leistung — und genau deshalb benannt: sonst sieht der
+                    Spieler eine Summe, zu der seine Tipps nicht führen. */}
+                {b.ersatz > 0 && (
+                  <span title={`${b.ersatz} versäumte Spiele wurden mit einem Ersatz-Tipp gewertet`
+                    + (b.ersatzPunkte ? ` — das sind ${b.ersatzPunkte} Punkte.` : ".")} style={{
+                    fontFamily: MONO, fontSize: 10, color: C.muted,
+                    border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 7px",
+                  }}>+{b.ersatzPunkte} Ersatz</span>
+                )}
                 {/* 🔴 Was die Saison-KURVE verschoben hat. Die Streicher
                     hatten längst eine Marke, die Kurve nicht — sie verschob den
                     Stand gemessen um bis zu 186 Punkte, ohne dass irgendwo

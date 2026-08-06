@@ -1367,7 +1367,7 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES, regelnFuer
   // Zwischenstand soll aus sich heraus stimmen.
   for (const e of mitTippEinfluss(entries, rules)) {
     const cur = byUser.get(e.userId)
-      || { userId: e.userId, name: e.name, total: 0, tips: 0, gewertet: 0, ersatz: 0 };
+      || { userId: e.userId, name: e.name, total: 0, tips: 0, gewertet: 0, ersatz: 0, ersatzPunkte: 0 };
     // 🔴 Ein ERSATZ-Tipp (Versäumnis, `autoTip.js`) ist kein abgegebener Tipp.
     // Er zählt in der Wertung mit, aber nicht in „x von y getippt" — sonst
     // stünde bei jemandem, der nie tippt, eine volle Tipp-Quote.
@@ -1381,7 +1381,14 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES, regelnFuer
       // dieses Spiels — dieselbe Stelle wie der Joker-Faktor, damit sich nichts
       // multiplikativ aufschaukelt. Ohne `malusFaktor` (jeder normale Tipp)
       // ändert sich nichts.
-      cur.total += Number.isFinite(e.malusFaktor) ? Math.round(roh * e.malusFaktor) : roh;
+      const wert = Number.isFinite(e.malusFaktor) ? Math.round(roh * e.malusFaktor) : roh;
+      cur.total += wert;
+      // 🔴 Getrennt mitzählen, nicht nur im Total. Sonst sieht ein Spieler eine
+      // Summe, zu der seine eigenen Tipps nicht führen — dieselbe Lücke wie bei
+      // Anschluss-Bonus, Saison-Wetten und Rad, die alle eine Marke im Ranking
+      // haben. Ein Ersatz-Tipp ist die Kulanz der Runde, keine eigene Leistung;
+      // gerade deshalb muss er benannt sein.
+      if (e.ersatz) cur.ersatzPunkte += wert;
       cur.gewertet += 1;
     }
     byUser.set(e.userId, cur);
