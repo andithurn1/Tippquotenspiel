@@ -239,10 +239,29 @@ nach.** Fehlt die Store-Methode, wird sie gebaut; das ist billiger als die
 zweite Wahrheit. Ein Screen darf rechnen, was NUR er zeigt (Vorschauen,
 Was-wäre-wenn) — dann aber mit den vier Antworten oben als Eingabe.
 
-**Abnahme statt Test:** `npm run anzeige` vergleicht dieselbe Zahl über alle
-Anzeige-Wege. Ein Test fragt „ist es kaputt", diese Messung fragt „wie weit
-auseinander" — und genau das ist die Frage, an der die 17 Funde hingen. Wer
-eine Mechanik ergänzt, hängt dort eine Zeile an.
+### 🔴 Drei Abnahmen statt Tests — wer eine Mechanik ergänzt, hängt in ALLE drei eine Zeile
+
+Ein Test fragt „ist es kaputt". Diese drei fragen etwas anderes, und **keine
+kann die Frage der anderen beantworten** — jede von ihnen ist aus einem Fund
+entstanden, den die beiden anderen nicht gesehen haben.
+
+| Kommando | Frage | woran sie entstanden ist |
+|---|---|---|
+| `npm run anzeige` | **Steht überall dieselbe Zahl?** Vergleicht denselben Wert über alle Anzeige-Wege — nicht „kaputt", sondern „wie weit auseinander". | 17 Funde am 05.08., kein einziger ein Rechenfehler |
+| `npm run greift` | **Bewegt die Einstellung überhaupt etwas?** Vorgabe gegen Extremwert, je Regel-Block. Teil 2 misst Ebenen, die keine PUNKTE bewegen, sondern Gutschriften. | `autoTip.js` war fertig, getestet, einstellbar — und von niemandem aufgerufen |
+| `npm run stufen` | **Kommt ein Admin überhaupt an sie heran?** Jedes Regel-Feld muss auf Stufe 1 oder 2 erreichbar sein — oder in `NUR_PROFI` einen Begründungssatz tragen. | `rules.ereignisse` war wirksam UND richtig angezeigt und trotzdem unfertig: nur in der Profi-Ansicht |
+
+⚠️ **Zwei Sperrklinken hängen daran**, damit die Zahlen nicht davonlaufen:
+`greift` meldet einen Messfall, der `sanitizeRules` gar nicht erst passiert
+(„EINSTELLUNG VERWORFEN" — ein Tippfehler im Feldnamen sieht sonst exakt aus
+wie eine tote Einstellung), und `stufen` hat einen Test, der die Zahl der
+Lücken nur SINKEN lässt.
+
+⚠️ **Und die Gegenprobe, die dreimal an einem Tag etwas gefunden hat:** neue
+Voreinstellungen gegen `reglerWarnung.js` laufen lassen. Keiner der drei Funde
+vom 06.08. (Derby-Faktor über dem Deckel · `DEFAULT_DUELL.maxProSaison` unter
+dem Erprobten · das Empfehlungsband für `saison.gewicht` aus dem falschen
+Katalog) kam aus einem Test — alle aus dieser Prüfung.
 
 ## Scoring-Kurzreferenz
 
