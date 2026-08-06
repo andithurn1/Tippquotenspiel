@@ -10,7 +10,7 @@ import { ErgebnisUebersicht } from "@/components/NaheErgebnisse";
 import { DEFAULT_RULES, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon, phaseVon, wettbewerbLabel, phasenLabel, istKo, wettbewerbeIn } from "@/lib/wettbewerbe";
-import { tippStatus, uebersicht, naechsteOeffnung, beschreibeTippfenster, formatZeitpunkt } from "@/lib/tippfenster";
+import { tippStatus, uebersicht, naechsteOeffnung, beschreibeTippfenster, formatZeitpunkt, spieltagStarts } from "@/lib/tippfenster";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { istGeoeffnet } from "@/lib/spieltagOeffnen";
 import { zeitachse, rundenSpieltagVon, achsenLabel, rundenSchluessel } from "@/lib/zeitachse";
@@ -158,15 +158,22 @@ export default function Spielwahl() {
   // Spieler will die sehen, die jetzt tippbar sind; der Rest ist auf Wunsch
   // einblendbar, wird aber nicht verschwiegen (die Zahlen stehen daneben).
   const [alleZeigen, setAlleZeigen] = useState(false);
+  // 🔴 Der erste Anpfiff je Spieltag — beim Anker `spieltag` die Bezugsgröße.
+  // Ohne ihn rechnet `tippStatus` ab dem eigenen Anpfiff und verhält sich wie
+  // der Anker `spiel`; die Einstellung des Admins läuft ins Leere. `uebersicht`
+  // bildet die Map intern, die Zeilen darunter taten es nicht — gemessen am
+  // 06.08.2026 meldete der Zähler 9 tippbare Spiele und die Liste zeigte 1.
+  // Ein Screen, der sich selbst widerspricht.
+  const starts = useMemo(() => spieltagStarts(matches ?? []), [matches]);
   const stand = uebersicht(matches ?? [], rules, now);
   const naechste = naechsteOeffnung(matches ?? [], rules, now);
-  const offeneUndGelaufene = (matches ?? []).filter((m) => tippStatus(m, regelnVon(m), now).zustand !== "zu");
+  const offeneUndGelaufene = (matches ?? []).filter((m) => tippStatus(m, regelnVon(m), now, starts).zustand !== "zu");
   // Wenn gerade NICHTS tippbar ist (typisch in der Sommerpause), wäre die
   // Liste leer — ein leerer Screen ist immer die schlechteste Antwort. Dann
   // zeigen wir die nächsten anstehenden Spiele, deutlich als „noch nicht
   // tippbar" markiert, statt den Spieler vor eine weiße Fläche zu setzen.
   const naechsteVorschau = (matches ?? [])
-    .filter((m) => tippStatus(m, regelnVon(m), now).zustand === "zu")
+    .filter((m) => tippStatus(m, regelnVon(m), now, starts).zustand === "zu")
     .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))
     .slice(0, 9);
   const sichtbar = alleZeigen
@@ -357,7 +364,7 @@ export default function Spielwahl() {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {g.spiele.map((m) => (
-                  <MatchRow key={m.id} match={m} status={tippStatus(m, regelnVon(m), now)}
+                  <MatchRow key={m.id} match={m} status={tippStatus(m, regelnVon(m), now, starts)}
                     tipped={tippedIds.has(m.id)} gewicht={gewichtVon(m.id)} rules={regelnVon(m)} />
                 ))}
               </div>

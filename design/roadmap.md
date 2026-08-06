@@ -278,6 +278,50 @@ fest). Wer den nächsten ergänzen will, prüft zuerst, ob er nicht in einen
 bestehenden gehört — Stufe 2 ist eine Handvoll FRAGEN, keine kürzere
 Profi-Ansicht.
 
+### 🧪 `npm run tot` — welcher gebaute Export hat keinen Aufrufer? (06.08.2026)
+
+Die vierte Abnahme, und sie ist aus einem Muster entstanden: an EINEM Tag sind
+vier Mechaniken aufgefallen, die fertig gebaut, getestet und einstellbar waren
+— und von niemandem aufgerufen wurden (`autoTip.js`, die `spieltagsPunkte`,
+`alleEintraege`, die ganze WEN-Achse). **Alle vier beim Hinsehen gefunden, keine
+durch eine Prüfung.** Kein Test konnte sie sehen: sie waren ja grün. Die
+Funktion rechnete richtig, sie wurde nur nie gefragt.
+
+`npm run tot` sucht das mechanisch: ein Export, den außerhalb seiner Datei und
+ihrer Tests niemand nennt. 89 Module, 605 Exporte.
+
+⚠️ **Der erste Lauf meldete 85 Einträge in einer Liste — das ist keine Messung,
+sondern eine Halde**, und eine Halde wird beim dritten Mal ignoriert (dieselbe
+Lehre wie bei der Überfüllungs-Warnung der Zeitachse). Deshalb sortiert sie
+nach RISIKO: die vier Funde waren FUNKTIONEN in Modulen, die zu einem
+`rules.*`-Block gehören. Dort heißt „ruft niemand auf" nämlich *die Einstellung
+tut nichts*; bei einer Konstante heißt es bloß *ungenutzt*. Erste Gruppe: 17.
+
+#### 🔴 Und gleich der fünfte Fund: `tippfenster.anker` lief ins Leere
+
+Aus der ersten Gruppe direkt eine echte Sache — sechs unbenutzte Exporte in
+`tippfenster.js`, darunter `spieltagStarts()`.
+
+`oeffnetAm` braucht die `starts`-Map, sobald `anker: "spieltag"` gilt (der
+Spieltag geht als BLOCK auf, gerechnet ab seinem ersten Anpfiff). Fehlt sie,
+fällt es auf den eigenen Anpfiff zurück — und verhält sich damit **exakt wie
+der Anker `spiel`**. Genau das taten alle direkten Aufrufer: `Spielwahl.jsx`
+(drei Stellen) und `saisonfahrplan.js` (zwei). `uebersicht()` und
+`naechsteOeffnung()` bilden die Map intern.
+
+**Damit widersprach der Screen sich selbst.** Gemessen, 60 h vor dem ersten
+Anpfiff bei 72 h Vorlauf:
+
+| | tippbare Spiele |
+|---|---|
+| der Zähler oben (`uebersicht`) | **9** |
+| die Liste darunter | **1** |
+
+⚠️ **Der Rückfall ist bewusst gebaut** (Altaufrufer ohne Spielplan-Kontext
+sollen gültig bleiben) und deshalb doppelt gefährlich: er meldet sich nicht.
+Behoben an allen fünf Stellen, mit Tests. Der Fahrplan unterscheidet jetzt
+messbar: 1 offenes Spiel bei `anker: spiel`, 9 bei `anker: spieltag`.
+
 ### 🔴 `auswahl.js` — achtzehn Modi, getestet, von NIEMANDEM aufgerufen (06.08.2026) — ✅ behoben
 
 Vierter Fund derselben Sorte an einem Tag, und der größte: die **WEN-Achse**

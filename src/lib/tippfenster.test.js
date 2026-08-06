@@ -1,9 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  DEFAULT_TIPPFENSTER, TIPPFENSTER_LIMITS, VORLAUF_STUFEN,
-  sanitizeTippfenster, tippStatus, istTippbar, tippbareSpiele,
-  naechsteOeffnung, uebersicht, oeffnetAm, formatDauer, beschreibeTippfenster,
-  ANKER, spieltagStarts, erklaereTippfenster, dauerText,
+  DEFAULT_TIPPFENSTER, TIPPFENSTER_LIMITS, VORLAUF_STUFEN, sanitizeTippfenster, tippStatus, istTippbar, tippbareSpiele, naechsteOeffnung, uebersicht, oeffnetAm, formatDauer, beschreibeTippfenster, ANKER, spieltagStarts, erklaereTippfenster, dauerText,
 } from "@/lib/tippfenster";
 import { DEFAULT_RULES, sanitizeRules, encodePreset, decodePreset } from "@/lib/engine";
 
@@ -211,5 +208,57 @@ describe("Im Regelwerk und im Creator-Code", () => {
 
   it("übersteht encode → decode → sanitize", () => {
     expect(sanitizeRules(decodePreset(encodePreset(RULES)))).toEqual(RULES);
+  });
+});
+
+// ── Der Anker `spieltag` braucht `starts` — sonst tut er nichts ──
+// 🔴 Befund 06.08.2026: `oeffnetAm` fällt ohne die `starts`-Map auf den eigenen
+// Anpfiff zurück und verhält sich damit exakt wie der Anker `spiel`. Genau das
+// taten ALLE direkten Aufrufer: `Spielwahl.jsx` (drei Stellen) und
+// `saisonfahrplan.js` (zwei). `uebersicht()` und `naechsteOeffnung()` bilden
+// die Map intern — und dadurch widersprach der Screen sich selbst: der Zähler
+// meldete **9 tippbare Spiele, die Liste daneben zeigte 1.**
+//
+// Der Rückfall ist bewusst gebaut (Altaufrufer ohne Spielplan-Kontext sollen
+// gültig bleiben) und deshalb doppelt gefährlich: er meldet sich nicht.
+
+describe("Anker `spieltag`: ohne `starts` läuft die Einstellung ins Leere", () => {
+  const rules = (anker) => ({ tippfenster: { vorlaufStunden: 72, anker } });
+  // Ein Spieltag, Freitag bis Sonntag.
+  const stunde = 3600_000;
+  const fr = Date.UTC(2026, 7, 28, 18, 30);
+  const spiele = [
+    { id: "a", wettbewerb: "bl", matchday: 1, kickoff: new Date(fr).toISOString() },
+    { id: "b", wettbewerb: "bl", matchday: 1, kickoff: new Date(fr + 24 * stunde).toISOString() },
+    { id: "c", wettbewerb: "bl", matchday: 1, kickoff: new Date(fr + 48 * stunde).toISOString() },
+  ];
+  // 60 Stunden vor dem ERSTEN Anpfiff: das Freitagsspiel ist offen (72 h
+  // Vorlauf), das Sonntagsspiel für sich genommen noch nicht.
+  const jetzt = fr - 60 * stunde;
+  const offen = (r, starts) => spiele.filter((m) => tippStatus(m, r, jetzt, starts).zustand === "offen").length;
+
+  it("mit `starts` geht der ganze Spieltag auf einmal auf", () => {
+    const starts = spieltagStarts(spiele);
+    expect(offen(rules("spieltag"), starts)).toBe(3);
+  });
+
+  it("OHNE `starts` bleibt es beim Anker `spiel` — das war der Fehler", () => {
+    expect(offen(rules("spieltag"), null)).toBe(1);
+    expect(offen(rules("spiel"), null)).toBe(1);
+  });
+
+  it("`uebersicht` bildet die Map selbst und war deshalb schon richtig", () => {
+    // Der Widerspruch im Screen: dieser Zähler stand neben einer Liste, die
+    // ohne `starts` gerechnet hat.
+    expect(uebersicht(spiele, rules("spieltag"), jetzt).offen).toBe(3);
+    expect(uebersicht(spiele, rules("spiel"), jetzt).offen).toBe(1);
+  });
+
+  it("der Anker ändert NICHTS am Schließen — das bleibt der eigene Anpfiff", () => {
+    const starts = spieltagStarts(spiele);
+    // Nach dem Freitagsspiel: es ist vorbei, die anderen beiden laufen weiter.
+    const spaeter = fr + stunde;
+    expect(tippStatus(spiele[0], rules("spieltag"), spaeter, starts).zustand).toBe("vorbei");
+    expect(tippStatus(spiele[2], rules("spieltag"), spaeter, starts).zustand).toBe("offen");
   });
 });

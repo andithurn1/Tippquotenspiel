@@ -31,7 +31,7 @@
 // ============================================================
 
 import { zeitachse, rundenSpieltagVon, achsenLabel, bespielteSpieltage } from "./zeitachse";
-import { tippStatus } from "./tippfenster";
+import { tippStatus, spieltagStarts } from "./tippfenster";
 import { jokerPlan, sichtbareSpieltage, sanitizeVerteilung } from "./jokerPlan";
 import { drehradPlan, sanitizeDrehrad } from "./drehrad";
 import { sanitizeSaison, wettenLabel, sanitizeFreigabe } from "./saisonwetten";
@@ -130,9 +130,18 @@ export function fahrplan({
     getipptJeTag.set(tag, (getipptJeTag.get(tag) ?? 0) + 1);
   }
 
+  // 🔴 `starts` ist beim Anker `spieltag` PFLICHT — ohne die Map rechnet
+  // `oeffnetAm` ab dem eigenen Anpfiff und verhält sich damit exakt wie der
+  // Anker `spiel`. Die Einstellung des Admins läuft dann ins Leere. Gemessen
+  // am 06.08.2026 in der Spielwahl: der Zähler meldete 9 tippbare Spiele, die
+  // Liste daneben zeigte 1.
+  //
+  // ⚠️ Über ALLE Spiele der Runde gebildet, nicht je Achsen-Eintrag: der erste
+  // Anpfiff eines Spieltags muss über den ganzen Spieltag gesucht werden.
+  const starts = spieltagStarts(matches);
   return achse.map((e) => {
-    const offen = e.spiele.filter((m) => tippStatus(m, rules, jetzt).zustand === "offen").length;
-    const vorbei = e.spiele.every((m) => tippStatus(m, rules, jetzt).zustand === "vorbei");
+    const offen = e.spiele.filter((m) => tippStatus(m, rules, jetzt, starts).zustand === "offen").length;
+    const vorbei = e.spiele.every((m) => tippStatus(m, rules, jetzt, starts).zustand === "vorbei");
     const zustand = jetztTag == null ? "kommt"
       : e.nummer < jetztTag ? "vorbei"
       : e.nummer > jetztTag ? "kommt"
