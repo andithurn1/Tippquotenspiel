@@ -123,6 +123,64 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-06 (III) · **Sechs tote Mechaniken, vier Abnahmen — `npm run tot` ist neu**
+
+> **👉 Frische Session: das hier ist der Stand.** Branch
+> `claude/koordinierte-arbeitsweise-fe6w1v`, 2011 Tests grün, Build sauber.
+
+**Der Satz, der den ganzen Tag zusammenfasst:** ein grüner Test beweist, dass
+eine Funktion RICHTIG rechnet — nicht, dass sie jemand fragt. **Sechsmal** war
+an diesem Tag die Rechnung fehlerfrei und der Aufruf nicht da:
+
+| # | Mechanik | gemessen |
+|---|---|---|
+| 1 | `autoTip.js` (Versäumnis) | importiert waren nur die Regler-LABELS |
+| 2 | Trost-Joker (`spieltagsPunkte`) | **0 statt 5** Gutschriften |
+| 3 | „Spieltag komplett getippt" (`alleEintraege`) | **5 von 5** für jemanden, der die Hälfte ausließ |
+| 4 | `auswahl.js` — die ganze WEN-Achse | 18 Modi, **null** Aufrufer |
+| 5 | `tippfenster.anker: "spieltag"` | Zähler sagt **9** tippbar, Liste zeigt **1** |
+| 6 | Freischalt-Fenster der Saison-Wetten | war ein `disabled`-Attribut, der Store nahm alles |
+
+#### 🔴 `npm run tot` — bitte benutzen, sie ist billig
+
+Vierte Abnahme neben `anzeige`, `greift` und `stufen`. Sucht Exporte, die außer
+ihrer eigenen Datei und ihren Tests niemand nennt. **Funde 5 und 6 kommen
+direkt aus ihrem ersten Lauf.**
+
+⚠️ Sie sortiert nach RISIKO und das ist der halbe Wert: der erste Lauf meldete
+85 Einträge in einer Liste, und eine Halde wird beim dritten Mal ignoriert.
+Erste Gruppe (16): Funktionen in Modulen, die zu einem `rules.*`-Block gehören
+— dort heißt „ruft niemand auf" nämlich *die Einstellung tut nichts*.
+
+#### Was DU wissen musst, bevor du etwas anfasst
+
+1. **`ereignisse.auswerten()` hat zwei neue optionale Parameter:**
+   `spieltagsPunkte` (aus `getSpieltagsPunkte(roundId)`) und `schluessel`
+   (aus `rundenSchluessel(achse)`). Ohne sie ändert sich nichts — mit ihnen
+   greift der Trost-Joker und zählt in RUNDEN-Spieltagen.
+2. **`rules.ereignisse.aktive[].auswahl`** ist neu: die WEN-Achse. Derselbe
+   Eintrag ist Trost-Joker (`ende: "unten"`) oder Spieltags-Krone
+   (`ende: "oben"`). ⚠️ Nur drei der achtzehn Modi sind zugelassen; die
+   übrigen brauchen Daten, die dort nicht vorliegen.
+3. **`saveSeasonTip` wirft jetzt**, wenn das Fenster zu ist oder die Wette
+   nicht zur Runde gehört (`saisonFenster.js`). Wer Tests schreibt, die
+   Saison-Tipps ablegen, braucht eine Runde MIT `teamFilter` — über den ganzen
+   Katalog gerechnet läuft die MLS seit dem 31.07., und fensterlose Wetten
+   gehören vor den 1. Spieltag.
+4. **`tippStatus(match, rules, jetzt, starts)`** — der vierte Parameter ist
+   beim Anker `spieltag` PFLICHT. Ohne ihn fällt er still auf `spiel` zurück.
+5. **Vier Screens holen die Runden-Spiele jetzt über `listRoundMatches`**
+   statt `listMatches` + eigenem Filter. `Hauptmenu.jsx` bleibt begründet die
+   Ausnahme (es zeigt alle Runden auf einmal).
+
+#### Stufen-Lücken: 15 → 1
+
+`npm run stufen` (seit heute morgen) zählt, welches Regel-Feld nur in der
+Profi-Ansicht erreichbar ist. Übrig ist **`wettbewerbe`** — und das gehört in
+den Gewichtungs-Durchgang am Ende (Nutzer-Reihenfolge Punkt 4). Ein Test hält
+fest, dass es genau diese eine ist.
+
+
 ### 2026-08-06 (II) · **Drei tote Mechaniken, eine neue Messung — Baukasten-Lücken 15 → 1**
 
 > **👉 Frische Session: das hier ist der aktuelle Auftrag und der Stand.**

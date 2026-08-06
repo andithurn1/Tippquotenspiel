@@ -250,6 +250,13 @@ entstanden, den die beiden anderen nicht gesehen haben.
 | `npm run anzeige` | **Steht überall dieselbe Zahl?** Vergleicht denselben Wert über alle Anzeige-Wege — nicht „kaputt", sondern „wie weit auseinander". | 17 Funde am 05.08., kein einziger ein Rechenfehler |
 | `npm run greift` | **Bewegt die Einstellung überhaupt etwas?** Vorgabe gegen Extremwert, je Regel-Block. Teil 2 misst Ebenen, die keine PUNKTE bewegen, sondern Gutschriften. | `autoTip.js` war fertig, getestet, einstellbar — und von niemandem aufgerufen |
 | `npm run stufen` | **Kommt ein Admin überhaupt an sie heran?** Jedes Regel-Feld muss auf Stufe 1 oder 2 erreichbar sein — oder in `NUR_PROFI` einen Begründungssatz tragen. | `rules.ereignisse` war wirksam UND richtig angezeigt und trotzdem unfertig: nur in der Profi-Ansicht |
+| `npm run tot` | **Ruft die gebaute Funktion überhaupt jemand auf?** Ein Export, den außerhalb seiner Datei und ihrer Tests niemand nennt. Sortiert nach Risiko: Funktionen in `rules.*`-Modulen zuerst. | An EINEM Tag sechs Mechaniken, die fertig, getestet und einstellbar waren — und niemand fragte sie |
+
+🔴 **Der gemeinsame Nenner aller sechs Funde vom 06.08.:** ein grüner Test
+beweist, dass eine Funktion RICHTIG rechnet — nicht, dass sie jemand fragt.
+`autoTip.js` · die `spieltagsPunkte` · `alleEintraege` · die ganze WEN-Achse
+(`auswahl.js`) · `tippfenster.anker` · das Freischalt-Fenster der Saison-Wetten.
+Sechsmal war die Rechnung fehlerfrei und der Aufruf nicht da.
 
 ⚠️ **Zwei Sperrklinken hängen daran**, damit die Zahlen nicht davonlaufen:
 `greift` meldet einen Messfall, der `sanitizeRules` gar nicht erst passiert
