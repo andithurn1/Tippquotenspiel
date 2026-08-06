@@ -1366,10 +1366,22 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES, regelnFuer
   // jeweils nur mit den bis dahin sichtbaren Tipps — das ist richtig so: ein
   // Zwischenstand soll aus sich heraus stimmen.
   for (const e of mitTippEinfluss(entries, rules)) {
-    const cur = byUser.get(e.userId) || { userId: e.userId, name: e.name, total: 0, tips: 0, gewertet: 0 };
-    cur.tips += 1;
+    const cur = byUser.get(e.userId)
+      || { userId: e.userId, name: e.name, total: 0, tips: 0, gewertet: 0, ersatz: 0 };
+    // 🔴 Ein ERSATZ-Tipp (Versäumnis, `autoTip.js`) ist kein abgegebener Tipp.
+    // Er zählt in der Wertung mit, aber nicht in „x von y getippt" — sonst
+    // stünde bei jemandem, der nie tippt, eine volle Tipp-Quote.
+    // Dieselbe Trennung wie in `jokerBasis.js`, wo er auch nicht als Tipp gilt.
+    if (e.ersatz) cur.ersatz += 1;
+    else cur.tips += 1;
     if (e.result) {
-      cur.total += scoreTip(e.tip, e.result, e.snapshot, e.rules || (regelnFuer ? regelnFuer(e) : null) || rules).total;
+      const roh = scoreTip(e.tip, e.result, e.snapshot,
+        e.rules || (regelnFuer ? regelnFuer(e) : null) || rules).total;
+      // Der Malus des Ersatz-Tipps greift GANZ ZULETZT auf die fertige Wertung
+      // dieses Spiels — dieselbe Stelle wie der Joker-Faktor, damit sich nichts
+      // multiplikativ aufschaukelt. Ohne `malusFaktor` (jeder normale Tipp)
+      // ändert sich nichts.
+      cur.total += Number.isFinite(e.malusFaktor) ? Math.round(roh * e.malusFaktor) : roh;
       cur.gewertet += 1;
     }
     byUser.set(e.userId, cur);

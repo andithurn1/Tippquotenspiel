@@ -14,6 +14,7 @@ import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
 import { filterMatchesByTeams } from "./roundStatus";
+import { ersatzEintraege } from "./versaeumnisBoard";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
@@ -357,16 +358,23 @@ export function createSupabaseStore() {
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
       const rules = round?.rules ?? DEFAULT_RULES;
-      const entries = tips.map((t) => eintragVon(t, nameOf, matchOf));
+      // ⚠️ Über die Spiele DIESER Runde — siehe `listRoundMatches`.
+      const rundenSpiele = filterMatchesByTeams(matches, round?.team_filter);
+      // 🔴 Ersatz-Tipps (Versäumnis) in DERSELBEN Eintragsliste — siehe
+      // Mock-Store. `autoTipsFor` war bis 06.08.2026 von niemandem aufgerufen.
+      const entries = [
+        ...tips.map((t) => eintragVon(t, nameOf, matchOf)),
+        ...ersatzEintraege({
+          matches: rundenSpiele, tips, rules,
+          userIds: members.map((m) => m.user_id), nameOf,
+        }),
+      ];
       // Verlaufsabhängige Regeln (Aufhol-Bonus, Saisonform) über den Verlauf.
       // WELCHE das sind, entscheidet die Engine an einer Stelle — hier stand
       // vorher `rules.aufholen?.enabled`, und mit der Saisonform war das still
       // falsch.
       // Die Zeitachse EINMAL bauen: Beschluss-Lage, Drehrad-Plan und der
       // Runden-Spieltag der Tipps brauchen sie alle drei.
-      // ⚠️ Über die Spiele DIESER Runde, nicht über den Katalog — siehe
-      // `listRoundMatches`.
-      const rundenSpiele = filterMatchesByTeams(matches, round?.team_filter);
       const achse = zeitachse(rundenSpiele, rules?.zeitachse);
       const { regelnFuer, amEnde } = beschlussLage({ rules, antraege, members, matches, achse, adminId: round?.admin_id ?? null });
       let board;

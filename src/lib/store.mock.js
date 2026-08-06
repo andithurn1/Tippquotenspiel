@@ -20,6 +20,7 @@ import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehr
 import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
 import { filterMatchesByTeams } from "./roundStatus";
+import { ersatzEintraege } from "./versaeumnisBoard";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -146,12 +147,25 @@ export function createMockStore() {
     const round = rounds.get(roundId);
     const rules = round?.rules ?? DEFAULT_RULES;
     const roundTips = tips.filter((t) => t.round_id === roundId);
-    const entries = roundTips.map(eintragVon);
+    // ⚠️ Über die Spiele DIESER Runde, nicht über den Katalog — siehe
+    // `listRoundMatches`. Wird gleich mehrfach gebraucht (Ersatz-Tipps,
+    // Zeitachse, Saison-Wetten).
+    const rundenSpiele = filterMatchesByTeams([...matches.values()], round?.team_filter);
+    // 🔴 Ersatz-Tipps (Versäumnis) gehören in DIESELBE Eintragsliste wie echte
+    // Tipps — sonst müsste jeder Wertungs-Weg sie einzeln kennen. Sie tragen
+    // `ersatz: true` und einen `malusFaktor`, `scoreLeaderboard` verrechnet
+    // beides. `autoTipsFor` war bis 06.08.2026 von niemandem aufgerufen: die
+    // ganze Einstellung lief ins Leere.
+    const entries = [
+      ...roundTips.map(eintragVon),
+      ...ersatzEintraege({
+        matches: rundenSpiele, tips: roundTips, rules,
+        userIds: members.filter((m) => m.round_id === roundId).map((m) => m.user_id),
+        nameOf,
+      }),
+    ];
     // Die Zeitachse EINMAL bauen: sie wird gleich dreimal gebraucht
     // (Beschluss-Lage, Drehrad-Plan, Runden-Spieltag der Tipps).
-    // ⚠️ Über die Spiele DIESER Runde, nicht über den Katalog — siehe
-    // `listRoundMatches`.
-    const rundenSpiele = filterMatchesByTeams([...matches.values()], round?.team_filter);
     const achse = zeitachse(rundenSpiele, rules?.zeitachse);
     const { regelnFuer, amEnde } = beschlussLage(roundId, rules, achse);
     let board;
