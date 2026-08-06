@@ -392,7 +392,49 @@ const wegMeineJoker = restVon(board.map((b) => b.userId));
 // Zustand, den niemand bemerkt hat.
 zeile("Narren-Kontostand", hubNarren, tippabgabeNarren);
 zeile("Rad-Punkte", radPunkteAnzeige, radPunkteBoard);
+// (4) Duell-Vorgänge: erklärt die LISTE die Marke im Ranking?
+//
+// 🔴 Das Ranking zeigt „−340 Duell". Wer die Vorgänge daneben aufaddiert, muss
+// auf dieselbe Zahl kommen — sonst ist eine der beiden falsch, und der Spieler
+// hat keine Möglichkeit zu erkennen welche.
+//
+// ⚠️ Die Falle steckt in der RUNDUNG, und sie ist beim Bauen zugeschnappt:
+// die erste Fassung rundete jeden Einzelposten, und die Summe ergab 1123, wo
+// im Ranking 1122 stand. Die Wertung addiert roh und rundet EINMAL. Deshalb
+// trägt `duellVorgaenge` ungerundete Beträge, und diese Zeile summiert sie
+// genauso.
+const duellRegeln = sanitizeRules({
+  ...rundenRegeln,
+  duell: { enabled: true, typen: ["klau", "block"], anzahl: 4, maxProSaison: 2000, phase: "ganze" },
+});
+const dSt = createMockStore();
+const dRnd = await dSt.createRound({ name: "D", adminId: "u-du", rules: duellRegeln, teamFilter: blTeams });
+for (const u of ["u-lena", "u-kemal"]) await dSt.joinRound({ roundId: dRnd.id, userId: u, name: u });
+const dSpieler = ["u-du", "u-lena", "u-kemal"];
+const dSpiele = (await dSt.listRoundMatches(dRnd.id)).filter((m) => m.result)
+  .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)).slice(0, 36);
+for (const [i, m] of dSpiele.entries()) {
+  for (const [j, u] of dSpieler.entries()) {
+    const t = { home: (i + j) % 4, away: (i * j) % 3, goals: { home: [], away: [] } };
+    if (i % 4 === 0) t.duell = { auf: dSpieler[(j + 1) % dSpieler.length], typ: j % 2 ? "block" : "klau" };
+    dSt.seedTip({ roundId: dRnd.id, matchId: m.id, userId: u, tip: t, snapshot: m.snapshot });
+  }
+}
+const vorgaenge = await dSt.getDuellVorgaenge(dRnd.id);
+const dBoard = await dSt.getLeaderboard(dRnd.id);
+let duellAus = 0;
+let duellBoard = 0;
+for (const u of dSpieler) {
+  duellAus += Math.round(vorgaenge.reduce(
+    (sum, v) => sum + (v.vonUserId === u ? v.gewinn : 0) - (v.aufUserId === u ? v.verlust : 0), 0));
+  duellBoard += dBoard.find((b) => b.userId === u)?.duell ?? 0;
+}
+
 zeile("Joker-Rest (Tippabgabe/Meine Joker)", wegTippabgabe, wegMeineJoker);
+zeile("Duell: Vorgänge vs. Ranking-Marke", duellAus, duellBoard);
+if (!vorgaenge.length) {
+  console.log("    ⚠️  KEIN DUELL GELAUFEN — die Zeile darüber vergleicht zwei Nullen.");
+}
 console.log(`    davon erspielt (Ereignisse + Rad): ${erspieltGesamt}`);
 if (erspieltGesamt === 0) {
   console.log("    ⚠️  NICHTS ERSPIELT — die Zeile darüber vergleicht zwei Nullen und");

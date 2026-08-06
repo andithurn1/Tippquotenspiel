@@ -297,6 +297,32 @@ nach RISIKO: die vier Funde waren FUNKTIONEN in Modulen, die zu einem
 `rules.*`-Block gehören. Dort heißt „ruft niemand auf" nämlich *die Einstellung
 tut nichts*; bei einer Konstante heißt es bloß *ungenutzt*. Erste Gruppe: 17.
 
+#### 🔴 Der elfte Fund: „−340 Duell" ohne den Namen ist die halbe Nachricht
+
+Priorität 2 der Nutzer-Reihenfolge, Anzeigen WÄHREND der Runde. Das Ranking
+zeigte die Nettosumme aus Duellen als Marke — und sonst nichts. Bei einer
+Mechanik, deren ganzer Sinn ist, dass ein ANDERER es war, fehlt damit die
+eigentliche Aussage: *wer*, *wann*, und *geklaut oder nur gedämpft*.
+
+Gebaut als **Store-Antwort, nicht als Screen-Rechnung** (Runden-Schicht,
+Frage 4): `getDuellVorgaenge(roundId)` in beiden Stores. Die Beträge hängen am
+Deckel, an der chronologischen Reihenfolge und am Nullsummen-Modus — eine
+zweite Fassung liefe unweigerlich auseinander. Deshalb reicht
+`scoreLeaderboardHistory` eine optionale Sammelliste an `applyDuellJoker`
+durch; es ist buchstäblich derselbe Durchlauf, der auch die Wertung erzeugt.
+
+🔴 **Und die Falle ist beim Bauen zugeschnappt, an mir selbst:** die erste
+Fassung rundete jeden Einzelposten. Summe der Vorgänge eines Spielers: 1123 —
+im Ranking stand 1122. Die Wertung addiert roh und rundet EINMAL am Ende;
+genau dafür gibt es in `breakdown.js` die Zeile „Rundung". `duellVorgaenge`
+trägt deshalb UNGERUNDETE Beträge: die Anzeige rundet je Zeile, die Summe wird
+aus den rohen Werten gebildet.
+
+`npm run anzeige` Teil 2 hat dafür eine vierte Zeile bekommen — sie addiert die
+Vorgänge und vergleicht sie mit der Marke im Ranking. Sie meldet zusätzlich,
+wenn in der Messrunde gar kein Duell gelaufen ist: zwei Nullen stimmen auch
+überein.
+
 #### 🔴 Der zehnte Fund: die MESSUNG selbst deckte 14 von 37 Blöcken nicht ab
 
 Die Frage an das Werkzeug, und sie ist so wichtig wie sein Ergebnis: **ein

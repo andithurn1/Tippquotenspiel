@@ -1442,7 +1442,12 @@ export function brauchtVerlauf(rules = DEFAULT_RULES) {
 // rückwirkend, also genau das, was Abschnitt 1 der Spec ausschließt. Deshalb
 // verweigert `beschluss.js` Anträge, die daran rühren, mit Begründung, statt
 // sie hier halb greifen zu lassen.
-export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, einsaetze = [], regelnFuer = null) {
+// `sammeln` (optional) nimmt die Einzel-Vorgänge des Duell-Jokers auf — siehe
+// `duellVorgaenge` in duellJoker.js. 🔴 Der Grund, warum es hier durchgereicht
+// wird statt in einer eigenen Rechnung: die Beträge hängen am Deckel, an der
+// Reihenfolge und am Nullsummen-Modus, und sie müssen exakt die sein, die auch
+// in der Wertung stehen. Eine zweite Fassung liefe auseinander.
+export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, einsaetze = [], regelnFuer = null, sammeln = null) {
   const geordnet = spieltageChronologisch(entries);
 
   // Position eines Spieltags im Verlauf — der kumulative Schnitt läuft über
@@ -1470,7 +1475,7 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
   // (oder — beim Duell-Joker — wenn keine Einsätze vorliegen, siehe
   // duellJoker.js). `einsaetze` ist heute immer leer (Store-Anbindung folgt),
   // `applyDuellJoker` bleibt bis dahin ein No-op.
-  return applyCatchup(applySaisonform(applyDuellJoker(roh, rules, einsaetze), rules), rules, regelnFuer);
+  return applyCatchup(applySaisonform(applyDuellJoker(roh, rules, einsaetze, sammeln), rules), rules, regelnFuer);
 }
 
 

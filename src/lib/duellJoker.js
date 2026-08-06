@@ -514,7 +514,10 @@ export function einsaetzeAusTipps(tipps = [], { spieltagVon = null } = {}) {
 // Ohne aktive Regel oder ohne Einsätze wird der Verlauf UNVERÄNDERT
 // zurückgegeben (`return verlauf`) — wie bei `applyCatchup` und
 // `applySaisonform`.
-export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = []) {
+// `sammeln` ist eine optionale Liste, in die die Einzel-Vorgänge geschrieben
+// werden (siehe `duellVorgaenge`). Ohne sie verhält sich die Funktion exakt
+// wie bisher — die Wertung bleibt unberührt.
+export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = [], sammeln = null) {
   const cfg = sanitizeDuellJoker(rules?.duell);
   const liste = Array.isArray(einsaetze) ? einsaetze : [];
   if (!cfg.enabled || !Array.isArray(verlauf) || verlauf.length === 0 || liste.length === 0) {
@@ -588,6 +591,32 @@ export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = []) {
 
     if (transfer === 0 && abzug === 0) continue;
 
+    // 🔴 Was genau passiert ist, für die ANZEIGE. Bis 06.08.2026 zeigte das
+    // Ranking nur die Nettosumme („−340 Duell") — bei einer Mechanik, deren
+    // ganzer Sinn ist, dass ein ANDERER es war, ist das die halbe Nachricht.
+    // Der Screen darf es nicht selbst nachrechnen (Runden-Schicht, Frage 4),
+    // also fällt es hier ab, wo es ohnehin entsteht.
+    if (Array.isArray(sammeln)) sammeln.push({
+      spieltag: e.spieltag ?? idx + 1,
+      typ: e.typ,
+      vonUserId: e.vonUserId,
+      aufUserId: e.aufUserId,
+      // `gewinn` ist das, was NACH dem Deckel beim Angreifer ankommt,
+      // `verlust` was das Ziel wirklich abgibt. Bei Nullsumme sind beide
+      // gleich, bei einem Block ohne Beute ist `gewinn` 0 — und genau dieser
+      // Unterschied ist die Aussage: „er hat dir etwas weggenommen" ist
+      // etwas anderes als „er hat dich gedämpft".
+      //
+      // 🔴 UNGERUNDET. Eine erste Fassung rundete hier jeden Einzelposten —
+      // und dann ergab die Summe der Vorgänge eines Spielers 1123, während im
+      // Ranking 1122 stand. Genau die Fehlerklasse, für die es in
+      // `breakdown.js` die Zeile „Rundung" gibt: die Wertung addiert die
+      // rohen Werte und rundet EINMAL am Ende. Wer die Liste zeigt, rundet
+      // jede Zeile für sich, bildet die SUMME aber aus den rohen Werten.
+      gewinn: transfer,
+      verlust: abzug,
+    });
+
     if (!deltaJeSpieltag.has(idx)) deltaJeSpieltag.set(idx, new Map());
     const tag = deltaJeSpieltag.get(idx);
     tag.set(e.aufUserId, (tag.get(e.aufUserId) ?? 0) - abzug);
@@ -627,6 +656,21 @@ export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = []) {
       })
       .sort((a, b) => b.total - a.total || String(a.name ?? "").localeCompare(String(b.name ?? ""))),
   }));
+}
+
+// ── Wer hat wen getroffen, und was hat es gekostet? ─────────
+// 🔴 Dieselbe Rechnung wie `applyDuellJoker`, nur die andere Hälfte des
+// Ergebnisses. Bewusst KEIN zweiter Durchlauf mit eigener Logik: die Beträge
+// hängen am Deckel, an der Reihenfolge und am Nullsummen-Modus, und eine
+// zweite Fassung davon liefe unweigerlich auseinander — genau die Klasse
+// Fehler, aus der die 17 Funde vom 05.08. kamen.
+//
+// Gibt eine flache, chronologische Liste zurück; wer sie je Spieler bündeln
+// will, tut das beim Anzeigen.
+export function duellVorgaenge(verlauf = [], rules = {}, einsaetze = []) {
+  const gesammelt = [];
+  applyDuellJoker(verlauf, rules, einsaetze, gesammelt);
+  return gesammelt;
 }
 
 // ── Konflikte mit anderen Regeln ────────────────────────────

@@ -665,6 +665,24 @@ export function createMockStore() {
       return punkteJeSpieltag(await verlaufVon(roundId));
     },
 
+    // 🔴 Wer hat wen getroffen — Frage 4 der Runden-Schicht, für den
+    // Duell-Joker. Das Ranking zeigte bis 06.08.2026 nur die Nettosumme
+    // („−340 Duell"); bei einer Mechanik, deren ganzer Sinn ist, dass ein
+    // ANDERER es war, ist das die halbe Nachricht.
+    //
+    // Gerechnet über DENSELBEN Weg wie die Wertung (`sammeln` wird durch
+    // `scoreLeaderboardHistory` an `applyDuellJoker` durchgereicht) — die
+    // Beträge hängen am Deckel und an der Reihenfolge, eine zweite Fassung
+    // liefe auseinander.
+    async getDuellVorgaenge(roundId) {
+      const { entries, rules, regelnFuer, roundTips } = await standVorDemRad(roundId);
+      if (!rules?.duell?.enabled) return [];
+      const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
+      const sammeln = [];
+      scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln);
+      return sammeln.map((v) => ({ ...v, vonName: nameOf(v.vonUserId), aufName: nameOf(v.aufUserId) }));
+    },
+
     async getLeaderboardHistory(roundId) {
       return verlaufVon(roundId);
     },

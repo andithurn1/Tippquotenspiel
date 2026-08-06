@@ -13,18 +13,33 @@ import { C, MONO } from "@/lib/theme";
 // jede Runde und jedes Match, weil es nur getLeaderboard(roundId) anzeigt.
 export default function Ranking() {
   const { user } = useAuth();
+  const meId = user?.id ?? null;
   const { roundId } = useCurrentRound();
   const [board, setBoard] = useState(null);
   const [roundName, setRoundName] = useState(null);
+  // 🔴 Wer hat wen getroffen. Die Marke „−340 Duell" allein ist die halbe
+  // Nachricht: bei einer Mechanik, deren ganzer Sinn ist, dass ein ANDERER es
+  // war, muss der Name dabeistehen. Kommt aus dem Store (`getDuellVorgaenge`)
+  // und wird NICHT nachgerechnet — die Beträge hängen am Deckel und an der
+  // Reihenfolge (Runden-Schicht, Frage 4).
+  const [duelle, setDuelle] = useState([]);
 
   useEffect(() => {
     let live = true;
     getStore().getLeaderboard(roundId).then((b) => { if (live) setBoard(b); }).catch(() => { if (live) setBoard([]); });
     getStore().getRound(roundId).then((r) => { if (live) setRoundName(r?.name ?? null); }).catch(() => {});
+    (getStore().getDuellVorgaenge?.(roundId) ?? Promise.resolve([]))
+      .then((v) => { if (live) setDuelle(v ?? []); }).catch(() => {});
     return () => { live = false; };
   }, [roundId]);
 
-  const meId = user?.id ?? null;
+  // Was mich getroffen hat und was ich selbst geholt habe — chronologisch
+  // rückwärts, das Neueste zuerst.
+  const meineDuelle = duelle
+    .filter((v) => v.vonUserId === meId || v.aufUserId === meId)
+    .sort((a, b) => b.spieltag - a.spieltag);
+
+
 
   return (
     <div style={{
@@ -156,6 +171,51 @@ export default function Ranking() {
           </div>
         </div>
       </div>
+
+      {/* 🔴 Wer hat mich getroffen. Die Marke „−340 Duell" in der Zeile sagt
+          WIEVIEL, aber nicht VON WEM — und genau das ist bei dieser Mechanik
+          die eigentliche Nachricht. Die Beträge kommen ungerundet aus dem
+          Store; gerundet wird je Zeile für die Anzeige, die SUMME oben in der
+          Marke wird aus den rohen Werten gebildet. Eine erste Fassung rundete
+          jede Zeile und kam auf 1123, wo im Ranking 1122 stand. */}
+      {meineDuelle.length > 0 && (
+        <div style={{ width: "100%", maxWidth: 400, marginTop: 18 }}>
+          <div style={{ fontSize: 12, letterSpacing: 1.5, color: C.muted, textTransform: "uppercase", marginBottom: 8 }}>
+            Deine Duelle
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {meineDuelle.map((v, i) => {
+              const ichAngreifer = v.vonUserId === meId;
+              const betrag = Math.round(ichAngreifer ? v.gewinn : v.verlust);
+              // Ein Block ohne Beute bringt dem Angreifer nichts — die Zeile
+              // muss trotzdem stehen, sonst fehlt beim Getroffenen die Ursache.
+              const text = ichAngreifer
+                ? (v.typ === "klau"
+                  ? `Du hast ${v.aufName} ${betrag} Punkte abgenommen`
+                  : `Du hast ${v.aufName} gedämpft${betrag ? ` (+${betrag} für dich)` : ""}`)
+                : (v.typ === "klau"
+                  ? `${v.vonName} hat dir ${betrag} Punkte abgenommen`
+                  : `${v.vonName} hat dich gedämpft (−${betrag})`);
+              return (
+                <div key={`${v.spieltag}-${v.vonUserId}-${v.aufUserId}-${i}`} style={{
+                  display: "flex", alignItems: "baseline", gap: 8,
+                  background: C.surface, border: `1px solid ${C.line}`,
+                  borderRadius: 12, padding: "8px 11px",
+                }}>
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: C.muted, minWidth: 34 }}>
+                    ST {v.spieltag}
+                  </span>
+                  <span style={{ flex: 1, fontSize: 12, lineHeight: 1.4 }}>{text}</span>
+                  <span style={{
+                    fontFamily: MONO, fontSize: 11,
+                    color: ichAngreifer ? C.mint : C.coral,
+                  }}>{ichAngreifer ? "+" : "−"}{betrag}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

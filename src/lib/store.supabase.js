@@ -535,5 +535,16 @@ export function createSupabaseStore() {
     async getSpieltagsPunkte(roundId) {
       return punkteJeSpieltag(await this.getLeaderboardHistory(roundId));
     },
+
+    // 🔴 Wer hat wen getroffen — siehe Mock-Store. Über DENSELBEN Weg wie die
+    // Wertung gerechnet; die Beträge hängen am Deckel und an der Reihenfolge.
+    async getDuellVorgaenge(roundId) {
+      const { entries, rules, regelnFuer, tips, nameOf, matchOf } = await this.standVorDemRad(roundId);
+      if (!rules?.duell?.enabled) return [];
+      const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
+      const sammeln = [];
+      scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln);
+      return sammeln.map((v) => ({ ...v, vonName: nameOf(v.vonUserId), aufName: nameOf(v.aufUserId) }));
+    },
   };
 }
