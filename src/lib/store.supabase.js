@@ -13,6 +13,7 @@ import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
+import { scoreSaison } from "./saisonwetten";
 import { filterMatchesByTeams } from "./roundStatus";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
@@ -538,6 +539,18 @@ export function createSupabaseStore() {
 
     // 🔴 Wer hat wen getroffen — siehe Mock-Store. Über DENSELBEN Weg wie die
     // Wertung gerechnet; die Beträge hängen am Deckel und an der Reihenfolge.
+    // 🔴 Zwischenstand der eigenen Saison-Wetten — siehe Mock-Store.
+    async getSaisonStand(roundId, userId) {
+      const [round, matches, seasonTips] = await Promise.all([
+        this.getRound(roundId), this.listRoundMatches(roundId),
+        this.listSeasonTips({ roundId, userId }),
+      ]);
+      const rules = round?.rules ?? DEFAULT_RULES;
+      if (!rules?.saison?.enabled) return { gesamt: 0, treffer: 0, zeilen: [] };
+      const tipps = Object.fromEntries(seasonTips.map((t) => [t.wetten_id, t.wert]));
+      return scoreSaison({ matches, tipps, saison: rules.saison });
+    },
+
     async getDuellVorgaenge(roundId) {
       const { entries, rules, regelnFuer, tips, nameOf, matchOf } = await this.standVorDemRad(roundId);
       if (!rules?.duell?.enabled) return [];

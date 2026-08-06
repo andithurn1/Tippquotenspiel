@@ -20,6 +20,7 @@ export default function SaisonTipps() {
   const [matches, setMatches] = useState([]);
   const [tipps, setTipps] = useState({});       // { wettenId: wert }
   const [saveState, setSaveState] = useState({}); // { wettenId: "saved" | "error" }
+  const [stand, setStand] = useState(null);      // Zwischenstand aus dem Store
 
   useEffect(() => {
     let live = true;
@@ -48,6 +49,16 @@ export default function SaisonTipps() {
     getStore().listSeasonTips({ roundId, userId: user.id }).then((rows) => {
       if (live) setTipps(Object.fromEntries(rows.map((r) => [r.wetten_id, r.wert])));
     });
+    // 🔴 Der ZWISCHENSTAND. Bis 06.08.2026 zeigte dieser Screen nur, WAS man
+    // getippt hat — nicht, ob es gerade zutrifft. Die Saison-Wetten laufen
+    // über die ganze Saison, und ihr Stand war die einzige Zahl im Spiel, die
+    // man nirgends sehen konnte: im Leaderboard steht nur die Summe.
+    //
+    // Aus dem Store (`getSaisonStand`), nicht selbst gerechnet — über den
+    // ganzen Katalog wäre der „Meister" einer Bundesliga-Runde der FC
+    // Barcelona (Befund 05.08.2026).
+    (getStore().getSaisonStand?.(roundId, user.id) ?? Promise.resolve(null))
+      .then((st) => { if (live) setStand(st); }).catch(() => {});
     return () => { live = false; };
   }, [roundId, user]);
 
@@ -75,6 +86,16 @@ export default function SaisonTipps() {
   // zu jeder Zeit durch. Zwei Formulierungen derselben Regel wären der nächste
   // Schritt in dieselbe Falle.
   const statusVon = (w) => wettenStatus({ wette: w, matches });
+  // 🔴 Läuft die Saison der RUNDE schon? Eine Wette ohne eigenes Fenster
+  // gehört davor. Abgeleitet aus derselben Funktion, die auch der Store fragt
+  // — eine fensterlose Wette meldet nach Saisonstart „vorbei".
+  //
+  // ⚠️ Diese Zeile hat gefehlt: beim Umbau auf `wettenStatus` ist die frühere
+  // `saisonLage`-Destrukturierung weggefallen, `gestartet` blieb aber weiter
+  // unten im JSX stehen. Weder `npm run build` noch die Tests sehen das —
+  // eine undeklarierte Variable wirft erst BEIM RENDERN, und für Komponenten
+  // gibt es keine Tests. Gefunden beim Nachlesen, nicht durch ein Werkzeug.
+  const gestartet = wettenStatus({ wette: {}, matches }).zustand === "vorbei";
 
   const setzeTipp = async (id, wert) => {
     setTipps((t) => ({ ...t, [id]: wert }));
@@ -82,6 +103,11 @@ export default function SaisonTipps() {
     try {
       await getStore().saveSeasonTip({ roundId, userId: user.id, wettenId: id, wert });
       setSaveState((s) => ({ ...s, [id]: "saved" }));
+      // Den Zwischenstand nachladen — NICHT über eine Abhängigkeit im Effekt:
+      // der setzt `tipps` selbst, und `Object.fromEntries` liefert jedes Mal
+      // ein neues Objekt. Das wäre eine Endlosschleife.
+      getStore().getSaisonStand?.(roundId, user.id)
+        .then((st) => setStand(st)).catch(() => {});
       setTimeout(() => setSaveState((s) => ({ ...s, [id]: undefined })), 1400);
     } catch {
       setSaveState((s) => ({ ...s, [id]: "error" }));
@@ -128,6 +154,21 @@ export default function SaisonTipps() {
           </div>
         )}
 
+        {/* Die Summe oben: dieselbe Zahl, die im Ranking als „Saison" steht.
+            Ohne sie muss ein Spieler die Zeilen im Kopf addieren. */}
+        {stand && stand.zeilen.length > 0 && (
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "baseline",
+            background: `${C.gold}12`, border: `1px solid ${C.gold}44`, borderRadius: 12,
+            padding: "9px 12px", marginTop: 14,
+          }}>
+            <span style={{ fontSize: 12.5 }}>
+              Dein Stand: <strong>{stand.treffer}</strong> von {stand.zeilen.length} liegen vorn
+            </span>
+            <span style={{ fontFamily: MONO, fontSize: 13, color: C.gold }}>{stand.gesamt} Pkt.</span>
+          </div>
+        )}
+
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
           {wetten.map((wette) => {
             const typ = WETT_TYP[wette.key];
@@ -137,6 +178,7 @@ export default function SaisonTipps() {
             const auswertbar = istAuswertbar(wette.key);
             const state = saveState[id];
             const status = statusVon(wette);
+            const zeile = stand?.zeilen?.find((z) => z.id === id) ?? null;
             return (
               <div key={id} style={{
                 background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "14px 16px",
@@ -154,6 +196,29 @@ export default function SaisonTipps() {
                     color: status.offen ? C.mint : status.zustand === "noch-zu" ? C.sky : C.muted,
                   }}>
                     {status.offen ? "🟢 " : status.zustand === "noch-zu" ? "🕘 " : "🔒 "}{status.text}
+                  </div>
+                )}
+                {/* 🔴 Der ZWISCHENSTAND. „Wer führt gerade?" ist öffentliche
+                    Information aus den Ergebnissen — sie zu verschweigen macht
+                    die Wette nicht fairer, nur undurchsichtiger. Und ohne sie
+                    sieht ein Spieler seinen Saison-Tipp erst am Saisonende
+                    wieder, während im Ranking längst Punkte dafür stehen.
+                    ⚠️ Kommt aus dem Store, wird nicht nachgerechnet — dieselbe
+                    Funktion, die auch das Leaderboard füttert. */}
+                {zeile && zeile.auswertbar && zeile.gewinner?.length > 0 && (
+                  <div style={{
+                    fontSize: 11, marginTop: 6, lineHeight: 1.45,
+                    color: zeile.richtig ? C.mint : C.muted,
+                  }}>
+                    {zeile.richtig ? "✓ " : "· "}
+                    Stand: <strong style={{ color: zeile.richtig ? C.mint : C.text }}>
+                      {zeile.gewinner.slice(0, 3).join(", ")}
+                      {zeile.gewinner.length > 3 ? ` +${zeile.gewinner.length - 3}` : ""}
+                    </strong>
+                    {zeile.getippt && (zeile.richtig
+                      ? ` — dein Tipp liegt vorn (${zeile.punkte} Pkt.)`
+                      : " — dein Tipp liegt gerade daneben")}
+                    {!zeile.getippt && " — noch nicht getippt"}
                   </div>
                 )}
                 {!auswertbar && (

@@ -297,7 +297,46 @@ nach RISIKO: die vier Funde waren FUNKTIONEN in Modulen, die zu einem
 `rules.*`-Block gehören. Dort heißt „ruft niemand auf" nämlich *die Einstellung
 tut nichts*; bei einer Konstante heißt es bloß *ungenutzt*. Erste Gruppe: 17.
 
-#### 🔴 Der elfte Fund: „−340 Duell" ohne den Namen ist die halbe Nachricht
+#### 🔴 Der zwölfte Fund — und diesmal war ich es selbst: ein weißer Screen
+
+Beim Umbau von `SaisonTipps.jsx` auf `wettenStatus()` fiel die
+`saisonLage`-Destrukturierung weg, und `gestartet` blieb weiter unten im JSX
+stehen. **`npm run build` grün, 2019 Tests grün** — und der Screen wäre im
+Browser weiß geblieben. Eine undeklarierte Variable wirft erst BEIM RENDERN,
+und für Komponenten gibt es keine Tests. Gefunden beim Nachlesen.
+
+**Daraus die fünfte Abnahme: `npm run lint`** — mit genau ZWEI Regeln:
+
+| Regel | der Beleg dafür |
+|---|---|
+| `no-undef` | der Fund von heute |
+| `react-hooks/rules-of-hooks` | in CLAUDE.md dokumentiert: „Hooks stehen VOR jedem frühen return", `Tippabgabe.jsx` lag daran eine Weile still kaputt |
+
+⚠️ **Bewusst kein volles Regelwerk.** Ein frischer ESLint auf einem gewachsenen
+Projekt meldet Hunderte Stilfragen, und eine Halde wird beim dritten Mal
+ignoriert — dieselbe Lehre wie beim ersten `tot`-Lauf mit 85 Einträgen. Wer
+eine dritte Regel ergänzt, bringt den Fund mit, der sie rechtfertigt.
+Gegengeprobt: der Lauf ist sauber, und eine eingebaute undefinierte Variable
+wird gemeldet.
+
+#### 🔴 Der elfte Fund: Saison-Wetten hatten keinen Zwischenstand
+
+Priorität 2, und es war die einzige Zahl im Spiel, die man nirgends sehen
+konnte: `/saison` zeigte, WAS man getippt hat — nicht, ob es gerade zutrifft.
+Im Ranking stand längst eine Summe dafür.
+
+`getSaisonStand(roundId, userId)` in beiden Stores, über `scoreSaison` und die
+Spiele DIESER Runde — dieselbe Funktion und dieselbe Grundlage, die
+`saisonBoard.js` fürs Leaderboard benutzt. Der Screen zeigt jetzt je Wette den
+aktuellen Führenden („Stand: FC Bayern München — dein Tipp liegt vorn, 300
+Pkt.") und oben die Summe.
+
+⚠️ **Beim Bauen fast eine Endlosschleife eingebaut:** der Zwischenstand sollte
+nachladen, wenn sich `tipps` ändert — aber der Effekt SETZT `tipps`, und
+`Object.fromEntries` liefert jedes Mal ein neues Objekt. Jetzt lädt er nach dem
+Speichern nach, nicht über eine Abhängigkeit.
+
+#### 🔴 Der zehnte Fund: „−340 Duell" ohne den Namen ist die halbe Nachricht
 
 Priorität 2 der Nutzer-Reihenfolge, Anzeigen WÄHREND der Runde. Das Ranking
 zeigte die Nettosumme aus Duellen als Marke — und sonst nichts. Bei einer

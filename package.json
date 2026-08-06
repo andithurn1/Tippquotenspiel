@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
+    "lint": "eslint src scripts",
     "test:watch": "vitest",
     "sync": "node scripts/sync-status.mjs",
     "balance": "vite-node scripts/balance-durchgang.mjs",
@@ -28,6 +29,10 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.9.0",
     "vitest": "^3.2.4"
   }
 }

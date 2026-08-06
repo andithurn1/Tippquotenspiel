@@ -254,9 +254,9 @@ nach.** Fehlt die Store-Methode, wird sie gebaut; das ist billiger als die
 zweite Wahrheit. Ein Screen darf rechnen, was NUR er zeigt (Vorschauen,
 Was-wäre-wenn) — dann aber mit den vier Antworten oben als Eingabe.
 
-### 🔴 Drei Abnahmen statt Tests — wer eine Mechanik ergänzt, hängt in ALLE drei eine Zeile
+### 🔴 Fünf Abnahmen statt Tests — wer eine Mechanik ergänzt, geht sie ALLE durch
 
-Ein Test fragt „ist es kaputt". Diese drei fragen etwas anderes, und **keine
+Ein Test fragt „ist es kaputt". Diese fünf fragen etwas anderes, und **keine
 kann die Frage der anderen beantworten** — jede von ihnen ist aus einem Fund
 entstanden, den die beiden anderen nicht gesehen haben.
 
@@ -265,6 +265,7 @@ entstanden, den die beiden anderen nicht gesehen haben.
 | `npm run anzeige` | **Steht überall dieselbe Zahl?** Vergleicht denselben Wert über alle Anzeige-Wege — nicht „kaputt", sondern „wie weit auseinander". | 17 Funde am 05.08., kein einziger ein Rechenfehler |
 | `npm run greift` | **Bewegt die Einstellung überhaupt etwas?** Vorgabe gegen Extremwert, je Regel-Block. Teil 2 misst Ebenen, die keine PUNKTE bewegen, sondern Gutschriften. | `autoTip.js` war fertig, getestet, einstellbar — und von niemandem aufgerufen |
 | `npm run stufen` | **Kommt ein Admin überhaupt an sie heran?** Jedes Regel-Feld muss auf Stufe 1 oder 2 erreichbar sein — oder in `NUR_PROFI` einen Begründungssatz tragen. | `rules.ereignisse` war wirksam UND richtig angezeigt und trotzdem unfertig: nur in der Profi-Ansicht |
+| `npm run lint` | **Gibt es die Variable überhaupt?** Nur ZWEI Regeln: `no-undef` und `react-hooks/rules-of-hooks`. | Beim Umbau fiel `gestartet` weg und stand weiter im JSX — Build grün, 2019 Tests grün, Screen im Browser weiß |
 | `npm run tot` | **Ruft die gebaute Funktion überhaupt jemand auf?** Ein Export, den außerhalb seiner Datei und ihrer Tests niemand nennt. Sortiert nach Risiko: Funktionen in `rules.*`-Modulen zuerst. | An EINEM Tag sechs Mechaniken, die fertig, getestet und einstellbar waren — und niemand fragte sie |
 
 🔴 **Der gemeinsame Nenner aller sechs Funde vom 06.08.:** ein grüner Test

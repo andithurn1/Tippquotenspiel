@@ -16,6 +16,7 @@ import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { spieltagOeffnen } from "./spieltagOeffnen";
 import { withSaisonPunkte } from "./saisonBoard";
+import { scoreSaison } from "./saisonwetten";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
@@ -674,6 +675,28 @@ export function createMockStore() {
     // `scoreLeaderboardHistory` an `applyDuellJoker` durchgereicht) — die
     // Beträge hängen am Deckel und an der Reihenfolge, eine zweite Fassung
     // liefe auseinander.
+    // 🔴 Wie stehen MEINE Saison-Wetten gerade? Der Screen `/saison` zeigte bis
+    // 06.08.2026 nur, WAS man getippt hat — nicht, ob es gerade zutrifft. Die
+    // Ebene läuft über die ganze Saison, und ihr Zwischenstand war die einzige
+    // Zahl im Spiel, die man nirgends sehen konnte.
+    //
+    // ⚠️ Über `scoreSaison` und über die Spiele DIESER Runde — dieselbe
+    // Funktion und dieselbe Grundlage wie `saisonBoard.js` fürs Leaderboard.
+    // Der Screen darf das nicht selbst rechnen: über den ganzen Katalog wäre
+    // der „Meister" einer Bundesliga-Runde der FC Barcelona (Befund 05.08.).
+    async getSaisonStand(roundId, userId) {
+      const round = rounds.get(roundId);
+      const rules = round?.rules ?? DEFAULT_RULES;
+      if (!rules?.saison?.enabled) return { gesamt: 0, treffer: 0, zeilen: [] };
+      const tipps = Object.fromEntries(seasonTips
+        .filter((t) => t.round_id === roundId && t.user_id === userId)
+        .map((t) => [t.wetten_id, t.wert]));
+      return scoreSaison({
+        matches: filterMatchesByTeams([...matches.values()], round?.team_filter),
+        tipps, saison: rules.saison,
+      });
+    },
+
     async getDuellVorgaenge(roundId) {
       const { entries, rules, regelnFuer, roundTips } = await standVorDemRad(roundId);
       if (!rules?.duell?.enabled) return [];
