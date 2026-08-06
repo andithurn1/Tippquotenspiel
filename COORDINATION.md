@@ -123,6 +123,93 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-06 (II) · **Drei tote Mechaniken, eine neue Messung — Baukasten-Lücken 15 → 1**
+
+> **👉 Frische Session: das hier ist der aktuelle Auftrag und der Stand.**
+> Alles auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, 1993 Tests grün,
+> Build sauber. Der Eintrag darunter ist der vorige Stand.
+
+**Die Kurzfassung:** dreimal war eine Mechanik gebaut, getestet, über die
+Oberfläche einstellbar — und sie tat nichts. Alle drei über eine MESSUNG
+gefunden, keine über einen Test.
+
+| Fund | gemessen |
+|---|---|
+| Trost-Joker („Letzter am Spieltag") | **0 statt 5** Gutschriften — kein Aufrufer gab `spieltagsPunkte` mit |
+| „Alle Spiele des Spieltags getippt" | **5 von 5** für jemanden, der jeden fünften Spieltag ausließ — verglich die eigenen Tipps mit den eigenen |
+| Ereignisse über mehrere Ligen | **45 statt 30** Gutschriften — Liga- statt Runden-Spieltag |
+
+#### Was neu ist und wovon die andere Session wissen muss
+
+1. **`src/lib/spieltagsPunkte.js`** — `punkteJeSpieltag(verlauf)`, EINE Quelle.
+   `applySaisonform` hatte dieselbe Rechnung wörtlich stehen, und
+   `ereignisse.js` erwartete sie von außen, ohne sie je zu bekommen.
+2. **`getSpieltagsPunkte(roundId)`** in BEIDEN Stores — die fünfte Antwort der
+   Runden-Schicht. ⚠️ Wer einen Screen baut, der Spieltagspunkte zeigt, fragt
+   sie ab und rechnet sie NICHT nach.
+3. **`getLeaderboardHistory` läuft jetzt über dieselben Einträge wie das
+   Leaderboard.** Vorher baute es sie selbst — ohne die Ersatz-Tipps des
+   Versäumnisses. Zwei Kurven für dieselbe Runde, sobald die Kulanz an war.
+4. **`auswerten()` und `spieltageChronologisch()` nehmen einen optionalen
+   `schluessel`** (wie `invalidJokerMatchdays`). Ohne ihn ändert sich nichts —
+   kein stiller Regelwechsel.
+5. **`erspielteLage()`** neben `erspielteJoker()`: dieselbe Rechnung, aber mit
+   dem, was an einem Begrenzer hängenblieb. Gemessen verfallen schon bei
+   Vorgabe-Einstellungen 4 von 19 Gutschriften am Deckel — bisher unsichtbar.
+
+#### 🔴 `npm run stufen` — die dritte Abnahme, bitte benutzen
+
+Neben `greift` („bewegt es etwas?") und `anzeige` („steht überall dieselbe
+Zahl?") jetzt: **kommt ein Admin überhaupt an die Einstellung heran?**
+
+Keine der beiden anderen kann das sehen. `rules.ereignisse` war wirksam UND
+richtig angezeigt — und trotzdem unfertig, weil kein Charakter und kein
+einfacher Regler sie je erwähnte.
+
+**Erster Befund: 15 von 37 Regel-Feldern nur in der Profi-Ansicht.** Jetzt
+sind es **1**. Ein Feld ist entweder auf Stufe 1/2 erreichbar oder trägt in
+`NUR_PROFI` (in `stufenAbdeckung.js`) einen **Begründungssatz**. Ein Test
+lässt die Zahl nur noch SINKEN, ein zweiter meldet eine Begründung, die
+inzwischen überholt ist.
+
+⚠️ **Für dich heißt das:** wer einen neuen Regelblock ergänzt, hängt ihn in
+Stufe 1 oder 2 — oder schreibt den Satz, warum nicht. Sonst schlägt der Test
+an. Das ist bewusst so.
+
+Neu in Stufe 2 (jetzt 9 Fragen): **„Wie leicht bleibt man dran?"**
+(`aufholen` + `saisonform`), **„Wie viel soll nebenbei passieren?"**
+(`ereignisse` + `drehrad`), **„Dürft ihr euch gegenseitig etwas wegnehmen?"**
+(`duell`). `teamMods` ist in „Zählen manche Spiele mehr als andere?" gewandert,
+statt eine zehnte Frage aufzumachen.
+
+#### ⚠️ Zwei Dinge, die DIR gehören und die ich nicht angefasst habe
+
+1. **`DEFAULT_DUELL.maxProSaison: 60` liegt unter dem Erprobten.** Deine eigene
+   Regler-Warnung meldet: *„der Deckel greift schon beim ersten Duell, ob 10 %
+   oder 100 % geklaut werden, ändert am Ergebnis nichts mehr."* Es fällt nur
+   nicht auf, weil das Duell standardmäßig aus ist. Meine Stufe-2-Stufen setzen
+   150; **die Vorgabe selbst habe ich stehen lassen**, weil ein Wechsel deine
+   Balance-Messungen verschiebt. Bitte entscheide du.
+2. **Die letzte Stufen-Lücke ist `wettbewerbe`** — die gehört in den
+   Gewichtungs-Durchgang am Ende (Nutzer-Reihenfolge Punkt 4, „bewusst grob,
+   2-/5-Prozent-Stufen"). Ein Test hält fest, dass es genau diese eine ist.
+
+#### Die Gegenprobe, die dreimal an einem Tag etwas gefunden hat
+
+Neue Voreinstellungen gegen `reglerWarnung.js` laufen lassen. **Alle drei
+Funde des Tages kamen von dort, keiner aus einem Test** — einer davon war mein
+eigener: Charakter *Mutig & wild* mit `derbyFaktor: 1,5` summierte sich auf
+×2,8 bei Deckel ×2,5, der Aufschlag lief ins Leere. Zwei Zeilen darüber stand
+mein eigener Warnkommentar dazu.
+
+Der dritte Fund sitzt in der Warnung selbst: **das Empfehlungsband für
+`saison.gewicht` las den falschen Katalog.** Es wird aus `PRESETS` abgeleitet —
+das sind WERTUNGS-Regelwerke, die die Saison-Wetten alle aus haben und deshalb
+überall die Vorgabe 1 tragen. Ergebnis: Band 0,565–1,435, und das kuratierte
+Saison-Preset „nebenbei" (Gewicht 0,5) galt als unerprobt. Ein Feld darf jetzt
+über `quelle` sagen, wo seine erprobten Werte liegen.
+
+
 ### 2026-08-06 · **Punkt 1 + 2 abgeschlossen: jede Mechanik greift und ist sichtbar**
 
 > **👉 Frische Session: das hier ist der Stand.** Alles auf Branch
