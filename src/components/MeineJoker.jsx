@@ -14,6 +14,8 @@ import {
 } from "@/lib/jokerPlan";
 import { kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
 import { EREIGNIS, sanitizeEreignisse, beschreibeEreignisse } from "@/lib/ereignisse";
+import { offeneKlassen, beschreibeKlasse, sanitizeLimitKlassen } from "@/lib/limitKlassen";
+import { einsaetzeAllerArten } from "@/lib/jokerBudget";
 import { C, MONO } from "@/lib/theme";
 
 // ── „Meine Joker" — die fehlende Anzeige WÄHREND der Runde ───
@@ -124,6 +126,26 @@ export default function MeineJoker() {
   // Runde laufen noch welche er selbst schon ausgelöst hat.
   // Der Platz dafür ist hier und kein eigener Screen: es ist derselbe Topf, den
   // der „erspielt"-Teil des Standes oben zählt.
+  // ── Welche GRENZEN gelten gerade für mich? ──
+  // `offeneKlassen` und `beschreibeKlasse` sind für die Oberfläche gebaut und
+  // wurden bislang NUR im Admin-Editor benutzt. Ein Spieler erfuhr von einer
+  // Limitierungsklasse erst, wenn das Speichern seines Tipps abgelehnt wurde —
+  // gemessen 06.08.2026: die Klassen greifen einwandfrei (der dritte Joker wird
+  // abgelehnt, ein Fenster öffnet an seinem Spieltag), sie waren nur nirgends
+  // angekündigt. Eine Grenze, die man erst beim Anstoßen bemerkt, ist keine
+  // Regel, sondern eine Falle.
+  const klassen = sanitizeLimitKlassen(rules.limitKlassen);
+  const klassenKontext = {
+    spieltage, aktuellerSpieltag: bis, board,
+    budgetStand: {}, ausgeloesteEreignisse: [],
+  };
+  const meineKlassen = user ? offeneKlassen(klassen, user.id, klassenKontext) : [];
+  // Wie viel ist davon schon verbraucht? Aus denselben Einsätzen, die auch
+  // `pruefeEinsatz` in der Tippabgabe zählt — keine zweite Buchführung.
+  const einsatzHistorie = einsaetzeAllerArten(meineTipsRunde, rules);
+  const verbrauchtIn = (klasse) => einsatzHistorie
+    .filter((e) => e.vonUserId === user?.id && klasse.mitglieder.includes(e.jokerArt)).length;
+
   const ereignisse = sanitizeEreignisse(rules.ereignisse);
   const erspieltJeKey = new Map();
   for (const g of gutschriften) {
@@ -216,6 +238,41 @@ export default function MeineJoker() {
                 : "Alle Spieltage stehen vorab fest. "}
               Ein Haken heißt: dort hast du deinen Joker gesetzt.
             </p>
+
+            {/* ── Grenzen ── */}
+            {meineKlassen.length > 0 && (
+              <div style={{ marginTop: 18 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>
+                  Was dich gerade begrenzt
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {meineKlassen.map((k) => {
+                    const genutzt = verbrauchtIn(k);
+                    const voll = genutzt >= k.max;
+                    return (
+                      <div key={k.id} style={{
+                        background: C.surface, borderRadius: 12, padding: "9px 12px",
+                        border: `1px solid ${voll ? C.coral + "55" : C.line}`,
+                      }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 12.5 }}>{k.label}</span>
+                          <span style={{ fontFamily: MONO, fontSize: 11, color: voll ? C.coral : C.muted }}>
+                            {genutzt}/{k.max}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                          {beschreibeKlasse(k, spieltage)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                  Gezeigt sind nur die Grenzen, die GERADE gelten — eine Klasse mit
+                  Zeitfenster taucht auf, wenn ihr Fenster offen ist.
+                </p>
+              </div>
+            )}
 
             {/* ── Zu erspielen ── */}
             {ereignisse.enabled && ereignisse.aktive.length > 0 && (
