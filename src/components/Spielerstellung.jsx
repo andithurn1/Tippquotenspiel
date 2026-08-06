@@ -29,6 +29,7 @@ import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
 import SaisonWetten from "@/components/SaisonWetten";
 import Ereignisse from "@/components/Ereignisse";
+import DuellJoker from "@/components/DuellJoker";
 import Drehrad from "@/components/Drehrad";
 import WettbewerbGewichte from "@/components/WettbewerbGewichte";
 import RundenCharaktere from "@/components/RundenCharaktere";
@@ -1352,6 +1353,17 @@ export default function Spielerstellung() {
           <SectionTitle>Joker verdienen</SectionTitle>
           <Ereignisse rules={rules}
             onChange={(ereignisse) => { touched(); setRules((r) => ({ ...r, ereignisse })); }} />
+
+          {/* 🔴 Duell-Joker. Gemessen am 06.08.2026 mit `npm run stufen` Teil 2:
+              ACHT Regel-Felder hatten überhaupt keine Oberfläche, und alle acht
+              gehörten hierher. Der Baustein war fertig gebaut, vermessen und
+              über den Creator-Code teilbar — einstellen konnte ihn niemand.
+              Steht direkt hinter „Joker verdienen", weil es dieselbe Frage in
+              ihrer dritten Antwort ist: Joker gibt es vom Admin, durch
+              Leistung — oder auf Kosten eines anderen. */}
+          <SectionTitle>Duell-Joker</SectionTitle>
+          <DuellJoker rules={rules}
+            onChange={(duell) => { touched(); setRules((r) => ({ ...r, duell })); }} />
 
           {/* Drehrad — der dritte Auslöser neben Zeitpunkt (Joker) und
               Leistung (Ereignisse): reiner Zufall aus einer vom Admin selbst

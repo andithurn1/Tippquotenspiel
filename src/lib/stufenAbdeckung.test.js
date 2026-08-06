@@ -89,8 +89,12 @@ const KOMPONENTEN = (function lies(ordner) {
   });
 })("src/components").join("\n");
 
-// Stand bei Einführung: die acht Felder des Duell-Jokers. Sperrklinke wie oben.
-const OHNE_UI_BEI_EINFUEHRUNG = 8;
+// Stand bei Einführung waren es ACHT — alle acht gehörten zum Duell-Joker, der
+// überhaupt keine Einstell-Oberfläche hatte. Sie sind noch am selben Tag
+// gebaut worden (`DuellJoker.jsx`), deshalb steht die Sperrklinke jetzt auf 0.
+// ⚠️ Sie darf sinken, nie steigen: ein neues Regel-Feld ohne Regler fällt
+// damit sofort auf.
+const OHNE_UI_BEI_EINFUEHRUNG = 0;
 
 describe("Jedes Regel-Feld braucht eine Oberfläche", () => {
   it("die Blatt-Liste ist feiner als die Block-Liste — sonst wäre sie blind", () => {
