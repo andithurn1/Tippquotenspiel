@@ -123,6 +123,59 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-06 · **Punkt 1 + 2 abgeschlossen: jede Mechanik greift und ist sichtbar**
+
+> **👉 Frische Session: das hier ist der Stand.** Alles auf Branch
+> `claude/koordinierte-arbeitsweise-fe6w1v`.
+
+Nach dem Anzeige-Durchgang (Eintrag darunter) die beiden anderen Punkte der
+Reihenfolge abgearbeitet. Vorgehen war jedes Mal dasselbe, und es hat sich
+gelohnt: **erst messen, ob die Einstellung überhaupt greift — dann erst die
+Anzeige bauen.**
+
+**🔴 Der schwerste Fund: Versäumnis war fertig gebaut und wurde von niemandem
+aufgerufen.** `autoTip.js` hatte drei Strategien, Malus, Saison-Deckel, eigene
+Tests, Regler, einen Runden-Charakter, eine Regler-Warnung und einen
+Preset-Aspekt. Aus dem Modul importiert waren im ganzen Projekt nur die
+LABELS. Angeschlossen über `versaeumnisBoard.js` (Geschwister von
+`saisonBoard`/`drehradBoard`). Gemessen an 15 Versäumnissen: 473 → 1507 →
+1197 → 752 → 473 je nach Malus und Deckel. Jeder Regler bewegt jetzt die Zahl.
+
+**Weitere Funde beim Durchmessen:**
+
+| Mechanik | greift? | Fund |
+|---|---|---|
+| **Joker-Plan** | ja, aber falsch | Plan sah 11 Joker vor, es gab sie an **27 von 42** Spieltagen (Liga- statt Runden-Spieltag) |
+| **Joker + Rad** | ja | fielen in die **Länderspielpause** — 7 von 42 Runden-Spieltagen tragen kein Spiel, einer davon trug einen Joker. Neu: `bespielt` in `jokerPlan`/`drehradPlan` |
+| **Ereignisse** | ja, alle Regler | nur unsichtbar |
+| **Duell-Joker** | ja, aber **jeder Stärke-Regler wirkungslos** | `maxProSaison: 60` greift beim ersten Duell; 10 %/35 %/100 % alle +60. Ohne Deckel +273/+954/+2726. Neue Regler-Warnung, Entscheidung dem Admin gelassen |
+| **Limitierungsklassen** | ja | Grenze erst beim abgelehnten Speichern sichtbar |
+| **Saisonform + Duell** | ja | Ranking zeigte **5049.67** und **3339.6** — nicht ganzzahlig. Gerundet in `applySaisonform`/`applyDuellJoker` |
+
+**Neue Anzeigen während der Runde:**
+- **`/fahrplan`** — der Zeitstrahl der Saison. Eine Zeile je Runden-Spieltag mit
+  Tipp-Stand, Joker-, Rad- und Saison-Wetten-Marken. `saisonfahrplan.js` rechnet
+  nichts selbst, jede Spalte kommt aus ihrem Modul.
+- **`/joker`** — Stand, eigene Joker-Spieltage (verdeckt bleibt verdeckt),
+  Mitspieler-Übersicht, **„Zu erspielen"** (Ereignisse) und **„Was dich gerade
+  begrenzt"** (Limitierungsklassen).
+- **Ranking**: jede Ebene hat jetzt eine Marke — Anschluss, Saison, Rad, Kurve,
+  Streicher (mit BETRAG statt nur Anzahl), Duell (auch negativ), Ersatz.
+
+**`npm run anzeige` hat drei Teile** und ist die Abnahme, nicht die Testsuite:
+1. fünf Anzeige-Wege für denselben Tipp · 2. Runden-Werte (Hub gegen Tippabgabe
+gegen Leaderboard) · 3. **erklärt das Ranking seine eigene Summe?**
+
+⚠️ Teil 3 zählt mit, ob eine Ebene überhaupt GEGRIFFEN hat, und meldet sonst
+„NICHTS GEGRIFFEN" — ein grüner Balken, der nichts geprüft hat, ist schlimmer
+als ein roter. Genau so ist aufgefallen, dass der Versäumnis-Fall vor
+Saisonstart gar nichts prüfte. **Teil 3 hat außerdem einen Fehler in einer
+Marke gefunden, die eine Stunde vorher entstanden war** (`form` zählte den
+Streicher-Effekt doppelt, 1361 Punkte) — kein Test hatte das gemeldet, weil
+beide Marken für sich richtig waren.
+
+**Stand: 1948 Tests grün, Build sauber, 35 Commits.**
+
 ### 2026-08-05 (V) · Punkt 3 begonnen — vier Anzeigen logen, keine davon fiel je einem Test auf
 
 > **👉 Was ich hier gemacht habe und wo der nächste anfängt.**
