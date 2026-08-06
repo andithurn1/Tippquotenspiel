@@ -225,6 +225,12 @@ export function beschreibeSaisonform(saisonform = DEFAULT_SAISONFORM, spieltage 
 // unveränderter Summe — die Differenz ist 0, aber das ist keine Leistung von 0,
 // sondern eine Nichtteilnahme. `gewertet` unterscheidet beides; ohne diese
 // Unterscheidung würde `nurGetippte` wirkungslos.
+// Die Punkte der Spieltage OHNE Kurve und ohne Streicher — der Bezugswert für
+// die `form`-Marke unten.
+function rohSumme(tage = []) {
+  return tage.reduce((s, t) => s + (Number(t.punkte) || 0), 0);
+}
+
 export function applySaisonform(verlauf = [], rules = {}) {
   const cfg = sanitizeSaisonform(rules?.saisonform);
   const aus = cfg.kurve === "flach" && !(cfg.streich > 0);
@@ -256,14 +262,33 @@ export function applySaisonform(verlauf = [], rules = {}) {
       .map((z) => {
         const tage = (proNutzer.get(z.userId) ?? []).slice(0, i + 1);
         const r = anwenden(tage, cfg);
+        // 🔴 GERUNDET. `anwenden` rechnet mit zwei Nachkommastellen (die Kurve
+        // multipliziert), und dieser Wert landet direkt im Ranking. Gemessen am
+        // 06.08.2026 stand dort „5049.67" — in einer Punktetabelle, in der jede
+        // andere Zahl ganzzahlig ist. Gerundet wird HIER und nicht in der
+        // Anzeige: sonst zeigt das Ranking 5050 und der Abstand zum Nächsten
+        // rechnet sich aus 5049,67.
+        const total = Math.round(r.total);
         return {
-          ...z, total: r.total,
+          ...z, total,
           // Mit an die Zeile, weil der Spieler sonst eine Summe sieht, die
           // nicht zu seinen Spieltagen passt, und sich das nicht erklären kann.
           // Dieselbe Regel wie bei den Ertragsquellen: was die Punktzahl
           // verändert, bekommt einen Namen.
           gestrichen: r.gestrichen.length,
+          // ⚠️ Auch der BETRAG, nicht nur die Anzahl. „−2 gestrichen" sagt
+          // niemandem, warum die Summe um 958 Punkte niedriger ist als die
+          // eigenen Spieltage — das ist dieselbe Lücke, die die `form`-Marke
+          // daneben schließt. Gezählt wird gewichtet, also so, wie es die
+          // Wertung auch verrechnet hat.
+          gestrichenPunkte: Math.round(
+            r.detail.filter((d) => d.gestrichen).reduce((sum, d) => sum + d.punkte, 0)),
           vorlaeufig: r.vorlaeufig,
+          // 🔴 Was die KURVE verändert hat, in Punkten. Die Streicher hatten
+          // längst einen Namen, die Kurve nicht — sie verschob den Stand
+          // gemessen um bis zu 186 Punkte, ohne dass irgendwo etwas stand.
+          // `null`, wenn die Kurve flach ist: dann gibt es nichts zu erklären.
+          form: cfg.kurve === "flach" ? null : total - Math.round(rohSumme(tage)),
         };
       })
       .sort((a, b) => b.total - a.total || String(a.name ?? "").localeCompare(String(b.name ?? ""))),

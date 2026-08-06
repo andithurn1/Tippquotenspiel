@@ -371,3 +371,54 @@ describe("applySaisonform beschriftet die Zeilen", () => {
     expect(r[2].board[0].vorlaeufig).toBe(false);
   });
 });
+
+// 🔴 Gemessen am 06.08.2026: das Ranking zeigte „5049.67" — in einer Tabelle,
+// in der jede andere Zahl ganzzahlig ist. Und die KURVE verschob den Stand um
+// bis zu 186 Punkte, ohne dass irgendwo etwas dazu stand: die Streicher hatten
+// längst eine Marke, die Kurve nicht.
+describe("Was die Saisonform am Board verändert, bekommt einen Namen", () => {
+  const verlauf = (n) => {
+    const board = [];
+    const out = [];
+    let summe = 0;
+    for (let i = 1; i <= n; i++) {
+      summe += 100 + i;
+      out.push({
+        wettbewerb: "bl", matchday: i,
+        board: [{ userId: "u1", name: "Eins", total: summe, gewertet: i, tips: i }],
+      });
+    }
+    return out;
+  };
+
+  it("das Total ist ganzzahlig — auch wenn die Kurve mit Faktoren rechnet", () => {
+    const v = applySaisonform(verlauf(10), { saisonform: { kurve: "steigend", streich: 0 } });
+    for (const stufe of v) {
+      for (const z of stufe.board) expect(Number.isInteger(z.total)).toBe(true);
+    }
+  });
+
+  it("`form` benennt genau das, was die Kurve verschoben hat", () => {
+    const roh = verlauf(10);
+    const v = applySaisonform(roh, { saisonform: { kurve: "steigend", streich: 0 } });
+    const letzte = v[v.length - 1].board[0];
+    const rohTotal = roh[roh.length - 1].board[0].total;
+    // Ohne Streicher ist die Kurve die EINZIGE Ursache — `form` muss die ganze
+    // Differenz tragen, sonst erklärt die Marke nur die Hälfte.
+    expect(letzte.form).toBe(letzte.total - rohTotal);
+  });
+
+  it("bei flacher Kurve gibt es nichts zu erklären: `form` ist null", () => {
+    const v = applySaisonform(verlauf(10), { saisonform: { kurve: "flach", streich: 2 } });
+    expect(v[v.length - 1].board[0].form).toBeNull();
+  });
+
+  it("`gestrichenPunkte` nennt den Betrag, nicht nur die Anzahl", () => {
+    const v = applySaisonform(verlauf(10), { saisonform: { kurve: "flach", streich: 2 } });
+    const z = v[v.length - 1].board[0];
+    expect(z.gestrichen).toBe(2);
+    // Zwei Spieltage à gut 100 Punkte — der Betrag muss in dieser Größenordnung
+    // liegen, nicht bei 2.
+    expect(z.gestrichenPunkte).toBeGreaterThan(100);
+  });
+});

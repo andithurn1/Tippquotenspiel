@@ -97,11 +97,34 @@ export default function Ranking() {
                     das nicht erklären. `vorläufig`, weil noch ein schlechterer
                     Spieltag kommen kann und dann ein anderer herausfällt. */}
                 {b.gestrichen > 0 && (
-                  <span title={`Die ${b.gestrichen} schwächsten Spieltage zählen nicht.`
+                  <span title={`Die ${b.gestrichen} schwächsten Spieltage zählen nicht`
+                    + (b.gestrichenPunkte ? ` — das sind ${b.gestrichenPunkte} Punkte.` : ".")
                     + (b.vorlaeufig ? " Welche das sind, kann sich noch ändern." : "")} style={{
                     fontFamily: MONO, fontSize: 10, color: C.muted,
                     border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 7px",
                   }}>−{b.gestrichen} gestrichen</span>
+                )}
+                {/* 🔴 Was die Saison-KURVE verschoben hat. Die Streicher
+                    hatten längst eine Marke, die Kurve nicht — sie verschob den
+                    Stand gemessen um bis zu 186 Punkte, ohne dass irgendwo
+                    etwas stand. `form` ist `null`, wenn die Kurve flach ist. */}
+                {b.form != null && b.form !== 0 && (
+                  <span title="Späte Spieltage zählen anders als frühe (Saison-Kurve)" style={{
+                    fontFamily: MONO, fontSize: 10, color: b.form > 0 ? C.mint : C.muted,
+                    border: `1px solid ${b.form > 0 ? C.mint + "55" : C.line}`,
+                    borderRadius: 999, padding: "2px 7px",
+                  }}>{b.form > 0 ? "+" : ""}{b.form} Kurve</span>
+                )}
+                {/* 🔴 Rad-Punkte. Sie fließen wie Anschluss-Bonus und
+                    Saison-Wetten ins Total, wurden hier aber als einzige NICHT
+                    ausgewiesen — ein Spieler sah eine Summe, die nicht zu
+                    seinen Spieltagen passt, ohne dass irgendwo stand, warum.
+                    Dieselbe Begründung wie bei den drei Marken darüber. */}
+                {b.drehrad > 0 && (
+                  <span title="Punkte vom Glücksrad" style={{
+                    fontFamily: MONO, fontSize: 10, color: C.gold,
+                    border: `1px solid ${C.gold}55`, borderRadius: 999, padding: "2px 7px",
+                  }}>+{b.drehrad} Rad</span>
                 )}
                 <span style={{
                   fontFamily: MONO, fontSize: 15, fontVariantNumeric: "tabular-nums", minWidth: 44, textAlign: "right",
