@@ -176,6 +176,8 @@ export default function Tippabgabe({ matchId }) {
   // Eigene Roh-Einträge der Runde — Grundlage für die ERSPIELTEN Joker
   // (ereignisse.js rechnet aus Tipps + Ergebnissen).
   const [meineEintraege, setMeineEintraege] = useState([]);
+  const [alleEintraege, setAlleEintraege] = useState([]);
+  const [tagesPunkte, setTagesPunkte] = useState([]);
   const [votes, setVotes] = useState([]);   // Joker-Abstimmung der Runde
   const [alleMatches, setAlleMatches] = useState([]);  // für die Zeitachse der Runde
   // Tabellenstand der Runde — für die `wer`-Modi `abPlatz`/`abRueckstand`
@@ -276,7 +278,14 @@ export default function Tippabgabe({ matchId }) {
       })));
       setAlleMatches(ms);
       getStore().getRoundEntries(roundId)
-        .then((alle) => { if (live) setMeineEintraege(alle.filter((x) => x.userId === user.id)); })
+        .then((alle) => { if (!live) return; setAlleEintraege(alle); setMeineEintraege(alle.filter((x) => x.userId === user.id)); })
+        .catch(() => {});
+      // 🔴 Die Spieltagspunkte ALLER Mitspieler — ohne sie fällt der
+      // Trost-Joker („Letzter am Spieltag") still aus. Gemessen am 06.08.2026
+      // über eine Bundesliga-Runde: 0 statt 5 Gutschriften. Der Store rechnet
+      // sie aus DEMSELBEN Verlauf wie das Ranking (Runden-Schicht, Frage 4).
+      (getStore().getSpieltagsPunkte?.(roundId) ?? Promise.resolve([]))
+        .then((p) => { if (live) setTagesPunkte(p ?? []); })
         .catch(() => {});
       const dieser = tips.find((t) => t.user_id === user.id && t.match_id === matchId);
       if (dieser?.tip?.joker === true) setJoker(true);
@@ -397,7 +406,13 @@ export default function Tippabgabe({ matchId }) {
       // Eine Gutschrift trägt `{ key, wettbewerb, matchday, belohnung }` — kein
       // Spiel. `rundenSpieltagVon` schlägt deshalb über Wettbewerb + Spieltag
       // nach, genau dafür nimmt es auch eine solche Form entgegen.
-      const ereignis = erspielteJoker({ eintraege: meineEintraege, rules: RULES })
+      const ereignis = erspielteJoker({
+        eintraege: meineEintraege,
+        // `alleEintraege` für „alle Spiele des Spieltags getippt" (die eigenen
+        // Einträge wissen nicht, was fehlt), `spieltagsPunkte` für den
+        // Trost-Joker.
+        alleEintraege, spieltagsPunkte: tagesPunkte, rules: RULES,
+      })
         .map((g) => {
           const runde = rundenSpieltagVon(achse, { wettbewerb: g.wettbewerb, matchday: g.matchday });
           return runde == null ? g : { ...g, matchday: runde };
@@ -405,7 +420,7 @@ export default function Tippabgabe({ matchId }) {
       // Nur die eigenen: der Store liefert die Belohnungen ALLER Spieler.
       return [...ereignis, ...radBelohnungen.joker.filter((g) => g.userId === user?.id)];
     },
-    [meineEintraege, RULES, radBelohnungen, user, achse]);
+    [meineEintraege, alleEintraege, tagesPunkte, RULES, radBelohnungen, user, achse]);
   // Der Ranglisten-Pool wird einmal je RUNDEN-Spieltag vergeben, nicht einmal je
   // Liga — sonst ließe er sich in einer Runde über fünf Wettbewerbe fünfmal pro
   // Woche ausgeben. Dieselbe Quelle wie in der Spielwahl, damit beide Screens

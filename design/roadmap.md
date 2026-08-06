@@ -176,6 +176,46 @@ Bausteine. Der Simulator bleibt für die Frage „**sieht er die Ebene
 zurückgestellt. Begründung im Nachrichten-Log von `COORDINATION.md`,
 Eintrag 2026-08-05 (IV).
 
+### 🔴 Ereignisse: der Trost-Joker war nicht angeschlossen (06.08.2026) — ✅ behoben
+
+Dritter Fund derselben Sorte wie beim Versäumnis (`autoTip.js`) und beim
+Runden-Spieltag: **gebaut, getestet, einstellbar — und von niemandem
+aufgerufen.**
+
+`ereignisse.auswerten()` nimmt `spieltagsPunkte` entgegen und wertet ohne sie
+den Trost-Joker („Letzter am Spieltag") gar nicht aus. Geliefert hat sie kein
+einziger Aufrufer: weder `Tippabgabe.jsx` noch `MeineJoker.jsx` noch
+`jokerKontingent.js`. Gemessen über eine Bundesliga-Runde (36 Spiele, drei
+Spieler): **0 statt 5 Gutschriften.** Kein Test hat es gesehen, weil
+`ereignisse.test.js` die Punkte selbst mitliefert — beide Seiten rechneten für
+sich richtig.
+
+**Daneben lag der umgekehrte Fehler im selben Aufruf.** Ohne `alleEintraege`
+vergleicht „alle Spiele des Spieltags getippt" die eigenen Tipps mit den
+eigenen Tipps. Das ist immer vollständig: ein Spieler, der jeden fünften
+Spieltag ausließ, bekam den Joker trotzdem — gemessen 5 von 5. Jetzt 0 von 5,
+und die beiden Vollständigen behalten ihre 5.
+
+**Behoben** über `src/lib/spieltagsPunkte.js` (`punkteJeSpieltag`) plus
+`getSpieltagsPunkte(roundId)` in BEIDEN Stores — Frage 4 der Runden-Schicht,
+der Screen fragt sie ab statt sie nachzurechnen. `applySaisonform` benutzt
+dieselbe Funktion, die Rechnung lag vorher zweimal da. Nebenbei mitgenommen:
+`getLeaderboardHistory` baute seine Einträge selbst und OHNE die Ersatz-Tipps
+des Versäumnisses — zwei Kurven für dieselbe Runde. Läuft jetzt über dieselbe
+Quelle wie das Leaderboard.
+
+⚠️ **Offen geblieben (bewusst, eigener Durchgang): `ereignisse.js` rechnet
+durchgängig in LIGA-Spieltagen.** Gemessen in derselben Runde: 5 Liga- fallen
+auf 4 RUNDEN-Spieltage zusammen, in einer Runde über mehrere Wettbewerbe
+entsprechend mehr. Damit kann derselbe Runden-Spieltag zwei Trost-Joker
+vergeben, und „drei Spieltage in Folge getippt" zählt eine andere Folge als die
+Zeitachse. Das ist die in `CLAUDE.md` beschriebene Fehlerklasse; der Weg dahin
+steht dort auch: ein optionaler `schluessel`-Parameter wie bei
+`invalidJokerMatchdays`, damit es keinen stillen Regelwechsel für Aufrufer ohne
+Achse gibt. ⚠️ Die Gutschriften tragen heute `wettbewerb`/`matchday`, und die
+Screens rechnen sie selbst auf Runden-Spieltage um — wer den Schlüssel
+umstellt, muss diese Umrechnung mit entfernen, sonst wird zweimal übersetzt.
+
 ### ⏰ Echte Spielpläne vor dem Launch — HARTE FRIST, Bundesliga ✅ erledigt
 **Der einzige Punkt mit einem Datum: 28.08.2026.**
 

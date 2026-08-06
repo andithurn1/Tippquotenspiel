@@ -21,6 +21,7 @@ import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
 import { filterMatchesByTeams } from "./roundStatus";
 import { ersatzEintraege } from "./versaeumnisBoard";
+import { punkteJeSpieltag } from "./spieltagsPunkte";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -169,6 +170,7 @@ export function createMockStore() {
     const achse = zeitachse(rundenSpiele, rules?.zeitachse);
     const { regelnFuer, amEnde } = beschlussLage(roundId, rules, achse);
     let board;
+    let verlauf = null;
     // Verlaufsabhängige Regeln (Aufhol-Bonus, Saisonform) brauchen den ganzen
     // Verlauf. WELCHE das sind, entscheidet die Engine an einer Stelle —
     // hier stand vorher `rules.aufholen?.enabled`, und mit der Saisonform war
@@ -187,8 +189,8 @@ export function createMockStore() {
       // (`match_id`), deshalb hier separat angereichert statt `entries`
       // selbst zu verändern.
       const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
-      const h = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
-      board = h.length ? h[h.length - 1].board : [];
+      verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
+      board = verlauf.length ? verlauf[verlauf.length - 1].board : [];
     } else {
       board = scoreLeaderboard(entries, rules, regelnFuer);
     }
@@ -250,7 +252,25 @@ export function createMockStore() {
     // ⚠️ Und die LÄNGE ebenso: die feste 34 wäre die Liga-Saison. Eine Runde
     // über mehrere Wettbewerbe hat mehr Runden-Spieltage (gemessen: 42) —
     // mit 34 bekämen die letzten acht nie eine Drehung.
-    return { board, rules, kontext, spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse) };
+    // `entries`, `regelnFuer` und `verlauf` reisen mit, damit `getSpieltagsPunkte`
+    // und `getLeaderboardHistory` auf DENSELBEN Einträgen rechnen wie das
+    // Leaderboard — inklusive der Ersatz-Tipps aus dem Versäumnis. `verlauf` ist
+    // `null`, wenn keine Regel ihn braucht; wer ihn trotzdem will, baut ihn aus
+    // `entries` nach (siehe `verlaufVon`).
+    return {
+      board, rules, kontext, entries, regelnFuer, verlauf, roundTips,
+      spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse),
+    };
+  }
+
+  // Der Verlauf einer Runde — EINE Stelle. Vorher baute `getLeaderboardHistory`
+  // ihn aus den rohen Tipps, `standVorDemRad` aus `entries` (mit Ersatz-Tipps):
+  // zwei Kurven für dieselbe Runde, sobald das Versäumnis eingeschaltet war.
+  async function verlaufVon(roundId) {
+    const { verlauf, entries, rules, regelnFuer, roundTips } = await standVorDemRad(roundId);
+    if (verlauf) return verlauf;
+    const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
+    return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
   }
 
   return {
@@ -568,13 +588,24 @@ export function createMockStore() {
       return beschlussLage(roundId, rules);
     },
 
+    // 🔴 Was hat wer an EINEM Spieltag geholt? — Frage 4 der Runden-Schicht.
+    //
+    // `ereignisse.auswerten()` erwartet diese Liste als `spieltagsPunkte`, und
+    // ohne sie fällt der Trost-Joker („Letzter am Spieltag") stillschweigend
+    // aus. Gemessen am 06.08.2026 über eine Bundesliga-Runde mit 36 Spielen und
+    // drei Spielern: **0 statt 5 Gutschriften** — die Einstellung war über die
+    // Oberfläche einschaltbar und tat nichts. Kein Test hat das gesehen, weil
+    // `ereignisse.test.js` die Punkte selbst mitliefert.
+    //
+    // Gerechnet auf dem FERTIGEN Verlauf (nach Duell-Joker, Saisonform,
+    // Aufhol-Bonus): der Letzte eines Spieltags muss derselbe sein, den die
+    // Tabelle daneben unten zeigt.
+    async getSpieltagsPunkte(roundId) {
+      return punkteJeSpieltag(await verlaufVon(roundId));
+    },
+
     async getLeaderboardHistory(roundId) {
-      const round = rounds.get(roundId);
-      const roundTips = tips.filter((t) => t.round_id === roundId);
-      const entries = roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id }));
-      const rules = round?.rules ?? DEFAULT_RULES;
-      const { regelnFuer } = beschlussLage(roundId, rules);
-      return scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries), regelnFuer);
+      return verlaufVon(roundId);
     },
   };
 }

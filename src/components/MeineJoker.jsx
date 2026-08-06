@@ -49,6 +49,7 @@ export default function MeineJoker() {
   const [board, setBoard] = useState([]);
   const [eintraege, setEintraege] = useState([]);
   const [radJoker, setRadJoker] = useState([]);
+  const [tagesPunkte, setTagesPunkte] = useState([]);
 
   useEffect(() => {
     let live = true;
@@ -61,7 +62,14 @@ export default function MeineJoker() {
       getStore().getLeaderboard(roundId),
       getStore().getRoundEntries(roundId),
       getStore().getDrehradBelohnungen?.(roundId) ?? Promise.resolve(null),
-    ]).then(([round, ms, tips, brd, entries, rad]) => {
+      // 🔴 Ohne die Spieltagspunkte fällt der Trost-Joker („Letzter am
+      // Spieltag") still aus — `ereignisse.auswerten()` erwartet sie, und
+      // dieser Screen hat sie bis 06.08.2026 nicht mitgegeben. Gemessen: 0
+      // statt 5 Gutschriften über eine Bundesliga-Runde.
+      // Nicht selbst nachrechnen (Runden-Schicht, Frage 4) — der Store
+      // rechnet sie aus DEMSELBEN Verlauf, den auch das Ranking zeigt.
+      getStore().getSpieltagsPunkte?.(roundId) ?? Promise.resolve([]),
+    ]).then(([round, ms, tips, brd, entries, rad, tagesPunkte]) => {
       if (!live) return;
       setRules(sanitizeRules(round?.rules ?? DEFAULT_RULES));
       setMatches(ms);
@@ -69,6 +77,7 @@ export default function MeineJoker() {
       setBoard(brd ?? []);
       setEintraege(entries ?? []);
       setRadJoker(rad?.joker ?? []);
+      setTagesPunkte(tagesPunkte ?? []);
     }).catch(() => {});
     return () => { live = false; };
   }, [roundId, user]);
@@ -103,7 +112,13 @@ export default function MeineJoker() {
     };
   });
   const gutschriften = [
-    ...erspielteJoker({ eintraege: eintraege.filter((e) => e.userId === user?.id), rules })
+    ...erspielteJoker({
+      eintraege: eintraege.filter((e) => e.userId === user?.id),
+      // `alleEintraege` UND `spieltagsPunkte`: das eine für „alle Spiele des
+      // Spieltags getippt" (die eigenen Einträge wissen nicht, was fehlt), das
+      // andere für den Trost-Joker.
+      alleEintraege: eintraege, spieltagsPunkte: tagesPunkte, rules,
+    })
       .map((g) => {
         const runde = rundenSpieltagVon(achse, { wettbewerb: g.wettbewerb, matchday: g.matchday });
         return runde == null ? g : { ...g, matchday: runde };

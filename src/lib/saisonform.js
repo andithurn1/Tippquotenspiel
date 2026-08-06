@@ -42,6 +42,8 @@
 //  Die Kurve verschiebt Gewicht, sie erzeugt keines.
 // ============================================================
 
+import { punkteJeSpieltag, proNutzer } from "./spieltagsPunkte";
+
 export const KURVEN = [
   {
     key: "flach",
@@ -237,21 +239,10 @@ export function applySaisonform(verlauf = [], rules = {}) {
   if (aus || !Array.isArray(verlauf) || verlauf.length === 0) return verlauf;
 
   // Je Nutzer die Punkte jedes Spieltags aus den kumulativen Ständen holen.
-  const proNutzer = new Map();
-  verlauf.forEach((stufe, i) => {
-    const vorher = i > 0 ? verlauf[i - 1].board : [];
-    const vorSumme = new Map(vorher.map((z) => [z.userId, z.total]));
-    const vorGewertet = new Map(vorher.map((z) => [z.userId, z.gewertet ?? 0]));
-    for (const z of stufe.board) {
-      if (!proNutzer.has(z.userId)) proNutzer.set(z.userId, []);
-      proNutzer.get(z.userId).push({
-        key: `${stufe.wettbewerb ?? ""}#${stufe.matchday}`,
-        punkte: z.total - (vorSumme.get(z.userId) ?? 0),
-        // Getippt heißt: an diesem Spieltag kam mindestens eine Wertung dazu.
-        getippt: (z.gewertet ?? 0) > (vorGewertet.get(z.userId) ?? 0),
-      });
-    }
-  });
+  // ⚠️ Die Rechnung stand bis 06.08.2026 hier wörtlich — und `ereignisse.js`
+  // erwartete dieselbe Liste als `spieltagsPunkte` von außen, bekam sie aber
+  // von niemandem. Jetzt eine Quelle: `spieltagsPunkte.js`.
+  const nutzerTage = proNutzer(punkteJeSpieltag(verlauf));
 
   // Für jede Stufe des Verlaufs neu aufsummieren — mit genau den Spieltagen,
   // die BIS DAHIN gespielt sind. Der Zwischenstand muss aus sich heraus
@@ -260,7 +251,7 @@ export function applySaisonform(verlauf = [], rules = {}) {
     ...stufe,
     board: stufe.board
       .map((z) => {
-        const tage = (proNutzer.get(z.userId) ?? []).slice(0, i + 1);
+        const tage = (nutzerTage.get(z.userId) ?? []).slice(0, i + 1);
         const r = anwenden(tage, cfg);
         // 🔴 GERUNDET. `anwenden` rechnet mit zwei Nachkommastellen (die Kurve
         // multipliziert), und dieser Wert landet direkt im Ranking. Gemessen am

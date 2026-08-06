@@ -18,6 +18,7 @@ import { ersatzEintraege } from "./versaeumnisBoard";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
+import { punkteJeSpieltag } from "./spieltagsPunkte";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -378,6 +379,7 @@ export function createSupabaseStore() {
       const achse = zeitachse(rundenSpiele, rules?.zeitachse);
       const { regelnFuer, amEnde } = beschlussLage({ rules, antraege, members, matches, achse, adminId: round?.admin_id ?? null });
       let board;
+      let verlauf = null;
       // ⚠️ BEIDE fragen: `brauchtVerlauf` liest sonst nur das ANGELEGTE
       // Regelwerk. Beschließt eine Runde den Anschluss-Bonus erst an Spieltag
       // 20, ist er in `round.rules` aus — der Verlauf würde gar nicht gebaut
@@ -390,8 +392,8 @@ export function createSupabaseStore() {
         // (`match_id`), deshalb hier separat angereichert statt `entries`
         // selbst zu verändern.
         const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
-        const h = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
-        board = h.length ? h[h.length - 1].board : [];
+        verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
+        board = verlauf.length ? verlauf[verlauf.length - 1].board : [];
       } else {
         board = scoreLeaderboard(entries, rules, regelnFuer);
       }
@@ -440,7 +442,14 @@ export function createSupabaseStore() {
         letzteEinsaetze: [],
       };
       // ⚠️ Und die LÄNGE ebenso — die feste 34 wäre die Liga-Saison.
-      return { board, rules, kontext, nameOf, spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse) };
+      // `entries`, `regelnFuer`, `verlauf` und `tips` reisen mit, damit
+      // `getLeaderboardHistory` und `getSpieltagsPunkte` auf DENSELBEN
+      // Einträgen rechnen wie das Leaderboard. `verlauf` ist `null`, wenn keine
+      // Regel ihn braucht — dann baut ihn der Aufrufer aus `entries` nach.
+      return {
+        board, rules, kontext, nameOf, matchOf, entries, regelnFuer, verlauf, tips,
+        spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse),
+      };
     },
 
     async getRoundEntries(roundId) {
@@ -478,23 +487,24 @@ export function createSupabaseStore() {
       });
     },
 
+    // Der Verlauf einer Runde — EINE Stelle, dieselben Eintraege wie das
+    // Leaderboard (inklusive der Ersatz-Tipps aus dem Versaeumnis). Vorher baute
+    // diese Methode ihre Eintraege selbst, ohne Ersatz-Tipps: zwei Kurven fuer
+    // dieselbe Runde, sobald das Versaeumnis eingeschaltet war.
     async getLeaderboardHistory(roundId) {
-      const [round, members, tips, matches] = await Promise.all([
-        this.getRound(roundId),
-        this.listMembers(roundId),
-        this.listTips({ roundId }),
-        this.listMatches(),
-      ]);
-      const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
-      const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
-      const entries = tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id }));
-      const rules = round?.rules ?? DEFAULT_RULES;
-      const antraege = await this.listAntraege({ roundId });
-      const { regelnFuer } = beschlussLage({
-        rules, antraege, members, adminId: round?.admin_id ?? null,
-        matches: filterMatchesByTeams(matches, round?.team_filter),
-      });
-      return scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries), regelnFuer);
+      const { verlauf, entries, rules, regelnFuer, tips, nameOf, matchOf } = await this.standVorDemRad(roundId);
+      if (verlauf) return verlauf;
+      // Wie im Zweig oben: `matchId` kommt aus den ROHEN Tipps, `entries` trägt
+      // es nicht — ohne das Feld verliert der Duell-Einsatz seinen Gleichstand-
+      // Schlüssel (zwei zeitgleich angepfiffene Spiele am selben Spieltag).
+      const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
+      return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
+    },
+
+    // 🔴 Was hat wer an EINEM Spieltag geholt? — Frage 4 der Runden-Schicht.
+    // Siehe Mock-Store: ohne diese Liste faellt der Trost-Joker still aus.
+    async getSpieltagsPunkte(roundId) {
+      return punkteJeSpieltag(await this.getLeaderboardHistory(roundId));
     },
   };
 }
