@@ -278,6 +278,51 @@ fest). Wer den nächsten ergänzen will, prüft zuerst, ob er nicht in einen
 bestehenden gehört — Stufe 2 ist eine Handvoll FRAGEN, keine kürzere
 Profi-Ansicht.
 
+### 🔴 `auswahl.js` — achtzehn Modi, getestet, von NIEMANDEM aufgerufen (06.08.2026) — ✅ behoben
+
+Vierter Fund derselben Sorte an einem Tag, und der größte: die **WEN-Achse**
+der Regel-Grammatik war totes Kapital. `waehleBetroffene()` beantwortet die
+zweite der vier Fragen jeder Mechanik (WANN · WEN · WAS · WIE LANGE), hat
+achtzehn Modi und eigene Tests — und kein einziger Aufrufer im ganzen Projekt.
+
+**Jetzt hängt sie am ersten Ereignis-Typ.** Aus „Trost-Joker für den Letzten"
+wird „Auszeichnung nach Spieltags-Platzierung": derselbe Eintrag liefert je
+nach `auswahl` auch die Spieltags-Krone, die zwei Letzten, das untere Fünftel
+oder das Mittelfeld — **ohne eine Zeile neuen Auswertungs-Code.** Gemessen über
+54 Spiele und fünf Spieler, Gutschriften je Spieler:
+
+| Auswahl | gesamt | Verteilung |
+|---|---|---|
+| der Letzte des Spieltags | 6 | du 1 · lena 0 · kemal 2 · **max 2** · jonas 1 |
+| der Beste des Spieltags | 6 | du 1 · lena 1 · kemal 2 · **max 0** · jonas 2 |
+| die 2 Letzten | 12 | |
+| das untere Fünftel (40 %) | 12 | |
+| das mittlere Feld | 18 | |
+
+Fünf Einstellungen, fünf verschiedene Verteilungen — und die Gegenrichtung
+trifft nachweislich andere Leute.
+
+**Drei Punkte, die dabei nicht brechen dürfen:**
+
+1. **Die Gleichstands-Regel bleibt, und sie ist keine Doppelung.**
+   `waehleBetroffene` löst einen Gleichstand deterministisch über den Namen
+   auf — für eine AUSWAHL richtig (sie muss reproduzierbar sein), für eine
+   BELOHNUNG an der Kante nicht: wer bei gleicher Punktzahl den Joker bekäme,
+   hinge am Alphabet. Punktgleich an der Kante heißt: niemand.
+2. **Nur drei der achtzehn Modi sind zugelassen** (`rang`, `perzentil`,
+   `mitte`). Die übrigen brauchen Daten, die hier nicht vorliegen
+   (Rangveränderung, Beitrittsdatum, Freiwillige) — sie lieferten
+   stillschweigend eine leere Auswahl, und das sähe für den Admin exakt aus wie
+   ein totes Ereignis. Ein unbekannter Modus fällt auf die Vorgabe zurück.
+3. **Die Doppelbelohnungs-Warnung gilt nur nach UNTEN.** Eine Spieltags-Krone
+   verdoppelt den Anschluss-Bonus nicht, sie tut das Gegenteil. Eine Warnung,
+   die auch im umgekehrten Fall anschlägt, wird nach dem dritten Mal überlesen.
+
+Alle drei Stufen dabei: neues Bibliotheks-Bündel **„Der Beste des Spieltags"**
+(als `verstärkend` etikettiert, mit Abklingzeit 3), eine Stufe-2-Stufe gleichen
+Namens, und in Stufe 3 ein Auswahlfeld mit **Live-Satz** („Trifft: der Letzte
+des Spieltags") plus einem Hinweis, sobald nach oben ausgezeichnet wird.
+
 ### 🔴 `/historie` zeigte einen anderen Verlauf als `/ranking` (06.08.2026) — ✅ behoben
 
 **Gemessen: 801 Punkte Unterschied, 32 %** — und heute unsichtbar, weil noch

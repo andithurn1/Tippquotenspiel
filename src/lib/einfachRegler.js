@@ -386,6 +386,17 @@ export const REGLER = [
         },
       },
       {
+        key: "krone", label: "Der Beste bekommt etwas",
+        // Die Gegenrichtung zu „Trost für den Letzten" — und derselbe
+        // Ereignis-Eintrag, nur mit `ende: "oben"`. Ausdrücklich als eigene
+        // Stufe, weil es das Gegenteil bewirkt: Auszeichnung statt Ausgleich.
+        beschreibung: "Wer einen Spieltag gewinnt, bekommt einen Joker. Verstärkt gutes Tippen.",
+        werte: {
+          ereignisse: ereignisseVon("krone"),
+          drehrad: { ...LEERES_RAD },
+        },
+      },
+      {
         key: "viel", label: "Ständig etwas los",
         beschreibung: "Alle Ereignisse an — dazu ein Glücksrad, das ab und zu etwas ausschüttet.",
         // 🔴 Das Drehrad gehört unter DIESE Frage: der Baukasten kennt drei

@@ -3,9 +3,63 @@
 import { C, MONO } from "@/lib/theme";
 import {
   AUSWERTBARE_TYPEN, EREIGNIS_TYPEN, EREIGNIS_LIMITS, EREIGNIS,
-  EREIGNIS_PRESETS, sanitizeEreignisse, konflikte, beschreibeEreignisse,
+  EREIGNIS_PRESETS, AUSWAHL_MODI, AUSWAHL_LIMITS,
+  sanitizeEreignisse, sanitizeAuswahl, beschreibeAuswahl, konflikte, beschreibeEreignisse,
 } from "@/lib/ereignisse";
 import { Zahl } from "@/components/Eingaben";
+
+// ── WEN trifft es? ──────────────────────────────────────────
+// Drei Modi, eine Richtung, eine Zahl — und darunter der SATZ, den ein Spieler
+// später liest. Ohne ihn steht dort „rang/unten/1", und das sagt niemandem
+// etwas; dieselbe Rolle wie `anteile()` bei den Wettbewerbs-Gewichten.
+const MODUS_LABEL = { rang: "Feste Anzahl", perzentil: "Anteil in Prozent", mitte: "Das Mittelfeld" };
+
+function Auswahlfeld({ wert, onChange }) {
+  const a = sanitizeAuswahl(wert);
+  const knopf = (aktiv, text, onClick, key) => (
+    <button key={key} type="button" onClick={onClick} style={{
+      border: `1px solid ${aktiv ? C.gold : C.line}`, borderRadius: 999,
+      background: aktiv ? `${C.gold}1a` : "transparent", color: aktiv ? C.gold : C.text,
+      cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
+    }}>{text}</button>
+  );
+  return (
+    <div style={{ width: "100%" }}>
+      <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 4 }}>Wen trifft es?</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
+        {AUSWAHL_MODI.map((m) => knopf(a.modus === m, MODUS_LABEL[m], () => onChange({ ...a, modus: m }), m))}
+      </div>
+      {/* `mitte` hat keine Richtung — es ist per Definition „weder oben noch
+          unten". Den Knopf trotzdem zu zeigen wäre eine Einstellung, die ins
+          Leere läuft. */}
+      {a.modus !== "mitte" && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
+          {knopf(a.ende === "unten", "die Letzten", () => onChange({ ...a, ende: "unten" }), "u")}
+          {knopf(a.ende === "oben", "die Besten", () => onChange({ ...a, ende: "oben" }), "o")}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        {a.modus === "rang" ? (
+          <Zahl label="wie viele" wert={a.n} limits={AUSWAHL_LIMITS.n} breite={110}
+            onChange={(v) => onChange({ ...a, n: v })} />
+        ) : (
+          <Zahl label="Anteil %" wert={a.prozent} limits={AUSWAHL_LIMITS.prozent} breite={110}
+            onChange={(v) => onChange({ ...a, prozent: v })} />
+        )}
+      </div>
+      <div style={{ fontSize: 11, color: C.gold, marginTop: 5 }}>
+        Trifft: {beschreibeAuswahl(a)}
+      </div>
+      {a.ende === "oben" && (
+        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+          ⚠️ Nach oben ausgezeichnet wirkt <strong>verstärkend</strong>: wer Spieltage
+          gewinnt, bekommt ein Werkzeug, mit dem er wieder besser tippt. Eine
+          Abklingzeit darunter hält das im Rahmen.
+        </div>
+      )}
+    </div>
+  );
+}
 
 const KATEGORIE = {
   meilenstein: "Aus dem Tippen selbst",
@@ -156,6 +210,13 @@ export default function Ereignisse({ rules, onChange }) {
                       <Zahl label="ab Sieger-Quote" wert={wert(t.key, "abQuote")}
                         limits={EREIGNIS_LIMITS.abQuote} breite={110}
                         onChange={(v) => setzeFeld(t.key, "abQuote", v)} />
+                    )}
+                    {/* 🔴 Die WEN-Achse (`auswahl.js`). Derselbe Eintrag ist
+                        Trost-Joker ODER Spieltags-Krone — der Unterschied ist
+                        eine Einstellung, kein zweiter Ereignis-Typ. */}
+                    {t.parameter.includes("auswahl") && (
+                      <Auswahlfeld wert={wert(t.key, "auswahl")}
+                        onChange={(v) => setzeFeld(t.key, "auswahl", v)} />
                     )}
                   </div>
                 )}

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   EREIGNIS_TYPEN, EREIGNIS, EREIGNIS_LIMITS, DEFAULT_EREIGNISSE, AUSWERTBARE_TYPEN,
   istAuswertbar, sanitizeEreignisse, auswerten, konflikte, beschreibeEreignisse,
-  EREIGNIS_PRESETS,
+  EREIGNIS_PRESETS, sanitizeAuswahl, beschreibeAuswahl,
 } from "@/lib/ereignisse";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { CHARAKTERE } from "@/lib/charaktere";
@@ -445,5 +445,107 @@ describe("Ereignisse sind auf allen drei Stufen erreichbar", () => {
     // seine Wirkrichtung sei belegt — das ist die Hausregel „die Herkunft wird
     // abgelesen, nicht behauptet".
     for (const p of EREIGNIS_PRESETS) expect(p.gemessen).toBe(false);
+  });
+});
+
+// ── Die WEN-Achse (`auswahl.js`) ────────────────────────────
+// 🔴 Vierter Fund derselben Sorte am 06.08.2026: `auswahl.js` hatte achtzehn
+// Auswahl-Modi, eigene Tests und einen Export — und **niemand rief es auf**.
+// Die zweite der vier Fragen jeder Mechanik (WANN · WEN · WAS · WIE LANGE)
+// existierte nur auf dem Papier.
+//
+// Hier hängt sie jetzt: derselbe Ereignis-Eintrag ist Trost-Joker ODER
+// Spieltags-Krone, je nach `auswahl.ende`. Gemessen über 54 Spiele und fünf
+// Spieler (Gutschriften je Spieler):
+//   der Letzte des Spieltags      6   {du:1, lena:0, kemal:2, max:2, jonas:1}
+//   der Beste des Spieltags       6   {du:1, lena:1, kemal:2, max:0, jonas:2}
+//   die 2 Letzten                12
+//   das untere Fünftel (40 %)    12
+//   das mittlere Feld            18
+// Fünf Einstellungen, fünf verschiedene Verteilungen — und „der Beste" trifft
+// andere Leute als „der Letzte" (max: 2 gegen 0).
+
+describe("WEN trifft es — die Auswahl-Achse hängt dran", () => {
+  const BASIS = { home: 1, away: 0, goals: { home: [], away: [] } };
+  const punkte = (userId, matchday, p) => ({ userId, wettbewerb: "bl", matchday, punkte: p });
+  // Fünf Spieler, ein Spieltag, klare Rangfolge ohne Gleichstand.
+  const STAND = [
+    punkte("a", 1, 100), punkte("b", 1, 80), punkte("c", 1, 60),
+    punkte("d", 1, 40), punkte("e", 1, 20),
+  ];
+  const eintrag = (userId) => ({
+    userId, name: userId, matchday: 1, matchId: "m1", wettbewerb: "bl",
+    tip: BASIS, result: { home: 1, away: 0 },
+    snapshot: { matchId: "m1", winner: { home: 2, draw: 3.4, away: 3 } },
+  });
+  const ALLE = ["a", "b", "c", "d", "e"].map(eintrag);
+
+  const trifft = (auswahl) => ["a", "b", "c", "d", "e"].filter((u) => auswerten({
+    eintraege: [eintrag(u)], alleEintraege: ALLE, spieltagsPunkte: STAND,
+    ereignisse: { enabled: true, maxErspielt: 15, aktive: [{ key: "letzter-am-spieltag", belohnung: 1, auswahl }] },
+  }).gutschriften.length > 0);
+
+  it("`unten` trifft den Letzten, `oben` den Besten — derselbe Eintrag", () => {
+    expect(trifft({ modus: "rang", ende: "unten", n: 1 })).toEqual(["e"]);
+    expect(trifft({ modus: "rang", ende: "oben", n: 1 })).toEqual(["a"]);
+  });
+
+  it("`n` weitet die Auswahl", () => {
+    expect(trifft({ modus: "rang", ende: "unten", n: 2 })).toEqual(["d", "e"]);
+  });
+
+  it("`perzentil` wächst mit der Rundengröße statt mit einer festen Zahl", () => {
+    // 40 % von fünf sind zwei.
+    expect(trifft({ modus: "perzentil", ende: "unten", prozent: 40 })).toEqual(["d", "e"]);
+  });
+
+  it("`mitte` trifft, wer weder vorn noch hinten steht", () => {
+    expect(trifft({ modus: "mitte", prozent: 20 })).toEqual(["b", "c", "d"]);
+  });
+
+  it("die Vorgabe ist das bisherige Verhalten — kein stiller Regelwechsel", () => {
+    const ohneFeld = ["a", "b", "c", "d", "e"].filter((u) => auswerten({
+      eintraege: [eintrag(u)], alleEintraege: ALLE, spieltagsPunkte: STAND,
+      ereignisse: { enabled: true, maxErspielt: 15, aktive: [{ key: "letzter-am-spieltag", belohnung: 1 }] },
+    }).gutschriften.length > 0);
+    expect(ohneFeld).toEqual(["e"]);
+  });
+
+  it("bei Gleichstand AN DER KANTE bekommt niemand etwas", () => {
+    // 🔴 Das ist KEINE Doppelung von `auswahl.js`. `waehleBetroffene` löst
+    // einen Gleichstand deterministisch über den Namen auf — für eine AUSWAHL
+    // richtig (sie muss reproduzierbar sein), für eine BELOHNUNG an der Kante
+    // nicht: wer den Joker bekäme, hinge dann am Alphabet.
+    const gleich = [punkte("a", 1, 100), punkte("b", 1, 20), punkte("c", 1, 20)];
+    const wer = ["a", "b", "c"].filter((u) => auswerten({
+      eintraege: [eintrag(u)], alleEintraege: ALLE, spieltagsPunkte: gleich,
+      ereignisse: { enabled: true, maxErspielt: 15, aktive: [{ key: "letzter-am-spieltag", belohnung: 1 }] },
+    }).gutschriften.length > 0);
+    expect(wer).toEqual([]);
+  });
+
+  it("die Doppelbelohnungs-Warnung gilt nur nach UNTEN", () => {
+    const mitAufholen = { aufholen: { enabled: true, staerke: "mittel", schwelle: 0.05 } };
+    const mit = (ende) => konflikte({
+      ...mitAufholen,
+      ereignisse: { enabled: true, maxErspielt: 5,
+        aktive: [{ key: "letzter-am-spieltag", belohnung: 1, auswahl: { modus: "rang", ende, n: 1 } }] },
+    }).length;
+    expect(mit("unten")).toBe(1);
+    // Eine Spieltags-Krone verdoppelt gar nichts — sie tut das Gegenteil.
+    expect(mit("oben")).toBe(0);
+  });
+
+  it("`beschreibeAuswahl` sagt es in einem Satz, nicht in Feldnamen", () => {
+    expect(beschreibeAuswahl({ modus: "rang", ende: "unten", n: 1 })).toContain("Letzte");
+    expect(beschreibeAuswahl({ modus: "rang", ende: "oben", n: 1 })).toContain("Beste");
+    expect(beschreibeAuswahl({ modus: "rang", ende: "unten", n: 3 })).toContain("3");
+    expect(beschreibeAuswahl({ modus: "mitte", prozent: 20 })).toContain("mittlere");
+  });
+
+  it("ein unbekannter Modus fällt auf die Vorgabe zurück, statt niemanden zu treffen", () => {
+    // Ein Modus, dessen Daten hier fehlen, lieferte sonst stillschweigend eine
+    // leere Auswahl — und das sähe für den Admin aus wie ein totes Ereignis.
+    expect(sanitizeAuswahl({ modus: "los", n: 3 }).modus).toBe("rang");
   });
 });

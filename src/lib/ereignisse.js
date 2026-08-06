@@ -35,6 +35,9 @@
 // Direkt aus `spieltag.js`, NICHT aus `engine.js` — die Engine importiert aus
 // dieser Datei hier, das wäre ein Kreis.
 import { spieltagKey, spieltageChronologisch } from "./spieltag";
+// 🔴 Die WEN-Achse. Sie lag seit ihrem Bau ungenutzt da — dieser Import ist
+// der erste Aufrufer überhaupt (Befund 06.08.2026).
+import { waehleBetroffene } from "./auswahl";
 
 // Welche Daten haben wir heute? Alles andere ist im Katalog vorbereitet, aber
 // nicht auswertbar — genau wie Karten/Fouls bei den Saison-Wetten.
@@ -81,16 +84,29 @@ export const EREIGNIS_TYPEN = [
 
   // ── 2. Widerfahrnisse (passiv, sozialer Ausgleich) ──
   {
+    // 🔴 Der erste Ereignis-Typ mit einer echten WEN-ACHSE.
+    //
+    // `auswahl.js` (`waehleBetroffene`) beantwortet die zweite der vier Fragen
+    // jeder Mechanik — WANN, WEN, WAS, WIE LANGE — mit achtzehn Modi und
+    // eigenen Tests. Bis 06.08.2026 hat es **niemand aufgerufen**: die ganze
+    // Achse war totes Kapital, vierter Fund derselben Sorte an einem Tag.
+    //
+    // Hier hängt sie: aus „Trost-Joker für den Letzten" wird „Auszeichnung
+    // nach Spieltags-Platzierung", und derselbe Eintrag liefert auch die
+    // Spieltags-Krone (`ende: "oben"`) oder das untere Fünftel
+    // (`modus: "perzentil"`) — ohne eine Zeile neuen Auswertungs-Code.
     key: "letzter-am-spieltag",
-    label: "Trost-Joker für den Letzten eines Spieltags",
+    label: "Auszeichnung nach Spieltags-Platzierung",
     kategorie: "widerfahrnis",
     braucht: ["spieltagspunkte"],
-    parameter: [],
-    standard: { belohnung: 1 },
+    parameter: ["auswahl"],
+    standard: { belohnung: 1, auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
     // ⚠️ Der Aufhol-Mechanismus belohnt Zurückliegen bereits. Beides zusammen
     // belohnt es DOPPELT — deshalb meldet `konflikte()` diese Kombination.
+    // Aber NUR, wenn hier tatsächlich nach unten ausgezeichnet wird: eine
+    // Spieltags-Krone für den Besten verdoppelt gar nichts.
     doppeltMit: "aufholen",
-    hint: "Wer einen Spieltag verpatzt, bekommt etwas zurück. Nicht zusammen mit dem Anschluss-Bonus.",
+    hint: "Wer je Spieltag etwas bekommt — hinten (Trost) oder vorn (Krone). Trost nicht zusammen mit dem Anschluss-Bonus.",
   },
 
   // ── 3. Herausforderungen (aktiv, Minispiel) — vorbereitet ──
@@ -118,6 +134,52 @@ export const EREIGNIS_TYPEN = [
 ];
 
 export const EREIGNIS = Object.fromEntries(EREIGNIS_TYPEN.map((e) => [e.key, e]));
+
+const clamp = (v, { min, max }, fallback) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
+
+// ── Welche Auswahl-Modi ergeben HIER einen Sinn? ────────────
+// `auswahl.js` kennt achtzehn. Die meisten brauchen Daten, die an dieser
+// Stelle nicht vorliegen (Rangveränderung, Beitrittsdatum, Freiwillige) oder
+// beantworten eine andere Frage (`selbst`, `betroffener`). Ein Ereignis, das
+// je Spieltag auszeichnet, arbeitet auf dem SPIELTAGS-Stand — und dort sind
+// genau diese drei sinnvoll.
+//
+// ⚠️ Bewusst eine kurze Liste statt „alles durchreichen": ein Modus, dessen
+// Daten fehlen, liefert stillschweigend eine leere Auswahl. Das sähe für den
+// Admin exakt aus wie ein Ereignis, das nie auslöst.
+export const AUSWAHL_MODI = ["rang", "perzentil", "mitte"];
+
+export const AUSWAHL_LIMITS = {
+  n: { min: 1, max: 5, step: 1 },
+  prozent: { min: 5, max: 50, step: 5 },
+};
+
+export function sanitizeAuswahl(partial = {}, standard = { modus: "rang", ende: "unten", n: 1, prozent: 20 }) {
+  const p = partial && typeof partial === "object" ? partial : {};
+  const modus = AUSWAHL_MODI.includes(p.modus) ? p.modus : standard.modus;
+  return {
+    modus,
+    // `mitte` hat kein Ende — es ist per Definition „weder oben noch unten".
+    // Trotzdem mitschreiben, damit ein Wechsel zurück nach `rang` die frühere
+    // Wahl nicht verliert.
+    ende: p.ende === "oben" ? "oben" : "unten",
+    n: Math.round(clamp(p.n, AUSWAHL_LIMITS.n, standard.n)),
+    prozent: Math.round(clamp(p.prozent, AUSWAHL_LIMITS.prozent, standard.prozent)),
+  };
+}
+
+// Ein Satz, den ein Spieler versteht — dieselbe Rolle wie `anteile()` bei den
+// Wettbewerbs-Gewichten: „rang/unten/1" sagt niemandem etwas.
+export function beschreibeAuswahl(auswahl) {
+  const a = sanitizeAuswahl(auswahl);
+  if (a.modus === "mitte") return `das mittlere Feld (ohne die oberen und unteren ${a.prozent} %)`;
+  if (a.modus === "perzentil") return `${a.ende === "oben" ? "das obere" : "das untere"} Fünftel (${a.prozent} %)`;
+  if (a.n === 1) return a.ende === "oben" ? "der Beste des Spieltags" : "der Letzte des Spieltags";
+  return `die ${a.n} ${a.ende === "oben" ? "Besten" : "Letzten"} des Spieltags`;
+}
 
 export const EREIGNIS_LIMITS = {
   belohnung: { min: 1, max: 3, step: 1 },
@@ -185,7 +247,8 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 5,
       // `abstand: 2`: ohne Abklingzeit kassiert derselbe Spieler jede Woche.
-      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, abstand: 2, maxProSaison: 0 }],
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, abstand: 2, maxProSaison: 0,
+        auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } }],
     },
   },
   {
@@ -206,6 +269,23 @@ export const EREIGNIS_PRESETS = [
     },
   },
   {
+    // 🔴 Kostet KEINE Zeile Auswertungs-Code — derselbe Eintrag wie der
+    // Trost-Joker, nur mit `ende: "oben"`. Genau dafür ist die WEN-Achse da.
+    key: "krone",
+    label: "Der Beste des Spieltags",
+    text: "Wer einen Spieltag gewinnt, bekommt einen Joker. Eine Auszeichnung, kein Ausgleich.",
+    // ⚠️ Verstärkend, und zwar deutlicher als „Mut wird belohnt": wer gut
+    // tippt, gewinnt Spieltage und bekommt dafür ein Werkzeug, mit dem er
+    // wieder besser tippt. Deshalb `abstand: 3` — ohne Abklingzeit kassiert
+    // derselbe Spieler wochenlang.
+    wirkrichtung: "verstärkend", gemessen: false,
+    ereignisse: {
+      enabled: true, maxErspielt: 5,
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, abstand: 3, maxProSaison: 0,
+        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 } }],
+    },
+  },
+  {
     key: "alles",
     label: "Ständig passiert etwas",
     text: "Alle fünf Ereignisse an. Es gibt fast jeden Spieltag irgendwo eine Gutschrift.",
@@ -215,7 +295,8 @@ export const EREIGNIS_PRESETS = [
       aktive: [
         { key: "serie", anzahl: 3, belohnung: 1, abstand: 2, maxProSaison: 0 },
         { key: "spieltag-komplett", belohnung: 1, abstand: 0, maxProSaison: 8 },
-        { key: "letzter-am-spieltag", belohnung: 1, abstand: 2, maxProSaison: 0 },
+        { key: "letzter-am-spieltag", belohnung: 1, abstand: 2, maxProSaison: 0,
+          auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
         { key: "aussenseiter", abQuote: 5, belohnung: 1, abstand: 0, maxProSaison: 4 },
         { key: "erster-exakter", belohnung: 1, abstand: 0, maxProSaison: 0 },
       ],
@@ -231,11 +312,6 @@ export function istAuswertbar(key) {
 }
 
 export const AUSWERTBARE_TYPEN = EREIGNIS_TYPEN.filter((e) => istAuswertbar(e.key));
-
-const clamp = (v, { min, max }, fallback) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
-};
 
 export function sanitizeEreignisse(partial = {}) {
   const p = partial && typeof partial === "object" ? partial : {};
@@ -259,6 +335,9 @@ export function sanitizeEreignisse(partial = {}) {
     }
     if (typ.parameter.includes("abQuote")) {
       eintrag.abQuote = +clamp(a.abQuote, EREIGNIS_LIMITS.abQuote, typ.standard.abQuote).toFixed(1);
+    }
+    if (typ.parameter.includes("auswahl")) {
+      eintrag.auswahl = sanitizeAuswahl(a.auswahl, typ.standard.auswahl);
     }
     // Die Begrenzer gelten für JEDEN Typ, nicht nur für die, die sie in
     // `parameter` führen — sie sind keine Eigenschaft des Ereignisses, sondern
@@ -417,17 +496,42 @@ export function auswerten({
         g.matchday = p.matchday; g.wettbewerb = p.wettbewerb ?? null;
       }
     }
+    const auswahl = sanitizeAuswahl(trost.auswahl, EREIGNIS["letzter-am-spieltag"].standard.auswahl);
+    const satz = beschreibeAuswahl(auswahl);
     for (const s of jeSpieltag.values()) {
       const liste = [...s.summe.entries()].map(([userId, punkte]) => ({ userId, punkte }));
-      if (liste.length < 2) continue;   // allein ist man nicht Letzter
-      const min = Math.min(...liste.map((p) => p.punkte));
-      const letzte = liste.filter((p) => p.punkte === min);
-      // Nur bei EINEM Letzten — bei Gleichstand ist es kein Missgeschick,
-      // sondern ein gemeinsamer schwacher Spieltag.
-      if (letzte.length === 1 && letzte[0].userId === meineId) {
-        roh.push({ key: "letzter-am-spieltag", wettbewerb: s.wettbewerb, matchday: s.matchday,
-          belohnung: trost.belohnung, text: "Trost-Joker für den letzten Platz am Spieltag" });
-      }
+      if (liste.length < 2) continue;   // allein ist man weder Erster noch Letzter
+
+      // 🔴 WEN es trifft, entscheidet `auswahl.js` — dieselbe Funktion, die
+      // auch jede künftige Mechanik benutzen wird. Vorher stand hier eine fest
+      // verdrahtete Min-Suche; damit gab es die Auswahl-Achse nur auf dem
+      // Papier.
+      //
+      // ⚠️ `total` statt `punkte`, weil `waehleBetroffene` das Board-Format
+      // erwartet und danach sortiert. `bezug: "spieltag"` sagt: dieser Stand
+      // ist der EINE Spieltag, nicht die Saisontabelle.
+      const stand = liste.map((p) => ({ userId: p.userId, name: p.userId, total: p.punkte }));
+      const getroffen = waehleBetroffene({
+        modus: auswahl.modus, ende: auswahl.ende, n: auswahl.n, prozent: auswahl.prozent,
+        bezug: "spieltag", spieltagStand: stand, mitglieder: liste.map((p) => p.userId),
+      });
+      if (!getroffen.includes(meineId)) continue;
+
+      // ⚠️ UND die Gleichstands-Regel bleibt — sie ist keine Doppelung von
+      // `auswahl.js`, sondern etwas anderes. `waehleBetroffene` löst einen
+      // Gleichstand deterministisch über den Namen auf; das ist für eine
+      // AUSWAHL richtig (sie muss reproduzierbar sein), für eine BELOHNUNG an
+      // der Grenze aber nicht: wer bei gleicher Punktzahl den Joker bekommt,
+      // hinge dann am Alphabet. Punktgleich an der Kante heißt: niemand.
+      const meinWert = s.summe.get(meineId);
+      const grenzWert = auswahl.ende === "oben"
+        ? Math.max(...liste.map((p) => p.punkte))
+        : Math.min(...liste.map((p) => p.punkte));
+      const teiltDieKante = liste.filter((p) => p.punkte === meinWert).length > 1;
+      if (meinWert === grenzWert && teiltDieKante) continue;
+
+      roh.push({ key: "letzter-am-spieltag", wettbewerb: s.wettbewerb, matchday: s.matchday,
+        belohnung: trost.belohnung, text: `Auszeichnung am Spieltag: ${satz}` });
     }
   }
 
@@ -487,7 +591,12 @@ export function konflikte(rules) {
   if (!cfg.enabled) return out;
   for (const a of cfg.aktive) {
     const typ = EREIGNIS[a.key];
-    if (typ?.doppeltMit === "aufholen" && rules?.aufholen?.enabled) {
+    // 🔴 Nur wenn tatsächlich nach UNTEN ausgezeichnet wird. Seit die WEN-Achse
+    // dranhängt, kann derselbe Eintrag auch die Spieltags-Krone sein — und die
+    // verdoppelt gar nichts, sie tut das Gegenteil. Eine Warnung, die auch im
+    // umgekehrten Fall anschlägt, wird nach dem dritten Mal überlesen.
+    const nachUnten = !a.auswahl || a.auswahl.ende === "unten";
+    if (typ?.doppeltMit === "aufholen" && rules?.aufholen?.enabled && nachUnten) {
       out.push({
         key: a.key,
         text: "Trost-Joker und Anschluss-Bonus belohnen beide das Zurückliegen — zusammen wird es doppelt belohnt. Eines von beiden genügt.",
