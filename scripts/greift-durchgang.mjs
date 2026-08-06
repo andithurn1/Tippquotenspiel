@@ -42,6 +42,8 @@ import { DEFAULT_RULES, sanitizeRules } from "../src/lib/engine.js";
 import { LIGEN } from "../src/lib/ligen.js";
 import { erspielteJoker } from "../src/lib/jokerKontingent.js";
 import { zeitachse, rundenSchluessel } from "../src/lib/zeitachse.js";
+import { readFileSync } from "node:fs";
+import { regelFelder } from "../src/lib/stufenAbdeckung.js";
 
 const blTeams = Object.keys(LIGEN.find((l) => l.key === "bl").ratings);
 const plTeams = Object.keys(LIGEN.find((l) => l.key === "pl").ratings);
@@ -72,6 +74,21 @@ const FAELLE = [
     goals: { ...DEFAULT_RULES.markets.goals, picksPerTeam: 3 } } }, { mehrSchuetzen: true,
     hinweis: "greift nur, wenn ein Spiel überhaupt drei plausible Schützen anbietet" }],
   ["underdogBoost", { underdogBoost: 3 }],
+  // Die Rampe formt den Außenseiter-Aufschlag. Ohne einen Aufschlag GRÖSSER 1
+  // ist sie folgenlos — deshalb steht er im Vergleichsstand mit drin, sonst
+  // misst die Zeile den Aufschlag statt die Rampe.
+  ["underdogRampStart", { underdogBoost: 3, underdogRampStart: 6 },
+    { gegen: { underdogBoost: 3 } }],
+  ["underdogRampEnd", { underdogBoost: 3, underdogRampEnd: 3 },
+    { gegen: { underdogBoost: 3 } }],
+  // ⚠️ `modFloor` ist die UNTERE Leitplanke — sie greift nur, wenn überhaupt
+  // etwas nach unten zieht. Team-Faktoren unter 1 stellen das her; mit der
+  // Vorgabe (alles ≥ 1) wäre die Zeile stumm und sähe wie eine tote
+  // Einstellung aus.
+  ["modFloor", {
+    teamMods: { derbyFaktor: 1, teams: Object.fromEntries(blTeams.map((t) => [t, 0.3])) },
+    modFloor: 0.9,
+  }, { gegen: { teamMods: { derbyFaktor: 1, teams: Object.fromEntries(blTeams.map((t) => [t, 0.3])) } } }],
   ["favFlopPenalty", { favFlopPenalty: 15 }],
   ["joker (Faktor)", { joker: { enabled: true, modus: "einzel", faktor: 3 } }, { joker: true }],
   ["teamMods (Derby)", { teamMods: { derbyFaktor: 1, teams: Object.fromEntries(blTeams.map((t) => [t, 2])) } }],
@@ -311,5 +328,74 @@ if (stumm.length) {
   for (const t of stumm) console.log(`     - ${t}`);
 } else {
   console.log("  ✅ Jedes geprüfte Ereignis schüttet aus, und der Deckel greift.");
+}
+console.log();
+
+// ════════════════════════════════════════════════════════════
+//  TEIL 3 — deckt die MESSUNG überhaupt jeden Regel-Block ab?
+//
+//  🔴 Die Frage an die Messung selbst, und sie ist genauso wichtig wie ihr
+//  Ergebnis: ein Block ohne Messfall steht nirgends als „bewegt nichts" — er
+//  steht GAR NICHT da. Eine Liste, die schweigt, sieht aus wie eine Liste
+//  ohne Befund.
+//
+//  Gemessen am 06.08.2026: 14 von 37 Blöcken hatten keinen Messfall. Drei
+//  davon waren einfach vergessen und bewegen kräftig etwas
+//  (`underdogRampStart` 1922 · `underdogRampEnd` 2716 · `modFloor` 8497
+//  Punkte). Für den Rest gilt dieselbe Regel wie bei `stufen` und `tot`:
+//  entweder ein Messfall, oder ein Satz, warum hier keiner hingehört.
+// ════════════════════════════════════════════════════════════
+const OHNE_MESSFALL = {
+  ereignisse:
+    "Wird in TEIL 2 gemessen — die Ebene zahlt Gutschriften, keine Punkte, "
+    + "und bewegt das Leaderboard deshalb bauartbedingt nicht.",
+  tippfenster:
+    "Entscheidet, WELCHE Spiele tippbar sind, nicht was ein Tipp zählt. Die "
+    + "Wirkung ist in `tippfenster.test.js` gemessen (Anker `spieltag`: 3 von 3 "
+    + "Spielen offen statt 1).",
+  spiele:
+    "Ändert die Menge der Spiele der Runde. Ein Leaderboard-Unterschied wäre "
+    + "tautologisch (weniger Spiele = weniger Punkte) und sagt nichts darüber, "
+    + "ob die Auswahl RICHTIG filtert — das prüft `spielauswahl.test.js`.",
+  zeitachse:
+    "Reine Struktur und Anzeige, ausdrücklich KEINE Wertung (siehe CLAUDE.md). "
+    + "Ihre einzige Wertungs-Berührung ist `rundenSchluessel`, und die wird in "
+    + "Teil 2 gemessen (eine Liga 43 gegen zwei Ligen 43 Gutschriften).",
+  budget:
+    "Begrenzt, wie viele Joker man EINSETZEN darf, nicht was einer zählt. Ohne "
+    + "eine Oberfläche, die Einsätze ablehnt, bewegt sich im Leaderboard nichts "
+    + "— dieselbe Lage wie bei den Duell-Schutzregeln (siehe Roadmap).",
+  limitKlassen: "Wie `budget`: eine Einsatz-Grenze, kein Punkte-Kanal.",
+  jokerBasis: "Wie `budget`: Form und Erlaubnis eines Jokers, nicht sein Wert.",
+  verfassung:
+    "Regiert, WAS eine Runde beschließen darf. Ohne einen Antrag im Messfall "
+    + "gibt es nichts zu regieren; geprüft in `regelAbstimmung.test.js`.",
+  regelAbstimmung: "Wie `verfassung` — Mitbestimmung, keine Wertung.",
+  oddsMode: "Woher die Quoten kommen. Im Mock gibt es nur eine Quelle.",
+  reglerFeinheit: "Eine Einstellung der Profi-Ansicht selbst, kein Spielwert.",
+};
+
+const faelleQuelle = (() => {
+  const q = readFileSync("scripts/greift-durchgang.mjs", "utf8");
+  const von = q.indexOf("const FAELLE = [");
+  return q.slice(von, q.indexOf("\n];", von));
+})();
+const ohneFall = regelFelder().filter((f) => !new RegExp(`\\b${f}\\b`).test(faelleQuelle));
+const unbegruendet = ohneFall.filter((f) => !OHNE_MESSFALL[f]);
+
+console.log(`${"=".repeat(88)}`);
+console.log("  TEIL 3 — deckt die Messung jeden Regel-Block ab?");
+console.log(`  ${regelFelder().length} Blöcke · ${regelFelder().length - ohneFall.length} mit Messfall`
+  + ` · ${Object.keys(OHNE_MESSFALL).length} ausdrücklich begründet`);
+console.log(`${"=".repeat(88)}\n`);
+
+if (unbegruendet.length) {
+  console.log(`  ⚠️ ${unbegruendet.length} Blöcke werden NICHT gemessen und haben keine Begründung:`);
+  for (const f of unbegruendet) console.log(`     ${f}`);
+  console.log();
+  console.log("  🔴 Ein Block ohne Messfall steht nirgends als „bewegt nichts\" — er steht");
+  console.log("     GAR NICHT da. Eine Liste, die schweigt, sieht aus wie eine ohne Befund.");
+} else {
+  console.log("  ✅ Jeder Regel-Block hat einen Messfall oder eine Begründung.");
 }
 console.log();

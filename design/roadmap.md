@@ -297,6 +297,37 @@ nach RISIKO: die vier Funde waren FUNKTIONEN in Modulen, die zu einem
 `rules.*`-Block gehören. Dort heißt „ruft niemand auf" nämlich *die Einstellung
 tut nichts*; bei einer Konstante heißt es bloß *ungenutzt*. Erste Gruppe: 17.
 
+#### 🔴 Der zehnte Fund: die MESSUNG selbst deckte 14 von 37 Blöcken nicht ab
+
+Die Frage an das Werkzeug, und sie ist so wichtig wie sein Ergebnis: **ein
+Block ohne Messfall steht nirgends als „bewegt nichts" — er steht GAR NICHT
+da.** Eine Liste, die schweigt, sieht aus wie eine Liste ohne Befund.
+
+Gemessen: 14 von 37 Regel-Blöcken hatten in `npm run greift` keinen Messfall.
+**Drei davon waren schlicht vergessen** und bewegen kräftig etwas:
+
+| Block | bewegt |
+|---|---|
+| `underdogRampStart` (2 → 6) | 1922 Punkte |
+| `underdogRampEnd` (→ 3) | 2716 Punkte |
+| `modFloor` (0,3 → 0,9) | 8497 Punkte |
+
+⚠️ Alle drei brauchen einen VORBEREITETEN Vergleichsstand, sonst messen sie das
+Falsche: die Rampe ist ohne `underdogBoost > 1` folgenlos, und `modFloor` ist
+die untere Leitplanke — sie greift nur, wenn überhaupt etwas nach unten zieht
+(Team-Faktoren unter 1). Mit der Vorgabe wären beide stumm gewesen und hätten
+wie tote Einstellungen ausgesehen.
+
+Für die restlichen elf gilt jetzt dieselbe Regel wie bei `stufen` und `tot`:
+ein Messfall **oder** ein Satz, warum hier keiner hingehört. Die Begründungen
+sagen dabei, WO die Ebene stattdessen gemessen wird — `ereignisse` in Teil 2,
+`tippfenster` in seinem Test, `zeitachse` über `rundenSchluessel` in Teil 2.
+
+🔴 Damit haben alle vier Abnahmen jetzt eine Selbstprüfung: `greift` (Teil 3),
+`stufen` (Sperrklinke + überholte Begründungen), `tot` (`GEDULDET`), und in
+`greift` zusätzlich „EINSTELLUNG VERWORFEN" für einen Messfall, der
+`sanitizeRules` gar nicht erst passiert.
+
 #### 🔴🔴 Der neunte Fund, und der schwerste: `saveTip` prüfte den ANPFIFF nicht
 
 **Gemessen:** ein Tipp auf das Demo-Spiel, dessen Anpfiff **zwei Monate**
