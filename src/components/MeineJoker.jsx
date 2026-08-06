@@ -13,6 +13,7 @@ import {
   sanitizeVerteilung,
 } from "@/lib/jokerPlan";
 import { kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
+import { EREIGNIS, sanitizeEreignisse, beschreibeEreignisse } from "@/lib/ereignisse";
 import { C, MONO } from "@/lib/theme";
 
 // ── „Meine Joker" — die fehlende Anzeige WÄHREND der Runde ───
@@ -116,6 +117,23 @@ export default function MeineJoker() {
   const gesetzt = new Set(meineTipsRunde.filter((t) => t.joker).map((t) => t.matchday));
   const andere = uebersicht(plan, bis, userIds);
 
+  // ── Was es zu ERSPIELEN gibt ──
+  // Die Ereignisse sind angeschlossen und jeder Regler greift (gemessen
+  // 06.08.2026: je nach Auswahl 8 oder 2 Gutschriften, der Deckel wirkt) — nur
+  // sehen konnte ein Spieler nichts davon. Weder WELCHE Ereignisse in seiner
+  // Runde laufen noch welche er selbst schon ausgelöst hat.
+  // Der Platz dafür ist hier und kein eigener Screen: es ist derselbe Topf, den
+  // der „erspielt"-Teil des Standes oben zählt.
+  const ereignisse = sanitizeEreignisse(rules.ereignisse);
+  const erspieltJeKey = new Map();
+  for (const g of gutschriften) {
+    if (!g?.key) continue;
+    const v = erspieltJeKey.get(g.key) ?? { anzahl: 0, joker: 0 };
+    v.anzahl += 1;
+    v.joker += Number(g.belohnung) || 0;
+    erspieltJeKey.set(g.key, v);
+  }
+
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
@@ -198,6 +216,48 @@ export default function MeineJoker() {
                 : "Alle Spieltage stehen vorab fest. "}
               Ein Haken heißt: dort hast du deinen Joker gesetzt.
             </p>
+
+            {/* ── Zu erspielen ── */}
+            {ereignisse.enabled && ereignisse.aktive.length > 0 && (
+              <div style={{ marginTop: 18 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Zu erspielen</div>
+                <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+                  {beschreibeEreignisse(ereignisse)}
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {ereignisse.aktive.map((a) => {
+                    const typ = EREIGNIS[a.key];
+                    const meins = erspieltJeKey.get(a.key);
+                    return (
+                      <div key={a.key} style={{
+                        background: C.surface, borderRadius: 12, padding: "9px 12px",
+                        border: `1px solid ${meins ? C.mint + "55" : C.line}`,
+                      }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 12.5 }}>
+                            {typ?.label ?? a.key}
+                          </span>
+                          <span style={{ fontFamily: MONO, fontSize: 11, color: meins ? C.mint : C.muted }}>
+                            {meins ? `${meins.anzahl}× · +${meins.joker}` : `+${a.belohnung}`}
+                          </span>
+                        </div>
+                        {typ?.hint && (
+                          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                            {typ.hint}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                  Rechts steht, was es gibt — und sobald du eines ausgelöst hast, wie
+                  oft und wie viele Joker daraus wurden. Erspielte Joker sind auf{" "}
+                  {ereignisse.maxErspielt} pro Saison gedeckelt; darüber hinaus zählt
+                  chronologisch, was zuerst kam.
+                </p>
+              </div>
+            )}
 
             {/* Die Mitspieler. Bei verdeckter Reihenfolge haben zwei Spieler
                 mitten in der Saison zwangsläufig unterschiedlich viele Joker
