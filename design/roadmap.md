@@ -278,6 +278,33 @@ fest). Wer den nächsten ergänzen will, prüft zuerst, ob er nicht in einen
 bestehenden gehört — Stufe 2 ist eine Handvoll FRAGEN, keine kürzere
 Profi-Ansicht.
 
+### 🔴 `/historie` zeigte einen anderen Verlauf als `/ranking` (06.08.2026) — ✅ behoben
+
+**Gemessen: 801 Punkte Unterschied, 32 %** — und heute unsichtbar, weil noch
+kein Spiel der Runde angepfiffen ist.
+
+`Historie.jsx` baut seinen Verlauf aus `getRoundEntries()`. Das liefert nur
+ABGEGEBENE Tipps; ein Ersatz-Tipp aus dem Versäumnis ist per Definition keiner.
+Das Ranking bekommt sie dagegen vom Store mitgeliefert. In einer Runde über 36
+Spiele, in der ein Spieler jedes zweite ausließ, stand er im Verlauf bei 1726
+und im Ranking bei 2527. **Ab dem 28.08.2026** (Bundesliga-Start) hätte das
+jeder gesehen, der die Kulanz eingeschaltet hat.
+
+⚠️ **Das war KEIN Rechenfehler** — beide Seiten rechneten richtig, sie
+rechneten nur über verschiedene Eingaben. Genau die Fehlerklasse aus
+Architektur-Regel 5, und sie hat den Store-Umbau von heute morgen überlebt:
+`getLeaderboardHistory` läuft jetzt über dieselben Einträge wie das
+Leaderboard, aber dieser Screen ruft es gar nicht auf.
+
+**Behoben, und zwar für BEIDE Fälle des Screens:**
+- „Diese Runde" bildet die Ersatz-Tipps aus denselben Zutaten wie der Store.
+- Ein fremdes Preset bildet sie unter DESSEN Regelwerk neu. `versaeumnis` ist
+  Teil des Regelwerks — ein „was wäre mit Preset X gewesen" muss auch dessen
+  Kulanz durchrechnen. Die Ersatz-Tipps der echten Runde zu übernehmen, mischte
+  zwei Regelwerke.
+- ⚠️ Die Duell-Einsätze kommen weiter aus den ECHTEN Tipps: ein Ersatz-Tipp
+  trägt keinen Einsatz, den niemand gesetzt hat.
+
 ### 📐 `npm run stufen` — ist jede Einstellung auch ERREICHBAR? (06.08.2026)
 
 Die dritte Messung neben `greift` („bewegt sie etwas?") und `anzeige` („steht

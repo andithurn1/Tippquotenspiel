@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { DEFAULT_RULES, scoreLeaderboardHistory, scoreTip } from "@/lib/engine";
+import { ersatzEintraege } from "@/lib/versaeumnisBoard";
 import { einsaetzeAusTipps } from "@/lib/duellJoker";
 import { computeRecords, matchdayDeltas } from "@/lib/records";
 import { PRESETS } from "@/lib/presets";
@@ -114,17 +115,31 @@ export default function Historie() {
   // etwas beschlossen hatte. `null`, solange nichts geladen ist; die Engine
   // behandelt das wie „keine Beschlüsse".
   const [regelnFuer, setRegelnFuer] = useState(null);
+  // 🔴 Die Zutaten für die ERSATZ-TIPPS (Versäumnis). `getRoundEntries` liefert
+  // nur abgegebene Tipps — ein Ersatz-Tipp ist per Definition keiner. Gemessen
+  // am 06.08.2026 über eine Runde mit 36 Spielen, in der ein Spieler die Hälfte
+  // ausließ: **801 Punkte Unterschied (32 %)**, sobald die Saison läuft. Heute
+  // fällt es nicht auf, weil noch kein Spiel der Runde angepfiffen ist — ab dem
+  // 28.08. hätte das Ranking eine andere Zahl gezeigt als dieser Verlauf.
+  const [rundenSpiele, setRundenSpiele] = useState([]);
+  const [rohTipps, setRohTipps] = useState([]);
+  const [mitglieder, setMitglieder] = useState([]);
 
   useEffect(() => {
     let live = true;
     Promise.all([
       getStore().getRoundEntries(roundId), getStore().getRound(roundId),
       getStore().getRegelnFuer?.(roundId) ?? Promise.resolve(null),
-    ]).then(([es, round, lage]) => {
+      getStore().listRoundMatches(roundId), getStore().listTips({ roundId }),
+      getStore().listMembers(roundId),
+    ]).then(([es, round, lage, ms, tps, mem]) => {
       if (!live) return;
       setEntries(es);
       setRoundRules(round?.rules ?? DEFAULT_RULES);
       setRegelnFuer(() => lage?.regelnFuer ?? null);
+      setRundenSpiele(ms ?? []);
+      setRohTipps(tps ?? []);
+      setMitglieder(mem ?? []);
     }).catch(() => { if (live) setEntries([]); });
     return () => { live = false; };
   }, [roundId]);
@@ -146,10 +161,26 @@ export default function Historie() {
     // gab es diese Beschlüsse nie, und sie mitzurechnen wäre eine Mischung aus
     // zwei Regelwerken.
     const lage = gewaehlt.key === "aktuell" ? regelnFuer : null;
+    // 🔴 Ersatz-Tipps gehören in DIESELBE Eintragsliste wie echte Tipps —
+    // genauso, wie es der Store für das Ranking macht. Sie werden hier unter
+    // dem GEWÄHLTEN Regelwerk neu gebildet und nicht vom Store übernommen:
+    // `versaeumnis` ist Teil des Regelwerks, also muss ein „was wäre mit
+    // Preset X gewesen" auch seine Kulanz durchrechnen. Übernähme man die
+    // Ersatz-Tipps der echten Runde, mischte man zwei Regelwerke.
+    const nameOf = (id) => mitglieder.find((m) => m.user_id === id)?.name ?? id;
+    const alle = [
+      ...entries,
+      ...ersatzEintraege({
+        matches: rundenSpiele, tips: rohTipps, rules,
+        userIds: mitglieder.map((m) => m.user_id), nameOf,
+      }),
+    ];
     // `entries` kommt aus `getRoundEntries` und trägt `matchId` bereits
     // (siehe store.mock.js/store.supabase.js) — keine separate Anreicherung
     // nötig wie bei den anderen vier Aufrufern von `scoreLeaderboardHistory`.
-    const history = scoreLeaderboardHistory(entries, rules, einsaetzeAusTipps(entries), lage);
+    // ⚠️ Die Duell-Einsätze kommen weiter aus den ECHTEN Tipps: ein Ersatz-Tipp
+    // trägt keinen Einsatz, den niemand gesetzt hat.
+    const history = scoreLeaderboardHistory(alle, rules, einsaetzeAusTipps(entries), lage);
     const scored = entries.filter((e) => e.result).map((e) => {
       // Auch die Rekorde unter den Regeln des jeweiligen Spieltags — sonst
       // steht in der Bestenliste ein Wert, den es nie gab.
@@ -157,7 +188,7 @@ export default function Historie() {
       return { userId: e.userId, name: e.name, matchday: e.matchday, total: s.total, ebene: s.ebene };
     });
     return { history, records: computeRecords(history, scored) };
-  }, [entries, gewaehlt, regelnFuer]);
+  }, [entries, gewaehlt, regelnFuer, rundenSpiele, rohTipps, mitglieder]);
 
   const series = useMemo(() => buildSeries(history, kriterium), [history, kriterium]);
   const kritInfo = KRITERIEN.find((k) => k.key === kriterium);

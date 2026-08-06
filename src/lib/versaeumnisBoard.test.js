@@ -136,3 +136,41 @@ describe("ersatzStand", () => {
     expect(stand.proSpieler["u-lena"]).toBe(3);
   });
 });
+
+// ── Der Verlauf im „Was wäre gewesen"-Screen ────────────────
+// 🔴 Befund 06.08.2026: `Historie.jsx` baut seinen Verlauf aus
+// `getRoundEntries()` — und das liefert nur ABGEGEBENE Tipps. Ein Ersatz-Tipp
+// ist per Definition keiner. Das Ranking dagegen bekommt sie vom Store
+// mitgeliefert.
+//
+// Heute fällt der Unterschied nicht auf, weil noch kein Spiel der Runde
+// angepfiffen ist (Bundesliga-Start 28.08.2026) und ein Versäumnis erst mit
+// dem Anpfiff entsteht. Ab dann hätten die beiden Screens verschiedene Zahlen
+// gezeigt — gemessen unten.
+
+describe("Ein Verlauf ohne Ersatz-Tipps ist ein anderer Verlauf", () => {
+  const REGELN = regeln({ enabled: true, strategie: "wahrscheinlich", malusProzent: 20, maxProSaison: 20 });
+
+  it("misst den Unterschied in Punkten — nicht nur, DASS es einen gibt", () => {
+    const nur = scoreLeaderboard(TIPS.map(eintragVon), REGELN);
+    const mit = scoreLeaderboard([...TIPS.map(eintragVon), ...bauen(
+      { enabled: true, strategie: "wahrscheinlich", malusProzent: 20, maxProSaison: 20 })], REGELN);
+    const lenaOhne = nur.find((b) => b.userId === "u-lena").total;
+    const lenaMit = mit.find((b) => b.userId === "u-lena").total;
+    // Der Versäumer steht ohne Kulanz messbar schlechter da …
+    expect(lenaMit).toBeGreaterThan(lenaOhne);
+    // … und zwar nicht um Krümel. In der Messrunde vom 06.08. (36 Spiele,
+    // jedes zweite ausgelassen) waren es 801 Punkte = 32 %. Hier reicht die
+    // Größenordnung: mehr als ein Zehntel, sonst wäre die Anzeige-Abweichung
+    // eine Rundungsfrage und kein Befund.
+    expect((lenaMit - lenaOhne) / lenaMit).toBeGreaterThan(0.1);
+  });
+
+  it("wer nichts versäumt hat, ist von beiden Wegen gleich betroffen", () => {
+    const nur = scoreLeaderboard(TIPS.map(eintragVon), REGELN);
+    const mit = scoreLeaderboard([...TIPS.map(eintragVon), ...bauen(
+      { enabled: true, strategie: "wahrscheinlich", malusProzent: 20, maxProSaison: 20 })], REGELN);
+    expect(mit.find((b) => b.userId === "u-du").total)
+      .toBe(nur.find((b) => b.userId === "u-du").total);
+  });
+});
