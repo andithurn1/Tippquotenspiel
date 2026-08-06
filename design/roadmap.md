@@ -297,6 +297,51 @@ nach RISIKO: die vier Funde waren FUNKTIONEN in Modulen, die zu einem
 `rules.*`-Block gehören. Dort heißt „ruft niemand auf" nämlich *die Einstellung
 tut nichts*; bei einer Konstante heißt es bloß *ungenutzt*. Erste Gruppe: 17.
 
+#### 🔴 Der achte Fund: die Schutzregeln des Duell-Jokers stehen nur im SCREEN
+
+Nachdem die acht Duell-Felder eine Oberfläche hatten, die nächste Frage:
+greifen sie? Gemessen über 54 Spiele und vier Spieler, die sich gegenseitig
+angreifen — Tipps direkt über `store.saveTip()` geschrieben, also am Screen
+vorbei:
+
+| Einstellung | bewegt |
+|---|---|
+| `block.restanteil` 0,5 → 0 | **1364 Punkte** |
+| `block.beute` 0 → 0,5 | **400 Punkte** |
+| `block.nurGewinn` an → aus | **206 Punkte** |
+| `zielWahl` (frei / nur Top 3) | **nichts** |
+| `maxProZiel` 2 → 1 | **nichts** |
+| `immun` 1 → 4 | **nichts** |
+| `konter` aus → an | **nichts** |
+| `kosten` frei → stattJoker | **nichts** |
+
+⚠️ **Zwei verschiedene Befunde, die nicht zusammengehören:**
+
+1. **`zielWahl` · `maxProZiel` · `immun` sind implementiert** — in
+   `zulaessigeZiele()`, und `Tippabgabe.jsx` fragt sie an zwei Stellen mit
+   identischen Argumenten (nachgesehen, kein zweiter Fehler dort). Aber
+   `saveTip` prüft NICHTS. Wer die Route direkt anspricht, trifft jeden,
+   beliebig oft. **Dieselbe Klasse wie das Freischalt-Fenster der
+   Saison-Wetten** — eine Fairness-Regel, die nur in einem Screen steht, ist
+   eine Vereinbarung. Der belastbare Ort ist die Server-Route (steht schon
+   unter „RLS-Durchgang"); anders als beim Saison-Fenster ist ein
+   Store-Vorgriff hier NICHT billig, weil die Prüfung den ganzen Tabellenstand
+   braucht.
+2. **`konter` und `kosten` sind nirgends implementiert.** Sie stehen im
+   Regelwerk, werden gesäubert, reisen im Creator-Code mit — und keine Zeile
+   fragt sie ab. In der neuen Oberfläche stehen sie deshalb als
+   „vorbereitet · wirkt noch nicht", in derselben Form wie die
+   Herausforderungen in `Ereignisse.jsx`. Ein Umschalter, der nichts bewirkt,
+   ist schlimmer als keiner.
+
+🔴 **Und eine Korrektur an mir selbst:** der erste Lauf meldete
+`block.nurGewinn` ebenfalls als wirkungslos. Falsch — das Messszenario lief mit
+`wrongPenalty: 0` und hatte deshalb keinen einzigen Minus-Spieltag, und genau
+die unterscheidet die Einstellung. Mit Abzug: 7 von 32 Spieltagen negativ, und
+der Regler bewegt 206 Punkte. **Eine Messung, die den Fall nicht herstellt, den
+sie messen will, meldet „tot" für etwas Lebendiges** — dieselbe Falle wie die
+vier Fehlalarme im ersten `greift`-Lauf.
+
 #### 🔴 Der siebte Fund: `tippfenster.anker` hatte GAR KEINE Oberfläche
 
 Nachdem der Anker wirksam war (Fund 5), die Frage danach: wo stellt man ihn

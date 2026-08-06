@@ -179,26 +179,35 @@ export default function DuellJoker({ rules, onChange }) {
             </Block>
           )}
 
-          <Block titel="Was kostet ein Einsatz?"
-            hinweis={d.kosten === "stattJoker"
-              ? "Der Einsatz verbraucht einen normalen Joker. Wer angreift, verzichtet auf die eigene Verstärkung — das ist die stärkste Bremse, die es hier gibt."
-              : "Der Einsatz kostet nichts außer sich selbst. Dann hängt alles an den Zahlen oben."}>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {knopf(d.kosten === "frei", "nichts", () => setze({ kosten: "frei" }), "kf")}
-              {knopf(d.kosten === "stattJoker", "einen eigenen Joker",
-                () => setze({ kosten: "stattJoker" }), "ks")}
+          {/* 🔴 VORBEREITET, ABER NOCH NICHT WIRKSAM — gemessen am 06.08.2026.
+              `konter` und `kosten` stehen im Regelwerk, werden von
+              `sanitizeDuellJoker` gesäubert und reisen im Creator-Code mit,
+              aber KEINE Zeile im Projekt fragt sie ab. Ein Umschalter, der
+              nichts bewirkt, ist schlimmer als keiner — deshalb hier dieselbe
+              Form wie bei den Herausforderungen in `Ereignisse.jsx`: sichtbar,
+              damit man weiß was kommt, und ehrlich als „geht noch nicht"
+              ausgewiesen statt stillschweigend anklickbar. */}
+          <div style={{
+            border: `1px dashed ${C.line}`, borderRadius: 12,
+            padding: "10px 12px", marginTop: 14,
+          }}>
+            <div style={{
+              fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.2, color: C.muted,
+              textTransform: "uppercase", marginBottom: 5,
+            }}>Vorbereitet · wirkt noch nicht</div>
+            <div style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.5 }}>
+              <div>
+                <strong style={{ color: C.text }}>Kosten eines Einsatzes</strong> — ob ein
+                Angriff einen eigenen Joker verbraucht. Wäre die stärkste Bremse, die es
+                hier gäbe: wer angreift, verzichtet auf die eigene Verstärkung.
+              </div>
+              <div style={{ marginTop: 4 }}>
+                <strong style={{ color: C.text }}>Konter</strong> — ob der Getroffene im
+                selben Spieltag zurückschlagen darf. Lebhafter, kann sich aber zwischen
+                zwei Leuten festfahren.
+              </div>
             </div>
-          </Block>
-
-          <Block titel="Darf man zurückschlagen?"
-            hinweis={d.konter
-              ? "Wer getroffen wurde, darf im selben Spieltag zurück. Lebhafter — aber es kann sich zwischen zwei Leuten festfahren."
-              : "Kein Konter. Ein Duell ist damit eine einseitige Sache und endet nach einem Zug."}>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {knopf(!d.konter, "Nein", () => setze({ konter: false }), "kn")}
-              {knopf(d.konter, "Ja", () => setze({ konter: true }), "kj")}
-            </div>
-          </Block>
+          </div>
 
           <p style={{
             fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.5,

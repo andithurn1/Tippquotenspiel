@@ -150,6 +150,21 @@ abschauen, statt Neues zu erfinden.
   fetch('/pfad?p=' + Date.now(), { cache: 'no-store' }).then(r => r.text()).then(t => t.includes('<neuer String>'))
   ```
   Liefert der SERVER den alten Text, ist es die falsche Arbeitskopie.
+- 🔴 **Typografische Anführungszeichen: `„` IMMER mit `“` schließen, nie mit `"`.**
+  Am 06.08.2026 dreimal hineingelaufen, jedes Mal mit einer anderen
+  Fehlermeldung:
+  · in einem JS-String bricht die Datei still ab — der Test-Zähler SINKT
+    (1948 → 1915), weil eine ganze Suite nicht mehr geparst wird, und kein
+    einziger Test schlägt rot fehl;
+  · in einem JSX-Attribut endet das Attribut mitten im Satz, und der Build
+    meldet nur `Expected '</', got ','` ohne Zeilennummer.
+  **Erkennungsprobe:** ein `grep` darauf listet auch jeden Kommentar mit und
+  ist damit unbrauchbar (dieselbe Halden-Falle wie überall). Was WIRKLICH
+  trägt, sind zwei Zahlen:
+  · `npm test` — die Zahl der Tests darf nach einer Änderung nur STEIGEN.
+    Sinkt sie ohne roten Test, ist eine Suite nicht mehr geparst worden.
+  · `npm run build` — bei `Expected '</', got ','` ohne Zeilennummer zuerst
+    in der zuletzt angefassten `.jsx` nach `„…"` suchen, nicht im JSX-Aufbau.
 - **Commit-Nachrichten über eine Datei** (`git commit -F <datei>`), nicht per
   `-m` mit Anführungszeichen: PowerShell zerlegt sie sonst.
   ℹ️ **Umlaute dürfen rein.** Die älteren Commits schreiben „Uebergabe",
