@@ -229,13 +229,29 @@ const store = createMockStore();
 const blTeams = Object.keys(LIGEN.find((l) => l.key === "bl").ratings);
 const rundenRegeln = sanitizeRules({
   ...DEFAULT_RULES,
-  joker: { enabled: true, modus: "einzel", faktor: 1.5 },
+  // ⚠️ MIT Verteilung: bei der Vorgabe `frei` gibt es an jedem Spieltag einen
+  // Joker, das Kontingent ist unbegrenzt — und die Zeile in Teil 2 verglei-
+  // che zwei `null`. Eine Messung, die nichts misst, meldet Ruhe.
+  joker: {
+    enabled: true, modus: "einzel", faktor: 1.5,
+    verteilung: { modus: "kontingent", anzahl: 8, sichtbarkeit: "offen" },
+  },
   budget: { enabled: true, quellen: [{ typ: "gleich", betrag: 10 }], takt: "spieltag", verfall: "nie" },
   drehrad: {
     enabled: true, frequenz: 4, phase: "ganze",
     felder: [
       { id: "n", label: "30 Narren", gewicht: 1, belohnung: { typ: "budget", betrag: 30 } },
       { id: "p", label: "50 Punkte", gewicht: 1, belohnung: { typ: "punkte", betrag: 50 } },
+    ],
+  },
+  // 🔴 Der zweite Joker-Topf. Ohne ihn misst Teil 2 nur die Rad-Seite des
+  // Kontingents — und genau die Ereignis-Seite war am 06.08.2026 tot.
+  ereignisse: {
+    enabled: true, maxErspielt: 10,
+    aktive: [
+      { key: "serie", anzahl: 3, belohnung: 1, abstand: 0, maxProSaison: 0 },
+      { key: "spieltag-komplett", belohnung: 1, abstand: 0, maxProSaison: 0 },
+      { key: "letzter-am-spieltag", belohnung: 1, abstand: 0, maxProSaison: 0 },
     ],
   },
 });
@@ -304,8 +320,88 @@ const zeile = (name, a, b) => {
 console.log(`\n  Runde über ${rundenSpiele.length} Spiele · Achse ${achseR.length} Runden-Spieltage `
   + `· jetzt Runden-Spieltag ${jetztRunde}`);
 console.log("                                              Hub/Anzeige |  Wertung");
+// (3) Erspielte Joker: der Weg der TIPPABGABE gegen den Weg von MEINE JOKER.
+//
+// 🔴 Beide Screens zeigen dieselbe Zahl („so viele Joker hast du noch"), und
+// beide bauen sie sich aus denselben vier Zutaten selbst zusammen: eigene
+// Einträge, ALLE Einträge, die Spieltagspunkte und der Runden-Schlüssel.
+// Fehlt einem Screen eine davon, zeigt er stillschweigend etwas anderes — bis
+// zum 06.08.2026 fehlten BEIDEN zwei davon, und der Trost-Joker war für beide
+// unsichtbar. Zwei Wege, die dieselbe Zahl selbst zusammensetzen, sind genau
+// die Konstellation, aus der die 17 Funde vom 05.08. kamen.
+const { erspielteJoker } = await import("../src/lib/jokerKontingent.js");
+const { rundenSchluessel } = await import("../src/lib/zeitachse.js");
+
+const rundenEintraege = await store.getRoundEntries(runde.id);
+const tagesPunkte = await store.getSpieltagsPunkte(runde.id);
+const schluesselR = rundenSchluessel(achseR) ?? undefined;
+const meine = rundenEintraege.filter((e) => e.userId === "u-du");
+
+const { kontingent } = await import("../src/lib/jokerKontingent.js");
+const { jokerPlan } = await import("../src/lib/jokerPlan.js");
+const { bespielteSpieltage } = await import("../src/lib/zeitachse.js");
+
+// Beide Screens rechnen die Gutschriften auf RUNDEN-Spieltage um, weil
+// `erspielteJoker` den Liga-Spieltag zurückgibt und `kontingent` gegen die
+// Runden-Skala vergleicht.
+const gutschriftenR = erspielteJoker({
+  eintraege: meine, alleEintraege: rundenEintraege,
+  spieltagsPunkte: tagesPunkte, rules: rundenRegeln, schluessel: schluesselR,
+}).map((g) => {
+  const r = rundenSpieltagVon(achseR, { wettbewerb: g.wettbewerb, matchday: g.matchday });
+  return r == null ? g : { ...g, matchday: r };
+});
+const erspieltGesamt = gutschriftenR.reduce((s_, g) => s_ + (g.belohnung ?? 0), 0);
+
+const meineTipsR = rundenTipps.filter((t) => t.user_id === "u-du").map((t) => {
+  const m = matchVon.get(t.match_id);
+  return {
+    userId: t.user_id, wettbewerb: null,
+    matchday: m ? rundenSpieltagVon(achseR, m) : null,
+    joker: t.tip?.joker === true,
+  };
+});
+
+// ⚠️ HIER liegt der echte Unterschied zwischen den beiden Screens, und er ist
+// kein Versehen: `Tippabgabe.jsx` baut den Joker-Plan mit `userIds: [ich]`,
+// `MeineJoker.jsx` mit ALLEN Spielern (es zeigt ja auch die Mitspieler-
+// Übersicht). Im Modus `kontingent` zieht `jokerPlan` je Spieler aus
+// `seed|userId` — dann darf die Liste egal sein. Diese Zeile prüft, dass sie
+// es wirklich ist; wäre sie es nicht, zeigten die beiden Screens demselben
+// Spieler zwei verschiedene Joker-Stände.
+const standMit = (userIds) => kontingent({
+  plan: jokerPlan({
+    spieltage: achseR.length, bespielt: bespielteSpieltage(achseR),
+    verteilung: rundenRegeln.joker?.verteilung, seed: runde.id, userIds,
+  }),
+  gutschriften: gutschriftenR, tipps: meineTipsR, userId: "u-du", bisSpieltag: jetztRunde,
+});
+// ⚠️ Gemessen wird der OFFENE Bestand — die Zahl, die beide Screens als
+// „noch x Joker" hinschreiben (`standText`). `zugeteilt.gesamt === null`
+// hiesse „unbegrenzt" (Verteilung `frei`); dann prüft die Zeile nichts, und
+// der Hinweis darunter sagt es.
+const restVon = (userIds) => {
+  const k = standMit(userIds);
+  return k.unbegrenzt ? null : k.offen;
+};
+const wegTippabgabe = restVon(["u-du"]);
+const wegMeineJoker = restVon(board.map((b) => b.userId));
+
+// ⚠️ Und die Gegenprobe, die zählt: die Ebene muss überhaupt ETWAS liefern.
+// Zwei Screens, die beide null zeigen, stimmen auch überein — das war der
+// Zustand, den niemand bemerkt hat.
 zeile("Narren-Kontostand", hubNarren, tippabgabeNarren);
 zeile("Rad-Punkte", radPunkteAnzeige, radPunkteBoard);
+zeile("Joker-Rest (Tippabgabe/Meine Joker)", wegTippabgabe, wegMeineJoker);
+console.log(`    davon erspielt (Ereignisse + Rad): ${erspieltGesamt}`);
+if (erspieltGesamt === 0) {
+  console.log("    ⚠️  NICHTS ERSPIELT — die Zeile darüber vergleicht zwei Nullen und");
+  console.log("        hat damit nichts geprüft. Ereignisse oder Messrunde nachsehen.");
+}
+if (wegTippabgabe === null) {
+  console.log("    ⚠️  UNBEGRENZTE VERTEILUNG (`frei`) — es gibt keinen Rest zu vergleichen.");
+  console.log("        Die Messrunde braucht eine Joker-Verteilung mit Kontingent.");
+}
 console.log();
 
 // ============================================================
