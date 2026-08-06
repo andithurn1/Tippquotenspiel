@@ -297,6 +297,44 @@ nach RISIKO: die vier Funde waren FUNKTIONEN in Modulen, die zu einem
 `rules.*`-Block gehören. Dort heißt „ruft niemand auf" nämlich *die Einstellung
 tut nichts*; bei einer Konstante heißt es bloß *ungenutzt*. Erste Gruppe: 17.
 
+#### 🔴🔴 Der neunte Fund, und der schwerste: `saveTip` prüfte den ANPFIFF nicht
+
+**Gemessen:** ein Tipp auf das Demo-Spiel, dessen Anpfiff **zwei Monate**
+zurückliegt, wurde angenommen, gespeichert und mit **1440 Punkten** für den
+„exakten Treffer" gewertet. Der Screen zeigte das Spiel korrekt als
+„angepfiffen" — der Store fragte niemanden.
+
+Das ist die zentrale Fairness-Regel des ganzen Spiels („geschlossen wird immer
+beim Anpfiff"), und sie stand nur in `Tippabgabe.jsx`. **Dritter Fall
+derselben Klasse an einem Tag:**
+
+| Regel | stand nur in | Folge |
+|---|---|---|
+| Freischalt-Fenster der Saison-Wetten | einem `disabled`-Attribut | jede Wette jederzeit abgebbar |
+| Ziel-Schutzregeln des Duell-Jokers | `Tippabgabe.jsx` | jeder trifft jeden, beliebig oft |
+| **Tipp-Fenster / Anpfiff** | `Tippabgabe.jsx` | **Tipp auf ein beendetes Spiel zählt** |
+
+Behoben in BEIDEN Stores über dieselbe Funktion, die auch der Screen benutzt
+(`tippStatus`). ⚠️ **Das ist keine Sicherheitsgrenze** — der Client schreibt
+direkt in die Tabelle, wer den Aufruf umgeht, kommt weiter durch. Dafür braucht
+es den Trigger aus dem RLS-Durchgang. Was es verhindert: dass UNSER EIGENER
+Code es falsch macht, und dass die Regel zweimal formuliert wird.
+
+🔴 **`seedTip` / `seedSeasonTip` — der benannte Umweg für Messläufe.**
+`npm run greift` und `npm run anzeige` legen ganze Saisons auf einmal an; kein
+einziger Zeitpunkt macht 54 Spiele gleichzeitig tippbar (das früheste ist längst
+angepfiffen, wenn das späteste aufgeht). Bewusst ZWEI eigene Namen statt eines
+`pruefen: false`-Schalters an `saveTip`: ein Schalter wird irgendwann aus
+Bequemlichkeit im Spielbetrieb gesetzt, ein Name mit Warnkommentar nicht.
+
+⚠️ **Nebenbefund aus zwei Läufen desselben Durchgangs:** die absoluten Zahlen
+von `npm run greift` wackeln. `createRound` leitet die Runden-Id aus einem
+ZUFÄLLIGEN Beitritts-Code ab, und alles daraus Geseedete (Drehrad,
+Kontingent-Joker, Zufalls-Ersatztipp) fällt jedes Mal anders aus — gemessen 600
+gegen 900 Punkte für denselben Drehrad-Fall. Aussagekräftig ist „bewegt etwas /
+bewegt nichts", nicht der Betrag im Vergleich zu gestern. Steht jetzt im Kopf
+des Skripts.
+
 #### 🔴 Der achte Fund: die Schutzregeln des Duell-Jokers stehen nur im SCREEN
 
 Nachdem die acht Duell-Felder eine Oberfläche hatten, die nächste Frage:

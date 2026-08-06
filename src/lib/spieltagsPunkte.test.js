@@ -82,7 +82,7 @@ async function runde(ereignisse, { luecke = null } = {}) {
   for (const [i, m] of spiele.entries()) {
     for (const [j, u] of SPIELER.entries()) {
       if (luecke && u === luecke && i % 5 === 0) continue;
-      await st.saveTip({
+      await st.seedTip({
         roundId: rnd.id, matchId: m.id, userId: u,
         tip: { home: (i + j) % 4, away: (i * j) % 3, goals: { home: [], away: [] } },
         snapshot: m.snapshot,
@@ -194,7 +194,7 @@ describe("Ereignisse zählen in RUNDEN-Spieltagen, sobald eine Achse mitkommt", 
       .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)).slice(0, 90);
     for (const [i, m] of spiele.entries()) {
       for (const [j, u] of SPIELER.entries()) {
-        await st.saveTip({
+        await st.seedTip({
           roundId: rnd.id, matchId: m.id, userId: u,
           tip: { home: (i + j) % 4, away: (i * j) % 3, goals: { home: [], away: [] } },
           snapshot: m.snapshot,

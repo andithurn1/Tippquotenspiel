@@ -23,6 +23,7 @@ import { filterMatchesByTeams } from "./roundStatus";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { darfSaisonTippen } from "./saisonFenster";
+import { tippStatus, spieltagStarts } from "./tippfenster";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -274,6 +275,25 @@ export function createMockStore() {
     return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
   }
 
+  // Der rohe Schreibvorgang ohne jede Prüfung — Grundlage von `saveTip` und
+  // `seedTip`. Steht hier oben und nicht im Objektliteral, weil `saveTip` sie
+  // aufruft.
+  function seedTip({ roundId, matchId, userId, tip, snapshot }) {
+    const existing = tips.find((t) => t.round_id === roundId && t.match_id === matchId && t.user_id === userId);
+    if (existing) { existing.tip = tip; existing.snapshot = snapshot; return existing; }
+    const row = { id: `tip-${userId}-${matchId}`, round_id: roundId, match_id: matchId, user_id: userId, tip, snapshot };
+    tips.push(row);
+    return row;
+  }
+
+  function seedSeasonTip({ roundId, userId, wettenId, wert }) {
+    const existing = seasonTips.find((s) => s.round_id === roundId && s.user_id === userId && s.wetten_id === wettenId);
+    if (existing) { existing.wert = wert; return existing; }
+    const row = { round_id: roundId, user_id: userId, wetten_id: wettenId, wert };
+    seasonTips.push(row);
+    return row;
+  }
+
   return {
     async listMatches() { return [...matches.values()]; },
 
@@ -401,13 +421,38 @@ export function createMockStore() {
       return round;
     },
 
+    // 🔴 DIE zentrale Fairness-Regel des Spiels: geschlossen wird beim Anpfiff.
+    //
+    // Gemessen am 06.08.2026: sie stand NUR in `Tippabgabe.jsx`. Über den Store
+    // ließ sich auf das Demo-Spiel tippen, dessen Anpfiff zwei Monate zurück
+    // liegt — angenommen, gespeichert und mit **1440 Punkten** für den
+    // „exakten Treffer" gewertet. Dritter Fall derselben Klasse an einem Tag
+    // (Saison-Fenster, Duell-Ziele, und jetzt der wichtigste).
+    //
+    // ⚠️ Das ist KEINE Sicherheitsgrenze. Wer die Datenbank direkt anspricht,
+    // kommt weiterhin durch — dafür braucht es den Trigger aus dem
+    // RLS-Durchgang. Es verhindert, dass UNSER EIGENER Code es falsch macht,
+    // und sorgt dafür, dass die Regel EINMAL formuliert ist: `tippStatus`.
     async saveTip({ roundId, matchId, userId, tip, snapshot }) {
-      const existing = tips.find((t) => t.round_id === roundId && t.match_id === matchId && t.user_id === userId);
-      if (existing) { existing.tip = tip; existing.snapshot = snapshot; return existing; }
-      const row = { id: `tip-${userId}-${matchId}`, round_id: roundId, match_id: matchId, user_id: userId, tip, snapshot };
-      tips.push(row);
-      return row;
+      const match = matches.get(matchId);
+      const round = rounds.get(roundId);
+      const status = tippStatus(match, round?.rules ?? DEFAULT_RULES, Date.now(),
+        spieltagStarts(filterMatchesByTeams([...matches.values()], round?.team_filter)));
+      if (!status.offen) {
+        throw new Error(`Dieses Spiel ist nicht tippbar: ${status.text}.`);
+      }
+      return seedTip({ roundId, matchId, userId, tip, snapshot });
     },
+
+    // ⚠️ NUR für Messläufe und Tests: schreibt einen Tipp OHNE die Prüfung des
+    // Tipp-Fensters. `npm run greift` und `npm run anzeige` legen ganze
+    // Saisons auf einmal an; kein einziger Zeitpunkt macht 54 Spiele
+    // gleichzeitig tippbar (das früheste ist längst angepfiffen, wenn das
+    // späteste aufgeht). Bewusst ein EIGENER, deutlich benannter Name statt
+    // eines `pruefen: false`-Schalters an `saveTip` — ein Schalter wird
+    // irgendwann aus Bequemlichkeit im Spielbetrieb gesetzt, ein Name mit
+    // diesem Kommentar nicht.
+    seedTip,
     async listTips({ roundId, matchId }) {
       return tips.filter((t) => t.round_id === roundId && (!matchId || t.match_id === matchId));
     },
@@ -524,12 +569,13 @@ export function createMockStore() {
         matches: filterMatchesByTeams([...matches.values()], round?.team_filter),
       });
       if (grund) throw new Error(grund);
-      const existing = seasonTips.find((s) => s.round_id === roundId && s.user_id === userId && s.wetten_id === wettenId);
-      if (existing) { existing.wert = wert; return existing; }
-      const row = { round_id: roundId, user_id: userId, wetten_id: wettenId, wert };
-      seasonTips.push(row);
-      return row;
+      return seedSeasonTip({ roundId, userId, wettenId, wert });
     },
+
+    // ⚠️ Wie `seedTip`: nur für Messläufe. `npm run greift` legt denselben
+    // Saison-Tipp im VERGLEICHSSTAND ab, in dem die Saison-Wetten aus sind —
+    // sonst misst es zwei verschiedene Runden gegeneinander.
+    seedSeasonTip,
     async listSeasonTips({ roundId, userId }) {
       return seasonTips.filter((s) => s.round_id === roundId && (!userId || s.user_id === userId));
     },

@@ -20,6 +20,18 @@
 //  Einstellung. Ändert sich das Leaderboard nicht, ist der Block entweder
 //  nicht angeschlossen oder von etwas anderem überdeckt.
 //
+//  ⚠️ **Die absoluten Zahlen wackeln zwischen zwei Läufen.** `createRound`
+//  leitet die Runden-Id aus einem ZUFÄLLIGEN Beitritts-Code ab, und alles, was
+//  daraus geseedet wird (Drehrad, Joker-Verteilung im Kontingent-Modus, der
+//  Zufalls-Ersatztipp), fällt jedes Mal anders aus — gemessen 600 gegen 900
+//  Punkte für denselben Drehrad-Fall. Aussagekräftig ist deshalb nur „bewegt
+//  etwas / bewegt nichts", nicht der Betrag im Vergleich zu gestern.
+//  🔴 Und die Falle für den nächsten Messfall: Vergleichsstand und Messstand
+//  sind ZWEI Runden mit zwei Ids. Wer einen Block prüft, der aus der Id
+//  geseedet wird, misst dann teilweise das Los und nicht die Einstellung. In
+//  der jetzigen Liste betrifft das nur das Drehrad, und dort ist es in einem
+//  der beiden Stände ganz aus — der Unterschied ist also echt.
+//
 //  ⚠️ „Bewegt nichts" ist ein BEFUND, kein Fehler. Manche Blöcke gehören
 //  nicht in die Wertung (Benachrichtigungen, Anzeige-Stufen) und stehen
 //  deshalb gar nicht erst in der Liste. Wer einen neuen Block ergänzt, trägt
@@ -121,11 +133,11 @@ async function board(extra, opt = {}) {
       };
       if (opt.joker && u === "u-du" && i % 9 === 0) tip.joker = true;
       if (opt.duell && u === "u-du") tip.duell = { auf: "u-lena", typ: "klau" };
-      await st.saveTip({ roundId: rnd.id, matchId: m.id, userId: u, tip, snapshot: m.snapshot });
+      await st.seedTip({ roundId: rnd.id, matchId: m.id, userId: u, tip, snapshot: m.snapshot });
     }
   }
   if (opt.saisonTipp) {
-    await st.saveSeasonTip({ roundId: rnd.id, userId: "u-du", wettenId: "meister", wert: blTeams[0] });
+    st.seedSeasonTip({ roundId: rnd.id, userId: "u-du", wettenId: "meister", wert: blTeams[0] });
   }
   // Spieltage öffnen (friert u. a. den Big-Game-Wert ein) — Admin-Handlung.
   if (opt.oeffnen) {
@@ -226,7 +238,7 @@ async function gutschriften(ereignisse, { teams = blTeams, spiele: anzahl = 54, 
   for (const [i, m] of spiele.entries()) {
     for (const [j, u] of SPIELER.entries()) {
       if (luecke && u === luecke && i % 5 === 0) continue;
-      await st.saveTip({
+      await st.seedTip({
         roundId: rnd.id, matchId: m.id, userId: u,
         tip: { home: (i + j) % 4, away: (i * j) % 3, goals: { home: [], away: [] } },
         snapshot: m.snapshot,

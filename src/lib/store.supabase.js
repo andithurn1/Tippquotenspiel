@@ -20,6 +20,7 @@ import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { darfSaisonTippen } from "./saisonFenster";
+import { tippStatus, spieltagStarts } from "./tippfenster";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -206,7 +207,23 @@ export function createSupabaseStore() {
       throw new Error("Konnte keinen eindeutigen Beitritts-Code erzeugen.");
     },
 
+    // 🔴 Geschlossen wird beim Anpfiff — die zentrale Fairness-Regel, und sie
+    // stand bis 06.08.2026 NUR in `Tippabgabe.jsx`. Begründung und Messung im
+    // Mock-Store; kurz: ein Tipp auf ein zwei Monate altes Spiel wurde
+    // angenommen und mit 1440 Punkten gewertet.
+    //
+    // ⚠️ KEINE Sicherheitsgrenze — der Client schreibt hier direkt in die
+    // Tabelle, wer den Aufruf umgeht, kommt durch. Dafür braucht es den
+    // Trigger aus dem RLS-Durchgang. Was es verhindert: dass unser eigener
+    // Code es falsch macht, und dass die Regel zweimal formuliert wird.
     async saveTip({ roundId, matchId, userId, tip, snapshot }) {
+      const [round, rundenSpiele] = await Promise.all([
+        this.getRound(roundId), this.listRoundMatches(roundId),
+      ]);
+      const match = rundenSpiele.find((m) => m.id === matchId) ?? await this.getMatch(matchId);
+      const status = tippStatus(match, round?.rules ?? DEFAULT_RULES, Date.now(),
+        spieltagStarts(rundenSpiele));
+      if (!status.offen) throw new Error(`Dieses Spiel ist nicht tippbar: ${status.text}.`);
       // ein Tipp je (round, match, user) → upsert auf dem Unique-Key
       const data = orThrow(await sb
         .from("tips")

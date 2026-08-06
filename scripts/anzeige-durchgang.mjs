@@ -261,7 +261,7 @@ const runde = await store.createRound({
 const rundenSpiele = await store.listRoundMatches(runde.id);
 // Ein paar Spieltage tippen, damit überhaupt etwas entsteht.
 for (const m of rundenSpiele.filter((x) => x.wettbewerb === "bl" && x.result).slice(0, 27)) {
-  await store.saveTip({
+  await store.seedTip({
     roundId: runde.id, matchId: m.id, userId: "u-du",
     tip: { home: 1, away: 1, goals: { home: [], away: [] } }, snapshot: m.snapshot,
   });
@@ -460,7 +460,7 @@ for (const [name, extra, opt = {}] of varianten) {
       // Für den Duell-Fall: „Du" setzt auf „Lena". Ohne Einsatz greift die
       // Regel nie, und die Zeile stünde grün da, ohne etwas geprüft zu haben.
       if (opt.duell && u === "u-du") tip.duell = { auf: "u-lena", typ: "klau" };
-      await st.saveTip({ roundId: rnd.id, matchId: m.id, userId: u, tip, snapshot: m.snapshot });
+      await st.seedTip({ roundId: rnd.id, matchId: m.id, userId: u, tip, snapshot: m.snapshot });
     }
   }
   const brd = await st.getLeaderboard(rnd.id);

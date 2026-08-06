@@ -43,13 +43,13 @@ describe("Mock-Store — Seed & Schnittstelle", () => {
   it("saveTip legt an und aktualisiert denselben Tipp (kein Duplikat)", async () => {
     const store = createMockStore();
     const snap = (await store.getMatch("JOR-ESP")).snapshot;
-    await store.saveTip({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP", userId: "u-neu", tip: { home: 3, away: 3 }, snapshot: snap });
+    await store.seedTip({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP", userId: "u-neu", tip: { home: 3, away: 3 }, snapshot: snap });
     let mine = await store.listTips({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP" });
     const neu = mine.filter((t) => t.user_id === "u-neu");
     expect(neu).toHaveLength(1);
     expect(neu[0].tip).toEqual({ home: 3, away: 3 });
 
-    await store.saveTip({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP", userId: "u-neu", tip: { home: 1, away: 0 }, snapshot: snap });
+    await store.seedTip({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP", userId: "u-neu", tip: { home: 1, away: 0 }, snapshot: snap });
     mine = await store.listTips({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP" });
     expect(mine.filter((t) => t.user_id === "u-neu")).toHaveLength(1);
     expect(mine.find((t) => t.user_id === "u-neu").tip).toEqual({ home: 1, away: 0 });
@@ -289,7 +289,7 @@ describe("Saison-Wetten (saveSeasonTip / listSeasonTips + Leaderboard)", () => {
     const meister = scoreSaison({ matches, tipps: {}, saison: SAISON }).zeilen[0].gewinner[0];
     // u-du tippt auch ein Match, damit er im (Spieltags-)Leaderboard erscheint
     const eins = matches.find((m) => m.result && m.snapshot);
-    await store.saveTip({ roundId: round.id, matchId: eins.id, userId: "u-du", tip: { home: 2, away: 1, goals: { home: [], away: [] } }, snapshot: eins.snapshot });
+    await store.seedTip({ roundId: round.id, matchId: eins.id, userId: "u-du", tip: { home: 2, away: 1, goals: { home: [], away: [] } }, snapshot: eins.snapshot });
     await store.saveSeasonTip({ roundId: round.id, userId: "u-du", wettenId: "meister", wert: meister });
     const board = await store.getLeaderboard(round.id);
     const du = board.find((b) => b.userId === "u-du");
@@ -413,7 +413,7 @@ describe("Beschlossene Regeländerungen wirken ab ihrem Spieltag — und nur ab 
     const runde = await s.createRound({ name: "Testrunde", rules, adminId: "u1" });
     await s.joinRound({ roundId: runde.id, userId: "u2" });
     for (const m of [frueh, spaet]) {
-      await s.saveTip({
+      await s.seedTip({
         roundId: runde.id, matchId: m.id, userId: "u1",
         tip: { home: m.result.home, away: m.result.away, goals: { home: [], away: [] } },
         snapshot: m.snapshot,
@@ -533,7 +533,7 @@ describe("Drehrad: der Store reicht den RUNDEN-Spieltag, nicht den Liga-Spieltag
     // echten Wettbewerb und hat deshalb gar keinen Runden-Spieltag
     // (`rundenSpieltagVon` liefert `null`) — es könnte nie eine Drehung tragen.
     const spiel = (await s.listMatches()).find((m) => m.wettbewerb === "bl" && m.result);
-    await s.saveTip({
+    await s.seedTip({
       roundId: runde.id, matchId: spiel.id, userId: "u-du",
       tip: { home: 2, away: 1, goals: { home: [], away: [] } }, snapshot: spiel.snapshot,
     });
@@ -621,7 +621,7 @@ describe("Drehrad: der Store reicht den RUNDEN-Spieltag, nicht den Liga-Spieltag
       name: "BL", adminId: "u-du", rules, teamFilter: blTeams,
     });
     const jor = await s.getMatch("JOR-ESP");
-    await s.saveTip({
+    await s.seedTip({
       roundId: runde.id, matchId: "JOR-ESP", userId: "u-du",
       tip: { home: 5, away: 1, goals: { home: [], away: [] } }, snapshot: jor.snapshot,
     });
@@ -698,5 +698,63 @@ describe("Admin-Freigaben (setAdminFreigabe / listAdminFreigaben)", () => {
     const s = createMockStore();
     await s.setAdminFreigabe({ roundId: "andere", userId: "u1", matchday: 7 });
     expect(await s.listAdminFreigaben({ roundId: DEMO_ROUND_ID })).toEqual([]);
+  });
+});
+
+// ── Geschlossen wird beim Anpfiff ───────────────────────────
+// 🔴 Der schwerste Fund vom 06.08.2026, und der dritte derselben Klasse an
+// einem Tag (nach dem Freischalt-Fenster der Saison-Wetten und den
+// Ziel-Schutzregeln des Duell-Jokers): die zentrale Fairness-Regel des Spiels
+// stand NUR in `Tippabgabe.jsx`.
+//
+// Gemessen: ein Tipp auf das Demo-Spiel, dessen Anpfiff zwei Monate zurück
+// liegt, wurde angenommen, gespeichert und mit **1440 Punkten** für den
+// „exakten Treffer" gewertet. Der Screen zeigte das Spiel korrekt als
+// „angepfiffen" — der Store fragte niemanden.
+describe("saveTip: geschlossen wird beim Anpfiff", () => {
+  it("ein angepfiffenes Spiel nimmt keinen Tipp mehr an", async () => {
+    const store = createMockStore();
+    const jor = await store.getMatch("JOR-ESP");   // Anpfiff in der Vergangenheit
+    await expect(store.saveTip({
+      roundId: DEMO_ROUND_ID, matchId: "JOR-ESP", userId: "u-neu",
+      tip: { home: 5, away: 1, goals: { home: [], away: [] } }, snapshot: jor.snapshot,
+    })).rejects.toThrow(/nicht tippbar/);
+  });
+
+  it("und der Tipp landet auch nicht heimlich doch in der Runde", async () => {
+    const store = createMockStore();
+    const jor = await store.getMatch("JOR-ESP");
+    await store.saveTip({
+      roundId: DEMO_ROUND_ID, matchId: "JOR-ESP", userId: "u-neu",
+      tip: { home: 5, away: 1, goals: { home: [], away: [] } }, snapshot: jor.snapshot,
+    }).catch(() => {});
+    const alle = await store.listTips({ roundId: DEMO_ROUND_ID, matchId: "JOR-ESP" });
+    expect(alle.some((t) => t.user_id === "u-neu")).toBe(false);
+  });
+
+  it("ein Spiel, dessen Fenster noch nicht offen ist, ebenfalls nicht", async () => {
+    const store = createMockStore();
+    // Die Bundesliga startet am 28.08.2026; mit der Vorgabe von einer Woche
+    // Vorlauf ist am 06.08. noch nichts offen.
+    const spaet = (await store.listMatches())
+      .filter((m) => m.wettbewerb === "bl")
+      .sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff))[0];
+    await expect(store.saveTip({
+      roundId: DEMO_ROUND_ID, matchId: spaet.id, userId: "u-du",
+      tip: { home: 1, away: 1, goals: { home: [], away: [] } }, snapshot: spaet.snapshot,
+    })).rejects.toThrow(/nicht tippbar/);
+  });
+
+  it("`seedTip` umgeht die Prüfung — und heißt genau deshalb anders", async () => {
+    // ⚠️ Der Weg für Messläufe und Tests. Ein `pruefen: false`-Schalter an
+    // `saveTip` wäre irgendwann aus Bequemlichkeit im Spielbetrieb gesetzt
+    // worden; ein eigener Name mit diesem Kommentar nicht.
+    const store = createMockStore();
+    const jor = await store.getMatch("JOR-ESP");
+    const row = store.seedTip({
+      roundId: DEMO_ROUND_ID, matchId: "JOR-ESP", userId: "u-mess",
+      tip: { home: 5, away: 1, goals: { home: [], away: [] } }, snapshot: jor.snapshot,
+    });
+    expect(row.user_id).toBe("u-mess");
   });
 });
