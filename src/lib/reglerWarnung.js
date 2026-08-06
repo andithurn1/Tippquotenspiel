@@ -289,6 +289,26 @@ const KOMBINATIONEN = [
     korrektur: (r) => ({ ...r, versaeumnis: { ...r.versaeumnis, malusProzent: 30 } }),
   },
   {
+    // 🔴 Gemessen am 06.08.2026 über 1600 hoffnungslose Tipps: bei
+    // `minPayout: 0` (Vorgabe) greift der Abzug in 17 Fällen — 1 %. Mit einer
+    // Mindestauszahlung von 5 sind es 800, also die Hälfte.
+    //
+    // Ursache: der Abzug fällt nur, wenn ALLE Teile exakt 0 sind, und die
+    // Ergebnis-Nähe ist fast immer knapp über null. Erst `minPayout` schneidet
+    // diese Krümel ab und macht „komplett daneben" zu einem echten Zustand.
+    // Der Regler ist also nicht kaputt — er hängt an einem zweiten.
+    id: "strafe-ohne-mindestauszahlung",
+    stufe: "hinweis",
+    titel: "Der Abzug für „komplett daneben“ greift fast nie",
+    gilt: (r) => r.wrongPenalty < 0 && !(r.minPayout > 0),
+    text: () =>
+      "Solange es keine Mindestauszahlung gibt, bringt fast jeder Tipp noch ein paar Krümel "
+      + "Ergebnis-Nähe — und „komplett daneben“ tritt damit kaum je ein. Gemessen: in 1 % der "
+      + "hoffnungslosen Tipps statt in der Hälfte.",
+    fix: "Mindestauszahlung auf 5 setzen",
+    korrektur: (r) => ({ ...r, minPayout: 5 }),
+  },
+  {
     // 🔴 Gemessen am 06.08.2026: mit dem Vorgabe-Deckel von 60 Punkten liefern
     // Klau-Anteile von 10 %, 35 % und 100 % ALLE dasselbe Ergebnis (+60). Der
     // Stärke-Regler bewegt die Zahl nicht — er läuft ins Leere, weil der Deckel
