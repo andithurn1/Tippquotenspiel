@@ -204,17 +204,39 @@ dieselbe Funktion, die Rechnung lag vorher zweimal da. Nebenbei mitgenommen:
 des Versäumnisses — zwei Kurven für dieselbe Runde. Läuft jetzt über dieselbe
 Quelle wie das Leaderboard.
 
-⚠️ **Offen geblieben (bewusst, eigener Durchgang): `ereignisse.js` rechnet
-durchgängig in LIGA-Spieltagen.** Gemessen in derselben Runde: 5 Liga- fallen
-auf 4 RUNDEN-Spieltage zusammen, in einer Runde über mehrere Wettbewerbe
-entsprechend mehr. Damit kann derselbe Runden-Spieltag zwei Trost-Joker
-vergeben, und „drei Spieltage in Folge getippt" zählt eine andere Folge als die
-Zeitachse. Das ist die in `CLAUDE.md` beschriebene Fehlerklasse; der Weg dahin
-steht dort auch: ein optionaler `schluessel`-Parameter wie bei
-`invalidJokerMatchdays`, damit es keinen stillen Regelwechsel für Aufrufer ohne
-Achse gibt. ⚠️ Die Gutschriften tragen heute `wettbewerb`/`matchday`, und die
-Screens rechnen sie selbst auf Runden-Spieltage um — wer den Schlüssel
-umstellt, muss diese Umrechnung mit entfernen, sonst wird zweimal übersetzt.
+**Nachgezogen im selben Durchgang: `ereignisse.js` rechnete in LIGA-Spieltagen.**
+Die in `CLAUDE.md` beschriebene Fehlerklasse, und sie war hier scharf. Gemessen
+über 90 Spiele und drei Spieler mit allen Ereignissen an:
+
+| Runde | Liga-Spieltage | Runden-Spieltage | Gutschriften Liga → Runde |
+|---|---|---|---|
+| nur Bundesliga | 13 | 12 | 45 → 45 |
+| Bundesliga + Premier League | 11 | 6 | **45 → 30** |
+
+Über Liga-Spieltage geschlüsselt vergibt eine Runde über mehrere Wettbewerbe
+also mehrere Trost-Joker pro Woche, und „drei Spieltage in Folge getippt" zählt
+eine andere Folge als die Zeitachse daneben. Gelöst wie bei
+`invalidJokerMatchdays`: ein OPTIONALER `schluessel` an `auswerten()` und
+`spieltageChronologisch()`. Ohne ihn bleibt alles wie bisher — kein stiller
+Regelwechsel, und bei einem Wettbewerb sind beide Schlüssel deckungsgleich
+(Zeile 1 der Tabelle ist der Beweis, dass das stimmt).
+
+Zwei Punkte, die dabei nicht brechen dürfen:
+1. **Die Gutschrift trägt weiter den LIGA-Spieltag** (den frühesten der
+   Gruppe). Die Screens machen daraus über `rundenSpieltagVon` die
+   Runden-Nummer — hätte die Gutschrift schon die Runden-Nummer, würde zweimal
+   übersetzt.
+2. **Beim Trost-Joker werden die Punkte je Nutzer AUFSUMMIERT**, wenn zwei
+   Liga-Spieltage in einen Runden-Spieltag fallen. Vorher stand jeder Spieler
+   zweimal in der Liste, und `Math.min` fand den schlechteren EINZELTAG statt
+   der Bilanz — „Letzter" wäre jemand anderes gewesen als in der Tabelle.
+
+**`npm run greift` hat jetzt einen Teil 2:** Einstellungen, die keine Punkte
+bewegen, sondern Gutschriften. Der ganze `ereignisse`-Block fehlte in Teil 1,
+weil sich das Leaderboard von ihm nicht rührt — genau deshalb konnte der
+Trost-Joker unbemerkt tot sein. Stand: alle fünf Ereignisse schütten aus
+(6 · 3 · 11 · 18 · 6), `maxErspielt` deckelt (43 → 6), und zwei Ligen ergeben
+dieselben 43 Gutschriften wie eine.
 
 ### ⏰ Echte Spielpläne vor dem Launch — HARTE FRIST, Bundesliga ✅ erledigt
 **Der einzige Punkt mit einem Datum: 28.08.2026.**

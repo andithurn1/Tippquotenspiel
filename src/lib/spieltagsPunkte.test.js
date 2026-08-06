@@ -4,6 +4,7 @@ import { createMockStore } from "@/lib/store.mock";
 import { erspielteJoker } from "@/lib/jokerKontingent";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { LIGEN } from "@/lib/ligen";
+import { zeitachse, rundenSchluessel } from "@/lib/zeitachse";
 
 // 🔴 Der Befund vom 06.08.2026, zweiter Teil derselben Sorte wie beim
 // Versäumnis: `ereignisse.auswerten()` nimmt `spieltagsPunkte` entgegen und
@@ -161,4 +162,71 @@ describe("„alle Spiele des Spieltags getippt“ braucht die Tipps der ANDEREN"
     expect(fuer("u-du")).toBeGreaterThan(0);
     expect(fuer("u-lena")).toBe(fuer("u-du"));
   });
+});
+
+// ── Der Spieltag DER RUNDE ──────────────────────────────────
+// 🔴 Die in CLAUDE.md beschriebene Fehlerklasse, hier an den Ereignissen:
+// über LIGA-Spieltage geschlüsselt vergibt eine Runde über mehrere Wettbewerbe
+// mehrere Trost-Joker pro Woche, und „drei Spieltage in Folge getippt" zählt
+// eine andere Folge als die Zeitachse daneben.
+//
+// Gemessen am 06.08.2026 (90 Spiele, drei Spieler, alle Ereignisse an):
+//   nur Bundesliga            13 Liga- → 12 Runden-Spieltage: 45 → 45 Gutschriften
+//   Bundesliga + Premier L.   11 Liga- →  6 Runden-Spieltage: 45 → 30 Gutschriften
+// Bei einem Wettbewerb sind beide Schlüssel deckungsgleich — deshalb ist die
+// zweite Zeile die, auf die es ankommt.
+
+describe("Ereignisse zählen in RUNDEN-Spieltagen, sobald eine Achse mitkommt", () => {
+  const EREIGNISSE = {
+    enabled: true, maxErspielt: 60,
+    aktive: [
+      { key: "letzter-am-spieltag", belohnung: 1 },
+      { key: "serie", anzahl: 3, belohnung: 1 },
+      { key: "spieltag-komplett", belohnung: 1 },
+    ],
+  };
+
+  async function gutschriften(teams, mitSchluessel) {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, ereignisse: EREIGNISSE });
+    const st = createMockStore();
+    const rnd = await st.createRound({ name: "M", adminId: "u-du", rules, teamFilter: teams });
+    const spiele = (await st.listRoundMatches(rnd.id)).filter((m) => m.result)
+      .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)).slice(0, 90);
+    for (const [i, m] of spiele.entries()) {
+      for (const [j, u] of SPIELER.entries()) {
+        await st.saveTip({
+          roundId: rnd.id, matchId: m.id, userId: u,
+          tip: { home: (i + j) % 4, away: (i * j) % 3, goals: { home: [], away: [] } },
+          snapshot: m.snapshot,
+        });
+      }
+    }
+    const eintraege = await st.getRoundEntries(rnd.id);
+    const spieltagsPunkte = await st.getSpieltagsPunkte(rnd.id);
+    const achse = zeitachse(spiele, rules.zeitachse);
+    const schluessel = mitSchluessel ? (rundenSchluessel(achse) ?? undefined) : undefined;
+    let n = 0;
+    for (const u of SPIELER) {
+      n += erspielteJoker({
+        eintraege: eintraege.filter((e) => e.userId === u),
+        alleEintraege: eintraege, spieltagsPunkte, rules, schluessel,
+      }).length;
+    }
+    return { n, ligaTage: new Set(spiele.map((m) => `${m.wettbewerb}#${m.matchday}`)).size, rundenTage: achse.length };
+  }
+
+  const plTeams = Object.keys(LIGEN.find((l) => l.key === "pl").ratings);
+
+  it("über MEHRERE Wettbewerbe fallen Liga-Spieltage zusammen — und die Gutschriften mit", async () => {
+    const ohne = await gutschriften([...blTeams, ...plTeams], false);
+    const mit = await gutschriften([...blTeams, ...plTeams], true);
+    expect(mit.rundenTage).toBeLessThan(mit.ligaTage);
+    expect(mit.n).toBeLessThan(ohne.n);
+  }, 30000);
+
+  it("bei EINEM Wettbewerb ändert der Schlüssel nichts — kein stiller Regelwechsel", async () => {
+    const ohne = await gutschriften(blTeams, false);
+    const mit = await gutschriften(blTeams, true);
+    expect(mit.n).toBe(ohne.n);
+  }, 30000);
 });

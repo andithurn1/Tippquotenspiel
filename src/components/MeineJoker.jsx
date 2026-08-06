@@ -6,7 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
-import { zeitachse, rundenSpieltagVon, achsenLabel, bespielteSpieltage } from "@/lib/zeitachse";
+import { zeitachse, rundenSpieltagVon, rundenSchluessel, achsenLabel, bespielteSpieltage } from "@/lib/zeitachse";
 import { naechstesOffenesSpiel } from "@/lib/muenzstand";
 import {
   jokerPlan, sichtbareSpieltage, fortschritt, uebersicht, beschreibeVerteilung,
@@ -118,6 +118,10 @@ export default function MeineJoker() {
       // Spieltags getippt" (die eigenen Einträge wissen nicht, was fehlt), das
       // andere für den Trost-Joker.
       alleEintraege: eintraege, spieltagsPunkte: tagesPunkte, rules,
+      // Der RUNDEN-Spieltag: ohne ihn zaehlt `ereignisse.js` in
+      // Liga-Spieltagen und vergibt in einer Runde ueber mehrere Wettbewerbe
+      // mehrere Trost-Joker pro Woche.
+      schluessel: rundenSchluessel(achse) ?? undefined,
     })
       .map((g) => {
         const runde = rundenSpieltagVon(achse, { wettbewerb: g.wettbewerb, matchday: g.matchday });

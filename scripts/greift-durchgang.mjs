@@ -28,8 +28,11 @@
 import { createMockStore } from "../src/lib/store.mock.js";
 import { DEFAULT_RULES, sanitizeRules } from "../src/lib/engine.js";
 import { LIGEN } from "../src/lib/ligen.js";
+import { erspielteJoker } from "../src/lib/jokerKontingent.js";
+import { zeitachse, rundenSchluessel } from "../src/lib/zeitachse.js";
 
 const blTeams = Object.keys(LIGEN.find((l) => l.key === "bl").ratings);
+const plTeams = Object.keys(LIGEN.find((l) => l.key === "pl").ratings);
 const SPIELER = ["u-du", "u-lena", "u-kemal"];
 
 // Je Block die Einstellung, bei der er am deutlichsten wirkt — und, wo nötig,
@@ -195,5 +198,106 @@ if (tot.length) {
   console.log("  Beides ist ein Befund und gehört nachgesehen.");
 } else {
   console.log("  ✅ Jeder geprüfte Block bewegt die Wertung.");
+}
+console.log();
+
+// ════════════════════════════════════════════════════════════
+//  TEIL 2 — Einstellungen, die KEINE Punkte bewegen
+//
+//  🔴 Die Lücke, die Teil 1 nicht sehen kann: `rules.ereignisse` zahlt keine
+//  Punkte, sondern JOKER-Gutschriften. Im Leaderboard steht deshalb dieselbe
+//  Zahl, egal wie die Ereignisse eingestellt sind — der ganze Block fehlte in
+//  der Liste oben und war damit unvermessen.
+//
+//  Genau dort saß der Fund vom 06.08.2026: der Trost-Joker war über die
+//  Oberfläche einschaltbar und lieferte 0 Gutschriften, weil kein Aufrufer die
+//  `spieltagsPunkte` mitgab. Gemessen wird deshalb, was diese Ebene wirklich
+//  ausschüttet — Gutschriften, nicht Punkte.
+//
+//  Wer eine Mechanik ergänzt, die keine Punkte bewegt, hängt sie HIER an.
+// ════════════════════════════════════════════════════════════
+
+async function gutschriften(ereignisse, { teams = blTeams, spiele: anzahl = 54, luecke = null } = {}) {
+  const st = createMockStore();
+  const rules = sanitizeRules({ ...DEFAULT_RULES, ereignisse });
+  const rnd = await st.createRound({ name: "E", adminId: "u-du", rules, teamFilter: teams });
+  const spiele = (await st.listRoundMatches(rnd.id)).filter((m) => m.result)
+    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)).slice(0, anzahl);
+  for (const [i, m] of spiele.entries()) {
+    for (const [j, u] of SPIELER.entries()) {
+      if (luecke && u === luecke && i % 5 === 0) continue;
+      await st.saveTip({
+        roundId: rnd.id, matchId: m.id, userId: u,
+        tip: { home: (i + j) % 4, away: (i * j) % 3, goals: { home: [], away: [] } },
+        snapshot: m.snapshot,
+      });
+    }
+  }
+  const eintraege = await st.getRoundEntries(rnd.id);
+  const spieltagsPunkte = await st.getSpieltagsPunkte(rnd.id);
+  const schluessel = rundenSchluessel(zeitachse(spiele, rules.zeitachse)) ?? undefined;
+  const je = {};
+  for (const u of SPIELER) {
+    for (const g of erspielteJoker({
+      eintraege: eintraege.filter((e) => e.userId === u),
+      alleEintraege: eintraege, spieltagsPunkte, rules, schluessel,
+    })) je[g.key] = (je[g.key] ?? 0) + 1;
+  }
+  return { je, summe: Object.values(je).reduce((a, b) => a + b, 0) };
+}
+
+const AUS = { enabled: false, maxErspielt: 5, aktive: [] };
+const EREIGNIS_FAELLE = [
+  ["serie (3 in Folge)", { key: "serie", anzahl: 3, belohnung: 1 }],
+  ["erster-exakter", { key: "erster-exakter", belohnung: 1 }],
+  ["aussenseiter (ab 3,0)", { key: "aussenseiter", abQuote: 3, belohnung: 1 }],
+  ["spieltag-komplett", { key: "spieltag-komplett", belohnung: 1 }],
+  ["letzter-am-spieltag", { key: "letzter-am-spieltag", belohnung: 1 }],
+];
+
+console.log(`${"=".repeat(88)}`);
+console.log("  TEIL 2 — Ereignisse: Gutschriften statt Punkte");
+console.log(`${"=".repeat(88)}\n`);
+
+const stumm = [];
+const nullstand = await gutschriften(AUS);
+console.log(`  ${"(ausgeschaltet)".padEnd(26)} ${nullstand.summe} Gutschriften`);
+for (const [name, eintrag] of EREIGNIS_FAELLE) {
+  const an = { enabled: true, maxErspielt: 60, aktive: [eintrag] };
+  // Auch hier: kommt die Einstellung überhaupt durch `sanitizeRules`?
+  if (!sanitizeRules({ ...DEFAULT_RULES, ereignisse: an }).ereignisse.aktive.length) {
+    console.log(`  ${name.padEnd(26)} ⚠️  EINSTELLUNG VERWORFEN — Feldname prüfen`);
+    stumm.push(`${name} (verworfen)`);
+    continue;
+  }
+  const r = await gutschriften(an);
+  console.log(`  ${name.padEnd(26)} ${r.summe === 0 ? "⚠️  ZAHLT NICHTS" : `${r.summe} Gutschriften`}`);
+  if (r.summe === 0) stumm.push(name);
+}
+
+// Der Deckel gehört dazu: er ist die einzige Einstellung dieser Ebene, die
+// nach OBEN begrenzt, und ohne Gegenprobe fiele nicht auf, wenn er durchlässt.
+const alleAn = { enabled: true, maxErspielt: 60, aktive: EREIGNIS_FAELLE.map(([, e]) => e) };
+const offen = await gutschriften(alleAn);
+const gedeckelt = await gutschriften({ ...alleAn, maxErspielt: 2 });
+console.log(`  ${"maxErspielt (60 → 2)".padEnd(26)} ${offen.summe} → ${gedeckelt.summe} Gutschriften`
+  + `${gedeckelt.summe >= offen.summe ? "  ⚠️  DECKELT NICHT" : ""}`);
+if (gedeckelt.summe >= offen.summe) stumm.push("maxErspielt");
+
+// 🔴 Und die Frage, an der der Joker-Plan schon einmal hing: zählt diese Ebene
+// in LIGA- oder in RUNDEN-Spieltagen? Über Liga-Spieltage vergäbe eine Runde
+// über zwei Ligen doppelt so viele Trost-Joker wie Runden-Spieltage existieren.
+const einLiga = await gutschriften(alleAn);
+const zweiLigen = await gutschriften(alleAn, { teams: [...blTeams, ...plTeams], spiele: 90 });
+console.log(`\n  Runden-Schlüssel: eine Liga ${einLiga.summe} · zwei Ligen ${zweiLigen.summe} Gutschriften`);
+console.log("  └ zwei Ligen dürfen NICHT proportional mehr sein: die Liga-Spieltage");
+console.log("    fallen in gemeinsame Runden-Spieltage zusammen.");
+
+console.log(`\n${"-".repeat(88)}`);
+if (stumm.length) {
+  console.log("  ⚠️ Diese Ereignis-Einstellungen haben nichts ausgeschüttet:");
+  for (const t of stumm) console.log(`     - ${t}`);
+} else {
+  console.log("  ✅ Jedes geprüfte Ereignis schüttet aus, und der Deckel greift.");
 }
 console.log();

@@ -199,11 +199,11 @@ export function sanitizeEreignisse(partial = {}) {
 // abgeleitet — die Einträge eines einzelnen Nutzers wissen nicht, was er
 // ausgelassen hat. Das ist eine Untergrenze: ein Spiel, das niemand getippt
 // hat, taucht nicht auf. Für „hat alles getippt" ist das die faire Lesart.
-function spieleJeSpieltag(alleEintraege) {
+function spieleJeSpieltag(alleEintraege, keyVon = spieltagKey) {
   const map = new Map();
   for (const e of alleEintraege) {
     if (!Number.isFinite(e.matchday)) continue;
-    const key = spieltagKey(e);
+    const key = keyVon(e);
     if (!map.has(key)) map.set(key, { wettbewerb: e.wettbewerb ?? null, matchday: e.matchday, ids: new Set() });
     map.get(key).ids.add(e.matchId ?? `${e.snapshot?.matchId}`);
   }
@@ -230,7 +230,7 @@ function aussenseiterTreffer(e, abQuote) {
 // SPÄTEREN abschneidet und nicht willkürlich mittendrin.
 export function auswerten({
   eintraege = [], alleEintraege = null, ereignisse = DEFAULT_EREIGNISSE,
-  spieltagsPunkte = null,
+  spieltagsPunkte = null, schluessel = null,
 } = {}) {
   const cfg = sanitizeEreignisse(ereignisse);
   if (!cfg.enabled) return { gutschriften: [], gesamt: 0, gedeckelt: false, verworfen: 0 };
@@ -239,17 +239,25 @@ export function auswerten({
   const meine = eintraege;
   const roh = [];
   const aktiv = (key) => cfg.aktive.find((a) => a.key === key);
+  // 🔴 Der Spieltag DER RUNDE, sobald eine Achse mitkommt (`rundenSchluessel`).
+  // Ohne sie der Liga-Spieltag — kein stiller Regelwechsel, und bei einem
+  // einzigen Wettbewerb sind beide deckungsgleich. Über Liga-Spieltage
+  // geschlüsselt vergäbe eine Runde über fünf Wettbewerbe fünf Trost-Joker pro
+  // Woche statt einem, und „drei Spieltage in Folge" zählte eine andere Folge
+  // als die Zeitachse daneben. Gemessen am 06.08.2026 fielen selbst in einer
+  // reinen Bundesliga-Runde 5 Liga- auf 4 Runden-Spieltage zusammen.
+  const keyVon = typeof schluessel === "function" ? schluessel : spieltagKey;
 
   // Serie: Spieltage in Folge. Zählt bei jedem Erreichen erneut, damit eine
   // lange Serie nicht nach dem ersten Mal wertlos wird.
   // Reihenfolge und Position aller Spieltage — eine Quelle für alles unten.
-  const reihenfolge = spieltageChronologisch(alle);
+  const reihenfolge = spieltageChronologisch(alle, keyVon);
   const posVon = new Map(reihenfolge.map((s, i) => [s.key, i]));
-  const pos = (e) => posVon.get(spieltagKey(e)) ?? -1;
+  const pos = (e) => posVon.get(keyVon(e)) ?? -1;
 
   const serie = aktiv("serie");
   if (serie) {
-    const getippt = new Set(meine.filter((e) => Number.isFinite(e.matchday)).map(spieltagKey));
+    const getippt = new Set(meine.filter((e) => Number.isFinite(e.matchday)).map(keyVon));
     let lauf = 0;
     // Chronologisch, wettbewerbsübergreifend: „dranbleiben" heißt, keinen
     // Spieltag auszulassen, der in der Runde überhaupt anstand — auch keinen
@@ -287,8 +295,8 @@ export function auswerten({
   // Spieltag vollständig getippt.
   const komplett = aktiv("spieltag-komplett");
   if (komplett) {
-    const proSpieltag = spieleJeSpieltag(alle);
-    const meineProSpieltag = spieleJeSpieltag(meine);
+    const proSpieltag = spieleJeSpieltag(alle, keyVon);
+    const meineProSpieltag = spieleJeSpieltag(meine, keyVon);
     for (const [key, s] of proSpieltag) {
       const meins = meineProSpieltag.get(key);
       if (meins && meins.ids.size >= s.ids.size) {
@@ -305,14 +313,25 @@ export function auswerten({
     const meineId = meine[0]?.userId;
     const jeSpieltag = new Map();
     for (const p of spieltagsPunkte) {
-      const key = spieltagKey(p);
-      if (!jeSpieltag.has(key)) jeSpieltag.set(key, { wettbewerb: p.wettbewerb ?? null, matchday: p.matchday, liste: [] });
-      jeSpieltag.get(key).liste.push(p);
+      const key = keyVon(p);
+      if (!jeSpieltag.has(key)) jeSpieltag.set(key, { wettbewerb: p.wettbewerb ?? null, matchday: p.matchday, summe: new Map() });
+      const g = jeSpieltag.get(key);
+      // ⚠️ AUFSUMMIERT je Nutzer, nicht angehängt. Fallen zwei Liga-Spieltage
+      // in denselben Runden-Spieltag, steht jeder Spieler zweimal in der Liste
+      // — `Math.min` fände dann den schlechteren EINZELTAG statt der Bilanz des
+      // Runden-Spieltags, und „Letzter" wäre jemand anderes als in der Tabelle.
+      g.summe.set(p.userId, (g.summe.get(p.userId) ?? 0) + (Number(p.punkte) || 0));
+      // Der frühere Liga-Spieltag vertritt die Gruppe (siehe
+      // `spieltageChronologisch`), damit die Screens ihn wiedererkennen.
+      if (p.matchday != null && (g.matchday == null || p.matchday < g.matchday)) {
+        g.matchday = p.matchday; g.wettbewerb = p.wettbewerb ?? null;
+      }
     }
     for (const s of jeSpieltag.values()) {
-      if (s.liste.length < 2) continue;   // allein ist man nicht Letzter
-      const min = Math.min(...s.liste.map((p) => p.punkte));
-      const letzte = s.liste.filter((p) => p.punkte === min);
+      const liste = [...s.summe.entries()].map(([userId, punkte]) => ({ userId, punkte }));
+      if (liste.length < 2) continue;   // allein ist man nicht Letzter
+      const min = Math.min(...liste.map((p) => p.punkte));
+      const letzte = liste.filter((p) => p.punkte === min);
       // Nur bei EINEM Letzten — bei Gleichstand ist es kein Missgeschick,
       // sondern ein gemeinsamer schwacher Spieltag.
       if (letzte.length === 1 && letzte[0].userId === meineId) {

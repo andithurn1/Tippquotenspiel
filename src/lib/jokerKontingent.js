@@ -39,9 +39,12 @@ import { auswerten } from "./ereignisse";
 
 // Alle erspielten Joker eines Nutzers, chronologisch — jede Gutschrift zählt
 // mit ihrem Spieltag, ab dem sie einsetzbar ist.
-export function erspielteJoker({ eintraege = [], alleEintraege = null, rules, spieltagsPunkte = null } = {}) {
+// `schluessel` = `rundenSchluessel(achse)`, siehe `auswerten`. Ohne ihn zaehlt
+// `ereignisse.js` in LIGA-Spieltagen — in einer Runde ueber fuenf Wettbewerbe
+// waeren das fuenf Trost-Joker pro Woche statt einem.
+export function erspielteJoker({ eintraege = [], alleEintraege = null, rules, spieltagsPunkte = null, schluessel = null } = {}) {
   const { gutschriften } = auswerten({
-    eintraege, alleEintraege, ereignisse: rules?.ereignisse, spieltagsPunkte,
+    eintraege, alleEintraege, ereignisse: rules?.ereignisse, spieltagsPunkte, schluessel,
   });
   return gutschriften;
 }

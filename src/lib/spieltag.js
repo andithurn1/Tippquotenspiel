@@ -43,20 +43,39 @@ export function gleicherSpieltag(a, b) {
 // bisher, und Altdaten ohne `kickoff` fallen nicht weg.
 //
 // Rückgabe: [{ key, wettbewerb, matchday, ende }] — `key` ist `spieltagKey`.
-export function spieltageChronologisch(entries = []) {
+//
+// 🔴 `schluessel` (optional) ist derselbe Ausweg wie bei
+// `invalidJokerMatchdays`: `rundenSchluessel(achse)` fasst damit alle
+// Liga-Spieltage EINES Runden-Spieltags zusammen. Ohne den Parameter bleibt es
+// beim Liga-Spieltag — kein stiller Regelwechsel für Aufrufer ohne Achse, und
+// bei nur einem Wettbewerb sind beide Schlüssel ohnehin deckungsgleich.
+//
+// ⚠️ `wettbewerb`/`matchday` bleiben auch dann der LIGA-Spieltag, und zwar der
+// FRÜHESTE der Gruppe. Sie sind das, woran ein Aufrufer den Tag wiedererkennt
+// (und woraus die Screens über `rundenSpieltagVon` die Runden-Nummer machen) —
+// eine Gruppe mit `matchday: null` wäre für sie unbrauchbar.
+export function spieltageChronologisch(entries = [], schluessel = null) {
   const zeit = (k) => { const t = new Date(k ?? "").getTime(); return Number.isFinite(t) ? t : null; };
+  const keyVon = typeof schluessel === "function" ? schluessel : spieltagKey;
 
   const spieltage = new Map();
   for (const e of entries) {
     if (e?.matchday == null) continue;
-    const key = spieltagKey(e);
+    const key = keyVon(e);
     const t = zeit(e.kickoff);
     const vorhanden = spieltage.get(key);
     if (!vorhanden) {
       spieltage.set(key, { key, wettbewerb: e.wettbewerb ?? null, matchday: e.matchday, ende: t });
-    } else if (t != null && (vorhanden.ende == null || t > vorhanden.ende)) {
-      vorhanden.ende = t;
+    } else {
+      if (t != null && (vorhanden.ende == null || t > vorhanden.ende)) vorhanden.ende = t;
+      // Der FRÜHESTE Liga-Spieltag der Gruppe vertritt sie. Ohne Anpfiff bleibt
+      // die kleinere Zahl — sonst hinge der Vertreter an der Eingabereihenfolge.
+      const frueher = t != null && vorhanden.start != null ? t < vorhanden.start
+        : e.matchday < vorhanden.matchday;
+      if (frueher) { vorhanden.wettbewerb = e.wettbewerb ?? null; vorhanden.matchday = e.matchday; }
     }
+    const eintrag = spieltage.get(key);
+    if (t != null && (eintrag.start == null || t < eintrag.start)) eintrag.start = t;
   }
 
   return [...spieltage.values()].sort((a, b) => {

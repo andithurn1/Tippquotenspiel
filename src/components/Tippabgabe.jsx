@@ -397,6 +397,11 @@ export default function Tippabgabe({ matchId }) {
         : t.matchday,
     }));
   }, [alleTipps, alleMatches, achse]);
+  // Der Ranglisten-Pool wird einmal je RUNDEN-Spieltag vergeben, nicht einmal je
+  // Liga — sonst ließe er sich in einer Runde über fünf Wettbewerbe fünfmal pro
+  // Woche ausgeben. Dieselbe Quelle wie in der Spielwahl, damit beide Screens
+  // dieselben Gewichte als belegt sehen.
+  const schluessel = useMemo(() => rundenSchluessel(achse) ?? undefined, [achse]);
   // ⚠️ BEIDE Quellen im RUNDEN-Spieltag. `erspielteJoker` liest `eintraege` aus
   // `getRoundEntries` und gibt den LIGA-Spieltag zurück; das Rad liefert schon
   // Runden-Spieltage. Ungleich gemischt vergleicht `erspieltBis` (matchday <=
@@ -412,6 +417,9 @@ export default function Tippabgabe({ matchId }) {
         // Einträge wissen nicht, was fehlt), `spieltagsPunkte` für den
         // Trost-Joker.
         alleEintraege, spieltagsPunkte: tagesPunkte, rules: RULES,
+        // Der RUNDEN-Spieltag, nicht der Liga-Spieltag — dieselbe Quelle wie
+        // beim Ranglisten-Pool ein paar Zeilen weiter unten.
+        schluessel,
       })
         .map((g) => {
           const runde = rundenSpieltagVon(achse, { wettbewerb: g.wettbewerb, matchday: g.matchday });
@@ -420,12 +428,7 @@ export default function Tippabgabe({ matchId }) {
       // Nur die eigenen: der Store liefert die Belohnungen ALLER Spieler.
       return [...ereignis, ...radBelohnungen.joker.filter((g) => g.userId === user?.id)];
     },
-    [meineEintraege, alleEintraege, tagesPunkte, RULES, radBelohnungen, user, achse]);
-  // Der Ranglisten-Pool wird einmal je RUNDEN-Spieltag vergeben, nicht einmal je
-  // Liga — sonst ließe er sich in einer Runde über fünf Wettbewerbe fünfmal pro
-  // Woche ausgeben. Dieselbe Quelle wie in der Spielwahl, damit beide Screens
-  // dieselben Gewichte als belegt sehen.
-  const schluessel = useMemo(() => rundenSchluessel(achse) ?? undefined, [achse]);
+    [meineEintraege, alleEintraege, tagesPunkte, RULES, radBelohnungen, user, achse, schluessel]);
 
   if (!match || !picks) {
     return (
