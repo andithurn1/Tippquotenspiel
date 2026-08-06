@@ -338,6 +338,12 @@ const varianten = [
   // die Bundesliga fängt erst an. Das einzige bereits gelaufene Spiel im
   // Katalog ist das Demo-Länderspiel — mit Filter fiele es heraus, und die
   // Zeile stünde grün da, ohne etwas geprüft zu haben.
+  // Duell: „Du" klaut bei „Lena". Ohne Saison-Deckel, weil der Vorgabe-Deckel
+  // von 60 Punkten schon beim ersten Duell greift (gemessen 06.08.2026) und
+  // die Zeile dann nur ihn prüfen würde, nicht die Ebene.
+  ["Duell-Joker (Klau)", {
+    duell: { enabled: true, typen: ["klau"], maxProSaison: 0, klau: { anteil: 0.35, modus: "nullsumme" } },
+  }, { duell: true }],
   ["Versäumnis (Ersatz-Tipps)", {
     versaeumnis: { enabled: true, strategie: "wahrscheinlich", malusProzent: 30, maxProSaison: 10 },
   }, { ohneFilter: true }],
@@ -354,11 +360,11 @@ for (const [name, extra, opt = {}] of varianten) {
     .filter((m) => m.wettbewerb === "bl" && m.result).slice(0, 45);
   for (const [i, m] of spiele.entries()) {
     for (const [j, u] of ["u-du", "u-lena", "u-kemal"].entries()) {
-      await st.saveTip({
-        roundId: rnd.id, matchId: m.id, userId: u,
-        tip: { home: (i + j) % 4, away: (i * j) % 3, goals: { home: [], away: [] } },
-        snapshot: m.snapshot,
-      });
+      const tip = { home: (i + j) % 4, away: (i * j) % 3, goals: { home: [], away: [] } };
+      // Für den Duell-Fall: „Du" setzt auf „Lena". Ohne Einsatz greift die
+      // Regel nie, und die Zeile stünde grün da, ohne etwas geprüft zu haben.
+      if (opt.duell && u === "u-du") tip.duell = { auf: "u-lena", typ: "klau" };
+      await st.saveTip({ roundId: rnd.id, matchId: m.id, userId: u, tip, snapshot: m.snapshot });
     }
   }
   const brd = await st.getLeaderboard(rnd.id);
@@ -372,7 +378,7 @@ for (const [name, extra, opt = {}] of varianten) {
   for (const b of brd) {
     const erklaert = (eigene.get(b.userId) ?? 0)
       + (b.form ?? 0) + (b.bonus ?? 0) + (b.saison ?? 0) + (b.drehrad ?? 0)
-      + (b.ersatzPunkte ?? 0)
+      + (b.ersatzPunkte ?? 0) + (b.duell ?? 0)
       - (b.gestrichenPunkte ?? 0);
     schlimmster = Math.max(schlimmster, Math.abs(b.total - erklaert));
   }
@@ -381,7 +387,7 @@ for (const [name, extra, opt = {}] of varianten) {
   // hat. Solange die Saison nicht angefangen hat, gibt es z. B. kein einziges
   // Versäumnis — die Zeile stünde grün da und hätte nichts geprüft. Deshalb
   // wird mitgezählt, ob die Marke wirklich einen Wert trägt.
-  const marken = ["form", "bonus", "saison", "drehrad", "ersatzPunkte", "gestrichenPunkte"];
+  const marken = ["form", "bonus", "saison", "drehrad", "ersatzPunkte", "duell", "gestrichenPunkte"];
   const gegriffen = marken.filter((k) => brd.some((b) => Number.isFinite(b[k]) && b[k] !== 0));
   console.log(`    ${name.padEnd(30)} unerklärter Rest: ${String(schlimmster).padStart(5)}`
     + `   ·   ganzzahlig: ${ganz ? "ja" : "NEIN"}`

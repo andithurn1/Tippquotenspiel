@@ -288,6 +288,41 @@ const KOMBINATIONEN = [
     fix: "Abzug auf 30 % setzen",
     korrektur: (r) => ({ ...r, versaeumnis: { ...r.versaeumnis, malusProzent: 30 } }),
   },
+  {
+    // 🔴 Gemessen am 06.08.2026: mit dem Vorgabe-Deckel von 60 Punkten liefern
+    // Klau-Anteile von 10 %, 35 % und 100 % ALLE dasselbe Ergebnis (+60). Der
+    // Stärke-Regler bewegt die Zahl nicht — er läuft ins Leere, weil der Deckel
+    // vorher greift. Ohne Deckel: +273, +954, +2726.
+    //
+    // Ursache ist eine Größenordnung, keine Balance: `maxProSaison` ist ein
+    // ABSOLUTER Punktwert, aber die Punkte werden mit `displayScale`
+    // hochskaliert. Ein einzelner exakter Treffer bringt schon ein Vielfaches
+    // des Deckels. Die Warnung sagt das — welchen Deckel eine Runde will,
+    // entscheidet der Admin.
+    id: "duell-deckel-erdrueckt",
+    stufe: "hinweis",
+    titel: "Der Saison-Deckel macht den Stärke-Regler wirkungslos",
+    gilt: (r) => {
+      const d = r?.duell;
+      if (!d?.enabled || !(d.maxProSaison > 0)) return false;
+      // Grober Vergleich mit der Punkte-Größenordnung EINES Treffers: liegt der
+      // Saison-Deckel darunter, ist er nach dem ersten Duell erschöpft.
+      return d.maxProSaison < (r.displayScale ?? 1) * 10;
+    },
+    text: (r) =>
+      `Höchstens ${r.duell.maxProSaison} Punkte pro Saison aus Duellen — das ist weniger als ein `
+      + "einzelner guter Tipp bringt. Der Deckel greift dann schon beim ersten Duell, und ob "
+      + "10 % oder 100 % geklaut werden, ändert am Ergebnis nichts mehr.",
+    fix: "Deckel auf das Zehnfache anheben",
+    korrektur: (r) => ({
+      ...r,
+      duell: {
+        ...r.duell,
+        maxProSaison: Math.min(RULE_LIMITS.duell?.maxProSaison?.max ?? 200,
+          Math.max(1, Math.round((r.displayScale ?? 1) * 10))),
+      },
+    }),
+  },
 ];
 
 // Rohe Summe aller Modifikator-Aufschläge, OHNE Deckel — damit sichtbar wird,

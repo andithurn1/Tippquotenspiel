@@ -104,6 +104,17 @@ export default function Ranking() {
                     border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 7px",
                   }}>−{b.gestrichen} gestrichen</span>
                 )}
+                {/* Duell-Joker: geklaut oder geblockt. Ein Spieler, dem Punkte
+                    fehlen, muss sehen WARUM — sonst wirkt es wie ein Fehler. */}
+                {b.duell != null && b.duell !== 0 && (
+                  <span title={b.duell > 0
+                    ? "Aus Duellen gewonnen"
+                    : "Durch ein Duell verloren — jemand hat auf dich gesetzt"} style={{
+                    fontFamily: MONO, fontSize: 10, color: b.duell > 0 ? C.mint : C.coral,
+                    border: `1px solid ${b.duell > 0 ? C.mint + "55" : C.coral + "55"}`,
+                    borderRadius: 999, padding: "2px 7px",
+                  }}>{b.duell > 0 ? "+" : ""}{b.duell} Duell</span>
+                )}
                 {/* Ersatz-Tipps (Versäumnis). Kulanz der Runde, keine eigene
                     Leistung — und genau deshalb benannt: sonst sieht der
                     Spieler eine Summe, zu der seine Tipps nicht führen. */}

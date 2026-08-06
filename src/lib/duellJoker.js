@@ -610,7 +610,20 @@ export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = []) {
       .map((z) => {
         const tage = proNutzer.get(z.userId) ?? [];
         const total = tage.slice(0, i + 1).reduce((s, p) => s + p, 0);
-        return { ...z, total: +total.toFixed(2) };
+        // 🔴 GERUNDET, wie in `applySaisonform`. Der Klau-Anteil ist ein Bruch
+        // (0,35 von 954 Punkten), und der Wert landet direkt im Ranking —
+        // gemessen am 06.08.2026 stand dort „3339.6" in einer Tabelle, in der
+        // jede andere Zahl ganzzahlig ist. Dieselbe Stelle wie dort: hier und
+        // nicht in der Anzeige, sonst rechnete der Abstand zum Nächsten mit
+        // einem anderen Wert als der angezeigte.
+        const gerundet = Math.round(total);
+        return {
+          ...z, total: gerundet,
+          // Was das Duell an dieser Zeile verändert hat — die Marke, ohne die
+          // ein Spieler eine Summe sieht, zu der seine Tipps nicht führen.
+          // Dieselbe Begründung wie bei `form`/`bonus`/`gestrichenPunkte`.
+          duell: gerundet - Math.round(z.total),
+        };
       })
       .sort((a, b) => b.total - a.total || String(a.name ?? "").localeCompare(String(b.name ?? ""))),
   }));

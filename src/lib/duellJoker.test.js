@@ -389,8 +389,12 @@ describe("applyDuellJoker — basis ersetzt die Rechengrundlage", () => {
     const r = applyDuellJoker(verlauf, rules, einsaetze);
     const a = r[0].board.find((z) => z.userId === "a");
     const b = r[0].board.find((z) => z.userId === "b");
-    expect(a.total).toBeCloseTo(10 + 50 * 0.35, 6);
-    expect(b.total).toBeCloseTo(50 - 50 * 0.35, 6);
+    // ⚠️ GERUNDET seit 06.08.2026: der Klau-Anteil ist ein Bruch, und der Wert
+    // landet direkt im Ranking — dort stand „3339.6" in einer Tabelle, in der
+    // jede andere Zahl ganzzahlig ist. Gerundet wird in `applyDuellJoker`,
+    // dieselbe Stelle wie in `applySaisonform`.
+    expect(a.total).toBe(Math.round(10 + 50 * 0.35));
+    expect(b.total).toBe(Math.round(50 - 50 * 0.35));
   });
 });
 
