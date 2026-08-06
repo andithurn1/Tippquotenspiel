@@ -3,7 +3,7 @@
 import { C, MONO } from "@/lib/theme";
 import {
   AUSWERTBARE_TYPEN, EREIGNIS_TYPEN, EREIGNIS_LIMITS, EREIGNIS,
-  sanitizeEreignisse, konflikte, beschreibeEreignisse,
+  EREIGNIS_PRESETS, sanitizeEreignisse, konflikte, beschreibeEreignisse,
 } from "@/lib/ereignisse";
 import { Zahl } from "@/components/Eingaben";
 
@@ -46,6 +46,43 @@ export default function Ereignisse({ rules, onChange }) {
         Belohnt wird immer dasselbe: eine Joker-Gutschrift — kein zweiter Punkte-Kanal,
         damit der Deckel weiter greift.
       </p>
+
+      {/* 🔴 Die kuratierten Bündel bleiben JEDERZEIT abrufbar, auch nachdem
+          jemand alles verstellt hat — Punkt 2 des Baukasten-Grundsatzes. Ohne
+          sie führt der Weg zurück zu einer stimmigen Einstellung nur über
+          „alles wieder abwählen und neu raten". */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: C.muted, marginBottom: 6 }}>
+          Empfohlene Zusammenstellungen
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {EREIGNIS_PRESETS.map((p) => {
+            const aktiv = JSON.stringify(sanitizeEreignisse(p.ereignisse)) === JSON.stringify(cfg);
+            return (
+              <button key={p.key} type="button" onClick={() => setze(p.ereignisse)}
+                title={p.text}
+                style={{
+                  border: `1px solid ${aktiv ? C.mint : C.line}`, borderRadius: 999,
+                  background: aktiv ? `${C.mint}1a` : "transparent",
+                  color: aktiv ? C.mint : C.text, cursor: "pointer",
+                  padding: "5px 11px", fontSize: 11.5, fontWeight: aktiv ? 700 : 500,
+                }}>
+                {p.label}
+                {/* ⚠️ Die Wirkrichtung ist ABGELEITET, nicht gemessen (siehe
+                    ereignisse.js) — deshalb steht „eher" davor. Ein Etikett,
+                    das mehr behauptet, als die Zahl hergibt, ist schlimmer als
+                    keins. */}
+                {p.wirkrichtung === "verstärkend" && (
+                  <span style={{ color: C.muted, fontWeight: 400 }}> · eher verstärkend</span>
+                )}
+                {p.wirkrichtung === "ausgleichend" && (
+                  <span style={{ color: C.muted, fontWeight: 400 }}> · eher ausgleichend</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {cfg.enabled && (
         <div style={{

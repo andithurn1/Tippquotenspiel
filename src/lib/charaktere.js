@@ -21,9 +21,19 @@
 import { sanitizeRules } from "./engine";
 import { PRESETS } from "./presets";
 import { SAISON_PRESETS } from "./saisonwetten";
+import { EREIGNIS_PRESETS } from "./ereignisse";
 
 const preset = (key) => PRESETS.find((p) => p.key === key)?.rules ?? PRESETS[0].rules;
 const saison = (key) => SAISON_PRESETS.find((p) => p.key === key)?.saison ?? { enabled: false, gewicht: 1, wetten: [] };
+// 🔴 Bis 06.08.2026 sagte KEIN Charakter etwas zu den Ereignissen — die ganze
+// Ebene kam nur in der Profi-Ansicht vor. Das ist Frage 1 des
+// Baukasten-Grundsatzes: „Kommt sie in Stufe 1 überhaupt vor? Meist nein —
+// dann muss ein Runden-Charakter sie sinnvoll mitsetzen, ohne sie zu zeigen."
+// Genau das passiert hier: jeder Charakter wählt ein Bündel aus der
+// Ereignis-Bibliothek, das zu seiner Idee passt. In der Beschreibung steht ein
+// Satz darüber, kein Regelname.
+const ereignisse = (key) =>
+  EREIGNIS_PRESETS.find((p) => p.key === key)?.ereignisse ?? { enabled: false, maxErspielt: 5, aktive: [] };
 
 // ⚠️ Zur MITBESTIMMUNG (`design/abstimmung-verfassung.md`) sagt hier bewusst
 // kein Charakter etwas: alle fünf lassen die Regel-Abstimmung aus, und das ist
@@ -46,6 +56,10 @@ export const CHARAKTERE = [
       name: "Klassisch & fair",
       joker: { enabled: true, modus: "einzel", faktor: 1.5, abstimmung: false },
       saison: saison("klassisch"),
+      // Die harmloseste Sorte: sie belohnt Teilnahme, nicht Können, und
+      // bevorzugt damit niemanden, der ohnehin vorn liegt. Passt zu „nichts,
+      // was man erklären muss".
+      ereignisse: ereignisse("dranbleiben"),
     }),
   },
   {
@@ -71,6 +85,10 @@ export const CHARAKTERE = [
       // wie beim Heimatbonus. Bewusst die mittlere Schwelle, nicht 0.
       bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 },
       saison: saison("ohne-favorit"),
+      // ⚠️ Das einzige Paket mit einem VERSTÄRKENDEN Bündel — und das ist hier
+      // die Ansage („große Ausschläge, viel Drama"), nicht ein Versehen.
+      // Anderswo hat es nichts zu suchen.
+      ereignisse: ereignisse("mut"),
     }),
   },
   {
@@ -85,6 +103,11 @@ export const CHARAKTERE = [
       name: "Kenner-Runde",
       joker: { enabled: true, modus: "ranking", faktoren: [2, 1.5, 1.2, 1], abstimmung: false },
       saison: saison("kenner"),
+      // Bewusst AUS. „Hier gewinnt, wer die Liga verfolgt" verträgt keine
+      // Nebengutschriften: jede davon verschiebt einen Teil der Entscheidung
+      // weg vom Tippen. Ausdrücklich begründet statt stillschweigend
+      // ausgelassen — dieselbe Regel wie bei der Mitbestimmung oben.
+      ereignisse: ereignisse("aus"),
     }),
   },
   {
@@ -111,6 +134,7 @@ export const CHARAKTERE = [
         einsatzTakt: "spieltag",
       },
       saison: saison("klassisch"),
+      ereignisse: ereignisse("dranbleiben"),
     }),
   },
   {
@@ -126,6 +150,11 @@ export const CHARAKTERE = [
       joker: { enabled: false },
       saison: saison("nebenbei"),
       versaeumnis: { enabled: true, strategie: "wahrscheinlich", malusProzent: 25, maxProSaison: 5 },
+      // ⚠️ NICHT „ausgleich": der Trost-Joker und der Versäumnis-Ersatztipp
+      // fangen beide den verpatzten Spieltag ab, und zusammen wäre das eine
+      // Doppelbelohnung für dasselbe. Dieselbe Überlegung, die `konflikte()`
+      // für Trost-Joker + Anschluss-Bonus meldet.
+      ereignisse: ereignisse("dranbleiben"),
     }),
   },
 ];
@@ -158,6 +187,15 @@ export function merkmale(charakter) {
   }
   if (r.versaeumnis?.enabled) m.push("Kulanz bei Versäumnis");
   if (r.underdogBoost > 1) m.push("Außenseiter zahlen extra");
+  // In Alltagssprache, nach dem, WAS der Spieler merkt — nicht nach dem, was
+  // eingeschaltet ist. „2 Ereignisse aktiv" wäre ein Regelname; „Joker zum
+  // Verdienen" ist die Sache selbst.
+  if (r.ereignisse?.enabled) {
+    const keys = new Set((r.ereignisse.aktive ?? []).map((a) => a.key));
+    if (keys.has("letzter-am-spieltag")) m.push("Trost-Joker für schlechte Spieltage");
+    else if (keys.has("aussenseiter") || keys.has("erster-exakter")) m.push("Joker für gute Treffer");
+    else m.push("Joker fürs Dranbleiben");
+  }
 
   return m;
 }

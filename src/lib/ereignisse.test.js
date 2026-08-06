@@ -2,8 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   EREIGNIS_TYPEN, EREIGNIS, EREIGNIS_LIMITS, DEFAULT_EREIGNISSE, AUSWERTBARE_TYPEN,
   istAuswertbar, sanitizeEreignisse, auswerten, konflikte, beschreibeEreignisse,
+  EREIGNIS_PRESETS,
 } from "@/lib/ereignisse";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
+import { CHARAKTERE } from "@/lib/charaktere";
+import { REGLER, anwenden, erkenneStufe } from "@/lib/einfachRegler";
 
 // Ein Eintrag, wie ihn `getRoundEntries` liefert.
 const e = (userId, matchday, matchId, tip, result, quote = { home: 2, away: 3 }) => ({
@@ -379,5 +382,68 @@ describe("Begrenzer je Ereignis", () => {
     const c = sanitizeEreignisse(AN([{ key: "serie", abstand: 99, maxProSaison: -5 }]));
     expect(c.aktive[0].abstand).toBe(EREIGNIS_LIMITS.abstand.max);
     expect(c.aktive[0].maxProSaison).toBe(0);
+  });
+});
+
+// ── Die drei Komplexitätsstufen ─────────────────────────────
+// 🔴 Bis 06.08.2026 kam `rules.ereignisse` NUR in der Profi-Ansicht vor: kein
+// Charakter setzte sie, kein Regler in Stufe 2 erreichte sie. Genau das
+// schließt der Baukasten-Grundsatz aus — „eine Einstellung, die nur in Stufe 3
+// auftaucht, ist nicht fertig". Diese Tests halten den Zustand fest, damit er
+// nicht beim nächsten Umbau wieder zurückfällt.
+describe("Ereignisse sind auf allen drei Stufen erreichbar", () => {
+  it("Stufe 1: jeder Charakter TRIFFT eine Entscheidung — auch „aus“ ist eine", () => {
+    for (const c of CHARAKTERE) {
+      expect(c.rules.ereignisse).toBeTruthy();
+      // Und sie muss ein gültiges Regelwerk ergeben, nicht ein halbes.
+      expect(sanitizeEreignisse(c.rules.ereignisse)).toEqual(c.rules.ereignisse);
+    }
+  });
+
+  it("Stufe 1: mindestens ein Charakter hat sie an — sonst wäre die Ebene dort unsichtbar", () => {
+    expect(CHARAKTERE.some((c) => c.rules.ereignisse.enabled)).toBe(true);
+  });
+
+  it("Stufe 2: der Regler „nebenbei“ deckt die Bibliothek ab und wird wiedererkannt", () => {
+    const regler = REGLER.find((r) => r.key === "nebenbei");
+    expect(regler).toBeTruthy();
+    for (const stufe of regler.stufen) {
+      const r = anwenden(DEFAULT_RULES, "nebenbei", stufe.key);
+      expect(erkenneStufe(r, "nebenbei")).toBe(stufe.key);
+    }
+  });
+
+  it("Stufe 2: die Stufen unterscheiden sich WIRKLICH, nicht nur im Namen", () => {
+    const regler = REGLER.find((r) => r.key === "nebenbei");
+    const fassungen = regler.stufen.map((s) => JSON.stringify(anwenden(DEFAULT_RULES, "nebenbei", s.key).ereignisse));
+    expect(new Set(fassungen).size).toBe(regler.stufen.length);
+  });
+
+  it("Stufe 3: jedes Bibliotheks-Bündel ist ein gültiges Regelwerk und schaltet etwas ein", () => {
+    for (const p of EREIGNIS_PRESETS) {
+      const c = sanitizeEreignisse(p.ereignisse);
+      expect(c).toEqual(p.ereignisse);          // nichts wird stillschweigend verworfen
+      expect(c.enabled).toBe(p.key !== "aus");  // nur „aus“ ist aus
+      // ⚠️ Jeder aktive Eintrag muss AUSWERTBAR sein — ein Bündel mit einem
+      // vorbereiteten Typ (Quiz, Duell) sähe eingeschaltet aus und täte nichts.
+      for (const a of c.aktive) expect(istAuswertbar(a.key)).toBe(true);
+    }
+  });
+
+  it("kein Bündel der Bibliothek erzeugt einen Konflikt mit dem Anschluss-Bonus …", () => {
+    // … außer dem ausdrücklich ausgleichenden, und DER soll ihn melden:
+    // Trost-Joker + Anschluss-Bonus belohnen beide das Zurückliegen.
+    const mitAufholen = { aufholen: { enabled: true, staerke: "mittel", schwelle: 0.05 } };
+    for (const p of EREIGNIS_PRESETS) {
+      const n = konflikte({ ...mitAufholen, ereignisse: p.ereignisse }).length;
+      expect(n).toBe(p.key === "ausgleich" || p.key === "alles" ? 1 : 0);
+    }
+  });
+
+  it("die Wirkrichtung ist als ABGELEITET gekennzeichnet, nicht als gemessen", () => {
+    // Solange keine Simulation dahintersteht, darf kein Eintrag behaupten,
+    // seine Wirkrichtung sei belegt — das ist die Hausregel „die Herkunft wird
+    // abgelesen, nicht behauptet".
+    for (const p of EREIGNIS_PRESETS) expect(p.gemessen).toBe(false);
   });
 });

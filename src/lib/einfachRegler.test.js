@@ -29,7 +29,14 @@ describe("Katalog", () => {
 
   it("wenige Regler — sonst wäre es die Profi-Ebene", () => {
     expect(REGLER.length).toBeGreaterThanOrEqual(3);
-    expect(REGLER.length).toBeLessThanOrEqual(6);
+    // ⚠️ Die Grenze wandert NICHT bei jedem neuen Regelblock mit. Sie stand auf
+    // 6 und ist am 06.08.2026 EINMAL auf 7 gegangen, für „Wie viel soll
+    // nebenbei passieren?" — die Ereignis-Ebene kam bis dahin nur in der
+    // Profi-Ansicht vor und war damit nach dem Baukasten-Grundsatz nicht
+    // fertig. Wer den nächsten Regler ergänzen will, prüft zuerst, ob er
+    // nicht in einen bestehenden gehört: Stufe 2 ist eine Handvoll FRAGEN,
+    // keine kürzere Profi-Ansicht. Sieben ist die Obergrenze.
+    expect(REGLER.length).toBeLessThanOrEqual(7);
   });
 
   it("Schlüssel sind eindeutig, auch je Stufe", () => {

@@ -135,6 +135,96 @@ export const EREIGNIS_LIMITS = {
 
 export const DEFAULT_EREIGNISSE = { enabled: false, maxErspielt: 5, aktive: [] };
 
+// ── Die Ereignis-Bibliothek ─────────────────────────────────
+//  🔴 Warum es sie gibt: bis 06.08.2026 kam `rules.ereignisse` NUR in der
+//  Profi-Ansicht vor — in Stufe 1 (Charaktere) und Stufe 2 (einfache Regler)
+//  war die ganze Ebene unsichtbar. Genau das schließt der Baukasten-Grundsatz
+//  aus: „eine Einstellung, die nur in Stufe 3 auftaucht, ist nicht fertig."
+//  Sie zwingt jeden, der sie nutzen will, in die Profi-Ansicht.
+//
+//  Ein Eintrag ist ein BÜNDEL, keine Einzeleinstellung — dieselbe Idee wie bei
+//  den Stufen in `einfachRegler.js` und den ASPEKTEN in `presetMerge.js`:
+//  zusammengehörige Werte wandern gemeinsam, damit keine unvermessene
+//  Kombination entsteht.
+//
+//  ⚠️ **`wirkrichtung` ist ABGELEITET, nicht gemessen** — deshalb steht
+//  `gemessen: false` daran. Sie sagt, WEN ein Eintrag seiner Bauart nach
+//  begünstigt (wer zurückliegt → ausgleichend, wer trifft → verstärkend), und
+//  das ist eine Aussage über den Auslöser, keine über die Endpunkte. Die
+//  Messung (Streuung der Endpunkte + `aufholFlipQuote`) gehört in den
+//  Balance-Durchgang am Ende und ersetzt das Feld dann. So herum ist es eine
+//  ehrliche Einordnung; als „gemessen" behauptet wäre es eine Erfindung.
+export const EREIGNIS_PRESETS = [
+  {
+    key: "aus",
+    label: "Nichts nebenbei",
+    text: "Joker gibt es nur vom Admin. Kein Ereignis, keine Nebenrechnung.",
+    wirkrichtung: "neutral", gemessen: false,
+    ereignisse: { enabled: false, maxErspielt: 5, aktive: [] },
+  },
+  {
+    key: "dranbleiben",
+    label: "Dranbleiben lohnt sich",
+    text: "Wer regelmäßig tippt, verdient sich Joker — unabhängig davon, wie gut er tippt.",
+    // Die harmloseste Sorte: sie belohnt Teilnahme, nicht Können. Damit
+    // bevorzugt sie niemanden, der ohnehin vorn liegt.
+    wirkrichtung: "neutral", gemessen: false,
+    ereignisse: {
+      enabled: true, maxErspielt: 6,
+      aktive: [
+        { key: "serie", anzahl: 3, belohnung: 1, abstand: 2, maxProSaison: 0 },
+        { key: "spieltag-komplett", belohnung: 1, abstand: 0, maxProSaison: 6 },
+      ],
+    },
+  },
+  {
+    key: "ausgleich",
+    label: "Wer hinten liegt, bekommt etwas",
+    text: "Der Letzte eines Spieltags bekommt einen Trost-Joker. Niemand ist nach zehn Spieltagen raus.",
+    wirkrichtung: "ausgleichend", gemessen: false,
+    ereignisse: {
+      enabled: true, maxErspielt: 5,
+      // `abstand: 2`: ohne Abklingzeit kassiert derselbe Spieler jede Woche.
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, abstand: 2, maxProSaison: 0 }],
+    },
+  },
+  {
+    key: "mut",
+    label: "Mut wird belohnt",
+    text: "Ein getroffener Außenseiter und der erste exakte Treffer bringen einen Joker extra.",
+    // ⚠️ Verstärkend: wer gut (oder mutig) tippt, bekommt ZUSÄTZLICH einen
+    // Joker, mit dem er wieder besser tippen kann. Gehört in die Bibliothek,
+    // aber nicht in eine Ausgleichs-Empfehlung — sichtbar etikettiert statt
+    // stillschweigend beigemischt.
+    wirkrichtung: "verstärkend", gemessen: false,
+    ereignisse: {
+      enabled: true, maxErspielt: 5,
+      aktive: [
+        { key: "aussenseiter", abQuote: 5, belohnung: 1, abstand: 0, maxProSaison: 4 },
+        { key: "erster-exakter", belohnung: 1, abstand: 0, maxProSaison: 0 },
+      ],
+    },
+  },
+  {
+    key: "alles",
+    label: "Ständig passiert etwas",
+    text: "Alle fünf Ereignisse an. Es gibt fast jeden Spieltag irgendwo eine Gutschrift.",
+    wirkrichtung: "gemischt", gemessen: false,
+    ereignisse: {
+      enabled: true, maxErspielt: 10,
+      aktive: [
+        { key: "serie", anzahl: 3, belohnung: 1, abstand: 2, maxProSaison: 0 },
+        { key: "spieltag-komplett", belohnung: 1, abstand: 0, maxProSaison: 8 },
+        { key: "letzter-am-spieltag", belohnung: 1, abstand: 2, maxProSaison: 0 },
+        { key: "aussenseiter", abQuote: 5, belohnung: 1, abstand: 0, maxProSaison: 4 },
+        { key: "erster-exakter", belohnung: 1, abstand: 0, maxProSaison: 0 },
+      ],
+    },
+  },
+];
+
+export const EREIGNIS_PRESET = Object.fromEntries(EREIGNIS_PRESETS.map((p) => [p.key, p]));
+
 export function istAuswertbar(key) {
   const typ = EREIGNIS[key];
   return Boolean(typ) && typ.braucht.every((d) => VERFUEGBARE_DATEN.includes(d));

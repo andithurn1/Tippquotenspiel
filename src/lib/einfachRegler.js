@@ -21,9 +21,12 @@ import { scoreTip, sanitizeRules, DEFAULT_RULES } from "./engine";
 import { createMockOddsSource } from "./engine";
 import { SAISON_PRESETS } from "./saisonwetten";
 import { PRESETS } from "./presets";
+import { EREIGNIS_PRESETS } from "./ereignisse";
 
 const saisonVon = (key) =>
   SAISON_PRESETS.find((p) => p.key === key)?.saison ?? { enabled: false, gewicht: 1, wetten: [] };
+const ereignisseVon = (key) =>
+  EREIGNIS_PRESETS.find((p) => p.key === key)?.ereignisse ?? { enabled: false, maxErspielt: 5, aktive: [] };
 
 // ⚠️ Die Naehe-Werte werden NICHT erfunden, sondern aus den bereits
 // vermessenen Presets uebernommen. Ein selbst gewaehltes `k` ergibt schnell
@@ -245,6 +248,38 @@ export const REGLER = [
         key: "spuerbar", label: "Spürbar",
         beschreibung: "Drei Wetten in voller Gewichtung. Ein guter Saison-Tipp zählt.",
         werte: { saison: saisonVon("klassisch") },
+      },
+    ],
+  },
+  {
+    // 🔴 Der Regler, den `rules.ereignisse` bis 06.08.2026 nicht hatte: die
+    // ganze Ebene kam nur in der Profi-Ansicht vor. Die Frage ist bewusst in
+    // KLARTEXT gestellt und nicht nach dem Feldnamen benannt — ein Regler in
+    // Stufe 2 fasst mehrere Profi-Werte zusammen, und der Admin denkt nicht in
+    // „Ereignissen", sondern in „was passiert bei uns so nebenbei".
+    key: "nebenbei",
+    label: "Wie viel soll nebenbei passieren?",
+    hint: "Joker, die man sich verdient — durch Dranbleiben, Mut oder als Trost für einen schlechten Spieltag.",
+    stufen: [
+      {
+        key: "nichts", label: "Nichts",
+        beschreibung: "Joker gibt es nur vom Admin. Ruhig und übersichtlich.",
+        werte: { ereignisse: ereignisseVon("aus") },
+      },
+      {
+        key: "dranbleiben", label: "Dranbleiben lohnt sich",
+        beschreibung: "Wer regelmäßig tippt, verdient sich Joker — unabhängig davon, wie gut.",
+        werte: { ereignisse: ereignisseVon("dranbleiben") },
+      },
+      {
+        key: "ausgleich", label: "Trost für den Letzten",
+        beschreibung: "Wer einen Spieltag verpatzt, bekommt einen Joker zurück.",
+        werte: { ereignisse: ereignisseVon("ausgleich") },
+      },
+      {
+        key: "viel", label: "Ständig etwas los",
+        beschreibung: "Alle Ereignisse an. Fast jeden Spieltag gibt es irgendwo eine Gutschrift.",
+        werte: { ereignisse: ereignisseVon("alles") },
       },
     ],
   },

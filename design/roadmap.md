@@ -238,6 +238,46 @@ Trost-Joker unbemerkt tot sein. Stand: alle fünf Ereignisse schütten aus
 (6 · 3 · 11 · 18 · 6), `maxErspielt` deckelt (43 → 6), und zwei Ligen ergeben
 dieselben 43 Gutschriften wie eine.
 
+### 🔴 Ereignisse gab es nur in Stufe 3 (06.08.2026) — ✅ behoben
+
+Die Ebene war über die Profi-Ansicht vollständig einstellbar, und **kein
+Charakter setzte sie, kein Regler in Stufe 2 erreichte sie**. Genau der
+Zustand, den der Baukasten-Grundsatz ausschließt: „eine Einstellung, die nur in
+Stufe 3 auftaucht, ist nicht fertig — sie zwingt jeden, der sie nutzen will, in
+die Profi-Ansicht."
+
+Gebaut wurden die drei Antworten der Reihe nach:
+
+1. **Ereignis-Bibliothek** (`EREIGNIS_PRESETS` in `ereignisse.js`) — fünf
+   Bündel: *Nichts nebenbei · Dranbleiben lohnt sich · Wer hinten liegt,
+   bekommt etwas · Mut wird belohnt · Ständig passiert etwas.* Ein Eintrag ist
+   ein BÜNDEL, keine Einzeleinstellung — dieselbe Idee wie die Stufen in
+   `einfachRegler.js` und die Aspekte in `presetMerge.js`.
+2. **Stufe 2: ein Klartext-Regler** „Wie viel soll nebenbei passieren?" mit
+   vier Stufen. Bewusst nicht nach dem Feldnamen benannt: der Admin denkt nicht
+   in „Ereignissen".
+3. **Stufe 1: jeder Charakter trifft eine Entscheidung**, auch „aus" ist eine.
+   *Klassisch/Wettbüro/Nebenbei* → Dranbleiben · *Mutig & wild* → Mut (das
+   einzige verstärkende Bündel, und dort ist es die Ansage) · *Kenner-Runde* →
+   ausdrücklich AUS, mit Begründung im Code statt stillschweigend.
+   ⚠️ *Nur nebenbei* bekommt bewusst NICHT „ausgleich": Trost-Joker und
+   Versäumnis-Ersatztipp fangen beide den verpatzten Spieltag ab.
+4. **Stufe 3 behält die Bündel als Knöpfe** — Punkt 2 des Grundsatzes: die
+   kuratierten Voreinstellungen müssen jederzeit abrufbar bleiben, auch nachdem
+   jemand alles verstellt hat.
+
+⚠️ **Die `wirkrichtung` steht als ABGELEITET dran, nicht als gemessen**
+(`gemessen: false`, in der Oberfläche „eher verstärkend"). Sie sagt, wen ein
+Bündel seiner BAUART nach begünstigt — das ist eine Aussage über den Auslöser,
+keine über die Endpunkte. Die Messung (Streuung der Endpunkte +
+`aufholFlipQuote`) gehört in den Balance-Durchgang am Ende und ersetzt das Feld
+dann. Als „gemessen" behauptet wäre es eine Erfindung.
+
+⚠️ **Die Obergrenze von Stufe 2 ist damit erreicht** (7 Regler, Test hält sie
+fest). Wer den nächsten ergänzen will, prüft zuerst, ob er nicht in einen
+bestehenden gehört — Stufe 2 ist eine Handvoll FRAGEN, keine kürzere
+Profi-Ansicht.
+
 ### ⏰ Echte Spielpläne vor dem Launch — HARTE FRIST, Bundesliga ✅ erledigt
 **Der einzige Punkt mit einem Datum: 28.08.2026.**
 
