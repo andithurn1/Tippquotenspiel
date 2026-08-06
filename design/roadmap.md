@@ -297,6 +297,35 @@ nach RISIKO: die vier Funde waren FUNKTIONEN in Modulen, die zu einem
 `rules.*`-Block gehören. Dort heißt „ruft niemand auf" nämlich *die Einstellung
 tut nichts*; bei einer Konstante heißt es bloß *ungenutzt*. Erste Gruppe: 17.
 
+#### 🔴 Der sechste Fund: das Freischalt-Fenster war ein `disabled`-Attribut
+
+`saveSeasonTip` nahm **jede Wette zu jeder Zeit entgegen.** `SaisonTipps.jsx`
+zeigte den Zustand richtig an und sperrte das Auswahlfeld — der Store prüfte
+nichts. Eine Regel, die nur in der Oberfläche steht, ist eine Vereinbarung;
+derselbe Satz steht in dieser Roadmap schon über den Quoten-Snapshot.
+
+Das ist mehr als Formsache: die Fenster tragen eine FAIRNESS-Aussage. „Wer
+gewinnt die Champions League?" vor dem 1. Spieltag ist Raten — wer später
+tippen darf, weiß mehr bei gleicher Punktzahl.
+
+**`src/lib/saisonFenster.js`** ist jetzt die eine Stelle: `wettenStatus()` für
+die Anzeige, `darfSaisonTippen()` für beide Stores. Der Screen hatte die
+Fallunterscheidung selbst stehen — zwei Formulierungen derselben Regel wären
+der nächste Schritt in dieselbe Falle.
+
+⚠️ **Client-seitig, und das ersetzt keinen Trigger** (siehe RLS-Durchgang).
+Geschlossen ist die Lücke zwischen ANZEIGE und SPEICHERUNG, nicht die zwischen
+Client und Datenbank.
+
+⚠️ **Ein Nebenbefund, der sofort scharf wurde:** über den GANZEN Katalog
+gerechnet hat die Saison längst begonnen — die MLS spielt seit dem 31.07.,
+15 Spiele sind angepfiffen. Eine Runde OHNE Vereinsfilter kann damit keine
+fensterlose Saison-Wette mehr annehmen. Das ist richtig so und stand als
+Warnung schon in `SaisonTipps.jsx`; seit der Store prüft, ist es keine
+Anzeige-Frage mehr. Fünf Store-Tests mussten deshalb eine Runde MIT
+`teamFilter` anlegen — vorher legten sie Saison-Tipps in einer Runde ab, die
+gar keine Saison-Wetten hatte.
+
 #### 🔴 Und gleich der fünfte Fund: `tippfenster.anker` lief ins Leere
 
 Aus der ersten Gruppe direkt eine echte Sache — sechs unbenutzte Exporte in

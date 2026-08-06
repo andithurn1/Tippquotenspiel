@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { getStore } from "@/lib/store";
-import { freigabeStatus } from "@/lib/saisonwetten";
-import { saisonLage } from "@/lib/wettbewerbe";
+import { wettenStatus } from "@/lib/saisonFenster";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
@@ -70,11 +69,12 @@ export default function SaisonTipps() {
   // wettbewerbe.js) — die Begründungen stehen dort. Kurz: gerechnet wird über
   // die Spiele DIESER Runde, das Demo-Länderspiel und fremde Wettbewerbe
   // zählen nicht mit.
-  const { gestartet, stand } = useMemo(() => saisonLage(matches), [matches]);
-  const statusVon = (w) => (w.abSpieltag == null
-    ? { offen: !gestartet, zustand: gestartet ? "vorbei" : "immer",
-        text: gestartet ? "Saison läuft — vor dem 1. Spieltag abzugeben" : "jederzeit abgebbar" }
-    : freigabeStatus(w, stand));
+  // 🔴 DIESELBE Funktion, die auch der Store vor dem Speichern fragt
+  // (`saisonFenster.js`). Vorher stand die Fallunterscheidung hier — und im
+  // Store gar nicht: das Fenster war ein `disabled`-Attribut, jede Wette kam
+  // zu jeder Zeit durch. Zwei Formulierungen derselben Regel wären der nächste
+  // Schritt in dieselbe Falle.
+  const statusVon = (w) => wettenStatus({ wette: w, matches });
 
   const setzeTipp = async (id, wert) => {
     setTipps((t) => ({ ...t, [id]: wert }));

@@ -22,6 +22,7 @@ import { einsaetzeAusTipps } from "./duellJoker";
 import { filterMatchesByTeams } from "./roundStatus";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
+import { darfSaisonTippen } from "./saisonFenster";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -508,7 +509,21 @@ export function createMockStore() {
 
     // ── Saison-Wetten abgeben ───────────────────────────────
     // Ein Tipp je (Runde, Nutzer, Wette); erneutes Abgeben überschreibt.
+    // 🔴 Das Freischalt-Fenster war bis 06.08.2026 ein `disabled`-Attribut.
+    // Der Screen zeigte den Zustand richtig an und sperrte das Auswahlfeld —
+    // hier kam jede Wette zu jeder Zeit durch. Eine Regel, die nur in der
+    // Oberfläche steht, ist eine Vereinbarung.
+    //
+    // ⚠️ Ersetzt keine Server-Prüfung (siehe RLS-Durchgang in der Roadmap),
+    // schließt aber die Lücke zwischen Anzeige und Speicherung: beide fragen
+    // jetzt dieselbe Funktion.
     async saveSeasonTip({ roundId, userId, wettenId, wert }) {
+      const round = rounds.get(roundId);
+      const grund = darfSaisonTippen({
+        rules: round?.rules ?? DEFAULT_RULES, id: wettenId,
+        matches: filterMatchesByTeams([...matches.values()], round?.team_filter),
+      });
+      if (grund) throw new Error(grund);
       const existing = seasonTips.find((s) => s.round_id === roundId && s.user_id === userId && s.wetten_id === wettenId);
       if (existing) { existing.wert = wert; return existing; }
       const row = { round_id: roundId, user_id: userId, wetten_id: wettenId, wert };

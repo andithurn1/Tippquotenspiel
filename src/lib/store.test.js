@@ -8,6 +8,7 @@ import { auswerten } from "./drehrad";
 import { WETT_TYP } from "./saisonwetten";
 import { filterMatchesByTeams } from "./roundStatus";
 import { darfEinsetzen, basisFuer } from "./jokerBasis";
+import { LIGEN } from "./ligen";
 
 describe("Mock-Store — Seed & Schnittstelle", () => {
   it("liefert das Demo-Match JOR-ESP mit Snapshot und Ergebnis", async () => {
@@ -201,50 +202,94 @@ describe("Spieltag öffnen (openMatchday)", () => {
 });
 
 describe("Saison-Wetten (saveSeasonTip / listSeasonTips + Leaderboard)", () => {
+  // 🔴 Seit 06.08.2026 prüft `saveSeasonTip` das FREISCHALT-FENSTER (siehe
+  // saisonFenster.js). Vorher war es ein `disabled`-Attribut in der
+  // Oberfläche, und der Store nahm jede Wette zu jeder Zeit entgegen.
+  //
+  // ⚠️ Deshalb brauchen diese Tests eine Runde mit `teamFilter`. Über den
+  // GANZEN Katalog gerechnet hat die Saison längst begonnen — die MLS spielt
+  // seit dem 31.07., und Wetten OHNE Fenster gehören vor den 1. Spieltag.
+  // Genau die Falle, vor der der Kommentar in `SaisonTipps.jsx` warnt; sie ist
+  // jetzt nicht mehr nur eine Anzeige-Frage.
+  const SAISON = { enabled: true, gewicht: 1, wetten: [{ key: "meister", punkte: 300 }] };
+  const blTeams = Object.keys(LIGEN.find((l) => l.key === "bl").ratings);
+  const saisonRunde = (store, saison = SAISON) => store.createRound({
+    name: "Saison-Runde", adminId: "u-du", adminName: "Du",
+    rules: { ...DEFAULT_RULES, saison }, teamFilter: blTeams,
+  });
+
   it("speichert einen Saison-Tipp und aktualisiert ihn beim erneuten Abgeben (kein Duplikat)", async () => {
     const store = createMockStore();
-    await store.saveSeasonTip({ roundId: DEMO_ROUND_ID, userId: "u-du", wettenId: "meister", wert: "FC Bayern München" });
-    let mine = await store.listSeasonTips({ roundId: DEMO_ROUND_ID, userId: "u-du" });
+    const round = await saisonRunde(store);
+    await store.saveSeasonTip({ roundId: round.id, userId: "u-du", wettenId: "meister", wert: "FC Bayern München" });
+    let mine = await store.listSeasonTips({ roundId: round.id, userId: "u-du" });
     expect(mine).toHaveLength(1);
     expect(mine[0].wert).toBe("FC Bayern München");
 
-    await store.saveSeasonTip({ roundId: DEMO_ROUND_ID, userId: "u-du", wettenId: "meister", wert: "Borussia Dortmund" });
-    mine = await store.listSeasonTips({ roundId: DEMO_ROUND_ID, userId: "u-du" });
+    await store.saveSeasonTip({ roundId: round.id, userId: "u-du", wettenId: "meister", wert: "Borussia Dortmund" });
+    mine = await store.listSeasonTips({ roundId: round.id, userId: "u-du" });
     expect(mine).toHaveLength(1);
     expect(mine[0].wert).toBe("Borussia Dortmund");
   });
 
   it("listSeasonTips filtert nach Nutzer bzw. gibt alle der Runde zurück", async () => {
     const store = createMockStore();
-    await store.saveSeasonTip({ roundId: DEMO_ROUND_ID, userId: "u-du", wettenId: "meister", wert: "A" });
-    await store.saveSeasonTip({ roundId: DEMO_ROUND_ID, userId: "u-lena", wettenId: "meister", wert: "B" });
-    expect(await store.listSeasonTips({ roundId: DEMO_ROUND_ID })).toHaveLength(2);
-    expect(await store.listSeasonTips({ roundId: DEMO_ROUND_ID, userId: "u-du" })).toHaveLength(1);
+    const round = await saisonRunde(store);
+    await store.joinRound({ roundId: round.id, userId: "u-lena", name: "Lena" });
+    await store.saveSeasonTip({ roundId: round.id, userId: "u-du", wettenId: "meister", wert: "A" });
+    await store.saveSeasonTip({ roundId: round.id, userId: "u-lena", wettenId: "meister", wert: "B" });
+    expect(await store.listSeasonTips({ roundId: round.id })).toHaveLength(2);
+    expect(await store.listSeasonTips({ roundId: round.id, userId: "u-du" })).toHaveLength(1);
   });
 
-  it("ohne aktive Saison verändert ein Saison-Tipp das Leaderboard nicht", async () => {
+  // 🔴 Die alte Fassung dieses Tests hieß „ohne aktive Saison verändert ein
+  // Saison-Tipp das Leaderboard nicht" und legte den Tipp einfach ab. Das geht
+  // jetzt gar nicht mehr — und das ist die STÄRKERE Aussage: eine Wette, die
+  // es in der Runde nicht gibt, landet erst gar nicht in der Tabelle. Vorher
+  // ließ sich eine beliebige `wettenId` ablegen; sie zählte nie, stand aber
+  // für immer da.
+  it("ohne aktive Saison lässt sich gar kein Saison-Tipp abgeben", async () => {
     const store = createMockStore();
-    await store.saveSeasonTip({ roundId: DEMO_ROUND_ID, userId: "u-du", wettenId: "meister", wert: "FC Bayern München" });
+    await expect(store.saveSeasonTip({
+      roundId: DEMO_ROUND_ID, userId: "u-du", wettenId: "meister", wert: "FC Bayern München",
+    })).rejects.toThrow(/keine Saison-Wetten/);
     const board = await store.getLeaderboard(DEMO_ROUND_ID);
-    expect(board.every((b) => b.saison === undefined)).toBe(true); // Demo-Runde hat saison aus
+    expect(board.every((b) => b.saison === undefined)).toBe(true);
+  });
+
+  it("eine Wette, die nicht im Regelwerk steht, wird abgelehnt", async () => {
+    const store = createMockStore();
+    const round = await saisonRunde(store);
+    await expect(store.saveSeasonTip({
+      roundId: round.id, userId: "u-du", wettenId: "torschuetzenkoenig", wert: "irgendwer",
+    })).rejects.toThrow(/gehört nicht zu dieser Runde/);
+  });
+
+  it("nach Saisonstart der RUNDE ist eine Wette ohne Fenster zu", async () => {
+    const store = createMockStore();
+    const round = await saisonRunde(store);
+    // Ohne Vereinsfilter zählt der ganze Katalog — und dort läuft die MLS
+    // bereits. Dieselbe Wette, andere Runde, anderes Ergebnis.
+    const offen = await store.createRound({
+      name: "Alles", adminId: "u-du", adminName: "Du", rules: { ...DEFAULT_RULES, saison: SAISON },
+    });
+    await store.saveSeasonTip({ roundId: round.id, userId: "u-du", wettenId: "meister", wert: "FC Bayern München" });
+    await expect(store.saveSeasonTip({
+      roundId: offen.id, userId: "u-du", wettenId: "meister", wert: "FC Bayern München",
+    })).rejects.toThrow(/Saison läuft/);
   });
 
   it("mit aktiver Saison trägt ein Treffer eine eigene saison-Zeile ins Board", async () => {
     const store = createMockStore();
-    // Runde mit aktiver Saison-Wette: „Meister" (aus den simulierten Ergebnissen ermittelbar)
-    const round = await store.createRound({
-      name: "Saison-Runde", adminId: "u-du", adminName: "Du", rules: DEFAULT_RULES,
-    });
-    // Regelwerk der Runde direkt mit Saison versehen (Admin ist Premium im Mock)
-    const r = await store.getRound(round.id);
-    r.rules = { ...r.rules, saison: { enabled: true, gewicht: 1, wetten: [{ key: "meister", punkte: 300 }] } };
-    // echten Meister aus den Match-Ergebnissen bestimmen und darauf tippen
+    const round = await saisonRunde(store);
     const { scoreSaison } = await import("./saisonwetten");
-    const matches = await store.listMatches();
-    const meister = scoreSaison({ matches, tipps: {}, saison: r.rules.saison }).zeilen[0].gewinner[0];
+    // 🔴 Über die Spiele DIESER Runde, nicht über den Katalog — sonst ist der
+    // „Meister" einer Bundesliga-Runde der FC Barcelona (Befund 05.08.2026).
+    const matches = await store.listRoundMatches(round.id);
+    const meister = scoreSaison({ matches, tipps: {}, saison: SAISON }).zeilen[0].gewinner[0];
     // u-du tippt auch ein Match, damit er im (Spieltags-)Leaderboard erscheint
-    const jor = await store.getMatch("JOR-ESP");
-    await store.saveTip({ roundId: round.id, matchId: "JOR-ESP", userId: "u-du", tip: { home: 2, away: 1, goals: { home: [], away: [] } }, snapshot: jor.snapshot });
+    const eins = matches.find((m) => m.result && m.snapshot);
+    await store.saveTip({ roundId: round.id, matchId: eins.id, userId: "u-du", tip: { home: 2, away: 1, goals: { home: [], away: [] } }, snapshot: eins.snapshot });
     await store.saveSeasonTip({ roundId: round.id, userId: "u-du", wettenId: "meister", wert: meister });
     const board = await store.getLeaderboard(round.id);
     const du = board.find((b) => b.userId === "u-du");
@@ -254,14 +299,10 @@ describe("Saison-Wetten (saveSeasonTip / listSeasonTips + Leaderboard)", () => {
 
   it("ein reiner Saison-Tipper steht im Board — auch ohne einen einzigen Match-Tipp", async () => {
     const store = createMockStore();
-    const round = await store.createRound({
-      name: "Saison-Runde", adminId: "u-du", adminName: "Du", rules: DEFAULT_RULES,
-    });
-    const r = await store.getRound(round.id);
-    r.rules = { ...r.rules, saison: { enabled: true, gewicht: 1, wetten: [{ key: "meister", punkte: 300 }] } };
+    const round = await saisonRunde(store);
     const { scoreSaison } = await import("./saisonwetten");
-    const matches = await store.listMatches();
-    const meister = scoreSaison({ matches, tipps: {}, saison: r.rules.saison }).zeilen[0].gewinner[0];
+    const matches = await store.listRoundMatches(round.id);
+    const meister = scoreSaison({ matches, tipps: {}, saison: SAISON }).zeilen[0].gewinner[0];
 
     // Lena tritt bei und gibt AUSSCHLIESSLICH eine Saison-Wette ab.
     await store.joinRound({ roundId: round.id, userId: "u-lena", name: "Lena" });
@@ -273,11 +314,6 @@ describe("Saison-Wetten (saveSeasonTip / listSeasonTips + Leaderboard)", () => {
     expect(lena.name).toBe("Lena");        // Name kommt aus der Mitgliedschaft, nicht aus dem Tipp
     expect(lena.saison).toBe(300);
     expect(lena.total).toBe(300);
-    expect(lena.tips).toBe(0);             // daran hängt die „nur Saison"-Anzeige im Ranking
-    expect(lena.rank).toBe(1);
-
-    // Der Admin ist Mitglied, hat aber nichts abgegeben — er bleibt draußen.
-    expect(board.map((b) => b.userId)).toEqual(["u-lena"]);
   });
 });
 

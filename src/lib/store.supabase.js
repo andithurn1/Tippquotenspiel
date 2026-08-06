@@ -19,6 +19,7 @@ import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehr
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
+import { darfSaisonTippen } from "./saisonFenster";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -312,7 +313,18 @@ export function createSupabaseStore() {
 
     // ── Saison-Wetten abgeben ───────────────────────────────
     // Ein Tipp je (Runde, Nutzer, Wette) → upsert auf dem Unique-Key.
+    // 🔴 Das Freischalt-Fenster prüfen, bevor gespeichert wird — siehe
+    // Mock-Store. Bis 06.08.2026 war es nur ein `disabled`-Attribut in der
+    // Oberfläche.
+    // ⚠️ Client-seitig und damit kein Ersatz für einen Trigger (siehe
+    // RLS-Durchgang in der Roadmap): wer die Route direkt anspricht, kommt
+    // weiterhin durch. Sie sorgt dafür, dass die Regel EINMAL formuliert ist.
     async saveSeasonTip({ roundId, userId, wettenId, wert }) {
+      const [round, matches] = await Promise.all([
+        this.getRound(roundId), this.listRoundMatches(roundId),
+      ]);
+      const grund = darfSaisonTippen({ rules: round?.rules ?? DEFAULT_RULES, id: wettenId, matches });
+      if (grund) throw new Error(grund);
       return orThrow(await sb
         .from("season_tips")
         .upsert({ round_id: roundId, user_id: userId, wetten_id: wettenId, wert },
