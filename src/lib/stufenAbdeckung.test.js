@@ -14,7 +14,7 @@ import { abdeckung, luecken, ueberholteBegruendungen, NUR_PROFI, regelFelder } f
 // SPERRKLINKE: sie darf sinken, aber nicht steigen. Ein neuer Regelblock, der
 // nur in der Profi-Ansicht landet, lässt diesen Test auffallen — genau das war
 // bei `ereignisse` monatelang niemandem aufgefallen.
-const LUECKEN_BEI_EINFUEHRUNG = 13;
+const LUECKEN_BEI_EINFUEHRUNG = 1;
 
 describe("Stufen-Abdeckung", () => {
   it("jedes Regel-Feld taucht genau einmal auf", () => {
@@ -26,6 +26,15 @@ describe("Stufen-Abdeckung", () => {
   it("die Zahl der Lücken wächst NICHT", () => {
     const offen = luecken();
     expect(offen.length).toBeLessThanOrEqual(LUECKEN_BEI_EINFUEHRUNG);
+  });
+
+  it("die eine verbliebene Lücke ist `wettbewerbe` — und die ist bewusst vertagt", () => {
+    // Die Wettbewerbs-Gewichte gehören in den Gewichtungs-Durchgang am Ende
+    // (Nutzer-Reihenfolge Punkt 4, „bewusst grob, 2-/5-Prozent-Stufen"). Sie
+    // hier vorher mit erfundenen Stufen zu belegen, hiesse Balance-Arbeit an
+    // der falschen Stelle. Der Test hält fest, dass es GENAU diese eine ist —
+    // eine zweite wäre ein neuer Befund.
+    expect(luecken()).toEqual(["wettbewerbe"]);
   });
 
   it("keine Begründung ist überholt", () => {

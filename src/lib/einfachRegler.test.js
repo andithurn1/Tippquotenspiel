@@ -7,6 +7,7 @@ import { simulateBalance } from "@/lib/balanceSim";
 import { PRESETS } from "@/lib/presets";
 import { konflikte } from "@/lib/regelAbstimmung";
 import { ASPEKT_KEYS } from "@/lib/presetMerge";
+import { pruefe } from "@/lib/reglerWarnung";
 
 // Basis fuer die Balance-Pruefung ist das Standard-PRESET, nicht DEFAULT_RULES:
 // DEFAULT_RULES ist der technische Fallback OHNE Balance-Daempfung (dort
@@ -38,7 +39,39 @@ describe("Katalog", () => {
     // bestehenden gehört. Die Probe steht im Test darunter: Stufe 2 ist eine
     // Handvoll FRAGEN, keine kürzere Profi-Ansicht. Zwei Profi-Werte unter
     // einer Frage sind richtig — zwei Fragen unter einem Regler nicht.
-    expect(REGLER.length).toBeLessThanOrEqual(8);
+    //
+    // Am 06.08.2026 zweimal gewachsen (6 → 8 → 9), und zweimal ist ein Feld
+    // bewusst NICHT zu einer eigenen Frage geworden, sondern in eine
+    // bestehende gewandert: `teamMods` (Derby) unter „Zählen manche Spiele
+    // mehr?", `drehrad` unter „Wie viel soll nebenbei passieren?". Beides
+    // hätte je einen zehnten und elften Regler ergeben.
+    expect(REGLER.length).toBeLessThanOrEqual(9);
+  });
+
+  it("keine Stufe holt sich eine Warnung, die die Vorgabe nicht schon hat", () => {
+    // 🔴 Der Test, der beim Bauen zweimal angeschlagen hat, und beide Male zu
+    // Recht:
+    //   `topspiel/normal` mit `derbyFaktor: 1,5` → „Derbys zählen so viel
+    //      mehr, dass die übrigen Spiele nebensächlich werden" (1,25 ist die
+    //      Grenze des Erprobten).
+    //   `angriff/*` mit der VORGABE `duell.maxProSaison: 60` → „der Deckel
+    //      greift schon beim ersten Duell, ob 10 % oder 100 % geklaut werden,
+    //      ändert am Ergebnis nichts mehr".
+    //
+    // Verglichen wird gegen die Warnungen von DEFAULT_RULES, nicht gegen
+    // „keine": das nackte Vorgabe-Regelwerk ist selbst kein vermessenes Preset
+    // und trägt vier Meldungen (`gratis-lose`, `minPayout`, `wrongPenalty`,
+    // `k`). Die hier mitzuzählen hiesse, jede Stufe für etwas verantwortlich
+    // zu machen, das sie gar nicht gesetzt hat.
+    const vorgabe = new Set(pruefe(sanitizeRules(DEFAULT_RULES)).map((w) => w.id));
+    for (const r of REGLER) {
+      for (const st of r.stufen) {
+        const neu = pruefe(anwenden(DEFAULT_RULES, r.key, st.key))
+          .filter((w) => !vorgabe.has(w.id))
+          .map((w) => w.id);
+        expect(neu, `${r.key}/${st.key}`).toEqual([]);
+      }
+    }
   });
 
   it("jeder Regler stellt eine FRAGE — das ist der Unterschied zur Profi-Ebene", () => {

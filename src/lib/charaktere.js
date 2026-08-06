@@ -92,6 +92,16 @@ export const CHARAKTERE = [
       // Fehlgriffe des Zockers, nicht nur seine Treffer — dieselbe Mechanik
       // wie beim Heimatbonus. Bewusst die mittlere Schwelle, nicht 0.
       bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 },
+      // Die Traditionsduelle dazu — sie stehen VORHER fest, anders als das
+      // Topspiel, das erst aus dem Tabellenstand entsteht.
+      // 🔴 GEMESSEN: 1,15 und nicht 1,5. Dieser Charakter trägt schon Joker
+      // 1,5 + Heimat 1,2 + Mut 1,1 + Topspiel 0,5 — mit einem Derby von 1,5
+      // summieren sich die Modifikatoren auf ×2,8 bei einem Deckel von ×2,5,
+      // und der Derby-Aufschlag läuft ins Leere. Mit 1,15 sind es ×2,45, also
+      // knapp darunter. Genau die Falle, die der Kommentar daneben beschreibt
+      // — beim ersten Versuch bin ich hineingelaufen, `reglerWarnung.js` hat
+      // es gemeldet.
+      teamMods: { derbyFaktor: 1.15, teams: {} },
       saison: saison("ohne-favorit"),
       // ⚠️ Das einzige Paket mit einem VERSTÄRKENDEN Bündel — und das ist hier
       // die Ansage („große Ausschläge, viel Drama"), nicht ein Versehen.

@@ -59,6 +59,65 @@ export const NUR_PROFI = {
     "Welche Spiele zur Runde gehören, wird beim ANLEGEN gewählt (eigene "
     + "Oberfläche mit Wettbewerben, Vereinen und Spieltag-Bereich) und nicht "
     + "über einen Charakter — sonst gäbe es zwei Wege zur selben Auswahl.",
+
+  // ── Die vier Wertungs-Leitplanken ─────────────────────────
+  // ⚠️ Gemeinsame Begründung, und sie ist eine MESSUNG: alle sechs vermessenen
+  // Presets tragen bei diesen vier denselben Wert (winnerFloor true,
+  // perGameCap null, favFlopPenalty 0, modCap 2,5). Eine Stufe-2-Stufe, die
+  // davon abweicht, wäre also ein Regelwerk, das niemand vermessen hat —
+  // genau das, wovor `naeheFelder()` in einfachRegler.js warnt („ein selbst
+  // gewähltes k liess im Simulator sofort den Zocker mit 97 % gewinnen").
+  // Sie bleiben deshalb in der Profi-Ansicht, wo `reglerWarnung.js` das
+  // Empfehlungsband dazu zeigt.
+  winnerFloor:
+    "Sieger-Boden: in ALLEN sechs vermessenen Presets an. Ihn abzuschalten "
+    + "ergibt ein Regelwerk, das niemand vermessen hat — dafür gibt es die "
+    + "Profi-Ansicht mit ihrem Empfehlungsband.",
+  perGameCap:
+    "Deckel je Spiel: in allen Presets aus (`null`). Er ist eine Notbremse "
+    + "gegen Ausreißer, keine Geschmacksfrage — auf Stufe 1/2 gäbe es keine "
+    + "Antwort, die ein Admin ohne Messung geben könnte.",
+  favFlopPenalty:
+    "Favoriten-Malus: in allen Presets 0. Er greift nur in einem sehr engen "
+    + "Fall (Favorit getippt, Favorit verliert) und ist damit eine "
+    + "Feinjustierung, keine Runden-Idee.",
+  modCap:
+    "Obere Leitplanke des additiven Modifikator-Topfs, in allen Presets 2,5. "
+    + "Kein Wunsch, sondern die Folge dessen, was eingeschaltet ist — die "
+    + "Bündel von Stufe 1 und 2 halten sie stimmig, siehe `modFloor`.",
+
+  // ── Der Joker-Unterbau ────────────────────────────────────
+  // Diese drei beschreiben, WIE Joker verwaltet werden, nicht wie sich die
+  // Runde anfühlt. Ein Admin auf Stufe 1/2 wählt „ein Joker pro Spieltag"
+  // oder „Münzen verteilen" — er fragt nicht nach einer Währung.
+  jokerBasis:
+    "Die Grundform, die JEDER Joker trägt (wer darf, wer sieht es, wann "
+    + "verfällt er). Stufe 1 und 2 setzen den Joker-MODUS; die Grundform "
+    + "kommt in beiden Fällen aus dem Standard und braucht keine eigene Frage.",
+  budget:
+    "Eine gemeinsame Währung, in der Joker etwas KOSTEN — ein Unterbau für "
+    + "Runden, die mehrere Joker-Arten gegeneinander abwägen wollen. Auf "
+    + "Stufe 1/2 gibt es dafür den Wettmodus („Münzen verteilen“), der "
+    + "dieselbe Frage in einer Form stellt, die ohne Vorwissen beantwortbar ist.",
+  limitKlassen:
+    "Benannte Gruppen von Joker-Arten mit gemeinsamem Kontingent — sie "
+    + "greifen quer über mehrere Ebenen und setzen voraus, dass man diese "
+    + "Ebenen schon kennt. Die Bündel von Stufe 1/2 deckeln jede Art einzeln.",
+
+  tippfenster:
+    "Wann ein Spiel tippbar wird, hängt daran, wann echte Quoten vorliegen "
+    + "(wenige Tage vorher) — eine Betriebsfrage der Runde, kein Spielgefühl. "
+    + "Die Vorgabe von einer Woche passt zu jedem Charakter.",
+
+  // ⚠️ Der einzige Eintrag hier, der ein KANDIDAT für Stufe 2 ist, sobald er
+  // vermessen ist. Er steht bewusst als Begründung und nicht als Lücke da,
+  // weil der Nutzer ihn ausdrücklich als Admin-Option entschieden hat
+  // (30.07.) — mit Standard AUS.
+  tippEinfluss:
+    "Ob die Gruppe die Quoten mitbewegt. Der eigentliche Regler ist die "
+    + "MARKTTIEFE („gegen wie viele virtuelle Mitspieler tretet ihr an“), und "
+    + "die ist eine Kalibrierungszahl, keine Geschmacksfrage. Kandidat für "
+    + "Stufe 2, sobald ein Balance-Durchgang sie vermessen hat.",
 };
 
 // Alle Regel-Felder, über die überhaupt geredet wird. `name` ist der

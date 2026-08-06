@@ -29,7 +29,7 @@
 
 import { RULE_LIMITS, sanitizeRules, maxTotalModifier } from "./engine";
 import { PRESETS } from "./presets";
-import { SAISON_LIMITS } from "./saisonwetten";
+import { SAISON_LIMITS, SAISON_PRESETS } from "./saisonwetten";
 import { BIGGAME_LIMITS } from "./bigGame";
 
 // Wie weit über das Preset-Spektrum hinaus noch als normal gilt — als Anteil
@@ -142,6 +142,19 @@ export const BAND_FELDER = [
     tief: "" },
   { pfad: "saison.gewicht", label: "Gewicht der Saison-Wetten", limits: SAISON_LIMITS.gewicht,
     aktiv: (r) => get(r, "saison.enabled") === true,
+    // 🔴 Das Erprobte für dieses Feld steht in einem ANDEREN Katalog.
+    // `PRESETS` sind Wertungs-Regelwerke; sie haben die Saison-Wetten alle
+    // aus und tragen deshalb überall dieselbe Vorgabe 1. Daraus abgeleitet
+    // ergab das Band 0,565–1,435 — und meldete ausgerechnet das kuratierte
+    // Saison-Preset „nebenbei" (Gewicht 0,5) als unerprobt. Gemessen am
+    // 06.08.2026: der Charakter „Nur nebenbei" und die Stufe-2-Stufe „Als
+    // Würze" lösten beide einen Hinweis aus, obwohl beide genau das tun, was
+    // ihr Name sagt.
+    //
+    // Deshalb `quelle`: ein Feld darf sagen, wo seine erprobten Werte liegen.
+    // Das ist kein Schlupfloch — die Regel bleibt „das Band kommt aus den
+    // kuratierten Voreinstellungen", sie fragt nur den richtigen Katalog.
+    quelle: () => SAISON_PRESETS.map((p) => p.saison?.gewicht),
     hoch: "Ein Tipp vor der Saison zählt dann mehr als viele Spieltage danach.",
     tief: "Die Saison-Wetten fallen kaum ins Gewicht." },
 ];
@@ -166,8 +179,7 @@ export function band(pfad) {
       min, max,
     };
   }
-  const werte = PRESETS
-    .map((p) => get(p.rules, pfad))
+  const werte = (feld.quelle ? feld.quelle() : PRESETS.map((p) => get(p.rules, pfad)))
     .filter((v) => Number.isFinite(v));
   const rand = (max - min) * TOLERANZ;
   const von = werte.length ? Math.min(...werte) : (min + max) / 2;

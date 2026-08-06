@@ -22,11 +22,17 @@ import { createMockOddsSource } from "./engine";
 import { SAISON_PRESETS } from "./saisonwetten";
 import { PRESETS } from "./presets";
 import { EREIGNIS_PRESETS } from "./ereignisse";
+import { DEFAULT_DUELL } from "./duellJoker";
+import { DEFAULT_DREHRAD } from "./drehrad";
 
 const saisonVon = (key) =>
   SAISON_PRESETS.find((p) => p.key === key)?.saison ?? { enabled: false, gewicht: 1, wetten: [] };
 const ereignisseVon = (key) =>
   EREIGNIS_PRESETS.find((p) => p.key === key)?.ereignisse ?? { enabled: false, maxErspielt: 5, aktive: [] };
+// Ein ausgeschaltetes Rad — nicht `{ enabled: false }` allein, sondern die
+// ganze Vorgabe: `erkenneStufe` vergleicht das FELD, und ein halb gesetztes
+// Rad wäre danach eine „eigene Mischung", die keine Stufe mehr trifft.
+const LEERES_RAD = { ...DEFAULT_DREHRAD };
 
 // ⚠️ Die Naehe-Werte werden NICHT erfunden, sondern aus den bereits
 // vermessenen Presets uebernommen. Ein selbst gewaehltes `k` ergibt schnell
@@ -165,23 +171,52 @@ export const REGLER = [
     // der Auszeichnung eine Dauer-Zugabe. Deshalb geht die stärkste Stufe hier
     // NICHT auf 0 — die Freiheit dazu bleibt der Profi-Ansicht.
     key: "topspiel",
-    label: "Gibt es ein Spiel des Spieltags?",
-    hint: "Das jeweils brisanteste Spiel zählt mehr — wer es ist, steht vor dem Tippen fest.",
+    label: "Zählen manche Spiele mehr als andere?",
+    hint: "Das jeweils brisanteste Spiel und die Traditionsduelle — wer es ist, steht vor dem Tippen fest.",
+    // 🔴 `teamMods` (Derby) gehört unter DIESE Frage und nicht unter eine
+    // eigene: „Spiel des Spieltags" und „Derby" sind für einen Spieler
+    // dasselbe Thema, und beide zahlen in DENSELBEN additiven Topf
+    // (`teamModFactor`). Getrennt gestellt könnte ein Admin beide
+    // hochdrehen und wüsste nicht, dass sie sich addieren.
     stufen: [
       {
         key: "aus", label: "Nein",
         beschreibung: "Alle Spiele sind gleich viel wert.",
-        werte: { bigGame: { enabled: false } },
+        werte: {
+          bigGame: { enabled: false },
+          teamMods: { derbyFaktor: 1, teams: {} },
+        },
+      },
+      {
+        key: "derby", label: "Nur die Traditionsduelle",
+        beschreibung: "Derbys zählen ein Viertel mehr. Welche das sind, steht fest — es hängt nicht an der Tabelle.",
+        // Ohne Big Game: ein Derby steht VORHER fest, das Topspiel entsteht
+        // erst aus dem Tabellenstand. Wer nur das Berechenbare will, nimmt das.
+        werte: {
+          bigGame: { enabled: false },
+          teamMods: { derbyFaktor: 1.25, teams: {} },
+        },
       },
       {
         key: "selten", label: "Nur die echten Kracher",
-        beschreibung: "Ein paar Mal pro Saison — dafür fällt es dann auf.",
-        werte: { bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.5 } },
+        beschreibung: "Ein paar Mal pro Saison ein Topspiel — dafür fällt es dann auf. Derbys zählen leicht mehr.",
+        werte: {
+          bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.5 },
+          teamMods: { derbyFaktor: 1.25, teams: {} },
+        },
       },
       {
         key: "normal", label: "Fast jeden Spieltag",
-        beschreibung: "Meistens gibt es ein Topspiel, das anderthalbfach zählt.",
-        werte: { bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 } },
+        beschreibung: "Meistens gibt es ein Topspiel, das anderthalbfach zählt — Derbys ein Viertel mehr.",
+        // ⚠️ GEMESSEN, nicht geschätzt: bei `derbyFaktor: 1,5` meldet
+        // `reglerWarnung.js` „Derbys zählen so viel mehr, dass die übrigen
+        // Spiele nebensächlich werden" — 1,25 ist der höchste Wert, der im
+        // Empfehlungsband bleibt. Beide Aufschläge landen ADDITIV in einem
+        // Topf und werden von `modCap` gedeckelt.
+        werte: {
+          bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 },
+          teamMods: { derbyFaktor: 1.25, teams: {} },
+        },
       },
     ],
   },
@@ -320,22 +355,109 @@ export const REGLER = [
       {
         key: "nichts", label: "Nichts",
         beschreibung: "Joker gibt es nur vom Admin. Ruhig und übersichtlich.",
-        werte: { ereignisse: ereignisseVon("aus") },
+        werte: {
+          ereignisse: ereignisseVon("aus"),
+          // Ausdrücklich aus: sonst bliebe ein in der Profi-Ansicht
+          // eingeschaltetes Rad beim Zurückschalten stehen, und die Stufe
+          // hielte nicht, was ihre Beschreibung verspricht.
+          drehrad: { ...LEERES_RAD },
+        },
       },
       {
         key: "dranbleiben", label: "Dranbleiben lohnt sich",
         beschreibung: "Wer regelmäßig tippt, verdient sich Joker — unabhängig davon, wie gut.",
-        werte: { ereignisse: ereignisseVon("dranbleiben") },
+        werte: {
+          ereignisse: ereignisseVon("dranbleiben"),
+          // Ausdrücklich aus: sonst bliebe ein in der Profi-Ansicht
+          // eingeschaltetes Rad beim Zurückschalten stehen, und die Stufe
+          // hielte nicht, was ihre Beschreibung verspricht.
+          drehrad: { ...LEERES_RAD },
+        },
       },
       {
         key: "ausgleich", label: "Trost für den Letzten",
         beschreibung: "Wer einen Spieltag verpatzt, bekommt einen Joker zurück.",
-        werte: { ereignisse: ereignisseVon("ausgleich") },
+        werte: {
+          ereignisse: ereignisseVon("ausgleich"),
+          // Ausdrücklich aus: sonst bliebe ein in der Profi-Ansicht
+          // eingeschaltetes Rad beim Zurückschalten stehen, und die Stufe
+          // hielte nicht, was ihre Beschreibung verspricht.
+          drehrad: { ...LEERES_RAD },
+        },
       },
       {
         key: "viel", label: "Ständig etwas los",
-        beschreibung: "Alle Ereignisse an. Fast jeden Spieltag gibt es irgendwo eine Gutschrift.",
-        werte: { ereignisse: ereignisseVon("alles") },
+        beschreibung: "Alle Ereignisse an — dazu ein Glücksrad, das ab und zu etwas ausschüttet.",
+        // 🔴 Das Drehrad gehört unter DIESE Frage: der Baukasten kennt drei
+        // Auslöser für eine Belohnung — ein ZEITPUNKT (`jokerPlan`), eine
+        // LEISTUNG (`ereignisse`) und reiner ZUFALL (das Rad). Alle drei
+        // beantworten „wie viel passiert bei uns nebenbei", und nur der
+        // Zufall hat bisher gefehlt.
+        //
+        // ⚠️ Bewusst mit `maxPunkteProSaison` und nur zwei Feldern, davon
+        // eines „nichts": ohne ein ausdrückliches Nichts passiert immer etwas,
+        // und dann ist es kein Ereignis mehr, sondern der Normalzustand.
+        werte: {
+          ereignisse: ereignisseVon("alles"),
+          drehrad: {
+            enabled: true, frequenz: 5, modus: "gleich", phase: "ganze",
+            schlussLaenge: 4, abSpieltag: null, bisSpieltag: null,
+            wer: "alle", werWert: null, sperrfrist: 0, maxPunkteProSaison: 20,
+            felder: [
+              { id: "nichts", label: "Diesmal nichts", gewicht: 3, belohnung: { typ: "nichts" } },
+              { id: "joker", label: "Ein Joker", gewicht: 1, belohnung: { typ: "joker", anzahl: 1 } },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    // 🔴 Der Duell-Joker war nur in der Profi-Ansicht erreichbar — obwohl er
+    // die einzige Mechanik ist, bei der ein Spieler einem ANDEREN etwas
+    // wegnimmt. Das ist keine Feineinstellung, sondern die Frage, ob eine
+    // Runde überhaupt konfrontativ sein soll; sie gehört gestellt.
+    key: "angriff",
+    label: "Dürft ihr euch gegenseitig etwas wegnehmen?",
+    hint: "Der Duell-Joker: einem Mitspieler Punkte abnehmen (Klau) oder seinen Joker blocken.",
+    stufen: [
+      {
+        key: "nein", label: "Nein",
+        beschreibung: "Jeder spielt für sich. Niemand kann dir etwas wegnehmen.",
+        werte: { duell: { ...DEFAULT_DUELL, enabled: false } },
+      },
+      {
+        key: "block", label: "Nur blocken",
+        // Die zahmere Hälfte: ein Block nimmt keine Punkte weg, er verhindert
+        // nur eine Verstärkung. Wer Konfrontation will, aber keinen Verlust,
+        // nimmt das — und Verlust wiegt schwerer als entgangener Gewinn.
+        beschreibung: "Du kannst den Joker eines anderen entschärfen, aber ihm nichts abnehmen.",
+        werte: {
+          duell: { ...DEFAULT_DUELL, enabled: true, typen: ["block"], anzahl: 2, maxProSaison: 150 },
+        },
+      },
+      {
+        key: "klau", label: "Auch klauen",
+        beschreibung: "Zweimal pro Saison darfst du jemandem vor dir einen Teil seiner Spieltagspunkte abnehmen.",
+        // ⚠️ `zielWahl: "nurVorne"` ist kein Detail: nach unten getreten wird
+        // aus einer Aufholmechanik eine Abwärtsspirale.
+        //
+        // 🔴 `maxProSaison: 150` statt der Vorgabe 60 — und das ist ein
+        // BEFUND, kein Geschmack: bei 60 meldet die eigene Regler-Warnung
+        // „der Deckel greift schon beim ersten Duell, ob 10 % oder 100 %
+        // geklaut werden, ändert am Ergebnis nichts mehr". Die Vorgabe von
+        // `DEFAULT_DUELL` liegt also unter dem Erprobten; sie fällt nur nicht
+        // auf, weil das Duell standardmäßig aus ist.
+        werte: {
+          duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau"], anzahl: 2, zielWahl: "nurVorne", maxProSaison: 150 },
+        },
+      },
+      {
+        key: "beides", label: "Klauen und blocken",
+        beschreibung: "Beide Angriffsarten, dreimal pro Saison. Eine Runde, in der man aufpassen muss.",
+        werte: {
+          duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau", "block"], anzahl: 3, zielWahl: "nurVorne", maxProSaison: 150 },
+        },
       },
     ],
   },

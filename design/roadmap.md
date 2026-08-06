@@ -313,12 +313,65 @@ eine stellt — und weil genau ihr Zusammenspiel die Balance trägt: doppelter
 Ausgleich presst das Feld zusammen, bis das Ranking beliebig wird. Deshalb
 überall die SANFTEN Werte, nie „stark" plus viele Streicher.
 
-**Noch offen (13):** `winnerFloor` · `perGameCap` · `favFlopPenalty` ·
-`teamMods` · `modCap` · `tippEinfluss` · `wettbewerbe` · `tippfenster` ·
-`duell` · `budget` · `limitKlassen` · `jokerBasis` · `drehrad`.
-Die letzten fünf sind der Joker-Baukasten von Account 2 und gehören
-zusammen unter eine Frage; `wettbewerbe` gehört in den Gewichtungs-Durchgang
-am Ende (Nutzer-Reihenfolge Punkt 4).
+**Im selben Durchgang auf 1 gebracht.** Geschlossen wurden:
+
+| Feld | wohin |
+|---|---|
+| `aufholen` + `saisonform` | neue Frage **„Wie leicht bleibt man dran?"** (4 Stufen) + zwei Charaktere |
+| `ereignisse` | **„Wie viel soll nebenbei passieren?"** (4 Stufen) + alle Charaktere |
+| `drehrad` | dieselbe Frage — der dritte Auslöser neben Zeitpunkt und Leistung ist reiner Zufall |
+| `teamMods` | **„Zählen manche Spiele mehr als andere?"** (aus „Gibt es ein Spiel des Spieltags?") + Charakter *Mutig & wild* |
+| `duell` | neue Frage **„Dürft ihr euch gegenseitig etwas wegnehmen?"** (4 Stufen) |
+
+⚠️ Zweimal ist ein Feld bewusst NICHT zu einer eigenen Frage geworden, sondern
+in eine bestehende gewandert (`teamMods`, `drehrad`) — sonst hätte Stufe 2
+elf Regler. Stufe 2 ist eine Handvoll FRAGEN, keine kürzere Profi-Ansicht; ein
+Test prüft jetzt genau diese Eigenschaft (jede Beschriftung endet auf „?").
+
+**Neun Felder sind BEGRÜNDET Profi-only geworden**, und die Begründung ist bei
+vier davon eine Messung: `winnerFloor`, `perGameCap`, `favFlopPenalty` und
+`modCap` tragen in ALLEN SECHS vermessenen Presets denselben Wert. Eine
+Stufe-2-Stufe, die davon abweicht, wäre ein Regelwerk, das niemand vermessen
+hat. Dazu der Joker-Unterbau (`jokerBasis`, `budget`, `limitKlassen` — sie
+beschreiben, WIE Joker verwaltet werden, nicht wie sich die Runde anfühlt),
+`tippfenster` (eine Betriebsfrage: wann liegen echte Quoten vor) und
+`tippEinfluss` (Kandidat für Stufe 2, sobald ein Balance-Durchgang die
+Markttiefe vermessen hat).
+
+**Noch offen: `wettbewerbe`** — gehört in den Gewichtungs-Durchgang am Ende
+(Nutzer-Reihenfolge Punkt 4, „bewusst grob, 2-/5-Prozent-Stufen"). Ein Test
+hält fest, dass es GENAU diese eine ist; eine zweite wäre ein neuer Befund.
+
+#### 🔴 Drei Funde, die erst die Gegenprobe gebracht hat
+
+Die neuen Stufen wurden gegen `reglerWarnung.js` geprüft — und **alle drei
+Funde stammen aus dieser Prüfung, keiner aus einem Test:**
+
+1. **Charakter *Mutig & wild* mit `derbyFaktor: 1,5`:** Modifikatoren summieren
+   sich auf ×2,8 bei einem Deckel von ×2,5 — der Derby-Aufschlag lief ins
+   Leere. Genau die Falle, zu der ich zwei Zeilen darüber einen Warnkommentar
+   geschrieben hatte. Jetzt 1,15 (= ×2,45, knapp darunter).
+2. **`DEFAULT_DUELL.maxProSaison: 60` liegt unter dem Erprobten.** Die eigene
+   Regler-Warnung meldet: „der Deckel greift schon beim ersten Duell, ob 10 %
+   oder 100 % geklaut werden, ändert am Ergebnis nichts mehr." Es fällt nur
+   nicht auf, weil das Duell standardmäßig aus ist. Die Stufe-2-Stufen setzen
+   150. ⚠️ **Die Vorgabe selbst steht noch auf 60** — sie gehört Account 2, und
+   ein Wechsel verschiebt dessen Balance-Messungen.
+3. **Das Empfehlungsband für `saison.gewicht` las den falschen Katalog.**
+   Es wird aus `PRESETS` abgeleitet — das sind WERTUNGS-Regelwerke, die die
+   Saison-Wetten alle aus haben und deshalb überall die Vorgabe 1 tragen.
+   Ergebnis: Band 0,565–1,435, und das kuratierte Saison-Preset „nebenbei"
+   (Gewicht 0,5) galt als unerprobt. Der Charakter *Nur nebenbei* und die Stufe
+   „Als Würze" lösten beide einen Hinweis aus, obwohl beide genau das tun, was
+   ihr Name sagt. Ein Feld darf jetzt über `quelle` sagen, wo seine erprobten
+   Werte liegen — die Regel bleibt „das Band kommt aus den kuratierten
+   Voreinstellungen", sie fragt nur den richtigen Katalog.
+
+**Der Test daraus, der bleibt:** keine Stufe-2-Stufe darf sich eine Warnung
+holen, die `DEFAULT_RULES` nicht schon hat. Verglichen wird gegen die Vorgabe
+und nicht gegen „keine" — das nackte Vorgabe-Regelwerk ist selbst kein
+vermessenes Preset und trägt vier Meldungen; die mitzuzählen hiesse, jede Stufe
+für etwas verantwortlich zu machen, das sie gar nicht gesetzt hat.
 
 ### ⏰ Echte Spielpläne vor dem Launch — HARTE FRIST, Bundesliga ✅ erledigt
 **Der einzige Punkt mit einem Datum: 28.08.2026.**
