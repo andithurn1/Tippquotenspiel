@@ -120,6 +120,60 @@ export const NUR_PROFI = {
     + "Stufe 2, sobald ein Balance-Durchgang sie vermessen hat.",
 };
 
+// ── Teil 2: hat die PROFI-Ansicht das Feld überhaupt? ───────
+//
+// 🔴 Die Lücke in Teil 1, und sie hat am 06.08.2026 einen echten Fund
+// durchgelassen: `tippfenster` steht mit Begründung in `NUR_PROFI`, also galt
+// es als „erreichbar in Stufe 3". Nachgesehen hatte das niemand — und die
+// Profi-Ansicht zeigte nur die Vorlaufzeit. Der ANKER („öffnet der Spieltag
+// als Block?") war im Regelwerk, im Creator-Code, in `sanitizeRules` — und in
+// keiner Oberfläche. Schlimmer: der Vorlauf-Knopf ersetzte das ganze Objekt
+// und löschte ihn dabei.
+//
+// Gemessen wird auf BLATT-Ebene, nicht auf Block-Ebene. Über den Block
+// gerechnet wäre `tippfenster` „vorhanden" gewesen, weil `vorlaufStunden`
+// vorkommt — genau der blinde Fleck.
+//
+// ⚠️ Textsuche über die Komponenten, keine Render-Analyse. Sie kann ein Feld
+// übersehen, das nur über eine Variable angesprochen wird; dafür kostet sie
+// nichts. Ein Verdacht, den man in zehn Sekunden prüft, ist mehr wert als eine
+// perfekte Analyse, die niemand startet — dieselbe Abwägung wie bei
+// `npm run tot`.
+//
+// Der Aufrufer reicht den QUELLTEXT herein (Skript und Test lesen ihn je
+// selbst): so bleibt diese Datei frei von `node:fs` und damit bundlebar.
+export const OHNE_OBERFLAECHE = {
+  oddsMode:
+    "Woher die Quoten kommen, entscheidet der Betrieb und nicht der Admin — "
+    + "das Feld existiert für den späteren Umschalter auf die echte API.",
+  modFloor:
+    "Untere Leitplanke des Modifikator-Topfs. Sie wird nicht eingestellt, "
+    + "sondern folgt aus dem, was eingeschaltet ist — siehe `NUR_PROFI`.",
+};
+
+// Alle BLATT-Pfade des Regelwerks: `duell.block.restanteil` statt `duell`.
+export function blattFelder() {
+  const out = [];
+  const geh = (obj, pfad) => {
+    for (const [k, v] of Object.entries(obj ?? {})) {
+      const p = pfad ? `${pfad}.${k}` : k;
+      if (v && typeof v === "object" && !Array.isArray(v)) geh(v, p);
+      else out.push(p);
+    }
+  };
+  geh(sanitizeRules(DEFAULT_RULES), "");
+  return out.filter((p) => p !== "name");
+}
+
+// Welche Blätter kommen im übergebenen Oberflächen-Quelltext NICHT vor?
+export function fehlendeOberflaeche(uiQuelltext = "") {
+  return blattFelder().filter((p) => {
+    const name = p.split(".").pop();
+    if (OHNE_OBERFLAECHE[name] || OHNE_OBERFLAECHE[p]) return false;
+    return !new RegExp(`\\b${name}\\b`).test(uiQuelltext);
+  });
+}
+
 // Alle Regel-Felder, über die überhaupt geredet wird. `name` ist der
 // Runden-Name und keine Einstellung.
 export function regelFelder() {
