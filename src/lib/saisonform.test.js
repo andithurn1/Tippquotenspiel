@@ -413,6 +413,23 @@ describe("Was die Saisonform am Board verändert, bekommt einen Namen", () => {
     expect(v[v.length - 1].board[0].form).toBeNull();
   });
 
+  // 🔴 Der Fehler in der ERSTEN Fassung dieser Marke, gefunden von
+  // `npm run anzeige` (Teil 3) statt von einem Test: `form` war als
+  // `total − rohSumme` gerechnet und enthielt damit den Streicher-Effekt mit,
+  // der daneben schon abgezogen wird. Bei Kurve UND Streichern blieben 1361
+  // Punkte doppelt gezählt.
+  it("Kurve und Streicher zusammen: die Gleichung geht auf", () => {
+    const roh = verlauf(12);
+    const v = applySaisonform(roh, { saisonform: { kurve: "steigend", streich: 2 } });
+    const z = v[v.length - 1].board[0];
+    const rohTotal = roh[roh.length - 1].board[0].total;
+    // Genau die Rechnung, die ein Spieler im Ranking aufmacht.
+    expect(rohTotal + z.form - z.gestrichenPunkte).toBe(z.total);
+    // Und beide Marken tragen wirklich etwas — sonst prüft das nichts.
+    expect(z.form).not.toBe(0);
+    expect(z.gestrichenPunkte).toBeGreaterThan(0);
+  });
+
   it("`gestrichenPunkte` nennt den Betrag, nicht nur die Anzahl", () => {
     const v = applySaisonform(verlauf(10), { saisonform: { kurve: "flach", streich: 2 } });
     const z = v[v.length - 1].board[0];

@@ -307,3 +307,64 @@ console.log("                                              Hub/Anzeige |  Wertun
 zeile("Narren-Kontostand", hubNarren, tippabgabeNarren);
 zeile("Rad-Punkte", radPunkteAnzeige, radPunkteBoard);
 console.log();
+
+// ============================================================
+//  TEIL 3 — erklärt das Ranking seine eigene Summe?
+//
+//  Ein Spieler sieht im Ranking eine Zahl und daneben ein paar Marken
+//  („+114 Anschluss", „−2 gestrichen"). Die Frage, die dahinter steht, ist
+//  nicht „stimmt die Zahl", sondern: **komme ich von meinen Spieltagen aus zu
+//  ihr?** Gemessen am 06.08.2026 ging das nicht — die Saison-Kurve verschob
+//  bis zu 186 Punkte ohne jede Marke, und die Streicher nannten nur ihre
+//  ANZAHL, nicht ihren Betrag.
+//
+//  Geprüft wird deshalb die Gleichung, die ein Spieler im Kopf aufmacht:
+//     Summe der eigenen Tipps
+//       + Kurve + Anschluss + Saison + Rad − Streicher   =   Ranking-Total
+// ============================================================
+console.log(`\n${"=".repeat(94)}`);
+console.log("  TEIL 3 — erklärt das Ranking seine eigene Summe?");
+console.log(`${"=".repeat(94)}`);
+
+const varianten = [
+  ["ohne verlaufsabhängige Regel", {}],
+  ["Aufhol-Bonus", { aufholen: { enabled: true, staerke: "mittel", schwelle: 0.1 } }],
+  ["Saisonform: 2 Streicher", { saisonform: { kurve: "flach", streich: 2 } }],
+  ["Saisonform: steigende Kurve", { saisonform: { kurve: "steigend", streich: 0 } }],
+  ["Kurve UND Streicher", { saisonform: { kurve: "steigend", streich: 2 } }],
+];
+
+for (const [name, extra] of varianten) {
+  const st = createMockStore();
+  const rl = sanitizeRules({ ...DEFAULT_RULES, ...extra });
+  const rnd = await st.createRound({ name, adminId: "u-du", rules: rl, teamFilter: blTeams });
+  const spiele = (await st.listRoundMatches(rnd.id))
+    .filter((m) => m.wettbewerb === "bl" && m.result).slice(0, 45);
+  for (const [i, m] of spiele.entries()) {
+    for (const [j, u] of ["u-du", "u-lena", "u-kemal"].entries()) {
+      await st.saveTip({
+        roundId: rnd.id, matchId: m.id, userId: u,
+        tip: { home: (i + j) % 4, away: (i * j) % 3, goals: { home: [], away: [] } },
+        snapshot: m.snapshot,
+      });
+    }
+  }
+  const brd = await st.getLeaderboard(rnd.id);
+  const eintraege = await st.getRoundEntries(rnd.id);
+  const eigene = new Map();
+  for (const e of eintraege) {
+    if (!e.result) continue;
+    eigene.set(e.userId, (eigene.get(e.userId) ?? 0) + scoreTip(e.tip, e.result, e.snapshot, rl).total);
+  }
+  let schlimmster = 0;
+  for (const b of brd) {
+    const erklaert = (eigene.get(b.userId) ?? 0)
+      + (b.form ?? 0) + (b.bonus ?? 0) + (b.saison ?? 0) + (b.drehrad ?? 0)
+      - (b.gestrichenPunkte ?? 0);
+    schlimmster = Math.max(schlimmster, Math.abs(b.total - erklaert));
+  }
+  const ganz = brd.every((b) => Number.isInteger(b.total));
+  console.log(`    ${name.padEnd(30)} unerklärter Rest: ${String(schlimmster).padStart(5)}`
+    + `   ·   ganzzahlig: ${ganz ? "ja" : "NEIN"}`);
+}
+console.log();

@@ -269,6 +269,8 @@ export function applySaisonform(verlauf = [], rules = {}) {
         // Anzeige: sonst zeigt das Ranking 5050 und der Abstand zum Nächsten
         // rechnet sich aus 5049,67.
         const total = Math.round(r.total);
+        const gestrichenPunkte = Math.round(
+          r.detail.filter((d) => d.gestrichen).reduce((sum, d) => sum + d.punkte, 0));
         return {
           ...z, total,
           // Mit an die Zeile, weil der Spieler sonst eine Summe sieht, die
@@ -281,14 +283,23 @@ export function applySaisonform(verlauf = [], rules = {}) {
           // eigenen Spieltage — das ist dieselbe Lücke, die die `form`-Marke
           // daneben schließt. Gezählt wird gewichtet, also so, wie es die
           // Wertung auch verrechnet hat.
-          gestrichenPunkte: Math.round(
-            r.detail.filter((d) => d.gestrichen).reduce((sum, d) => sum + d.punkte, 0)),
+          gestrichenPunkte: gestrichenPunkte,
           vorlaeufig: r.vorlaeufig,
           // 🔴 Was die KURVE verändert hat, in Punkten. Die Streicher hatten
           // längst einen Namen, die Kurve nicht — sie verschob den Stand
           // gemessen um bis zu 186 Punkte, ohne dass irgendwo etwas stand.
           // `null`, wenn die Kurve flach ist: dann gibt es nichts zu erklären.
-          form: cfg.kurve === "flach" ? null : total - Math.round(rohSumme(tage)),
+          //
+          // ⚠️ Als REST gerechnet, nicht als eigene Summe. Eine erste Fassung
+          // nahm `total − rohSumme` — darin steckte der Streicher-Effekt mit
+          // drin, der daneben schon als `gestrichenPunkte` abgezogen wird.
+          // `npm run anzeige` hat es sofort gemeldet: bei Kurve UND Streichern
+          // blieben 1361 Punkte doppelt gezählt. So herum geht die Gleichung
+          // auf, die ein Spieler im Kopf aufmacht:
+          //     eigene Punkte + Kurve − Streicher = Stand
+          form: cfg.kurve === "flach"
+            ? null
+            : total + gestrichenPunkte - Math.round(rohSumme(tage)),
         };
       })
       .sort((a, b) => b.total - a.total || String(a.name ?? "").localeCompare(String(b.name ?? ""))),
