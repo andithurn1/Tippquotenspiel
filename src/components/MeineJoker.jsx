@@ -12,7 +12,7 @@ import {
   jokerPlan, sichtbareSpieltage, fortschritt, uebersicht, beschreibeVerteilung,
   sanitizeVerteilung,
 } from "@/lib/jokerPlan";
-import { kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
+import { kontingent, erspielteLage, standText } from "@/lib/jokerKontingent";
 import { EREIGNIS, sanitizeEreignisse, beschreibeEreignisse } from "@/lib/ereignisse";
 import { offeneKlassen, beschreibeKlasse, sanitizeLimitKlassen } from "@/lib/limitKlassen";
 import { einsaetzeAllerArten } from "@/lib/jokerBudget";
@@ -111,18 +111,22 @@ export default function MeineJoker() {
       joker: t.tip?.joker === true,
     };
   });
+  // Die Lage EINMAL rechnen — die Gutschriften und das, was an einem Begrenzer
+  // hängengeblieben ist, kommen aus demselben Aufruf. Zweimal gerechnet wäre
+  // die zweite Wahrheit, vor der die Runden-Schicht warnt.
+  //
+  // `alleEintraege` UND `spieltagsPunkte`: das eine für „alle Spiele des
+  // Spieltags getippt" (die eigenen Einträge wissen nicht, was fehlt), das
+  // andere für den Trost-Joker. `schluessel` ist der RUNDEN-Spieltag — ohne
+  // ihn zählt `ereignisse.js` in Liga-Spieltagen und vergibt in einer Runde
+  // über mehrere Wettbewerbe mehrere Trost-Joker pro Woche.
+  const lage = erspielteLage({
+    eintraege: eintraege.filter((e) => e.userId === user?.id),
+    alleEintraege: eintraege, spieltagsPunkte: tagesPunkte, rules,
+    schluessel: rundenSchluessel(achse) ?? undefined,
+  });
   const gutschriften = [
-    ...erspielteJoker({
-      eintraege: eintraege.filter((e) => e.userId === user?.id),
-      // `alleEintraege` UND `spieltagsPunkte`: das eine für „alle Spiele des
-      // Spieltags getippt" (die eigenen Einträge wissen nicht, was fehlt), das
-      // andere für den Trost-Joker.
-      alleEintraege: eintraege, spieltagsPunkte: tagesPunkte, rules,
-      // Der RUNDEN-Spieltag: ohne ihn zaehlt `ereignisse.js` in
-      // Liga-Spieltagen und vergibt in einer Runde ueber mehrere Wettbewerbe
-      // mehrere Trost-Joker pro Woche.
-      schluessel: rundenSchluessel(achse) ?? undefined,
-    })
+    ...lage.gutschriften
       .map((g) => {
         const runde = rundenSpieltagVon(achse, { wettbewerb: g.wettbewerb, matchday: g.matchday });
         return runde == null ? g : { ...g, matchday: runde };
@@ -322,10 +326,59 @@ export default function MeineJoker() {
                             {typ.hint}
                           </div>
                         )}
+                        {/* 🔴 Die Begrenzer standen nirgends. Ein Spieler sah
+                            „Serie: 3 Spieltage in Folge getippt" und wusste
+                            nicht, dass sie nur viermal pro Saison zahlt oder
+                            danach zwei Spieltage Ruhe hat — und wenn dann
+                            nichts kam, sah es nach einem Fehler aus. */}
+                        {(a.abstand > 0 || a.maxProSaison > 0) && (
+                          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                            {[
+                              a.maxProSaison > 0 && `höchstens ${a.maxProSaison}× pro Saison`,
+                              a.abstand > 0 && `danach ${a.abstand} Spieltage Pause`,
+                            ].filter(Boolean).join(" · ")}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
+                {/* 🔴 Was NICHT gutgeschrieben wurde. `auswerten()` zählt es
+                    seit jeher mit (`gebremst` am Begrenzer des Ereignisses,
+                    `verworfen` am Gesamtdeckel), und bis 06.08.2026 hat es
+                    niemand weitergereicht — ein Spieler, der seine Serie
+                    geschafft hatte und keinen Joker bekam, konnte sich das
+                    nicht erklären.
+
+                    Die beiden bleiben GETRENNT, weil sie verschiedene Dinge
+                    sind: das eine ist eine Regel dieses Ereignisses, das
+                    andere der Deckel über allen. Zusammengeworfen wüsste man
+                    nicht, woran es lag. */}
+                {(lage.gebremst > 0 || lage.verworfen > 0) && (
+                  <div style={{
+                    background: `${C.gold}12`, border: `1px solid ${C.line}`,
+                    borderRadius: 12, padding: "9px 12px", marginTop: 8,
+                  }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, marginBottom: 3 }}>
+                      Nicht alles wurde gutgeschrieben
+                    </div>
+                    <div style={{ fontSize: 10.5, color: C.muted, lineHeight: 1.45 }}>
+                      {lage.gebremst > 0 && (
+                        <div>
+                          {lage.gebremst}× ausgelöst, aber an der eigenen Grenze des
+                          Ereignisses hängengeblieben (Pause oder Höchstzahl, siehe oben).
+                        </div>
+                      )}
+                      {lage.verworfen > 0 && (
+                        <div>
+                          {lage.verworfen}× am Saison-Deckel von {ereignisse.maxErspielt} Jokern
+                          vorbei. Gezählt wird chronologisch — die früh verdienten zählen.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                   Rechts steht, was es gibt — und sobald du eines ausgelöst hast, wie
                   oft und wie viele Joker daraus wurden. Erspielte Joker sind auf{" "}

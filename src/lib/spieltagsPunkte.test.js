@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { punkteJeSpieltag, proNutzer } from "@/lib/spieltagsPunkte";
 import { createMockStore } from "@/lib/store.mock";
-import { erspielteJoker } from "@/lib/jokerKontingent";
+import { erspielteJoker, erspielteLage } from "@/lib/jokerKontingent";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { LIGEN } from "@/lib/ligen";
 import { zeitachse, rundenSchluessel } from "@/lib/zeitachse";
@@ -229,4 +229,71 @@ describe("Ereignisse zählen in RUNDEN-Spieltagen, sobald eine Achse mitkommt", 
     const mit = await gutschriften(blTeams, true);
     expect(mit.n).toBe(ohne.n);
   }, 30000);
+});
+
+// ── Was NICHT gutgeschrieben wurde ──────────────────────────
+// 🔴 `auswerten()` zählt seit jeher zwei Sorten mit, und bis 06.08.2026 hat
+// sie niemand weitergereicht: `gebremst` (an der Abklingzeit oder der
+// Höchstzahl DES EREIGNISSES hängengeblieben) und `verworfen` (am
+// Gesamtdeckel `maxErspielt`). `erspielteJoker` gab nur die Gutschriften
+// zurück — ein Spieler, der seine Serie geschafft hatte und keinen Joker
+// bekam, konnte sich das nicht erklären.
+//
+// Gemessen über 90 Spiele und drei Spieler, alle drei auswertbaren
+// Ereignisse an:
+//   ohne Begrenzer (Deckel greift bei 15)   15 gutgeschrieben ·  0 gebremst · 4 verworfen
+//   Abklingzeit 3 Spieltage                  9 gutgeschrieben · 10 gebremst · 0 verworfen
+//   höchstens 2× je Ereignis                 6 gutgeschrieben · 13 gebremst · 0 verworfen
+//   Saison-Deckel 3                          3 gutgeschrieben ·  0 gebremst · 16 verworfen
+// Beide Zahlen sind also keine Randfälle — sie treffen einen normalen Spieler
+// in einer normalen Runde.
+
+describe("erspielteLage — die Begrenzer bekommen einen Namen", () => {
+  const ALLE = (extra = {}) => ({
+    enabled: true, maxErspielt: 15,
+    aktive: [
+      { key: "serie", anzahl: 3, belohnung: 1, ...extra },
+      { key: "spieltag-komplett", belohnung: 1, ...extra },
+      { key: "letzter-am-spieltag", belohnung: 1, ...extra },
+    ],
+  });
+
+  async function lage(ereignisse) {
+    const { rules, eintraege, tagesPunkte } = await runde(ereignisse);
+    return erspielteLage({
+      eintraege: eintraege.filter((e) => e.userId === "u-du"),
+      alleEintraege: eintraege, spieltagsPunkte: tagesPunkte, rules,
+    });
+  }
+
+  it("liefert dieselben Gutschriften wie `erspielteJoker` — eine Rechnung, zwei Sichten", async () => {
+    const { rules, eintraege, tagesPunkte } = await runde(ALLE());
+    const args = {
+      eintraege: eintraege.filter((e) => e.userId === "u-du"),
+      alleEintraege: eintraege, spieltagsPunkte: tagesPunkte, rules,
+    };
+    expect(erspielteLage(args).gutschriften).toEqual(erspielteJoker(args));
+  });
+
+  it("die ABKLINGZEIT bremst, ohne dass der Gesamtdeckel greift", async () => {
+    const ohne = await lage(ALLE());
+    const mit = await lage(ALLE({ abstand: 3 }));
+    expect(mit.gebremst).toBeGreaterThan(ohne.gebremst);
+    expect(mit.gesamt).toBeLessThan(ohne.gesamt);
+  });
+
+  it("die HÖCHSTZAHL je Ereignis bremst ebenfalls", async () => {
+    const mit = await lage(ALLE({ maxProSaison: 2 }));
+    expect(mit.gebremst).toBeGreaterThan(0);
+  });
+
+  it("der SAISON-DECKEL verwirft — und das ist etwas anderes als bremsen", async () => {
+    // Getrennt gezählt, weil man sonst nicht sagen kann, an welcher Schraube
+    // der Admin drehen muss.
+    const eng = await lage({ ...ALLE(), maxErspielt: 3 });
+    expect(eng.gesamt).toBe(3);
+    expect(eng.verworfen).toBeGreaterThan(0);
+    expect(eng.gebremst).toBe(0);
+    expect(eng.gedeckelt).toBe(true);
+  });
 });

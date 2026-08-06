@@ -42,11 +42,25 @@ import { auswerten } from "./ereignisse";
 // `schluessel` = `rundenSchluessel(achse)`, siehe `auswerten`. Ohne ihn zaehlt
 // `ereignisse.js` in LIGA-Spieltagen — in einer Runde ueber fuenf Wettbewerbe
 // waeren das fuenf Trost-Joker pro Woche statt einem.
-export function erspielteJoker({ eintraege = [], alleEintraege = null, rules, spieltagsPunkte = null, schluessel = null } = {}) {
-  const { gutschriften } = auswerten({
+export function erspielteJoker(args = {}) {
+  return erspielteLage(args).gutschriften;
+}
+
+// 🔴 Dieselbe Rechnung, aber MIT dem, was NICHT gutgeschrieben wurde.
+//
+// `auswerten()` liefert neben den Gutschriften zwei Zahlen, die bisher
+// niemand weitergereicht hat: `gebremst` (an einer Abklingzeit oder am
+// Einzel-Deckel des Ereignisses hängengeblieben) und `verworfen` (am
+// Gesamtdeckel `maxErspielt`). Ohne sie sieht ein Spieler, der seine Serie
+// geschafft hat, einfach keinen Joker — und kann sich das nicht erklären.
+//
+// Das ist derselbe Fall wie bei den Streichresultaten im Ranking: was die
+// Zahl verändert, bekommt einen Namen. Eine Belohnung, die stillschweigend
+// ausfällt, liest sich wie ein Fehler.
+export function erspielteLage({ eintraege = [], alleEintraege = null, rules, spieltagsPunkte = null, schluessel = null } = {}) {
+  return auswerten({
     eintraege, alleEintraege, ereignisse: rules?.ereignisse, spieltagsPunkte, schluessel,
   });
-  return gutschriften;
 }
 
 // Wie viele erspielte Joker stehen an DIESEM Spieltag schon zur Verfügung?
