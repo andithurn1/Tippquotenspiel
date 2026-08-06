@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { getStore } from "@/lib/store";
-import { filterMatchesByTeams } from "@/lib/roundStatus";
 import { freigabeStatus } from "@/lib/saisonwetten";
 import { saisonLage } from "@/lib/wettbewerbe";
 import { useAuth } from "@/components/AuthProvider";
@@ -25,19 +24,21 @@ export default function SaisonTipps() {
 
   useEffect(() => {
     let live = true;
-    Promise.all([getStore().getRound(roundId), getStore().listMatches()]).then(([round, ms]) => {
+    // 🔴 NUR die Spiele DIESER Runde — und zwar über `listRoundMatches`, nicht
+    // über `listMatches` mit eigenem Filter. Der Katalog enthält alle
+    // Wettbewerbe, und sie starten Wochen auseinander: gemessen am 05.08.2026
+    // hat die MLS am 31.07. angefangen, die Bundesliga fängt am 28.08. an.
+    // Ungefiltert war `gestartet` in einer reinen Bundesliga-Runde deshalb
+    // schon jetzt `true`, und ALLE fensterlosen Saison-Wetten waren drei
+    // Wochen vor dem ersten Spieltag eingefroren. Auch `aktuellerSpieltag`
+    // betraf es: ganzer Katalog `{mls: 1}`, die Runde selbst steht bei 0.
+    //
+    // ⚠️ Der Filter lag hier nachgebaut — richtig gerechnet, aber an einer
+    // zweiten Stelle. Die Regel hat EINE Stelle (Runden-Schicht, Frage 1).
+    Promise.all([getStore().getRound(roundId), getStore().listRoundMatches(roundId)]).then(([round, ms]) => {
       if (!live) return;
       setSaison(round?.rules?.saison ?? { enabled: false, wetten: [] });
-      // 🔴 NUR die Spiele DIESER Runde. Der Katalog enthält alle Wettbewerbe,
-      // und sie starten Wochen auseinander — gemessen am 05.08.2026: die MLS
-      // hat am 31.07. angefangen, die Bundesliga fängt am 28.08. an. Ungefiltert
-      // war `gestartet` in einer reinen Bundesliga-Runde deshalb schon jetzt
-      // `true`, und ALLE fensterlosen Saison-Wetten waren drei Wochen vor dem
-      // ersten Spieltag eingefroren. Genau die Falle, vor der der Kommentar
-      // weiter unten beim Demo-Länderspiel warnt — nur eine Ebene höher.
-      // Auch `aktuellerSpieltag` betraf es: ganzer Katalog `{mls: 1}`, die
-      // Runde selbst steht bei 0.
-      setMatches(filterMatchesByTeams(ms, round?.team_filter));
+      setMatches(ms);
     });
     return () => { live = false; };
   }, [roundId]);

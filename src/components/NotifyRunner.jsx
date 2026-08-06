@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
-import { filterMatchesByTeams } from "@/lib/roundStatus";
 import { sanitizeNotify, dueNotifications, DEFAULT_NOTIFY } from "@/lib/notify";
 import { zustellbar, merkeZustellung, pruneZustellungen } from "@/lib/zustellung";
 import { waehleKanal, STATUS } from "@/lib/pushKanal";
@@ -56,14 +55,15 @@ export default function NotifyRunner() {
 
       laeuft.current = true;
       try {
-        const [round, alle, tips] = await Promise.all([
-          getStore().getRound(roundId),
-          getStore().listMatches(),
+        // 🔴 `listRoundMatches`, nicht `listMatches` + eigener Filter. Beide
+        // liefern heute dasselbe — der Store rechnet exakt diesen Ausdruck.
+        // Genau das ist der Punkt: die Regel „welche Spiele gehören zur Runde"
+        // hat EINE Stelle (Runden-Schicht, Frage 1). Wächst sie dort, wächst
+        // sie hier mit; nachgebaut bliebe sie still auf dem alten Stand.
+        const [matches, tips] = await Promise.all([
+          getStore().listRoundMatches(roundId),
           getStore().listTips({ roundId }),
         ]);
-        // Nur die Spiele DIESER Runde — sonst erinnert eine Bundesliga-Runde
-        // an Spiele der Serie A, die gar nicht dazugehören.
-        const matches = filterMatchesByTeams(alle, round?.team_filter);
 
         const gesehen = pruneZustellungen(lies(GESEHEN_KEY, []));
         const faellig = dueNotifications({ matches, tips, userId: user.id, prefs, gesehen });

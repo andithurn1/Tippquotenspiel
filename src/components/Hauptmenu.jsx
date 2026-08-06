@@ -37,6 +37,13 @@ export default function Hauptmenu() {
     Promise.all([getStore().listRoundsForUser(user.id), getStore().listMatches()]).then(async ([myRounds, matches]) => {
       if (!live) return;
       const withStatus = await Promise.all(myRounds.map(async (r) => {
+        // ⚠️ Hier BEWUSST nachgebaut statt `listRoundMatches(r.id)`: dieser
+        // Screen zeigt ALLE Runden des Nutzers auf einmal. Über die
+        // Store-Methode wäre es ein Abruf des ganzen Katalogs JE RUNDE; so ist
+        // es einer für alle. `listRoundMatches` rechnet exakt diesen Ausdruck
+        // — wächst die Regel dort, muss diese Zeile MIT (Runden-Schicht,
+        // Frage 1). Die vier Einzelrunden-Screens sind am 06.08.2026 auf die
+        // Store-Methode umgestellt worden; das hier ist die eine Ausnahme.
         const relevant = filterMatchesByTeams(matches, r.team_filter);
         const { total, open } = computeMatchStatus(relevant);
         const [tips, history, rad] = await Promise.all([

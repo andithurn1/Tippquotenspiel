@@ -7,7 +7,6 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { ErgebnisUebersicht } from "@/components/NaheErgebnisse";
-import { filterMatchesByTeams } from "@/lib/roundStatus";
 import { DEFAULT_RULES, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon, phaseVon, wettbewerbLabel, phasenLabel, istKo, wettbewerbeIn } from "@/lib/wettbewerbe";
@@ -50,14 +49,17 @@ export default function Spielwahl() {
     (getStore().getRegelnFuer?.(roundId) ?? Promise.resolve(null))
       .then((lage) => { if (live) setBeschlussLage(lage ?? null); })
       .catch(() => {});
-    Promise.all([getStore().getRound(roundId), getStore().listMatches(), getStore().listVotes({ roundId })]).then(([round, ms, vs]) => {
+    // 🔴 `listRoundMatches`: die Regel „welche Spiele gehören zur Runde" hat
+    // EINE Stelle (Runden-Schicht, Frage 1). Hier lag sie nachgebaut — heute
+    // mit demselben Ergebnis, aber sie wäre stehengeblieben, sobald der Store
+    // seine Antwort erweitert.
+    Promise.all([getStore().getRound(roundId), getStore().listRoundMatches(roundId), getStore().listVotes({ roundId })]).then(([round, ms, vs]) => {
       if (!live) return;
       setTeamFilter(round?.team_filter ?? null);
       setRules(round?.rules ?? DEFAULT_RULES);
       setAdminId(round?.admin_id ?? null);
       setVotes(vs);
-      const relevant = filterMatchesByTeams(ms, round?.team_filter);
-      setMatches([...relevant].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)));
+      setMatches([...ms].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff)));
     }).catch((e) => {
       // Ohne diesen Zweig bleibt der Screen für immer bei „Spiele laden …" und
       // in der Konsole steht nichts Verwertbares — die Ursache liegt dann in der
@@ -73,7 +75,7 @@ export default function Spielwahl() {
 
   useEffect(() => {
     let live = true;
-    Promise.all([getStore().listTips({ roundId }), getStore().listMatches()]).then(([tips, ms]) => {
+    Promise.all([getStore().listTips({ roundId }), getStore().listRoundMatches(roundId)]).then(([tips, ms]) => {
       if (!live || !user) return;
       const eigene = tips.filter((t) => t.user_id === user.id);
       setTippedIds(new Set(eigene.map((t) => t.match_id)));

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
-import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "@/lib/roundStatus";
+import { computeMatchStatus, countTippedByUser } from "@/lib/roundStatus";
 import { muenzStand } from "@/lib/muenzstand";
 import { basisFuer } from "@/lib/jokerBasis";
 import { narrenStand } from "@/lib/narrenstand";
@@ -57,7 +57,9 @@ export default function RundenHub() {
   useEffect(() => {
     let live = true;
     Promise.all([
-      getStore().getRound(roundId), getStore().listMatches(), getStore().listTips({ roundId }),
+      // 🔴 `listRoundMatches`: die Regel „welche Spiele gehören zur Runde"
+      // hat EINE Stelle (Runden-Schicht, Frage 1). Hier lag sie nachgebaut.
+      getStore().getRound(roundId), getStore().listRoundMatches(roundId), getStore().listTips({ roundId }),
       getStore().getLeaderboardHistory(roundId),
       // Narren vom Glücksrad — dieselbe Quelle wie in der Tippabgabe.
       getStore().getDrehradBelohnungen?.(roundId) ?? Promise.resolve(null),
@@ -72,12 +74,11 @@ export default function RundenHub() {
         setFreigaben(["joker.einzel", "joker.ranking", "duell.klau", "duell.block", "drehrad"]
           .some((art) => basisFuer(art, round?.rules)?.wer === "adminFreigabe"));
         setSaison(round?.rules?.saison?.enabled === true);
-        const relevant = filterMatchesByTeams(matches, round?.team_filter);
-        const { total, open } = computeMatchStatus(relevant);
+        const { total, open } = computeMatchStatus(matches);
         setStatus({ total, open, tippedByMe: countTippedByUser(tips, user?.id) });
-        setStand(muenzStand({ rules: round?.rules, matches: relevant, tips, userId: user?.id }));
+        setStand(muenzStand({ rules: round?.rules, matches, tips, userId: user?.id }));
         setNarren(narrenStand({
-          rules: round?.rules, matches: relevant, tips, userId: user?.id,
+          rules: round?.rules, matches, tips, userId: user?.id,
           stand: history, zusatz: rad?.narren ?? [],
         }));
       }).catch(() => {});
