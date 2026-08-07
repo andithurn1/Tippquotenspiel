@@ -3,6 +3,29 @@
 Offene Feature-Ideen, grob nach Aufwand. Gebaut wird in einzelnen, testbaren
 Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 
+## ⛔ ENDPHASE — hier steht, was ERST GANZ AM SCHLUSS drankommt
+
+**Nicht anfangen. Nicht messen. Nicht melden.** Ausdrückliche Anweisung von
+Andi, mehrfach wiederholt; die verbindliche Fassung steht ganz oben in
+`CLAUDE.md`. Dieser Abschnitt existiert, damit solche Punkte einen Platz haben,
+an dem sie NICHT als nächster Schritt gelesen werden.
+
+- **Balancing insgesamt.** Welche Zahlenwerte die Variablen entlang der
+  Möglichkeiten (Spieltags-Ereignisse, Joker, Wirkungen, Geltungen …) haben
+  sollen, und wie das auf die Wahl der Spiele, Wettbewerbe und Mannschaften
+  abgestimmt wird. Das Ziel ist eine **Empfehlung in Form konkreter Zahlen je
+  Einstellung** — bewusst grob (2 %/5 %-Schritte), mit Beispielwerten. Es geht
+  erst, wenn das Gehäuse steht; vorher ist jede Zahl Zwischenarbeit.
+- **`balanceSim.js` vollständig machen.** Der Simulator rechnet zwei der vier
+  Schritte, die `scoreLeaderboardHistory` rechnet (Saisonform, Aufholen); die
+  Ereignis-Wirkungen und der Duell-Joker fehlen, dazu die Store-Ebenen
+  (Drehrad, Saison-Wetten, Versäumnis). Seit 07.08.2026 **sagt die Ampel das
+  wenigstens dazu** (`NICHT_SIMULIERT`, Stufe `unbekannt`) — damit ist der
+  Punkt für die Bauphase abgehakt. Der richtige Weg später ist NICHT, die
+  fehlenden Schritte im Simulator nachzubauen (dann stünde die zweite Fassung
+  nur vollständiger da und wanderte wieder ab), sondern ihn dieselbe Kette
+  benutzen zu lassen wie die Wertung.
+
 ## Erledigt (alles auf `main`, Stand fb82eab)
 - QT-Design-Spec (`design/reaktions-clips.md`)
 - Joker/Gewichtung: Einzel- + Ranking-Modus, Skalierungs-Empfehlung

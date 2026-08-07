@@ -63,7 +63,7 @@ ausführen.
 | 1 (Andi) | ~~**Münz-Takt** (`wettmodus.md` 3)~~ — `muenzTakt.js` + Verkabelung + alle drei Komplexitätsstufen, Build sauber. ⚠️ Liegt auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** auf `main`. | fertig | 2026-08-04 |
 | 2 (Andre) | ~~Joker-Baukasten: zehn Module + fünf Oberflächen-Bausteine~~ — alles auf `main`, 1472 Tests grün | fertig | 2026-08-02 |
 | 1 (Andi) | ~~**Regel-Grammatik: die WIE-LANGE-Achse** (`geltung.js`) + Ereignis-Bibliothek + Duell-Schutzregeln am Store (`duellPruefung.js`)~~ — 2157 Tests grün, alle Abnahmen ohne Befund. ⚠️ Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** `main`. | fertig | 2026-08-07 |
-| 2 (Andre) | **NÄCHSTE AUFGABE: Blindstellen-Durchgang `balanceSim.js`.** Sieht der Simulator die neuen Ebenen? **Am 07.08.2026 nachgemessen: weiterhin nein, null Verweise** — und inzwischen sind es acht statt sechs (`ereignisse`, `geltung`, `ausloeser`, `auswahl`, `drehrad`, Duell-Joker …). Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-31 |
+| 2 (Andre) | ~~Blindstellen-Durchgang `balanceSim.js`~~ — ⛔ **GESTRICHEN, nicht erledigt.** Balancing ist Endphase (Andi, mehrfach; steht jetzt ganz oben in `CLAUDE.md`). Diese Zeile stand seit dem 31.07. als „nächste Aufgabe" hier und hat mehrfach Sessions hineingezogen. Die offene Frage liegt in `design/roadmap.md` unter „Endphase". | zurückgestellt | 2026-08-07 |
 | 2 (Andre) | ~~Joker-Ökonomie: sechs Module + Einhängen + Creator-Code~~ — alles auf `main`, 1359 Tests grün | fertig | 2026-07-31 |
 | 2 (Andre) | **Duell-Joker** (Klau + Block) — `design/duell-joker.md` (Spec, liegt), `src/lib/duellJoker.js` + Test, danach `engine.js` (additiv), `presetMerge.js`, `reglerWarnung.js`, neue Komponente `DuellJoker.jsx`, Einbau in `Spielerstellung.jsx`. Vom Nutzer am 31.07. ausdrücklich beauftragt. | läuft | 2026-07-31 |
 | 2 (Andre) | **Punkt 3 `saisonform` messbar** — Blindstellen-Befund steht (siehe Log oben), Umsetzung PAUSIERT zugunsten der Duell-Joker. `balanceSim.js` ist unberührt. | pausiert | 2026-07-31 |
@@ -198,51 +198,24 @@ Kopfkommentar. Live schreibt der Client direkt in `tips`; wer den Store-Aufruf
 umgeht, kommt weiterhin durch. Das braucht Policies/Trigger in `schema.sql`,
 und danach muss der Nutzer sie ausführen (Push-Regel 3).
 
-**3. Balance — der Vorschritt ist benannt und halb gemacht.**
+**3. Die Ereignis-Bibliothek weiterfüllen.** `EREIGNIS_PRESETS` in
+`ereignisse.js`. Mit den vier Achsen ist jeder weitere Eintrag ein Bündel und
+kein Feature. Was noch offen ist, steht in der Roadmap-Tabelle der Grammatik.
 
-🔴 **Nachgemessen am 07.08.2026, und der Befund ist schärfer als „ein paar
-Ebenen fehlen": der Simulator hat eine ZWEITE FASSUNG der Ranglisten-Kette,
-und die ist abgewandert.**
+⛔ **BALANCE IST KEIN NÄCHSTER SCHRITT — auch nicht als „Vorschritt".**
+Siehe den Block ganz oben in `CLAUDE.md`. Andi hat das fünfmal gesagt, und der
+Rückfall kam jedes Mal über genau diese Liste hier: Balance stand als Punkt 3
+und 4 drin, das nächste Fenster las sie und fing an. Deshalb steht hier jetzt
+nichts mehr dazu, und das ist Absicht, kein Vergessen.
 
-```
-scoreLeaderboardHistory:  roh → Ereignis-Wirkungen → Duell-Joker → Saisonform → Aufholen
-balanceSim.js:            verlauf →                                Saisonform → Aufholen
-```
+Was am 07.08. am Simulator passiert ist (vierte Ampelstufe `unbekannt`,
+`NICHT_SIMULIERT`), liegt fertig und ist **abgeschlossen — nicht der Anfang
+einer Reihe.** Wer es fortsetzen will: nicht ohne ausdrückliche Ansage von
+Andi. Die offene Frage dahinter ist in `design/roadmap.md` unter „Endphase"
+abgelegt, wo sie hingehört.
 
-Der Kommentar im Simulator sagt sogar „Reihenfolge wie in
-`scoreLeaderboardHistory`" — er stimmt für das ENDE der Kette und verschweigt
-den Anfang. Dazu fehlen die Store-Ebenen ganz: Drehrad, Saison-Wetten,
-Versäumnis-Ersatztipps.
-
-**Der Schaden war nicht die fehlende Zahl, sondern das falsche Grün.** Die
-Ampel in der Spielerstellung sagte „Ausgewogen", während ein Jackpot auf dem
-Dreifachen stand und Duelle liefen — sie hatte davon nichts gesehen. Gemessen:
-die sechs vermessenen PRESETS sind sauber, aber **alle fünf RUNDEN-CHARAKTERE
-(Stufe 1!) tragen unvermessene Ebenen, vier davon standen auf „Ausgewogen"**.
-Ausgerechnet die, die dem grünen Licht am ehesten glauben, bekamen das
-bedeutungsloseste.
-
-✅ **Behoben ist die Ehrlichkeit** (Commit `<dieser>`): `NICHT_SIMULIERT` +
-`unvermesseneEbenen()` in `balanceSim.js`, vierte Ampelstufe `unbekannt`
-(unbunt, offener Kreis — eine Ampel, die nicht alles gesehen hat, leuchtet
-nicht), und die Ampel benennt die übergangenen Ebenen im Klartext. Ein GELB
-oder ROT bleibt dabei stehen: eine Warnung wegen Unwissen zurückzunehmen wäre
-der Fehler in die andere Richtung.
-
-⛔ **Offen ist die Messung selbst.** Die eigentliche Aufgabe: den Simulator die
-Ebenen wirklich rechnen lassen. Der natürliche Weg ist NICHT, die fehlenden
-zwei Schritte im Simulator nachzubauen — dann stünde die zweite Fassung nur
-vollständiger da und wanderte beim nächsten Mal wieder ab. Der Weg ist, den
-Simulator dieselbe Kette benutzen zu lassen wie die Wertung. **Wer eine Ebene
-anschließt, streicht sie aus `NICHT_SIMULIERT`** — dann wird aus dem
-Teilbefund wieder ein Urteil, und ein Test wacht darüber.
-
-**4. Erst danach die Gewichtung.** Ausdrückliche Nutzer-Entscheidung vom
-05.08.: zuletzt, bewusst grob (2 %/5 %-Schritte), mit Beispielwerten je
-Admin-Einstellung.
-
-⛔ **Nicht anfangen:** Symbolsystem, Animationen, Andis eigene Joker-Designs.
-Ausdrücklich zurückgestellt.
+⛔ **Ebenfalls nicht anfangen:** Symbolsystem, Animationen, Andis eigene
+Joker-Designs. Ausdrücklich zurückgestellt.
 
 #### ⚠️ Drei Dinge, die du beim Bauen mitziehen musst
 

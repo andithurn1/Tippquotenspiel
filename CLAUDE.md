@@ -4,6 +4,44 @@ Quoten-gewichtetes Fußball-Tippspiel unter Freunden. Kein Echtgeld (bewusste
 Glücksspiel-Abgrenzung — wichtig für App-Store-Zulassung). Launch-Ziel:
 vor Bundesliga-Start am 28.08.2026. Details zur Strategie: `README.md`.
 
+## ⛔ BALANCING IST ENDPHASE — NICHT ANFASSEN (Andi, mehrfach, zuletzt 07.08.2026)
+
+**Das steht bewusst ganz oben, weil es das ist, was am häufigsten schiefgeht.**
+Andi hat es fünfmal geschrieben, fünfmal ist ihm zugestimmt worden, und danach
+kam trotzdem wieder eine Balance-Rückmeldung. Der Grund war nicht schlechtes
+Zuhören, sondern **die Aufgabenlisten im Repo**: Balance stand als „nächster
+Schritt" in Übergabe und Roadmap, das nächste Fenster las die Liste und fing an.
+Deshalb hier, und deshalb als Verbot formuliert.
+
+Wir bauen den **Baukasten** — Gehäuse, Regler, Mechaniken. **Welche Zahlen
+darin gut sind, wird ganz am Ende entschieden**, wenn das Gehäuse steht und
+feststeht, welche Spiele, Wettbewerbe und Mannschaften eine Runde umfasst.
+Vorher ist jede Balance-Aussage Zwischenarbeit, die ohnehin über den Haufen
+geworfen wird.
+
+- ⛔ **Keine Balance-Arbeit, keine Balance-Messung, keine Balance-Meldung** —
+  nicht als Aufgabe, nicht nebenbei, nicht „nur kurz nachgesehen".
+- ⛔ **`balanceSim.js` und die Balance-Ampel bleiben, wie sie sind.** Kein
+  Anschließen neuer Ebenen, keine Blindstellen-Durchgänge, kein Nachrüsten.
+- ⛔ **Nicht als „nächster Schritt" in eine Übergabe schreiben.** Genau darüber
+  kommt es zurück.
+- ⚠️ Fällt trotzdem etwas auf: **eine Zeile in `design/roadmap.md` unter
+  „Endphase"** — nicht in den Chat, nicht in die Aufgabenliste.
+
+**Warum Balance im Repo überhaupt vorkommt:** Andi hat vor zwei Wochen im Chat
+beschrieben, was er am Ende WILL — **Empfehlungen in Form konkreter Zahlenwerte**
+je Variable, abgestimmt auf die gewählten Spiele und Wettbewerbe. Das ist eine
+Beschreibung des Ziels, **kein Auftrag für jetzt**. Alles, was im Repo zu
+Balance steht, ist unter diesem Vorbehalt zu lesen.
+
+🔴 **Was JETZT gilt, ist etwas anderes und heißt nur ähnlich:** geprüft wird, ob
+eine Einstellung GREIFT und ob sie ERREICHBAR ist — nicht, ob sie klug ist
+(Baukasten-Grundsatz unten). Dafür sind `npm test`, `greift`, `stufen`, `tot`,
+`anzeige`, `lint` da. **Diese Abnahmen sind KEINE Balance-Prüfung** und laufen
+normal weiter.
+
+---
+
 ## Session-Start (bei einem frischen Chat zuerst lesen)
 
 An diesem Projekt arbeiten ZWEI Claude-Sessions verschiedener Accounts
