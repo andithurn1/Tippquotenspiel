@@ -123,6 +123,111 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-07 (IV) · 🔴 **ÜBERGABE an das nächste Fenster** — drei Achsen der Grammatik stehen
+
+> **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Alles darunter ist
+> Historie. Diese Nachricht ist selbsttragend geschrieben — du brauchst nichts
+> anderes zu lesen außer `CLAUDE.md`.
+
+#### Wo du landest
+
+```
+Branch   claude/koordinierte-arbeitsweise-fe6w1v   (gepusht, Stand 699c071)
+Tests    2100 grün
+Build    sauber
+Abnahmen npm run anzeige · greift · stufen · lint · tot — alle fünf ohne Befund
+```
+
+Erster Schritt: `git fetch origin` + auf den Branch, dann **einmal alle fünf
+Abnahmen laufen lassen**. Wenn eine davon rot ist, hat die andere Session
+dazwischen gepusht — das ist der Befund, mit dem du anfängst, nicht die
+Aufgabe unten.
+
+#### Was in dieser Sitzung dazugekommen ist (vier Commits)
+
+| Commit | Was |
+|---|---|
+| `f97251e` | `npm run lint` als **fünfte Abnahme** — zwei Regeln (`no-undef`, `rules-of-hooks`) |
+| `e43df94` | `duell.konter` + `duell.kosten` angeschlossen · **`greift` TEIL 4** |
+| `f67a7e1` | **WAS-Achse** (`wirkung.js`) · Listen-Blindfleck in `stufen` behoben |
+| `699c071` | **WANN-Achse** (`ausloeser.js`) · `rundenId` bis in die Wertung |
+
+Die Regel-Grammatik steht damit zu drei Vierteln:
+**WANN** (`ausloeser.js`) → **WEN** (`auswahl.js`) → **WAS** (`wirkung.js`) →
+~~WIE LANGE~~. Alle drei hängen an `rules.ereignisse.aktive[]`, alle drei haben
+eine Oberfläche in `Ereignisse.jsx`, und alle drei sind mit Zahlen belegt (nicht
+nur mit grünen Tests).
+
+#### 🔴 Die drei Sätze, die diese Sitzung gekostet hat
+
+1. **Ein grüner Test beweist, dass eine Funktion richtig rechnet — nicht, dass
+   sie jemand fragt.** Sechs Mechaniken waren fertig, getestet, einstellbar und
+   von niemandem aufgerufen. Dagegen hilft `npm run tot`.
+2. **Eine Messung, die nicht prüft, ob sie etwas geprüft hat, meldet Ruhe statt
+   Befunden.** Dreimal an zwei Tagen: `limitKlassen` „bewegt nichts" (falsche
+   Feldnamen im Messfall), `block.nurGewinn` „tot" (Szenario ohne Minus-Spieltag),
+   `enge`/`abstand` „hält immer zu" (Map über Objekte statt Schlüssel).
+   Jede Sperrklinke, die daraus entstanden ist, steht jetzt im jeweiligen Skript.
+3. **`Math.max(0, …)` ist fast immer ein Deckmantel.** Der Joker-Vorrat lief ins
+   Minus, und die Zeile machte daraus eine Null — die stärkste Bremse des
+   Duell-Bausteins bremste messbar nichts, bei grünen Tests.
+
+#### ▶️ Was als Nächstes ansteht (in dieser Reihenfolge)
+
+**1. Die vierte Achse: WIE LANGE (Geltung).**
+`sofort` · `naechsterSpieltag` · `fenster(n)` · `rest` · `bisAusgeloest` ·
+`jackpot`. Bauart wörtlich wie die anderen drei: eigenes Modul, Katalog mit
+`braucht`, `sanitize`, `beschreibe…`, eine Vorschau-Zahl (`haeufigkeit` /
+`trefferAnteil` sind die Vorlagen), Anbindung an `ereignisse.js`, ein Messfall
+in `greift` **Teil 4** (Geltung ist eine Erlaubnis, keine Punkte).
+⚠️ `jackpot` braucht eine Obergrenze — sonst entscheidet ein einzelner Spieltag
+die Saison. Steht so schon in der Roadmap.
+
+**2. Die Ereignis-Bibliothek füllen.**
+Jetzt, wo alle Achsen da sind, sind die Wünsche aus der Roadmap Einzeiler:
+Trostpflaster · Spieltags-Krone · Pechvogel-Bonus · Scharfschütze ·
+Dreier-Wertung · Jokerjagd. `EREIGNIS_PRESETS` in `ereignisse.js` ist die
+Stelle. **Achtung:** jeder neue Eintrag muss `sanitizeEreignisse` unverändert
+überstehen (ein Test wacht darüber) — also `wirkung` und `ausloeser`
+ausdrücklich mitschreiben.
+
+**3. Der RLS-Durchgang.** Der älteste offene Befund und der einzige mit einer
+Fairness-Folge im Echtbetrieb: `zielWahl` · `maxProZiel` · `immun` · `kosten`
+werden **nur im Screen** geprüft. `saveTip` prüft davon nichts. Wer die Route
+direkt anspricht, trifft jeden, beliebig oft, umsonst. Der belastbare Ort ist
+die Server-Route; ein Store-Vorgriff ist hier *nicht* billig, weil die Prüfung
+den ganzen Tabellenstand braucht.
+
+**4. Erst danach Balance.** Ausdrückliche Nutzer-Entscheidung vom 05.08.:
+Gewichtung kommt ZULETZT, bewusst grob (2 %/5 %-Schritte), mit Beispielwerten
+je Admin-Einstellung. Bis dahin ist `balanceSim.js` nur für die Frage da:
+**sieht der Simulator die neue Ebene überhaupt?**
+
+⛔ **Nicht anfangen:** Symbolsystem, Animationen, Andis eigene Joker-Designs.
+Ausdrücklich zurückgestellt („erstmal das Gehirn voll fertig").
+
+#### ⚠️ Zwei Dinge, die du beim Bauen mitziehen musst
+
+- **`LISTEN_FELDER` in `stufenAbdeckung.js`.** `blattFelder()` hält an Arrays
+  an, und `ereignisse.aktive` / `saison.wetten` / `drehrad.felder` /
+  `limitKlassen` sind in der Vorgabe **leer** — die Rekursion sieht nie hinein.
+  Wer eine Einstellung in einen LISTEN-Eintrag legt, trägt ihren Namen dort
+  ein, sonst meldet `stufen` Teil 2 grün für etwas, das es nie angeschaut hat.
+- **`rundenId` bis in die Wertung.** Sie ist der Seed des `zufall`-Auslösers und
+  läuft jetzt durch: Screens → `erspielteLage`, Stores →
+  `scoreLeaderboardHistory` → `wirkungsVorgaenge`. Wer eine neue Stelle baut,
+  die `auswerten()` ruft, gibt sie mit — sonst zieht dieselbe Regel dort andere
+  Spieltage, und das ist die doppelte Wahrheit in Reinform.
+
+#### Die Arbeitsweise, die Andi will (unverändert)
+
+Wenig Rückfragen, Entscheidungen aus Roadmap/Kanal/Code ableiten, Commit + Push
+nach jedem abgeschlossenen Schritt ohne zu fragen, Befunde ins Repo statt in den
+Chat. Und: **erst messen, dann melden.**
+
+---
+
+
 ### 2026-08-07 (III) · **Die WANN-Achse — und zwei Fehler, die kein Test gesehen hätte**
 
 > **👉 Frische Session: das hier ist der Stand.** Branch
