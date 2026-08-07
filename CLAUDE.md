@@ -40,6 +40,21 @@ eine Einstellung GREIFT und ob sie ERREICHBAR ist — nicht, ob sie klug ist
 `anzeige`, `lint` da. **Diese Abnahmen sind KEINE Balance-Prüfung** und laufen
 normal weiter.
 
+⛔ **Die Balance-Tests sind seit 07.08.2026 STILLGELEGT** — das ist Absicht und
+kein kaputter Zustand. `npm test` meldet deshalb „39 skipped", und zwei Dateien
+laufen gar nicht mit:
+
+| Wo | Was |
+|---|---|
+| `vitest.config.mjs` → `BALANCE_TESTS` | `presets.balance.test.js` und `balanceSim.test.js` ausgeschlossen |
+| `charaktere.test.js` · `einfachRegler.test.js` | je ein `describe.skip("Schnelltest Balance …")` |
+
+**Nicht „reparieren".** Gelöscht ist nichts — die Dateien tragen die Vorarbeit
+für die Endphase. Wieder anschalten geht in zwei Minuten (Anleitung steht im
+Kopf von `vitest.config.mjs`), aber erst **auf ausdrückliche Ansage von Andi**.
+Nebeneffekt, den man sonst für ein Problem hält: `npm test` läuft dadurch etwa
+doppelt so schnell.
+
 ---
 
 ## Session-Start (bei einem frischen Chat zuerst lesen)

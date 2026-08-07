@@ -133,11 +133,16 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 #### Wo du landest
 
 ```
-Branch   claude/koordinierte-arbeitsweise-fe6w1v   (gepusht, Stand 35fc125)
-Tests    2157 grün
+Branch   claude/koordinierte-arbeitsweise-fe6w1v   (gepusht)
+Tests    2038 grün · 39 skipped (Balance, ABSICHTLICH — siehe unten)
 Build    sauber
 Abnahmen npm test · anzeige · greift · stufen · lint · tot — alle ohne Befund
 ```
+
+⛔ **„39 skipped" ist kein kaputter Zustand.** Die Balance-Tests sind seit
+07.08.2026 stillgelegt (`BALANCE_TESTS` in `vitest.config.mjs` plus zwei
+`describe.skip`). Nicht reparieren, nicht wieder anschalten — Begründung und
+Anleitung stehen ganz oben in `CLAUDE.md`.
 
 Erster Schritt: `git fetch origin` + auf den Branch, dann **einmal alle
 Abnahmen laufen lassen**. Ist eine rot, hat die andere Session dazwischen

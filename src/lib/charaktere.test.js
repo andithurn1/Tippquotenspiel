@@ -104,7 +104,12 @@ describe("merkmale — Alltagssprache statt Regelnamen", () => {
   });
 });
 
-describe("Schnelltest Balance: der Kenner gewinnt bei jedem Charakter", () => {
+// ⛔ STILLGELEGT (Andi, 07.08.2026): Balancing ist Endphase — siehe ganz oben
+// in `CLAUDE.md` und den Kopf von `vitest.config.mjs`. Der Rest dieser Datei
+// (Stufen-Abdeckung der Charaktere) läuft weiter, deshalb `describe.skip` statt
+// eines Datei-Ausschlusses.
+// ▶️ Wieder anschalten: `describe.skip` → `describe`.
+describe.skip("Schnelltest Balance: der Kenner gewinnt bei jedem Charakter", () => {
   // Bewusst nur ein STRUKTURELLER Test — gewinnt der Kenner überhaupt noch?
   // Die Feinjustierung der Werte passiert gebündelt im Abschluss-Durchgang
   // (siehe design/roadmap.md), nicht bei jeder Änderung neu.

@@ -238,7 +238,12 @@ describe("Beispiele — konkrete Zahlen statt abstrakter Regler", () => {
   });
 });
 
-describe("Schnelltest Balance: keine Stufe kippt das Spiel", () => {
+// ⛔ STILLGELEGT (Andi, 07.08.2026): Balancing ist Endphase — siehe ganz oben
+// in `CLAUDE.md` und den Kopf von `vitest.config.mjs`. Der Rest dieser Datei
+// (welche Stufe welches Feld setzt) läuft weiter, deshalb `describe.skip` statt
+// eines Datei-Ausschlusses.
+// ▶️ Wieder anschalten: `describe.skip` → `describe`.
+describe.skip("Schnelltest Balance: keine Stufe kippt das Spiel", () => {
   // Nur strukturell — gewinnt der Kenner noch? Feinjustierung sammelt sich
   // im Abschluss-Durchgang (siehe design/roadmap.md).
   for (const r of REGLER) {
