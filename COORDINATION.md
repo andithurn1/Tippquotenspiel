@@ -196,9 +196,20 @@ begründen), und der Block-Stand geht als eigener `bezug` hinein — nicht als
 `spieltag` durchgereicht, sonst schreibt die Oberfläche „am Spieltag" über eine
 Wertung, die drei umfasst.
 
-**Offen bleibt `sonderspiel`** (Jokerjagd): Infrastruktur, kein Vokabular — die
-Geltung dafür (`fenster(3)`) liegt bereit. Gehört mit Quiz und Duell in
-denselben Topf.
+**✅ Auch die Jokerjagd steht** (Commit `0335e2f`) — und sie brauchte das
+`sonderspiel` gar nicht. Ein Sonderspiel ist kein Minispiel, sondern ein
+Wettbewerb über ein FENSTER nach einer KENNZAHL; gefehlt hat allein, dass man
+etwas anderes als Punkte zählen kann. Gebaut als `metrik` (`punkte` ·
+`exakteTreffer` · `getippteSpiele`).
+
+🔴 **Damit sind ALLE SECHS Wünsche aus der Roadmap-Tabelle der Regel-Grammatik
+gebaut** — vier als reine Bündel, zwei mit je einer neuen Vokabel. Die
+Grammatik trägt also wirklich, was sie versprochen hat; die Ansage „das sind
+Einzeiler" stimmte nur nicht beim ersten Hinsehen.
+
+⚠️ Die Wirkung `sonderspiel` bleibt im Katalog und nicht auswertbar: ein echtes
+Miniwettspiel mit eigener Buchführung wäre etwas anderes. Sie ist nur kein
+Blocker mehr.
 
 **2. Der RLS-Durchgang in der DATENBANK.** `duellPruefung.js` schließt die
 Lücke in unserem eigenen Code — mehr nicht, und das steht so auch im
