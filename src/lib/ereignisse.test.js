@@ -438,13 +438,25 @@ describe("Ereignisse sind auf allen drei Stufen erreichbar", () => {
   });
 
   it("kein Bündel der Bibliothek erzeugt einen Konflikt mit dem Anschluss-Bonus …", () => {
-    // … außer dem ausdrücklich ausgleichenden, und DER soll ihn melden:
-    // Trost-Joker + Anschluss-Bonus belohnen beide das Zurückliegen.
+    // … außer den ausdrücklich ausgleichenden, und DIE sollen ihn melden:
+    // Trost-Joker bzw. Pechsträhne und Anschluss-Bonus belohnen beide das
+    // Zurückliegen.
+    //
+    // ⚠️ Die Erwartung wird aus dem INHALT des Bündels abgeleitet, nicht aus
+    // einer Liste von Schlüsseln. Mit einer festen Liste hätte der Test beim
+    // nächsten Eintrag der Bibliothek angeschlagen, ohne dass etwas kaputt
+    // gewesen wäre — und beim übernächsten hätte ihn jemand entschärft.
     const mitAufholen = { aufholen: { enabled: true, staerke: "mittel", schwelle: 0.05 } };
     for (const p of EREIGNIS_PRESETS) {
+      const ausgleichend = sanitizeEreignisse(p.ereignisse).aktive.filter((a) =>
+        EREIGNIS[a.key]?.doppeltMit === "aufholen" && (!a.auswahl || a.auswahl.ende === "unten"));
       const n = konflikte({ ...mitAufholen, ereignisse: p.ereignisse }).length;
-      expect(n).toBe(p.key === "ausgleich" || p.key === "alles" ? 1 : 0);
+      expect(n).toBe(ausgleichend.length);
     }
+    // Gegenprobe, damit die abgeleitete Erwartung nicht einfach immer 0 ist:
+    // mindestens ein Bündel MUSS melden, sonst prüft die Zeile nichts.
+    expect(EREIGNIS_PRESETS.some((p) =>
+      konflikte({ ...mitAufholen, ereignisse: p.ereignisse }).length > 0)).toBe(true);
   });
 
   it("die Wirkrichtung ist als ABGELEITET gekennzeichnet, nicht als gemessen", () => {
@@ -764,5 +776,67 @@ describe("Jackpot", () => {
       .reduce((s, x) => s + x.punkte, 0);
     expect(anSpieltag4(ohne)).toBe(50);
     expect(anSpieltag4(mit)).toBe(100);
+  });
+});
+
+// ── Die Ereignis-Bibliothek: Scharfschütze und Pechvogel ────
+// Beide stehen seit dem 29.07. als Wunsch in der Roadmap-Tabelle der
+// Regel-Grammatik. Mit den vier Achsen sind sie je ein Eintrag — der Pechvogel
+// allerdings erst seit der WIE-LANGE-Achse: „+20 % am NÄCHSTEN Spieltag" ist
+// sein ganzer Witz. „Sofort" hieße rückwirkend auf Punkte, die schon feststehen.
+describe("Serien mit Ergebnis-Bezug", () => {
+  // Vier Spieltage. u1 trifft an 1 und 2 exakt, an 3 und 4 nicht.
+  const treffer = (md, exakt) =>
+    e("u1", md, `m${md}`, { home: 1, away: 0 }, exakt ? { home: 1, away: 0 } : { home: 3, away: 3 });
+
+  it("Scharfschütze zählt Spieltage in Folge mit einem exakten Treffer", () => {
+    const eintraege = [treffer(1, true), treffer(2, true), treffer(3, false), treffer(4, true)];
+    const r = auswerten({ eintraege, ereignisse: AN([{ key: "treffer-serie", anzahl: 2, belohnung: 1 }]) });
+    expect(r.gutschriften.map((g) => g.matchday)).toEqual([2]);
+  });
+
+  it("ein Fehlschlag setzt die Serie zurück", () => {
+    const eintraege = [treffer(1, true), treffer(2, false), treffer(3, true), treffer(4, false)];
+    const r = auswerten({ eintraege, ereignisse: AN([{ key: "treffer-serie", anzahl: 2, belohnung: 1 }]) });
+    expect(r.gutschriften).toHaveLength(0);
+  });
+
+  it("Pechsträhne zählt Spieltage in Folge OHNE exakten Treffer", () => {
+    const eintraege = [treffer(1, false), treffer(2, false), treffer(3, true), treffer(4, false)];
+    const r = auswerten({ eintraege, ereignisse: AN([{ key: "pechstraehne", anzahl: 2, belohnung: 1 }]) });
+    expect(r.gutschriften.map((g) => g.matchday)).toEqual([2]);
+  });
+
+  // 🔴 Die teuerste Falle dieses Ereignisses: „kein exakter Treffer" ist für
+  // jemanden, der GAR NICHT getippt hat, immer wahr. Ohne die Bedingung
+  // „getippt und Ergebnis lag vor" wäre der Pechvogel-Bonus die einzige
+  // Mechanik im ganzen Regelwerk, bei der Wegbleiben zahlt.
+  it("wer gar nicht tippt, ist kein Pechvogel", () => {
+    const alle = [1, 2, 3, 4].map((md) => e("u2", md, `m${md}`, { home: 1, away: 0 }, { home: 2, away: 2 }));
+    const r = auswerten({
+      eintraege: [], alleEintraege: alle,
+      ereignisse: AN([{ key: "pechstraehne", anzahl: 2, belohnung: 1 }]),
+    });
+    expect(r.gutschriften).toHaveLength(0);
+  });
+
+  it("ein ausgelassener Spieltag setzt die Strähne zurück, statt sie fortzuschreiben", () => {
+    // u1 tippt an 1 und 4 (je daneben), lässt 2 und 3 aus. Ohne die Regel wären
+    // das vier Pech-Spieltage in Folge und damit zwei Gutschriften.
+    const meine = [treffer(1, false), treffer(4, false)];
+    const alle = [...meine, ...[2, 3].map((md) => e("u2", md, `m${md}`, { home: 1, away: 0 }, { home: 2, away: 2 }))];
+    const r = auswerten({
+      eintraege: meine, alleEintraege: alle,
+      ereignisse: AN([{ key: "pechstraehne", anzahl: 2, belohnung: 1 }]),
+    });
+    expect(r.gutschriften).toHaveLength(0);
+  });
+
+  it("ohne Ergebnisse zählt kein Spieltag mit — weder für noch gegen", () => {
+    const offen = [1, 2, 3].map((md) => e("u1", md, `m${md}`, { home: 1, away: 0 }, null));
+    for (const key of ["treffer-serie", "pechstraehne"]) {
+      const r = auswerten({ eintraege: offen, ereignisse: AN([{ key, anzahl: 2, belohnung: 1 }]) });
+      expect(r.gutschriften).toHaveLength(0);
+    }
   });
 });

@@ -311,6 +311,11 @@ const EREIGNIS_FAELLE = [
   ["aussenseiter (ab 3,0)", { key: "aussenseiter", abQuote: 3, belohnung: 1 }],
   ["spieltag-komplett", { key: "spieltag-komplett", belohnung: 1 }],
   ["letzter-am-spieltag", { key: "letzter-am-spieltag", belohnung: 1 }],
+  // Die beiden Einträge der Ereignis-Bibliothek vom 07.08.2026. Beide hängen
+  // an ERGEBNISSEN und nicht nur an Tipps — der Messfall oben tippt über 54
+  // gelaufene Spiele, also liegen welche vor.
+  ["treffer-serie (2 in Folge)", { key: "treffer-serie", anzahl: 2, belohnung: 1 }],
+  ["pechstraehne (2 in Folge)", { key: "pechstraehne", anzahl: 2, belohnung: 1 }],
 ];
 
 console.log(`${"=".repeat(88)}`);

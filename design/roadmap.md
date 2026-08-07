@@ -2150,14 +2150,44 @@ WANN (Auslöser)  →  WEN (Auswahl)  →  WAS (Belohnung)  →  WIE LANGE (Gelt
 
 Alle Beispiele des Nutzers sind in dieser Grammatik ein Einzeiler:
 
-| Wunsch | Auslöser | Auswahl | Belohnung | Geltung |
-|---|---|---|---|---|
-| Trostpflaster | jeder Spieltag | Perzentil unten 20 % | 1 Joker | sofort |
-| Spieltags-Krone | jeder Spieltag | Rang oben 5 **am Spieltag** | 1 Joker (Sorte wählbar) | sofort |
-| Pechvogel-Bonus | Serie: 3× kein Treffer | der Betroffene | +20 % | nächster Spieltag |
-| Scharfschütze | Serie: 4× exakt | der Betroffene | 1 Joker | sofort |
-| Dreier-Wertung | Rhythmus: jeder 3. Spieltag | Rang oben 1 **über die 3** | Belohnung | sofort |
-| Jokerjagd | Zufall (≈ alle 8 Spieltage) | alle | Sonderspiel | 3 Spieltage |
+| Wunsch | Auslöser | Auswahl | Belohnung | Geltung | Stand |
+|---|---|---|---|---|---|
+| Trostpflaster | jeder Spieltag | Perzentil unten 20 % | 1 Joker | sofort | ✅ Bündel „ausgleich" |
+| Spieltags-Krone | jeder Spieltag | Rang oben 5 **am Spieltag** | 1 Joker (Sorte wählbar) | sofort | ✅ Bündel „krone" |
+| Pechvogel-Bonus | Serie: 3× kein Treffer | der Betroffene | +20 % | nächster Spieltag | ✅ Bündel „pechvogel" (07.08.) |
+| Scharfschütze | Serie: 4× exakt | der Betroffene | 1 Joker | sofort | ✅ Bündel „scharfschuetze" (07.08.) |
+| Dreier-Wertung | Rhythmus: jeder 3. Spieltag | Rang oben 1 **über die 3** | Belohnung | sofort | ⛔ blockiert, siehe unten |
+| Jokerjagd | Zufall (≈ alle 8 Spieltage) | alle | Sonderspiel | 3 Spieltage | ⛔ blockiert, siehe unten |
+
+🔴 **Gemessen am 07.08.2026, und es widerspricht der Ansage „mit allen vier
+Achsen sind die Wünsche Einzeiler": vier von sechs sind es, zwei nicht.**
+Vier Achsen ergeben nicht automatisch jeden Satz — es fehlen an zwei Stellen
+noch VOKABELN, und zwar an genau benennbaren:
+
+- **Dreier-Wertung** braucht einen `bezug: "zeitraum"` in der WEN-Achse. Der
+  Auslöser („jeder 3. Spieltag") steht, die Auswahl („der Beste") steht — aber
+  „der Beste **über die drei**" nicht: `ereignisse.js` reicht an
+  `waehleBetroffene` fest `bezug: "spieltag"` durch. `auswahl.js` kennt den
+  Zeitraum-Bezug bereits; es fehlt allein die Stelle, die den Stand über einen
+  BLOCK von Spieltagen aufsummiert und hineingibt.
+  ⚠️ Nicht als „der Beste des dritten Spieltags" abkürzen. Das ist eine andere
+  Regel mit einem anderen Anreiz (ein Glückstag statt drei Wochen Konstanz) und
+  sähe in der Oberfläche genauso aus — die teuerste Sorte Näherung.
+- **Jokerjagd** braucht die Wirkung `sonderspiel`, und die steht in
+  `wirkung.js` ausdrücklich als nicht auswertbar (`braucht: ["sonderspiele"]`).
+  Ein Miniwettspiel über drei Spieltage ist kein Vokabel-, sondern ein
+  Infrastruktur-Thema — dieselbe Lage wie bei `quiz` und `duell` in den
+  Ereignis-Typen. Die GELTUNG dafür (`fenster(3)`) liegt seit dem 07.08. bereit.
+
+Zwei NEUE Ereignis-Typen sind dafür entstanden (`treffer-serie`,
+`pechstraehne`) — beide Serien über Spieltage, wie `serie`, nur mit einer
+anderen Bedingung je Spieltag; gezählt wird in `inFolge()`, einer Funktion für
+alle drei.
+⚠️ **Die Falle beim Pechvogel, und sie ist keine kleine:** „kein exakter
+Treffer" ist für jemanden, der GAR NICHT getippt hat, immer wahr. Ohne die
+Bedingung „hat getippt UND es lag ein Ergebnis vor" wäre der Pechvogel-Bonus
+die einzige Mechanik im Regelwerk, bei der Wegbleiben zahlt. Ein ausgelassener
+Spieltag setzt die Strähne deshalb zurück; ein Test hält das fest.
 
 **Das ist die ganze Idee.** Neue Wünsche brauchen künftig kein neues Feature,
 sondern nur einen neuen Wert in einer der vier Listen — und der wird EINMAL

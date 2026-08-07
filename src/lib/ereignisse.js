@@ -95,6 +95,21 @@ export const EREIGNIS_TYPEN = [
     hint: "Wer den Mut hatte und recht behielt. Ab der eingestellten Sieger-Quote.",
   },
   {
+    // Der SCHARFSCHÜTZE aus der Roadmap-Tabelle („Serie: 4× exakt → 1 Joker").
+    // Bewusst je SPIELTAG gezählt und nicht je Spiel: vier exakte Treffer
+    // hintereinander in DERSELBEN Woche ist etwas anderes als vier Wochen in
+    // Folge mindestens einen — und gemeint ist die Konstanz, nicht der
+    // Glückstag. `erster-exakter` bleibt daneben stehen: der eine ist ein
+    // einmaliger Moment, dieser hier eine Leistung über Wochen.
+    key: "treffer-serie",
+    label: "Scharfschütze: mehrere Spieltage in Folge exakt getroffen",
+    kategorie: "meilenstein",
+    braucht: ["tipps", "ergebnisse"],
+    parameter: ["anzahl"],
+    standard: { anzahl: 3, belohnung: 1 },
+    hint: "Wer an n Spieltagen hintereinander mindestens ein Ergebnis genau trifft. Eine Serie, kein Glückstag.",
+  },
+  {
     key: "spieltag-komplett",
     label: "Alle Spiele eines Spieltags getippt",
     kategorie: "meilenstein",
@@ -129,6 +144,26 @@ export const EREIGNIS_TYPEN = [
     // Spieltags-Krone für den Besten verdoppelt gar nichts.
     doppeltMit: "aufholen",
     hint: "Wer je Spieltag etwas bekommt — hinten (Trost) oder vorn (Krone). Trost nicht zusammen mit dem Anschluss-Bonus.",
+  },
+
+  {
+    // Der PECHVOGEL-BONUS aus der Roadmap-Tabelle („Serie: 3× kein Treffer →
+    // der Betroffene → +20 % → nächster Spieltag"). Er ist der erste Eintrag
+    // der Bibliothek, der ohne die WIE-LANGE-Achse gar nicht formulierbar
+    // wäre — „nächster Spieltag" ist sein ganzer Witz: eine Ansage, die man
+    // vorher weiß, statt einer nachträglichen Gutschrift.
+    key: "pechstraehne",
+    label: "Pechsträhne: mehrere Spieltage ohne exakten Treffer",
+    kategorie: "widerfahrnis",
+    braucht: ["tipps", "ergebnisse"],
+    parameter: ["anzahl"],
+    standard: { anzahl: 3, belohnung: 1 },
+    // ⚠️ Wie der Trost-Joker belohnt er das Zurückliegen — zusammen mit dem
+    // Anschluss-Bonus also doppelt. Anders als dort gibt es hier keine
+    // WEN-Achse, mit der man ihn umdrehen könnte: eine Pechsträhne hat kein
+    // oberes Ende.
+    doppeltMit: "aufholen",
+    hint: "Wer n Spieltage in Folge kein Ergebnis genau trifft. Ausgelassene Spieltage zählen NICHT mit — sonst zahlte Wegbleiben.",
   },
 
   // ── 3. Herausforderungen (aktiv, Minispiel) — vorbereitet ──
@@ -308,13 +343,52 @@ export const EREIGNIS_PRESETS = [
     },
   },
   {
+    // 🔴 Der erste Eintrag der Bibliothek, den die WIE-LANGE-Achse überhaupt
+    // erst möglich macht. Ohne sie wäre ein Aufschlag „sofort" fällig — also
+    // rückwirkend auf den Spieltag, an dem die Strähne festgestellt wurde, und
+    // damit auf Punkte, die schon feststehen. „Nächster Spieltag" macht daraus
+    // eine ANSAGE: du weißt vorher, dass die nächste Woche mehr zählt.
+    key: "pechvogel",
+    label: "Der Pechvogel bekommt Rückenwind",
+    text: "Wer drei Spieltage in Folge nichts genau trifft, bekommt am NÄCHSTEN Spieltag "
+      + "einen Aufschlag von 20 %.",
+    wirkrichtung: "ausgleichend", gemessen: false,
+    ereignisse: {
+      enabled: true, maxErspielt: 5,
+      // ⚠️ `belohnung: 0` ist kein Vergessen: `belohnung` ist die Zahl, gegen
+      // die der JOKER-Deckel rechnet, und diese Wirkung vergibt keine Joker.
+      // `sanitizeEreignisse` setzt sie deshalb auf 0 — steht sie hier anders,
+      // weicht das Bündel nach dem Säubern von sich selbst ab.
+      aktive: [{ key: "pechstraehne", anzahl: 3, belohnung: 0,
+        wirkung: { typ: "bonus", prozent: 20 }, ausloeser: { typ: "immer" },
+        geltung: { typ: "naechsterSpieltag" }, abstand: 3, maxProSaison: 0 }],
+    },
+  },
+  {
+    key: "scharfschuetze",
+    label: "Konstanz wird belohnt",
+    text: "Drei Spieltage hintereinander mindestens ein Ergebnis genau getroffen — dafür "
+      + "gibt es einen Joker.",
+    // ⚠️ Verstärkend, und zwar von allen am deutlichsten: belohnt wird, wer gut
+    // tippt, mit einem Werkzeug, mit dem er besser tippt. Deshalb `abstand: 2`.
+    wirkrichtung: "verstärkend", gemessen: false,
+    ereignisse: {
+      enabled: true, maxErspielt: 5,
+      aktive: [{ key: "treffer-serie", anzahl: 3, belohnung: 1,
+        wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" },
+        geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0 }],
+    },
+  },
+  {
     key: "alles",
     label: "Ständig passiert etwas",
-    text: "Alle fünf Ereignisse an. Es gibt fast jeden Spieltag irgendwo eine Gutschrift.",
+    text: "Alle sieben Ereignisse an. Es gibt fast jeden Spieltag irgendwo eine Gutschrift.",
     wirkrichtung: "gemischt", gemessen: false,
     ereignisse: {
       enabled: true, maxErspielt: 10,
       aktive: [
+        { key: "treffer-serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0 },
+        { key: "pechstraehne", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 3, maxProSaison: 0 },
         { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0 },
         { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 8 },
         { key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0,
@@ -420,6 +494,36 @@ function spieleJeSpieltag(alleEintraege, keyVon = spieltagKey) {
 const istExakt = (e) =>
   e?.result && e?.tip && e.tip.home === e.result.home && e.tip.away === e.result.away;
 
+// „n Spieltage in Folge, an denen X gilt" — die gemeinsame Zählung für alle
+// Serien-Ereignisse. Zählt bei jedem Erreichen erneut, damit eine lange Serie
+// nicht nach dem ersten Mal wertlos wird; ein Spieltag, an dem die Bedingung
+// nicht gilt, setzt zurück.
+function inFolge(reihenfolge, anzahl, gilt, treffer) {
+  let lauf = 0;
+  for (const s of reihenfolge) {
+    if (!gilt(s)) { lauf = 0; continue; }
+    lauf++;
+    if (lauf % anzahl === 0) treffer(s);
+  }
+}
+
+// Was war an einem Spieltag los — aus der Sicht EINES Nutzers?
+// `auswertbar` heißt: er hat getippt UND mindestens ein Ergebnis lag vor. Das
+// ist die Bedingung, ohne die „nichts getroffen" auch für jemanden gilt, der
+// gar nicht dabei war (siehe Kommentar bei `pechstraehne`).
+function spieltagsLage(eintraege, keyVon) {
+  const map = new Map();
+  for (const e of eintraege) {
+    if (!Number.isFinite(e.matchday)) continue;
+    const key = keyVon(e);
+    if (!map.has(key)) map.set(key, { auswertbar: false, exakt: false });
+    const l = map.get(key);
+    if (e.result && e.tip) l.auswertbar = true;
+    if (istExakt(e)) l.exakt = true;
+  }
+  return map;
+}
+
 // Hat der Tipp den Sieger richtig — und war der ein Außenseiter?
 function aussenseiterTreffer(e, abQuote) {
   if (!e?.result || !e?.tip) return false;
@@ -470,18 +574,40 @@ export function auswerten({
   const serie = aktiv("serie");
   if (serie) {
     const getippt = new Set(meine.filter((e) => Number.isFinite(e.matchday)).map(keyVon));
-    let lauf = 0;
     // Chronologisch, wettbewerbsübergreifend: „dranbleiben" heißt, keinen
     // Spieltag auszulassen, der in der Runde überhaupt anstand — auch keinen
     // aus einem zweiten Wettbewerb.
-    for (const s of reihenfolge) {
-      if (!getippt.has(s.key)) { lauf = 0; continue; }
-      lauf++;
-      if (lauf % serie.anzahl === 0) {
-        roh.push({ key: "serie", wettbewerb: s.wettbewerb, matchday: s.matchday, belohnung: serie.belohnung,
-          text: `${serie.anzahl} Spieltage in Folge getippt` });
-      }
-    }
+    inFolge(reihenfolge, serie.anzahl, (s) => getippt.has(s.key), (s) =>
+      roh.push({ key: "serie", wettbewerb: s.wettbewerb, matchday: s.matchday, belohnung: serie.belohnung,
+        text: `${serie.anzahl} Spieltage in Folge getippt` }));
+  }
+
+  // ── Die beiden Serien mit Ergebnis-Bezug ────────────────────
+  // Scharfschütze und Pechvogel-Bonus aus der Roadmap. Beide zählen wie
+  // `serie` Spieltage in Folge, nur mit einer anderen Bedingung je Spieltag —
+  // deshalb dieselbe Funktion und nicht drei fast gleiche Schleifen.
+  const tagesLage = spieltagsLage(meine, keyVon);
+
+  const scharf = aktiv("treffer-serie");
+  if (scharf) {
+    inFolge(reihenfolge, scharf.anzahl, (s) => tagesLage.get(s.key)?.exakt === true, (s) =>
+      roh.push({ key: "treffer-serie", wettbewerb: s.wettbewerb, matchday: s.matchday,
+        belohnung: scharf.belohnung, text: `${scharf.anzahl} Spieltage in Folge exakt getroffen` }));
+  }
+
+  const pech = aktiv("pechstraehne");
+  if (pech) {
+    // 🔴 Die Falle dieses Ereignisses, und sie ist keine kleine: „kein exakter
+    // Treffer" ist für jemanden, der GAR NICHT getippt hat, immer wahr. Ohne
+    // die Bedingung „hat getippt und es lag ein Ergebnis vor" wäre der
+    // Pechvogel-Bonus die Belohnung fürs Nichtstun — und zwar die einzige
+    // Mechanik im ganzen Regelwerk, bei der Wegbleiben zahlt. Ein
+    // ausgelassener Spieltag setzt die Strähne deshalb zurück, statt sie
+    // fortzuschreiben.
+    inFolge(reihenfolge, pech.anzahl,
+      (s) => { const l = tagesLage.get(s.key); return !!l && l.auswertbar && !l.exakt; },
+      (s) => roh.push({ key: "pechstraehne", wettbewerb: s.wettbewerb, matchday: s.matchday,
+        belohnung: pech.belohnung, text: `${pech.anzahl} Spieltage in Folge nichts exakt getroffen` }));
   }
 
   // Erster exakter Treffer — genau einmal.
