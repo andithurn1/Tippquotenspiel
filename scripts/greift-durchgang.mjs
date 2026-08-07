@@ -311,6 +311,11 @@ const EREIGNIS_FAELLE = [
   ["aussenseiter (ab 3,0)", { key: "aussenseiter", abQuote: 3, belohnung: 1 }],
   ["spieltag-komplett", { key: "spieltag-komplett", belohnung: 1 }],
   ["letzter-am-spieltag", { key: "letzter-am-spieltag", belohnung: 1 }],
+  // 🔴 Die Dreier-Wertung (07.08.2026). Gemessen wird gegen die Zeile darüber:
+  // über einen Block von drei Spieltagen fallen weniger Auszeichnungen an als
+  // je Spieltag — und zwar nicht nur ein Drittel, weil die Auswahl über die
+  // SUMME entscheidet und damit andere Leute trifft.
+  ["… über 3 Spieltage", { key: "letzter-am-spieltag", belohnung: 1, zeitraum: 3 }],
   // Die beiden Einträge der Ereignis-Bibliothek vom 07.08.2026. Beide hängen
   // an ERGEBNISSEN und nicht nur an Tipps — der Messfall oben tippt über 54
   // gelaufene Spiele, also liegen welche vor.

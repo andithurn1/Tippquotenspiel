@@ -136,8 +136,11 @@ export const EREIGNIS_TYPEN = [
     label: "Auszeichnung nach Spieltags-Platzierung",
     kategorie: "widerfahrnis",
     braucht: ["spieltagspunkte"],
-    parameter: ["auswahl"],
-    standard: { belohnung: 1, auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
+    // `zeitraum` (07.08.2026): über wie viele Spieltage der Stand gerechnet
+    // wird. 1 = je Spieltag (Vorgabe, bisheriges Verhalten), 3 = die
+    // „Dreier-Wertung" aus der Roadmap.
+    parameter: ["auswahl", "zeitraum"],
+    standard: { belohnung: 1, zeitraum: 1, auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
     // ⚠️ Der Aufhol-Mechanismus belohnt Zurückliegen bereits. Beides zusammen
     // belohnt es DOPPELT — deshalb meldet `konflikte()` diese Kombination.
     // Aber NUR, wenn hier tatsächlich nach unten ausgezeichnet wird: eine
@@ -243,6 +246,11 @@ export const EREIGNIS_LIMITS = {
   maxErspielt: { min: 1, max: 15, step: 1 },
   anzahl: { min: 2, max: 10, step: 1 },      // Serie
   abQuote: { min: 2, max: 15, step: 0.5 },   // Außenseiter
+  // Über wie viele Spieltage die Platzierung gerechnet wird. 1 = je Spieltag
+  // (Vorgabe). Nach oben bewusst begrenzt: ein Block über die halbe Saison ist
+  // keine Spieltags-Auszeichnung mehr, sondern die Tabelle — und dafür gibt es
+  // `bezug: "gesamt"` in `auswahl.js`.
+  zeitraum: { min: 1, max: 6, step: 1 },
   // ── Begrenzer, für JEDES Ereignis verfügbar ───────────────
   // 0 heißt „aus" und ist die Vorgabe — ohne Zutun ändert sich nichts am
   // bisherigen Verhalten. Sie sind der zweite Wert zu jeder Option: die
@@ -305,7 +313,7 @@ export const EREIGNIS_PRESETS = [
       enabled: true, maxErspielt: 5,
       // `abstand: 2`: ohne Abklingzeit kassiert derselbe Spieler jede Woche.
       aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0,
-        auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } }],
+        auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 }, zeitraum: 1 }],
     },
   },
   {
@@ -339,7 +347,7 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 5,
       aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 3, maxProSaison: 0,
-        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 } }],
+        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 }, zeitraum: 1 }],
     },
   },
   {
@@ -362,6 +370,31 @@ export const EREIGNIS_PRESETS = [
       aktive: [{ key: "pechstraehne", anzahl: 3, belohnung: 0,
         wirkung: { typ: "bonus", prozent: 20 }, ausloeser: { typ: "immer" },
         geltung: { typ: "naechsterSpieltag" }, abstand: 3, maxProSaison: 0 }],
+    },
+  },
+  {
+    // 🔴 Die „Dreier-Wertung" aus der Roadmap-Tabelle, und der Grund, warum
+    // `bezug: "zeitraum"` gebaut wurde. Alle vier Achsen zusammen in einem
+    // Satz: WANN jeder dritte Spieltag · WEN der Beste ÜBER DIE DREI ·
+    // WAS ein Joker · WIE LANGE sofort.
+    //
+    // ⚠️ `ausloeser.rhythmus` und `zeitraum` müssen zusammenpassen, und das
+    // ist keine Balance-, sondern eine Vollständigkeitsfrage: das Gatter
+    // öffnet an jedem dritten Spieltag, der Block endet an jedem dritten
+    // Spieltag. Stünden dort verschiedene Zahlen, fiele die Auszeichnung
+    // manchmal mitten in einen laufenden Block — eine Einstellung, die ins
+    // Leere läuft.
+    key: "dreier",
+    label: "Dreier-Wertung",
+    text: "Alle drei Spieltage wird abgerechnet: wer über die drei zusammen am besten "
+      + "getippt hat, bekommt einen Joker. Belohnt Konstanz statt eines Glückstags.",
+    wirkrichtung: "verstärkend", gemessen: false,
+    ereignisse: {
+      enabled: true, maxErspielt: 6,
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 },
+        ausloeser: { typ: "rhythmus", n: 3 }, geltung: { typ: "sofort" },
+        abstand: 0, maxProSaison: 0,
+        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 }, zeitraum: 3 }],
     },
   },
   {
@@ -392,7 +425,7 @@ export const EREIGNIS_PRESETS = [
         { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0 },
         { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 8 },
         { key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0,
-          auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
+          auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 }, zeitraum: 1 },
         { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 4 },
         { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 0 },
       ],
@@ -450,6 +483,9 @@ export function sanitizeEreignisse(partial = {}) {
     }
     if (typ.parameter.includes("auswahl")) {
       eintrag.auswahl = sanitizeAuswahl(a.auswahl, typ.standard.auswahl);
+    }
+    if (typ.parameter.includes("zeitraum")) {
+      eintrag.zeitraum = Math.round(clamp(a.zeitraum, EREIGNIS_LIMITS.zeitraum, typ.standard.zeitraum));
     }
     // Die Begrenzer gelten für JEDEN Typ, nicht nur für die, die sie in
     // `parameter` führen — sie sind keine Eigenschaft des Ereignisses, sondern
@@ -649,24 +685,54 @@ export function auswerten({
   const trost = aktiv("letzter-am-spieltag");
   if (trost && Array.isArray(spieltagsPunkte) && spieltagsPunkte.length) {
     const meineId = meine[0]?.userId;
+    // ── Über wie viele Spieltage wird gewertet? ───────────────
+    // 🔴 `zeitraum: 1` (Vorgabe) ist das bisherige Verhalten: je Spieltag ein
+    // Stand, je Spieltag eine Auszeichnung. Ab 2 wird über einen BLOCK
+    // gewertet — die „Dreier-Wertung" aus der Roadmap („der Beste über die
+    // drei"), die bis 07.08.2026 nicht formulierbar war.
+    //
+    // ⚠️ Nicht dasselbe wie „der Beste jedes dritten Spieltags". Das wäre
+    // derselbe Aufwand in der Oberfläche und ein anderer Anreiz: ein
+    // Glückstag statt drei Wochen Konstanz. Deshalb ein eigener `bezug` in
+    // `auswahl.js` statt eines durchgereichten Spieltags-Stands.
+    const zeitraum = Math.max(1, Math.round(Number(trost.zeitraum) || 1));
     const jeSpieltag = new Map();
     for (const p of spieltagsPunkte) {
       const key = keyVon(p);
-      if (!jeSpieltag.has(key)) jeSpieltag.set(key, { wettbewerb: p.wettbewerb ?? null, matchday: p.matchday, summe: new Map() });
-      const g = jeSpieltag.get(key);
+      // Der BLOCK, in den dieser Spieltag fällt — über seine Position im
+      // Runden-Verlauf, nicht über die Liga-Zahl. Ein Spieltag ohne Position
+      // (kommt in `alle` nicht vor) bildet seinen eigenen Block, statt in
+      // Block 0 zu rutschen und dort fremde Punkte mitzuzählen.
+      const p0 = posVon.get(key);
+      const block = zeitraum > 1
+        ? (p0 == null ? `x${key}` : `b${Math.floor(p0 / zeitraum)}`)
+        : key;
+      if (!jeSpieltag.has(block)) {
+        jeSpieltag.set(block, { wettbewerb: p.wettbewerb ?? null, matchday: p.matchday, ende: p0 ?? -1, summe: new Map() });
+      }
+      const g = jeSpieltag.get(block);
       // ⚠️ AUFSUMMIERT je Nutzer, nicht angehängt. Fallen zwei Liga-Spieltage
       // in denselben Runden-Spieltag, steht jeder Spieler zweimal in der Liste
       // — `Math.min` fände dann den schlechteren EINZELTAG statt der Bilanz des
       // Runden-Spieltags, und „Letzter" wäre jemand anderes als in der Tabelle.
       g.summe.set(p.userId, (g.summe.get(p.userId) ?? 0) + (Number(p.punkte) || 0));
-      // Der frühere Liga-Spieltag vertritt die Gruppe (siehe
-      // `spieltageChronologisch`), damit die Screens ihn wiedererkennen.
-      if (p.matchday != null && (g.matchday == null || p.matchday < g.matchday)) {
+      if (zeitraum > 1) {
+        // 🔴 Über einen Block vertritt der LETZTE Spieltag die Gruppe, nicht
+        // der erste: entschieden ist die Wertung erst, wenn der Block vorbei
+        // ist. Am ersten Spieltag verbucht stünde die Auszeichnung im Verlauf
+        // vor den Punkten, die sie begründen — und eine Geltung „nächster
+        // Spieltag" läge mitten im laufenden Block.
+        if ((p0 ?? -1) >= g.ende) {
+          g.ende = p0 ?? -1; g.matchday = p.matchday; g.wettbewerb = p.wettbewerb ?? null;
+        }
+      } else if (p.matchday != null && (g.matchday == null || p.matchday < g.matchday)) {
+        // Der frühere Liga-Spieltag vertritt die Gruppe (siehe
+        // `spieltageChronologisch`), damit die Screens ihn wiedererkennen.
         g.matchday = p.matchday; g.wettbewerb = p.wettbewerb ?? null;
       }
     }
     const auswahl = sanitizeAuswahl(trost.auswahl, EREIGNIS["letzter-am-spieltag"].standard.auswahl);
-    const satz = beschreibeAuswahl(auswahl);
+    const satz = `${beschreibeAuswahl(auswahl)}${zeitraum > 1 ? ` über ${zeitraum} Spieltage` : ""}`;
     for (const s of jeSpieltag.values()) {
       const liste = [...s.summe.entries()].map(([userId, punkte]) => ({ userId, punkte }));
       if (liste.length < 2) continue;   // allein ist man weder Erster noch Letzter
@@ -682,7 +748,14 @@ export function auswerten({
       const stand = liste.map((p) => ({ userId: p.userId, name: p.userId, total: p.punkte }));
       const getroffen = waehleBetroffene({
         modus: auswahl.modus, ende: auswahl.ende, n: auswahl.n, prozent: auswahl.prozent,
-        bezug: "spieltag", spieltagStand: stand, mitglieder: liste.map((p) => p.userId),
+        // 🔴 Der `bezug` sagt, WORÜBER der Stand gerechnet ist. Einen
+        // Block-Stand als `spieltag` durchzureichen wäre am Aufrufer nicht
+        // mehr erkennbar — und die Oberfläche schriebe „am Spieltag" über eine
+        // Wertung, die drei umfasst.
+        ...(zeitraum > 1
+          ? { bezug: "zeitraum", zeitraumStand: stand }
+          : { bezug: "spieltag", spieltagStand: stand }),
+        mitglieder: liste.map((p) => p.userId),
       });
       if (!getroffen.includes(meineId)) continue;
 

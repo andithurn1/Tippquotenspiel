@@ -448,6 +448,28 @@ export default function Ereignisse({ rules, onChange }) {
                     {/* 🔴 Die WEN-Achse (`auswahl.js`). Derselbe Eintrag ist
                         Trost-Joker ODER Spieltags-Krone — der Unterschied ist
                         eine Einstellung, kein zweiter Ereignis-Typ. */}
+                    {/* 🔴 Der ZEITRAUM gehört direkt über die Auswahl: er sagt,
+                        WORÜBER die Platzierung gerechnet wird, und ohne ihn
+                        liest man „der Beste" automatisch als „der Beste dieses
+                        Spieltags". Über drei Spieltage ist das ein anderer
+                        Anreiz — Konstanz statt Glückstag. */}
+                    {t.parameter.includes("zeitraum") && (
+                      <div style={{ width: "100%" }}>
+                        <Zahl label="Wertung über … Spieltage" wert={wert(t.key, "zeitraum")}
+                          limits={EREIGNIS_LIMITS.zeitraum} breite={160}
+                          onChange={(v) => setzeFeld(t.key, "zeitraum", v)} />
+                        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                          {(wert(t.key, "zeitraum") ?? 1) > 1
+                            ? <>Gewertet wird die Summe über <strong style={{ color: C.text }}>
+                                {wert(t.key, "zeitraum")} Spieltage</strong>, ausgezeichnet wird am
+                                letzten davon. Belohnt Konstanz statt eines einzelnen guten Tages.
+                                {" "}⚠️ Passt am besten zu einem Auslöser „jeder {wert(t.key, "zeitraum")}.
+                                Spieltag“ — sonst fällt die Auszeichnung mitten in einen laufenden Block.</>
+                            : <>Gewertet wird <strong style={{ color: C.text }}>jeder Spieltag
+                                einzeln</strong>.</>}
+                        </div>
+                      </div>
+                    )}
                     {t.parameter.includes("auswahl") && (
                       <Auswahlfeld wert={wert(t.key, "auswahl")}
                         onChange={(v) => setzeFeld(t.key, "auswahl", v)} />

@@ -264,3 +264,45 @@ describe("trefferAnteil — die Zahl für die Live-Vorschau", () => {
     }
   });
 });
+
+// ── `bezug: "zeitraum"` — der dritte Stand ──────────────────
+// 🔴 Bis 07.08.2026 kannte `standFuer` nur „gesamt" und „spieltag". Genau daran
+// blieb die Dreier-Wertung hängen: „der Beste ÜBER DIE DREI Spieltage" ist
+// weder die Saisontabelle noch ein einzelner Spieltag.
+describe("Der Zeitraum-Bezug", () => {
+  const saison = [
+    { userId: "a", name: "A", total: 900 },
+    { userId: "b", name: "B", total: 100 },
+  ];
+  const einTag = [
+    { userId: "a", name: "A", total: 10 },
+    { userId: "b", name: "B", total: 90 },
+  ];
+  const dreiTage = [
+    { userId: "a", name: "A", total: 300 },
+    { userId: "b", name: "B", total: 120 },
+  ];
+  const bester = (bezug) => waehleBetroffene({
+    modus: "rang", ende: "oben", n: 1, bezug,
+    stand: saison, spieltagStand: einTag, zeitraumStand: dreiTage,
+    mitglieder: ["a", "b"],
+  });
+
+  it("liest den Block-Stand — und nicht den Spieltag oder die Tabelle", () => {
+    // Drei verschieden aufgebaute Stände, damit die Zeile nicht zufällig
+    // dieselbe Antwort für alle drei gibt: über den Spieltag gewinnt B, über
+    // Block und Saison A — aber aus verschiedenen Zahlen.
+    expect(bester("spieltag")).toEqual(["b"]);
+    expect(bester("zeitraum")).toEqual(["a"]);
+    expect(bester("gesamt")).toEqual(["a"]);
+  });
+
+  it("ohne Block-Stand trifft es niemanden, statt auf die Tabelle auszuweichen", () => {
+    // Fehlende Daten heißen leere Auswahl — eine Regel, deren Stand fehlt,
+    // darf nicht auf einen anderen ausweichen und dabei jemand anderen treffen.
+    expect(waehleBetroffene({
+      modus: "rang", ende: "oben", n: 1, bezug: "zeitraum",
+      stand: saison, mitglieder: ["a", "b"],
+    })).toEqual([]);
+  });
+});

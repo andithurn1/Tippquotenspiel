@@ -78,8 +78,21 @@ function geordnet(stand) {
 // gegensätzliche Anreize: der eine ist ein rotierender Preis, der auch von
 // hinten erreichbar ist, der andere verstärkt einen bestehenden Vorsprung.
 // Deshalb ist `bezug` ein Pflichtfeld und kein Beiwerk.
-function standFuer(bezug, { stand = [], spieltagStand = [] } = {}) {
-  return bezug === "spieltag" ? spieltagStand : stand;
+//
+// 🔴 `zeitraum` ist die dritte Antwort und war bis 07.08.2026 die Lücke, an der
+// die „Dreier-Wertung" aus der Roadmap hängen blieb („der Beste ÜBER DIE DREI
+// Spieltage"). Sie ist weder das eine noch das andere: über einen Block
+// gerechnet bleibt der Preis rotierend genug, um von hinten erreichbar zu
+// sein, verlangt aber Konstanz statt eines Glückstags.
+//
+// ⚠️ Ohne eigenen Wert ginge es nicht. Als `spieltag` durchgereicht wäre am
+// Aufrufer nicht mehr erkennbar, ob der Stand einen Tag oder drei umfasst —
+// und beide Male stünde „am Spieltag" in der Oberfläche. Der Unterschied ist
+// ein anderer Anreiz, nicht eine andere Zahl.
+function standFuer(bezug, { stand = [], spieltagStand = [], zeitraumStand = [] } = {}) {
+  if (bezug === "spieltag") return spieltagStand;
+  if (bezug === "zeitraum") return zeitraumStand;
+  return stand;
 }
 
 // Wie viele Plätze bei einem Prozentsatz? Mindestens einer, sobald überhaupt
@@ -132,6 +145,10 @@ export function waehleBetroffene({
   mitglieder = [],
   stand = [],
   spieltagStand = [],
+  // Der Stand über einen BLOCK von Spieltagen — für `bezug: "zeitraum"`.
+  // Der Aufrufer summiert ihn, weil nur er weiß, welche Spieltage zum Block
+  // gehören (Runden-Spieltage, nicht Liga-Spieltage).
+  zeitraumStand = [],
   vorstand = [],
   betroffener = null,
   freiwillige = [],
@@ -142,7 +159,7 @@ export function waehleBetroffene({
   rundenId = "",
 } = {}) {
   if (!MODUS_KEYS.has(modus)) return [];
-  const tabelle = geordnet(standFuer(bezug, { stand, spieltagStand }));
+  const tabelle = geordnet(standFuer(bezug, { stand, spieltagStand, zeitraumStand }));
   const alle = mitglieder.length ? mitglieder.map((m) => (m?.userId ?? m)) : ids(tabelle);
   const anzahl = Math.max(0, Math.floor(Number(n) || 0));
   const seed = `${rundenId}|${rundenSpieltag}|${modus}`;

@@ -840,3 +840,73 @@ describe("Serien mit Ergebnis-Bezug", () => {
     }
   });
 });
+
+// ── Der Zeitraum: „der Beste ÜBER DIE DREI" ─────────────────
+// 🔴 Die Vokabel, an der die Dreier-Wertung aus der Roadmap bis zum 07.08.2026
+// hängen blieb. Wichtig ist der Unterschied zu „der Beste jedes dritten
+// Spieltags": das wäre derselbe Aufwand in der Oberfläche und ein ANDERER
+// Anreiz — ein Glückstag statt drei Wochen Konstanz.
+describe("Wertung über einen Zeitraum statt über einen Spieltag", () => {
+  // Vier Spieltage, zwei Spieler. u1 gewinnt Spieltag 1 knapp und verliert 2
+  // und 3 deutlich — über die drei zusammen liegt u2 vorn.
+  const alle = [1, 2, 3].flatMap((md) => [
+    e("u1", md, `m${md}`, { home: 1, away: 0 }, null),
+    e("u2", md, `m${md}`, { home: 2, away: 0 }, null),
+  ]);
+  const punkte = [
+    { matchday: 1, userId: "u1", punkte: 60 }, { matchday: 1, userId: "u2", punkte: 40 },
+    { matchday: 2, userId: "u1", punkte: 10 }, { matchday: 2, userId: "u2", punkte: 90 },
+    { matchday: 3, userId: "u1", punkte: 10 }, { matchday: 3, userId: "u2", punkte: 90 },
+  ];
+  const krone = (zeitraum) => AN([{
+    key: "letzter-am-spieltag", belohnung: 1, zeitraum,
+    auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 },
+  }]);
+  const fuer = (userId, zeitraum) => auswerten({
+    eintraege: alle.filter((x) => x.userId === userId), alleEintraege: alle,
+    ereignisse: krone(zeitraum), spieltagsPunkte: punkte,
+  }).gutschriften;
+
+  it("je Spieltag gewinnt u1 einmal — über drei Spieltage gar nicht", () => {
+    // Der eigentliche Beweis: dieselben Punkte, dieselbe Auswahl, anderes
+    // Ergebnis. Ohne diesen Unterschied wäre `zeitraum` eine Einstellung, die
+    // ins Leere läuft.
+    expect(fuer("u1", 1)).toHaveLength(1);
+    expect(fuer("u1", 3)).toHaveLength(0);
+    // Und die Gegenprobe: u2 gewinnt beide Male etwas, über den Block aber
+    // nur EINMAL statt zweimal.
+    expect(fuer("u2", 1)).toHaveLength(2);
+    expect(fuer("u2", 3)).toHaveLength(1);
+  });
+
+  // 🔴 Entschieden ist die Wertung erst, wenn der Block vorbei ist. Am ersten
+  // Spieltag verbucht stünde die Auszeichnung im Verlauf VOR den Punkten, die
+  // sie begründen — und eine Geltung „nächster Spieltag" läge mitten im Block.
+  it("die Auszeichnung hängt am LETZTEN Spieltag des Blocks", () => {
+    expect(fuer("u2", 3)[0].matchday).toBe(3);
+  });
+
+  it("die Vorgabe ist 1 und ändert nichts am bisherigen Verhalten", () => {
+    const ohne = auswerten({
+      eintraege: alle.filter((x) => x.userId === "u2"), alleEintraege: alle,
+      ereignisse: AN([{ key: "letzter-am-spieltag", belohnung: 1,
+        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 } }]),
+      spieltagsPunkte: punkte,
+    }).gutschriften;
+    expect(ohne).toHaveLength(fuer("u2", 1).length);
+  });
+
+  it("der Text nennt den Zeitraum, statt „am Spieltag“ zu behaupten", () => {
+    expect(fuer("u2", 3)[0].text).toContain("3 Spieltage");
+    expect(fuer("u2", 1)[0].text).not.toContain("Spieltage über");
+  });
+
+  it("übersteht den Creator-Code unverändert", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      ereignisse: AN([{ key: "letzter-am-spieltag", belohnung: 1, zeitraum: 3 }]),
+    });
+    expect(rules.ereignisse.aktive[0].zeitraum).toBe(3);
+    expect(sanitizeRules(rules)).toEqual(rules);
+  });
+});

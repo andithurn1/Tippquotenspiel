@@ -2179,23 +2179,28 @@ Alle Beispiele des Nutzers sind in dieser Grammatik ein Einzeiler:
 | Spieltags-Krone | jeder Spieltag | Rang oben 5 **am Spieltag** | 1 Joker (Sorte wählbar) | sofort | ✅ Bündel „krone" |
 | Pechvogel-Bonus | Serie: 3× kein Treffer | der Betroffene | +20 % | nächster Spieltag | ✅ Bündel „pechvogel" (07.08.) |
 | Scharfschütze | Serie: 4× exakt | der Betroffene | 1 Joker | sofort | ✅ Bündel „scharfschuetze" (07.08.) |
-| Dreier-Wertung | Rhythmus: jeder 3. Spieltag | Rang oben 1 **über die 3** | Belohnung | sofort | ⛔ blockiert, siehe unten |
+| Dreier-Wertung | Rhythmus: jeder 3. Spieltag | Rang oben 1 **über die 3** | Belohnung | sofort | ✅ Bündel „dreier" (07.08.) |
 | Jokerjagd | Zufall (≈ alle 8 Spieltage) | alle | Sonderspiel | 3 Spieltage | ⛔ blockiert, siehe unten |
 
-🔴 **Gemessen am 07.08.2026, und es widerspricht der Ansage „mit allen vier
-Achsen sind die Wünsche Einzeiler": vier von sechs sind es, zwei nicht.**
-Vier Achsen ergeben nicht automatisch jeden Satz — es fehlen an zwei Stellen
-noch VOKABELN, und zwar an genau benennbaren:
+🔴 **Gemessen am 07.08.2026, und es widersprach der Ansage „mit allen vier
+Achsen sind die Wünsche Einzeiler": vier von sechs waren es, zwei nicht.**
+Vier Achsen ergeben nicht automatisch jeden Satz — an zwei Stellen fehlten noch
+VOKABELN. Eine davon ist inzwischen gebaut:
 
-- **Dreier-Wertung** braucht einen `bezug: "zeitraum"` in der WEN-Achse. Der
-  Auslöser („jeder 3. Spieltag") steht, die Auswahl („der Beste") steht — aber
-  „der Beste **über die drei**" nicht: `ereignisse.js` reicht an
-  `waehleBetroffene` fest `bezug: "spieltag"` durch. `auswahl.js` kennt den
-  Zeitraum-Bezug bereits; es fehlt allein die Stelle, die den Stand über einen
-  BLOCK von Spieltagen aufsummiert und hineingibt.
-  ⚠️ Nicht als „der Beste des dritten Spieltags" abkürzen. Das ist eine andere
-  Regel mit einem anderen Anreiz (ein Glückstag statt drei Wochen Konstanz) und
-  sähe in der Oberfläche genauso aus — die teuerste Sorte Näherung.
+- ✅ **Dreier-Wertung** brauchte einen `bezug: "zeitraum"` in der WEN-Achse.
+  Auslöser und Auswahl standen, „der Beste **über die drei**" nicht:
+  `standFuer()` in `auswahl.js` kannte nur `gesamt` und `spieltag`, und
+  `ereignisse.js` reichte fest `bezug: "spieltag"` durch. **Gebaut am
+  07.08.2026** — dritter Bezug (`zeitraumStand`) plus das Feld `zeitraum` am
+  Ereignis, das die Runden-Spieltage in Blöcke gruppiert. Gemessen in `greift`
+  Teil 2: 6 → 2 Gutschriften.
+  ⚠️ **Zwei Punkte, die nicht brechen dürfen.** (1) Ausgezeichnet wird am
+  LETZTEN Spieltag des Blocks — am ersten verbucht stünde die Auszeichnung im
+  Verlauf VOR den Punkten, die sie begründen, und eine Geltung „nächster
+  Spieltag" läge mitten im laufenden Block. (2) Nicht als „der Beste des
+  dritten Spieltags" abkürzen: anderer Anreiz (ein Glückstag statt drei Wochen
+  Konstanz), gleiche Oberfläche — die teuerste Sorte Näherung. Genau deshalb
+  ein eigener `bezug` und kein durchgereichter Spieltags-Stand.
 - **Jokerjagd** braucht die Wirkung `sonderspiel`, und die steht in
   `wirkung.js` ausdrücklich als nicht auswertbar (`braucht: ["sonderspiele"]`).
   Ein Miniwettspiel über drei Spieltage ist kein Vokabel-, sondern ein
