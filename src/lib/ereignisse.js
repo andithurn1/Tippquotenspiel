@@ -38,6 +38,13 @@ import { spieltagKey, spieltageChronologisch } from "./spieltag";
 // 🔴 Die WEN-Achse. Sie lag seit ihrem Bau ungenutzt da — dieser Import ist
 // der erste Aufrufer überhaupt (Befund 06.08.2026).
 import { waehleBetroffene } from "./auswahl";
+// 🔴 Die WAS-Achse. Bis 07.08.2026 war die Wirkung eines Ereignisses IMMER
+// „n Joker" — das Feld hieß `belohnung` und war eine Zahl. Das ist die
+// Voreinstellung geblieben (`wirkungVon` unten), aber nicht mehr die einzige
+// Möglichkeit. Wichtig dabei: der Deckel `maxErspielt` zählt weiterhin nur
+// JOKER, weil er ein Joker-Deckel ist — die anderen Wirkungen bringen ihren
+// eigenen Topf mit (siehe Kopfkommentar von `wirkung.js`).
+import { sanitizeWirkung, beschreibeWirkung, wendeAn } from "./wirkung";
 
 // Welche Daten haben wir heute? Alles andere ist im Katalog vorbereitet, aber
 // nicht auswertbar — genau wie Karten/Fouls bei den Saison-Wetten.
@@ -234,8 +241,8 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 6,
       aktive: [
-        { key: "serie", anzahl: 3, belohnung: 1, abstand: 2, maxProSaison: 0 },
-        { key: "spieltag-komplett", belohnung: 1, abstand: 0, maxProSaison: 6 },
+        { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 2, maxProSaison: 0 },
+        { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 6 },
       ],
     },
   },
@@ -247,7 +254,7 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 5,
       // `abstand: 2`: ohne Abklingzeit kassiert derselbe Spieler jede Woche.
-      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, abstand: 2, maxProSaison: 0,
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 2, maxProSaison: 0,
         auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } }],
     },
   },
@@ -263,8 +270,8 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 5,
       aktive: [
-        { key: "aussenseiter", abQuote: 5, belohnung: 1, abstand: 0, maxProSaison: 4 },
-        { key: "erster-exakter", belohnung: 1, abstand: 0, maxProSaison: 0 },
+        { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 4 },
+        { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 0 },
       ],
     },
   },
@@ -281,7 +288,7 @@ export const EREIGNIS_PRESETS = [
     wirkrichtung: "verstärkend", gemessen: false,
     ereignisse: {
       enabled: true, maxErspielt: 5,
-      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, abstand: 3, maxProSaison: 0,
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 3, maxProSaison: 0,
         auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 } }],
     },
   },
@@ -293,12 +300,12 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 10,
       aktive: [
-        { key: "serie", anzahl: 3, belohnung: 1, abstand: 2, maxProSaison: 0 },
-        { key: "spieltag-komplett", belohnung: 1, abstand: 0, maxProSaison: 8 },
-        { key: "letzter-am-spieltag", belohnung: 1, abstand: 2, maxProSaison: 0,
+        { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 2, maxProSaison: 0 },
+        { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 8 },
+        { key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 2, maxProSaison: 0,
           auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
-        { key: "aussenseiter", abQuote: 5, belohnung: 1, abstand: 0, maxProSaison: 4 },
-        { key: "erster-exakter", belohnung: 1, abstand: 0, maxProSaison: 0 },
+        { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 4 },
+        { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 0 },
       ],
     },
   },
@@ -330,6 +337,17 @@ export function sanitizeEreignisse(partial = {}) {
       key: typ.key,
       belohnung: Math.round(clamp(a.belohnung, EREIGNIS_LIMITS.belohnung, typ.standard.belohnung)),
     };
+    // 🔴 Die WAS-Achse. Ohne Angabe gilt weiter „so viele Joker wie
+    // `belohnung`" — dadurch ist kein bestehendes Regelwerk betroffen und
+    // kein Creator-Code ändert stillschweigend seine Bedeutung. Ein
+    // ausdrücklich gesetztes `wirkung` gewinnt.
+    //
+    // ⚠️ `belohnung` bleibt daneben stehen und ist NICHT redundant: es ist
+    // die Zahl, gegen die `maxErspielt` deckelt. Bei einer Nicht-Joker-Wirkung
+    // wird sie unten auf 0 gesetzt, damit eine Punkte-Gutschrift nicht den
+    // JOKER-Deckel aufzehrt (der Topf-Vertrag aus `wirkung.js`).
+    eintrag.wirkung = sanitizeWirkung(a.wirkung, { typ: "joker", n: eintrag.belohnung });
+    if (eintrag.wirkung.typ !== "joker") eintrag.belohnung = 0;
     if (typ.parameter.includes("anzahl")) {
       eintrag.anzahl = Math.round(clamp(a.anzahl, EREIGNIS_LIMITS.anzahl, typ.standard.anzahl));
     }
@@ -535,6 +553,24 @@ export function auswerten({
     }
   }
 
+  // ── Die WAS-Achse an jeden Vorgang hängen ───────────────────
+  // An EINER Stelle statt an sechs `roh.push`-Aufrufen — sonst hätte die
+  // nächste neue Ereignisart die Zeile vergessen, und ihre Wirkung wäre
+  // stillschweigend wieder „ein Joker".
+  //
+  // 🔴 `belohnung` wird hier aus der Wirkung ABGELEITET und nicht daneben
+  // gepflegt: es ist die Zahl, gegen die `maxErspielt` deckelt, und der ist
+  // ein JOKER-Deckel. Eine Punkte-Gutschrift oder ein Aufschlag zehrt ihn
+  // deshalb nicht auf — sie bringen ihren eigenen Topf mit (Topf-Vertrag in
+  // `wirkung.js`). Zwei Zahlen für dieselbe Sache wären genau die zweite
+  // Wahrheit, vor der die Runden-Schicht warnt.
+  for (const g of roh) {
+    const cfgE = cfg.aktive.find((a) => a.key === g.key);
+    g.wirkung = cfgE?.wirkung ?? sanitizeWirkung(null, { typ: "joker", n: g.belohnung ?? 1 });
+    g.belohnung = g.wirkung.typ === "joker" ? (g.wirkung.n ?? 0) : 0;
+    g.wirkungText = beschreibeWirkung(g.wirkung);
+  }
+
   // Chronologisch, damit der Deckel die SPÄTEREN abschneidet. Spieltage, die in
   // `alle` nicht vorkommen, landen über pos = -1 vorn — das betrifft nur
   // konstruierte Fälle und bleibt deterministisch.
@@ -611,4 +647,174 @@ export function beschreibeEreignisse(ereignisse) {
   if (!cfg.enabled) return "Joker gibt es nur vom Admin.";
   const namen = cfg.aktive.map((a) => EREIGNIS[a.key]?.label).filter(Boolean);
   return `${namen.length} Ereignis${namen.length === 1 ? "" : "se"}, höchstens ${cfg.maxErspielt} erspielte Joker pro Saison.`;
+}
+
+// ── Die Nicht-Joker-Wirkungen, für den VERLAUF ──────────────
+// 🔴 Warum es diese Funktion gibt: `auswerten()` liefert Gutschriften JE
+// NUTZER, und für einen Joker genügt das — er landet im Kontingent dieses
+// Spielers. Eine Umverteilung geht so aber nicht: dort ist die andere Hälfte
+// des Vorgangs bei ALLEN ANDEREN, und die kennt ein Ein-Nutzer-Lauf nicht.
+//
+// Diese Funktion läuft deshalb einmal über die ganze Runde, sammelt die
+// Wirkungen je Spieltag ein und lässt `wendeAn()` (wirkung.js) EINMAL je
+// Gruppe rechnen. Ergebnis ist eine flache Liste von Vorgängen, die
+// `applyEreignisWirkungen` in `engine.js` in den Verlauf einrechnet —
+// dieselbe Bauart wie `duellVorgaenge`/`applyDuellJoker`.
+//
+// ⚠️ Joker-Wirkungen kommen hier NICHT vor. Sie haben ihren eigenen, längst
+// gebauten Weg über `erspielteJoker`/`jokerKontingent.js`, und eine zweite
+// Buchung derselben Gutschrift wäre genau die doppelte Wahrheit, vor der die
+// Runden-Schicht warnt.
+//
+// `mitglieder` = alle Nutzer-Ids der Runde. Ohne sie kann `umverteilung`
+// niemanden als Empfänger benennen und liefert nichts, statt zu raten.
+export function wirkungsVorgaenge({
+  alleEintraege = [], ereignisse = DEFAULT_EREIGNISSE, spieltagsPunkte = null,
+  schluessel = null, mitglieder = [],
+} = {}) {
+  const cfg = sanitizeEreignisse(ereignisse);
+  if (!cfg.enabled) return [];
+  // Kein einziges Nicht-Joker-Ereignis? Dann gibt es hier nichts zu tun, und
+  // der ganze Durchlauf über alle Nutzer entfällt.
+  if (!cfg.aktive.some((a) => a.wirkung?.typ && a.wirkung.typ !== "joker")) return [];
+
+  const nutzer = [...new Set(alleEintraege.map((e) => e.userId).filter((x) => x != null))];
+  const keyVon = typeof schluessel === "function" ? schluessel : spieltagKey;
+
+  // Alle Nicht-Joker-Gutschriften einsammeln, gruppiert nach Spieltag +
+  // Ereignis. Die Gruppe ist der Punkt: für `umverteilung` sind ALLE
+  // Ausgezeichneten dieses Spieltags gemeinsam die Geber.
+  const gruppen = new Map();
+  for (const userId of nutzer) {
+    const meine = alleEintraege.filter((e) => e.userId === userId);
+    const r = auswerten({
+      eintraege: meine, alleEintraege, ereignisse: cfg, spieltagsPunkte, schluessel,
+    });
+    for (const g of r.gutschriften) {
+      if (!g.wirkung || g.wirkung.typ === "joker") continue;
+      const k = `${g.wettbewerb ?? ""}|${g.matchday}|${g.key}`;
+      if (!gruppen.has(k)) {
+        gruppen.set(k, {
+          wettbewerb: g.wettbewerb, matchday: g.matchday, key: g.key,
+          wirkung: g.wirkung, text: g.text, userIds: [],
+        });
+      }
+      gruppen.get(k).userIds.push(userId);
+    }
+  }
+  if (!gruppen.size) return [];
+
+  // Spieltagspunkte je Spieltag umschlüsseln — `wendeAn` erwartet
+  // `{ [userId]: Punkte DIESES Spieltags }`.
+  const punkteJe = new Map();
+  for (const p of spieltagsPunkte ?? []) {
+    const k = keyVon(p);
+    if (!punkteJe.has(k)) punkteJe.set(k, {});
+    punkteJe.get(k)[p.userId] = p.punkte;
+  }
+
+  // Chronologisch, damit der Saison-Deckel einer Punkte-Wirkung die SPÄTEREN
+  // abschneidet — dieselbe Regel wie beim Gesamtdeckel oben.
+  const sortiert = [...gruppen.values()].sort((a, b) =>
+    (a.matchday ?? 0) - (b.matchday ?? 0) || a.key.localeCompare(b.key));
+
+  const bisher = new Map();   // Ereignis-Key → schon vergebene Punkte
+  const out = [];
+  for (const gr of sortiert) {
+    const vorgaenge = wendeAn({
+      wirkung: gr.wirkung,
+      betroffene: gr.userIds,
+      mitglieder: mitglieder.length ? mitglieder : nutzer,
+      spieltagsPunkte: punkteJe.get(keyVon(gr)) ?? null,
+      bisherPunkte: bisher.get(gr.key) ?? 0,
+    });
+    let vergeben = 0;
+    for (const v of vorgaenge) {
+      if (v.punkte > 0) vergeben += v.punkte;
+      out.push({ ...v, wettbewerb: gr.wettbewerb, matchday: gr.matchday, key: gr.key, ereignisText: gr.text });
+    }
+    // Nur positive Gutschriften zählen gegen den Deckel: bei einer
+    // Umverteilung stünde sonst die Empfängerseite gegen ihn, obwohl sie
+    // gar nichts erzeugt hat.
+    bisher.set(gr.key, (bisher.get(gr.key) ?? 0) + vergeben);
+  }
+  return out;
+}
+
+// ── Die Vorgänge in den VERLAUF einrechnen ──────────────────
+// Bauart wörtlich wie `applyDuellJoker` und `applySaisonform`: der Verlauf
+// hält kumulative Summen, die Wirkung passiert aber INNERHALB eines
+// Spieltags. Also: Spieltagspunkte zurückrechnen, verändern, neu aufsummieren.
+//
+// Reihenfolge der beiden Arten ist NICHT beliebig:
+//   1. `faktor` (bonus/malus) — er wiegt die Leistung DIESES Spieltags.
+//   2. `punkte` — eine feste Gutschrift danach, damit ein Aufschlag nicht
+//      auch noch die Gutschrift vergrößert. Andersherum hinge der Wert einer
+//      festen Zahl davon ab, ob zufällig ein Bonus danebenliegt.
+//
+// Ohne Vorgänge wird der Verlauf UNVERÄNDERT zurückgegeben (`return verlauf`)
+// — wie bei `applyCatchup`, `applySaisonform` und `applyDuellJoker`.
+export function applyEreignisWirkungen(verlauf = [], vorgaenge = []) {
+  const liste = Array.isArray(vorgaenge) ? vorgaenge : [];
+  if (!Array.isArray(verlauf) || verlauf.length === 0 || liste.length === 0) return verlauf;
+
+  // Verlaufs-Position je Spieltag: die Vorgänge tragen `wettbewerb`+`matchday`,
+  // der Verlauf ist chronologisch geordnet. Über die nackte Zahl gesucht
+  // träfe „Spieltag 1" fünf Wettbewerbe auf einmal.
+  const posVon = new Map();
+  verlauf.forEach((s, i) => posVon.set(spieltagKey(s), i));
+
+  const proNutzer = new Map();   // userId -> [Punkte je Spieltag]
+  verlauf.forEach((stufe, i) => {
+    const vorher = i > 0 ? verlauf[i - 1].board : [];
+    const vorSumme = new Map(vorher.map((z) => [z.userId, z.total]));
+    for (const z of stufe.board) {
+      if (!proNutzer.has(z.userId)) proNutzer.set(z.userId, []);
+      proNutzer.get(z.userId).push(z.total - (vorSumme.get(z.userId) ?? 0));
+    }
+  });
+
+  const faktoren = new Map();   // "idx|userId" -> Faktor
+  const summanden = new Map();  // "idx|userId" -> Punkte
+  let etwas = false;
+  for (const v of liste) {
+    const idx = posVon.get(spieltagKey(v));
+    if (idx == null || !proNutzer.has(v.userId)) continue;
+    const k = `${idx}|${v.userId}`;
+    if (v.faktor != null && v.faktor !== 1) {
+      faktoren.set(k, (faktoren.get(k) ?? 1) * v.faktor);
+      etwas = true;
+    }
+    if (v.punkte) {
+      summanden.set(k, (summanden.get(k) ?? 0) + v.punkte);
+      etwas = true;
+    }
+  }
+  if (!etwas) return verlauf;
+
+  for (const [userId, tage] of proNutzer) {
+    for (let i = 0; i < tage.length; i++) {
+      const k = `${i}|${userId}`;
+      const f = faktoren.get(k);
+      if (f != null) tage[i] = tage[i] * f;
+      const s = summanden.get(k);
+      if (s != null) tage[i] = tage[i] + s;
+    }
+  }
+
+  return verlauf.map((stufe, i) => ({
+    ...stufe,
+    board: stufe.board
+      .map((z) => {
+        const tage = proNutzer.get(z.userId) ?? [];
+        const total = tage.slice(0, i + 1).reduce((s, p) => s + p, 0);
+        // GERUNDET wie in `applySaisonform`/`applyDuellJoker`: der Wert landet
+        // direkt im Ranking, und ein Bruchteil steht dort in einer Tabelle,
+        // in der jede andere Zahl ganzzahlig ist. Die Marke daneben, damit ein
+        // Spieler eine Summe erklärt bekommt, zu der seine Tipps nicht führen.
+        const gerundet = Math.round(total);
+        return { ...z, total: gerundet, ereignis: gerundet - Math.round(z.total) };
+      })
+      .sort((a, b) => b.total - a.total || String(a.name ?? "").localeCompare(String(b.name ?? ""))),
+  }));
 }

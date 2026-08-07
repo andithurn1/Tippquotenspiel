@@ -485,6 +485,25 @@ const varianten = [
   ["Versäumnis (Ersatz-Tipps)", {
     versaeumnis: { enabled: true, strategie: "wahrscheinlich", malusProzent: 30, maxProSaison: 10 },
   }, { ohneFilter: true }],
+  // 🔴 Die WAS-Achse (07.08.2026). Eine Ereignis-Wirkung, die PUNKTE
+  // gutschreibt statt Joker, verschiebt den Endstand — und ohne eine eigene
+  // Marke stünde die Verschiebung unerklärt in der Tabelle. Genau die Sorte
+  // Fund, für die es diesen Teil gibt: die Saison-Kurve verschob am 06.08.
+  // bis zu 186 Punkte, ohne dass irgendwo etwas dazu stand.
+  ["Ereignis-Wirkung: Punkte", {
+    ereignisse: { enabled: true, maxErspielt: 5, aktive: [
+      { key: "letzter-am-spieltag", belohnung: 1, abstand: 0, maxProSaison: 0,
+        auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 },
+        wirkung: { typ: "punkte", betrag: 200, maxProSaison: 2000 } },
+    ] },
+  }],
+  ["Ereignis-Wirkung: Umverteilung", {
+    ereignisse: { enabled: true, maxErspielt: 5, aktive: [
+      { key: "letzter-am-spieltag", belohnung: 1, abstand: 0, maxProSaison: 0,
+        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 },
+        wirkung: { typ: "umverteilung", prozent: 40 } },
+    ] },
+  }],
 ];
 
 for (const [name, extra, opt = {}] of varianten) {
@@ -516,7 +535,7 @@ for (const [name, extra, opt = {}] of varianten) {
   for (const b of brd) {
     const erklaert = (eigene.get(b.userId) ?? 0)
       + (b.form ?? 0) + (b.bonus ?? 0) + (b.saison ?? 0) + (b.drehrad ?? 0)
-      + (b.ersatzPunkte ?? 0) + (b.duell ?? 0)
+      + (b.ersatzPunkte ?? 0) + (b.duell ?? 0) + (b.ereignis ?? 0)
       - (b.gestrichenPunkte ?? 0);
     schlimmster = Math.max(schlimmster, Math.abs(b.total - erklaert));
   }
@@ -525,7 +544,7 @@ for (const [name, extra, opt = {}] of varianten) {
   // hat. Solange die Saison nicht angefangen hat, gibt es z. B. kein einziges
   // Versäumnis — die Zeile stünde grün da und hätte nichts geprüft. Deshalb
   // wird mitgezählt, ob die Marke wirklich einen Wert trägt.
-  const marken = ["form", "bonus", "saison", "drehrad", "ersatzPunkte", "duell", "gestrichenPunkte"];
+  const marken = ["form", "bonus", "saison", "drehrad", "ersatzPunkte", "duell", "ereignis", "gestrichenPunkte"];
   const gegriffen = marken.filter((k) => brd.some((b) => Number.isFinite(b[k]) && b[k] !== 0));
   console.log(`    ${name.padEnd(30)} unerklärter Rest: ${String(schlimmster).padStart(5)}`
     + `   ·   ganzzahlig: ${ganz ? "ja" : "NEIN"}`

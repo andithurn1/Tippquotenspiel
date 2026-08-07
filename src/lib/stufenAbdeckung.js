@@ -152,6 +152,19 @@ export const OHNE_OBERFLAECHE = {
 };
 
 // Alle BLATT-Pfade des Regelwerks: `duell.block.restanteil` statt `duell`.
+//
+// 🔴 **Der blinde Fleck dieser Funktion, benannt statt versteckt:** sie läuft
+// über `sanitizeRules(DEFAULT_RULES)` und hält an ARRAYS an. In der Vorgabe
+// sind `ereignisse.aktive`, `saison.wetten`, `drehrad.felder` und
+// `limitKlassen` alle LEER — was ein Eintrag darin trägt, sieht diese
+// Rekursion also nie. Gemessen am 07.08.2026: die ganze Wirkungs-Achse
+// (`ereignisse.aktive[].wirkung`) lag außerhalb, und Teil 2 meldete trotzdem
+// „jedes Regel-Feld kommt in einer Oberfläche vor".
+//
+// Deshalb `LISTEN_FELDER` darunter — eine ausdrückliche Liste dessen, was in
+// diesen Einträgen steckt. Sie ist von Hand gepflegt, und das ist der Preis:
+// die Vorgabe kann sie nicht liefern, weil die Listen leer anfangen. Wer eine
+// neue Einstellung in einen LISTEN-Eintrag legt, trägt sie hier ein.
 export function blattFelder() {
   const out = [];
   const geh = (obj, pfad) => {
@@ -165,9 +178,25 @@ export function blattFelder() {
   return out.filter((p) => p !== "name");
 }
 
+// Was in einem LISTEN-Eintrag steckt und deshalb aus `blattFelder()` fällt.
+// Geprüft wird wie bei den Blättern: kommt der Name in irgendeiner Oberfläche
+// vor? Bewusst nur die Namen, nicht die Pfade — mehr kann eine Textsuche
+// ohnehin nicht.
+export const LISTEN_FELDER = [
+  // rules.ereignisse.aktive[]
+  "belohnung", "anzahl", "abQuote", "auswahl", "wirkung", "abstand", "maxProSaison",
+  // rules.saison.wetten[]
+  "punkte", "ausser", "abSpieltag", "bisSpieltag",
+  // rules.drehrad.felder[]
+  "gewicht", "felder",
+  // rules.limitKlassen[]
+  "mitglieder", "proZeitraum", "aktivierung",
+];
+
 // Welche Blätter kommen im übergebenen Oberflächen-Quelltext NICHT vor?
+// Die LISTEN-Felder laufen mit — siehe Kopfkommentar von `blattFelder`.
 export function fehlendeOberflaeche(uiQuelltext = "") {
-  return blattFelder().filter((p) => {
+  return [...blattFelder(), ...LISTEN_FELDER].filter((p) => {
     const name = p.split(".").pop();
     if (OHNE_OBERFLAECHE[name] || OHNE_OBERFLAECHE[p]) return false;
     return !new RegExp(`\\b${name}\\b`).test(uiQuelltext);

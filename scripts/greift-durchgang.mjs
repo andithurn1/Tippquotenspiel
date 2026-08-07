@@ -126,6 +126,18 @@ const FAELLE = [
   ["saison (Wetten)", {
     saison: { enabled: true, gewicht: 1, wetten: [{ key: "meister", punkte: 500 }] },
   }, { saisonTipp: true }],
+  // 🔴 Die WAS-Achse (07.08.2026). Bis dahin war die Wirkung eines Ereignisses
+  // IMMER „n Joker" — und Joker bewegen das Leaderboard nicht, deshalb stand
+  // der ganze Block `ereignisse` in TEIL 2 statt hier. Eine Punkte-Wirkung
+  // bewegt es sehr wohl, und genau das misst diese Zeile: kommt die neue
+  // Achse in der Wertung an?
+  ["ereignisse (Wirkung: Punkte)", {
+    ereignisse: { enabled: true, maxErspielt: 5, aktive: [
+      { key: "letzter-am-spieltag", belohnung: 1, abstand: 0, maxProSaison: 0,
+        auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 },
+        wirkung: { typ: "punkte", betrag: 200, maxProSaison: 2000 } },
+    ] },
+  }],
 ];
 
 async function board(extra, opt = {}) {
@@ -346,9 +358,6 @@ console.log();
 //  entweder ein Messfall, oder ein Satz, warum hier keiner hingehört.
 // ════════════════════════════════════════════════════════════
 const OHNE_MESSFALL = {
-  ereignisse:
-    "Wird in TEIL 2 gemessen — die Ebene zahlt Gutschriften, keine Punkte, "
-    + "und bewegt das Leaderboard deshalb bauartbedingt nicht.",
   tippfenster:
     "Wird in TEIL 4 gemessen — entscheidet, WELCHE Spiele tippbar sind, nicht "
     + "was ein Tipp zählt.",

@@ -24,7 +24,16 @@ import { sanitizeSaison } from "./saisonwetten";
 import { sanitizeVerteilung, DEFAULT_VERTEILUNG } from "./jokerPlan";
 import { sanitizeBigGame, DEFAULT_BIGGAME, bigGameAufschlag } from "./bigGame";
 import { sanitizeSpiele, DEFAULT_SPIELE } from "./spielauswahl";
-import { sanitizeEreignisse, DEFAULT_EREIGNISSE } from "./ereignisse";
+import {
+  sanitizeEreignisse, DEFAULT_EREIGNISSE,
+  // Die WAS-Achse der Regel-Grammatik (07.08.2026). `wirkungsVorgaenge`
+  // rechnet die Nicht-Joker-Wirkungen aus, `applyEreignisWirkungen` legt sie
+  // in den Verlauf — dieselbe Aufteilung wie `duellVorgaenge`/`applyDuellJoker`.
+  wirkungsVorgaenge, applyEreignisWirkungen,
+} from "./ereignisse";
+// Die Spieltagspunkte aus dem rohen Verlauf. EINE Quelle — `ereignisse.js`
+// bekommt exakt dieselbe Liste, die auch der Store liefert.
+import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { sanitizeWettbewerbe, DEFAULT_WETTBEWERBE, wettbewerbAufschlag, maxWettbewerbAufschlag } from "./wettbewerbGewicht";
 import { sanitizeTippfenster, DEFAULT_TIPPFENSTER } from "./tippfenster";
 import { sanitizeZeitachse, DEFAULT_ZEITACHSE } from "./zeitachse";
@@ -1429,8 +1438,24 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES, regelnFuer
 export function brauchtVerlauf(rules = DEFAULT_RULES) {
   if (rules?.aufholen?.enabled === true) return true;
   if (sanitizeDuellJoker(rules?.duell).enabled) return true;
+  // 🔴 Die WAS-Achse (07.08.2026). Eine JOKER-Wirkung braucht den Verlauf
+  // nicht — sie landet im Kontingent, nicht in der Tabelle. Alles andere
+  // (Punkte, Aufschlag, Abzug, Umverteilung) verändert Spieltagspunkte und
+  // fiele ohne diese Zeile stillschweigend aus dem Endstand heraus, weil
+  // `getLeaderboard` dann die einfache Summe nimmt. Genau der Fall, vor dem
+  // der Absatz über dieser Funktion warnt — er ist hier schon zweimal
+  // eingetreten.
+  if (hatVerlaufsWirkung(rules)) return true;
   const sf = sanitizeSaisonform(rules?.saisonform);
   return sf.kurve !== "flach" || sf.streich > 0;
+}
+
+// Trägt dieses Regelwerk eine Ereignis-Wirkung, die den Verlauf verändert?
+// Eigene Funktion, weil `scoreLeaderboardHistory` sie ein zweites Mal braucht
+// — und zwei Fassungen derselben Frage laufen auseinander.
+function hatVerlaufsWirkung(rules) {
+  const cfg = sanitizeEreignisse(rules?.ereignisse);
+  return cfg.enabled && cfg.aktive.some((a) => a.wirkung?.typ && a.wirkung.typ !== "joker");
 }
 
 // `regelnFuer` wie bei `scoreLeaderboard` — hier zusätzlich an `applyCatchup`
@@ -1475,7 +1500,23 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
   // (oder — beim Duell-Joker — wenn keine Einsätze vorliegen, siehe
   // duellJoker.js). `einsaetze` ist heute immer leer (Store-Anbindung folgt),
   // `applyDuellJoker` bleibt bis dahin ein No-op.
-  return applyCatchup(applySaisonform(applyDuellJoker(roh, rules, einsaetze, sammeln), rules), rules, regelnFuer);
+  // 🔴 Die Ereignis-Wirkungen kommen VOR dem Duell-Joker, und das ist eine
+  // Entscheidung: sie hängen an den ROHEN Spieltagspunkten — genau der Liste,
+  // aus der `auswerten()` seine Auswahl trifft („der Letzte des Spieltags").
+  // Hinter dem Duell gerechnet würde eine Auszeichnung mit einem anderen Stand
+  // begründet, als sie sie ausgelöst hat. Ohne eine Nicht-Joker-Wirkung ist es
+  // ein No-op — `hatVerlaufsWirkung` fragt genau das, und `brauchtVerlauf`
+  // benutzt dieselbe Funktion, damit der Endstand nicht an dieser Ebene
+  // vorbeirechnet.
+  const mitWirkungen = hatVerlaufsWirkung(rules)
+    ? applyEreignisWirkungen(roh, wirkungsVorgaenge({
+        alleEintraege: entries, ereignisse: rules?.ereignisse,
+        spieltagsPunkte: punkteJeSpieltag(roh),
+        mitglieder: [...new Set(entries.map((e) => e.userId).filter((x) => x != null))],
+      }))
+    : roh;
+
+  return applyCatchup(applySaisonform(applyDuellJoker(mitWirkungen, rules, einsaetze, sammeln), rules), rules, regelnFuer);
 }
 
 

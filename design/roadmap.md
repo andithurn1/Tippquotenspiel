@@ -470,6 +470,76 @@ vorbei:
    ✅ **Erledigt 07.08.2026** — beide angeschlossen, siehe den Abschnitt
    darunter.
 
+#### ✅ 07.08.: die WAS-Achse der Regel-Grammatik steht (`src/lib/wirkung.js`)
+
+Schritt 2 der Reihenfolge weiter unten („die Grammatik als Datenmodell in
+`rules.ereignisse` erweitern — noch ohne neue Auslöser"). Nach der WEN-Achse
+(`auswahl.js`, 06.08.) ist das die zweite der vier.
+
+**Die Wirkung eines Ereignisses war bis dahin IMMER „n Joker"** — das Feld
+hieß `belohnung` und war eine Zahl. Das ist die Voreinstellung geblieben
+(`sanitizeWirkung(a.wirkung, { typ: "joker", n: belohnung })`), damit kein
+bestehender Creator-Code stillschweigend seine Bedeutung ändert. Daneben
+stehen jetzt sechs weitere auswertbare Wirkungen und sechs vorbereitete.
+
+🔴 **Der Vertrag, an dem alles hängt: keine Wirkung macht einen neuen
+Punkte-Kanal auf.** Jede läuft in einen Topf, der schon einen Deckel hat —
+und ein Test prüft, dass keine auswertbare Wirkung ZWEI Töpfe gleichzeitig
+bedient.
+
+| Wirkung | Topf | Deckel |
+|---|---|---|
+| `joker` / `jokerEntzug` | Joker-Kontingent | `ereignisse.maxErspielt` |
+| `punkte` | direkte Gutschrift | **eigener** Saison-Deckel, Bauart `drehrad.maxPunkteProSaison` |
+| `bonus` / `malus` | Gewichtung eines Spieltags im Verlauf, wie `saisonform.kurve` | `WIRKUNG_LIMITS.prozent` (± 50 %) |
+| `umverteilung` | keiner — summenneutral | braucht keinen |
+| `nichts` | keiner | kostet null Balance |
+
+⚠️ **Eine Korrektur am Plan weiter unten:** dort steht, `bonus` und `punkte`
+fielen „in denselben ADDITIVEN Topf wie Derby, Big Game und Wettbewerbs-Gewicht
+und damit unter `modCap`". Das stimmt nicht. `modCap` deckelt die Modifikatoren
+EINES TIPPS und greift in `scoreTip`; diese Wirkung liegt eine Ebene darüber
+und wiegt einen ganzen SPIELTAG im Verlauf. Ihre Grenze ist die eigene, nicht
+`modCap` — wer das verwechselt, hält den Faktor für gedeckelt, obwohl ihn dort
+niemand sieht. Und `punkte` ist ein SUMMAND: ein Faktor ist von Natur aus
+begrenzt, eine feste Gutschrift wächst mit jedem Auslösen weiter. Deshalb der
+eigene Saison-Deckel, und deshalb meldet `konflikte()` ein `maxProSaison: 0`.
+
+**Angeschlossen, nicht nur gebaut** (die Lehre vom 06.08.): `wirkungsVorgaenge`
+läuft einmal über die ganze Runde und lässt `wendeAn()` je Spieltag EINMAL
+rechnen — bei einer Umverteilung sitzt die andere Hälfte des Vorgangs bei allen
+anderen, ein Ein-Nutzer-Lauf kann sie gar nicht sehen. `applyEreignisWirkungen`
+legt das Ergebnis in den Verlauf, VOR dem Duell-Joker: die Wirkungen hängen an
+den ROHEN Spieltagspunkten, genau der Liste, aus der die Auswahl ihre
+Betroffenen zieht. Und `brauchtVerlauf()` fragt dieselbe Funktion — sonst
+rechnete `getLeaderboard` an der ganzen Ebene vorbei.
+
+**Gemessen auf echten Daten** (36 Spiele, drei Spieler, Trost-Ereignis):
+
+| Wirkung | Δ Endstand | |
+|---|---|---|
+| `joker` (wie bisher) | 0 / 0 / 0 | keine stille Änderung ✅ |
+| `punkte` 100, Deckel 500 | +200 / +100 / +200 | **Summe exakt 500 = der Deckel** |
+| `bonus` 50 % | +385 / +333 / +748 | |
+| `malus` 50 % | −384 / −333 / −747 | spiegelbildlich |
+| `umverteilung` 50 % | +156 / +233 / −389 | **Rundensumme 10419 → 10419, Differenz 0** |
+
+#### 🔴 Und der blinde Fleck, den das aufgedeckt hat: `stufen` Teil 2 sah in LISTEN gar nicht hinein
+
+`blattFelder()` läuft über `sanitizeRules(DEFAULT_RULES)` und hält an ARRAYS
+an. In der Vorgabe sind `ereignisse.aktive`, `saison.wetten`, `drehrad.felder`
+und `limitKlassen` **alle leer** — was ein Eintrag darin trägt, hat die
+Rekursion also nie gesehen. Die ganze Wirkungs-Achse lag außerhalb, und Teil 2
+meldete weiter „jedes Regel-Feld kommt in einer Oberfläche vor".
+
+Behoben über `LISTEN_FELDER`: eine ausdrückliche, von Hand gepflegte Liste
+dessen, was in solchen Einträgen steckt (16 Namen). Von Hand ist hier kein
+Kompromiss, sondern die einzige Möglichkeit — die Vorgabe kann sie nicht
+liefern, weil die Listen leer anfangen. Gegenprobe gemacht: ein erfundener
+Name in der Liste wird sofort als Lücke gemeldet.
+
+**Wer eine Einstellung in einen LISTEN-Eintrag legt, trägt sie dort ein.**
+
 #### ✅ 07.08.: `konter` und `kosten` angeschlossen — und die Messung, die sie hätte finden müssen
 
 **`konter`** liegt in `zulaessigeZiele()`: wer an DIESEM Spieltag getroffen

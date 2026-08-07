@@ -123,6 +123,73 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-07 (II) · **Die WAS-Achse der Regel-Grammatik — und ein blinder Fleck in `stufen`**
+
+> **👉 Frische Session: das hier ist der Stand.** Branch
+> `claude/koordinierte-arbeitsweise-fe6w1v`, **2076 Tests grün**, Build sauber,
+> alle fünf Abnahmen ohne Befund.
+
+Schritt 2 der Grammatik-Reihenfolge aus der Roadmap ist gebaut:
+`src/lib/wirkung.js`. Nach der WEN-Achse (`auswahl.js`, gestern) ist das die
+zweite der vier — WANN → WEN → **WAS** → WIE LANGE.
+
+**Bis heute war die Wirkung eines Ereignisses IMMER „n Joker".** Das bleibt die
+Voreinstellung — kein bestehender Creator-Code ändert stillschweigend seine
+Bedeutung —, aber es ist nicht mehr die einzige Möglichkeit: `punkte`, `bonus`,
+`malus`, `umverteilung`, `nichts`, `jokerEntzug`. Sechs weitere stehen
+vorbereitet und lassen sich (wie die Herausforderungen) gar nicht erst
+einstellen.
+
+🔴 **Der Vertrag, an dem alles hängt: keine Wirkung macht einen neuen
+Punkte-Kanal auf.** Jede läuft in einen Topf, der schon einen Deckel hat, und
+ein Test prüft, dass keine auswertbare Wirkung ZWEI Töpfe gleichzeitig bedient.
+
+⚠️ **Dabei eine Korrektur am Plan in der Roadmap:** dort stand, `bonus` und
+`punkte` fielen „unter `modCap`". Das stimmt nicht. `modCap` deckelt die
+Modifikatoren EINES TIPPS und greift in `scoreTip`; diese Wirkung liegt eine
+Ebene darüber und wiegt einen ganzen SPIELTAG, wie `saisonform.kurve`. Und
+`punkte` ist ein SUMMAND — ein Faktor ist von Natur aus begrenzt, eine feste
+Gutschrift wächst mit jedem Auslösen weiter. Deshalb hat sie einen EIGENEN
+Saison-Deckel, Bauart `drehrad.maxPunkteProSaison`, und `konflikte()` meldet
+ein `maxProSaison: 0`.
+
+**Angeschlossen, nicht nur gebaut** — die Lehre von gestern:
+`wirkungsVorgaenge` läuft einmal über die ganze Runde (bei einer Umverteilung
+sitzt die andere Hälfte des Vorgangs bei allen anderen, ein Ein-Nutzer-Lauf
+sieht sie gar nicht), `applyEreignisWirkungen` legt das Ergebnis in den
+Verlauf, und `brauchtVerlauf()` fragt dieselbe Funktion — sonst rechnete
+`getLeaderboard` an der Ebene vorbei.
+
+Gemessen auf echten Daten: `joker` bewegt 0 (keine stille Änderung ✅),
+`punkte` trifft den Deckel auf den Punkt (Summe exakt 500 bei Deckel 500),
+`bonus`/`malus` sind spiegelbildlich, und die **Umverteilung ist summenneutral:
+Rundensumme 10419 vor wie nach.**
+
+#### 🔴 Wichtiger als die Achse: `npm run stufen` Teil 2 sah in LISTEN gar nicht hinein
+
+`blattFelder()` läuft über `sanitizeRules(DEFAULT_RULES)` und hält an ARRAYS
+an. In der Vorgabe sind `ereignisse.aktive`, `saison.wetten`, `drehrad.felder`
+und `limitKlassen` **alle leer** — was ein Eintrag darin trägt, hat die
+Rekursion nie gesehen. Die ganze Wirkungs-Achse lag außerhalb, und Teil 2
+meldete weiter grün.
+
+Behoben über `LISTEN_FELDER`: eine ausdrückliche, von Hand gepflegte Liste
+(16 Namen). Von Hand ist hier kein Kompromiss, sondern die einzige
+Möglichkeit — die Vorgabe kann sie nicht liefern, weil die Listen leer
+anfangen. Gegenprobe gemacht: ein erfundener Name wird sofort als Lücke
+gemeldet.
+
+**⚠️ Für beide Sessions: wer eine Einstellung in einen LISTEN-Eintrag legt
+(neue Saison-Wette, neues Rad-Feld, neue Limit-Klasse), trägt ihren Namen in
+`LISTEN_FELDER` ein.** Sonst ist sie im blinden Fleck.
+
+Dazu zwei neue Messfälle: `greift` Teil 1 misst die Punkte-Wirkung (bewegt
+1000 Punkte — `ereignisse` steht damit nicht mehr als „wird nur in Teil 2
+gemessen" da), `anzeige` Teil 3 prüft, dass die neue Marke `ereignis` die
+Verschiebung erklärt (unerklärter Rest 0 für Punkte UND Umverteilung).
+
+---
+
 ### 2026-08-07 · **`konter` + `kosten` angeschlossen — und `greift` bekommt einen TEIL 4**
 
 > **👉 Frische Session: das hier ist der Stand.** Branch

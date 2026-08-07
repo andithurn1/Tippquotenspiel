@@ -21,7 +21,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   abdeckung, luecken, ueberholteBegruendungen, NUR_PROFI,
-  blattFelder, fehlendeOberflaeche, OHNE_OBERFLAECHE,
+  blattFelder, LISTEN_FELDER, fehlendeOberflaeche, OHNE_OBERFLAECHE,
 } from "../src/lib/stufenAbdeckung.js";
 
 const alle = abdeckung();
@@ -101,7 +101,12 @@ const ohneUi = fehlendeOberflaeche(uiQuelltext);
 
 console.log(`${"=".repeat(88)}`);
 console.log("  TEIL 2 — welches Regel-FELD kommt in keiner Oberfläche vor?");
-console.log(`  ${blaetter.length} Blattfelder · ${Object.keys(OHNE_OBERFLAECHE).length} ausdrücklich begründet`);
+console.log(`  ${blaetter.length} Blattfelder + ${LISTEN_FELDER.length} aus LISTEN-Einträgen`
+  + ` · ${Object.keys(OHNE_OBERFLAECHE).length} ausdrücklich begründet`);
+// 🔴 Die LISTEN-Felder stehen getrennt, weil sie NICHT aus der Vorgabe
+// abgeleitet sind: `ereignisse.aktive` & Co. fangen leer an, also sieht die
+// Rekursion nie hinein. Am 07.08.2026 lag die ganze Wirkungs-Achse in diesem
+// blinden Fleck, und Teil 2 meldete trotzdem grün.
 console.log(`${"=".repeat(88)}\n`);
 
 if (ohneUi.length) {

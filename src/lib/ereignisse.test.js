@@ -314,8 +314,12 @@ describe("Im Regelwerk und im Creator-Code", () => {
       ereignisse: AN([{ key: "serie", anzahl: 4, belohnung: 2 }], { maxErspielt: 6 }),
     });
     // Die Begrenzer stehen seit 30.07. an JEDEM Eintrag, Vorgabe 0 = aus.
+    // Die WAS-Achse (07.08.) ebenso: ohne Angabe „so viele Joker wie
+    // `belohnung`" — dadurch ändert kein bestehender Creator-Code seine
+    // Bedeutung.
     expect(rules.ereignisse.aktive[0]).toEqual({
       key: "serie", anzahl: 4, belohnung: 2, abstand: 0, maxProSaison: 0,
+      wirkung: { typ: "joker", n: 2 },
     });
     expect(sanitizeRules(rules)).toEqual(rules);
   });
@@ -547,5 +551,75 @@ describe("WEN trifft es — die Auswahl-Achse hängt dran", () => {
     // Ein Modus, dessen Daten hier fehlen, lieferte sonst stillschweigend eine
     // leere Auswahl — und das sähe für den Admin aus wie ein totes Ereignis.
     expect(sanitizeAuswahl({ modus: "los", n: 3 }).modus).toBe("rang");
+  });
+});
+
+// ── WAS passiert dann — die Wirkungs-Achse hängt dran ───────
+// 🔴 Der Beweis, dass `wirkung.js` nicht das nächste tote Modul ist. Bis
+// 07.08.2026 war die Wirkung eines Ereignisses IMMER „n Joker"; die Achse
+// ist neu, und diese Tests halten fest, dass sie hier wirklich ankommt —
+// und dass sie das bisherige Verhalten nicht stillschweigend ändert.
+describe("WAS passiert dann — die Wirkungs-Achse hängt dran", () => {
+  const eintraege = [1, 2, 3, 4].map((md) => e("u1", md, `m${md}`, { home: 1, away: 0 }, null));
+  const serie = (extra = {}) => AN([{ key: "serie", anzahl: 2, belohnung: 1, ...extra }]);
+
+  it("ohne Angabe bleibt es bei „so viele Joker wie `belohnung`“", () => {
+    const r = auswerten({ eintraege, ereignisse: serie() });
+    expect(r.gutschriften.length).toBeGreaterThan(0);
+    for (const g of r.gutschriften) {
+      expect(g.wirkung).toEqual({ typ: "joker", n: 1 });
+      expect(g.belohnung).toBe(1);
+    }
+  });
+
+  it("jede Gutschrift trägt ihre Wirkung im Klartext", () => {
+    const r = auswerten({ eintraege, ereignisse: serie({ belohnung: 2 }) });
+    expect(r.gutschriften[0].wirkungText).toContain("Joker");
+  });
+
+  // 🔴 Der Topf-Vertrag: `maxErspielt` ist ein JOKER-Deckel. Eine
+  // Punkte-Gutschrift darf ihn nicht aufzehren — sie bringt ihren eigenen mit.
+  it("eine Nicht-Joker-Wirkung zehrt den Joker-Deckel nicht auf", () => {
+    const r = auswerten({
+      eintraege,
+      ereignisse: {
+        enabled: true, maxErspielt: 1,
+        aktive: [{ key: "serie", anzahl: 2, belohnung: 1, wirkung: { typ: "punkte", betrag: 100 } }],
+      },
+    });
+    // Mit Joker-Wirkung wäre nach der ersten Gutschrift Schluss (Test oben,
+    // „gedeckelt wird chronologisch"). Als Punkte-Wirkung laufen alle durch.
+    expect(r.gutschriften.length).toBeGreaterThan(1);
+    expect(r.gesamt).toBe(0);
+    expect(r.gedeckelt).toBe(false);
+    for (const g of r.gutschriften) expect(g.wirkung.typ).toBe("punkte");
+  });
+
+  it("`belohnung` und `wirkung` können nicht auseinanderlaufen", () => {
+    // Zwei Zahlen für dieselbe Sache wären die zweite Wahrheit. `belohnung`
+    // wird deshalb AUS der Wirkung abgeleitet, nicht daneben gepflegt.
+    const r = auswerten({
+      eintraege,
+      ereignisse: AN([{ key: "serie", anzahl: 2, belohnung: 3, wirkung: { typ: "joker", n: 2 } }]),
+    });
+    for (const g of r.gutschriften) expect(g.belohnung).toBe(g.wirkung.n);
+  });
+
+  it("eine unfertige Wirkung fällt auf Joker zurück, statt folgenlos zu bleiben", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      ereignisse: AN([{ key: "serie", anzahl: 2, belohnung: 1, wirkung: { typ: "sonderspiel" } }]),
+    });
+    expect(rules.ereignisse.aktive[0].wirkung.typ).toBe("joker");
+  });
+
+  it("übersteht den Creator-Code unverändert", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      ereignisse: AN([{ key: "serie", anzahl: 2, wirkung: { typ: "punkte", betrag: 100, maxProSaison: 300 } }]),
+    });
+    expect(sanitizeRules(rules)).toEqual(rules);
+    expect(rules.ereignisse.aktive[0].wirkung)
+      .toEqual({ typ: "punkte", betrag: 100, maxProSaison: 300 });
   });
 });

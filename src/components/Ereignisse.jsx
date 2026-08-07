@@ -8,6 +8,10 @@ import {
 } from "@/lib/ereignisse";
 import { Zahl } from "@/components/Eingaben";
 import { trefferAnteil } from "@/lib/auswahl";
+import {
+  AUSWERTBARE_WIRKUNGEN, WIRKUNG, WIRKUNG_LIMITS,
+  sanitizeWirkung, beschreibeWirkung, konflikte as wirkungsKonflikte,
+} from "@/lib/wirkung";
 
 // ── WEN trifft es? ──────────────────────────────────────────
 // Drei Modi, eine Richtung, eine Zahl — und darunter der SATZ, den ein Spieler
@@ -19,6 +23,67 @@ import { trefferAnteil } from "@/lib/auswahl";
 const BEISPIEL_RUNDE = 12;
 
 const MODUS_LABEL = { rang: "Feste Anzahl", perzentil: "Anteil in Prozent", mitte: "Das Mittelfeld" };
+
+// ── WAS passiert dann? ──────────────────────────────────────
+// 🔴 Die dritte der vier Achsen (`wirkung.js`). Bis 07.08.2026 war die Antwort
+// immer „n Joker", und das Feld hieß entsprechend `belohnung`. Es ist die
+// Voreinstellung geblieben — aber nicht mehr die einzige Möglichkeit, und
+// deshalb steht sie hier als Auswahl statt als stille Annahme.
+//
+// ⚠️ Genau EIN Regler je Wirkung, plus der Satz darunter. „bonus/20" sagt
+// niemandem etwas, „+20 % auf die Punkte des Spieltags" schon — dieselbe
+// Rolle wie `beschreibeAuswahl` eine Achse weiter oben.
+function Wirkungsfeld({ wert, onChange }) {
+  const w = sanitizeWirkung(wert);
+  const info = WIRKUNG[w.typ];
+  const warnungen = wirkungsKonflikte(w);
+  const knopf = (aktiv, text, onClick, key, titel) => (
+    <button key={key} type="button" onClick={onClick} title={titel} style={{
+      border: `1px solid ${aktiv ? C.gold : C.line}`, borderRadius: 999,
+      background: aktiv ? `${C.gold}1a` : "transparent", color: aktiv ? C.gold : C.text,
+      cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
+    }}>{text}</button>
+  );
+  return (
+    <div style={{ width: "100%" }}>
+      <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 4 }}>Was passiert dann?</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
+        {AUSWERTBARE_WIRKUNGEN.map((x) =>
+          knopf(w.typ === x.key, x.label, () => onChange({ ...w, typ: x.key }), x.key, x.text))}
+      </div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        {info.parameter.includes("n") && (
+          <Zahl label="wie viele" wert={w.n} limits={WIRKUNG_LIMITS.n} breite={110}
+            onChange={(v) => onChange({ ...w, n: v })} />
+        )}
+        {info.parameter.includes("betrag") && (
+          <Zahl label="Punkte" wert={w.betrag} limits={WIRKUNG_LIMITS.betrag} breite={110}
+            onChange={(v) => onChange({ ...w, betrag: v })} />
+        )}
+        {info.parameter.includes("prozent") && (
+          <Zahl label="Prozent" wert={w.prozent} limits={WIRKUNG_LIMITS.prozent} breite={110}
+            onChange={(v) => onChange({ ...w, prozent: v })} />
+        )}
+        {/* Der eigene Saison-Deckel — er gehört zu dieser Wirkung und nicht
+            zum Ereignis, sonst hätte dieselbe Wirkung in zwei Regeln zwei
+            Deckel. 0 = keiner, und dann meldet sich die Warnung darunter. */}
+        {w.typ === "punkte" && (
+          <Zahl label="max./Saison" wert={w.maxProSaison} limits={WIRKUNG_LIMITS.maxPunkteProSaison}
+            breite={130} onChange={(v) => onChange({ ...w, maxProSaison: v })} />
+        )}
+      </div>
+      <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+        Ergebnis: <strong style={{ color: C.text }}>{beschreibeWirkung(w)}</strong> · {info.topf}
+      </div>
+      {warnungen.map((k) => (
+        <div key={k.key} style={{
+          fontSize: 10.5, color: k.korrigieren ? C.coral : C.muted,
+          marginTop: 4, lineHeight: 1.45,
+        }}>{k.korrigieren ? "⚠️ " : "💡 "}{k.text}</div>
+      ))}
+    </div>
+  );
+}
 
 function Auswahlfeld({ wert, onChange }) {
   const a = sanitizeAuswahl(wert);
@@ -112,10 +177,18 @@ export default function Ereignisse({ rules, onChange }) {
         : [...cfg.aktive, { key, ...typ.standard }],
     });
   };
-  const setzeFeld = (key, feld, v) => setze({
-    ...cfg,
-    aktive: cfg.aktive.map((a) => (a.key === key ? { ...a, [feld]: v } : a)),
-  });
+  const setzeFeld = (key, feld, v) => setzeEintrag(key, { [feld]: v });
+
+  // Mehrere Felder EINES Eintrags in einem Zug. Nötig, seit der Joker-Regler
+  // die Wirkung mitschreibt: zwei `setzeFeld`-Aufrufe hintereinander gingen
+  // beide von demselben alten `cfg` aus, und der zweite überschriebe den
+  // ersten — der klassische Zustands-Fehler, und er wäre still.
+  function setzeEintrag(key, teil) {
+    setze({
+      ...cfg,
+      aktive: cfg.aktive.map((a) => (a.key === key ? { ...a, ...teil } : a)),
+    });
+  }
 
   return (
     <div>
@@ -222,9 +295,15 @@ export default function Ereignisse({ rules, onChange }) {
 
                 {an && (
                   <div style={{ marginTop: 9, paddingTop: 9, borderTop: `1px solid ${C.line}`, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    {/* 🔴 Die WAS-Achse. Der Joker-Regler bleibt der Weg für
+                        den Normalfall (und schreibt die Wirkung gleich mit),
+                        darunter steht die volle Auswahl — sonst müsste jeder,
+                        der nur „ein Joker" will, erst durch einen Katalog. */}
                     <Zahl label="Joker dafür" wert={wert(t.key, "belohnung")}
                       limits={EREIGNIS_LIMITS.belohnung} breite={110}
-                      onChange={(v) => setzeFeld(t.key, "belohnung", v)} />
+                      onChange={(v) => setzeEintrag(t.key, {
+                        belohnung: v, wirkung: { typ: "joker", n: v },
+                      })} />
                     {t.parameter.includes("anzahl") && (
                       <Zahl label="Spieltage in Folge" wert={wert(t.key, "anzahl")}
                         limits={EREIGNIS_LIMITS.anzahl} breite={110}
@@ -242,6 +321,8 @@ export default function Ereignisse({ rules, onChange }) {
                       <Auswahlfeld wert={wert(t.key, "auswahl")}
                         onChange={(v) => setzeFeld(t.key, "auswahl", v)} />
                     )}
+                    <Wirkungsfeld wert={wert(t.key, "wirkung")}
+                      onChange={(v) => setzeFeld(t.key, "wirkung", v)} />
                   </div>
                 )}
               </div>
