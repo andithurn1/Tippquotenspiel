@@ -186,16 +186,19 @@ Damit sind **Punkt 1, 2 und 3** der Übergabe vom 07.08. (IV) abgearbeitet.
 
 #### ▶️ Was als Nächstes ansteht (in dieser Reihenfolge)
 
-**1. Die zwei fehlenden Vokabeln der Grammatik.** Beide sind benannt und
-klein umrissen:
-- **`bezug: "zeitraum"`** durchreichen. `auswahl.js` kennt ihn schon,
-  `ereignisse.js` gibt fest `bezug: "spieltag"` hinein. Es fehlt die Stelle,
-  die den Stand über einen BLOCK von Spieltagen aufsummiert. Damit wird aus
-  der Dreier-Wertung ein Einzeiler.
-  ⚠️ Nicht als „der Beste des dritten Spieltags" abkürzen — anderer Anreiz,
-  gleiche Oberfläche, die teuerste Sorte Näherung.
-- **`sonderspiel`** ist Infrastruktur, kein Vokabular. Die Geltung dafür
-  (`fenster(3)`) liegt bereit. Gehört zu Quiz und Duell in denselben Topf.
+**1. ✅ ERLEDIGT: `bezug: "zeitraum"`** (Commit `e412760`). Die WEN-Achse kannte
+nur `gesamt` und `spieltag`; „der Beste ÜBER DIE DREI" fehlte. Jetzt gebaut,
+Bündel „dreier" liegt in der Bibliothek, gemessen in `greift` Teil 2 (6 → 2
+Gutschriften).
+⚠️ Zwei Punkte beim Weiterbauen: ausgezeichnet wird am LETZTEN Spieltag des
+Blocks (sonst steht die Auszeichnung im Verlauf vor den Punkten, die sie
+begründen), und der Block-Stand geht als eigener `bezug` hinein — nicht als
+`spieltag` durchgereicht, sonst schreibt die Oberfläche „am Spieltag" über eine
+Wertung, die drei umfasst.
+
+**Offen bleibt `sonderspiel`** (Jokerjagd): Infrastruktur, kein Vokabular — die
+Geltung dafür (`fenster(3)`) liegt bereit. Gehört mit Quiz und Duell in
+denselben Topf.
 
 **2. Der RLS-Durchgang in der DATENBANK.** `duellPruefung.js` schließt die
 Lücke in unserem eigenen Code — mehr nicht, und das steht so auch im
