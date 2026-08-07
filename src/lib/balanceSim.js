@@ -34,6 +34,96 @@ import { applySaisonform, sanitizeSaisonform } from "./saisonform";
 import { basisFuer, darfEinsetzen, erfuelltBedingung } from "./jokerBasis";
 import { sanitizeTippEinfluss, mischeRaster } from "./tippEinfluss";
 
+// ── 🔴 Was dieser Simulator NICHT rechnet ───────────────────
+//
+//  Gemessen am 07.08.2026, und der Befund ist schärfer als „ein paar neue
+//  Ebenen fehlen": **dieser Simulator hat eine ZWEITE FASSUNG der
+//  Ranglisten-Kette, und die ist von der echten abgewandert.**
+//
+//  `scoreLeaderboardHistory` (engine.js) rechnet vier Schritte:
+//    roh → applyEreignisWirkungen → applyDuellJoker → applySaisonform → applyCatchup
+//  Dieser Simulator baut den Verlauf selbst und rechnet zwei davon:
+//    verlauf → applySaisonform → applyCatchup
+//
+//  Der Kommentar weiter unten sagt sogar „Reihenfolge wie in
+//  `scoreLeaderboardHistory`" — er stimmt für das ENDE der Kette und
+//  verschweigt den Anfang. Genau die Sorte zweite Wahrheit, an der dieses
+//  Projekt `saisonBoard.js` schon einmal auseinandergezogen hat.
+//
+//  Dazu die Ebenen, die der STORE draufrechnet und die es hier gar nicht
+//  gibt: Drehrad, Saison-Wetten, Versäumnis-Ersatztipps.
+//
+//  ⚠️ **Warum das nicht nur eine Lücke, sondern ein Schaden ist:** die Ampel
+//  in der Spielerstellung sagt „Ausgewogen", auch wenn ein Jackpot auf dem
+//  Dreifachen steht und Duelle laufen. Sie hat davon nichts gesehen. Ein
+//  grünes Licht, das nichts bedeutet, ist schlimmer als gar keins — deshalb
+//  BENENNT `unvermesseneEbenen()` die Lücke, solange sie besteht, statt sie
+//  stillschweigend als Urteil auszugeben.
+//
+//  Wer eine dieser Ebenen an den Simulator anschließt, streicht sie HIER —
+//  dann wird aus dem Teilbefund wieder ein Urteil.
+export const NICHT_SIMULIERT = [
+  {
+    feld: "ereignisse", label: "Ereignisse",
+    was: "erspielte Joker, Punkte-Gutschriften, Auf- und Abschläge",
+    aktiv: (r) => r?.ereignisse?.enabled === true,
+  },
+  {
+    feld: "duell", label: "Duell-Joker",
+    was: "Klau und Block zwischen Mitspielern",
+    aktiv: (r) => r?.duell?.enabled === true,
+  },
+  {
+    feld: "drehrad", label: "Drehrad",
+    was: "die Ziehung je Spieltag",
+    aktiv: (r) => r?.drehrad?.enabled === true,
+  },
+  {
+    feld: "saison", label: "Saison-Wetten",
+    was: "die Langzeit-Ebene neben den Spieltagen",
+    aktiv: (r) => r?.saison?.enabled === true,
+  },
+  {
+    feld: "versaeumnis", label: "Versäumnis",
+    was: "Ersatz-Tipps für vergessene Spieltage",
+    aktiv: (r) => r?.versaeumnis?.enabled === true,
+  },
+];
+
+// Welche unsimulierten Ebenen sind in DIESEM Regelwerk eingeschaltet?
+// Leer = die Simulation hat alles gesehen, was aktiv ist.
+export function unvermesseneEbenen(rules) {
+  return NICHT_SIMULIERT.filter((e) => e.aktiv(rules))
+    .map(({ feld, label, was }) => ({ feld, label, was }));
+}
+
+// ── Ein Urteil, das seine eigenen Grenzen kennt ─────────────
+// 🔴 Warum das NICHT in `bewerten()` steckt: dort gehören Aussagen über
+// gemessene Zahlen hin. Dies hier ist eine Aussage über die MESSUNG SELBST,
+// und die beiden dürfen sich nicht vermischen — `presets.balance.test.js`
+// misst `bewerten()` und soll weiter genau das messen.
+//
+// Die Regel dahinter, und sie ist keine Geschmacksfrage:
+//  - Ein GRÜN, das aktive Ebenen nicht gesehen hat, ist keine abgeschwächte
+//    Entwarnung, sondern gar keine. Es wird zu „unbekannt".
+//  - Ein GELB oder ROT bleibt stehen. Der gemessene Teil ist auffällig, und
+//    daran ändert eine ungesehene Ebene nichts — sie kann es nur schlimmer
+//    machen. Eine Warnung wegen Unwissen zurückzunehmen wäre der Fehler in
+//    die andere Richtung.
+export function ampelMitLuecken(ampel, luecken = []) {
+  if (!luecken.length) return ampel;
+  const namen = luecken.map((l) => l.label).join(", ");
+  if (ampel.stufe !== "gruen") {
+    return { ...ampel, luecken, text: `${ampel.text} Nicht mitgerechnet: ${namen}.` };
+  }
+  return {
+    stufe: "unbekannt", luecken,
+    titel: "Nur teilweise vermessen",
+    text: `Was die Simulation gesehen hat, ist ausgewogen — aber ${namen} rechnet sie `
+      + "nicht mit. Für diese Runde gibt es deshalb kein Urteil, nur einen Teilbefund.",
+  };
+}
+
 // Kleiner, schneller Zufallsgenerator mit Seed (mulberry32) — reproduzierbar.
 function rng(seed) {
   let a = seed >>> 0;
@@ -589,6 +679,9 @@ export function simulateBalance(rules, {
   // Kosmetik im Mittelfeld), hoch = gutes Tippen wird entwertet.
   const aufholFlipQuote = aufholenAktiv ? +(aufholFlips / seasons).toFixed(3) : 0;
 
+  // Welche eingeschalteten Ebenen hat dieser Durchlauf gar nicht angefasst?
+  const unvermessen = unvermesseneEbenen(rules);
+
   return {
     profile,
     gewinner: gewinner.key,
@@ -598,14 +691,20 @@ export function simulateBalance(rules, {
     modifikatorAnteil: +modifikatorAnteil.toFixed(3),
     aufholFlipQuote,
     maximalfall,
-    ampel: bewerten({
+    // 🔴 Die Ampel weiß jetzt, was sie NICHT gesehen hat. `bewerten()` bleibt
+    // die reine Zahl-zu-Urteil-Funktion; `ampelMitLuecken` legt darüber, was
+    // die Messung selbst nicht abdeckt. Vorher stand hier ein „Ausgewogen"
+    // auch für Regelwerke mit Duellen, Drehrad und Ereignissen — von denen
+    // dieser Simulator kein einziges rechnet.
+    ampel: ampelMitLuecken(bewerten({
       gewinner: gewinner.key,
       kennerQuote: profile[iKenner].siegquote,
       zockerQuote,
       favoritQuote: profile[iFavorit].siegquote,
       modifikatorAnteil,
       aufholFlipQuote,
-    }),
+    }), unvermessen),
+    unvermessen,
   };
 }
 

@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { simulateBalance, bewerten, formFaktor, PROFILE } from "./balanceSim";
+import { simulateBalance, bewerten, formFaktor, PROFILE, NICHT_SIMULIERT, unvermesseneEbenen, ampelMitLuecken } from "./balanceSim";
 import { DEFAULT_RULES, sanitizeRules } from "./engine";
 import { PRESETS } from "./presets";
+import { CHARAKTERE } from "./charaktere";
 
 // Klein halten, damit die Tests flott bleiben — die Aussagen sind dieselben.
 const KLEIN = { seasons: 25, matchdays: 9, perMatchday: 9, seed: 7 };
@@ -373,5 +374,85 @@ describe("Joker-Grundform — wird sie überhaupt gemessen? (Blindstellen-Regres
     const nurHinten = mit({ wer: "abRueckstand", werWert: 200 }).modifikatorAnteil;
     expect(nurHinten).toBeLessThan(alle);
     expect(nurHinten).toBeGreaterThan(0);
+  });
+});
+
+// ── 🔴 Was der Simulator NICHT sieht — und dass er es zugibt ──
+//
+// Gemessen am 07.08.2026: dieser Simulator rechnet zwei der vier Schritte, die
+// `scoreLeaderboardHistory` rechnet (`applySaisonform`, `applyCatchup`) — die
+// Ereignis-Wirkungen und der Duell-Joker fehlen, dazu die Store-Ebenen
+// (Drehrad, Saison-Wetten, Versäumnis). Solange das so ist, darf die Ampel für
+// ein Regelwerk mit diesen Ebenen kein „Ausgewogen" behaupten.
+//
+// ⚠️ Diese Tests halten eine LÜCKE fest, keine Eigenschaft. Wer eine Ebene
+// anschließt, streicht sie aus `NICHT_SIMULIERT` — dann schlagen sie an, und
+// das ist richtig so.
+describe("Der Simulator kennt seine eigenen Grenzen", () => {
+  const mit = (teil) => sanitizeRules({ ...DEFAULT_RULES, ...teil });
+
+  it("meldet nur, was auch EINGESCHALTET ist", () => {
+    expect(unvermesseneEbenen(sanitizeRules(DEFAULT_RULES))).toEqual([]);
+    const r = mit({ duell: { ...DEFAULT_RULES.duell, enabled: true, typen: ["klau"] } });
+    expect(unvermesseneEbenen(r).map((e) => e.feld)).toEqual(["duell"]);
+  });
+
+  it("jeder Eintrag nennt sich selbst im Klartext", () => {
+    for (const e of NICHT_SIMULIERT) {
+      expect(e.feld && e.label && e.was).toBeTruthy();
+      expect(typeof e.aktiv).toBe("function");
+    }
+    expect(new Set(NICHT_SIMULIERT.map((e) => e.feld)).size).toBe(NICHT_SIMULIERT.length);
+  });
+
+  // 🔴 Die Regel, um die es geht: ein Grün, das Ebenen übergangen hat, ist
+  // keine abgeschwächte Entwarnung — es ist gar keine.
+  it("aus einem übergangenen Grün wird „unbekannt“, aus Gelb/Rot nicht", () => {
+    const luecken = [{ feld: "duell", label: "Duell-Joker", was: "…" }];
+    const gruen = { stufe: "gruen", titel: "Ausgewogen", text: "alles gut" };
+    const rot = { stufe: "rot", titel: "Glück schlägt Können", text: "Zocker gewinnt." };
+
+    expect(ampelMitLuecken(gruen, luecken).stufe).toBe("unbekannt");
+    // Eine Warnung wegen Unwissen zurückzunehmen wäre der Fehler in die
+    // andere Richtung: der gemessene Teil ist ja auffällig.
+    expect(ampelMitLuecken(rot, luecken).stufe).toBe("rot");
+    expect(ampelMitLuecken(rot, luecken).text).toContain("Duell-Joker");
+    // Ohne Lücken bleibt alles, wie es war.
+    expect(ampelMitLuecken(gruen, [])).toBe(gruen);
+  });
+
+  it("die Simulation reicht die Lücken mit heraus", () => {
+    const r = mit({ ereignisse: { enabled: true, maxErspielt: 5, aktive: [{ key: "serie", anzahl: 3, belohnung: 1 }] } });
+    const sim = simulateBalance(r, { seasons: 6, matchdays: 6, perMatchday: 9, seed: 3 });
+    expect(sim.unvermessen.map((e) => e.feld)).toContain("ereignisse");
+    expect(sim.ampel.stufe).not.toBe("gruen");
+  });
+
+  // 🔴 Der Fund, der diese Runde ausgelöst hat: die sechs vermessenen PRESETS
+  // sind sauber — aber alle fünf RUNDEN-CHARAKTERE (Stufe 1, das was jemand
+  // ohne Vorwissen wählt) tragen unvermessene Ebenen. Vier von fünf standen
+  // vorher auf „Ausgewogen". Ausgerechnet die, die dem grünen Licht am
+  // ehesten glauben, bekamen das bedeutungsloseste.
+  it("kein Charakter bekommt ein Urteil über etwas, das nicht gerechnet wurde", () => {
+    let mitLuecken = 0;
+    for (const c of CHARAKTERE) {
+      const r = sanitizeRules({ ...DEFAULT_RULES, ...c.rules });
+      const luecken = unvermesseneEbenen(r);
+      if (!luecken.length) continue;
+      mitLuecken++;
+      const sim = simulateBalance(r, { seasons: 6, matchdays: 6, perMatchday: 9, seed: 5 });
+      expect(sim.ampel.stufe).not.toBe("gruen");
+    }
+    // Gegenprobe: fände der Test keinen einzigen Charakter mit Lücken, prüfte
+    // die Schleife oben nichts — und meldete trotzdem Ruhe.
+    expect(mitLuecken).toBeGreaterThan(0);
+  });
+
+  // Die andere Richtung, damit die Ampel nicht einfach pauschal verstummt:
+  // die vermessenen Presets müssen ihr Urteil behalten.
+  it("die vermessenen Presets behalten ihr Urteil", () => {
+    for (const p of PRESETS) {
+      expect(unvermesseneEbenen(sanitizeRules({ ...DEFAULT_RULES, ...p.rules }))).toEqual([]);
+    }
   });
 });

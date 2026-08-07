@@ -66,6 +66,11 @@ export const AMPEL = {
   gruen: COLORS.mint,
   gelb: COLORS.gold,
   rot: COLORS.coral,
+  // 🔴 Die vierte Stufe, und sie ist kein Ton zwischen grün und gelb, sondern
+  // das FEHLEN einer Aussage: „ich habe nicht alles angeschaut". Bewusst
+  // unbunt — eine Ampel, die bei fehlendem Wissen eine Farbe zeigt, wird als
+  // abgeschwächtes Urteil gelesen. Es ist aber gar keins.
+  unbekannt: COLORS.muted,
 };
 
 // ============================================================

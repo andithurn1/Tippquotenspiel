@@ -198,14 +198,44 @@ Kopfkommentar. Live schreibt der Client direkt in `tips`; wer den Store-Aufruf
 umgeht, kommt weiterhin durch. Das braucht Policies/Trigger in `schema.sql`,
 und danach muss der Nutzer sie ausführen (Push-Regel 3).
 
-**3. Balance — und die eine Frage, die vorher zu klären ist.**
-🔴 **Gemessen am 07.08.2026: `balanceSim.js` sieht KEINE der neuen Ebenen.**
-Null Verweise auf `ereignisse`, `geltung`, `ausloeser`, `auswahl`, `drehrad`
-und den Duell-Joker (die zwei „duell"-Treffer im Text sind
-„Traditionsduelle"). Der Befund stand seit dem 31.07. im Claim-Board und ist
-seitdem um zwei Ebenen größer geworden. **Solange das so ist, misst jede
-Balance-Aussage über diese Ebenen nichts.** Das ist der Vorschritt, nicht die
-Gewichtung.
+**3. Balance — der Vorschritt ist benannt und halb gemacht.**
+
+🔴 **Nachgemessen am 07.08.2026, und der Befund ist schärfer als „ein paar
+Ebenen fehlen": der Simulator hat eine ZWEITE FASSUNG der Ranglisten-Kette,
+und die ist abgewandert.**
+
+```
+scoreLeaderboardHistory:  roh → Ereignis-Wirkungen → Duell-Joker → Saisonform → Aufholen
+balanceSim.js:            verlauf →                                Saisonform → Aufholen
+```
+
+Der Kommentar im Simulator sagt sogar „Reihenfolge wie in
+`scoreLeaderboardHistory`" — er stimmt für das ENDE der Kette und verschweigt
+den Anfang. Dazu fehlen die Store-Ebenen ganz: Drehrad, Saison-Wetten,
+Versäumnis-Ersatztipps.
+
+**Der Schaden war nicht die fehlende Zahl, sondern das falsche Grün.** Die
+Ampel in der Spielerstellung sagte „Ausgewogen", während ein Jackpot auf dem
+Dreifachen stand und Duelle liefen — sie hatte davon nichts gesehen. Gemessen:
+die sechs vermessenen PRESETS sind sauber, aber **alle fünf RUNDEN-CHARAKTERE
+(Stufe 1!) tragen unvermessene Ebenen, vier davon standen auf „Ausgewogen"**.
+Ausgerechnet die, die dem grünen Licht am ehesten glauben, bekamen das
+bedeutungsloseste.
+
+✅ **Behoben ist die Ehrlichkeit** (Commit `<dieser>`): `NICHT_SIMULIERT` +
+`unvermesseneEbenen()` in `balanceSim.js`, vierte Ampelstufe `unbekannt`
+(unbunt, offener Kreis — eine Ampel, die nicht alles gesehen hat, leuchtet
+nicht), und die Ampel benennt die übergangenen Ebenen im Klartext. Ein GELB
+oder ROT bleibt dabei stehen: eine Warnung wegen Unwissen zurückzunehmen wäre
+der Fehler in die andere Richtung.
+
+⛔ **Offen ist die Messung selbst.** Die eigentliche Aufgabe: den Simulator die
+Ebenen wirklich rechnen lassen. Der natürliche Weg ist NICHT, die fehlenden
+zwei Schritte im Simulator nachzubauen — dann stünde die zweite Fassung nur
+vollständiger da und wanderte beim nächsten Mal wieder ab. Der Weg ist, den
+Simulator dieselbe Kette benutzen zu lassen wie die Wertung. **Wer eine Ebene
+anschließt, streicht sie aus `NICHT_SIMULIERT`** — dann wird aus dem
+Teilbefund wieder ein Urteil, und ein Test wacht darüber.
 
 **4. Erst danach die Gewichtung.** Ausdrückliche Nutzer-Entscheidung vom
 05.08.: zuletzt, bewusst grob (2 %/5 %-Schritte), mit Beispielwerten je

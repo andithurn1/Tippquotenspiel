@@ -56,6 +56,18 @@ const GEDULDET = {
     "Bequemer Weg zu „was ist JETZT tippbar\". Die Spielwahl baut ihre Liste "
     + "selbst, weil sie zusätzlich nach Regelwerk je Spiel gruppiert. Beide "
     + "gehen über `tippStatus`, also eine Rechnung.",
+
+  // ── Am 07.08.2026 geprüft und stehen gelassen ─────────────
+  // Beide werden INNERHALB von `balanceSim.js` aufgerufen (`simulateBalance`
+  // benutzt sie) — dieselbe Datei sieht diese Textsuche bauartbedingt nicht.
+  // Exportiert sind sie, weil der Test die Lücken-Logik einzeln prüfen muss:
+  // sie über `simulateBalance` zu messen hieße, ein ganzes Monte-Carlo laufen
+  // zu lassen, um eine Fallunterscheidung zu prüfen.
+  unvermesseneEbenen:
+    "Wird in `simulateBalance` (dieselbe Datei) aufgerufen; der Export ist für "
+    + "den Test der Lücken-Logik da.",
+  ampelMitLuecken:
+    "Dito — legt über `bewerten()`, was die Messung selbst nicht abdeckt.",
 };
 
 const LIB = "src/lib";

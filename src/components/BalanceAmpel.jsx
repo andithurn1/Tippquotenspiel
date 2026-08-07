@@ -6,7 +6,9 @@ import { C, MONO, AMPEL } from "@/lib/theme";
 
 
 const FARBE = { gruen: C.mint, gelb: C.gold, rot: C.coral };
-const SYMBOL = { gruen: "●", gelb: "●", rot: "●" };
+// „unbekannt" bekommt bewusst KEINEN gefüllten Punkt: eine Ampel, die nicht
+// alles gesehen hat, leuchtet nicht — sie hält sich zurück.
+const SYMBOL = { gruen: "●", gelb: "●", rot: "●", unbekannt: "○" };
 
 // Etwas kleiner als der Default, damit es beim Schieben der Regler flüssig
 // bleibt — die Aussage ändert sich dadurch nicht.
@@ -50,6 +52,30 @@ export default function BalanceAmpel({ rules }) {
           wert={String(sim.maximalfall)}
           hint="Höchste realistisch erreichbare Punktzahl in einem Spiel, mit vollem Modifikator." />
       </div>
+
+      {/* 🔴 Was die Simulation NICHT gerechnet hat, steht bei ihr — nicht in
+          einer Datei, die niemand liest. Ohne diesen Block sagte die Ampel
+          „Ausgewogen", während ein Jackpot auf dem Dreifachen stand und
+          Duelle liefen; sie hatte davon nur nichts gesehen. Ein grünes Licht,
+          das nichts bedeutet, ist schlimmer als gar keins.
+          Verschwindet von selbst, sobald eine Ebene angeschlossen wird —
+          die Liste steht in `NICHT_SIMULIERT` (balanceSim.js). */}
+      {sim.unvermessen.length > 0 && (
+        <div style={{
+          marginTop: 10, paddingTop: 9, borderTop: `1px solid ${C.line}`,
+          fontSize: 10.5, color: C.muted, lineHeight: 1.5,
+        }}>
+          <strong style={{ color: C.text }}>Nicht mitgerechnet:</strong>{" "}
+          {sim.unvermessen.map((e, i) => (
+            <span key={e.feld}>
+              {i > 0 && " · "}
+              <span style={{ color: C.text }}>{e.label}</span> ({e.was})
+            </span>
+          ))}
+          . Diese Ebenen vergeben Punkte neben der Tipp-Wertung; der Simulator
+          kennt sie noch nicht. Für sie gilt hier keine Aussage.
+        </div>
+      )}
 
       <p style={{ fontSize: 10, color: C.muted, margin: "9px 0 0", lineHeight: 1.4, opacity: 0.8 }}>
         Simuliert {LIVE.seasons} Saisons: ein guter Tipper (tippt den wahrscheinlichsten Ausgang)
