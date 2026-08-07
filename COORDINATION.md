@@ -62,7 +62,8 @@ ausführen.
 | 1 (Andi) | ~~**Regel-Abstimmung & Verfassung** (`abstimmung-verfassung.md`)~~ — alle fünf Schritte der Spec; offen bleibt allein das Einhängen in die Wertung. ⚠️ Branch, nicht `main`. ⚠️ `schema.sql` muss der Nutzer ausführen. | fertig | 2026-08-05 |
 | 1 (Andi) | ~~**Münz-Takt** (`wettmodus.md` 3)~~ — `muenzTakt.js` + Verkabelung + alle drei Komplexitätsstufen, Build sauber. ⚠️ Liegt auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** auf `main`. | fertig | 2026-08-04 |
 | 2 (Andre) | ~~Joker-Baukasten: zehn Module + fünf Oberflächen-Bausteine~~ — alles auf `main`, 1472 Tests grün | fertig | 2026-08-02 |
-| 2 (Andre) | **NÄCHSTE AUFGABE: Blindstellen-Durchgang `balanceSim.js`.** Sieht der Simulator die sechs neuen Ebenen? Nach Stand 31.07. nein — null Verweise. Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-31 |
+| 1 (Andi) | ~~**Regel-Grammatik: die WIE-LANGE-Achse** (`geltung.js`) + Ereignis-Bibliothek + Duell-Schutzregeln am Store (`duellPruefung.js`)~~ — 2157 Tests grün, alle Abnahmen ohne Befund. ⚠️ Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** `main`. | fertig | 2026-08-07 |
+| 2 (Andre) | **NÄCHSTE AUFGABE: Blindstellen-Durchgang `balanceSim.js`.** Sieht der Simulator die neuen Ebenen? **Am 07.08.2026 nachgemessen: weiterhin nein, null Verweise** — und inzwischen sind es acht statt sechs (`ereignisse`, `geltung`, `ausloeser`, `auswahl`, `drehrad`, Duell-Joker …). Details im obersten Log-Eintrag. | frei zu übernehmen | 2026-07-31 |
 | 2 (Andre) | ~~Joker-Ökonomie: sechs Module + Einhängen + Creator-Code~~ — alles auf `main`, 1359 Tests grün | fertig | 2026-07-31 |
 | 2 (Andre) | **Duell-Joker** (Klau + Block) — `design/duell-joker.md` (Spec, liegt), `src/lib/duellJoker.js` + Test, danach `engine.js` (additiv), `presetMerge.js`, `reglerWarnung.js`, neue Komponente `DuellJoker.jsx`, Einbau in `Spielerstellung.jsx`. Vom Nutzer am 31.07. ausdrücklich beauftragt. | läuft | 2026-07-31 |
 | 2 (Andre) | **Punkt 3 `saisonform` messbar** — Blindstellen-Befund steht (siehe Log oben), Umsetzung PAUSIERT zugunsten der Duell-Joker. `balanceSim.js` ist unberührt. | pausiert | 2026-07-31 |
@@ -122,6 +123,128 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-08-07 (V) · 🔴 **ÜBERGABE an das nächste Fenster** — die Grammatik steht, drei von vier Punkten sind ab
+
+> **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Alles darunter ist
+> Historie. Diese Nachricht ist selbsttragend — außer `CLAUDE.md` brauchst du
+> nichts zu lesen.
+
+#### Wo du landest
+
+```
+Branch   claude/koordinierte-arbeitsweise-fe6w1v   (gepusht, Stand 35fc125)
+Tests    2157 grün
+Build    sauber
+Abnahmen npm test · anzeige · greift · stufen · lint · tot — alle ohne Befund
+```
+
+Erster Schritt: `git fetch origin` + auf den Branch, dann **einmal alle
+Abnahmen laufen lassen**. Ist eine rot, hat die andere Session dazwischen
+gepusht — das ist dein Einstieg, nicht die Liste unten.
+
+⚠️ **`npm run lint` braucht auf diesem Rechner vorher ein `npm install`.**
+`eslint` kam mit `f97251e` als neue devDependency dazu und liegt in einem
+älteren Checkout nicht vor. Der erste Lauf meldet dann „Der Befehl eslint …
+konnte nicht gefunden werden" und sieht wie ein Code-Befund aus. Ist keiner.
+
+#### Was in dieser Sitzung dazugekommen ist (drei Commits)
+
+| Commit | Was |
+|---|---|
+| `7ed0c42` | **WIE-LANGE-Achse** (`geltung.js`) — die Regel-Grammatik ist vollständig |
+| `4f5ad1a` | **Ereignis-Bibliothek**: Pechvogel + Scharfschütze, zwei neue Ereignis-Typen |
+| `35fc125` | **Duell-Schutzregeln am Store** (`duellPruefung.js`) — der älteste offene Befund |
+
+Damit sind **Punkt 1, 2 und 3** der Übergabe vom 07.08. (IV) abgearbeitet.
+
+#### 🔴 Die vier Sätze, die diese Sitzung gekostet hat
+
+1. **Vier Achsen ergeben nicht automatisch jeden Satz.** Die letzte Übergabe
+   sagte, mit allen Achsen seien die Roadmap-Wünsche Einzeiler. Gemessen: vier
+   von sechs sind es. *Dreier-Wertung* braucht `bezug: "zeitraum"` in der
+   WEN-Achse, *Jokerjagd* die Wirkung `sonderspiel` (nicht auswertbar). Beides
+   steht mit Begründung in der Roadmap-Tabelle der Grammatik.
+2. **`Number(null) === 0` — zum dritten Mal in diesem Projekt**, diesmal in
+   meiner eigenen Vorschau-Funktion, zwei Funktionen unter dem Kommentar, der
+   genau davor warnt. Der Vorgabe-Spieltag wurde 0, und `geltungsfenster` gab
+   für JEDE Geltung `null` zurück. Der Test hat es gefunden, nicht das Lesen.
+3. **Ein Messfall, der über die falsche Größe misst, ist ein totes Tor.**
+   „Nächster Spieltag" gilt genau einen Spieltag lang — „sofort" auch. Über die
+   ANZAHL gemessen wäre die Zeile in `greift` Teil 4 stumm geblieben, obwohl
+   die Achse sauber verschiebt. Gezählt wird deshalb, WELCHER Spieltag es ist.
+4. **Ein Test, der von einer Auslosung abhängt, ist kein Test.** Der erste
+   Duell-Testaufbau suchte den Duell-Spieltag unter den 60 getippten Spielen;
+   der Plan verteilt sechs über 42, und die Runden-Id wechselt je Lauf. Grün
+   oder rot je nach Zufall. Jetzt über ALLE Spiele der Runde, fünf Läufe
+   hintereinander grün.
+
+#### ▶️ Was als Nächstes ansteht (in dieser Reihenfolge)
+
+**1. Die zwei fehlenden Vokabeln der Grammatik.** Beide sind benannt und
+klein umrissen:
+- **`bezug: "zeitraum"`** durchreichen. `auswahl.js` kennt ihn schon,
+  `ereignisse.js` gibt fest `bezug: "spieltag"` hinein. Es fehlt die Stelle,
+  die den Stand über einen BLOCK von Spieltagen aufsummiert. Damit wird aus
+  der Dreier-Wertung ein Einzeiler.
+  ⚠️ Nicht als „der Beste des dritten Spieltags" abkürzen — anderer Anreiz,
+  gleiche Oberfläche, die teuerste Sorte Näherung.
+- **`sonderspiel`** ist Infrastruktur, kein Vokabular. Die Geltung dafür
+  (`fenster(3)`) liegt bereit. Gehört zu Quiz und Duell in denselben Topf.
+
+**2. Der RLS-Durchgang in der DATENBANK.** `duellPruefung.js` schließt die
+Lücke in unserem eigenen Code — mehr nicht, und das steht so auch im
+Kopfkommentar. Live schreibt der Client direkt in `tips`; wer den Store-Aufruf
+umgeht, kommt weiterhin durch. Das braucht Policies/Trigger in `schema.sql`,
+und danach muss der Nutzer sie ausführen (Push-Regel 3).
+
+**3. Balance — und die eine Frage, die vorher zu klären ist.**
+🔴 **Gemessen am 07.08.2026: `balanceSim.js` sieht KEINE der neuen Ebenen.**
+Null Verweise auf `ereignisse`, `geltung`, `ausloeser`, `auswahl`, `drehrad`
+und den Duell-Joker (die zwei „duell"-Treffer im Text sind
+„Traditionsduelle"). Der Befund stand seit dem 31.07. im Claim-Board und ist
+seitdem um zwei Ebenen größer geworden. **Solange das so ist, misst jede
+Balance-Aussage über diese Ebenen nichts.** Das ist der Vorschritt, nicht die
+Gewichtung.
+
+**4. Erst danach die Gewichtung.** Ausdrückliche Nutzer-Entscheidung vom
+05.08.: zuletzt, bewusst grob (2 %/5 %-Schritte), mit Beispielwerten je
+Admin-Einstellung.
+
+⛔ **Nicht anfangen:** Symbolsystem, Animationen, Andis eigene Joker-Designs.
+Ausdrücklich zurückgestellt.
+
+#### ⚠️ Drei Dinge, die du beim Bauen mitziehen musst
+
+- **`LISTEN_FELDER` in `stufenAbdeckung.js`** (unverändert wichtig). Wer eine
+  Einstellung in einen LISTEN-Eintrag legt, trägt ihren Namen dort ein — sonst
+  meldet `stufen` Teil 2 grün für etwas, das es nie angeschaut hat. `geltung`
+  steht jetzt drin.
+- **Der Topf-Vertrag der Geltung:** über ein Fenster läuft nur ein FAKTOR. Eine
+  feste Gutschrift wird EINMAL gezahlt, am Beginn — sonst wäre das Fenster eine
+  Multiplikation und damit der eine Punkte-Kanal, den `wirkung.js` ausschließt.
+  `wirkSpieltage()` rechnet das an einer Stelle aus.
+- **Der Jackpot ist eine Aussage über die RUNDE, nicht über einen Spieler.**
+  `jackpotLage()` läuft einmal über alle Mitspieler und wird von `auswerten`
+  hereingereicht. Wer einen neuen Aufrufer baut, gibt sie mit — sonst wächst
+  der Topf aus der Sicht eines einzelnen, und bei „der Letzte des Spieltags"
+  würde daraus still eine Verdreifachung für den, der selten hinten steht.
+
+#### Kleiner offener Punkt (kein Blocker)
+
+`EREIGNIS_PRESET` in `ereignisse.js` (die Map neben `EREIGNIS_PRESETS`) hat
+laut `npm run tot` **keinen Aufrufer** — schon vor dieser Sitzung. Anschließen,
+löschen oder in `GEDULDET` begründen. Bewusst nicht stillschweigend gelöscht,
+falls die andere Session sie in Arbeit hat.
+
+#### Die Arbeitsweise, die Andi will (unverändert)
+
+Wenig Rückfragen, Entscheidungen aus Roadmap/Kanal/Code ableiten, Commit + Push
+nach jedem abgeschlossenen Schritt ohne zu fragen, Befunde ins Repo statt in den
+Chat. Und: **erst messen, dann melden.**
+
+---
+
 
 ### 2026-08-07 (IV) · 🔴 **ÜBERGABE an das nächste Fenster** — drei Achsen der Grammatik stehen
 
