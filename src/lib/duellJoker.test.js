@@ -258,6 +258,122 @@ describe("zulaessigeZiele — maxProZiel und immun", () => {
   });
 });
 
+// ── konter ──────────────────────────────────────────────────
+// 🔴 `konter` stand bis 06.08.2026 im Regelwerk, wurde gesäubert, reiste im
+// Creator-Code mit — und keine Zeile fragte es ab. Diese Tests halten die
+// Bedeutung fest, nicht nur die Wirkung: der Konter ist eine Ausnahme von der
+// ZIELWAHL, nicht von den Schutzregeln.
+describe("zulaessigeZiele — konter", () => {
+  const board = [
+    { userId: "c", name: "C", total: 100 },
+    { userId: "b", name: "B", total: 50 },
+    { userId: "a", name: "A", total: 20 },
+  ];
+  // „nur nach vorne": a darf normalerweise nur b und c treffen — und wird
+  // von c getroffen. Ohne Ausnahme kann b, den a nicht treffen darf, nie
+  // gekontert werden.
+  const getroffenVon = (von, spieltag = 7) => [
+    { spieltag, vonUserId: von, aufUserId: "a", typ: "klau" },
+  ];
+
+  it("aus ist die Vorgabe: ein Treffer ändert nichts an der Zielwahl", () => {
+    const cfg = { ...DEFAULT_DUELL, zielWahl: "nurVorne", konter: false, immun: 0 };
+    const ziele = zulaessigeZiele(board, "a", cfg, {
+      bisherigeEinsaetze: getroffenVon("b"), aktuellerSpieltag: 7,
+    });
+    expect(ziele.sort()).toEqual(["b", "c"]);
+  });
+
+  it("der Fall, für den es `konter` gibt: ein Angreifer HINTER mir", () => {
+    // Im Test darüber steht b VOR a und ist ohnehin ein erlaubtes Ziel — dort
+    // zeigt `konter` gar nichts. Erst hier wird die Zielwahl gebrochen, und
+    // genau darin liegt der Sinn: bei „nur nach vorne" steht der Angreifer
+    // per Definition hinter dem Getroffenen.
+    const board2 = [
+      { userId: "a", name: "A", total: 100 },
+      { userId: "b", name: "B", total: 50 },
+    ];
+    const aus = { ...DEFAULT_DUELL, zielWahl: "nurVorne", konter: false, immun: 0 };
+    const an = { ...aus, konter: true };
+    const args = { bisherigeEinsaetze: getroffenVon("b"), aktuellerSpieltag: 7 };
+    expect(zulaessigeZiele(board2, "a", aus, args)).toEqual([]);
+    expect(zulaessigeZiele(board2, "a", an, args)).toEqual(["b"]);
+  });
+
+  it("nur DERSELBE Spieltag zählt", () => {
+    const board2 = [
+      { userId: "a", name: "A", total: 100 },
+      { userId: "b", name: "B", total: 50 },
+    ];
+    const an = { ...DEFAULT_DUELL, zielWahl: "nurVorne", konter: true, immun: 0 };
+    expect(zulaessigeZiele(board2, "a", an, {
+      bisherigeEinsaetze: getroffenVon("b", 6), aktuellerSpieltag: 7,
+    })).toEqual([]);
+  });
+
+  it("nur der ANGREIFER, nicht jemand Drittes", () => {
+    const board2 = [
+      { userId: "a", name: "A", total: 100 },
+      { userId: "b", name: "B", total: 50 },
+      { userId: "d", name: "D", total: 30 },
+    ];
+    const an = { ...DEFAULT_DUELL, zielWahl: "nurVorne", konter: true, immun: 0 };
+    expect(zulaessigeZiele(board2, "a", an, {
+      bisherigeEinsaetze: getroffenVon("b"), aktuellerSpieltag: 7,
+    })).toEqual(["b"]);
+  });
+
+  it("auch bei „nur Top 3“ und „nicht den Letzten“", () => {
+    const gross = [1, 2, 3, 4, 5].map((i) => ({ userId: `p${i}`, name: `P${i}`, total: 100 - i * 10 }));
+    const einsaetze = [{ spieltag: 7, vonUserId: "p5", aufUserId: "p4", typ: "klau" }];
+    const args = { bisherigeEinsaetze: einsaetze, aktuellerSpieltag: 7 };
+
+    const top3Aus = { ...DEFAULT_DUELL, zielWahl: "nurTop3", konter: false, immun: 0 };
+    expect(zulaessigeZiele(gross, "p4", top3Aus, args)).not.toContain("p5");
+    expect(zulaessigeZiele(gross, "p4", { ...top3Aus, konter: true }, args)).toContain("p5");
+
+    const letzterAus = { ...DEFAULT_DUELL, zielWahl: "nichtLetzter", konter: false, immun: 0 };
+    expect(zulaessigeZiele(gross, "p4", letzterAus, args)).not.toContain("p5");
+    expect(zulaessigeZiele(gross, "p4", { ...letzterAus, konter: true }, args)).toContain("p5");
+  });
+
+  // ⚠️ Der Punkt, an dem ein Konter sonst zum Freifahrtschein würde.
+  it("hebt maxProZiel NICHT auf", () => {
+    const board2 = [
+      { userId: "a", name: "A", total: 100 },
+      { userId: "b", name: "B", total: 50 },
+    ];
+    const an = { ...DEFAULT_DUELL, zielWahl: "nurVorne", konter: true, immun: 0, maxProZiel: 1 };
+    const bisherigeEinsaetze = [
+      { spieltag: 7, vonUserId: "b", aufUserId: "a", typ: "klau" },  // b trifft a
+      { spieltag: 3, vonUserId: "a", aufUserId: "b", typ: "klau" },  // a hat b schon einmal getroffen
+    ];
+    expect(zulaessigeZiele(board2, "a", an, { bisherigeEinsaetze, aktuellerSpieltag: 7 })).toEqual([]);
+  });
+
+  it("hebt immun NICHT auf", () => {
+    const board2 = [
+      { userId: "a", name: "A", total: 100 },
+      { userId: "b", name: "B", total: 50 },
+    ];
+    const an = { ...DEFAULT_DUELL, zielWahl: "nurVorne", konter: true, immun: 3, maxProZiel: 6 };
+    const bisherigeEinsaetze = [
+      { spieltag: 7, vonUserId: "b", aufUserId: "a", typ: "klau" },
+      { spieltag: 6, vonUserId: "a", aufUserId: "b", typ: "klau" },  // erst einen Spieltag her
+    ];
+    expect(zulaessigeZiele(board2, "a", an, { bisherigeEinsaetze, aktuellerSpieltag: 7 })).toEqual([]);
+  });
+
+  it("ohne `aktuellerSpieltag` gibt es keinen Konter", () => {
+    const board2 = [
+      { userId: "a", name: "A", total: 100 },
+      { userId: "b", name: "B", total: 50 },
+    ];
+    const an = { ...DEFAULT_DUELL, zielWahl: "nurVorne", konter: true, immun: 0 };
+    expect(zulaessigeZiele(board2, "a", an, { bisherigeEinsaetze: getroffenVon("b") })).toEqual([]);
+  });
+});
+
 // ── Pflichtfall 9 ───────────────────────────────────────────
 
 describe("fensterVon — alle Phasen bei 34 Spieltagen", () => {

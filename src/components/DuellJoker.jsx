@@ -95,6 +95,25 @@ export default function DuellJoker({ rules, onChange }) {
                 alle auf den Führenden. „Nur nach vorne“ ist die direkte Antwort darauf.
               </div>
             )}
+
+            {/* Der Konter steht bewusst HIER und nicht in einem eigenen Block:
+                er ist eine Ausnahme von genau dieser Einstellung. Bei „nur nach
+                vorne" steht der Angreifer per Definition hinter dem Getroffenen
+                — ohne die Ausnahme könnte der nie antworten, und der Schalter
+                wäre folgenlos. */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+              {knopf(!d.konter, "Kein Konter", () => setze({ konter: false }), "kt-aus",
+                "Ein Treffer ändert nichts an der Zielwahl.")}
+              {knopf(d.konter, "Konter erlaubt", () => setze({ konter: true }), "kt-an",
+                "Wer an diesem Spieltag getroffen wurde, darf seinen Angreifer zurückschlagen — auch entgegen der Zielwahl.")}
+            </div>
+            <div style={{ fontSize: 10.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+              {d.konter
+                ? (d.zielWahl === "frei"
+                    ? "Bei freier Zielwahl ändert der Konter wenig — jeder darf ohnehin jeden treffen."
+                    : "Wer an diesem Spieltag getroffen wurde, darf seinen Angreifer zurückschlagen, auch wenn die Zielwahl ihn sonst ausschließt. Schonfrist und „max. je Ziel“ gelten weiter.")
+                : "Getroffen zu werden gibt kein Rückschlagrecht. Ruhiger, aber bei „nur nach vorne“ kann der Getroffene nie antworten."}
+            </div>
           </Block>
 
           <Block titel="Schutz der Getroffenen"
@@ -104,6 +123,24 @@ export default function DuellJoker({ rules, onChange }) {
                 breite={110} onChange={(v) => setze({ maxProZiel: v })} />
               <Zahl label="Schonfrist (Spieltage)" wert={d.immun} limits={DUELL_LIMITS.immun}
                 breite={130} onChange={(v) => setze({ immun: v })} />
+            </div>
+          </Block>
+
+          {/* 🔴 Die stärkste Bremse des ganzen Bausteins — und bis 06.08.2026
+              eine reine Karteileiche: `kosten` stand im Regelwerk, wurde
+              gesäubert, reiste im Creator-Code mit, und keine Zeile fragte es
+              ab. Angeschlossen ist es jetzt in `jokerKontingent.js`
+              (`darfDuellSetzen`), weil „kostet einen Joker" eine Aussage über
+              den JOKER-VORRAT ist, nicht über die Duell-Wertung. */}
+          <Block titel="Was kostet ein Einsatz?"
+            hinweis={d.kosten === "stattJoker"
+              ? "Wer angreift, verzichtet auf die eigene Verstärkung an diesem Spieltag. Ohne freien Joker geht kein Einsatz — auch dann nicht, wenn das Duell-Kontingent noch etwas hergäbe."
+              : "Duell-Einsätze haben ihr eigenes Kontingent und lassen den Joker-Vorrat unberührt. Angreifen ist damit gratis."}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {knopf(d.kosten !== "stattJoker", "Nichts", () => setze({ kosten: "frei" }), "k-frei",
+                "Ein Duell-Einsatz kostet keinen Joker.")}
+              {knopf(d.kosten === "stattJoker", "Einen Joker", () => setze({ kosten: "stattJoker" }), "k-joker",
+                "Ein Duell-Einsatz verbraucht einen zugeteilten oder erspielten Joker.")}
             </div>
           </Block>
 
@@ -178,36 +215,6 @@ export default function DuellJoker({ rules, onChange }) {
               </div>
             </Block>
           )}
-
-          {/* 🔴 VORBEREITET, ABER NOCH NICHT WIRKSAM — gemessen am 06.08.2026.
-              `konter` und `kosten` stehen im Regelwerk, werden von
-              `sanitizeDuellJoker` gesäubert und reisen im Creator-Code mit,
-              aber KEINE Zeile im Projekt fragt sie ab. Ein Umschalter, der
-              nichts bewirkt, ist schlimmer als keiner — deshalb hier dieselbe
-              Form wie bei den Herausforderungen in `Ereignisse.jsx`: sichtbar,
-              damit man weiß was kommt, und ehrlich als „geht noch nicht"
-              ausgewiesen statt stillschweigend anklickbar. */}
-          <div style={{
-            border: `1px dashed ${C.line}`, borderRadius: 12,
-            padding: "10px 12px", marginTop: 14,
-          }}>
-            <div style={{
-              fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.2, color: C.muted,
-              textTransform: "uppercase", marginBottom: 5,
-            }}>Vorbereitet · wirkt noch nicht</div>
-            <div style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.5 }}>
-              <div>
-                <strong style={{ color: C.text }}>Kosten eines Einsatzes</strong> — ob ein
-                Angriff einen eigenen Joker verbraucht. Wäre die stärkste Bremse, die es
-                hier gäbe: wer angreift, verzichtet auf die eigene Verstärkung.
-              </div>
-              <div style={{ marginTop: 4 }}>
-                <strong style={{ color: C.text }}>Konter</strong> — ob der Getroffene im
-                selben Spieltag zurückschlagen darf. Lebhafter, kann sich aber zwischen
-                zwei Leuten festfahren.
-              </div>
-            </div>
-          </div>
 
           <p style={{
             fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.5,

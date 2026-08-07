@@ -345,17 +345,42 @@ export function zulaessigeZiele(board = [], userId, duell, { bisherigeEinsaetze 
   const sortiert = [...liste].sort((a, b) => b.total - a.total);
   const mich = sortiert.find((b) => b.userId === userId);
 
+  // 🔴 KONTER — bis 06.08.2026 stand `konter` im Regelwerk, wurde gesäubert,
+  // reiste im Creator-Code mit, und KEINE Zeile im Projekt fragte es ab
+  // (gefunden über `npm run stufen` Teil 2 und `npm run greift`).
+  //
+  // Bedeutung: wer an DIESEM Spieltag getroffen wurde, darf zurückschlagen —
+  // und zwar auch dann, wenn der Angreifer nach `zielWahl` eigentlich kein
+  // erlaubtes Ziel wäre. Genau darin liegt der Sinn: bei „nur nach vorne"
+  // kann der Getroffene sonst NIE antworten, weil sein Angreifer per
+  // Definition hinter ihm steht. Ohne diese Ausnahme wäre `konter` in der
+  // häufigsten Zielwahl folgenlos.
+  //
+  // ⚠️ Nur derselbe Spieltag, und nur der ANGREIFER. Ein Konter, der eine
+  // Woche später oder gegen jemand Drittes gilt, wäre ein zweiter freier
+  // Einsatz — und die Schutzregeln darunter (`maxProZiel`, `immun`) gelten
+  // für ihn weiter.
+  const konterZiele = new Set();
+  if (cfg.konter && aktuellerSpieltag != null) {
+    for (const e of Array.isArray(bisherigeEinsaetze) ? bisherigeEinsaetze : []) {
+      if (e.aufUserId === userId && e.spieltag === aktuellerSpieltag) konterZiele.add(e.vonUserId);
+    }
+  }
+
   let kandidaten = sortiert.filter((b) => b.userId !== userId);
 
+  // Der Konter ist eine AUSNAHME von der Zielwahl, nicht von den
+  // Schutzregeln — deshalb steht `konterZiele` nur in diesen drei Filtern.
+  const darf = (b) => konterZiele.has(b.userId);
   if (cfg.zielWahl === "nurVorne") {
     const meinTotal = mich?.total ?? -Infinity;
-    kandidaten = kandidaten.filter((b) => b.total > meinTotal);
+    kandidaten = kandidaten.filter((b) => b.total > meinTotal || darf(b));
   } else if (cfg.zielWahl === "nurTop3") {
     const top3 = new Set(sortiert.slice(0, 3).map((b) => b.userId));
-    kandidaten = kandidaten.filter((b) => top3.has(b.userId));
+    kandidaten = kandidaten.filter((b) => top3.has(b.userId) || darf(b));
   } else if (cfg.zielWahl === "nichtLetzter") {
     const letzterId = sortiert[sortiert.length - 1]?.userId;
-    kandidaten = kandidaten.filter((b) => b.userId !== letzterId);
+    kandidaten = kandidaten.filter((b) => b.userId !== letzterId || darf(b));
   }
   // "frei": keine weitere Einschränkung.
 

@@ -123,6 +123,93 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-07 · **`konter` + `kosten` angeschlossen — und `greift` bekommt einen TEIL 4**
+
+> **👉 Frische Session: das hier ist der Stand.** Branch
+> `claude/koordinierte-arbeitsweise-fe6w1v`, **2040 Tests grün**, Build sauber,
+> alle fünf Abnahmen (`anzeige` · `greift` · `stufen` · `lint` · `tot`) ohne
+> Befund.
+
+Die beiden letzten Karteileichen des Duell-Bausteins sind weg. Sie standen
+seit gestern in der Oberfläche als „vorbereitet · wirkt noch nicht" — jetzt
+haben sie echte Schalter.
+
+**`konter`** liegt in `zulaessigeZiele()` und ist eine Ausnahme von der
+**Zielwahl**, nicht von den Schutzregeln: wer an DIESEM Spieltag getroffen
+wurde, darf seinen Angreifer zurückschlagen, auch wenn `zielWahl` ihn sonst
+ausschließt. Ohne diese Ausnahme wäre der Schalter bei „nur nach vorne"
+(der Vorgabe!) folgenlos — der Angreifer steht dort per Definition hinter dem
+Getroffenen. `maxProZiel` und `immun` gelten weiter, je ein Test hält das fest.
+
+**`kosten: "stattJoker"`** liegt bewusst in `jokerKontingent.js` und NICHT im
+Duell-Modul: „kostet einen Joker" ist eine Aussage über den Joker-VORRAT. Im
+Duell-Modul gerechnet gäbe es zwei Buchführungen über denselben Topf — die
+zweite Wahrheit, vor der die Runden-Schicht warnt.
+
+#### 🔴 Der Fund beim Nachmessen — ein `Math.max(0, …)` als Deckmantel
+
+Angeschlossen, dann gemessen. Der Verbrauch stieg, der Vorrat nicht:
+
+```
+Duell AUSSERHALB des Plans      erspielt 1/0 · offen 5
+3 Duelle ausserhalb             erspielt 3/0 · offen 5
+```
+
+`erspieltOffen = Math.max(0, erspieltGesamt - verbraucht)`: der Topf war leer,
+drei Einsätze gingen trotzdem durch, und das `Math.max` machte aus der
+Überziehung wieder eine Null. **Die stärkste Bremse des Bausteins bremste
+messbar nichts** — obwohl die Zählung selbst stimmte und jeder Test grün war.
+
+`kontingent()` meldet die Überziehung jetzt als eigenes Feld (`ueberzogen`)
+statt sie wegzurechnen, und `darfDuellSetzen()` lehnt einen Einsatz ohne
+Deckung ab. **Verallgemeinert:** ein `Math.max(0, …)` ist immer eine Aussage
+(„weniger als leer gibt es nicht") und fast immer auch ein Deckmantel.
+
+#### 🔴 Wichtiger als die zwei Schalter: `npm run greift` hat jetzt einen TEIL 4
+
+Warum keine der bisherigen Abnahmen die beiden finden konnte: **sie bewegen
+keine Punkte.** Sie entscheiden, ob ein Einsatz überhaupt zustande kommt. In
+Teil 1 waren sie vom Block `duell` (3401 Punkte) mit abgedeckt und sahen
+dadurch gesund aus.
+
+Dieselbe Lage haben `budget`, `limitKlassen`, `jokerBasis` und `tippfenster` —
+und die standen in Teil 3 als BEGRÜNDUNG, warum sie nicht gemessen werden.
+An dieser Stelle ist eine Begründung nur ein anderes Wort für „ungemessen".
+
+**Teil 4 zählt erlaubte VORGÄNGE statt Punkte.** Erster Lauf, alle neun Tore
+öffnen und schließen:
+
+| Tor | Vorgabe → Extremwert | Einheit |
+|---|---|---|
+| `duell.zielWahl` | 20 → 10 | erlaubte Ziele über 5 Spieler |
+| `duell.konter` | 10 → 11 | dito |
+| `duell.kosten` | 20 → 5 | bezahlbare Spieltage von 20 |
+| `jokerBasis.wer` | 5 → 2 | berechtigte Spieler von 5 |
+| `limitKlassen` | 25 → 0 | durchgelassene Einsätze von 25 |
+| `budget` (Preise) | 5 → 3 | bezahlbare Joker-Arten von 5 |
+| `tippfenster` | 9 → 44 | tippbare Spiele von 341 |
+
+⚠️ **Und prompt die alte Falle im neuen Teil:** `limitKlassen` meldete beim
+ersten Lauf „bewegt nichts". Nicht das Tor war tot, sondern mein Messfall —
+`jokerArten`/`pro` statt `mitglieder`/`proZeitraum`, dazu `jokerArt: "joker"`
+statt `"joker.einzel"`. `sanitizeLimitKlassen` warf die Klasse still weg, und
+das Ergebnis sah aus wie ein Befund. Sperrklinke eingebaut, wie `kommtDurch`
+in Teil 1. **Zum dritten Mal an zwei Tagen dieselbe Lehre: eine Messung, die
+nicht prüft, ob sie etwas geprüft hat, meldet Ruhe statt Befunden.**
+
+**Wer eine Mechanik ergänzt, die eine ERLAUBNIS steuert statt Punkte, hängt
+sie in Teil 4 an — nicht in Teil 1.**
+
+#### Was weiterhin offen ist (unverändert)
+
+`zielWahl` · `maxProZiel` · `immun` **und jetzt auch `kosten`** werden im
+Screen geprüft; `saveTip` prüft nichts davon. Wer die Route direkt anspricht,
+trifft jeden, beliebig oft, umsonst. Der belastbare Ort ist die Server-Route
+(RLS-Durchgang) — anders als beim Saison-Fenster ist ein Store-Vorgriff hier
+nicht billig, weil die Prüfung den ganzen Tabellenstand braucht.
+
+---
+
 ### 2026-08-06 (III) · **Sechs tote Mechaniken, vier Abnahmen — `npm run tot` ist neu**
 
 > **👉 Frische Session: das hier ist der Stand.** Branch

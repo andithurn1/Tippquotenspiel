@@ -350,9 +350,8 @@ const OHNE_MESSFALL = {
     "Wird in TEIL 2 gemessen — die Ebene zahlt Gutschriften, keine Punkte, "
     + "und bewegt das Leaderboard deshalb bauartbedingt nicht.",
   tippfenster:
-    "Entscheidet, WELCHE Spiele tippbar sind, nicht was ein Tipp zählt. Die "
-    + "Wirkung ist in `tippfenster.test.js` gemessen (Anker `spieltag`: 3 von 3 "
-    + "Spielen offen statt 1).",
+    "Wird in TEIL 4 gemessen — entscheidet, WELCHE Spiele tippbar sind, nicht "
+    + "was ein Tipp zählt.",
   spiele:
     "Ändert die Menge der Spiele der Runde. Ein Leaderboard-Unterschied wäre "
     + "tautologisch (weniger Spiele = weniger Punkte) und sagt nichts darüber, "
@@ -362,11 +361,10 @@ const OHNE_MESSFALL = {
     + "Ihre einzige Wertungs-Berührung ist `rundenSchluessel`, und die wird in "
     + "Teil 2 gemessen (eine Liga 43 gegen zwei Ligen 43 Gutschriften).",
   budget:
-    "Begrenzt, wie viele Joker man EINSETZEN darf, nicht was einer zählt. Ohne "
-    + "eine Oberfläche, die Einsätze ablehnt, bewegt sich im Leaderboard nichts "
-    + "— dieselbe Lage wie bei den Duell-Schutzregeln (siehe Roadmap).",
-  limitKlassen: "Wie `budget`: eine Einsatz-Grenze, kein Punkte-Kanal.",
-  jokerBasis: "Wie `budget`: Form und Erlaubnis eines Jokers, nicht sein Wert.",
+    "Wird in TEIL 4 gemessen — begrenzt, wie viele Joker man EINSETZEN darf, "
+    + "nicht was einer zählt.",
+  limitKlassen: "Wird in TEIL 4 gemessen — eine Einsatz-Grenze, kein Punkte-Kanal.",
+  jokerBasis: "Wird in TEIL 4 gemessen — Erlaubnis eines Jokers, nicht sein Wert.",
   verfassung:
     "Regiert, WAS eine Runde beschließen darf. Ohne einen Antrag im Messfall "
     + "gibt es nichts zu regieren; geprüft in `regelAbstimmung.test.js`.",
@@ -397,5 +395,190 @@ if (unbegruendet.length) {
   console.log("     GAR NICHT da. Eine Liste, die schweigt, sieht aus wie eine ohne Befund.");
 } else {
   console.log("  ✅ Jeder Regel-Block hat einen Messfall oder eine Begründung.");
+}
+console.log();
+
+// ════════════════════════════════════════════════════════════
+//  TEIL 4 — Einstellungen, die keine PUNKTE bewegen, sondern eine ERLAUBNIS
+//
+//  🔴 Die zweite Lücke, die Teil 1 bauartbedingt nicht sehen kann — und die
+//  bis 06.08.2026 in Teil 3 als vier Begründungen stand statt als Messung:
+//  `budget`, `limitKlassen`, `jokerBasis`, `tippfenster` und die
+//  Duell-Schutzregeln bewegen das Leaderboard NIE. Sie entscheiden, ob ein
+//  Einsatz überhaupt zustande kommt. Wer nur Punkte misst, sieht bei ihnen
+//  immer dieselbe Zahl — und eine tote Einstellung sieht dann exakt aus wie
+//  eine, die sauber greift.
+//
+//  Genau dort saßen `duell.konter` und `duell.kosten`: beide standen im
+//  Regelwerk, wurden gesäubert, reisten im Creator-Code mit, waren in Teil 1
+//  vom Block `duell` (3401 Punkte) mit abgedeckt — und keine Zeile im Projekt
+//  fragte sie ab. Punkte zu messen konnte das nicht finden.
+//
+//  ── Was hier gezählt wird ──
+//  Nicht Punkte, sondern ERLAUBTE VORGÄNGE: wie viele Ziele darf ein Spieler
+//  treffen, an wie vielen Spieltagen ist ein Einsatz bezahlbar, wie viele
+//  Spiele sind tippbar. Vorgabe gegen Extremwert, wie oben. Ändert sich die
+//  Zahl nicht, ist das Tor nicht angeschlossen.
+//
+//  ⚠️ Eine Zahl, die STEIGT, ist genauso gut wie eine, die sinkt — `konter`
+//  öffnet, `immun` schließt. Gemessen wird der Unterschied, nicht die
+//  Richtung.
+// ════════════════════════════════════════════════════════════
+import { zulaessigeZiele, DEFAULT_DUELL } from "../src/lib/duellJoker.js";
+import { darfDuellSetzen } from "../src/lib/jokerKontingent.js";
+import { jokerPlan } from "../src/lib/jokerPlan.js";
+import { pruefeEinsatz, sanitizeLimitKlassen } from "../src/lib/limitKlassen.js";
+import { darfEinsetzen, DEFAULT_BASIS } from "../src/lib/jokerBasis.js";
+import { preisFuer, kannBezahlen, DEFAULT_BUDGET } from "../src/lib/jokerBudget.js";
+import { tippStatus } from "../src/lib/tippfenster.js";
+
+// Ein fester Stand, gegen den alle Tore gemessen werden: fünf Spieler mit
+// klarem Abstand, damit „nur nach vorne" und „nicht den Letzten" überhaupt
+// unterscheidbar sind.
+const GBOARD = [1, 2, 3, 4, 5].map((i) => ({
+  userId: `p${i}`, name: `P${i}`, total: 600 - i * 100,
+}));
+const GIDS = GBOARD.map((b) => b.userId);
+
+// Eine feste Vorgeschichte: p1 (Erster) wurde am Spieltag 8 von p5 (Letzter)
+// getroffen, und p2 hat p3 schon zweimal erwischt.
+const GHISTORIE = [
+  { spieltag: 8, vonUserId: "p5", aufUserId: "p1", typ: "klau" },
+  { spieltag: 4, vonUserId: "p2", aufUserId: "p3", typ: "klau" },
+  { spieltag: 7, vonUserId: "p2", aufUserId: "p3", typ: "klau" },
+];
+
+// Summe der erlaubten Ziele über ALLE Spieler — eine Zahl, die jede
+// Zielwahl-Einstellung anders färbt.
+const zieleGesamt = (duell, spieltag = 8) => GIDS.reduce((s, id) =>
+  s + zulaessigeZiele(GBOARD, id, duell, {
+    bisherigeEinsaetze: GHISTORIE, aktuellerSpieltag: spieltag,
+  }).length, 0);
+
+const D = (teil) => ({ ...DEFAULT_DUELL, enabled: true, immun: 0, maxProZiel: 6, ...teil });
+
+// An wie vielen der ersten 20 Spieltage ist ein Duell-Einsatz bezahlbar?
+const GPLAN = jokerPlan({
+  spieltage: 20, verteilung: { modus: "kontingent", anzahl: 5 }, seed: "greift", userIds: ["p1"],
+});
+const bezahlbareTage = (duell, gutschriften = []) =>
+  [...Array(20).keys()].map((i) => i + 1).filter((md) =>
+    darfDuellSetzen({ plan: GPLAN, gutschriften, tipps: [], userId: "p1", spieltag: md, duell }).erlaubt,
+  ).length;
+
+// Wie viele der fünf Spieler dürfen laut Grundform überhaupt einsetzen?
+const duerfenEinsetzen = (basis) => GIDS.filter((id) =>
+  darfEinsetzen({ ...DEFAULT_BASIS, ...basis }, id, { hatGetippt: true, board: GBOARD }).erlaubt).length;
+
+// Wie viele Einsätze lässt eine Limit-Klasse durch? Gezählt über fünf Spieler
+// an fünf Spieltagen, mit einer Historie von je einem bereits gesetzten Joker.
+//
+// ⚠️ `jokerArt` ist "joker.einzel", nicht "joker" — die JOKER_ARTEN-Form aus
+// `jokerBudget.js`. Mit dem kurzen Namen greift `klasse.mitglieder.includes`
+// nie, und die Zeile meldete beim ersten Lauf „bewegt nichts" für ein Tor,
+// das einwandfrei schließt. Dieselbe Falle wie `kommtDurch` in Teil 1.
+const KART = "joker.einzel";
+const KHISTORIE = GIDS.map((id) => ({ spieltag: 2, jokerArt: KART, vonUserId: id, aufUserId: null }));
+const durchKlassen = (klassen) => {
+  let n = 0;
+  for (const id of GIDS) {
+    for (const md of [3, 4, 5, 6, 7]) {
+      const p = pruefeEinsatz(
+        { spieltag: md, jokerArt: KART, vonUserId: id, aufUserId: null },
+        klassen, KHISTORIE, { spieltage: 34, board: GBOARD },
+      );
+      if (p.erlaubt) n++;
+    }
+  }
+  return n;
+};
+// 🔴 Dieselbe Sperrklinke wie `kommtDurch` in Teil 1: eine Klasse, die
+// `sanitizeLimitKlassen` gar nicht erst passiert (falscher Feldname, fehlende
+// `mitglieder`), sieht danach exakt aus wie ein totes Tor. Beim ersten Lauf
+// war genau das der Fall — `jokerArten`/`pro` statt `mitglieder`/`proZeitraum`.
+const KLASSE_ENG = [{
+  id: "k1", label: "Einer pro Saison", mitglieder: [KART],
+  max: 1, proZeitraum: "saison", aktivierung: { typ: "immer" },
+}];
+if (sanitizeLimitKlassen(KLASSE_ENG).length !== KLASSE_ENG.length) {
+  console.log("  ⚠️  limitKlassen: der Messfall passiert `sanitizeLimitKlassen` nicht — er misst nichts.");
+}
+
+// Wie viele der fünf Joker-Arten sind bei einem Kontostand von 20 Narren
+// bezahlbar?
+const GARTEN = ["joker", "duell.klau", "duell.block", "drehrad", "ereignis"];
+const bezahlbareArten = (budget, stand = 20) =>
+  GARTEN.filter((art) => kannBezahlen(stand, preisFuer(art, budget))).length;
+
+const GATE_FAELLE = [
+  ["duell.zielWahl", () => zieleGesamt(D({ zielWahl: "frei" })), () => zieleGesamt(D({ zielWahl: "nurVorne" })),
+    "erlaubte Ziele über 5 Spieler"],
+  ["duell.maxProZiel", () => zieleGesamt(D({ zielWahl: "frei", maxProZiel: 6 })),
+    () => zieleGesamt(D({ zielWahl: "frei", maxProZiel: 2 })), "erlaubte Ziele über 5 Spieler"],
+  ["duell.immun", () => zieleGesamt(D({ zielWahl: "frei", immun: 0 })),
+    () => zieleGesamt(D({ zielWahl: "frei", immun: 6 })), "erlaubte Ziele über 5 Spieler"],
+  // 🔴 Der Fall, für den `konter` gebaut ist: p1 steht ganz vorne und hat bei
+  // „nur nach vorne" NIE ein Ziel — außer dem, der ihn gerade getroffen hat.
+  ["duell.konter", () => zieleGesamt(D({ zielWahl: "nurVorne", konter: false })),
+    () => zieleGesamt(D({ zielWahl: "nurVorne", konter: true })), "erlaubte Ziele über 5 Spieler"],
+  ["duell.kosten", () => bezahlbareTage(D({ kosten: "frei" })),
+    () => bezahlbareTage(D({ kosten: "stattJoker" })), "bezahlbare Spieltage von 20"],
+  ["jokerBasis.wer", () => duerfenEinsetzen({ wer: "alle" }),
+    () => duerfenEinsetzen({ wer: "abPlatz", werWert: 4 }), "berechtigte Spieler von 5"],
+  ["limitKlassen", () => durchKlassen([]), () => durchKlassen(KLASSE_ENG),
+    "durchgelassene Einsätze von 25"],
+  ["budget (Preise)", () => bezahlbareArten({ ...DEFAULT_BUDGET, enabled: true, preise: {} }),
+    () => bezahlbareArten({ ...DEFAULT_BUDGET, enabled: true, preise: Object.fromEntries(GARTEN.map((a) => [a, 50])) }),
+    "bezahlbare Joker-Arten von 5"],
+];
+
+console.log(`${"=".repeat(88)}`);
+console.log("  TEIL 4 — Erlaubnis statt Punkte");
+console.log(`  ${GATE_FAELLE.length + 1} Tore, jeweils Vorgabe gegen Extremwert`);
+console.log(`${"=".repeat(88)}\n`);
+
+const taubeTore = [];
+for (const [name, vorgabe, extrem, einheit] of GATE_FAELLE) {
+  const a = vorgabe();
+  const b = extrem();
+  if (a === b) {
+    console.log(`  ${name.padEnd(26)} ⚠️  BEWEGT NICHTS (${a} ${einheit})`);
+    taubeTore.push(name);
+  } else {
+    console.log(`  ${name.padEnd(26)} ${String(a).padStart(3)} → ${String(b).padEnd(3)} ${einheit}`);
+  }
+}
+
+// `tippfenster` braucht echte Spiele mit Anpfiff — deshalb getrennt und mit
+// einem festen `jetzt`, sonst hinge die Zahl an der Uhrzeit des Laufs.
+{
+  const st = createMockStore();
+  const rnd = await st.createRound({ name: "T", adminId: "u-du", rules: sanitizeRules(DEFAULT_RULES), teamFilter: blTeams });
+  const spiele = (await st.listRoundMatches(rnd.id))
+    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+  // Ein Zeitpunkt MITTEN in der Saison: kurz vor dem 60. Spiel.
+  const jetzt = new Date(spiele[59].kickoff).getTime() - 60 * 60 * 1000;
+  const offen = (stunden) => spiele.filter((m) =>
+    tippStatus(m, sanitizeRules({ ...DEFAULT_RULES, tippfenster: { vorlaufStunden: stunden } }), jetzt).offen).length;
+  const eng = offen(2);
+  const weit = offen(720);
+  const einheit = `tippbare Spiele von ${spiele.length}`;
+  if (eng === weit) {
+    console.log(`  ${"tippfenster".padEnd(26)} ⚠️  BEWEGT NICHTS (${eng} ${einheit})`);
+    taubeTore.push("tippfenster");
+  } else {
+    console.log(`  ${"tippfenster".padEnd(26)} ${String(eng).padStart(3)} → ${String(weit).padEnd(3)} ${einheit}`);
+  }
+}
+
+console.log(`\n${"-".repeat(88)}`);
+if (taubeTore.length) {
+  console.log("  ⚠️ Diese Tore lassen bei jeder Einstellung dasselbe durch:");
+  for (const t of taubeTore) console.log(`     - ${t}`);
+  console.log();
+  console.log("  🔴 Ein Tor, das nie zugeht, ist keine Einstellung — es ist eine Zeile");
+  console.log("     im Regelwerk, die im Creator-Code mitreist und nichts tut.");
+} else {
+  console.log("  ✅ Jedes geprüfte Tor öffnet und schließt.");
 }
 console.log();

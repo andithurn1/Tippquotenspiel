@@ -467,6 +467,83 @@ vorbei:
    „vorbereitet · wirkt noch nicht", in derselben Form wie die
    Herausforderungen in `Ereignisse.jsx`. Ein Umschalter, der nichts bewirkt,
    ist schlimmer als keiner.
+   ✅ **Erledigt 07.08.2026** — beide angeschlossen, siehe den Abschnitt
+   darunter.
+
+#### ✅ 07.08.: `konter` und `kosten` angeschlossen — und die Messung, die sie hätte finden müssen
+
+**`konter`** liegt in `zulaessigeZiele()`: wer an DIESEM Spieltag getroffen
+wurde, darf seinen Angreifer zurückschlagen — auch dort, wo `zielWahl` es sonst
+verbietet. Genau darin liegt der Sinn: bei „nur nach vorne" steht der Angreifer
+per Definition HINTER dem Getroffenen, der könnte also nie antworten, und der
+Schalter wäre in der häufigsten Zielwahl folgenlos. Es ist eine Ausnahme von
+der ZIELWAHL, nicht von den Schutzregeln — `maxProZiel` und `immun` gelten
+weiter, dafür gibt es je einen Test.
+
+**`kosten: "stattJoker"`** liegt in `jokerKontingent.js`, nicht im Duell-Modul:
+„kostet einen Joker" ist eine Aussage über den JOKER-VORRAT, nicht über die
+Duell-Wertung. Im Duell-Modul gerechnet gäbe es zwei Buchführungen über
+denselben Vorrat. Angeschlossen über `verbrauch()` → `kontingent()` →
+neu `darfDuellSetzen()` → `Tippabgabe.jsx`.
+
+🔴 **Der Fund beim Nachmessen, und er ist der eigentliche Ertrag des Tages.**
+Nach dem Anschließen zeigte die Messung:
+
+```
+Plan-Spieltage: [2,7,12,13,18]
+Duell AN einem Plan-Spieltag    zugeteilt 1/5 · erspielt 0/0 · offen 4
+Duell AUSSERHALB des Plans      zugeteilt 0/5 · erspielt 1/0 · offen 5
+3 Duelle ausserhalb             zugeteilt 0/5 · erspielt 3/0 · offen 5
+```
+
+Der Verbrauch stieg, `offen` nicht. Ursache:
+`erspieltOffen = Math.max(0, erspieltGesamt - verbraucht)` — der Topf war leer,
+drei Einsätze gingen trotzdem durch, und das `Math.max` machte aus der
+Überziehung wieder eine Null. **Die stärkste Bremse des Bausteins bremste
+messbar nichts**, obwohl die Zählung stimmte.
+
+⚠️ **Die Lehre, allgemeiner als der Fall:** ein `Math.max(0, …)` ist immer eine
+Aussage („weniger als leer gibt es nicht") und fast immer auch ein Deckmantel.
+`kontingent()` meldet jetzt `ueberzogen` statt es wegzurechnen, und
+`darfDuellSetzen()` lehnt den Einsatz ab, wenn nichts mehr da ist.
+
+#### 🔴 Und die Abnahme, die diese Fehlerklasse gar nicht sehen konnte: `greift` TEIL 4
+
+`konter` und `kosten` bewegen **keine Punkte** — sie entscheiden, ob ein Einsatz
+zustande kommt. In Teil 1 waren sie vom Block `duell` (3401 Punkte) mit
+abgedeckt und sahen dadurch gesund aus. **Punkte zu messen konnte sie nicht
+finden.**
+
+Dieselbe Lage hatten vier weitere Blöcke — und sie standen in Teil 3 als
+BEGRÜNDUNG, warum sie nicht gemessen werden („begrenzt, wie viele Joker man
+einsetzen darf, nicht was einer zählt"). Eine Begründung ist an der Stelle
+aber nur ein anderes Wort für „ungemessen".
+
+**Teil 4 zählt deshalb erlaubte VORGÄNGE statt Punkte** (erster Lauf):
+
+| Tor | Vorgabe → Extremwert | |
+|---|---|---|
+| `duell.zielWahl` | 20 → 10 | erlaubte Ziele über 5 Spieler |
+| `duell.maxProZiel` | 20 → 19 | dito |
+| `duell.immun` | 20 → 18 | dito |
+| `duell.konter` | 10 → 11 | dito |
+| `duell.kosten` | 20 → 5 | bezahlbare Spieltage von 20 |
+| `jokerBasis.wer` | 5 → 2 | berechtigte Spieler von 5 |
+| `limitKlassen` | 25 → 0 | durchgelassene Einsätze von 25 |
+| `budget` (Preise) | 5 → 3 | bezahlbare Joker-Arten von 5 |
+| `tippfenster` | 9 → 44 | tippbare Spiele von 341 |
+
+⚠️ **Und prompt die alte Falle im neuen Teil:** `limitKlassen` meldete beim
+ersten Lauf „bewegt nichts". Nicht das Tor war tot, sondern mein Messfall —
+`jokerArten`/`pro` statt `mitglieder`/`proZeitraum`, und `sanitizeLimitKlassen`
+warf die Klasse still weg. Dazu `jokerArt: "joker"` statt `"joker.einzel"`.
+Beides ist jetzt mit einer Sperrklinke abgesichert, wie `kommtDurch` in Teil 1.
+**Eine Messung, die nicht prüft, ob sie etwas geprüft hat, meldet Ruhe statt
+Befunden** — zum dritten Mal an zwei Tagen dieselbe Lehre.
+
+**Offen bleibt Befund 1 oben unverändert:** `zielWahl`/`maxProZiel`/`immun`
+**und jetzt auch `kosten`** werden im Screen geprüft, `saveTip` prüft weiterhin
+nichts. Der belastbare Ort ist die Server-Route (RLS-Durchgang).
 
 🔴 **Und eine Korrektur an mir selbst:** der erste Lauf meldete
 `block.nurGewinn` ebenfalls als wirkungslos. Falsch — das Messszenario lief mit

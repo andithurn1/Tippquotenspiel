@@ -77,15 +77,34 @@ function erspieltBis(gutschriften = [], bisSpieltag) {
 // Gesetzte Joker eines Nutzers, aufgeteilt nach Topf. Ein gesetzter Joker an
 // einem Plan-Spieltag geht auf den zugeteilten Topf, sonst auf den erspielten
 // (Regel 3).
-function verbrauch({ tipps = [], plan, userId, wettbewerb = null }) {
+// 🔴 `duell.kosten === "stattJoker"` zählt einen Duell-Einsatz wie einen
+// gesetzten Joker. Bis 06.08.2026 stand die Einstellung im Regelwerk, wurde
+// gesäubert, reiste im Creator-Code mit — und KEINE Zeile im Projekt fragte
+// sie ab (gefunden über `npm run stufen` Teil 2, gemessen mit `greift`:
+// bewegt nichts).
+//
+// Warum genau HIER und nicht im Duell-Modul: „kostet einen Joker" ist eine
+// Aussage über den JOKER-VORRAT, nicht über die Duell-Wertung. Im Duell-Modul
+// gerechnet gäbe es zwei Buchführungen über denselben Vorrat — die zweite
+// Wahrheit, vor der die Runden-Schicht warnt.
+//
+// ⚠️ Es ist die stärkste Bremse des ganzen Bausteins: wer angreift, verzichtet
+// auf die eigene Verstärkung. Ein Tipp, der BEIDES trägt (Joker gesetzt UND
+// Duell), verbraucht dementsprechend zwei.
+function verbrauch({ tipps = [], plan, userId, wettbewerb = null, duellKostetJoker = false }) {
   let zugeteilt = 0;
   let erspielt = 0;
-  for (const t of tipps) {
-    if (t?.joker !== true) continue;
+  const zaehle = (t) => {
     const md = t.matchday ?? null;
     const passt = t.wettbewerb == null || wettbewerb == null || t.wettbewerb === wettbewerb;
     if (passt && hatJoker(plan, userId, md)) zugeteilt++;
     else erspielt++;
+  };
+  for (const t of tipps) {
+    if (t?.joker === true) zaehle(t);
+    // Ein Duell-Einsatz DESSELBEN Spielers. `tipps` ist bereits auf ihn
+    // gefiltert (siehe `kontingent`), der Absender steht also fest.
+    if (duellKostetJoker && t?.duell?.auf != null) zaehle(t);
   }
   return { zugeteilt, erspielt };
 }
@@ -94,8 +113,12 @@ function verbrauch({ tipps = [], plan, userId, wettbewerb = null }) {
 // `bisSpieltag` grenzt ein, wie weit die Saison gelaufen ist; ohne Angabe zählt
 // alles. `wettbewerb` sagt, auf welchen Wettbewerb sich der Plan bezieht —
 // `jokerPlan` verteilt je Wettbewerb, nicht über alle hinweg.
+// `duell` (optional) ist `rules.duell` — nur `kosten: "stattJoker"` wird
+// daraus gelesen. Ohne den Parameter zählt ein Duell-Einsatz nichts, das
+// Verhalten bleibt also unverändert; kein stiller Regelwechsel für Aufrufer,
+// die ihn noch nicht mitgeben.
 export function kontingent({
-  plan, gutschriften = [], tipps = [], userId, bisSpieltag = null, wettbewerb = null,
+  plan, gutschriften = [], tipps = [], userId, bisSpieltag = null, wettbewerb = null, duell = null,
 } = {}) {
   const planGesamt = plan && plan.modus !== "frei"
     ? (plan.proSpieler?.[userId] ?? plan.alle ?? []).filter(
@@ -103,15 +126,41 @@ export function kontingent({
     : null;   // null = unbegrenzt („frei": an jedem Spieltag einer)
 
   const erspieltGesamt = erspieltBis(gutschriften, bisSpieltag);
-  const v = verbrauch({ tipps, plan, userId, wettbewerb });
+  const v = verbrauch({
+    tipps, plan, userId, wettbewerb,
+    duellKostetJoker: duell?.enabled === true && duell?.kosten === "stattJoker",
+  });
 
   const zugeteiltOffen = planGesamt === null ? null : Math.max(0, planGesamt - v.zugeteilt);
   const erspieltOffen = Math.max(0, erspieltGesamt - v.erspielt);
 
+  // 🔴 ÜBERZOGEN — was mehr verbraucht wurde, als da war.
+  //
+  // Gemessen am 06.08.2026, direkt nachdem `kosten: "stattJoker"` angeschlossen
+  // war: ein Duell-Einsatz an einem Spieltag OHNE Plan-Joker erhöhte
+  // `erspielt.verbraucht` auf 3, während `erspielt.gesamt` bei 0 stand — und
+  // `Math.max(0, …)` schluckte die Differenz. `offen` blieb bei 5, die Bremse
+  // war also messbar wirkungslos: „kostet einen Joker" kostete nichts.
+  //
+  // Ein `Math.max(0, …)` ist immer eine Aussage („weniger als leer gibt es
+  // nicht") und fast immer auch ein Deckmantel. Hier heißt die ehrliche Zahl
+  // ÜBERZOGEN: der Vorrat ist leer UND es wurde schon mehr gesetzt. Sie wird
+  // gemeldet statt weggerechnet — `darfDuellSetzen` liest sie, und die
+  // Oberfläche kann sie benennen.
+  const ueberzogenZugeteilt = planGesamt === null ? 0 : Math.max(0, v.zugeteilt - planGesamt);
+  const ueberzogenErspielt = Math.max(0, v.erspielt - erspieltGesamt);
+
   return {
-    zugeteilt: { gesamt: planGesamt, verbraucht: v.zugeteilt, offen: zugeteiltOffen },
-    erspielt: { gesamt: erspieltGesamt, verbraucht: v.erspielt, offen: erspieltOffen },
+    zugeteilt: {
+      gesamt: planGesamt, verbraucht: v.zugeteilt, offen: zugeteiltOffen,
+      ueberzogen: ueberzogenZugeteilt,
+    },
+    erspielt: {
+      gesamt: erspieltGesamt, verbraucht: v.erspielt, offen: erspieltOffen,
+      ueberzogen: ueberzogenErspielt,
+    },
     offen: zugeteiltOffen === null ? null : zugeteiltOffen + erspieltOffen,
+    ueberzogen: ueberzogenZugeteilt + ueberzogenErspielt,
     unbegrenzt: planGesamt === null,
   };
 }
@@ -121,7 +170,7 @@ export function kontingent({
 // kommt — „du setzt einen erspielten Joker ein" ist eine andere Aussage als
 // „heute ist dein Joker-Spieltag".
 export function darfJokerSetzen({
-  plan, gutschriften = [], tipps = [], userId, spieltag, wettbewerb = null,
+  plan, gutschriften = [], tipps = [], userId, spieltag, wettbewerb = null, duell = null,
 } = {}) {
   const md = (spieltag && typeof spieltag === "object") ? spieltag.matchday : spieltag;
   const key = (spieltag && typeof spieltag === "object")
@@ -133,7 +182,7 @@ export function darfJokerSetzen({
     return { erlaubt: false, quelle: null, grund: "An diesem Spieltag hast du schon einen Joker gesetzt." };
   }
 
-  const stand = kontingent({ plan, gutschriften, tipps, userId, wettbewerb });
+  const stand = kontingent({ plan, gutschriften, tipps, userId, wettbewerb, duell });
 
   // Plan-Spieltag: der zugeteilte Topf greift.
   if (!plan || plan.modus === "frei" || hatJoker(plan, userId, md)) {
@@ -150,6 +199,64 @@ export function darfJokerSetzen({
   return {
     erlaubt: false, quelle: null,
     grund: "Heute ist kein Joker-Spieltag, und du hast keinen erspielten übrig.",
+  };
+}
+
+// ── Darf ich HIER ein Duell setzen? ─────────────────────────
+// 🔴 Die Gegenstück-Frage zu `darfJokerSetzen`, und der Grund, warum
+// `kosten: "stattJoker"` überhaupt etwas bremst.
+//
+// Ohne diese Prüfung war die Einstellung eine reine Buchungszeile: der Einsatz
+// wurde gezählt, der Vorrat rutschte ins Minus, und `Math.max(0, …)` machte
+// daraus eine Null (siehe `ueberzogen` oben). Wer angreifen wollte, konnte
+// immer angreifen — die stärkste Bremse des Bausteins bremste nichts.
+//
+// Die Antwort trägt eine QUELLE wie bei `darfJokerSetzen`: „das kostet deinen
+// Joker für diesen Spieltag" ist eine andere Nachricht als „das kostet einen
+// erspielten". Bei `kosten: "frei"` (Vorgabe) ist die Antwort immer ja — das
+// Duell hat dann sein eigenes Kontingent aus `duellPlan`, und dieser Vorrat
+// hier geht es nichts an.
+//
+// ⚠️ NICHT geprüft wird hier das Duell-eigene Kontingent (`anzahl`, Fenster,
+// `proSpieltag`) — das steht in `duellPlan`. Zwei Fragen, zwei Stellen.
+export function darfDuellSetzen({
+  plan, gutschriften = [], tipps = [], userId, spieltag, wettbewerb = null, duell = null,
+} = {}) {
+  if (duell?.enabled !== true || duell?.kosten !== "stattJoker") {
+    return { erlaubt: true, quelle: null, grund: "Ein Duell-Einsatz kostet in dieser Runde keinen Joker." };
+  }
+
+  const md = (spieltag && typeof spieltag === "object") ? spieltag.matchday : spieltag;
+  const key = (spieltag && typeof spieltag === "object")
+    ? spieltagKey(spieltag) : spieltagKey({ matchday: spieltag });
+
+  // Der zugeteilte Joker eines Spieltags ist GENAU EINER. Ist er dort schon
+  // vergeben — an einen Joker oder an ein früheres Duell —, muss der Einsatz
+  // aus dem erspielten Vorrat kommen.
+  const belegt = tipps.some((t) => spieltagKey(t) === key
+    && (t?.joker === true || t?.duell?.auf != null));
+
+  const stand = kontingent({ plan, gutschriften, tipps, userId, wettbewerb, duell });
+
+  if (!belegt && (!plan || plan.modus === "frei" || hatJoker(plan, userId, md))) {
+    return {
+      erlaubt: true, quelle: "zugeteilt",
+      grund: "Der Einsatz kostet dich deinen Joker für diesen Spieltag.",
+    };
+  }
+
+  const verfuegbar = Math.max(0, erspieltBis(gutschriften, md) - stand.erspielt.verbraucht);
+  if (verfuegbar > 0) {
+    return {
+      erlaubt: true, quelle: "erspielt",
+      grund: `Der Einsatz kostet einen erspielten Joker (noch ${verfuegbar}).`,
+    };
+  }
+  return {
+    erlaubt: false, quelle: null,
+    grund: belegt
+      ? "Dein Joker für diesen Spieltag ist schon vergeben, und du hast keinen erspielten übrig."
+      : "Ein Duell kostet einen Joker — und du hast keinen übrig.",
   };
 }
 

@@ -12,7 +12,7 @@ import { zeitachse, rundenSchluessel, rundenSpieltagVon, verlaufNachRundenSpielt
 import { muenzSchluessel, muenzTaktStatus, periodeLabel, spieltagsFolge } from "@/lib/muenzTakt";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
-import { darfJokerSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
+import { darfJokerSetzen, darfDuellSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
 import { pruefeJokerEinsatz, basisFuer, darfWiderrufen, duellBasis as duellBasisVon } from "@/lib/jokerBasis";
 import {
   kontoVerlauf, perioden, preisFuer, kannBezahlen, sanitizeBudget, istNarrenKauf, einsaetzeAllerArten,
@@ -260,6 +260,10 @@ export default function Tippabgabe({ matchId }) {
           // Für `letzteEinsaetze` (Abklingzeit, jokerBasis.js): ob auf DIESEM
           // Tipp der Joker (Modus „einzel") gesetzt wurde.
           joker: t.tip?.joker === true,
+          // 🔴 Und der Duell-Einsatz. Bei `duell.kosten: "stattJoker"` zählt
+          // er gegen denselben Vorrat — ohne dieses Feld sähe `kontingent()`
+          // ihn nicht und die Einstellung liefe ins Leere.
+          duell: t.tip?.duell ?? null,
         }));
       setMeineTips(eigene);
       // Käufe ALLER Spieler, angereichert um `matchday`/`matchId` — Grundlage
@@ -625,13 +629,17 @@ export default function Tippabgabe({ matchId }) {
   // ⚠️ Alles im RUNDEN-Spieltag und ohne `wettbewerb` — siehe `plan` oben.
   // Mit dem Wettbewerb liefe wieder der alte „ein Plan je Liga"-Weg, und der
   // vergibt in einer Runde über fünf Wettbewerbe das Fünffache.
+  // 🔴 `duell` mitgeben: bei `kosten: "stattJoker"` verbraucht ein
+  // Duell-Einsatz einen Joker aus demselben Vorrat. Ohne diesen Parameter
+  // zeigte der Screen einen Vorrat, den es nicht gibt — und die Einstellung
+  // war folgenlos (Befund 06.08.2026, `npm run greift`).
   const jokerErlaubnis = darfJokerSetzen({
     plan, gutschriften, tipps: meineTipsRunde, userId: user?.id,
-    spieltag: meinSpieltagRunde,
+    spieltag: meinSpieltagRunde, duell: RULES.duell,
   });
   const jokerStand = kontingent({
     plan, gutschriften, tipps: meineTipsRunde, userId: user?.id,
-    bisSpieltag: meinSpieltagRunde,
+    bisSpieltag: meinSpieltagRunde, duell: RULES.duell,
   });
 
   // Duell-Joker (design/duell-joker.md, design/kontaktstellen.md Abschnitt 5
@@ -663,6 +671,22 @@ export default function Tippabgabe({ matchId }) {
         bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
       })
     : [];
+
+  // 🔴 KANN ich mir den Einsatz überhaupt leisten? Bei `duell.kosten:
+  // "stattJoker"` verbraucht ein Duell einen Joker aus demselben Vorrat wie
+  // `darfJokerSetzen` — ist keiner mehr da, ist der Einsatz nicht möglich,
+  // auch wenn `duellPlan` und `zulaessigeZiele` ihn hergäben. Bis 06.08.2026
+  // war die Einstellung eine reine Karteileiche.
+  //
+  // ⚠️ Der eigene Tipp fliegt raus, wie bei `einsatzHistorie` weiter oben:
+  // wer sein Duell gerade BEARBEITET, darf sich nicht selbst den letzten
+  // Joker wegnehmen und dann vor der eigenen Sperre stehen.
+  const meineTipsOhneAktuellen = meineTipsRunde.filter(
+    (t) => (t.match_id ?? t.matchId) !== matchId);
+  const duellErlaubnis = darfDuellSetzen({
+    plan, gutschriften, tipps: meineTipsOhneAktuellen, userId: user?.id,
+    spieltag: meinSpieltagRunde, duell: RULES.duell,
+  });
 
   // Ranking: welche Gewichte hat der Nutzer an DIESEM Spieltag schon vergeben?
   // Der eigene Tipp ist ausgenommen (man stellt ihn ja gerade ein).
@@ -926,6 +950,14 @@ export default function Tippabgabe({ matchId }) {
         const zulaessigJetzt = zulaessigeZiele(board, user.id, RULES.duell, {
           bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
         });
+        // Die Kosten-Prüfung steht VOR den Kontingent-Klassen: sie ist die
+        // gröbere Frage („kann ich zahlen"), und sie hat eine eigene
+        // Fehlermeldung verdient statt still verschluckt zu werden.
+        if (!duellErlaubnis.erlaubt) {
+          setKlasseGrund(duellErlaubnis.grund);
+          setSaveState("klasseUngueltig");
+          return;
+        }
         if (zulaessigJetzt.includes(duellZiel) && duellTypenErlaubt.includes(duellTypGewaehlt)) {
           // Kontingent-Klassen prüfen (design/kontaktstellen.md Abschnitt 5
           // Punkt 5, limitKlassen.js) — dieselbe Bedingung: nur wenn hier
@@ -1352,6 +1384,20 @@ export default function Tippabgabe({ matchId }) {
                 <div style={{ fontSize: 11, color: C.coral, textTransform: "uppercase", letterSpacing: 1 }}>
                   Duell-Joker
                 </div>
+                {/* Was der Einsatz kostet — nur wenn er überhaupt etwas kostet
+                    (`duell.kosten: "stattJoker"`). Steht ÜBER den Zielen, weil
+                    es die Frage vor der Zielwahl ist. Wie beim Joker oben trägt
+                    die Zeile die QUELLE: „dein Joker für diesen Spieltag" ist
+                    eine andere Nachricht als „ein erspielter". */}
+                {RULES.duell?.kosten === "stattJoker" && (
+                  <p style={{
+                    fontSize: 11, marginTop: 8, lineHeight: 1.45,
+                    color: duellErlaubnis.quelle === "erspielt" ? C.mint
+                      : duellErlaubnis.erlaubt ? C.muted : C.coral,
+                  }}>
+                    {duellErlaubnis.grund}
+                  </p>
+                )}
                 {duellZulaessig.length === 0 ? (
                   <p style={{ fontSize: 11.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
                     Aktuell kein zulässiges Ziel — z.&nbsp;B. weil niemand infrage kommt,
@@ -1363,10 +1409,15 @@ export default function Tippabgabe({ matchId }) {
                       {duellZulaessig.map((zielId) => {
                         const name = board.find((b) => b.userId === zielId)?.name ?? zielId;
                         const on = duellZiel === zielId;
+                        // Nicht bezahlbar = nicht wählbar. Ein bereits
+                        // gewähltes Ziel bleibt anklickbar, damit man es wieder
+                        // abwählen kann — dasselbe Muster wie beim Joker-Knopf.
+                        const zu = gesperrt || (!on && !duellErlaubnis.erlaubt);
                         return (
-                          <button key={zielId} disabled={gesperrt}
+                          <button key={zielId} disabled={zu}
                             onClick={() => setDuellZiel(on ? null : zielId)} style={{
-                              cursor: gesperrt ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                              cursor: zu ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                              opacity: zu && !on ? 0.5 : 1,
                               padding: "8px 14px", borderRadius: 999,
                               background: on ? `${C.coral}22` : C.surface,
                               color: on ? C.coral : C.muted,
