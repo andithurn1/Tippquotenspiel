@@ -25,6 +25,7 @@ import { ersatzEintraege } from "./versaeumnisBoard";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { darfSaisonTippen } from "./saisonFenster";
 import { tippStatus, spieltagStarts } from "./tippfenster";
+import { pruefeDuellEinsatz } from "./duellPruefung";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -441,6 +442,16 @@ export function createMockStore() {
         spieltagStarts(filterMatchesByTeams([...matches.values()], round?.team_filter)));
       if (!status.offen) {
         throw new Error(`Dieses Spiel ist nicht tippbar: ${status.text}.`);
+      }
+      // 🔴 Dieselbe Lücke eine Ebene tiefer, und der älteste offene Befund des
+      // Kanals: die Duell-Schutzregeln (`zielWahl`, `maxProZiel`, `immun`,
+      // `kosten`, Limit-Klassen) standen NUR in `Tippabgabe.jsx`. Über den
+      // Store ließ sich jeder treffen, beliebig oft, umsonst. Die Prüfung
+      // liegt in `duellPruefung.js` — EINE Fassung für beide Stores; hier
+      // steht nur der Aufruf, und er kostet bei einem Tipp ohne Duell nichts.
+      const duellPruef = await pruefeDuellEinsatz({ store: this, roundId, matchId, userId, tip });
+      if (!duellPruef.erlaubt) {
+        throw new Error(`Dieser Duell-Einsatz ist nicht möglich: ${duellPruef.grund}`);
       }
       return seedTip({ roundId, matchId, userId, tip, snapshot });
     },

@@ -22,6 +22,7 @@ import { einsaetzeAusTipps } from "./duellJoker";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { darfSaisonTippen } from "./saisonFenster";
 import { tippStatus, spieltagStarts } from "./tippfenster";
+import { pruefeDuellEinsatz } from "./duellPruefung";
 
 // Dieselbe Spanne, die alle anderen Aufrufer von `spieltage`-Parametern im
 // Projekt verwenden (Tippabgabe.jsx, Drehrad.jsx, JokerVerteilung.jsx,
@@ -225,6 +226,16 @@ export function createSupabaseStore() {
       const status = tippStatus(match, round?.rules ?? DEFAULT_RULES, Date.now(),
         spieltagStarts(rundenSpiele));
       if (!status.offen) throw new Error(`Dieses Spiel ist nicht tippbar: ${status.text}.`);
+      // 🔴 Die Duell-Schutzregeln, dieselbe Lücke eine Ebene tiefer: sie
+      // standen bis 07.08.2026 NUR in `Tippabgabe.jsx`, und LIVE schreibt der
+      // Client direkt in diese Tabelle. Wer den Aufruf umging, traf jeden,
+      // beliebig oft, umsonst. Die Prüfung liegt in `duellPruefung.js` — EINE
+      // Fassung für Mock und Supabase, damit die Regel nicht zweimal
+      // formuliert wird (die Lehre aus `saisonBoard.js`).
+      const duellPruef = await pruefeDuellEinsatz({ store: this, roundId, matchId, userId, tip });
+      if (!duellPruef.erlaubt) {
+        throw new Error(`Dieser Duell-Einsatz ist nicht möglich: ${duellPruef.grund}`);
+      }
       // ein Tipp je (round, match, user) → upsert auf dem Unique-Key
       const data = orThrow(await sb
         .from("tips")
