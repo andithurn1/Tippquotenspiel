@@ -504,6 +504,27 @@ const varianten = [
         wirkung: { typ: "umverteilung", prozent: 40 } },
     ] },
   }],
+  // 🔴 Die WIE-LANGE-Achse (07.08.2026). Sie ist der erste Fall, in dem eine
+  // Wirkung an einem ANDEREN Spieltag landet als dem, an dem sie entstanden
+  // ist — und an mehreren zugleich. Für die Tabelle heißt das: die Marke muss
+  // dort stehen, wo der Aufschlag WIRKT, nicht wo er verdient wurde. Steht sie
+  // am falschen Spieltag, ist die Summe erklärt und die Zeile trotzdem falsch;
+  // dieser Fall prüft, dass beides zusammenpasst.
+  ["Ereignis-Geltung: Fenster", {
+    ereignisse: { enabled: true, maxErspielt: 5, aktive: [
+      { key: "letzter-am-spieltag", belohnung: 1, abstand: 0, maxProSaison: 0,
+        auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 },
+        wirkung: { typ: "bonus", prozent: 40 }, geltung: { typ: "fenster", n: 3 } },
+    ] },
+  }],
+  ["Ereignis-Geltung: nächster Spieltag", {
+    ereignisse: { enabled: true, maxErspielt: 5, aktive: [
+      { key: "letzter-am-spieltag", belohnung: 1, abstand: 0, maxProSaison: 0,
+        auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 },
+        wirkung: { typ: "punkte", betrag: 200, maxProSaison: 2000 },
+        geltung: { typ: "naechsterSpieltag" } },
+    ] },
+  }],
 ];
 
 for (const [name, extra, opt = {}] of varianten) {

@@ -16,6 +16,11 @@ import {
   AUSWERTBARE_AUSLOESER, AUSLOESER, AUSLOESER_LIMITS,
   sanitizeAusloeser, beschreibeAusloeser, haeufigkeit,
 } from "@/lib/ausloeser";
+import {
+  AUSWERTBARE_GELTUNGEN, GELTUNG, GELTUNG_LIMITS,
+  sanitizeGeltung, beschreibeGeltung, reichweite, jackpotDeckelNach,
+  konflikte as geltungsKonflikte,
+} from "@/lib/geltung";
 
 // ── WEN trifft es? ──────────────────────────────────────────
 // Drei Modi, eine Richtung, eine Zahl — und darunter der SATZ, den ein Spieler
@@ -82,6 +87,73 @@ const FELD_LABEL = {
   n: "jeder n-te", spieltag: "Spieltag", letzte: "letzte n",
   frequenz: "etwa alle n", prozent: "Prozent", abQuote: "ab Quote",
 };
+
+// ── WIE LANGE gilt es? ──────────────────────────────────────
+// 🔴 Die vierte und letzte Achse (`geltung.js`). Sie erzeugt nichts, sondern
+// verschiebt und streckt, was die Wirkung liefert — und ist damit die einzige
+// der vier, bei der zwei Einstellungen dasselbe Wort verschieden meinen: ein
+// Fenster über einen AUFSCHLAG gilt drei Spieltage lang, ein Fenster über eine
+// GUTSCHRIFT zahlt trotzdem einmal. Deshalb steht die Wirkung im Satz darunter
+// ausdrücklich drin, statt dass der Admin den Vertrag im Kopfkommentar von
+// `geltung.js` nachlesen müsste.
+//
+// ⚠️ Eigene Label-Tabelle: `n` heißt bei der WANN-Achse „jeder n-te" und hier
+// „Spieltage". Dieselbe Abkürzung für zwei Bedeutungen wäre der Anfang der
+// Sorte Verwechslung, die dieses Projekt schon mehrfach Zeit gekostet hat.
+const GELTUNG_FELD_LABEL = {
+  n: "Spieltage", zuwachs: "Zuwachs % je leerem Spieltag", maxFaktor: "höchstens ×",
+};
+
+function Geltungsfeld({ wert, wirkung, onChange }) {
+  const g = sanitizeGeltung(wert);
+  const info = GELTUNG[g.typ];
+  const dauer = reichweite(g, BEISPIEL_SAISON);
+  const deckelNach = jackpotDeckelNach(g);
+  const warnungen = geltungsKonflikte(g, wirkung);
+  const knopf = (aktiv, text, onClick, key, titel) => (
+    <button key={key} type="button" onClick={onClick} title={titel} style={{
+      border: `1px solid ${aktiv ? C.gold : C.line}`, borderRadius: 999,
+      background: aktiv ? `${C.gold}1a` : "transparent", color: aktiv ? C.gold : C.text,
+      cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
+    }}>{text}</button>
+  );
+  return (
+    <div style={{ width: "100%" }}>
+      <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 4 }}>Wie lange gilt das?</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
+        {AUSWERTBARE_GELTUNGEN.map((x) =>
+          knopf(g.typ === x.key, x.label, () => onChange({ ...g, typ: x.key }), x.key, x.text))}
+      </div>
+      {info.parameter.length > 0 && (
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {info.parameter.map((feld) => (
+            <Zahl key={feld} label={GELTUNG_FELD_LABEL[feld] ?? feld} wert={g[feld]}
+              limits={GELTUNG_LIMITS[feld]} breite={130}
+              onChange={(v) => onChange({ ...g, [feld]: v })} />
+          ))}
+        </div>
+      )}
+      <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+        Gilt <strong style={{ color: C.text }}>{beschreibeGeltung(g)}</strong>
+        {/* Die Live-Vorschau. „rest" ist die einzige, deren Antwort am
+            Zeitpunkt hängt — deshalb wird die Annahme genannt statt eine Zahl
+            behauptet, wörtlich wie bei der Rundengröße eine Achse weiter. */}
+        {g.typ === "rest"
+          ? ` — an Spieltag ${Math.ceil(BEISPIEL_SAISON / 2)} verdient also noch ${dauer} Spieltage lang.`
+          : dauer != null ? ` — das sind ${dauer} Spieltag${dauer === 1 ? "" : "e"}.` : "."}
+        {deckelNach != null && (
+          <> Ab {deckelNach} Spieltagen ohne Ausschüttung wächst nichts mehr.</>
+        )}
+      </div>
+      {warnungen.map((k) => (
+        <div key={k.key} style={{
+          fontSize: 10.5, color: k.korrigieren ? C.coral : C.muted,
+          marginTop: 4, lineHeight: 1.45,
+        }}>{k.korrigieren ? "⚠️ " : "💡 "}{k.text}</div>
+      ))}
+    </div>
+  );
+}
 
 // ── WAS passiert dann? ──────────────────────────────────────
 // 🔴 Die dritte der vier Achsen (`wirkung.js`). Bis 07.08.2026 war die Antwort
@@ -384,6 +456,15 @@ export default function Ereignisse({ rules, onChange }) {
                       onChange={(v) => setzeFeld(t.key, "wirkung", v)} />
                     <Ausloeserfeld wert={wert(t.key, "ausloeser")}
                       onChange={(v) => setzeFeld(t.key, "ausloeser", v)} />
+                    {/* 🔴 Die WIE-LANGE-Achse (`geltung.js`). Sie bekommt die
+                        WIRKUNG mit, weil dieselbe Geltung über einem Aufschlag
+                        etwas anderes bedeutet als über einer Gutschrift — und
+                        weil die gefährlichste Kombination der ganzen Achse
+                        (Aufschlag ohne Ende) nur aus beiden zusammen sichtbar
+                        ist. */}
+                    <Geltungsfeld wert={wert(t.key, "geltung")}
+                      wirkung={wert(t.key, "wirkung")}
+                      onChange={(v) => setzeFeld(t.key, "geltung", v)} />
                   </div>
                 )}
               </div>

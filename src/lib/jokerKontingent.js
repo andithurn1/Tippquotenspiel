@@ -35,7 +35,7 @@
 
 import { spieltagKey } from "./engine";
 import { hatJoker } from "./jokerPlan";
-import { auswerten } from "./ereignisse";
+import { auswerten, jackpotLage } from "./ereignisse";
 
 // Alle erspielten Joker eines Nutzers, chronologisch — jede Gutschrift zählt
 // mit ihrem Spieltag, ab dem sie einsetzbar ist.
@@ -61,12 +61,22 @@ export function erspielteJoker(args = {}) {
 // ⚠️ Ohne ihn losen ALLE Runden dieselben Spieltage — deterministisch ist es
 // so oder so, aber die Überraschung wäre für alle dieselbe. Wer diese
 // Funktion aufruft und die Runden-Id hat, gibt sie mit.
+// 🔴 Die WIE-LANGE-Achse braucht für ihren Jackpot eine Aussage über die ganze
+// RUNDE („holt es niemand"), und die kann `auswerten` als Ein-Nutzer-Lauf nicht
+// treffen. Sie wird hier vorgerechnet und mitgegeben — ohne diese Zeile stünde
+// der Jackpot im Regelwerk, wäre einstellbar und bliebe für Joker folgenlos.
+// `jackpotLage` liefert `null`, solange keiner eingestellt ist; der Durchlauf
+// über alle Mitspieler kostet also nur dann etwas, wenn er gebraucht wird.
 export function erspielteLage({
   eintraege = [], alleEintraege = null, rules, spieltagsPunkte = null,
   schluessel = null, rundenId = "",
 } = {}) {
+  const alle = alleEintraege ?? eintraege;
   return auswerten({
     eintraege, alleEintraege, ereignisse: rules?.ereignisse, spieltagsPunkte, schluessel, rundenId,
+    jackpotLage: jackpotLage({
+      alleEintraege: alle, ereignisse: rules?.ereignisse, spieltagsPunkte, schluessel, rundenId,
+    }),
   });
 }
 

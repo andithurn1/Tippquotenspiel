@@ -2310,13 +2310,48 @@ Spiel richtig getippt → alle bekommen einen Joker" braucht keine neuen Daten,
 erzeugt ein Gemeinschaftsgefühl, das keine individuelle Regel hinbekommt, und
 ist automatisch balancefair, weil es alle gleich trifft.
 
-**WIE LANGE — Geltung.** `sofort` · `naechsterSpieltag` · `fenster(n)` ·
-`rest` (bis Saisonende) · `bisAusgeloest` · **`jackpot`** („holt es niemand,
-wächst es und wandert weiter"). Das Fenster ist der Fall Miniwettspiel: eine
-Regel, die den Zustand für mehrere Spieltage verändert.
+**WIE LANGE — Geltung.** ✅ **GEBAUT am 07.08.2026** (`src/lib/geltung.js`,
+34 Tests, Oberfläche in `Ereignisse.jsx`, gemessen in `greift` Teil 4 und
+`anzeige` Teil 3). Sechs auswertbare Typen: `sofort` · `naechsterSpieltag` ·
+`fenster(n)` · `rest` (bis Saisonende) · `bisAusgeloest` · **`jackpot`**
+(„holt es niemand, wächst es und wandert weiter"); zwei vorbereitet
+(`handelbar` braucht Bestandsverwaltung, `bisWiderruf` eine Abstimmung).
+Das Fenster ist der Fall Miniwettspiel: eine Regel, die den Zustand für
+mehrere Spieltage verändert.
+
+Damit steht die Grammatik vollständig:
+**WANN** (`ausloeser.js`) → **WEN** (`auswahl.js`) → **WAS** (`wirkung.js`) →
+**WIE LANGE** (`geltung.js`). Vorgabe jeder Achse ist das bisherige Verhalten
+(`immer` / `sofort`), ein bestehender Creator-Code ändert also seine Bedeutung
+nicht.
+
+🔴 **Der Vertrag beim Bauen, und er ist nicht offensichtlich: über ein Fenster
+läuft nur ein FAKTOR.** Ein Aufschlag über drei Spieltage wirkt dreimal; eine
+feste Gutschrift über dieselben drei Spieltage wird EINMAL gezahlt, am Beginn.
+Andersherum wäre das Fenster eine Multiplikation — und damit genau der neue
+Punkte-Kanal, den die Wirkungs-Achse ausschließt. `wirkSpieltage()` rechnet das
+an einer Stelle aus, `konflikte()` sagt es dem Admin im Klartext.
+
+🔴 **Der Jackpot ist eine Aussage über die RUNDE, nicht über einen Spieler** —
+und das ist der Fehler, der beim Bauen nahelag. Aus Sicht eines einzelnen
+Spielers wäre bei „der Letzte des Spieltags" fast jeder Spieltag ein leerer
+gewesen; aus Sicht der Runde ist an JEDEM Spieltag jemand Letzter, der Topf darf
+also nie wachsen. Ein Ein-Nutzer-Lauf hätte aus einer Auszeichnung still eine
+Verdreifachung für den gemacht, der selten hinten steht. Deshalb rechnet
+`jackpotLage()` einmal über alle Mitspieler — und nur dann, wenn wirklich ein
+Jackpot eingestellt ist.
 
 ⚠️ **`jackpot` braucht eine Obergrenze**, sonst entscheidet ein einzelner
-Spieltag die Saison.
+Spieltag die Saison. Umgesetzt als PFLICHT: `GELTUNG_LIMITS.maxFaktor.min` ist
+1,5 und nicht 0 — anders als bei `wirkung.punkte.maxProSaison`, wo 0 („kein
+Deckel") erlaubt ist und nur eine Warnung auslöst. Der Unterschied ist
+begründet: eine feste Gutschrift wächst nur durch eine ungünstige Einstellung,
+ein Jackpot bauartbedingt.
+
+⚠️ **Nicht zu verwechseln mit `jokerBasis.verfall`.** Der beschreibt die
+Grundform ALLER Joker einer Runde (`periode`/`saison`/`wandert`), `geltung`
+gehört zu EINER Regel. Zwei Runden können denselben Joker-Verfall haben und
+trotzdem verschiedene Geltungen je Ereignis.
 
 #### 🎰 Die Lotterie: gelost wird mit einstellbaren Wahrscheinlichkeiten
 

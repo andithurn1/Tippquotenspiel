@@ -52,6 +52,14 @@ import { sanitizeWirkung, beschreibeWirkung, wendeAn } from "./wirkung";
 // die Tabelle eng ist", ohne eine Zeile neuen Auswertungs-Code. Vorgabe
 // `{ typ: "immer" }` = Gatter offen, also kein stiller Regelwechsel.
 import { sanitizeAusloeser, feuert, beschreibeAusloeser } from "./ausloeser";
+// 🔴 Die WIE-LANGE-Achse (07.08.2026), die vierte und letzte. Sie erzeugt
+// nichts, sondern VERSCHIEBT und STRECKT, was die Wirkung liefert: aus
+// „Trost-Joker" wird „+20 % am NÄCHSTEN Spieltag" oder „drei Spieltage lang".
+// Vorgabe `{ typ: "sofort" }` = das heutige Verhalten, also kein stiller
+// Regelwechsel — dieselbe Behandlung wie bei Wirkung und Auslöser.
+import {
+  sanitizeGeltung, geltungsfenster, wirkSpieltage, jackpotVerlauf, DEFAULT_GELTUNG,
+} from "./geltung";
 
 // Welche Daten haben wir heute? Alles andere ist im Katalog vorbereitet, aber
 // nicht auswertbar — genau wie Karten/Fouls bei den Saison-Wetten.
@@ -248,8 +256,8 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 6,
       aktive: [
-        { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 2, maxProSaison: 0 },
-        { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 6 },
+        { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0 },
+        { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 6 },
       ],
     },
   },
@@ -261,7 +269,7 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 5,
       // `abstand: 2`: ohne Abklingzeit kassiert derselbe Spieler jede Woche.
-      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 2, maxProSaison: 0,
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0,
         auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } }],
     },
   },
@@ -277,8 +285,8 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 5,
       aktive: [
-        { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 4 },
-        { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 0 },
+        { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 4 },
+        { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 0 },
       ],
     },
   },
@@ -295,7 +303,7 @@ export const EREIGNIS_PRESETS = [
     wirkrichtung: "verstärkend", gemessen: false,
     ereignisse: {
       enabled: true, maxErspielt: 5,
-      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 3, maxProSaison: 0,
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 3, maxProSaison: 0,
         auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 } }],
     },
   },
@@ -307,12 +315,12 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 10,
       aktive: [
-        { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 2, maxProSaison: 0 },
-        { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 8 },
-        { key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 2, maxProSaison: 0,
+        { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0 },
+        { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 8 },
+        { key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0,
           auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
-        { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 4 },
-        { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 0 },
+        { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 4 },
+        { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 0 },
       ],
     },
   },
@@ -358,6 +366,8 @@ export function sanitizeEreignisse(partial = {}) {
     // Die WANN-Achse als GATTER. Vorgabe „immer" — ein bestehendes Regelwerk
     // verhält sich unverändert, dieselbe Behandlung wie bei der Wirkung.
     eintrag.ausloeser = sanitizeAusloeser(a.ausloeser);
+    // Die WIE-LANGE-Achse. Vorgabe „sofort" = das bisherige Verhalten.
+    eintrag.geltung = sanitizeGeltung(a.geltung);
     if (typ.parameter.includes("anzahl")) {
       eintrag.anzahl = Math.round(clamp(a.anzahl, EREIGNIS_LIMITS.anzahl, typ.standard.anzahl));
     }
@@ -425,9 +435,14 @@ function aussenseiterTreffer(e, abQuote) {
 
 // Alle Gutschriften eines Nutzers — chronologisch, damit der Deckel die
 // SPÄTEREN abschneidet und nicht willkürlich mittendrin.
+// `jackpotLage` ist die einzige Größe dieser Funktion, die sie NICHT selbst
+// ausrechnen kann: „holt es niemand" ist eine Aussage über die ganze Runde,
+// und hier läuft ein einzelner Nutzer. Ohne sie bleibt der Jackpot-Faktor 1 —
+// dieselbe Regel wie bei den Auslösern, wo fehlende Daten NEIN heißen und
+// nicht „wahrscheinlich schon". Gebaut wird sie von `jackpotLage()` unten.
 export function auswerten({
   eintraege = [], alleEintraege = null, ereignisse = DEFAULT_EREIGNISSE,
-  spieltagsPunkte = null, schluessel = null, rundenId = "",
+  spieltagsPunkte = null, schluessel = null, rundenId = "", jackpotLage: lage = null,
 } = {}) {
   const cfg = sanitizeEreignisse(ereignisse);
   if (!cfg.enabled) return { gutschriften: [], gesamt: 0, gedeckelt: false, verworfen: 0 };
@@ -630,6 +645,27 @@ export function auswerten({
     erlaubt.push(g);
   }
 
+  // ── Die WIE-LANGE-Achse an jeden erlaubten Vorgang ──────────
+  // 🔴 Hier und nicht früher: erst nach Gatter und Begrenzern steht fest, was
+  // wirklich gezahlt wird — und nur dafür gibt es ein Fenster. Ein Vorgang,
+  // den die Abklingzeit geschluckt hat, hätte sonst eine Geltung, die niemand
+  // je sieht, und der Jackpot zählte ihn als Ausschüttung.
+  //
+  // ⚠️ Der Faktor wird auf `belohnung` angewandt, BEVOR `maxErspielt` deckelt.
+  // Andersherum käme ein gewachsener Jackpot am Gesamtdeckel vorbei, und der
+  // ist die Zusage, dass niemand das Tippspiel über Nebenaufgaben gewinnt.
+  const spieltageGesamt = reihenfolge.length;
+  for (const g of erlaubt) {
+    const cfgE = cfg.aktive.find((a) => a.key === g.key);
+    g.geltung = cfgE?.geltung ?? DEFAULT_GELTUNG;
+    g.position = pos(g) + 1;                       // `pos` ist 0-basiert
+    g.gilt = geltungsfenster({ geltung: g.geltung, position: g.position, spieltageGesamt });
+    g.jackpot = lage?.get(g.key)?.get(g.position) ?? 1;
+    if (g.jackpot !== 1 && g.wirkung.typ === "joker") {
+      g.belohnung = Math.round(g.belohnung * g.jackpot);
+    }
+  }
+
   const gutschriften = [];
   let gesamt = 0;
   let verworfen = 0;
@@ -647,6 +683,50 @@ export function auswerten({
   // andere Nachricht als „die Abklingzeit lief noch" oder „der Saison-Deckel
   // war voll" — dieselbe Begründung wie bei `gebremst`/`verworfen`.
   return { gutschriften, gesamt, gedeckelt: verworfen > 0, verworfen, gebremst, zugehalten };
+}
+
+// ── Der Jackpot: eine Aussage über die RUNDE, nicht über einen ──
+// 🔴 „Holt es niemand, wächst es und wandert weiter" lässt sich in `auswerten`
+// nicht beantworten: dort läuft ein einzelner Nutzer, und aus seiner Sicht
+// hätte jeder Spieltag ohne eigene Gutschrift den Topf wachsen lassen. Bei
+// „der Letzte des Spieltags" ist aber an JEDEM Spieltag jemand Letzter — der
+// Topf dürfte nie wachsen, und aus einer Auszeichnung würde still eine
+// Verdreifachung für den, der selten hinten steht.
+//
+// Deshalb ein eigener, runden-weiter Durchlauf. Er ruft `auswerten` je Nutzer
+// OHNE Lage auf — dadurch ist er nicht rekursiv, und das ist auch sachlich
+// richtig: WO ausgeschüttet wurde, hängt nicht davon ab, WIE VIEL.
+//
+// ⚠️ Der Durchlauf kostet einen Lauf je Mitspieler und passiert deshalb nur,
+// wenn wirklich ein Jackpot eingestellt ist — sonst `null` und kein Aufwand.
+// Dieselbe Sparklausel wie bei `ausloeserGatter` und `wirkungsVorgaenge`.
+export function jackpotLage({
+  alleEintraege = [], ereignisse = DEFAULT_EREIGNISSE, spieltagsPunkte = null,
+  schluessel = null, rundenId = "",
+} = {}) {
+  const cfg = sanitizeEreignisse(ereignisse);
+  const jackpots = cfg.aktive.filter((a) => a.geltung?.typ === "jackpot");
+  if (!cfg.enabled || !jackpots.length) return null;
+
+  const nutzer = [...new Set(alleEintraege.map((e) => e.userId).filter((x) => x != null))];
+  const positionen = new Map();   // Ereignis-Key → Positionen mit Ausschüttung
+  for (const userId of nutzer) {
+    const r = auswerten({
+      eintraege: alleEintraege.filter((e) => e.userId === userId),
+      alleEintraege, ereignisse: cfg, spieltagsPunkte, schluessel, rundenId,
+    });
+    for (const g of r.gutschriften) {
+      if (!positionen.has(g.key)) positionen.set(g.key, new Set());
+      positionen.get(g.key).add(g.position);
+    }
+  }
+
+  const out = new Map();
+  for (const a of jackpots) {
+    const verlauf = jackpotVerlauf(a.geltung, [...(positionen.get(a.key) ?? [])]);
+    out.set(a.key, new Map(verlauf.map((v) => [v.position, v.faktor])));
+  }
+  return out;
 }
 
 // ── Das WANN-Gatter, einmal je Spieltag ausgerechnet ────────
@@ -782,26 +862,50 @@ export function wirkungsVorgaenge({
 
   const nutzer = [...new Set(alleEintraege.map((e) => e.userId).filter((x) => x != null))];
   const keyVon = typeof schluessel === "function" ? schluessel : spieltagKey;
+  // Dieselbe Reihenfolge, aus der `auswerten` seine Positionen zieht — die
+  // Geltung rechnet in Positionen, der Verlauf in Spieltagen, und das hier ist
+  // die eine Übersetzung zwischen beiden.
+  const reihenfolge = spieltageChronologisch(alleEintraege, keyVon);
+  const lage = jackpotLage({ alleEintraege, ereignisse: cfg, spieltagsPunkte, schluessel, rundenId });
 
-  // Alle Nicht-Joker-Gutschriften einsammeln, gruppiert nach Spieltag +
+  // Alle Nicht-Joker-Gutschriften einsammeln, gruppiert nach WIRK-Spieltag +
   // Ereignis. Die Gruppe ist der Punkt: für `umverteilung` sind ALLE
   // Ausgezeichneten dieses Spieltags gemeinsam die Geber.
+  //
+  // 🔴 Gruppiert wird nach dem Spieltag, an dem es WIRKT, nicht nach dem, an
+  // dem es entstanden ist. Bei „sofort" ist das derselbe; bei „nächster
+  // Spieltag" nicht, und dann müssen zwei Ausgezeichnete verschiedener
+  // Herkunft trotzdem zusammen umverteilen — sonst gäben sie nacheinander ab
+  // und die zweite Umverteilung träfe eine bereits geschrumpfte Summe.
   const gruppen = new Map();
   for (const userId of nutzer) {
     const meine = alleEintraege.filter((e) => e.userId === userId);
     const r = auswerten({
       eintraege: meine, alleEintraege, ereignisse: cfg, spieltagsPunkte, schluessel, rundenId,
+      jackpotLage: lage,
     });
     for (const g of r.gutschriften) {
       if (!g.wirkung || g.wirkung.typ === "joker") continue;
-      const k = `${g.wettbewerb ?? ""}|${g.matchday}|${g.key}`;
-      if (!gruppen.has(k)) {
-        gruppen.set(k, {
-          wettbewerb: g.wettbewerb, matchday: g.matchday, key: g.key,
-          wirkung: g.wirkung, text: g.text, userIds: [],
-        });
+      // 🔴 Der Vertrag aus `geltung.js`: über ein Fenster läuft nur ein
+      // FAKTOR. Eine feste Gutschrift wird einmal gezahlt, am Beginn — sonst
+      // wäre das Fenster eine Multiplikation und damit der eine Punkte-Kanal,
+      // den `wirkung.js` ausschließt.
+      const istFaktor = g.wirkung.typ === "bonus" || g.wirkung.typ === "malus";
+      for (const zp of wirkSpieltage({
+        geltung: g.geltung, position: g.position,
+        spieltageGesamt: reihenfolge.length, istFaktor,
+      })) {
+        const tag = reihenfolge[zp - 1];
+        if (!tag) continue;
+        const k = `${tag.key}|${g.key}`;
+        if (!gruppen.has(k)) {
+          gruppen.set(k, {
+            tagKey: tag.key, position: zp, wettbewerb: tag.wettbewerb, matchday: tag.matchday,
+            key: g.key, wirkung: g.wirkung, text: g.text, jackpot: g.jackpot ?? 1, userIds: [],
+          });
+        }
+        gruppen.get(k).userIds.push(userId);
       }
-      gruppen.get(k).userIds.push(userId);
     }
   }
   if (!gruppen.size) return [];
@@ -816,9 +920,12 @@ export function wirkungsVorgaenge({
   }
 
   // Chronologisch, damit der Saison-Deckel einer Punkte-Wirkung die SPÄTEREN
-  // abschneidet — dieselbe Regel wie beim Gesamtdeckel oben.
+  // abschneidet — dieselbe Regel wie beim Gesamtdeckel oben. Sortiert wird über
+  // die POSITION im Runden-Verlauf und nicht über `matchday`: seit die Geltung
+  // verschiebt, liegen die Wirk-Spieltage nicht mehr zwangsläufig in der
+  // Reihenfolge ihrer Liga-Zahlen.
   const sortiert = [...gruppen.values()].sort((a, b) =>
-    (a.matchday ?? 0) - (b.matchday ?? 0) || a.key.localeCompare(b.key));
+    a.position - b.position || a.key.localeCompare(b.key));
 
   const bisher = new Map();   // Ereignis-Key → schon vergebene Punkte
   const out = [];
@@ -827,11 +934,17 @@ export function wirkungsVorgaenge({
       wirkung: gr.wirkung,
       betroffene: gr.userIds,
       mitglieder: mitglieder.length ? mitglieder : nutzer,
-      spieltagsPunkte: punkteJe.get(keyVon(gr)) ?? null,
+      spieltagsPunkte: punkteJe.get(gr.tagKey) ?? null,
       bisherPunkte: bisher.get(gr.key) ?? 0,
     });
     let vergeben = 0;
-    for (const v of vorgaenge) {
+    for (const roh of vorgaenge) {
+      // Der Jackpot vergrößert den BETRAG, nicht die Dauer. Beim Faktor wird
+      // der AUFSCHLAG skaliert, nicht der Faktor selbst — sonst würde aus
+      // „+20 % mal 2" ein „+140 %" statt „+40 %", und ein Malus schlüge sogar
+      // ins Positive um.
+      const j = gr.jackpot ?? 1;
+      const v = j === 1 ? roh : { ...roh, punkte: roh.punkte * j, faktor: 1 + (roh.faktor - 1) * j };
       if (v.punkte > 0) vergeben += v.punkte;
       out.push({ ...v, wettbewerb: gr.wettbewerb, matchday: gr.matchday, key: gr.key, ereignisText: gr.text });
     }

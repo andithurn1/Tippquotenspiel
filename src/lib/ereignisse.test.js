@@ -3,6 +3,7 @@ import {
   EREIGNIS_TYPEN, EREIGNIS, EREIGNIS_LIMITS, DEFAULT_EREIGNISSE, AUSWERTBARE_TYPEN,
   istAuswertbar, sanitizeEreignisse, auswerten, konflikte, beschreibeEreignisse,
   EREIGNIS_PRESETS, sanitizeAuswahl, beschreibeAuswahl,
+  wirkungsVorgaenge, jackpotLage,
 } from "@/lib/ereignisse";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { CHARAKTERE } from "@/lib/charaktere";
@@ -316,10 +317,12 @@ describe("Im Regelwerk und im Creator-Code", () => {
     // Die Begrenzer stehen seit 30.07. an JEDEM Eintrag, Vorgabe 0 = aus.
     // Die WAS-Achse (07.08.) ebenso: ohne Angabe „so viele Joker wie
     // `belohnung`" — dadurch ändert kein bestehender Creator-Code seine
-    // Bedeutung.
+    // Bedeutung. Für die WANN- und die WIE-LANGE-Achse gilt dasselbe: „immer"
+    // und „sofort" sind genau das bisherige Verhalten.
     expect(rules.ereignisse.aktive[0]).toEqual({
       key: "serie", anzahl: 4, belohnung: 2, abstand: 0, maxProSaison: 0,
       wirkung: { typ: "joker", n: 2 }, ausloeser: { typ: "immer" },
+      geltung: { typ: "sofort" },
     });
     expect(sanitizeRules(rules)).toEqual(rules);
   });
@@ -622,5 +625,144 @@ describe("WAS passiert dann — die Wirkungs-Achse hängt dran", () => {
     expect(rules.ereignisse.aktive[0].wirkung)
       .toEqual({ typ: "punkte", betrag: 100, maxProSaison: 300 });
     expect(rules.ereignisse.aktive[0].ausloeser).toEqual({ typ: "immer" });
+  });
+});
+
+// ── Die WIE-LANGE-Achse (`geltung.js`) ──────────────────────
+// 🔴 Die vierte und letzte der vier Fragen jeder Mechanik. Sie erzeugt nichts,
+// sondern verschiebt und streckt, was die Wirkung liefert — und genau das ist
+// der Teil, den ein grüner Modul-Test NICHT beweist: `geltung.js` kann fehlerfrei
+// rechnen und trotzdem von niemandem gefragt werden. Diese Fälle prüfen das
+// Fragen.
+describe("WIE LANGE gilt es — die Geltungs-Achse hängt dran", () => {
+  // Vier Spieltage, zwei Spieler. u1 ist an Spieltag 1 und 3 Letzter.
+  const alle = [1, 2, 3, 4].flatMap((md) => [
+    e("u1", md, `m${md}`, { home: 1, away: 0 }, null),
+    e("u2", md, `m${md}`, { home: 2, away: 0 }, null),
+  ]);
+  const punkte = [
+    { matchday: 1, userId: "u1", punkte: 10 }, { matchday: 1, userId: "u2", punkte: 100 },
+    { matchday: 2, userId: "u1", punkte: 100 }, { matchday: 2, userId: "u2", punkte: 10 },
+    { matchday: 3, userId: "u1", punkte: 10 }, { matchday: 3, userId: "u2", punkte: 100 },
+    { matchday: 4, userId: "u1", punkte: 100 }, { matchday: 4, userId: "u2", punkte: 10 },
+  ];
+  const trost = (geltung, wirkung = { typ: "punkte", betrag: 50, maxProSaison: 0 }) =>
+    AN([{ key: "letzter-am-spieltag", belohnung: 1, wirkung, geltung }]);
+
+  it("die Vorgabe ist „sofort“ — jede Gutschrift trägt ihr Fenster", () => {
+    const r = auswerten({
+      eintraege: alle.filter((x) => x.userId === "u1"), alleEintraege: alle,
+      ereignisse: AN([{ key: "letzter-am-spieltag", belohnung: 1 }]), spieltagsPunkte: punkte,
+    });
+    expect(r.gutschriften.length).toBeGreaterThan(0);
+    for (const g of r.gutschriften) {
+      expect(g.geltung).toEqual({ typ: "sofort" });
+      expect(g.gilt).toEqual({ von: g.position, bis: g.position, dauer: 1, offen: false });
+    }
+  });
+
+  // 🔴 Der Pechvogel-Bonus aus der Roadmap: „+20 % am NÄCHSTEN Spieltag".
+  // Ohne diese Achse ist er unbaubar.
+  it("„nächster Spieltag“ verschiebt die Wirkung um einen Spieltag", () => {
+    const sofort = wirkungsVorgaenge({
+      alleEintraege: alle, ereignisse: trost({ typ: "sofort" }), spieltagsPunkte: punkte,
+      mitglieder: ["u1", "u2"],
+    });
+    const spaeter = wirkungsVorgaenge({
+      alleEintraege: alle, ereignisse: trost({ typ: "naechsterSpieltag" }), spieltagsPunkte: punkte,
+      mitglieder: ["u1", "u2"],
+    });
+    const tage = (v) => [...new Set(v.filter((x) => x.userId === "u1").map((x) => x.matchday))].sort();
+    expect(tage(sofort)).toEqual([1, 3]);
+    expect(tage(spaeter)).toEqual([2, 4]);
+  });
+
+  // 🔴 Der Vertrag mit `wirkung.js`: über ein Fenster läuft nur ein FAKTOR.
+  // Eine feste Gutschrift n-mal auszuzahlen wäre der eine Punkte-Kanal, den die
+  // Wirkungs-Achse ausschließt.
+  it("ein Fenster streckt einen Aufschlag — aber vervielfacht keine Gutschrift", () => {
+    const faktor = (geltung) => wirkungsVorgaenge({
+      alleEintraege: alle, ereignisse: trost(geltung, { typ: "bonus", prozent: 20 }),
+      spieltagsPunkte: punkte, mitglieder: ["u1", "u2"],
+    }).filter((v) => v.userId === "u1").length;
+    const summe = (geltung) => wirkungsVorgaenge({
+      alleEintraege: alle, ereignisse: trost(geltung), spieltagsPunkte: punkte,
+      mitglieder: ["u1", "u2"],
+    }).filter((v) => v.userId === "u1").reduce((s, v) => s + v.punkte, 0);
+
+    expect(faktor({ typ: "fenster", n: 3 })).toBeGreaterThan(faktor({ typ: "sofort" }));
+    expect(summe({ typ: "fenster", n: 3 })).toBe(summe({ typ: "sofort" }));
+  });
+
+  // ⚠️ Am letzten Spieltag gibt es keinen nächsten. Ohne diesen Fall bekäme
+  // ein Pechvogel-Bonus dort stillschweigend die Wirkung von „sofort".
+  it("was hinter das Saisonende fällt, wirkt nirgends", () => {
+    const v = wirkungsVorgaenge({
+      alleEintraege: alle.filter((x) => x.matchday <= 3),
+      ereignisse: trost({ typ: "naechsterSpieltag" }),
+      spieltagsPunkte: punkte.filter((p) => p.matchday <= 3), mitglieder: ["u1", "u2"],
+    });
+    // u1 ist an Spieltag 1 und 3 Letzter; der Bonus für Spieltag 3 hat keinen
+    // Landeplatz mehr und verfällt, statt auf Spieltag 3 zurückzufallen.
+    expect([...new Set(v.filter((x) => x.userId === "u1").map((x) => x.matchday))]).toEqual([2]);
+  });
+});
+
+// ── Der Jackpot ist eine Aussage über die RUNDE ─────────────
+// 🔴 Der Fehler, der hier nahe lag: „holt es niemand" aus der Sicht EINES
+// Spielers gelesen. Bei „der Letzte des Spieltags" ist an jedem Spieltag jemand
+// Letzter — aus Sicht der Runde wächst da nie etwas, aus Sicht eines einzelnen
+// Spielers dagegen fast immer. Ein Ein-Nutzer-Lauf hätte aus einer Auszeichnung
+// still eine Verdreifachung für den gemacht, der selten hinten steht.
+describe("Jackpot", () => {
+  const alle = [1, 2, 3, 4].flatMap((md) => [
+    e("u1", md, `m${md}`, { home: 1, away: 0 }, null),
+    e("u2", md, `m${md}`, { home: 2, away: 0 }, null),
+  ]);
+  const punkte = [
+    { matchday: 1, userId: "u1", punkte: 10 }, { matchday: 1, userId: "u2", punkte: 100 },
+    { matchday: 2, userId: "u1", punkte: 100 }, { matchday: 2, userId: "u2", punkte: 10 },
+    { matchday: 3, userId: "u1", punkte: 10 }, { matchday: 3, userId: "u2", punkte: 100 },
+    { matchday: 4, userId: "u1", punkte: 100 }, { matchday: 4, userId: "u2", punkte: 10 },
+  ];
+  const mitJackpot = AN([{
+    key: "letzter-am-spieltag", belohnung: 1,
+    wirkung: { typ: "punkte", betrag: 50, maxProSaison: 0 },
+    geltung: { typ: "jackpot", zuwachs: 50, maxFaktor: 3 },
+  }]);
+
+  it("an jedem Spieltag ausgeschüttet heißt: der Topf wächst nie", () => {
+    const lage = jackpotLage({ alleEintraege: alle, ereignisse: mitJackpot, spieltagsPunkte: punkte });
+    expect([...lage.get("letzter-am-spieltag").values()]).toEqual([1, 1, 1, 1]);
+  });
+
+  it("fällt eine Ausschüttung aus, wächst der Topf für die nächste", () => {
+    // Spieltag 2 und 3 gleichauf: dort ist niemand Letzter, also holt es
+    // niemand — und Spieltag 4 zahlt entsprechend mehr.
+    const gleich = punkte.map((p) => (p.matchday === 2 || p.matchday === 3 ? { ...p, punkte: 50 } : p));
+    const lage = jackpotLage({ alleEintraege: alle, ereignisse: mitJackpot, spieltagsPunkte: gleich });
+    const faktoren = lage.get("letzter-am-spieltag");
+    expect(faktoren.get(1)).toBe(1);
+    expect(faktoren.get(4)).toBe(2);   // zwei leere Spieltage × 50 %
+  });
+
+  it("ohne eingestellten Jackpot kostet der Durchlauf gar nichts", () => {
+    expect(jackpotLage({ alleEintraege: alle, ereignisse: AN([{ key: "letzter-am-spieltag" }]) })).toBe(null);
+  });
+
+  it("der Faktor kommt in der Wertung an — und nur der Aufschlag wächst", () => {
+    const gleich = punkte.map((p) => (p.matchday === 2 || p.matchday === 3 ? { ...p, punkte: 50 } : p));
+    const ohne = wirkungsVorgaenge({
+      alleEintraege: alle, spieltagsPunkte: gleich, mitglieder: ["u1", "u2"],
+      ereignisse: AN([{ key: "letzter-am-spieltag", belohnung: 1,
+        wirkung: { typ: "punkte", betrag: 50, maxProSaison: 0 } }]),
+    });
+    const mit = wirkungsVorgaenge({
+      alleEintraege: alle, ereignisse: mitJackpot, spieltagsPunkte: gleich, mitglieder: ["u1", "u2"],
+    });
+    const anSpieltag4 = (v) => v.filter((x) => x.matchday === 4 && x.punkte > 0)
+      .reduce((s, x) => s + x.punkte, 0);
+    expect(anSpieltag4(ohne)).toBe(50);
+    expect(anSpieltag4(mit)).toBe(100);
   });
 });

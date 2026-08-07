@@ -138,6 +138,23 @@ const FAELLE = [
         wirkung: { typ: "punkte", betrag: 200, maxProSaison: 2000 } },
     ] },
   }],
+  // 🔴 Die WIE-LANGE-Achse (07.08.2026), Ende zu Ende. Der Vergleichsstand ist
+  // dasselbe Ereignis mit `geltung: sofort` — dadurch misst die Zeile die
+  // GELTUNG und nicht das Ereignis. Ein Aufschlag über vier Spieltage statt
+  // über einen ist der einzige Fall, in dem die Achse Punkte bewegt: eine
+  // feste Gutschrift zahlt auch über ein Fenster nur einmal (der Topf-Vertrag
+  // aus `wirkung.js`), und Joker bewegen das Leaderboard bauartbedingt nicht.
+  ["ereignisse (Geltung: Fenster)", {
+    ereignisse: { enabled: true, maxErspielt: 5, aktive: [
+      { key: "letzter-am-spieltag", belohnung: 1, abstand: 0, maxProSaison: 0,
+        auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 },
+        wirkung: { typ: "bonus", prozent: 50 }, geltung: { typ: "fenster", n: 4 } },
+    ] },
+  }, { gegen: { ereignisse: { enabled: true, maxErspielt: 5, aktive: [
+    { key: "letzter-am-spieltag", belohnung: 1, abstand: 0, maxProSaison: 0,
+      auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 },
+      wirkung: { typ: "bonus", prozent: 50 }, geltung: { typ: "sofort" } },
+  ] } } }],
 ];
 
 async function board(extra, opt = {}) {
@@ -441,6 +458,7 @@ import { darfEinsetzen, DEFAULT_BASIS } from "../src/lib/jokerBasis.js";
 import { preisFuer, kannBezahlen, DEFAULT_BUDGET } from "../src/lib/jokerBudget.js";
 import { tippStatus } from "../src/lib/tippfenster.js";
 import { feuert } from "../src/lib/ausloeser.js";
+import { giltAn, geltungsfenster, jackpotFaktor } from "../src/lib/geltung.js";
 
 // Ein fester Stand, gegen den alle Tore gemessen werden: fünf Spieler mit
 // klarem Abstand, damit „nur nach vorne" und „nicht den Letzten" überhaupt
@@ -536,6 +554,19 @@ const offeneSpieltage = (ausloeser) =>
     eintraege: [{ tip: { home: 1, away: 0 }, result: { home: position % 3, away: 0 } }],
   })).length;
 
+// An wie vielen der 20 Spieltage gilt etwas, das an Spieltag 8 entstanden ist?
+const ERWORBEN_AN = 8;
+const gueltigeSpieltage = (geltung) =>
+  [...Array(20).keys()].map((i) => i + 1).filter((position) =>
+    giltAn({ geltung, erworbenAn: ERWORBEN_AN, position, spieltageGesamt: 20 })).length;
+
+const ersterGueltiger = (geltung) =>
+  geltungsfenster({ geltung, position: ERWORBEN_AN, spieltageGesamt: 20 })?.von ?? 0;
+
+// Was zahlt eine Ausschüttung, wenn sie n Spieltage liegen geblieben ist?
+// In Prozent, damit die Zeile eine ganze Zahl zeigt.
+const ausschuettung = (geltung, luecke = 4) => Math.round(jackpotFaktor(geltung, luecke) * 100);
+
 const GATE_FAELLE = [
   ["duell.zielWahl", () => zieleGesamt(D({ zielWahl: "frei" })), () => zieleGesamt(D({ zielWahl: "nurVorne" })),
     "erlaubte Ziele über 5 Spieler"],
@@ -566,6 +597,29 @@ const GATE_FAELLE = [
     () => offeneSpieltage({ typ: "saisonende", letzte: 3 }), "offene Spieltage von 20"],
   ["ausloeser.enge", () => offeneSpieltage({ typ: "enge", prozent: 60 }),
     () => offeneSpieltage({ typ: "enge", prozent: 5 }), "offene Spieltage von 20"],
+  // 🔴 Die WIE-LANGE-Achse (07.08.2026). Sie ist die Erlaubnis in Reinform:
+  // sie sagt, an welchen Spieltagen etwas gilt, und bewegt für sich genommen
+  // keinen einzigen Punkt.
+  ["geltung.fenster", () => gueltigeSpieltage({ typ: "sofort" }),
+    () => gueltigeSpieltage({ typ: "fenster", n: 5 }), "gültige Spieltage von 20"],
+  ["geltung.rest", () => gueltigeSpieltage({ typ: "sofort" }),
+    () => gueltigeSpieltage({ typ: "rest" }), "gültige Spieltage von 20"],
+  // ⚠️ Nicht über die ANZAHL messbar: „nächster Spieltag" gilt genau einen
+  // Spieltag lang, „sofort" auch. Die Zahl wäre in beiden Fällen 1, und die
+  // Zeile stünde als totes Tor da, obwohl sie sauber verschiebt. Gemessen wird
+  // deshalb, WELCHER Spieltag es ist — dieselbe Lehre wie bei `limitKlassen`,
+  // wo der erste Messfall am falschen Feldnamen scheiterte.
+  ["geltung.naechsterSpieltag", () => ersterGueltiger({ typ: "sofort" }),
+    () => ersterGueltiger({ typ: "naechsterSpieltag" }), "erster gültiger Spieltag (erworben an 8)"],
+  ["geltung.jackpot", () => ausschuettung({ typ: "sofort" }),
+    () => ausschuettung({ typ: "jackpot", zuwachs: 25, maxFaktor: 3 }),
+    "% Ausschüttung nach 4 leeren Spieltagen"],
+  // 🔴 Die Pflicht-Obergrenze aus der Roadmap („sonst entscheidet ein einzelner
+  // Spieltag die Saison"). Ohne diese Zeile stünde sie im Regelwerk und niemand
+  // hätte geprüft, ob sie überhaupt greift.
+  ["geltung.maxFaktor", () => ausschuettung({ typ: "jackpot", zuwachs: 25, maxFaktor: 5 }, 20),
+    () => ausschuettung({ typ: "jackpot", zuwachs: 25, maxFaktor: 2 }, 20),
+    "% Ausschüttung nach 20 leeren Spieltagen"],
 ];
 
 console.log(`${"=".repeat(88)}`);
