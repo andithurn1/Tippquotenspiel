@@ -10,8 +10,21 @@ describe("sanitizePrefs", () => {
 
   it("gültige Stufen bleiben erhalten", () => {
     for (const lv of LEVELS) {
-      expect(sanitizePrefs({ abrechnung: lv, vorschau: lv })).toEqual({ abrechnung: lv, vorschau: lv, startScreen: "menu" });
+      expect(sanitizePrefs({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv }))
+        .toEqual({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu" });
     }
+  });
+
+  // ⚠️ Eine Anzeige-Stufe, die `sanitizePrefs` nicht mitschreibt, fällt beim
+  // nächsten Speichern still auf die Vorgabe zurück: der Nutzer stellt die
+  // Einblendung ab, und beim übernächsten Öffnen ist sie wieder da. Deshalb
+  // hier über ALLE Stufen aus `DEFAULT_PREFS` statt über eine Aufzählung —
+  // die nächste vergisst sonst wieder jemand.
+  it("keine Stufe fällt beim Säubern hinten runter", () => {
+    const stufen = Object.keys(DEFAULT_PREFS).filter((k) => k !== "startScreen");
+    const alleAus = Object.fromEntries(stufen.map((k) => [k, "aus"]));
+    const s = sanitizePrefs(alleAus);
+    for (const k of stufen) expect(s[k]).toBe("aus");
   });
 
   it("verwirft Fremdschlüssel", () => {

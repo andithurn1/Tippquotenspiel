@@ -3,6 +3,7 @@ import PrefsProvider from "@/components/PrefsProvider";
 import RoundProvider from "@/components/RoundProvider";
 import ThemeProvider from "@/components/ThemeProvider";
 import NotifyRunner from "@/components/NotifyRunner";
+import Zwischenabrechnung from "@/components/Zwischenabrechnung";
 
 export const metadata = {
   title: "Tippquotenspiel",
@@ -43,6 +44,12 @@ export default function RootLayout({ children }) {
                     Erinnerung nicht davon abhängen darf, auf welchem Screen
                     man gerade steht. */}
                 <NotifyRunner />
+                {/* Meldet sich beim Öffnen, wenn Spiele fertig geworden sind,
+                    auf die man getippt hat — aus demselben Grund hier und
+                    nicht auf der Abrechnungs-Seite: eine Nachricht, die man
+                    nur sieht, wenn man ohnehin nachschaut, ist keine.
+                    Abstellbar über `prefs.zwischenabrechnung`. */}
+                <Zwischenabrechnung />
                 {children}
               </ThemeProvider>
             </PrefsProvider>

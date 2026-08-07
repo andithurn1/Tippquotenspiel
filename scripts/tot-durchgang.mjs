@@ -68,6 +68,17 @@ const GEDULDET = {
     + "den Test der Lücken-Logik da.",
   ampelMitLuecken:
     "Dito — legt über `bewerten()`, was die Messung selbst nicht abdeckt.",
+
+  // Beide werden in `neueAbrechnungen` (dieselbe Datei) benutzt. Exportiert,
+  // weil „wann ist ein Spiel vorbei" die Kernregel dieser Datei ist und einen
+  // eigenen Testfall verdient — über `neueAbrechnungen` gemessen bräuchte es
+  // dafür jedes Mal eine ganze Eintragsliste.
+  abrechnungsZeit:
+    "Wird in `neueAbrechnungen` (dieselbe Datei) aufgerufen; der Export ist für "
+    + "den Test der Zeit-Regel da.",
+  SPIELDAUER_MIN:
+    "Dito — der Test hält fest, dass die Spanne großzügig bleibt (zu spät ist "
+    + "harmlos, zu früh zeigt ein Ergebnis, das es noch nicht gibt).",
 };
 
 const LIB = "src/lib";

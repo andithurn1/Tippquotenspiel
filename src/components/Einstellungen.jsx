@@ -74,6 +74,14 @@ export default function Einstellungen() {
 
           <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
 
+          {/* 🔴 Die Einblendung nach Spielende. Sie legt sich beim Öffnen vor
+              alles — der Schalter dafür MUSS hier stehen, und der Hinweis in
+              der Einblendung verlinkt genau hierher. */}
+          <PrefSection meta={PREF_META.zwischenabrechnung} value={prefs.zwischenabrechnung}
+            onChange={(v) => setPref("zwischenabrechnung", v)} />
+
+          <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
+
           <div>
             <div style={{ fontSize: 14, fontWeight: 700 }}>App-Start</div>
             <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>

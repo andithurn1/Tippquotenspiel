@@ -3,6 +3,37 @@
 Offene Feature-Ideen, grob nach Aufwand. Gebaut wird in einzelnen, testbaren
 Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 
+## 🆕 Zwischenabrechnung nach Spielende (Nutzer-Wunsch, 07.08.2026, gebaut)
+
+**Der Wunsch:** abgerechnet wird nach JEDEM einzelnen Spiel, zeitgesteuert; der
+Spieler sieht es beim Öffnen der App — und zwar gesammelt für alle Spiele, die
+seit seinem letzten Besuch fertig geworden sind.
+
+Gebaut: `src/lib/zwischenabrechnung.js` (Logik), `Zwischenabrechnung.jsx`
+(Einblendung im Layout), `prefs.zwischenabrechnung` (voll · dezent · **aus**).
+
+Drei Punkte, die nicht brechen dürfen:
+
+1. **Zeit UND Ergebnis.** Ein Spiel gilt `SPIELDAUER_MIN` (135) nach Anpfiff als
+   vorbei — großzügig, weil zu spät harmlos ist und zu früh ein Ergebnis zeigt,
+   das es noch nicht gibt. Die Zeit allein genügt aber nicht: ohne vorliegendes
+   Ergebnis gäbe es eine Meldung mit 0 Punkten, und die liest sich wie ein
+   Fehltipp statt wie ein fehlendes Ergebnis.
+2. **Die Marke ist der Stand des LETZTEN abgerechneten Spiels, nicht `jetzt`.**
+   Zwischen Aufbau der Liste und Klick liegen Minuten; mit „jetzt" markiert
+   würde ein Spiel, das genau dazwischen fertig wird, als gesehen verbucht und
+   nie erzählt. Doppelt zeigen ist ärgerlich, verschlucken ist schlimmer.
+3. **Beim allerersten Start wird NICHTS erzählt**, nur die Marke gesetzt — sonst
+   käme die halbe Saison als „Neuigkeiten".
+
+⚠️ **Was noch fehlt: die Ergebnis-Quelle.** Echt ist bisher nur der Kalender;
+Ergebnisse sind erzeugt. Die Mechanik läuft vollständig gegen die erzeugten
+Ergebnisse und ist quellen-neutral gebaut (Zeit + `result`), aber im
+Live-Betrieb hängt sie daran, dass Ergebnisse überhaupt eintreffen. Das ist
+dieselbe austauschbare Stelle wie bei den Quoten.
+
+---
+
 ## ⛔ ENDPHASE — hier steht, was ERST GANZ AM SCHLUSS drankommt
 
 **Nicht anfangen. Nicht messen. Nicht melden.** Ausdrückliche Anweisung von
