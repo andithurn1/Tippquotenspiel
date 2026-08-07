@@ -440,6 +440,7 @@ import { pruefeEinsatz, sanitizeLimitKlassen } from "../src/lib/limitKlassen.js"
 import { darfEinsetzen, DEFAULT_BASIS } from "../src/lib/jokerBasis.js";
 import { preisFuer, kannBezahlen, DEFAULT_BUDGET } from "../src/lib/jokerBudget.js";
 import { tippStatus } from "../src/lib/tippfenster.js";
+import { feuert } from "../src/lib/ausloeser.js";
 
 // Ein fester Stand, gegen den alle Tore gemessen werden: fünf Spieler mit
 // klarem Abstand, damit „nur nach vorne" und „nicht den Letzten" überhaupt
@@ -519,6 +520,22 @@ const GARTEN = ["joker", "duell.klau", "duell.block", "drehrad", "ereignis"];
 const bezahlbareArten = (budget, stand = 20) =>
   GARTEN.filter((art) => kannBezahlen(stand, preisFuer(art, budget))).length;
 
+// Wie viele der 20 Spieltage lässt ein Auslöser durch? Der Tabellenstand
+// zieht sich über die Saison auseinander (250 → 3000 Punkte Spanne), damit
+// `enge`/`abstand` überhaupt etwas zu unterscheiden haben — sonst stünde die
+// Zeile grün da, ohne etwas geprüft zu haben.
+const offeneSpieltage = (ausloeser) =>
+  [...Array(20).keys()].map((i) => i + 1).filter((position) => feuert({
+    ausloeser, position, spieltageGesamt: 20, rundenId: "greift",
+    stand: [
+      { userId: "p1", total: 100 * position },
+      { userId: "p2", total: 100 * position - 10 * position * position },
+    ],
+    spiele: [{ result: { home: position % 4, away: 0 },
+      snapshot: { winner: { home: 1.3, draw: 3.4, away: 8 } } }],
+    eintraege: [{ tip: { home: 1, away: 0 }, result: { home: position % 3, away: 0 } }],
+  })).length;
+
 const GATE_FAELLE = [
   ["duell.zielWahl", () => zieleGesamt(D({ zielWahl: "frei" })), () => zieleGesamt(D({ zielWahl: "nurVorne" })),
     "erlaubte Ziele über 5 Spieler"],
@@ -539,6 +556,16 @@ const GATE_FAELLE = [
   ["budget (Preise)", () => bezahlbareArten({ ...DEFAULT_BUDGET, enabled: true, preise: {} }),
     () => bezahlbareArten({ ...DEFAULT_BUDGET, enabled: true, preise: Object.fromEntries(GARTEN.map((a) => [a, 50])) }),
     "bezahlbare Joker-Arten von 5"],
+  // 🔴 Die WANN-Achse (07.08.2026) ist ein GATTER und bewegt bauartbedingt
+  // keine Punkte — sie gehört genau hierher und nicht in Teil 1.
+  ["ausloeser.rhythmus", () => offeneSpieltage({ typ: "immer" }),
+    () => offeneSpieltage({ typ: "rhythmus", n: 4 }), "offene Spieltage von 20"],
+  ["ausloeser.zufall", () => offeneSpieltage({ typ: "immer" }),
+    () => offeneSpieltage({ typ: "zufall", frequenz: 5 }), "offene Spieltage von 20"],
+  ["ausloeser.saisonende", () => offeneSpieltage({ typ: "immer" }),
+    () => offeneSpieltage({ typ: "saisonende", letzte: 3 }), "offene Spieltage von 20"],
+  ["ausloeser.enge", () => offeneSpieltage({ typ: "enge", prozent: 60 }),
+    () => offeneSpieltage({ typ: "enge", prozent: 5 }), "offene Spieltage von 20"],
 ];
 
 console.log(`${"=".repeat(88)}`);

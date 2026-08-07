@@ -470,6 +470,76 @@ vorbei:
    ✅ **Erledigt 07.08.2026** — beide angeschlossen, siehe den Abschnitt
    darunter.
 
+#### ✅ 07.08.: die WANN-Achse als GATTER (`src/lib/ausloeser.js`)
+
+Dritte der vier Achsen, und die Entscheidung dabei ist die wichtigste Zeile:
+**sie ersetzt die Ereignis-Typen nicht.** Die SIND heute schon Auslöser
+(„Serie", „erster exakter Treffer", „Außenseiter getroffen"). Diese Achse legt
+nur eine zweite Frage davor — „und passt der Zeitpunkt?" Aus „Trost-Joker"
+wird damit „Trost-Joker, aber nur jeden vierten Spieltag" oder „nur, solange
+die Tabelle eng ist", ohne eine Zeile neuen Auswertungs-Code. Genau so hat die
+WEN-Achse aus dem Trost-Joker die Spieltags-Krone gemacht.
+
+Ein Ersatz der bestehenden Typen wäre dagegen ein Umbau der funktionierenden
+Ebene, und der gehört nicht in denselben Schritt.
+
+**Zehn auswertbare Auslöser**, vier vorbereitet (`lotterie`, `abstimmung`,
+`adminAusloesung`, `kaskade` — alle brauchen Infrastruktur). Vorgabe
+`{ typ: "immer" }` = Gatter offen, also kein stiller Regelwechsel für
+bestehende Regelwerke.
+
+⚠️ **`zufall` nimmt die Lösung, die dieses Projekt schon einmal gebaut hat:**
+reiner Zufall bündelt (`jokerPlan.js`: „sonst bündelt reiner Zufall vier Joker
+in fünf Spieltagen; formal fair, gefühlt kaputt"). Deshalb blockweise — je
+Block von `frequenz` Spieltagen feuert GENAU EINER, welcher ist aus der
+Runden-Id gelost. Ein Test prüft das über vier verschiedene Runden-Ids.
+
+**Gemessen über 54 Spiele, drei Spieler, Trost-Ereignis:**
+
+| Gatter | Gutschriften | zurückgehalten |
+|---|---|---|
+| `immer` (Vorgabe) | 8 | 0 |
+| `rhythmus` n=4 | 2 | 6 |
+| `zufall` frequenz=5 | 2 | 6 |
+| `saisonende` letzte=3 | 3 | 5 |
+| `termin` Spieltag 3 | 1 | 7 |
+| `enge` ≤ 10 % | 3 | 5 |
+| `gruppenereignis` | 3 | 5 |
+| `quotenereignis` ab 6,0 | 2 | 6 |
+| `torlos` | 2 | 6 |
+
+🔴 **Zwei Fehler, die nur die Messung gefunden hat — kein Test hätte sie
+gemeldet:**
+
+1. **`Number(null) === 0`, zum wiederholten Mal.** `feuert()` prüfte
+   `Number.isFinite(Number(position))`, und `Number(null)` ist 0 — bei
+   `rhythmus` heißt `0 % 4 === 0` also: **das Gatter geht ohne jede Grundlage
+   auf.** Dieselbe Falle, die `sanitizeDuellJoker` bei `abSpieltag` schon
+   einmal hatte. Hier hat der Test sie erwischt, bevor sie in die Wertung kam.
+
+2. **`spieltageChronologisch` liefert OBJEKTE, keine Schlüssel.** Der erste
+   Anlauf iterierte sie als Schlüssel; `standVor` war damit über Objekte
+   indiziert, jedes `get(key)` ging ins Leere, und `enge` wie `abstand`
+   hielten IMMER zu. **Und das sieht plausibel aus** — sie sind Gegenstücke,
+   eines von beiden ist immer falsch. Gefunden hat es erst die Messung, die
+   alle zehn Gatter nebeneinander stellte, und die Gegenprobe (`abstand` bei
+   5 % lässt 7 durch, `enge` bei 60 % ebenfalls 7 — das Gatter bewegt sich
+   monoton).
+
+**Angeschlossen:** das Gatter steht VOR den Begrenzern in `auswerten()` —
+was der Auslöser nicht durchlässt, darf keine Abklingzeit starten und nicht
+gegen `maxProSaison` zählen; sonst verbrauchte ein Ereignis sein Kontingent an
+Spieltagen, an denen es nie gefeuert hat. `zugehalten` steht als eigene Zahl
+neben `gebremst` und `verworfen`: drei Gründe, drei Schrauben.
+
+⚠️ **`rundenId` reicht jetzt bis in die Wertung durch** (Screens →
+`erspielteLage`, Stores → `scoreLeaderboardHistory` → `wirkungsVorgaenge`).
+Ohne das zöge dieselbe `zufall`-Regel im Joker-Vorrat andere Spieltage als in
+der Wertung — die doppelte Wahrheit in Reinform.
+
+Vier neue Tore in `greift` Teil 4: `rhythmus` 20 → 5 · `zufall` 20 → 4 ·
+`saisonende` 20 → 3 · `enge` 6 → 0 offene Spieltage.
+
 #### ✅ 07.08.: die WAS-Achse der Regel-Grammatik steht (`src/lib/wirkung.js`)
 
 Schritt 2 der Reihenfolge weiter unten („die Grammatik als Datenmodell in

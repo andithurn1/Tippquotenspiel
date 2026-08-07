@@ -45,6 +45,13 @@ import { waehleBetroffene } from "./auswahl";
 // JOKER, weil er ein Joker-Deckel ist — die anderen Wirkungen bringen ihren
 // eigenen Topf mit (siehe Kopfkommentar von `wirkung.js`).
 import { sanitizeWirkung, beschreibeWirkung, wendeAn } from "./wirkung";
+// 🔴 Die WANN-Achse (07.08.2026). Sie ERSETZT die Ereignis-Typen nicht — die
+// sind selbst schon Auslöser („Serie", „erster exakter Treffer") — sondern
+// legt eine zweite Frage davor: „und passt der Zeitpunkt?" Aus „Trost-Joker"
+// wird so „Trost-Joker, aber nur jeden vierten Spieltag" oder „nur, solange
+// die Tabelle eng ist", ohne eine Zeile neuen Auswertungs-Code. Vorgabe
+// `{ typ: "immer" }` = Gatter offen, also kein stiller Regelwechsel.
+import { sanitizeAusloeser, feuert, beschreibeAusloeser } from "./ausloeser";
 
 // Welche Daten haben wir heute? Alles andere ist im Katalog vorbereitet, aber
 // nicht auswertbar — genau wie Karten/Fouls bei den Saison-Wetten.
@@ -241,8 +248,8 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 6,
       aktive: [
-        { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 2, maxProSaison: 0 },
-        { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 6 },
+        { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 2, maxProSaison: 0 },
+        { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 6 },
       ],
     },
   },
@@ -254,7 +261,7 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 5,
       // `abstand: 2`: ohne Abklingzeit kassiert derselbe Spieler jede Woche.
-      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 2, maxProSaison: 0,
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 2, maxProSaison: 0,
         auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } }],
     },
   },
@@ -270,8 +277,8 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 5,
       aktive: [
-        { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 4 },
-        { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 0 },
+        { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 4 },
+        { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 0 },
       ],
     },
   },
@@ -288,7 +295,7 @@ export const EREIGNIS_PRESETS = [
     wirkrichtung: "verstärkend", gemessen: false,
     ereignisse: {
       enabled: true, maxErspielt: 5,
-      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 3, maxProSaison: 0,
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 3, maxProSaison: 0,
         auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 } }],
     },
   },
@@ -300,12 +307,12 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 10,
       aktive: [
-        { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 2, maxProSaison: 0 },
-        { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 8 },
-        { key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 2, maxProSaison: 0,
+        { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 2, maxProSaison: 0 },
+        { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 8 },
+        { key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 2, maxProSaison: 0,
           auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
-        { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 4 },
-        { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, abstand: 0, maxProSaison: 0 },
+        { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 4 },
+        { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, abstand: 0, maxProSaison: 0 },
       ],
     },
   },
@@ -348,6 +355,9 @@ export function sanitizeEreignisse(partial = {}) {
     // JOKER-Deckel aufzehrt (der Topf-Vertrag aus `wirkung.js`).
     eintrag.wirkung = sanitizeWirkung(a.wirkung, { typ: "joker", n: eintrag.belohnung });
     if (eintrag.wirkung.typ !== "joker") eintrag.belohnung = 0;
+    // Die WANN-Achse als GATTER. Vorgabe „immer" — ein bestehendes Regelwerk
+    // verhält sich unverändert, dieselbe Behandlung wie bei der Wirkung.
+    eintrag.ausloeser = sanitizeAusloeser(a.ausloeser);
     if (typ.parameter.includes("anzahl")) {
       eintrag.anzahl = Math.round(clamp(a.anzahl, EREIGNIS_LIMITS.anzahl, typ.standard.anzahl));
     }
@@ -417,7 +427,7 @@ function aussenseiterTreffer(e, abQuote) {
 // SPÄTEREN abschneidet und nicht willkürlich mittendrin.
 export function auswerten({
   eintraege = [], alleEintraege = null, ereignisse = DEFAULT_EREIGNISSE,
-  spieltagsPunkte = null, schluessel = null,
+  spieltagsPunkte = null, schluessel = null, rundenId = "",
 } = {}) {
   const cfg = sanitizeEreignisse(ereignisse);
   if (!cfg.enabled) return { gutschriften: [], gesamt: 0, gedeckelt: false, verworfen: 0 };
@@ -587,12 +597,29 @@ export function auswerten({
   //
   // Beide greifen CHRONOLOGISCH, aus demselben Grund wie der Gesamtdeckel: die
   // früh verdienten zählen, sonst hinge das Ergebnis an der Sortierung.
+  // ── Das WANN-Gatter, VOR den Begrenzern ─────────────────────
+  // 🔴 Reihenfolge ist nicht beliebig: was der Auslöser gar nicht durchlässt,
+  // darf auch keine Abklingzeit starten und nicht gegen `maxProSaison`
+  // zählen. Andersherum verbrauchte ein Ereignis sein Kontingent an
+  // Spieltagen, an denen es nie gefeuert hat — und der Admin sähe eine Regel,
+  // die früh aufhört, ohne Grund.
+  //
+  // Die Daten je Spieltag kommen aus derselben Quelle wie alles andere hier:
+  // `alle` (Tipps mit Ergebnis und Snapshot) und `spieltagsPunkte`. Der STAND
+  // wird daraus kumulativ aufgebaut — die Lage VOR diesem Spieltag, wie beim
+  // Anschluss-Bonus, sonst begründete ein Gatter sich mit dem Ergebnis, das
+  // es gerade auslöst.
+  const gatterOffen = ausloeserGatter({
+    roh, cfg, alle, spieltagsPunkte, keyVon, pos, reihenfolge, rundenId,
+  });
   const zuletzt = new Map();   // key → Position des letzten Treffers
   const gezaehlt = new Map();  // key → wie oft schon gezahlt
   const erlaubt = [];
   let gebremst = 0;
+  let zugehalten = 0;
   for (const g of roh) {
     const cfgE = cfg.aktive.find((a) => a.key === g.key) ?? {};
+    if (!gatterOffen(g)) { zugehalten++; continue; }
     const p = pos(g);
     const vor = zuletzt.get(g.key);
     const zuFrueh = cfgE.abstand > 0 && vor != null && p - vor < cfgE.abstand;
@@ -614,7 +641,82 @@ export function auswerten({
   // `gebremst` und `verworfen` bleiben getrennt: das eine ist eine Regel des
   // Ereignisses, das andere der Gesamtdeckel. Wer sie zusammenwirft, kann dem
   // Admin nicht sagen, an welcher Schraube er drehen muss.
-  return { gutschriften, gesamt, gedeckelt: verworfen > 0, verworfen, gebremst };
+  // `zugehalten` steht neben `gebremst` und `verworfen` und wird nicht mit
+  // ihnen verrechnet: drei verschiedene Gründe, drei verschiedene Schrauben.
+  // „Dein Ereignis hat ausgelöst, aber der Zeitpunkt passte nicht" ist eine
+  // andere Nachricht als „die Abklingzeit lief noch" oder „der Saison-Deckel
+  // war voll" — dieselbe Begründung wie bei `gebremst`/`verworfen`.
+  return { gutschriften, gesamt, gedeckelt: verworfen > 0, verworfen, gebremst, zugehalten };
+}
+
+// ── Das WANN-Gatter, einmal je Spieltag ausgerechnet ────────
+// Gibt eine Funktion `(gutschrift) => boolean` zurück. Ausgerechnet wird JE
+// SPIELTAG und nicht je Gutschrift: `gruppenereignis` und `quotenereignis`
+// schauen auf den ganzen Spieltag, und dieselbe Frage für jede Gutschrift
+// erneut zu stellen wäre nicht nur teuer, sondern lüde dazu ein, sie
+// unterschiedlich zu beantworten.
+function ausloeserGatter({ roh, cfg, alle, spieltagsPunkte, keyVon, pos, reihenfolge, rundenId }) {
+  // Kein einziges Gatter gesetzt? Dann ist alles offen, und der ganze Aufbau
+  // entfällt — der Normalfall.
+  if (!cfg.aktive.some((a) => a.ausloeser?.typ && a.ausloeser.typ !== "immer")) return () => true;
+
+  // Spiele und Tipps je Spieltag, aus derselben Liste, aus der die Ereignisse
+  // selbst kommen.
+  const jeTag = new Map();
+  for (const e of alle) {
+    const k = keyVon(e);
+    if (!jeTag.has(k)) jeTag.set(k, { eintraege: [], spiele: new Map() });
+    const t = jeTag.get(k);
+    t.eintraege.push(e);
+    if (e.matchId != null && !t.spiele.has(e.matchId)) {
+      t.spiele.set(e.matchId, { result: e.result, snapshot: e.snapshot });
+    }
+  }
+
+  // Der kumulative Stand VOR jedem Spieltag, aus `spieltagsPunkte` aufgebaut.
+  // Ohne die Punkte gibt es keinen Stand — und ein Gatter ohne seine Daten
+  // hält zu (siehe `feuert`).
+  // ⚠️ `spieltageChronologisch` liefert OBJEKTE (`{ key, wettbewerb, matchday,
+  // start, ende }`), keine Schlüssel. Der erste Anlauf iterierte sie als
+  // Schlüssel — `standVor` war damit über Objekte indiziert, jedes `get(key)`
+  // ging ins Leere, und `enge` wie `abstand` hielten IMMER zu. Beide auf null
+  // sieht plausibel aus (sie sind Gegenstücke, eines von beiden ist immer
+  // falsch), und kein Test hätte das gemeldet — gefunden hat es erst die
+  // Messung, die alle zehn Gatter nebeneinander stellte.
+  const standVor = new Map();
+  if (Array.isArray(spieltagsPunkte)) {
+    const summe = new Map();
+    for (const stufe of reihenfolge) {
+      const k = stufe.key;
+      standVor.set(k, [...summe.entries()].map(([userId, total]) => ({ userId, total })));
+      for (const p of spieltagsPunkte) {
+        if (keyVon(p) !== k) continue;
+        summe.set(p.userId, (summe.get(p.userId) ?? 0) + (Number(p.punkte) || 0));
+      }
+    }
+  }
+
+  const zwischen = new Map();  // `${key}|${ereignisKey}` → ja/nein
+  return (g) => {
+    const cfgE = cfg.aktive.find((a) => a.key === g.key);
+    const a = cfgE?.ausloeser;
+    if (!a || a.typ === "immer") return true;
+    const k = keyVon(g);
+    const merk = `${k}|${g.key}`;
+    if (zwischen.has(merk)) return zwischen.get(merk);
+    const tag = jeTag.get(k);
+    const antwort = feuert({
+      ausloeser: a,
+      position: pos(g) + 1,                    // `pos` ist 0-basiert
+      spieltageGesamt: reihenfolge.length,
+      stand: standVor.get(k) ?? [],
+      spiele: tag ? [...tag.spiele.values()] : [],
+      eintraege: tag?.eintraege ?? [],
+      rundenId,
+    });
+    zwischen.set(merk, antwort);
+    return antwort;
+  };
 }
 
 // ── Konflikte mit anderen Regeln ────────────────────────────
@@ -670,7 +772,7 @@ export function beschreibeEreignisse(ereignisse) {
 // niemanden als Empfänger benennen und liefert nichts, statt zu raten.
 export function wirkungsVorgaenge({
   alleEintraege = [], ereignisse = DEFAULT_EREIGNISSE, spieltagsPunkte = null,
-  schluessel = null, mitglieder = [],
+  schluessel = null, mitglieder = [], rundenId = "",
 } = {}) {
   const cfg = sanitizeEreignisse(ereignisse);
   if (!cfg.enabled) return [];
@@ -688,7 +790,7 @@ export function wirkungsVorgaenge({
   for (const userId of nutzer) {
     const meine = alleEintraege.filter((e) => e.userId === userId);
     const r = auswerten({
-      eintraege: meine, alleEintraege, ereignisse: cfg, spieltagsPunkte, schluessel,
+      eintraege: meine, alleEintraege, ereignisse: cfg, spieltagsPunkte, schluessel, rundenId,
     });
     for (const g of r.gutschriften) {
       if (!g.wirkung || g.wirkung.typ === "joker") continue;

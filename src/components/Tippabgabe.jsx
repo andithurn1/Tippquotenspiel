@@ -424,6 +424,9 @@ export default function Tippabgabe({ matchId }) {
         // Der RUNDEN-Spieltag, nicht der Liga-Spieltag — dieselbe Quelle wie
         // beim Ranglisten-Pool ein paar Zeilen weiter unten.
         schluessel,
+        // Speist den `zufall`-Auslöser der WANN-Achse. Ohne die Runden-Id
+        // losten alle Runden dieselben Spieltage.
+        rundenId: roundId ?? "",
       })
         .map((g) => {
           const runde = rundenSpieltagVon(achse, { wettbewerb: g.wettbewerb, matchday: g.matchday });

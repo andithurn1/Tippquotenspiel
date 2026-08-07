@@ -12,6 +12,10 @@ import {
   AUSWERTBARE_WIRKUNGEN, WIRKUNG, WIRKUNG_LIMITS,
   sanitizeWirkung, beschreibeWirkung, konflikte as wirkungsKonflikte,
 } from "@/lib/wirkung";
+import {
+  AUSWERTBARE_AUSLOESER, AUSLOESER, AUSLOESER_LIMITS,
+  sanitizeAusloeser, beschreibeAusloeser, haeufigkeit,
+} from "@/lib/ausloeser";
 
 // ── WEN trifft es? ──────────────────────────────────────────
 // Drei Modi, eine Richtung, eine Zahl — und darunter der SATZ, den ein Spieler
@@ -23,6 +27,61 @@ import {
 const BEISPIEL_RUNDE = 12;
 
 const MODUS_LABEL = { rang: "Feste Anzahl", perzentil: "Anteil in Prozent", mitte: "Das Mittelfeld" };
+
+// ── WANN geht es los? ───────────────────────────────────────
+// 🔴 Die vierte Achse in dieser Oberfläche (`ausloeser.js`) — und ein GATTER,
+// kein Ersatz: die Ereignis-Typen selbst sind schon Auslöser („Serie",
+// „erster exakter Treffer"). Hier kommt nur die zweite Frage davor: „und passt
+// der Zeitpunkt?" Aus „Trost-Joker" wird so „Trost-Joker, aber nur jeden
+// vierten Spieltag", ohne eine Zeile neuen Auswertungs-Code.
+//
+// ⚠️ Die HÄUFIGKEIT gehört dazu, nicht als Komfort: „jeder 4. Spieltag" klingt
+// nach wenig und sind über eine Saison acht Auslösungen. Wörtlich dieselbe
+// Falle wie bei den Wettbewerbs-Gewichten, wo `anteile()` deshalb eingebaut
+// wurde — und wie `trefferAnteil` eine Achse weiter.
+const BEISPIEL_SAISON = 34;
+
+function Ausloeserfeld({ wert, onChange }) {
+  const a = sanitizeAusloeser(wert);
+  const info = AUSLOESER[a.typ];
+  const wieOft = haeufigkeit(a, BEISPIEL_SAISON);
+  const knopf = (aktiv, text, onClick, key, titel) => (
+    <button key={key} type="button" onClick={onClick} title={titel} style={{
+      border: `1px solid ${aktiv ? C.gold : C.line}`, borderRadius: 999,
+      background: aktiv ? `${C.gold}1a` : "transparent", color: aktiv ? C.gold : C.text,
+      cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
+    }}>{text}</button>
+  );
+  return (
+    <div style={{ width: "100%" }}>
+      <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 4 }}>Wann darf es überhaupt auslösen?</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
+        {AUSWERTBARE_AUSLOESER.map((x) =>
+          knopf(a.typ === x.key, x.label, () => onChange({ ...a, typ: x.key }), x.key, x.text))}
+      </div>
+      {info.parameter.length > 0 && (
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {info.parameter.map((feld) => (
+            <Zahl key={feld} label={FELD_LABEL[feld] ?? feld} wert={a[feld]}
+              limits={AUSLOESER_LIMITS[feld]} breite={120}
+              onChange={(v) => onChange({ ...a, [feld]: v })} />
+          ))}
+        </div>
+      )}
+      <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+        Gilt <strong style={{ color: C.text }}>{beschreibeAusloeser(a)}</strong>
+        {wieOft != null
+          ? ` — etwa ${wieOft}× in ${BEISPIEL_SAISON} Spieltagen.`
+          : " — wie oft das vorkommt, hängt am Saisonverlauf und lässt sich vorher nicht sagen."}
+      </div>
+    </div>
+  );
+}
+
+const FELD_LABEL = {
+  n: "jeder n-te", spieltag: "Spieltag", letzte: "letzte n",
+  frequenz: "etwa alle n", prozent: "Prozent", abQuote: "ab Quote",
+};
 
 // ── WAS passiert dann? ──────────────────────────────────────
 // 🔴 Die dritte der vier Achsen (`wirkung.js`). Bis 07.08.2026 war die Antwort
@@ -323,6 +382,8 @@ export default function Ereignisse({ rules, onChange }) {
                     )}
                     <Wirkungsfeld wert={wert(t.key, "wirkung")}
                       onChange={(v) => setzeFeld(t.key, "wirkung", v)} />
+                    <Ausloeserfeld wert={wert(t.key, "ausloeser")}
+                      onChange={(v) => setzeFeld(t.key, "ausloeser", v)} />
                   </div>
                 )}
               </div>

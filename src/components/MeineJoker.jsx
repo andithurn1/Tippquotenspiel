@@ -124,6 +124,9 @@ export default function MeineJoker() {
     eintraege: eintraege.filter((e) => e.userId === user?.id),
     alleEintraege: eintraege, spieltagsPunkte: tagesPunkte, rules,
     schluessel: rundenSchluessel(achse) ?? undefined,
+    // Speist den `zufall`-Auslöser der WANN-Achse — dieselbe Quelle wie in
+    // der Tippabgabe, sonst zöge dieselbe Regel hier andere Spieltage.
+    rundenId: roundId ?? "",
   });
   const gutschriften = [
     ...lage.gutschriften

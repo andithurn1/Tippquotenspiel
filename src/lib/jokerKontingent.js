@@ -57,9 +57,16 @@ export function erspielteJoker(args = {}) {
 // Das ist derselbe Fall wie bei den Streichresultaten im Ranking: was die
 // Zahl verändert, bekommt einen Namen. Eine Belohnung, die stillschweigend
 // ausfällt, liest sich wie ein Fehler.
-export function erspielteLage({ eintraege = [], alleEintraege = null, rules, spieltagsPunkte = null, schluessel = null } = {}) {
+// `rundenId` speist den `zufall`-Auslöser der WANN-Achse (`ausloeser.js`).
+// ⚠️ Ohne ihn losen ALLE Runden dieselben Spieltage — deterministisch ist es
+// so oder so, aber die Überraschung wäre für alle dieselbe. Wer diese
+// Funktion aufruft und die Runden-Id hat, gibt sie mit.
+export function erspielteLage({
+  eintraege = [], alleEintraege = null, rules, spieltagsPunkte = null,
+  schluessel = null, rundenId = "",
+} = {}) {
   return auswerten({
-    eintraege, alleEintraege, ereignisse: rules?.ereignisse, spieltagsPunkte, schluessel,
+    eintraege, alleEintraege, ereignisse: rules?.ereignisse, spieltagsPunkte, schluessel, rundenId,
   });
 }
 

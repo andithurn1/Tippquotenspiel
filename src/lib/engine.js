@@ -1472,7 +1472,12 @@ function hatVerlaufsWirkung(rules) {
 // wird statt in einer eigenen Rechnung: die Beträge hängen am Deckel, an der
 // Reihenfolge und am Nullsummen-Modus, und sie müssen exakt die sein, die auch
 // in der Wertung stehen. Eine zweite Fassung liefe auseinander.
-export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, einsaetze = [], regelnFuer = null, sammeln = null) {
+// `rundenId` (letzter Parameter) speist den `zufall`-Auslöser der WANN-Achse
+// (`ausloeser.js`). ⚠️ Er MUSS derselbe sein wie der, den die Screens an
+// `erspielteJoker` geben — sonst zöge dieselbe Regel im Joker-Vorrat andere
+// Spieltage als in der Wertung, und das wäre die doppelte Wahrheit in
+// Reinform. Deshalb hier als Parameter und nicht als Vorgabe.
+export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, einsaetze = [], regelnFuer = null, sammeln = null, rundenId = "") {
   const geordnet = spieltageChronologisch(entries);
 
   // Position eines Spieltags im Verlauf — der kumulative Schnitt läuft über
@@ -1513,6 +1518,7 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
         alleEintraege: entries, ereignisse: rules?.ereignisse,
         spieltagsPunkte: punkteJeSpieltag(roh),
         mitglieder: [...new Set(entries.map((e) => e.userId).filter((x) => x != null))],
+        rundenId,
       }))
     : roh;
 

@@ -180,7 +180,7 @@ export default function Historie() {
     // nötig wie bei den anderen vier Aufrufern von `scoreLeaderboardHistory`.
     // ⚠️ Die Duell-Einsätze kommen weiter aus den ECHTEN Tipps: ein Ersatz-Tipp
     // trägt keinen Einsatz, den niemand gesetzt hat.
-    const history = scoreLeaderboardHistory(alle, rules, einsaetzeAusTipps(entries), lage);
+    const history = scoreLeaderboardHistory(alle, rules, einsaetzeAusTipps(entries), lage, null, roundId);
     const scored = entries.filter((e) => e.result).map((e) => {
       // Auch die Rekorde unter den Regeln des jeweiligen Spieltags — sonst
       // steht in der Bestenliste ein Wert, den es nie gab.

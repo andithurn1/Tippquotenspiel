@@ -422,7 +422,7 @@ export function createSupabaseStore() {
         // (`match_id`), deshalb hier separat angereichert statt `entries`
         // selbst zu verändern.
         const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
-        verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
+        verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
         board = verlauf.length ? verlauf[verlauf.length - 1].board : [];
       } else {
         board = scoreLeaderboard(entries, rules, regelnFuer);
@@ -528,7 +528,7 @@ export function createSupabaseStore() {
       // es nicht — ohne das Feld verliert der Duell-Einsatz seinen Gleichstand-
       // Schlüssel (zwei zeitgleich angepfiffene Spiele am selben Spieltag).
       const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
-      return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
+      return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
     },
 
     // 🔴 Was hat wer an EINEM Spieltag geholt? — Frage 4 der Runden-Schicht.
@@ -556,7 +556,7 @@ export function createSupabaseStore() {
       if (!rules?.duell?.enabled) return [];
       const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
       const sammeln = [];
-      scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln);
+      scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln, roundId);
       return sammeln.map((v) => ({ ...v, vonName: nameOf(v.vonUserId), aufName: nameOf(v.aufUserId) }));
     },
   };

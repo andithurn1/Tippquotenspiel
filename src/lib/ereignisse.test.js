@@ -319,7 +319,7 @@ describe("Im Regelwerk und im Creator-Code", () => {
     // Bedeutung.
     expect(rules.ereignisse.aktive[0]).toEqual({
       key: "serie", anzahl: 4, belohnung: 2, abstand: 0, maxProSaison: 0,
-      wirkung: { typ: "joker", n: 2 },
+      wirkung: { typ: "joker", n: 2 }, ausloeser: { typ: "immer" },
     });
     expect(sanitizeRules(rules)).toEqual(rules);
   });
@@ -621,5 +621,6 @@ describe("WAS passiert dann — die Wirkungs-Achse hängt dran", () => {
     expect(sanitizeRules(rules)).toEqual(rules);
     expect(rules.ereignisse.aktive[0].wirkung)
       .toEqual({ typ: "punkte", betrag: 100, maxProSaison: 300 });
+    expect(rules.ereignisse.aktive[0].ausloeser).toEqual({ typ: "immer" });
   });
 });

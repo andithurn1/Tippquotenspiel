@@ -192,7 +192,7 @@ export function createMockStore() {
       // (`match_id`), deshalb hier separat angereichert statt `entries`
       // selbst zu verändern.
       const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
-      verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
+      verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
       board = verlauf.length ? verlauf[verlauf.length - 1].board : [];
     } else {
       board = scoreLeaderboard(entries, rules, regelnFuer);
@@ -273,7 +273,7 @@ export function createMockStore() {
     const { verlauf, entries, rules, regelnFuer, roundTips } = await standVorDemRad(roundId);
     if (verlauf) return verlauf;
     const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
-    return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer);
+    return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
   }
 
   // Der rohe Schreibvorgang ohne jede Prüfung — Grundlage von `saveTip` und
@@ -702,7 +702,7 @@ export function createMockStore() {
       if (!rules?.duell?.enabled) return [];
       const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
       const sammeln = [];
-      scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln);
+      scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln, roundId);
       return sammeln.map((v) => ({ ...v, vonName: nameOf(v.vonUserId), aufName: nameOf(v.aufUserId) }));
     },
 

@@ -123,6 +123,54 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-07 (III) · **Die WANN-Achse — und zwei Fehler, die kein Test gesehen hätte**
+
+> **👉 Frische Session: das hier ist der Stand.** Branch
+> `claude/koordinierte-arbeitsweise-fe6w1v`, **2100 Tests grün**, Build sauber,
+> alle fünf Abnahmen ohne Befund.
+
+`src/lib/ausloeser.js` ist die dritte der vier Achsen. Die wichtigste
+Entscheidung darin: **sie ersetzt die Ereignis-Typen nicht.** Die SIND schon
+Auslöser („Serie", „erster exakter Treffer"). Diese Achse legt nur eine zweite
+Frage davor — „und passt der Zeitpunkt?" Aus „Trost-Joker" wird so
+„Trost-Joker, aber nur jeden vierten Spieltag", ohne eine Zeile neuen
+Auswertungs-Code. Ein Ersatz der bestehenden Typen wäre ein Umbau der
+funktionierenden Ebene und gehört nicht in denselben Schritt.
+
+Zehn auswertbare Auslöser, vier vorbereitet. Vorgabe `{ typ: "immer" }` =
+Gatter offen, also kein stiller Regelwechsel.
+
+⚠️ **`zufall` nimmt die Lösung, die dieses Projekt schon einmal gebaut hat:**
+reiner Zufall bündelt (`jokerPlan.js`). Deshalb blockweise — je Block feuert
+genau einer, gelost aus der Runden-Id.
+
+#### 🔴 Zwei Fehler, die nur die Messung gefunden hat
+
+1. **`Number(null) === 0`, zum wiederholten Mal in diesem Projekt.** `feuert()`
+   prüfte `Number.isFinite(Number(position))` — und bei `rhythmus` heißt
+   `0 % 4 === 0`: **das Gatter geht ohne jede Grundlage auf.** Dieselbe Falle
+   wie `abSpieltag` in `sanitizeDuellJoker`.
+
+2. **`spieltageChronologisch` liefert OBJEKTE, keine Schlüssel.** Der erste
+   Anlauf iterierte sie als Schlüssel; `standVor` war über Objekte indiziert,
+   jedes `get(key)` ging ins Leere, und `enge` wie `abstand` hielten IMMER zu.
+   **Und das sieht plausibel aus** — sie sind Gegenstücke, eines von beiden ist
+   immer falsch. Gefunden hat es erst die Messung, die alle zehn Gatter
+   nebeneinander stellte, plus die Gegenprobe: `abstand` bei 5 % lässt 7 von 8
+   durch, `enge` bei 60 % ebenfalls — das Gatter bewegt sich monoton.
+
+**Zweimal hätte ein grüner Test nichts gesagt.** Das ist inzwischen der Regelfall
+und nicht die Ausnahme: wer eine Mechanik ergänzt, stellt ihre Einstellungen
+nebeneinander und schaut sich die ZAHLEN an, nicht die Testfarbe.
+
+⚠️ **Für beide Sessions: `rundenId` reicht jetzt bis in die Wertung durch**
+(Screens → `erspielteLage`, Stores → `scoreLeaderboardHistory` →
+`wirkungsVorgaenge`). Sie ist der Seed des `zufall`-Auslösers. Wer eine neue
+Stelle baut, die `auswerten()` ruft, gibt sie mit — sonst zieht dieselbe Regel
+dort andere Spieltage, und das ist die doppelte Wahrheit in Reinform.
+
+---
+
 ### 2026-08-07 (II) · **Die WAS-Achse der Regel-Grammatik — und ein blinder Fleck in `stufen`**
 
 > **👉 Frische Session: das hier ist der Stand.** Branch
