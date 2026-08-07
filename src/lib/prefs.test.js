@@ -11,7 +11,7 @@ describe("sanitizePrefs", () => {
   it("gültige Stufen bleiben erhalten", () => {
     for (const lv of LEVELS) {
       expect(sanitizePrefs({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv }))
-        .toEqual({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu" });
+        .toEqual({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu", vergleich: {} });
     }
   });
 
@@ -21,7 +21,11 @@ describe("sanitizePrefs", () => {
   // hier über ALLE Stufen aus `DEFAULT_PREFS` statt über eine Aufzählung —
   // die nächste vergisst sonst wieder jemand.
   it("keine Stufe fällt beim Säubern hinten runter", () => {
-    const stufen = Object.keys(DEFAULT_PREFS).filter((k) => k !== "startScreen");
+    // Nur die ANZEIGE-Stufen: `startScreen` und `vergleich` sind eigene
+    // Wertebereiche und haben ihre eigenen Fälle. Über die Vorgabe erkannt
+    // statt aufgezählt — die nächste Stufe vergisst sonst wieder jemand.
+    const stufen = Object.keys(DEFAULT_PREFS).filter((k) => LEVELS.includes(DEFAULT_PREFS[k]));
+    expect(stufen.length).toBeGreaterThan(2);
     const alleAus = Object.fromEntries(stufen.map((k) => [k, "aus"]));
     const s = sanitizePrefs(alleAus);
     for (const k of stufen) expect(s[k]).toBe("aus");

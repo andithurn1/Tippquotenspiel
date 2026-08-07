@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
   SPIELDAUER_MIN, abrechnungsZeit, neueAbrechnungen, zusammenfassung, gesehenBis,
 } from "@/lib/zwischenabrechnung";
-import { DEFAULT_PREFS, sanitizePrefs, PREF_META } from "@/lib/prefs";
+import {
+  DEFAULT_PREFS, sanitizePrefs, PREF_META,
+  MAX_VERGLEICH, toggleVergleich, vergleichFuer,
+} from "@/lib/prefs";
 import { createMockOddsSource } from "@/lib/engine";
 
 const MIN = 60 * 1000;
@@ -155,5 +158,87 @@ describe("Abstellbar", () => {
     // „aus" muss sagen, wie man trotzdem hinkommt — sonst liest es sich, als
     // wäre die Abrechnung weg.
     expect(meta.levels.aus).toContain("Menü");
+  });
+});
+
+// ── Der Vergleich mit ausgewählten Mitspielern ──────────────
+// 🔴 Nutzer-Wunsch vom 07.08.: bis zu drei Mitspieler laufen im Vergleich mit,
+// auch in der Einblendung. Persönliche Einstellung je Runde — kein Regelwerk.
+describe("Vergleich mit Mitspielern", () => {
+  const jetzt = T0 + 1000 * MIN;
+  const meins = e(0, treffer, treffer);
+  const fremd = (userId, tip) => ({ ...e(0, tip, treffer), userId, name: userId.toUpperCase() });
+
+  const mit = (vergleich, alle) => neueAbrechnungen({
+    eintraege: [meins], alleEintraege: alle, vergleich, seit: T0 - 1, jetzt,
+  });
+
+  it("hängt die Tipps und Punkte der Gewählten an das Spiel", () => {
+    const alle = [meins, fremd("u2", { home: 0, away: 0 }), fremd("u3", treffer)];
+    const [zeile] = mit(["u2", "u3"], alle);
+    expect(zeile.andere.map((a) => a.userId)).toEqual(["u2", "u3"]);
+    expect(zeile.andere[0].name).toBe("U2");
+    // u3 hat exakt getippt wie ich, u2 nicht — die Punkte müssen das zeigen,
+    // sonst steht dort nur eine Zahl statt einer Wertung.
+    expect(zeile.andere[1].exakt).toBe(true);
+    expect(zeile.andere[0].punkte).toBeLessThan(zeile.andere[1].punkte);
+  });
+
+  it("ohne Auswahl bleibt die Zeile bei den eigenen Zahlen", () => {
+    const alle = [meins, fremd("u2", { home: 0, away: 0 })];
+    expect(mit([], alle)[0].andere).toEqual([]);
+    // Auch ohne `alleEintraege` — der Aufrufer darf sie weglassen.
+    expect(neueAbrechnungen({ eintraege: [meins], seit: T0 - 1, jetzt })[0].andere).toEqual([]);
+  });
+
+  // 🔴 „Hat nicht getippt" und „hat null Punkte geholt" sind zwei verschiedene
+  // Aussagen. Die zweite wäre eine Behauptung über jemanden, die nicht stimmt.
+  it("wer dieses Spiel nicht getippt hat, taucht gar nicht auf", () => {
+    const alle = [meins, { ...fremd("u2", treffer), tip: null }];
+    expect(mit(["u2"], alle)[0].andere).toEqual([]);
+  });
+
+  it("die Reihenfolge folgt der Auswahl, nicht der Datenlage", () => {
+    const alle = [meins, fremd("u3", treffer), fremd("u2", treffer)];
+    expect(mit(["u2", "u3"], alle)[0].andere.map((a) => a.userId)).toEqual(["u2", "u3"]);
+  });
+});
+
+describe("Die Vergleichs-Einstellung", () => {
+  it("liegt JE RUNDE getrennt", () => {
+    const v = toggleVergleich({}, "r1", "u2");
+    expect(vergleichFuer({ vergleich: v }, "r1")).toEqual(["u2"]);
+    // Wer in drei Runden spielt, hat dort verschiedene Mitspieler — eine
+    // flache Liste träfe in der zweiten Runde niemanden.
+    expect(vergleichFuer({ vergleich: v }, "r2")).toEqual([]);
+  });
+
+  it("schaltet an und wieder ab", () => {
+    let v = toggleVergleich({}, "r1", "u2");
+    v = toggleVergleich(v, "r1", "u2");
+    expect(vergleichFuer({ vergleich: v }, "r1")).toEqual([]);
+    expect(v.r1).toBeUndefined();   // keine leeren Einträge zurücklassen
+  });
+
+  // ⚠️ Voll heißt GESPERRT, nicht „verdrängt den ersten". Ein Häkchen, das
+  // still ein anderes wegnimmt, ist die Sorte Oberfläche, bei der man beim
+  // dritten Klick aufgibt.
+  it("über der Grenze passiert NICHTS — es wird niemand verdrängt", () => {
+    let v = {};
+    for (const u of ["u2", "u3", "u4"]) v = toggleVergleich(v, "r1", u);
+    const voll = vergleichFuer({ vergleich: v }, "r1");
+    expect(voll).toHaveLength(MAX_VERGLEICH);
+    const danach = toggleVergleich(v, "r1", "u5");
+    expect(vergleichFuer({ vergleich: danach }, "r1")).toEqual(voll);
+  });
+
+  it("überlebt das Säubern — und beschneidet Unsinn", () => {
+    const roh = { vergleich: { r1: ["u2", "u2", "u3", "u4", "u5"], r2: "kaputt", "": ["u9"] } };
+    const s = sanitizePrefs(roh);
+    expect(s.vergleich.r1).toEqual(["u2", "u3", "u4"]);   // entdoppelt, gedeckelt
+    expect(s.vergleich.r2).toBeUndefined();
+    expect(s.vergleich[""]).toBeUndefined();
+    // Und stabil: zweimal säubern ändert nichts mehr.
+    expect(sanitizePrefs(s)).toEqual(s);
   });
 });

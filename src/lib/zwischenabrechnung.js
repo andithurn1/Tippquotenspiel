@@ -69,12 +69,37 @@ export function abrechnungsZeit(eintrag, jetzt = Date.now()) {
 // Sonst bekäme jemand beim allerersten Öffnen die halbe Saison als
 // „Neuigkeiten" vorgesetzt — dieselbe Überlegung wie bei der Spielwahl, die
 // nur Anstehendes zeigt statt 465 Spiele.
+// ── Der Vergleich mit ausgewählten Mitspielern ──────────────
+// `alleEintraege` sind die Tipps ALLER Mitglieder, `vergleich` die bis zu drei
+// Nutzer-Ids, die dieser Spieler im Blick haben will (persönliche Einstellung,
+// je Runde — siehe `prefs.js`).
+//
+// ⚠️ Verglichen wird NUR bei denselben Spielen. Ein Mitspieler, der dieses
+// Spiel nicht getippt hat, taucht in der Zeile gar nicht auf, statt mit 0
+// dazustehen — „hat nicht getippt" und „hat null Punkte geholt" sind zwei
+// verschiedene Aussagen, und die zweite wäre eine Behauptung über jemanden,
+// die nicht stimmt.
 export function neueAbrechnungen({
   eintraege = [], seit = null, jetzt = Date.now(), rules = DEFAULT_RULES,
+  alleEintraege = null, vergleich = [],
 } = {}) {
   if (seit == null) return [];
   const grenze = zeit(seit) ?? Number(seit);
   if (!Number.isFinite(grenze)) return [];
+
+  // Die Tipps der Vergleichs-Mitspieler, nach Spiel gebündelt. Einmal
+  // aufgebaut statt je Spiel durch die ganze Liste zu suchen.
+  const wen = new Set(vergleich.filter(Boolean));
+  const andereJeSpiel = new Map();
+  if (wen.size && Array.isArray(alleEintraege)) {
+    for (const a of alleEintraege) {
+      if (!wen.has(a.userId) || !a.tip || !a.snapshot || !a.result) continue;
+      const mid = a.matchId ?? a.snapshot?.matchId ?? null;
+      if (mid == null) continue;
+      if (!andereJeSpiel.has(mid)) andereJeSpiel.set(mid, []);
+      andereJeSpiel.get(mid).push(a);
+    }
+  }
 
   const out = [];
   for (const e of eintraege) {
@@ -84,8 +109,21 @@ export function neueAbrechnungen({
     // ausgelassen hat, ist keine Neuigkeit über den eigenen Tipp.
     if (!e.tip || !e.snapshot) continue;
     const wertung = scoreTip(e.tip, e.result, e.snapshot, e.rules ?? rules);
+    const matchId = e.matchId ?? e.snapshot?.matchId ?? null;
+    // Die ausgewählten Mitspieler zu DIESEM Spiel — in der Reihenfolge, in der
+    // sie gewählt wurden, damit die Spalten nicht je Spiel springen.
+    const andere = (andereJeSpiel.get(matchId) ?? [])
+      .map((a) => {
+        const w = scoreTip(a.tip, a.result, a.snapshot, a.rules ?? rules);
+        return {
+          userId: a.userId, name: a.name ?? a.userId, tip: a.tip,
+          punkte: w.total,
+          exakt: a.tip.home === a.result.home && a.tip.away === a.result.away,
+        };
+      })
+      .sort((x, y) => vergleich.indexOf(x.userId) - vergleich.indexOf(y.userId));
     out.push({
-      matchId: e.matchId ?? e.snapshot?.matchId ?? null,
+      matchId,
       wettbewerb: e.wettbewerb ?? null,
       matchday: e.matchday ?? null,
       kickoff: e.kickoff ?? null,
@@ -96,6 +134,7 @@ export function neueAbrechnungen({
       result: e.result,
       punkte: wertung.total,
       exakt: e.tip.home === e.result.home && e.tip.away === e.result.away,
+      andere,
     });
   }
   // Chronologisch: die App erzählt der Reihe nach, was passiert ist.

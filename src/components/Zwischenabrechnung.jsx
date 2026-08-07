@@ -7,6 +7,7 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { usePrefs } from "@/components/PrefsProvider";
+import { vergleichFuer } from "@/lib/prefs";
 import { neueAbrechnungen, zusammenfassung, gesehenBis } from "@/lib/zwischenabrechnung";
 
 // ============================================================
@@ -67,13 +68,16 @@ export default function Zwischenabrechnung() {
         const neu = neueAbrechnungen({
           eintraege: entries.filter((e) => e.userId === user.id),
           seit, rules: round?.rules,
+          // Die bis zu drei Mitspieler, die dieser Nutzer FÜR DIESE RUNDE im
+          // Blick haben will (persönliche Einstellung, siehe `prefs.js`).
+          alleEintraege: entries, vergleich: vergleichFuer(prefs, roundId),
         });
         if (neu.length) { setListe(neu); setOffen(true); }
       } catch { /* Ohne Daten keine Einblendung — sie ist Beiwerk, kein Muss. */ }
     })();
 
     return () => { abgebrochen = true; };
-  }, [ready, aus, user?.id, roundId]);
+  }, [ready, aus, user?.id, roundId, prefs.vergleich]);
 
   const summe = useMemo(() => zusammenfassung(liste), [liste]);
 
@@ -124,21 +128,50 @@ export default function Zwischenabrechnung() {
           <div style={{ overflowY: "auto", padding: "0 18px", flex: 1 }}>
             {liste.map((s) => (
               <div key={s.matchId ?? `${s.wettbewerb}-${s.matchday}-${s.kickoff}`} style={{
-                display: "flex", alignItems: "center", gap: 10,
                 padding: "9px 0", borderTop: `1px solid ${C.line}`,
               }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12.5, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {s.home} – {s.away}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {s.home} – {s.away}
+                    </div>
+                    <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2 }}>
+                      dein Tipp {s.tip.home}:{s.tip.away} · Ergebnis {s.result.home}:{s.result.away}
+                      {s.exakt && <span style={{ color: C.gold }}> · exakt</span>}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2 }}>
-                    dein Tipp {s.tip.home}:{s.tip.away} · Ergebnis {s.result.home}:{s.result.away}
-                    {s.exakt && <span style={{ color: C.gold }}> · exakt</span>}
+                  <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: s.punkte > 0 ? C.mint : C.muted }}>
+                    {s.punkte}
                   </div>
                 </div>
-                <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: s.punkte > 0 ? C.mint : C.muted }}>
-                  {s.punkte}
-                </div>
+
+                {/* 🔴 Der Vergleich mit den gewählten Mitspielern. Eingerückt
+                    und kleiner, weil die eigene Zeile die Nachricht ist und
+                    der Vergleich der Zusatz — stünde beides gleich groß da,
+                    müsste man erst suchen, welche Zeile die eigene ist.
+                    ⚠️ Wer dieses Spiel nicht getippt hat, steht hier gar
+                    nicht: „nicht getippt" und „null Punkte" sind zwei
+                    verschiedene Aussagen (siehe `neueAbrechnungen`). */}
+                {s.andere?.length > 0 && (
+                  <div style={{ marginTop: 6, paddingLeft: 10, borderLeft: `2px solid ${C.line}` }}>
+                    {s.andere.map((a) => (
+                      <div key={a.userId} style={{
+                        display: "flex", alignItems: "center", gap: 8, marginTop: 3,
+                        fontSize: 10.5, color: C.muted,
+                      }}>
+                        <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {a.name} · {a.tip.home}:{a.tip.away}
+                          {a.exakt && <span style={{ color: C.gold }}> · exakt</span>}
+                        </span>
+                        <span style={{
+                          fontFamily: MONO, fontWeight: 700,
+                          // Besser als ich? Dann darf man das auch sehen.
+                          color: a.punkte > s.punkte ? C.coral : C.muted,
+                        }}>{a.punkte}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

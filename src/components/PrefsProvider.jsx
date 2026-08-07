@@ -23,9 +23,21 @@ export default function PrefsProvider({ children }) {
     setReady(true);
   }, []);
 
+  // 🔴 `value` darf eine FUNKTION sein: `setPref("vergleich", (v) => …)` bekommt
+  // den aktuellen Wert und liefert den neuen.
+  //
+  // Ohne das rechnet jeder Aufruf gegen den Stand, den die Komponente beim
+  // Rendern gesehen hat — zwei Klicks kurz hintereinander gehen beide von
+  // demselben alten Wert aus, und der zweite überschreibt den ersten.
+  // Im Browser gemessen (07.08.2026): drei Mitspieler nacheinander angehakt,
+  // gespeichert war EINER. Derselbe Zustands-Fehler, den `Ereignisse.jsx`
+  // schon einmal dokumentiert hat („zwei `setzeFeld`-Aufrufe gingen beide von
+  // demselben alten `cfg` aus") — nur fällt er hier nicht beim Lesen auf,
+  // sondern erst beim schnellen Klicken.
   const setPref = (key, value) =>
     setPrefs((p) => {
-      const next = sanitizePrefs({ ...p, [key]: value });
+      const neuerWert = typeof value === "function" ? value(p[key]) : value;
+      const next = sanitizePrefs({ ...p, [key]: neuerWert });
       try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* ignorieren */ }
       return next;
     });

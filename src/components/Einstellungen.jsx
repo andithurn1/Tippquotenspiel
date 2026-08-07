@@ -5,7 +5,11 @@ import { createMockOddsSource, scoreTip, toDisplay, projectTip, sanitizeRules, D
 import { usePrefs } from "@/components/PrefsProvider";
 import { getStore } from "@/lib/store";
 import { useCurrentRound } from "@/components/RoundProvider";
-import { PREF_META, LEVELS, LEVEL_LABEL, START_SCREENS, START_SCREEN_LABEL } from "@/lib/prefs";
+import {
+  PREF_META, LEVELS, LEVEL_LABEL, START_SCREENS, START_SCREEN_LABEL,
+  MAX_VERGLEICH, toggleVergleich, vergleichFuer,
+} from "@/lib/prefs";
+import { useAuth } from "@/components/AuthProvider";
 import BackLink from "@/components/BackLink";
 import { C, MONO } from "@/lib/theme";
 
@@ -18,6 +22,7 @@ const DEMO_TIP = { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], 
 
 export default function Einstellungen() {
   const { prefs, setPref } = usePrefs();
+  const { user } = useAuth();
   // 🔴 Auch die Vorschau rechnet mit dem Regelwerk DER RUNDE. Sie zeigt, wie
   // die eigene Abrechnung gleich aussehen wird — mit `DEFAULT_RULES` standen
   // dort Punktzahlen, die es in dieser Runde nicht gibt.
@@ -30,6 +35,20 @@ export default function Einstellungen() {
       .catch(() => {});
     return () => { live = false; };
   }, [roundId]);
+
+  // Die Mitspieler DIESER Runde — für die Vergleichs-Auswahl. Ohne sie wäre
+  // die Einstellung eine Liste von Nutzer-Ids, und niemand weiß, wer „u-kemal"
+  // ist.
+  const [mitglieder, setMitglieder] = useState([]);
+  useEffect(() => {
+    let live = true;
+    getStore().listMembers(roundId)
+      .then((m) => { if (live) setMitglieder(m ?? []); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [roundId]);
+
+  const gewaehlteFreunde = vergleichFuer(prefs, roundId);
 
   const ME = useMemo(() => scoreTip(DEMO_TIP, RESULT, SNAP, rules), [rules]);
   const PROJ = useMemo(
@@ -79,6 +98,54 @@ export default function Einstellungen() {
               der Einblendung verlinkt genau hierher. */}
           <PrefSection meta={PREF_META.zwischenabrechnung} value={prefs.zwischenabrechnung}
             onChange={(v) => setPref("zwischenabrechnung", v)} />
+
+          {/* 🔴 Mit wem vergleiche ich mich? Eine PERSÖNLICHE Wahl und keine
+              Regel der Runde — der Admin hat damit nichts zu tun, und zwei
+              Spieler derselben Runde dürfen verschiedene Leute im Blick haben.
+              Steht direkt unter der Einblendung, weil sie dort auftaucht. */}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
+              Vergleich mit Mitspielern
+            </div>
+            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+              Bis zu {MAX_VERGLEICH} aus dieser Runde. Ihre Tipps und Punkte stehen dann neben
+              deinen — auch in der Einblendung nach dem Spiel. Nur für dich sichtbar.
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {mitglieder
+                .filter((m) => m.user_id !== user?.id)
+                .map((m) => {
+                  const gewaehlt = gewaehlteFreunde.includes(m.user_id);
+                  // ⚠️ Voll heißt GESPERRT, nicht „verdrängt den ersten". Ein
+                  // Häkchen, das still ein anderes wegnimmt, ist die Sorte
+                  // Oberfläche, bei der man beim dritten Klick aufgibt.
+                  const voll = !gewaehlt && gewaehlteFreunde.length >= MAX_VERGLEICH;
+                  return (
+                    <button key={m.user_id} type="button" disabled={voll}
+                      // ⚠️ Funktionale Form: `toggleVergleich(prefs.vergleich, …)`
+                      // rechnet gegen den Stand VOM RENDERN — drei Klicks
+                      // hintereinander speicherten dann nur den letzten
+                      // (im Browser gemessen). Siehe `PrefsProvider`.
+                      onClick={() => setPref("vergleich", (v) => toggleVergleich(v, roundId, m.user_id))}
+                      title={voll ? `Höchstens ${MAX_VERGLEICH} — erst einen abwählen.` : undefined}
+                      style={{
+                        border: `1px solid ${gewaehlt ? C.gold : C.line}`, borderRadius: 999,
+                        background: gewaehlt ? `${C.gold}1a` : "transparent",
+                        color: gewaehlt ? C.gold : (voll ? C.ghost : C.text),
+                        cursor: voll ? "not-allowed" : "pointer",
+                        padding: "5px 11px", fontSize: 11.5, fontWeight: gewaehlt ? 700 : 500,
+                      }}>
+                      {gewaehlt ? "✓ " : ""}{m.name ?? m.user_id}
+                    </button>
+                  );
+                })}
+            </div>
+            <div style={{ fontSize: 10.5, color: C.muted, marginTop: 7 }}>
+              {gewaehlteFreunde.length === 0
+                ? "Niemand ausgewählt — es stehen nur deine eigenen Zahlen da."
+                : `${gewaehlteFreunde.length} von ${MAX_VERGLEICH} ausgewählt.`}
+            </div>
+          </div>
 
           <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
 
