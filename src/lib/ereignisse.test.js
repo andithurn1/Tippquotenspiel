@@ -910,3 +910,76 @@ describe("Wertung über einen Zeitraum statt über einen Spieltag", () => {
     expect(sanitizeRules(rules)).toEqual(rules);
   });
 });
+
+// ── Die Kennzahl: WONACH gewertet wird ──────────────────────
+// 🔴 Die letzte Stellschraube der „Jokerjagd" aus der Roadmap. Das Wort
+// SONDERSPIEL sah nach einem Minispiel aus — es ist aber ein Wettbewerb über
+// ein Fenster nach einer Kennzahl, und Fenster, Zeitpunkt und Preis gab es
+// schon. Gefehlt hat allein, etwas anderes als Punkte zählen zu können.
+describe("Wertung nach einer anderen Kennzahl", () => {
+  // u1 trifft an Spieltag 1 und 2 exakt, u2 nie — u2 holt aber deutlich mehr
+  // PUNKTE. Nach Punkten gewinnt u2, nach Treffern u1: dieselbe Runde, zwei
+  // Sieger. Ohne diesen Unterschied wäre `metrik` eine tote Einstellung.
+  const treffer = (userId, md, exakt) =>
+    e(userId, md, `m${md}`, { home: 1, away: 0 }, exakt ? { home: 1, away: 0 } : { home: 4, away: 4 });
+  const alle = [
+    treffer("u1", 1, true), treffer("u2", 1, false),
+    treffer("u1", 2, true), treffer("u2", 2, false),
+  ];
+  const punkte = [
+    { matchday: 1, userId: "u1", punkte: 10 }, { matchday: 1, userId: "u2", punkte: 90 },
+    { matchday: 2, userId: "u1", punkte: 10 }, { matchday: 2, userId: "u2", punkte: 90 },
+  ];
+  const bester = (metrik) => AN([{
+    key: "letzter-am-spieltag", belohnung: 1, zeitraum: 2, metrik,
+    auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 },
+  }]);
+  const fuer = (userId, metrik) => auswerten({
+    eintraege: alle.filter((x) => x.userId === userId), alleEintraege: alle,
+    ereignisse: bester(metrik), spieltagsPunkte: punkte,
+  }).gutschriften;
+
+  it("nach Punkten gewinnt der eine, nach Treffern der andere", () => {
+    expect(fuer("u2", "punkte")).toHaveLength(1);
+    expect(fuer("u1", "punkte")).toHaveLength(0);
+    expect(fuer("u1", "exakteTreffer")).toHaveLength(1);
+    expect(fuer("u2", "exakteTreffer")).toHaveLength(0);
+  });
+
+  // 🔴 Der Punkt, der ohne Erklärung wie ein Fehler aussieht: trifft niemand,
+  // sind alle gleichauf — und bei Gleichstand an der Kante gewinnt niemand.
+  // Eine Jagd ohne Beute hat keinen Sieger. Gewollt, aber es muss dastehen.
+  it("trifft niemand, gewinnt niemand", () => {
+    const ohneTreffer = [treffer("u1", 1, false), treffer("u2", 1, false)];
+    for (const u of ["u1", "u2"]) {
+      expect(auswerten({
+        eintraege: ohneTreffer.filter((x) => x.userId === u), alleEintraege: ohneTreffer,
+        ereignisse: bester("exakteTreffer"), spieltagsPunkte: punkte,
+      }).gutschriften).toHaveLength(0);
+    }
+  });
+
+  // Die anderen Kennzahlen brauchen die Spieltagspunkte NICHT — sie zählen aus
+  // den Tipps. Wer weiter stur auf sie prüft, lässt ein Sonderspiel nie
+  // auslösen.
+  it("ohne Spieltagspunkte wertet die Kennzahl trotzdem", () => {
+    const r = auswerten({
+      eintraege: alle.filter((x) => x.userId === "u1"), alleEintraege: alle,
+      ereignisse: bester("exakteTreffer"),
+    });
+    expect(r.gutschriften).toHaveLength(1);
+  });
+
+  it("der Text nennt die Kennzahl, statt „der Beste“ zu behaupten", () => {
+    expect(fuer("u1", "exakteTreffer")[0].text).toContain("Exakte Treffer");
+    expect(fuer("u2", "punkte")[0].text).not.toContain("nach ");
+  });
+
+  it("eine unbekannte Kennzahl fällt auf Punkte zurück", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      ereignisse: AN([{ key: "letzter-am-spieltag", belohnung: 1, metrik: "gibtsNicht" }]),
+    });
+    expect(rules.ereignisse.aktive[0].metrik).toBe("punkte");
+  });
+});

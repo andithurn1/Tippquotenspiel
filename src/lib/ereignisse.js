@@ -139,8 +139,8 @@ export const EREIGNIS_TYPEN = [
     // `zeitraum` (07.08.2026): über wie viele Spieltage der Stand gerechnet
     // wird. 1 = je Spieltag (Vorgabe, bisheriges Verhalten), 3 = die
     // „Dreier-Wertung" aus der Roadmap.
-    parameter: ["auswahl", "zeitraum"],
-    standard: { belohnung: 1, zeitraum: 1, auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
+    parameter: ["auswahl", "zeitraum", "metrik"],
+    standard: { belohnung: 1, zeitraum: 1, metrik: "punkte", auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
     // ⚠️ Der Aufhol-Mechanismus belohnt Zurückliegen bereits. Beides zusammen
     // belohnt es DOPPELT — deshalb meldet `konflikte()` diese Kombination.
     // Aber NUR, wenn hier tatsächlich nach unten ausgezeichnet wird: eine
@@ -194,6 +194,40 @@ export const EREIGNIS_TYPEN = [
 ];
 
 export const EREIGNIS = Object.fromEntries(EREIGNIS_TYPEN.map((e) => [e.key, e]));
+
+// ── WONACH wird gewertet? ───────────────────────────────────
+// 🔴 Die letzte Stellschraube, die der „Jokerjagd" aus der Roadmap gefehlt hat
+// — und sie kostet keine neue Infrastruktur. Der Wunsch lautete „Zufall alle 8
+// Spieltage → alle → Sonderspiel → 3 Spieltage", und das Wort SONDERSPIEL sah
+// nach einem Minispiel aus. Ist es nicht: ein Sonderspiel ist ein Wettbewerb
+// über ein Fenster nach einer Kennzahl. Fenster (`zeitraum`), Zeitpunkt
+// (`ausloeser`) und Preis (`wirkung`) standen schon; es fehlte allein, dass
+// man etwas ANDERES als Punkte zählen kann.
+//
+// ⚠️ Nur Kennzahlen, die aus den Tipps selbst folgen. Alles, was eine eigene
+// Buchführung bräuchte, gehört zum Minispiel und steht hier bewusst nicht —
+// dieselbe Grenze wie bei Quiz und Duell in den Ereignis-Typen.
+export const METRIKEN = [
+  {
+    key: "punkte", label: "Punkte",
+    text: "Die Wertung selbst — wer am besten getippt hat. Die Vorgabe.",
+    braucht: "punkte",
+  },
+  {
+    key: "exakteTreffer", label: "Exakte Treffer",
+    text: "Wie viele Ergebnisse genau aufgingen. Die Jagd: wer nichts trifft, gewinnt nichts.",
+    braucht: "eintraege",
+  },
+  {
+    key: "getippteSpiele", label: "Abgegebene Tipps",
+    text: "Wer am fleißigsten mitgemacht hat — ohne Rücksicht auf die Güte.",
+    braucht: "eintraege",
+  },
+];
+
+// Nur intern: die Oberfläche arbeitet mit `METRIKEN` (der Liste), diese Map ist
+// der Nachschlage-Weg innerhalb dieser Datei.
+const METRIK = Object.fromEntries(METRIKEN.map((m) => [m.key, m]));
 
 const clamp = (v, { min, max }, fallback) => {
   const n = Number(v);
@@ -313,7 +347,7 @@ export const EREIGNIS_PRESETS = [
       enabled: true, maxErspielt: 5,
       // `abstand: 2`: ohne Abklingzeit kassiert derselbe Spieler jede Woche.
       aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0,
-        auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 }, zeitraum: 1 }],
+        auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 }, zeitraum: 1, metrik: "punkte" }],
     },
   },
   {
@@ -347,7 +381,7 @@ export const EREIGNIS_PRESETS = [
     ereignisse: {
       enabled: true, maxErspielt: 5,
       aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 3, maxProSaison: 0,
-        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 }, zeitraum: 1 }],
+        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 }, zeitraum: 1, metrik: "punkte" }],
     },
   },
   {
@@ -394,7 +428,33 @@ export const EREIGNIS_PRESETS = [
       aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 },
         ausloeser: { typ: "rhythmus", n: 3 }, geltung: { typ: "sofort" },
         abstand: 0, maxProSaison: 0,
-        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 }, zeitraum: 3 }],
+        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 }, zeitraum: 3, metrik: "punkte" }],
+    },
+  },
+  {
+    // 🔴 Die JOKERJAGD aus der Roadmap-Tabelle — der letzte der sechs Wünsche.
+    // Sie stand dort als „Sonderspiel über 3 Spieltage" und sah nach einem
+    // Minispiel aus. Ist keins: ein Sonderspiel ist ein Wettbewerb über ein
+    // FENSTER nach einer KENNZAHL. Fenster (`zeitraum`), Zeitpunkt
+    // (`ausloeser: zufall`) und Preis (`wirkung`) gab es längst — gefehlt hat
+    // allein, dass man etwas anderes als Punkte zählen kann.
+    //
+    // ⚠️ Bei `exakteTreffer` gewinnt oft NIEMAND, und das ist richtig: bei
+    // Gleichstand an der Kante gibt es nichts (Gleichstands-Regel in
+    // `auswerten`). Eine Jagd, bei der niemand trifft, hat keinen Sieger — sie
+    // sieht nur aus wie eine tote Einstellung. Deshalb steht es hier.
+    key: "jokerjagd",
+    label: "Jokerjagd",
+    text: "Unangekündigt startet eine Jagd über drei Spieltage: wer in dieser Zeit die "
+      + "meisten Ergebnisse genau trifft, bekommt einen Joker. Trifft niemand, gibt es nichts.",
+    wirkrichtung: "verstärkend", gemessen: false,
+    ereignisse: {
+      enabled: true, maxErspielt: 5,
+      aktive: [{ key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 },
+        ausloeser: { typ: "zufall", frequenz: 8 }, geltung: { typ: "sofort" },
+        abstand: 0, maxProSaison: 0,
+        auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 },
+        zeitraum: 3, metrik: "exakteTreffer" }],
     },
   },
   {
@@ -425,7 +485,7 @@ export const EREIGNIS_PRESETS = [
         { key: "serie", anzahl: 3, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0 },
         { key: "spieltag-komplett", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 8 },
         { key: "letzter-am-spieltag", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 2, maxProSaison: 0,
-          auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 }, zeitraum: 1 },
+          auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 }, zeitraum: 1, metrik: "punkte" },
         { key: "aussenseiter", abQuote: 5, belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 4 },
         { key: "erster-exakter", belohnung: 1, wirkung: { typ: "joker", n: 1 }, ausloeser: { typ: "immer" }, geltung: { typ: "sofort" }, abstand: 0, maxProSaison: 0 },
       ],
@@ -487,6 +547,9 @@ export function sanitizeEreignisse(partial = {}) {
     if (typ.parameter.includes("zeitraum")) {
       eintrag.zeitraum = Math.round(clamp(a.zeitraum, EREIGNIS_LIMITS.zeitraum, typ.standard.zeitraum));
     }
+    if (typ.parameter.includes("metrik")) {
+      eintrag.metrik = METRIK[a.metrik] ? a.metrik : typ.standard.metrik;
+    }
     // Die Begrenzer gelten für JEDEN Typ, nicht nur für die, die sie in
     // `parameter` führen — sie sind keine Eigenschaft des Ereignisses, sondern
     // eine Grenze, die der Admin ihm setzt. Vorgabe 0 = aus.
@@ -541,6 +604,30 @@ function inFolge(reihenfolge, anzahl, gilt, treffer) {
     lauf++;
     if (lauf % anzahl === 0) treffer(s);
   }
+}
+
+// Eine Kennzahl je Spieltag und Nutzer, aus den TIPPS gerechnet — die Form,
+// in der `spieltagsPunkte` sonst hereinkommt: `{ wettbewerb, matchday, userId,
+// wert }`.
+//
+// ⚠️ Über ALLE Nutzer, nicht nur den eigenen: die Auswahl vergleicht ja, und
+// ein Vergleich mit sich selbst hat keinen Sieger. Ein Spieltag ohne Wert für
+// jemanden bedeutet 0 — er hat dort nichts getroffen bzw. nicht getippt, und
+// das ist ein Ergebnis, kein fehlender Wert.
+function werteAusEintraegen(eintraege, keyVon, metrik) {
+  const map = new Map();   // `${key}|${userId}` → Zeile
+  for (const e of eintraege) {
+    if (!Number.isFinite(e.matchday) || e.userId == null) continue;
+    const key = keyVon(e);
+    const k = `${key}|${e.userId}`;
+    if (!map.has(k)) {
+      map.set(k, { wettbewerb: e.wettbewerb ?? null, matchday: e.matchday, userId: e.userId, wert: 0 });
+    }
+    const zeile = map.get(k);
+    if (metrik === "exakteTreffer") { if (istExakt(e)) zeile.wert += 1; }
+    else if (metrik === "getippteSpiele") { if (e.tip) zeile.wert += 1; }
+  }
+  return [...map.values()];
 }
 
 // Was war an einem Spieltag los — aus der Sicht EINES Nutzers?
@@ -683,7 +770,17 @@ export function auswerten({
   // Trost-Joker: braucht die Spieltagspunkte, die nur die Wertung kennt —
   // deshalb reicht der Aufrufer sie herein, statt dass diese Datei scort.
   const trost = aktiv("letzter-am-spieltag");
-  if (trost && Array.isArray(spieltagsPunkte) && spieltagsPunkte.length) {
+  // ── WONACH wird gewertet? ─────────────────────────────────
+  // Vorgabe `punkte` = das bisherige Verhalten. Die anderen Kennzahlen zählen
+  // aus den Tipps selbst und brauchen deshalb die Spieltagspunkte NICHT — wer
+  // hier weiter stur auf sie prüft, lässt ein „Sonderspiel" nie auslösen.
+  const metrik = trost && METRIK[trost.metrik] ? trost.metrik : "punkte";
+  const werte = trost
+    ? (metrik === "punkte"
+      ? (Array.isArray(spieltagsPunkte) ? spieltagsPunkte.map((p) => ({ ...p, wert: Number(p.punkte) || 0 })) : [])
+      : werteAusEintraegen(alle, keyVon, metrik))
+    : [];
+  if (trost && werte.length) {
     const meineId = meine[0]?.userId;
     // ── Über wie viele Spieltage wird gewertet? ───────────────
     // 🔴 `zeitraum: 1` (Vorgabe) ist das bisherige Verhalten: je Spieltag ein
@@ -697,7 +794,7 @@ export function auswerten({
     // `auswahl.js` statt eines durchgereichten Spieltags-Stands.
     const zeitraum = Math.max(1, Math.round(Number(trost.zeitraum) || 1));
     const jeSpieltag = new Map();
-    for (const p of spieltagsPunkte) {
+    for (const p of werte) {
       const key = keyVon(p);
       // Der BLOCK, in den dieser Spieltag fällt — über seine Position im
       // Runden-Verlauf, nicht über die Liga-Zahl. Ein Spieltag ohne Position
@@ -715,7 +812,7 @@ export function auswerten({
       // in denselben Runden-Spieltag, steht jeder Spieler zweimal in der Liste
       // — `Math.min` fände dann den schlechteren EINZELTAG statt der Bilanz des
       // Runden-Spieltags, und „Letzter" wäre jemand anderes als in der Tabelle.
-      g.summe.set(p.userId, (g.summe.get(p.userId) ?? 0) + (Number(p.punkte) || 0));
+      g.summe.set(p.userId, (g.summe.get(p.userId) ?? 0) + (Number(p.wert) || 0));
       if (zeitraum > 1) {
         // 🔴 Über einen Block vertritt der LETZTE Spieltag die Gruppe, nicht
         // der erste: entschieden ist die Wertung erst, wenn der Block vorbei
@@ -732,7 +829,12 @@ export function auswerten({
       }
     }
     const auswahl = sanitizeAuswahl(trost.auswahl, EREIGNIS["letzter-am-spieltag"].standard.auswahl);
-    const satz = `${beschreibeAuswahl(auswahl)}${zeitraum > 1 ? ` über ${zeitraum} Spieltage` : ""}`;
+    // Der Satz muss die Kennzahl NENNEN. „Der Beste des Spieltags" heißt bei
+    // `exakteTreffer` etwas anderes als bei Punkten, und in der Aufschlüsselung
+    // stünde sonst eine Auszeichnung ohne erkennbaren Grund.
+    const satz = `${beschreibeAuswahl(auswahl)}`
+      + `${zeitraum > 1 ? ` über ${zeitraum} Spieltage` : ""}`
+      + `${metrik !== "punkte" ? ` (nach ${METRIK[metrik].label})` : ""}`;
     for (const s of jeSpieltag.values()) {
       const liste = [...s.summe.entries()].map(([userId, punkte]) => ({ userId, punkte }));
       if (liste.length < 2) continue;   // allein ist man weder Erster noch Letzter

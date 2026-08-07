@@ -3,7 +3,7 @@
 import { C, MONO } from "@/lib/theme";
 import {
   AUSWERTBARE_TYPEN, EREIGNIS_TYPEN, EREIGNIS_LIMITS, EREIGNIS,
-  EREIGNIS_PRESETS, AUSWAHL_MODI, AUSWAHL_LIMITS,
+  EREIGNIS_PRESETS, AUSWAHL_MODI, AUSWAHL_LIMITS, METRIKEN,
   sanitizeEreignisse, sanitizeAuswahl, beschreibeAuswahl, konflikte, beschreibeEreignisse,
 } from "@/lib/ereignisse";
 import { Zahl } from "@/components/Eingaben";
@@ -467,6 +467,41 @@ export default function Ereignisse({ rules, onChange }) {
                                 Spieltag“ — sonst fällt die Auszeichnung mitten in einen laufenden Block.</>
                             : <>Gewertet wird <strong style={{ color: C.text }}>jeder Spieltag
                                 einzeln</strong>.</>}
+                        </div>
+                      </div>
+                    )}
+                    {/* 🔴 WONACH gewertet wird. Ohne diese Wahl heißt „der
+                        Beste" immer „die meisten Punkte" — und damit ist ein
+                        Sonderspiel wie die Jokerjagd („wer trifft in drei
+                        Spieltagen am häufigsten exakt") nicht formulierbar.
+                        ⚠️ Der Hinweis zur leeren Jagd gehört dazu: bei
+                        Gleichstand an der Kante gewinnt niemand, und wenn
+                        keiner trifft, sind alle gleich. Das ist gewollt, sieht
+                        aber ohne Erklärung nach einer kaputten Regel aus. */}
+                    {t.parameter.includes("metrik") && (
+                      <div style={{ width: "100%" }}>
+                        <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 4 }}>Wonach wird gewertet?</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                          {METRIKEN.map((m) => {
+                            const aktiv = (wert(t.key, "metrik") ?? "punkte") === m.key;
+                            return (
+                              <button key={m.key} type="button" title={m.text}
+                                onClick={() => setzeFeld(t.key, "metrik", m.key)}
+                                style={{
+                                  border: `1px solid ${aktiv ? C.gold : C.line}`, borderRadius: 999,
+                                  background: aktiv ? `${C.gold}1a` : "transparent",
+                                  color: aktiv ? C.gold : C.text, cursor: "pointer",
+                                  padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
+                                }}>{m.label}</button>
+                            );
+                          })}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+                          {METRIKEN.find((m) => m.key === (wert(t.key, "metrik") ?? "punkte"))?.text}
+                          {(wert(t.key, "metrik") ?? "punkte") !== "punkte" && (
+                            <> ⚠️ Sind alle gleichauf, gewinnt niemand — bei „exakte Treffer“ heißt
+                              das: trifft in dem Zeitraum keiner, gibt es nichts. Das ist gewollt.</>
+                          )}
                         </div>
                       </div>
                     )}

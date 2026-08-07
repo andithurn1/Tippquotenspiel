@@ -2180,7 +2180,7 @@ Alle Beispiele des Nutzers sind in dieser Grammatik ein Einzeiler:
 | Pechvogel-Bonus | Serie: 3× kein Treffer | der Betroffene | +20 % | nächster Spieltag | ✅ Bündel „pechvogel" (07.08.) |
 | Scharfschütze | Serie: 4× exakt | der Betroffene | 1 Joker | sofort | ✅ Bündel „scharfschuetze" (07.08.) |
 | Dreier-Wertung | Rhythmus: jeder 3. Spieltag | Rang oben 1 **über die 3** | Belohnung | sofort | ✅ Bündel „dreier" (07.08.) |
-| Jokerjagd | Zufall (≈ alle 8 Spieltage) | alle | Sonderspiel | 3 Spieltage | ⛔ blockiert, siehe unten |
+| Jokerjagd | Zufall (≈ alle 8 Spieltage) | alle | Sonderspiel | 3 Spieltage | ✅ Bündel „jokerjagd" (07.08.) |
 
 🔴 **Gemessen am 07.08.2026, und es widersprach der Ansage „mit allen vier
 Achsen sind die Wünsche Einzeiler": vier von sechs waren es, zwei nicht.**
@@ -2201,11 +2201,22 @@ VOKABELN. Eine davon ist inzwischen gebaut:
   dritten Spieltags" abkürzen: anderer Anreiz (ein Glückstag statt drei Wochen
   Konstanz), gleiche Oberfläche — die teuerste Sorte Näherung. Genau deshalb
   ein eigener `bezug` und kein durchgereichter Spieltags-Stand.
-- **Jokerjagd** braucht die Wirkung `sonderspiel`, und die steht in
-  `wirkung.js` ausdrücklich als nicht auswertbar (`braucht: ["sonderspiele"]`).
-  Ein Miniwettspiel über drei Spieltage ist kein Vokabel-, sondern ein
-  Infrastruktur-Thema — dieselbe Lage wie bei `quiz` und `duell` in den
-  Ereignis-Typen. Die GELTUNG dafür (`fenster(3)`) liegt seit dem 07.08. bereit.
+- ✅ **Jokerjagd** stand als „Sonderspiel über 3 Spieltage" da und sah nach
+  Infrastruktur aus — nach der Wirkung `sonderspiel`, die in `wirkung.js`
+  ausdrücklich nicht auswertbar ist. **Nachgesehen am 07.08.2026: sie braucht
+  sie gar nicht.** Ein Sonderspiel ist kein Minispiel, sondern ein WETTBEWERB
+  ÜBER EIN FENSTER NACH EINER KENNZAHL. Fenster (`zeitraum`), Zeitpunkt
+  (`ausloeser: zufall`) und Preis (`wirkung`) gab es längst; gefehlt hat allein
+  die KENNZAHL — bis dahin war „der Beste" immer „die meisten Punkte".
+  Gebaut als `metrik` (`punkte` · `exakteTreffer` · `getippteSpiele`), Bündel
+  „jokerjagd" liegt in der Bibliothek.
+  ⚠️ **Bei einer Jagd gewinnt oft niemand, und das ist richtig.** Trifft in dem
+  Zeitraum keiner exakt, sind alle gleichauf — und bei Gleichstand an der Kante
+  gibt es nichts. Eine Jagd ohne Beute hat keinen Sieger; sie sieht nur aus wie
+  eine tote Einstellung. Deshalb steht der Satz in der Oberfläche.
+  ℹ️ Die Wirkung `sonderspiel` bleibt trotzdem im Katalog: ein echtes
+  Miniwettspiel mit eigener Buchführung wäre etwas anderes als ein Wettbewerb
+  über vorhandene Kennzahlen. Sie ist nur nicht mehr der Blocker.
 
 Zwei NEUE Ereignis-Typen sind dafür entstanden (`treffer-serie`,
 `pechstraehne`) — beide Serien über Spieltage, wie `serie`, nur mit einer

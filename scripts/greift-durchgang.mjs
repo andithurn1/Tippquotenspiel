@@ -316,6 +316,25 @@ const EREIGNIS_FAELLE = [
   // je Spieltag — und zwar nicht nur ein Drittel, weil die Auswahl über die
   // SUMME entscheidet und damit andere Leute trifft.
   ["… über 3 Spieltage", { key: "letzter-am-spieltag", belohnung: 1, zeitraum: 3 }],
+  // 🔴 Die Kennzahl (07.08.2026) — die letzte Stellschraube der Jokerjagd.
+  // ⚠️ „ZAHLT NICHTS" wäre hier ein echter Befund und keine Erklärung: wenn
+  // nach exakten Treffern gewertet wird und niemand trifft, gewinnt bei
+  // Gleichstand niemand. Das ist gewollt, aber es muss SICHTBAR sein — sonst
+  // sieht eine sinnvolle Einstellung wie eine tote aus.
+  ["… nach exakten Treffern", { key: "letzter-am-spieltag", belohnung: 1, zeitraum: 3,
+    metrik: "exakteTreffer", auswahl: { modus: "rang", ende: "oben", n: 1, prozent: 20 } }],
+  // ⚠️ Zwei Anläufe, bis diese Zeile wirklich etwas gemessen hat — beide Male
+  // war der MESSFALL falsch, nie die Regel:
+  //  1. Ohne Lücke tippen alle drei jedes Spiel. Der Fleiß ist überall gleich,
+  //     der Gleichstand an der Kante zeichnet niemanden aus.
+  //  2. Mit Lücke bei EINEM Spieler und `ende: "oben"` teilen sich die beiden
+  //     anderen die Spitze — wieder Gleichstand, wieder nichts.
+  // Eindeutig ist nur die UNTERE Kante: genau ein Spieler hat weniger getippt.
+  // Das ist zugleich die sinnvollere Regel („wer wenig mitgemacht hat, bekommt
+  // einen Schubs") und nicht bloß ein Messtrick.
+  ["… nach Tipp-Fleiß", { key: "letzter-am-spieltag", belohnung: 1, zeitraum: 3,
+    metrik: "getippteSpiele", auswahl: { modus: "rang", ende: "unten", n: 1, prozent: 20 } },
+    { luecke: "u-lena", hinweis: "ein Spieler lässt Spieltage aus" }],
   // Die beiden Einträge der Ereignis-Bibliothek vom 07.08.2026. Beide hängen
   // an ERGEBNISSEN und nicht nur an Tipps — der Messfall oben tippt über 54
   // gelaufene Spiele, also liegen welche vor.
@@ -330,7 +349,15 @@ console.log(`${"=".repeat(88)}\n`);
 const stumm = [];
 const nullstand = await gutschriften(AUS);
 console.log(`  ${"(ausgeschaltet)".padEnd(26)} ${nullstand.summe} Gutschriften`);
-for (const [name, eintrag] of EREIGNIS_FAELLE) {
+// 🔴 Manche Ereignisse brauchen ein anderes SZENARIO, nicht eine andere
+// Einstellung. „Wer am fleißigsten getippt hat" kann im Grundfall niemanden
+// auszeichnen, weil dort alle drei Spieler jedes Spiel tippen — alle gleich,
+// Gleichstand an der Kante, also niemand. Das ist kein Befund am Ereignis,
+// sondern einer am Messfall: gemeldet würde „ZAHLT NICHTS" für eine
+// Einstellung, die einwandfrei greift.
+// Deshalb darf jeder Fall sein Szenario mitbringen (dieselbe Bauart wie `opt`
+// in TEIL 1).
+for (const [name, eintrag, opt = {}] of EREIGNIS_FAELLE) {
   const an = { enabled: true, maxErspielt: 60, aktive: [eintrag] };
   // Auch hier: kommt die Einstellung überhaupt durch `sanitizeRules`?
   if (!sanitizeRules({ ...DEFAULT_RULES, ereignisse: an }).ereignisse.aktive.length) {
@@ -338,8 +365,9 @@ for (const [name, eintrag] of EREIGNIS_FAELLE) {
     stumm.push(`${name} (verworfen)`);
     continue;
   }
-  const r = await gutschriften(an);
-  console.log(`  ${name.padEnd(26)} ${r.summe === 0 ? "⚠️  ZAHLT NICHTS" : `${r.summe} Gutschriften`}`);
+  const r = await gutschriften(an, opt);
+  console.log(`  ${name.padEnd(26)} ${r.summe === 0 ? "⚠️  ZAHLT NICHTS" : `${r.summe} Gutschriften`}`
+    + `${opt.hinweis ? `  (${opt.hinweis})` : ""}`);
   if (r.summe === 0) stumm.push(name);
 }
 

@@ -185,7 +185,7 @@ export function blattFelder() {
 export const LISTEN_FELDER = [
   // rules.ereignisse.aktive[]
   "belohnung", "anzahl", "abQuote", "auswahl", "wirkung", "ausloeser", "geltung",
-  "zeitraum", "abstand", "maxProSaison",
+  "zeitraum", "metrik", "abstand", "maxProSaison",
   // rules.saison.wetten[]
   "punkte", "ausser", "abSpieltag", "bisSpieltag",
   // rules.drehrad.felder[]
