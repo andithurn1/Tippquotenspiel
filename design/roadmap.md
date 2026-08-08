@@ -3197,3 +3197,26 @@ verglichen.**
 gegen die spätere Wertung, und die Rundenansicht. Beides braucht einen
 gemeinsamen Bezugspunkt, den es noch nicht gibt — wer dort weitermacht, hängt
 es an diesen Durchgang statt einen sechsten zu bauen.
+
+### ⚠️ 07.08.2026: Vercel-Deployment pausiert — Pro Plan abgelaufen
+
+Die Seite zeigte „This deployment is temporarily paused". Ursache war NICHT das
+Ausgabenlimit (stand auf 0 von 200 $, „Pause Projects: Off"), sondern der Plan
+selbst: **Pro Plan — Expired**, Zyklus 30.07.–30.08.2026. Also eine
+fehlgeschlagene Verlängerung, kein neuer Antrag — das Datum deckt sich mit dem
+Tag, an dem Pro hier vermerkt wurde.
+
+**Entscheidung des Nutzers: Pro wird verlängert.** `vercel.json` bleibt damit
+auf `0 * * * *`; der stündliche Cron ist ein Pro-Feature.
+
+🔴 **Für den Fall, dass es doch einmal auf Hobby zurückfällt** — der Satz steht
+schon in `CLAUDE.md`, hier die Bestätigung aus dem Ernstfall: dann MUSS
+`vercel.json` sofort auf `0 3 * * *`. Auf dem Gratis-Tarif lässt ein zu
+häufiger Plan nicht den Cron scheitern, sondern **den ganzen Build** — und man
+sucht den Fehler im Code.
+
+⚠️ **Was währenddessen still liegt, und das ist der eigentliche Punkt:** nicht
+nur die Seite, sondern auch `/api/matchday/auto`. Ohne Cron öffnet sich kein
+Spieltag von selbst und der Big-Game-Wert wird nicht eingefroren. Bis zum
+28.08. folgenlos — danach nicht mehr. **Vor dem Launch prüfen, dass der Cron
+wirklich läuft**, nicht nur, dass die Seite lädt.
