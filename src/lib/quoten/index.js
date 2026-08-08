@@ -14,9 +14,10 @@
 // ============================================================
 
 import bl from "./bl";
+import bl2 from "./bl2";
 import mls from "./mls";
 import pd from "./pd";
 import pl from "./pl";
 import sa from "./sa";
 
-export const QUOTEN = { bl, mls, pd, pl, sa };
+export const QUOTEN = { bl, bl2, mls, pd, pl, sa };

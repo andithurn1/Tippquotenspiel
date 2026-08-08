@@ -50,6 +50,9 @@ const KADER = resolve(WURZEL, "src/lib/kader");
 // Paaren vorkommt.
 const LIGEN = {
   bl: { label: "Bundesliga", sport: "soccer_germany_bundesliga", beobachtung: ["soccer_germany_dfb_pokal"] },
+  // 2. Bundesliga (07.08.2026). Eigener Sport-Key beim Anbieter; der Pokal
+  // steht schon bei `bl` unter Beobachtung und gehoert nicht doppelt hierher.
+  bl2: { label: "2. Bundesliga", sport: "soccer_germany_bundesliga2", beobachtung: [] },
   pl: { label: "Premier League", sport: "soccer_epl", beobachtung: ["soccer_england_efl_cup", "soccer_fa_cup"] },
   pd: { label: "La Liga", sport: "soccer_spain_la_liga", beobachtung: [] },
   sa: { label: "Serie A", sport: "soccer_italy_serie_a", beobachtung: [] },

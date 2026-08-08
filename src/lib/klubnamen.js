@@ -21,6 +21,19 @@
 // API-Name → unser Katalog-Name, je Wettbewerb. Getrennt gehalten, weil
 // derselbe Kurzname in zwei Ligen verschiedene Klubs meinen kann.
 export const KLUB_ALIASE = {
+  // 2. Bundesliga (07.08.2026). Beide Einträge sind reine SCHREIBVARIANTEN
+  // desselben Vereins — gefunden über `npm run odds:pruefen`, das jeden
+  // unbekannten Namen einzeln meldet. Die übrigen 16 Klubs schreibt der
+  // Anbieter genauso wie wir.
+  //
+  // ⚠️ Ein Alias ist NUR dann richtig, wenn er denselben Verein meint. Spielt
+  // ein Klub gar nicht mehr in dieser Liga, gehört die Klubliste korrigiert —
+  // ein Alias verdeckte den Fehler still und hängte die Quoten ans falsche
+  // Spiel.
+  bl2: {
+    "FC Energie Cottbus": "Energie Cottbus",
+    "Greuther Fürth": "SpVgg Greuther Fürth",
+  },
   bl: {
     "Bayern Munich": "FC Bayern München",
     "Bayer Leverkusen": "Bayer 04 Leverkusen",
