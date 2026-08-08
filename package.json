@@ -16,6 +16,7 @@
     "stufen": "vite-node scripts/stufen-durchgang.mjs",
     "tot": "vite-node scripts/tot-durchgang.mjs",
     "sicht": "vite-node scripts/sicht-durchgang.mjs",
+    "gleich": "vite-node scripts/gleich-durchgang.mjs",
     "import:spielplan": "vite-node scripts/import-spielplan.mjs",
     "odds:pruefen": "vite-node scripts/fetch-odds.mjs -- --pruefen",
     "odds:holen": "vite-node scripts/fetch-odds.mjs",

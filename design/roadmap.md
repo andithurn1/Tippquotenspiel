@@ -3174,3 +3174,26 @@ nichts zu tun — deshalb hier notiert statt nebenbei repariert.
 ⚠️ Es fällt nicht auf, weil ein fehlendes `<video>` still bleibt: der Sieger
 sieht schlicht keine Reaktion. Beim Prüfen der übrigen Clips mitnehmen, ob noch
 weitere fehlen — die Liste der Namen steht in `reactions.js`.
+
+### 📐 `npm run gleich` — steht derselbe Wert überall gleich da? (07.08.2026)
+
+Punkt 3 der Nutzer-Reihenfolge, jetzt messbar statt vermutet. Verglichen werden
+drei Wege zu DERSELBEN Zahl (`getLeaderboard` · letzter Punkt von
+`getLeaderboardHistory` · Summe aus `getSpieltagsPunkte`) plus die
+Selbstkontrolle der Aufschlüsselung (`breakdown().stimmt`).
+
+Gemessen über FÜNF Regelwerke, nicht nur die Vorgabe — der Fund vom selben Tag
+(Abrechnung gegen Leaderboard, 445 Punkte) trat nur bei eingeschaltetem
+`tippEinfluss` auf. Mit der Vorgabe allein hätte die Messung Ruhe gemeldet.
+
+**Stand: alle fünf Regelwerke gleich, 192/192 Ketten stimmig, 16 Werte je Fall
+verglichen.**
+
+⚠️ Die Zahl „16 Werte verglichen" steht bewusst in der Ausgabe. Ohne sie hieße
+„gleich" womöglich nur, dass nichts geprüft wurde — dieselbe Sperrklinke wie in
+`sicht` (kein Spieler-Screen übrig) und `greift` (Einstellung verworfen).
+
+**Was noch NICHT verglichen wird:** die Vorschau beim Tippen (`projectTip`)
+gegen die spätere Wertung, und die Rundenansicht. Beides braucht einen
+gemeinsamen Bezugspunkt, den es noch nicht gibt — wer dort weitermacht, hängt
+es an diesen Durchgang statt einen sechsten zu bauen.
