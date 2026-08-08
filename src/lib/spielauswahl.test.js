@@ -207,3 +207,151 @@ describe("Die Auswahl reist im Creator-Code mit", () => {
     expect(sanitizeRules(decodePreset(encodePreset(rules)))).toEqual(rules);
   });
 });
+
+// ============================================================
+//  SCHRITT 3 — Abweichungen JE WETTBEWERB (design/spielauswahl-je-liga.md)
+// ============================================================
+
+// Zwei Ligen in einem Katalog, dazu ein eingefrorener Tabellenstand.
+const ZWEI_LIGEN = [
+  { matchId: "b1", home: "A", away: "B", matchday: 30, wettbewerb: "bl",
+    snapshot: { tabellenPlatz: { home: 1, away: 17 } } },
+  { matchId: "b2", home: "C", away: "D", matchday: 30, wettbewerb: "bl",
+    snapshot: { tabellenPlatz: { home: 8, away: 9 } } },
+  { matchId: "b3", home: "E", away: "F", matchday: 12, wettbewerb: "bl",
+    snapshot: { tabellenPlatz: { home: 15, away: 16 } } },
+  { matchId: "p1", home: "G", away: "H", matchday: 30, wettbewerb: "pl",
+    snapshot: { tabellenPlatz: { home: 2, away: 3 } } },
+  { matchId: "p2", home: "I", away: "J", matchday: 12, wettbewerb: "pl" },
+];
+
+describe("jeWettbewerb — die Vorgabe bleibt, die Liga weicht ab", () => {
+  it("🔴 ohne `jeWettbewerb` ändert sich NICHTS", () => {
+    // Die Zusicherung, die den ganzen Umbau trägt: alte Regelwerke und alte
+    // Creator-Codes verhalten sich bitgleich wie vorher.
+    for (const spiele of [
+      DEFAULT_SPIELE,
+      { modus: "teams", teams: ["A", "C"] },
+      { spieltagVon: 20 },
+      { wettbewerbe: ["bl"] },
+    ]) {
+      expect(filterSpiele(ZWEI_LIGEN, spiele).map((m) => m.matchId))
+        .toEqual(filterSpiele(ZWEI_LIGEN, { ...spiele, jeWettbewerb: {} }).map((m) => m.matchId));
+    }
+  });
+
+  it("überschreibt FELD FÜR FELD, nicht tief gemischt", () => {
+    // Runden-weit „nur A und C", für die PL aber „G und H" — die Vorgabe wird
+    // ERSETZT, nicht ergänzt. Sonst zählte in der PL auch noch A oder C.
+    const spiele = {
+      modus: "teams", teams: ["A", "C"],
+      jeWettbewerb: { pl: { teams: ["G", "H"] } },
+    };
+    const ids = filterSpiele(ZWEI_LIGEN, spiele).map((m) => m.matchId);
+    expect(ids).toContain("b1");   // A ist dabei
+    expect(ids).toContain("b2");   // C ist dabei
+    expect(ids).toContain("p1");   // G/H über die Abweichung
+    expect(ids).not.toContain("p2");
+  });
+
+  it("ein NICHT gesetztes Feld gilt weiter aus der Vorgabe", () => {
+    // Die Abweichung setzt nur den Spieltag — der Vereinsfilter der Vorgabe
+    // gilt in der Bundesliga unverändert weiter.
+    const spiele = {
+      modus: "teams", teams: ["A", "E"],
+      jeWettbewerb: { bl: { spieltagVon: 20 } },
+    };
+    const ids = filterSpiele(ZWEI_LIGEN, spiele).map((m) => m.matchId);
+    expect(ids).toEqual(["b1"]);   // b3 hat E, fällt aber am Spieltag 12 raus
+  });
+
+  it("ein gesetztes, LEERES Feld hebt die Vorgabe für diese Liga auf", () => {
+    // Der Unterschied zwischen „nichts gesetzt" und „ausdrücklich leer". Ohne
+    // ihn ließe sich eine runden-weite Einschränkung je Liga nie aufheben.
+    const spiele = {
+      spieltagVon: 20,
+      jeWettbewerb: { pl: { spieltagVon: null } },
+    };
+    const ids = filterSpiele(ZWEI_LIGEN, spiele).map((m) => m.matchId);
+    expect(ids).toContain("p2");        // Spieltag 12, Grenze aufgehoben
+    expect(ids).not.toContain("b3");    // Bundesliga: Grenze gilt weiter
+  });
+
+  it("welche Wettbewerbe dazugehören, bleibt RUNDEN-weit", () => {
+    // Eine Liga darf sich nicht selbst in die Runde hineindefinieren — sonst
+    // zwei Wahrheiten über dieselbe Frage.
+    const spiele = {
+      wettbewerbe: ["bl"],
+      jeWettbewerb: { pl: { wettbewerbe: ["pl"] } },
+    };
+    expect(filterSpiele(ZWEI_LIGEN, spiele).every((m) => m.wettbewerb === "bl")).toBe(true);
+    // Und das Feld wird gar nicht erst gespeichert:
+    expect(sanitizeSpiele(spiele).jeWettbewerb.pl).toBeUndefined();
+  });
+
+  it("wirft leere und unbrauchbare Abweichungen weg", () => {
+    const s = sanitizeSpiele({
+      jeWettbewerb: { bl: {}, pl: null, "": { teams: ["X"] }, cl: { phasen: ["af"] } },
+    });
+    expect(Object.keys(s.jeWettbewerb)).toEqual(["cl"]);
+  });
+});
+
+describe("Tabellenzone — „Abstiegskampf“", () => {
+  it("nimmt ein Spiel mit, sobald EINE Seite in der Zone steht", () => {
+    const spiele = { zonen: [{ von: 14, bis: 18 }] };
+    const ids = filterSpiele(ZWEI_LIGEN, spiele).map((m) => m.matchId);
+    expect(ids).toEqual(["b1", "b3"]);   // 17. bzw. 15./16.
+  });
+
+  it("🔴 ohne Tabellenstand fällt das Spiel RAUS, nicht rein", () => {
+    // Andersherum zöge ein fehlendes Feld still den ganzen Spielplan herein.
+    expect(passtSpiel({ matchId: "x", home: "A", away: "B" }, { zonen: [{ von: 1, bis: 99 }] }))
+      .toBe(false);
+  });
+
+  it("greift auch als Abweichung EINER Liga", () => {
+    // Andis Fall: „letzte 5 Spieltage, Plätze 14–18" — aber nur in der
+    // Bundesliga, die PL läuft normal weiter.
+    const spiele = {
+      jeWettbewerb: { bl: { spieltagVon: 30, zonen: [{ von: 14, bis: 18 }] } },
+    };
+    const ids = filterSpiele(ZWEI_LIGEN, spiele).map((m) => m.matchId);
+    expect(ids).toEqual(["b1", "p1", "p2"]);
+  });
+
+  it("füllt halbe Angaben auf und dreht vertauschte Grenzen", () => {
+    expect(sanitizeSpiele({ zonen: [{ von: 14 }] }).zonen).toEqual([{ von: 14, bis: 99 }]);
+    expect(sanitizeSpiele({ zonen: [{ bis: 4 }] }).zonen).toEqual([{ von: 1, bis: 4 }]);
+    expect(sanitizeSpiele({ zonen: [{ von: 18, bis: 14 }] }).zonen).toEqual([{ von: 14, bis: 18 }]);
+    expect(sanitizeSpiele({ zonen: [{}, null, "x"] }).zonen).toEqual([]);
+  });
+});
+
+describe("Schritt 3 reist im Creator-Code mit", () => {
+  it("übersteht encode → decode → sanitize unverändert", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      spiele: {
+        modus: "teams", teams: ["Bayern", "Dortmund"],
+        jeWettbewerb: { bl: { spieltagVon: 30, zonen: [{ von: 14, bis: 18 }] } },
+      },
+    });
+    expect(rules.spiele.jeWettbewerb.bl.zonen).toEqual([{ von: 14, bis: 18 }]);
+    expect(sanitizeRules(decodePreset(encodePreset(rules)))).toEqual(rules);
+  });
+
+  it("eine leere Karte landet NICHT im Code", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, spiele: { jeWettbewerb: {} } });
+    expect(encodePreset(rules)).toBe(encodePreset(sanitizeRules(DEFAULT_RULES)));
+  });
+});
+
+describe("Beschreibung nennt die neuen Ebenen", () => {
+  it("Zone und Sonderregeln", () => {
+    expect(beschreibeAuswahl({ zonen: [{ von: 14, bis: 18 }] }))
+      .toBe("alle Spiele, Plätze 14–18");
+    expect(beschreibeAuswahl({ jeWettbewerb: { bl: { spieltagVon: 30 } } }))
+      .toBe("alle Spiele, Sonderregeln für 1 Wettbewerb");
+  });
+});

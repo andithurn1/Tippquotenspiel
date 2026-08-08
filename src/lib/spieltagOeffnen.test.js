@@ -120,3 +120,43 @@ describe("Neutral, wenn nichts zu tun ist", () => {
     expect(istGeoeffnet([{ snapshot: { bigGameGeprueft: true } }])).toBe(true);
   });
 });
+
+describe("Tabellenplatz einfrieren — Grundlage für die Zonen-Auswahl", () => {
+  it("legt beide Plätze im Snapshot ab (Stand VOR dem Spieltag)", () => {
+    // Im Aufbau oben gewinnt immer die kleinere Nummer, T01 steht also auf 1.
+    const { snapshots } = spieltagOeffnen({
+      spieltag: 30, matches: SPIELTAG, gespielt: GESPIELT, rules: sanitizeRules(DEFAULT_RULES),
+    });
+    const eins = Object.values(snapshots)[0];
+    expect(eins.tabellenPlatz).toBeDefined();
+    expect(Number.isFinite(eins.tabellenPlatz.home)).toBe(true);
+    expect(Number.isFinite(eins.tabellenPlatz.away)).toBe(true);
+    // Jeder Snapshot des Spieltags trägt ihn, nicht nur das Big Game.
+    for (const s of Object.values(snapshots)) expect(s.tabellenPlatz).toBeDefined();
+  });
+
+  it("schreibt gar nichts, wenn ein Verein noch keine Tabelle hat", () => {
+    // Ein halber Stand wäre schlimmer als keiner: „nicht in der Zone" ließe
+    // sich dann nicht mehr von „Platz unbekannt" unterscheiden.
+    const { snapshots } = spieltagOeffnen({
+      spieltag: 1, matches: [
+        { id: "x", home: "Neu-A", away: "Neu-B", matchday: 1,
+          snapshot: { matchId: "x", home: "Neu-A", away: "Neu-B", winner: { home: 2, draw: 3, away: 4 } } },
+      ], gespielt: [], rules: sanitizeRules(DEFAULT_RULES),
+    });
+    expect(snapshots.x.tabellenPlatz).toBeUndefined();
+    expect(snapshots.x.bigGameGeprueft).toBe(true);
+  });
+
+  it("ist eingefroren: ein zweiter Aufruf ändert nichts mehr", () => {
+    const erst = spieltagOeffnen({
+      spieltag: 30, matches: SPIELTAG, gespielt: GESPIELT, rules: sanitizeRules(DEFAULT_RULES),
+    });
+    const mitStand = SPIELTAG.map((m) => ({ ...m, snapshot: erst.snapshots[m.id] }));
+    const zweit = spieltagOeffnen({
+      spieltag: 30, matches: mitStand, gespielt: [], rules: sanitizeRules(DEFAULT_RULES),
+    });
+    expect(zweit.schonOffen).toBe(true);
+    expect(zweit.snapshots).toEqual({});
+  });
+});

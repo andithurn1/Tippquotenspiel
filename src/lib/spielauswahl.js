@@ -45,7 +45,18 @@ export const AUSWAHL_LIMITS = {
   maxTeams: 40,
   maxSpiele: 200,
   spieltag: { min: 1, max: 99 },
+  maxZonen: 4,
+  platz: { min: 1, max: 99 },
+  maxAbweichungen: 12,
 };
+
+// Welche Felder eine Liga für sich anders setzen darf. `wettbewerbe` steht
+// bewusst NICHT dabei: welche Wettbewerbe überhaupt dazugehören, ist eine
+// runden-weite Frage. Dürfte eine Liga sich selbst hinein- oder
+// hinausdefinieren, gäbe es zwei Wahrheiten über dieselbe Frage.
+export const ABWEICHUNGS_FELDER = [
+  "modus", "teams", "matchIds", "spieltagVon", "spieltagBis", "phasen", "zonen",
+];
 
 export const DEFAULT_SPIELE = {
   modus: "alle",
@@ -58,6 +69,20 @@ export const DEFAULT_SPIELE = {
   // „nur Champions League ab dem Achtelfinale".
   wettbewerbe: [],
   phasen: [],
+  // ── Tabellenzone (Schritt 3, design/spielauswahl-je-liga.md) ──
+  // „Abstiegskampf" = Plätze 14–18. Leer = keine Einschränkung. Ein Spiel
+  // zählt, sobald EINE Seite in einer der Zonen steht — dieselbe Regel wie
+  // bei den Vereinen.
+  // 🔴 Der Platz kommt aus `snapshot.tabellenPlatz` und ist beim ÖFFNEN des
+  // Spieltags eingefroren. Zwischen zwei Spielen desselben Spieltags ändert
+  // er sich also nicht; sonst sähe, wer Sonntag tippt, eine andere Runde als
+  // wer Freitag tippt.
+  zonen: [],
+  // ── Abweichungen JE WETTBEWERB (Schritt 3) ──
+  // Alles darüber ist die runden-weite VORGABE. Hier stehen nur die
+  // Abweichungen: `{ bl: { spieltagVon: 30, zonen: [{von:14,bis:18}] } }`.
+  // Leer heißt bitgleich wie vorher — deshalb bricht kein alter Creator-Code.
+  jeWettbewerb: {},
 };
 
 // ⚠️ Alle Dimensionen wirken UND-verknüpft: Vereine, Zeitraum, Wettbewerbe,
@@ -84,6 +109,51 @@ function spieltagWert(v) {
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
+function platzWert(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  const { min, max } = AUSWAHL_LIMITS.platz;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+// Tabellenzonen: eine Liste von Platz-Bereichen. Eine halbe Angabe ist kein
+// Grund, sie wegzuwerfen — „ab Platz 14" heißt bis zum Tabellenende, „bis
+// Platz 4" heißt ab Platz 1. Vertauschte Grenzen werden gedreht, wie beim
+// Spieltag-Bereich auch.
+function zonenWert(arr) {
+  if (!Array.isArray(arr)) return [];
+  const raus = [];
+  for (const z of arr) {
+    if (!z || typeof z !== "object") continue;
+    let von = platzWert(z.von);
+    let bis = platzWert(z.bis);
+    if (von === null && bis === null) continue;
+    if (von === null) von = AUSWAHL_LIMITS.platz.min;
+    if (bis === null) bis = AUSWAHL_LIMITS.platz.max;
+    if (von > bis) [von, bis] = [bis, von];
+    raus.push({ von, bis });
+  }
+  return raus.slice(0, AUSWAHL_LIMITS.maxZonen);
+}
+
+// Eine Abweichung trägt NUR die Felder, die wirklich gesetzt wurden. Das ist
+// der Unterschied zwischen „für diese Liga gilt keine Vereins-Einschränkung"
+// (Feld gesetzt, leer) und „für diese Liga steht nichts Eigenes drin" (Feld
+// fehlt, die Vorgabe gilt weiter). Wer das zusammenwirft, kann eine
+// runden-weite Einschränkung für eine Liga nie wieder aufheben.
+function sanitizeAbweichung(p) {
+  if (!p || typeof p !== "object") return null;
+  // Über den vollen Sanitizer laufen lassen (eine Quelle für die Regeln),
+  // dann auf die tatsächlich gesetzten Felder zurückschneiden.
+  const voll = sanitizeSpiele({ ...p, jeWettbewerb: undefined });
+  const raus = {};
+  for (const feld of ABWEICHUNGS_FELDER) {
+    if (Object.prototype.hasOwnProperty.call(p, feld)) raus[feld] = voll[feld];
+  }
+  return Object.keys(raus).length > 0 ? raus : null;
+}
+
 export function sanitizeSpiele(partial = {}) {
   const p = partial && typeof partial === "object" ? partial : {};
   const modus = AUSWAHL_MODI.some((m) => m.key === p.modus) ? p.modus : DEFAULT_SPIELE.modus;
@@ -102,6 +172,17 @@ export function sanitizeSpiele(partial = {}) {
   const liste = (arr, max) => [...new Set((Array.isArray(arr) ? arr : [])
     .map((t) => text(t, 20)).filter(Boolean))].slice(0, max);
 
+  // Abweichungen je Wettbewerb. Ein unbekannter oder leerer Schlüssel und eine
+  // Abweichung ohne ein einziges gesetztes Feld fliegen raus — sonst wüchse
+  // der Creator-Code um Einträge, die nichts bewirken.
+  const jeWettbewerb = {};
+  const roh = p.jeWettbewerb && typeof p.jeWettbewerb === "object" ? p.jeWettbewerb : {};
+  for (const [k, v] of Object.entries(roh).slice(0, AUSWAHL_LIMITS.maxAbweichungen)) {
+    const key = text(k, 20);
+    const ab = key ? sanitizeAbweichung(v) : null;
+    if (key && ab) jeWettbewerb[key] = ab;
+  }
+
   return {
     // Ein Modus ohne die dazugehörigen Daten wäre eine Auswahl, die alles
     // wegfiltert — das ist nie gewollt, also fällt er auf „alle" zurück.
@@ -110,14 +191,57 @@ export function sanitizeSpiele(partial = {}) {
     teams, matchIds, spieltagVon: von, spieltagBis: bis,
     wettbewerbe: liste(p.wettbewerbe, 10),
     phasen: liste(p.phasen, 10),
+    zonen: zonenWert(p.zonen),
+    jeWettbewerb,
   };
+}
+
+// ── Die effektive Auswahl für EINEN Wettbewerb ───────────────
+// Vorgabe + Abweichung, **Feld für Feld überschrieben, nicht tief gemischt**.
+// Diese Regel steht hier und nirgends sonst: wer `bl.teams` setzt, ERSETZT die
+// runden-weite Vereinsliste für die Bundesliga — er ergänzt sie nicht. Alles,
+// was er nicht setzt, gilt weiter aus der Vorgabe.
+//
+// 🔴 Diese Funktion ist die EINE Stelle, an der gemischt wird. Kein Screen
+// rechnet das nach — das ist genau die Sorte Fehler, aus der die Runden-Schicht
+// in CLAUDE.md entstanden ist (17 Funde an einem Tag, kein einziger ein
+// Rechenfehler).
+export function auswahlFuer(spiele = DEFAULT_SPIELE, wettbewerb = null) {
+  const s = sanitizeSpiele(spiele);
+  const ab = wettbewerb ? s.jeWettbewerb[wettbewerb] : null;
+  if (!ab) return s;
+  return sanitizeSpiele({
+    ...s, ...ab,
+    // Runden-weit und NICHT überschreibbar (siehe ABWEICHUNGS_FELDER).
+    wettbewerbe: s.wettbewerbe,
+    // Die Karte selbst reist nicht mit in die effektive Auswahl — sonst
+    // stünde die Abweichung zweimal da und lüde zum zweiten Mischen ein.
+    jeWettbewerb: {},
+  });
+}
+
+// Steht eine der beiden Mannschaften in einer der Zonen?
+//
+// 🔴 Fehlt der Tabellenstand, gilt die Zone als NICHT erfüllt — das Spiel
+// fällt raus. Andersherum (fehlender Stand = erfüllt) zöge ein einziges
+// fehlendes Feld stillschweigend den ganzen Spielplan in die Runde, und
+// niemand sähe, warum.
+function inZone(match, zonen) {
+  if (!zonen.length) return true;
+  const p = match.snapshot?.tabellenPlatz ?? match.tabellenPlatz;
+  if (!p) return false;
+  const trifft = (r) => Number.isFinite(r) && zonen.some((z) => r >= z.von && r <= z.bis);
+  return trifft(Number(p.home)) || trifft(Number(p.away));
 }
 
 // Gehört dieses Spiel zur Runde? Der Spieltag-Bereich gilt in JEDEM Modus —
 // er ist eine zweite, unabhängige Einschränkung („nur die Rückrunde").
+//
+// ⚠️ Gerechnet wird mit der Auswahl, die für den Wettbewerb DIESES Spiels
+// gilt (`auswahlFuer`) — seit Schritt 3 kann jede Liga abweichen.
 export function passtSpiel(match, spiele = DEFAULT_SPIELE) {
-  const s = sanitizeSpiele(spiele);
   if (!match) return false;
+  const s = auswahlFuer(spiele, match.wettbewerb ?? null);
 
   const md = Number(match.matchday ?? match.spieltag);
   if (s.spieltagVon !== null && Number.isFinite(md) && md < s.spieltagVon) return false;
@@ -128,6 +252,10 @@ export function passtSpiel(match, spiele = DEFAULT_SPIELE) {
   // Altdaten still aus der Runde.
   if (s.wettbewerbe.length && match.wettbewerb && !s.wettbewerbe.includes(match.wettbewerb)) return false;
   if (s.phasen.length && match.phase && !s.phasen.includes(match.phase)) return false;
+
+  // Tabellenzone — wie Zeitraum und Phase eine zusätzliche Einschränkung, die
+  // in JEDEM Modus gilt.
+  if (!inZone(match, s.zonen)) return false;
 
   if (s.modus === "teams") {
     return s.teams.includes(match.home) || s.teams.includes(match.away);
@@ -187,5 +315,11 @@ export function beschreibeAuswahl(spiele = DEFAULT_SPIELE) {
     const bis = s.spieltagBis ?? "Saisonende";
     teile.push(`Spieltag ${von} bis ${bis}`);
   }
+  for (const z of s.zonen) teile.push(`Plätze ${z.von}–${z.bis}`);
+  // Die Abweichungen NENNEN, nicht auflisten: eine Zusammenfassung, die je
+  // Liga alles wiederholt, liest niemand — dass es sie gibt, muss aber
+  // dastehen, sonst wundert man sich über die Spielzahl.
+  const abw = Object.keys(s.jeWettbewerb);
+  if (abw.length) teile.push(`Sonderregeln für ${abw.length} Wettbewerb${abw.length === 1 ? "" : "e"}`);
   return teile.join(", ");
 }

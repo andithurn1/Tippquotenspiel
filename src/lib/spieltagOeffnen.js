@@ -79,12 +79,32 @@ export function spieltagOeffnen({
     bigGame: { enabled: true, aufschlag: 0, minSpannung: 0 },
   });
 
+  // Tabellenplatz beider Mannschaften VOR diesem Spieltag — dieselbe Kante
+  // wie beim Big Game und aus demselben Grund: die Auswahl „Abstiegskampf"
+  // (`rules.spiele.zonen`) darf sich zwischen zwei Spielen desselben
+  // Spieltags nicht ändern. Wer Freitag tippt, sähe sonst eine andere Runde
+  // als wer Sonntag tippt.
+  //
+  // ⚠️ Eingefroren wird auch hier der WERT, nicht das Urteil: der PLATZ ist
+  // objektiv, ob er in eine Zone fällt, entscheidet jede Runde mit ihren
+  // eigenen `zonen`. Ein Häkchen „Abstiegskampf" im Snapshot hieße, dass die
+  // zuerst öffnende Runde für alle mitentscheidet — `matches` ist global.
+  const platzVon = new Map(tabelle.map((t) => [t.team, t.rang]));
+
   const snapshots = {};
   for (const m of matches) {
     const id = m.id ?? m.snapshot?.matchId;
+    const heim = platzVon.get(m.home ?? m.snapshot?.home);
+    const gast = platzVon.get(m.away ?? m.snapshot?.away);
     snapshots[id] = {
       ...m.snapshot,
       bigGameGeprueft: true,
+      // Nur schreiben, wenn BEIDE Plätze bekannt sind. Ein halber Stand wäre
+      // schlimmer als keiner: „Zone nicht erfüllt" ist dann nicht mehr von
+      // „steht nicht in der Zone" zu unterscheiden.
+      ...(Number.isFinite(heim) && Number.isFinite(gast)
+        ? { tabellenPlatz: { home: heim, away: gast } }
+        : {}),
       ...(gewaehlt && gewaehlt.matchId === id
         ? { bigGameWert: gewaehlt.wert, bigGameGrund: gewaehlt.begruendung }
         : {}),

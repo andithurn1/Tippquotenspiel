@@ -50,6 +50,7 @@ import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } 
 import { VORLAUF_STUFEN, ANKER, beschreibeTippfenster, erklaereTippfenster } from "@/lib/tippfenster";
 import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
 import SpielauswahlListe from "@/components/SpielauswahlListe";
+import LigaSonderregeln from "@/components/LigaSonderregeln";
 import Zeitachse from "@/components/Zeitachse";
 import { C, MONO } from "@/lib/theme";
 import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
@@ -106,6 +107,8 @@ export default function Spielerstellung() {
   // Und innerhalb der Wettbewerbs-Zeile: welche LIGA zeigt ihre Mannschaften?
   // Auch hier eine auf einmal — 18 Chips sind schon eine halbe Bildschirmhöhe.
   const [offeneLiga, setOffeneLiga] = useState(null);
+  // Und darin: für welche Liga steht das Sonderregel-Fenster offen (Schritt 3)?
+  const [sonderregelnLiga, setSonderregelnLiga] = useState(null);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -284,6 +287,11 @@ export default function Spielerstellung() {
     const w = sp.wettbewerbe?.length ?? 0;
     if (w > 0) teile.push(`${w} gewählt`);
     if (teamFilterOn && selectedTeams.length > 0) teile.push(`${selectedTeams.length} Teams`);
+    // Sonderregeln je Liga gehören in denselben Stand: sonst steht dort „alle",
+    // während eine Liga schon auf „nur Derbys" eingestellt ist — eine
+    // zugeklappte Zeile, die das verschweigt, ist schlimmer als gar keine.
+    const sonder = Object.keys(sp.jeWettbewerb ?? {}).length;
+    if (sonder > 0) teile.push(`${sonder}× Sonderregeln`);
     return teile.length > 0 ? teile.join(" · ") : "alle";
   })();
 
@@ -563,11 +571,22 @@ export default function Spielerstellung() {
               <Toggle label="Auf bestimmte Teams beschränken" on={teamFilterOn}
                 onChange={(on) => patchSpiele(on ? { modus: "teams" } : { modus: "alle", teams: [] })} />
             </div>
-          {teamFilterOn && (
+          {/* 🔴 Die Liga-Zeilen stehen AUSSERHALB des Schalters, und das ist
+              kein Schönheitsgriff: seit Schritt 3 hängen die Sonderregeln je
+              Liga daran. Lägen sie hinter „Auf bestimmte Teams beschränken",
+              käme an Abstiegskampf und Derbys nur heran, wer zusätzlich seine
+              Vereine einschränkt — eine Einstellung, die für die meisten ins
+              Leere läuft. Genau das verbietet der Baukasten-Grundsatz.
+              Ein Klick auf einen Verein schaltet den Filter selbst ein
+              (`toggleTeam` setzt `modus: "teams"`), es geht also nichts
+              verloren. Was hinter dem Schalter bleibt, sind die Rückmeldungen
+              zur VEREINSAUSWAHL — sie ergeben ohne sie keinen Sinn. */}
             <div style={{ marginTop: 8, marginBottom: 8 }}>
-              <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.4 }}>
-                Mindestens 2 Vereine — ein Spiel zählt, sobald eine Seite dabei ist.
-              </p>
+              {teamFilterOn && (
+                <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.4 }}>
+                  Mindestens 2 Vereine — ein Spiel zählt, sobald eine Seite dabei ist.
+                </p>
+              )}
               {/* ── Schritt 2: Liga anklicken → Mannschaften klappen auf ──
                   Vorher lagen alle Vereine ALLER gewählten Ligen offen
                   untereinander: bei sieben Wettbewerben über 90 Chips am
@@ -612,28 +631,51 @@ export default function Spielerstellung() {
                       }}>{alleDrin ? "keine" : "alle"}</button>
                     </div>
                     {auf && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 2px 2px" }}>
-                        {g.vereine.map((team) => {
-                          const on = selectedTeams.includes(team);
-                          return (
-                            <button key={team} onClick={() => toggleTeam(team)} style={{
-                              cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "6px 12px", borderRadius: 999,
-                              minHeight: 44, boxSizing: "border-box",
-                              background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
-                              border: `1px solid ${on ? C.mint + "66" : C.line}`,
-                            }}>{team}</button>
-                          );
-                        })}
-                      </div>
+                      <>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 2px 2px" }}>
+                          {g.vereine.map((team) => {
+                            const on = selectedTeams.includes(team);
+                            return (
+                              <button key={team} onClick={() => toggleTeam(team)} style={{
+                                cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "6px 12px", borderRadius: 999,
+                                minHeight: 44, boxSizing: "border-box",
+                                background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
+                                border: `1px solid ${on ? C.mint + "66" : C.line}`,
+                              }}>{team}</button>
+                            );
+                          })}
+                        </div>
+                        {/* Schritt 3: Sonderregeln JE LIGA. Sie stehen UNTER den
+                            Mannschaften, weil sie die feinere Entscheidung sind —
+                            dieselbe Reihenfolge wie oben zwischen Wettbewerb und
+                            Verein. Was hier eingestellt wird, landet als
+                            Abweichung in `spiele.jeWettbewerb[key]`; gemischt
+                            wird ausschließlich in `auswahlFuer`. */}
+                        <button onClick={() => setSonderregelnLiga((o) => (o === g.key ? null : g.key))} style={{
+                          marginTop: 8, width: "100%", minHeight: 44, boxSizing: "border-box",
+                          cursor: "pointer", fontFamily: "inherit", fontSize: 12.5, textAlign: "left",
+                          background: "transparent", color: sonderregelnLiga === g.key ? C.mint : C.muted,
+                          border: `1px dashed ${sonderregelnLiga === g.key ? C.mint + "55" : C.line}`,
+                          borderRadius: 10, padding: "8px 12px",
+                        }}>
+                          {sonderregelnLiga === g.key ? "▾" : "▸"} Sonderregeln für {g.label}
+                          {sp.jeWettbewerb?.[g.key] && " · aktiv"}
+                        </button>
+                        {sonderregelnLiga === g.key && (
+                          <LigaSonderregeln wettbewerb={g.key} label={g.label} spiele={sp} onChange={patchSpiele} />
+                        )}
+                      </>
                     )}
                   </div>
                 );
               })}
 
+              {teamFilterOn && (
               <div style={{ fontSize: 11, color: teamFilterInvalid ? C.coral : C.muted, marginTop: 8 }}>
                 {selectedTeams.length} von mindestens 2 Teams ausgewählt
                 {teamFilterInvalid && " — bitte noch mindestens ein weiteres Team wählen"}.
               </div>
+              )}
 
               {/* ⚠️ Gewählte Vereine, die in KEINEM gewählten Wettbewerb mehr
                   vorkommen. Ohne diesen Hinweis filtert die Runde still gegen
@@ -648,7 +690,7 @@ export default function Spielerstellung() {
               {/* Was die Auswahl konkret bedeutet. Ohne diese Rückmeldung
                   stellt man „nur die Top 2" ein und merkt erst in Woche drei,
                   dass pro Spieltag ein einziges Spiel übrig bleibt. */}
-              {!teamFilterInvalid && (() => {
+              {teamFilterOn && !teamFilterInvalid && (() => {
                 const gesamt = teamGruppen.reduce((s, g) => s + g.vereine.length, 0) || ALL_TEAMS.length;
                 const { min, max } = spieleProSpieltag(selectedTeams.length, gesamt);
                 const duenn = max < 3;
@@ -660,7 +702,6 @@ export default function Spielerstellung() {
                 );
               })()}
             </div>
-          )}
           </GrosseZeile>
 
           {/* Die feste Liste — der Ausweg aus der UND-Verknüpfung aller
