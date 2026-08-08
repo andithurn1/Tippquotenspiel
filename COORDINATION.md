@@ -59,7 +59,8 @@ ausführen.
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
-| 1 (Andi) | ~~**Oberflächen-Umbau Schritt 1** (`Spielerstellung.jsx`, `SpielauswahlWettbewerbe.jsx`, `SpielauswahlListe.jsx`)~~ — alle sechs Punkte aus Andis iPhone-Durchgang; 18 zu kleine Tippziele → 0. ⚠️ Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** `main`. Schritt 2 (Ligen aufklappbar) ist frei. | fertig | 2026-08-08 |
+| 1 (Andi) | **Spielauswahl JE LIGA** (Schritt 3) — Spec liegt: `design/spielauswahl-je-liga.md`. Ändert das Regelwerk (`spielauswahl.js`, `sanitizeRules`, Creator-Code), hiermit nach Push-Regel 3 ANGEKÜNDIGT. Noch nichts gebaut. | frei zu übernehmen | 2026-08-08 |
+| 1 (Andi) | ~~**Oberflächen-Umbau Schritt 1 + 2** (`Spielerstellung.jsx`, `SpielauswahlWettbewerbe.jsx`, `SpielauswahlListe.jsx`)~~ — alle sechs Punkte aus Andis iPhone-Durchgang, dazu Ligen aufklappbar; 18 zu kleine Tippziele → 0. ⚠️ Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** `main`. | fertig | 2026-08-08 |
 | 1 (Andi) | ~~**Regel-Abstimmung & Verfassung** (`abstimmung-verfassung.md`)~~ — alle fünf Schritte der Spec; offen bleibt allein das Einhängen in die Wertung. ⚠️ Branch, nicht `main`. ⚠️ `schema.sql` muss der Nutzer ausführen. | fertig | 2026-08-05 |
 | 1 (Andi) | ~~**Münz-Takt** (`wettmodus.md` 3)~~ — `muenzTakt.js` + Verkabelung + alle drei Komplexitätsstufen, Build sauber. ⚠️ Liegt auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** auf `main`. | fertig | 2026-08-04 |
 | 2 (Andre) | ~~Joker-Baukasten: zehn Module + fünf Oberflächen-Bausteine~~ — alles auf `main`, 1472 Tests grün | fertig | 2026-08-02 |
@@ -125,7 +126,87 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
-### 2026-08-08 (I) · 🔴 **ÜBERGABE** — Schritt 1 steht, Schritt 2 (Ligen aufklappbar) ist dran
+### 2026-08-08 (II) · 🔴 **ÜBERGABE** — Schritt 1 + 2 stehen, Schritt 3 ist geplant und ANGEKÜNDIGT
+
+> **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
+> außer `CLAUDE.md` und `design/spielauswahl-je-liga.md` brauchst du nichts.
+
+#### Wo du landest
+
+```
+Branch   claude/koordinierte-arbeitsweise-fe6w1v   (gepusht)
+Tests    2089 grün · 39 skipped (Balance, ABSICHTLICH — nicht reparieren)
+Build    sauber · lint · stufen · sicht · gleich · anzeige · greift · tot ohne neuen Befund
+```
+
+#### ✅ Fertig: Schritt 1 und Schritt 2 des Oberflächen-Umbaus
+
+**Schritt 1** — alle sechs Punkte aus Andis iPhone-Durchgang: Untertitel weg ·
+„Teams" → „Wettbewerbe auswählen" mit dem Nominalsatz · große Zeilen
+(`⚽ Wettbewerbe · Ligen & Teams · 3 gewählt ›`, `📋 Begegnungen`) ·
+Preset-Bibliothek als eine Zeile `📚 Empfehlungen verwalten ›`.
+**Gemessen bei 390 px, Stufe „einfach": 18 Tippziele unter 40 px → 0.**
+
+**Schritt 2** — Liga anklicken, Mannschaften klappen auf. Je Liga eine Zeile
+mit Stand (`Bundesliga 3/18 ›`) und daneben „alle/keine". Mit Team-Filter an
+sind 44 Knöpfe im Bild statt 199.
+
+Neue, wiederverwendbare Bauteile in `Spielerstellung.jsx`: **`GrosseZeile`**
+(icon · titel · unter · wert · aufklappbar, ≥ 56 px) und die Liga-Zeile
+(≥ 48 px). **Für Schritt 3 dieselben nehmen**, kein drittes Zeilen-Muster.
+
+Zwei Regeln stecken in beiden und dürfen nicht wegoptimiert werden:
+der STAND steht rechts im ZUGEKLAPPTEN Zustand (sonst verlagert Aufklappen das
+Problem nur), und aufgeklappt wird IN der Seite, nicht auf einer Unterseite —
+Spielzahl und Aufwand müssen im Bild bleiben.
+
+#### ▶️ DEIN AUFTRAG: Schritt 3 — Sonderregeln je Liga
+
+**Die Spec liegt fertig: `design/spielauswahl-je-liga.md`.** Sie enthält das
+Modell, die Baureihenfolge und die Fallen. Kurzfassung:
+
+- `rules.spiele` gilt heute für die GANZE RUNDE. Vorschlag: das Objekt bleibt
+  die runden-weite Vorgabe, darunter kommt `jeWettbewerb: { bl: {…}, cl: {…} }`
+  mit **Abweichungen**. Fehlt die Karte, ist alles bitgleich zu heute.
+- Mischregel, vor dem ersten Test festzunageln: **Feld für Feld überschreiben,
+  nicht tief mischen.**
+- Neue Dimension `zonen: [{ von: 14, bis: 18 }]` für den Abstiegskampf. Sie
+  greift **nur zwischen Spieltagen** — `spieltagOeffnen` legt
+  `snap.tabellenPlatz` ab (objektiver Wert), das Urteil fällt jede Runde selbst.
+  Präzedenz und Begründung: Big Game.
+
+🔴 **Push-Regel 3 ist damit erfüllt: dieser Umbau ist hiermit ANGEKÜNDIGT.**
+Er ändert das Regelwerk (`spielauswahl.js`, `sanitizeRules`, Creator-Code).
+Wer ihn baut, geht die Reihenfolge in Abschnitt 6 der Spec durch und committet
+Punkt 2 (die Fairness-Kante) getrennt.
+
+#### 📋 Befund nebenbei — NICHT Teil von Schritt 3
+
+**Profi-Stufe: rund 110 Tippziele unter 40 px** (dieselbe Messung,
+`stufe = "profi"`). Nicht der Screen, den Andi vermessen hat, und nicht durch
+stumpfes `minHeight: 44` zu erledigen — bei acht Modus-Knöpfen nebeneinander
+wird daraus eine Kachelwand. Steht mit Messbefehl in `design/roadmap.md`.
+
+#### ⚠️ Andis Vorgaben für JEDE Textänderung (stehen in `CLAUDE.md`)
+
+1. `formulierungXXX` → **immer mehrere Alternativen**, er wählt, DANN bauen.
+2. **Weniger Text, dafür größer.** 3. **Nominalstil**, nicht erklären.
+4. Anweisungen an ihn **Schritt für Schritt**, Dateien über den **Browser**.
+
+#### Offen bei ANDI (unverändert)
+
+- Supabase-Gegenprobe: `select count(*) from matches where snapshot->>'quelle' = 'markt';` → erwartet **76**
+- `supabase/seed-matches-bl2.sql` ausführen, falls noch nicht geschehen
+- Supabase → Email Template „Magic Link" → `{{ .Token }}` ergänzen
+- Vercel: `ODDS_API_KEY` gesetzt? **Pause Projects auf `Off`** lassen
+
+⛔ **Nicht anfangen:** Balancing (Endphase), Symbolsystem, Animationen, Andis
+eigene Joker-Designs.
+
+---
+
+
+### 2026-08-08 (I) · **ÜBERGABE** (erledigt) — Schritt 1 steht, Schritt 2 (Ligen aufklappbar) ist dran
 
 > **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
 > außer `CLAUDE.md` brauchst du nichts zu lesen.
