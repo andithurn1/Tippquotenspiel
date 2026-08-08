@@ -4,6 +4,7 @@ import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import { LEGAL } from "@/lib/legal";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // Impressum (§ 5 DDG). Angaben kommen aus legal.js — vor Launch dort ausfüllen.
 export default function Impressum() {
@@ -41,7 +42,7 @@ export default function Impressum() {
 
         <div style={{ height: 1, background: C.line, margin: "18px 0" }} />
         <p style={{ fontSize: 12, color: C.muted }}>
-          <Link href="/datenschutz" style={{ color: C.muted, textDecoration: "underline" }}>Datenschutzerklärung</Link>
+          <Link href="/datenschutz" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "underline" }}>Datenschutzerklärung</Link>
         </p>
       </div>
     </div>

@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/components/AuthProvider";
 import BackLink from "@/components/BackLink";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 
 // Beispiel-Begegnung für die Live-Vorschau (dieselbe Engine wie überall).
@@ -133,7 +134,7 @@ export default function Einstellungen() {
                         background: gewaehlt ? `${C.gold}1a` : "transparent",
                         color: gewaehlt ? C.gold : (voll ? C.ghost : C.text),
                         cursor: voll ? "not-allowed" : "pointer",
-                        padding: "5px 11px", fontSize: 11.5, fontWeight: gewaehlt ? 700 : 500,
+                        ...TAPZIEL, padding: "5px 11px", fontSize: 11.5, fontWeight: gewaehlt ? 700 : 500,
                       }}>
                       {gewaehlt ? "✓ " : ""}{m.name ?? m.user_id}
                     </button>
@@ -157,7 +158,7 @@ export default function Einstellungen() {
             <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
               {START_SCREENS.map((s) => (
                 <button key={s} onClick={() => setPref("startScreen", s)} style={{
-                  flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: 10,
+                  ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: 10,
                   background: prefs.startScreen === s ? C.gold : C.surface, color: prefs.startScreen === s ? C.ink : C.muted,
                   border: `1px solid ${prefs.startScreen === s ? C.gold : C.line}`, fontFamily: "inherit",
                 }}>{START_SCREEN_LABEL[s]}</button>
@@ -183,7 +184,7 @@ function PrefSection({ meta, value, onChange }) {
       <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
         {LEVELS.map((lv) => (
           <button key={lv} onClick={() => onChange(lv)} style={{
-            flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: 10,
+            ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: 10,
             background: value === lv ? C.gold : C.surface, color: value === lv ? C.ink : C.muted,
             border: `1px solid ${value === lv ? C.gold : C.line}`, fontFamily: "inherit",
           }}>{LEVEL_LABEL[lv]}</button>

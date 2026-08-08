@@ -14,9 +14,21 @@
 //  Projekt arbeitet ohnehin mit Inline-Styles (CLAUDE.md, Stack) — die
 //  Konstante passt dazu und lässt sich pro Stelle bewusst weglassen.
 //
-//  ── Wo es NICHT gilt ──
-//  Text-Links innerhalb eines Satzes. Sie sind Fließtext, kein Bedienelement
-//  in einer Reihe; eine Kastenhöhe zerreißt dort die Zeile.
+//  ── Wo es NICHT gilt, und zwar namentlich ──
+//  Text-Links INNERHALB eines Satzes. Sie sind Fließtext, kein Bedienelement
+//  in einer Reihe; eine Kastenhöhe zerreißt dort die Zeile. Nach dem
+//  Durchgang über alle Screens (09.08.2026) sind das genau zwei Stellen, und
+//  sie stehen hier, damit der nächste Durchgang sie nicht für vergessen hält:
+//
+//    · `Begriff.jsx` im Tutorial — 17 Glossar-Begriffe à 23–24 px, jeder
+//      mitten in einem Satz („… über die aktuelle Quoteⓘ gewichtet"). Eine
+//      44-px-Kastenhöhe machte aus jedem Absatz eine Treppe.
+//    · `Datenschutz.jsx` — „… jederzeit selbst unter Mein Konto auslösen."
+//
+//  ⚠️ Ein Link, der ALLEIN in einer Zeile steht („Verlauf →", „Impressum"),
+//  ist KEIN Fließtext-Link, auch wenn er wie einer aussieht. Er wird
+//  angetippt, also gilt die Grenze — mit `display: inline-flex`, weil
+//  `min-height` an einem reinen Inline-Element nicht greift.
 //
 //  Verwendung: `style={{ ...TAPZIEL, ...der Rest }}`
 export const TAPZIEL = { minHeight: 44, boxSizing: "border-box" };

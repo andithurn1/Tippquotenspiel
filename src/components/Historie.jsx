@@ -11,6 +11,7 @@ import { einsaetzeAusTipps } from "@/lib/duellJoker";
 import { computeRecords, matchdayDeltas } from "@/lib/records";
 import { PRESETS } from "@/lib/presets";
 import { C, MONO, SERIES } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 
 // Serien-Farben (bewusst gut unterscheidbare Farbtöne, hell auf dunklem Grund).
@@ -246,7 +247,7 @@ export default function Historie() {
                 return (
                   <button key={o.key} onClick={() => setPresetKey(o.key)} style={{
                     cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 600,
-                    padding: "7px 12px", borderRadius: 999,
+                    ...TAPZIEL, padding: "7px 12px", borderRadius: 999,
                     background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
                     border: `1px solid ${on ? C.gold + "77" : C.line}`,
                   }}>{o.label}</button>
@@ -266,7 +267,7 @@ export default function Historie() {
                 return (
                   <button key={k.key} onClick={() => setKriterium(k.key)} style={{
                     flex: 1, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
-                    padding: "8px 0", borderRadius: 10,
+                    ...TAPZIEL, padding: "8px 0", borderRadius: 10,
                     background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                     border: `1px solid ${on ? C.mint + "66" : C.line}`,
                   }}>{k.label}</button>

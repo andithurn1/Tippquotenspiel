@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // Schlankes, echtes Ranking für die aktive Runde — im Unterschied zu
 // Abrechnung.jsx (feste JOR-ESP-Demo-Choreographie) funktioniert das hier für
@@ -59,7 +60,7 @@ export default function Ranking() {
             <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
               Ranking
             </span>
-            <Link href="/ranking/verlauf" style={{ fontFamily: MONO, fontSize: 12, color: C.mint, textDecoration: "none" }}>
+            <Link href="/ranking/verlauf" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", fontFamily: MONO, fontSize: 12, color: C.mint, textDecoration: "none", paddingLeft: 10 }}>
               Verlauf →
             </Link>
           </div>

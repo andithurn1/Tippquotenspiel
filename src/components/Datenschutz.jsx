@@ -4,6 +4,7 @@ import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import { LEGAL, DATA_POINTS } from "@/lib/legal";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // Datenschutzerklärung (Art. 13/14 DSGVO). Bewusst schlank gehalten, weil die
 // App bewusst wenig verarbeitet. Kontakt-/Betreiberangaben kommen aus legal.js.
@@ -88,7 +89,7 @@ export default function Datenschutz() {
 
         <div style={{ height: 1, background: C.line, margin: "18px 0" }} />
         <p style={{ fontSize: 12, color: C.muted }}>
-          <Link href="/impressum" style={{ color: C.muted, textDecoration: "underline" }}>Impressum</Link>
+          <Link href="/impressum" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "underline" }}>Impressum</Link>
         </p>
       </div>
     </div>

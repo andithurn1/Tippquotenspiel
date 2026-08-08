@@ -9,6 +9,7 @@ import {
 } from "@/lib/notify";
 import { waehleKanal, STATUS, STATUS_TEXT } from "@/lib/pushKanal";
 import { budgetText, pruneZustellungen } from "@/lib/zustellung";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Benachrichtigungen einstellen ───────────────────────────
 // Bewusst als „aus, bis du zustimmst" gebaut: Erst der große Schalter, dann
@@ -147,7 +148,7 @@ export default function Benachrichtigungen() {
             <button onClick={testen} style={{
               marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, fontWeight: 700,
               background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
-              borderRadius: 999, padding: "5px 12px",
+              ...TAPZIEL, borderRadius: 999, padding: "5px 12px",
             }}>
               Testbenachrichtigung senden
             </button>
@@ -196,7 +197,7 @@ export default function Benachrichtigungen() {
                     cursor: "pointer", fontFamily: MONO, fontSize: 12.5,
                     background: an ? C.gold : C.surface, color: an ? C.ink : C.muted,
                     border: `1px solid ${an ? C.gold : C.line}`, borderRadius: 999,
-                    padding: "6px 13px", fontWeight: 700,
+                    ...TAPZIEL, padding: "6px 13px", fontWeight: 700,
                   }}>{h} h</button>
                 );
               })}

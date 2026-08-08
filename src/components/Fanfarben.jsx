@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTheme } from "@/components/ThemeProvider";
 import { C, MONO, deriveRoles, readableInk, CLUB_PRESETS } from "@/lib/theme";
 import BackLink from "@/components/BackLink";
+import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
 
 // Rollen-Beschreibung (aus THEMING.md) — welche Farbe wo landet.
 const SLOTS = [
@@ -66,7 +67,7 @@ export default function Fanfarben() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
           {CLUB_PRESETS.map((p) => (
             <button key={p.id} onClick={() => applyPreset(p.colors)} title={p.label} style={{
-              cursor: "pointer", display: "flex", alignItems: "center", gap: 7,
+              ...TAPZIEL, cursor: "pointer", display: "flex", alignItems: "center", gap: 7,
               background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999,
               padding: "5px 10px 5px 6px", color: C.text, fontFamily: "inherit", fontSize: 12,
             }}>
@@ -107,14 +108,14 @@ export default function Fanfarben() {
               <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{color.toUpperCase()}</span>
               <button onClick={() => removeColor(i)} aria-label="Farbe entfernen" style={{
                 cursor: "pointer", background: "transparent", border: "none",
-                color: C.muted, fontSize: 18, lineHeight: 1, padding: "0 2px",
+                ...TAPZIEL_QUADRAT, color: C.muted, fontSize: 18, lineHeight: 1, padding: "0 2px",
               }}>×</button>
             </div>
           ))}
           {draft.length < 3 && (
             <button onClick={addColor} style={{
               cursor: "pointer", background: "transparent", color: C.muted,
-              border: `1px dashed ${C.line}`, borderRadius: 14, padding: "10px 12px",
+              ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: 14, padding: "10px 12px",
               fontFamily: "inherit", fontSize: 13, textAlign: "left",
             }}>+ Farbe hinzufügen {draft.length === 0 ? "" : `(${draft.length}/3)`}</button>
           )}
@@ -123,14 +124,14 @@ export default function Fanfarben() {
         {/* Aktionen */}
         <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
           <button onClick={save} disabled={!dirty} style={{
-            flex: 1, cursor: dirty ? "pointer" : "default",
+            ...TAPZIEL, flex: 1, cursor: dirty ? "pointer" : "default",
             background: dirty ? C.gold : C.surface, color: dirty ? readableInk(preview.gold) : C.muted,
             fontWeight: 700, fontSize: 14, border: `1px solid ${dirty ? C.gold : C.line}`,
             borderRadius: 12, padding: "11px 0", fontFamily: "inherit",
           }}>{dirty ? "Übernehmen" : "Gespeichert"}</button>
           <button onClick={clearAll} style={{
             cursor: "pointer", background: C.surface, color: C.muted,
-            border: `1px solid ${C.line}`, borderRadius: 12, padding: "11px 16px",
+            ...TAPZIEL, border: `1px solid ${C.line}`, borderRadius: 12, padding: "11px 16px",
             fontFamily: "inherit", fontSize: 14, fontWeight: 700,
           }}>Zurücksetzen</button>
         </div>

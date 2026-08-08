@@ -9,6 +9,7 @@ import ReactionGif from "@/components/ReactionGif";
 import { C, MONO } from "@/lib/theme";
 import { RANK_REACTIONS } from "@/lib/reactions";
 import { relationBetween, tauntsFor, buildTaunt, tauntTargets, darfSenden } from "@/lib/taunts";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Spott-GIF an einen Mitspieler ───────────────────────────
 // Bewusst OHNE eigene Tabelle: der fertige Spott geht über die Teilen-Funktion
@@ -119,7 +120,7 @@ export default function SpottSenden() {
                   display: "flex", alignItems: "center", gap: 10, cursor: "pointer", textAlign: "left",
                   background: aktiv ? `${C.gold}14` : C.surface,
                   border: `1px solid ${aktiv ? C.gold + "55" : C.line}`,
-                  borderRadius: 14, padding: "10px 12px", color: C.text, fontFamily: "inherit",
+                  ...TAPZIEL, borderRadius: 14, padding: "10px 12px", color: C.text, fontFamily: "inherit",
                 }}>
                   <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 18 }}>{z.rank}</span>
                   <span style={{ flex: 1, fontSize: 14, fontWeight: aktiv ? 700 : 400 }}>{z.name}</span>

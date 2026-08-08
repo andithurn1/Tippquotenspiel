@@ -10,6 +10,7 @@ import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { zeitachse } from "@/lib/zeitachse";
 import { fahrplan, aktuellerRundenSpieltag, beschreibeFahrplan } from "@/lib/saisonfahrplan";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Der Saison-Fahrplan aus Sicht des Spielers ──────────────
 //
@@ -105,7 +106,7 @@ export default function SaisonVerlauf() {
               <button onClick={() => setAlle(true)} style={{
                 marginTop: 12, width: "100%", cursor: "pointer",
                 background: C.surface2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: 12, padding: "10px 0", fontSize: 13, fontFamily: "inherit",
+                ...TAPZIEL, borderRadius: 12, padding: "10px 0", fontSize: 13, fontFamily: "inherit",
               }}>
                 Alle {zeilen.length} Spieltage zeigen
               </button>
@@ -164,7 +165,7 @@ function Zeile({ z, jetzt }) {
             : `${z.getippt} von ${z.spiele} getippt`}
         </span>
         {z.offen > 0 && (
-          <Link href="/tippen" style={{ color: C.gold, textDecoration: "none" }}>
+          <Link href="/tippen" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.gold, textDecoration: "none", paddingLeft: 8 }}>
             {z.offen} {z.offen === 1 ? "Spiel" : "Spiele"} jetzt tippbar →
           </Link>
         )}

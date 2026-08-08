@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import BackLink from "@/components/BackLink";
 import { LEGAL, DATA_POINTS } from "@/lib/legal";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 export default function Konto() {
   const { user, isMock, updateName, exportMyData, deleteAccount } = useAuth();
@@ -49,9 +50,9 @@ export default function Konto() {
 
         <Divider />
         <div style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.7 }}>
-          <Link href="/datenschutz" style={{ color: C.muted, textDecoration: "underline" }}>Datenschutz</Link>
+          <Link href="/datenschutz" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "underline", paddingRight: 8 }}>Datenschutz</Link>
           {"  ·  "}
-          <Link href="/impressum" style={{ color: C.muted, textDecoration: "underline" }}>Impressum</Link>
+          <Link href="/impressum" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "underline", paddingLeft: 8 }}>Impressum</Link>
           <div style={{ marginTop: 6 }}>Stand: {LEGAL.stand}. Wir speichern bewusst nur das Nötigste.</div>
         </div>
       </div>

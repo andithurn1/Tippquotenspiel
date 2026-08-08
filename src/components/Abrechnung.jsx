@@ -13,6 +13,7 @@ import ReactionGif from "@/components/ReactionGif";
 import Ertragsquellen from "@/components/Ertragsquellen";
 import { tipScenario, rankReaction } from "@/lib/reactions";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
 // Nächtliches Flutlicht-Stadion: tiefes Indigo, Flutlicht-Gold,
@@ -181,7 +182,7 @@ export default function Abrechnung() {
         alignItems: "center", marginBottom: 10, fontFamily: MONO, fontSize: 11.5, color: C.muted,
       }}>
         <span>Runde: <span style={{ color: C.text }}>{roundName ?? "…"}</span></span>
-        <Link href="/beitreten" style={{ color: C.mint, textDecoration: "none" }}>wechseln</Link>
+        <Link href="/beitreten" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.mint, textDecoration: "none", paddingLeft: 10 }}>wechseln</Link>
       </div>
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
@@ -314,7 +315,7 @@ export default function Abrechnung() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Tabelle</span>
               <button onClick={() => setFair((f) => !f)} style={{
-                fontFamily: MONO, fontSize: 11, color: C.text, cursor: "pointer",
+                ...TAPZIEL, fontFamily: MONO, fontSize: 11, color: C.text, cursor: "pointer",
                 background: C.surface, border: `1px solid ${C.line}`,
                 borderRadius: 999, padding: "4px 10px",
               }}>
@@ -345,7 +346,7 @@ export default function Abrechnung() {
 
           {/* Replay */}
           <button onClick={() => { setStage(0); setKey((k) => k + 1); }} style={{
-            ...show(5), marginTop: 18, width: "100%", cursor: "pointer",
+            ...TAPZIEL, ...show(5), marginTop: 18, width: "100%", cursor: "pointer",
             background: C.gold, color: C.ink, fontWeight: 700, fontSize: 14,
             border: "none", borderRadius: 14, padding: "13px 0",
           }}>

@@ -299,10 +299,31 @@ nicht bei der nächsten „Vereinfachung" verloren geht.
 
 **Für jeden neuen Knopf:** `style={{ ...TAPZIEL, … }}`.
 
-⚠️ **Was NICHT gemessen ist:** die Spieler-Screens (`/tippen`, `/ranking`,
-`/rad`, `/joker`, `/abrechnung`). Sie laden fehlerfrei, aber ihre Tippziele hat
-niemand gezählt — das ist der nächste Durchgang, und er ist nicht mehr groß:
-die gemeinsamen Bauformen sind jetzt versorgt.
+✅ **Nachgezogen am 09.08.2026: die SPIELER-Screens sind ebenfalls durch.**
+Gemessen wurden **alle 26 Routen** bei 390 px (die Seiten in einem 390er
+`iframe` geladen und darin gezählt — deutlich schneller als 26-mal navigieren).
+
+| | vorher | nachher |
+|---|---|---|
+| `/historie` | 10 | 0 |
+| `/einstellungen` | 15 | 0 |
+| `/benachrichtigungen` | 6 | 0 |
+| `/explorer` | 9 | 0 |
+| `/farben` | 11 | 0 |
+| `/spott` · `/abrechnung` · `/tippen` · `/ranking` · `/hub` · `/menu` · `/` · `/konto` · `/fahrplan` · `/datenschutz` · `/impressum` | je 1–4 | 0 |
+| `/saison` `/rad` `/joker` `/profil` `/abstimmung` `/beitreten` `/regeln` `/freigaben` `/ranking/verlauf` | 0 | 0 |
+
+🔴 **Zwei Stellen bleiben absichtlich klein, und sie stehen namentlich in
+`src/lib/tapziel.js`:** die 17 Glossar-Begriffe in `/tutorial` (`Begriff.jsx`)
+und „Mein Konto" in `/datenschutz`. Beide stehen MITTEN IM SATZ — eine
+44-px-Kastenhöhe machte aus jedem Absatz eine Treppe. **Wer sie beim nächsten
+Durchgang findet, hat nichts entdeckt.**
+
+⚠️ **Die Unterscheidung, die dabei gelernt wurde:** ein Link, der ALLEIN in
+einer Zeile steht („Verlauf →", „Impressum", „wechseln"), ist KEIN
+Fließtext-Link, auch wenn er wie einer aussieht. Er wird angetippt, also gilt
+die Grenze — mit `display: inline-flex`, weil `min-height` an einem reinen
+Inline-Element nicht greift.
 
 <details><summary>Ursprünglicher Eintrag (Stand vor dem Profi-Durchgang)</summary>
 

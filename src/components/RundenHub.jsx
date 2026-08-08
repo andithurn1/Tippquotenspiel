@@ -11,6 +11,7 @@ import { basisFuer } from "@/lib/jokerBasis";
 import { narrenStand } from "@/lib/narrenstand";
 import Waehrungen from "@/components/Waehrungen";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 
 // Landing-Karten der aktiven Runde: Tipp abgeben / Ranking / Ranking-Verlauf.
@@ -96,7 +97,7 @@ export default function RundenHub() {
           <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
             Tippquotenspiel
           </span>
-          <Link href="/menu" style={{ fontFamily: MONO, fontSize: 11.5, color: C.mint, textDecoration: "none" }}>
+          <Link href="/menu" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", fontFamily: MONO, fontSize: 11.5, color: C.mint, textDecoration: "none", paddingLeft: 10 }}>
             Alle Tippspiele →
           </Link>
         </div>

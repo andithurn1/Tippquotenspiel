@@ -6,6 +6,7 @@ import { getStore } from "@/lib/store";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
 
 
 // ── Eine Quelle: Engine liefert Quoten, Regeln und Scoring ──
@@ -25,7 +26,7 @@ const SNAP = odds.getSnapshot("JOR-ESP");
 const SIDES = ["home", "away"];
 const short = (side) => (side === "home" ? SNAP.home : SNAP.away).slice(0, 3).toUpperCase();
 
-const braceBtn = (on) => ({ fontFamily: MONO, fontSize: 11, cursor: "pointer", padding: "4px 9px", borderRadius: 999,
+const braceBtn = (on) => ({ ...TAPZIEL, fontFamily: MONO, fontSize: 11, cursor: "pointer", padding: "4px 12px", borderRadius: 999,
   background: on ? `${C.gold}22` : C.surface2, color: on ? C.gold : C.muted, border: `1px solid ${on ? C.gold + "66" : C.line}` });
 
 // Ein hypothetischer Endstand {h,a}: Engine wertet, Kombi-Regel obendrauf.
@@ -95,7 +96,7 @@ export default function AuszahlungsExplorer() {
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)", padding: "22px 18px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>Ergebnis-Auszahlung</span>
-          <button onClick={() => setDec((v) => !v)} style={{ fontFamily: MONO, fontSize: 11, cursor: "pointer",
+          <button onClick={() => setDec((v) => !v)} style={{ ...TAPZIEL, fontFamily: MONO, fontSize: 11, cursor: "pointer",
             color: dec ? C.gold : C.muted, background: C.surface, border: `1px solid ${dec ? C.gold + "66" : C.line}`, borderRadius: 999, padding: "4px 10px" }}>
             Quoten {dec ? "1.xx" : "1.x"}
           </button>
@@ -220,7 +221,7 @@ export default function AuszahlungsExplorer() {
 }
 
 function Mini({ value, onStep }) {
-  const b = { width: 26, height: 26, borderRadius: 7, cursor: "pointer", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, fontSize: 16, lineHeight: 1 };
+  const b = { ...TAPZIEL_QUADRAT, borderRadius: 10, cursor: "pointer", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, fontSize: 16, lineHeight: 1 };
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <button onClick={() => onStep(-1)} style={b}>−</button>
@@ -245,7 +246,7 @@ function Sel({ side, value, onChange, fmt }) {
 
 function Toggle({ on, onClick, label, tone }) {
   return (
-    <button onClick={onClick} style={{ flex: 1, cursor: "pointer", fontSize: 12, fontFamily: MONO, padding: "9px 0", borderRadius: 999,
+    <button onClick={onClick} style={{ ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 12, fontFamily: MONO, padding: "9px 0", borderRadius: 999,
       background: on ? `${tone}22` : C.surface, color: on ? tone : C.muted, border: `1px solid ${on ? tone + "66" : C.line}` }}>{label}</button>
   );
 }

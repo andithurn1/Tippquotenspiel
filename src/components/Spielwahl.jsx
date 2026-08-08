@@ -17,6 +17,7 @@ import { zeitachse, rundenSpieltagVon, achsenLabel, rundenSchluessel } from "@/l
 import { herkunftLabel } from "@/lib/spielplan";
 import { echteSpielplaene } from "@/lib/ligen";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 
 const timeFmt = new Intl.DateTimeFormat("de-DE", {
@@ -240,7 +241,7 @@ export default function Spielwahl() {
               <button onClick={() => setAlleZeigen((v) => !v)} style={{
                 marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, fontWeight: 700,
                 background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
-                borderRadius: 999, padding: "5px 12px",
+                ...TAPZIEL, borderRadius: 999, padding: "5px 12px",
               }}>
                 {alleZeigen ? "Nur anstehende zeigen" : `Auch die ${stand.zu} späteren zeigen`}
               </button>
@@ -330,7 +331,7 @@ export default function Spielwahl() {
                     marginTop: 7, cursor: oeffnet === g.key ? "default" : "pointer",
                     fontFamily: "inherit", fontSize: 11.5, fontWeight: 700,
                     background: "transparent", color: C.coral, border: `1px solid ${C.coral}66`,
-                    borderRadius: 999, padding: "5px 12px",
+                    ...TAPZIEL, borderRadius: 999, padding: "5px 12px",
                   }}>
                     {oeffnet === g.key ? "öffnet …" : "Spieltag öffnen"}
                   </button>

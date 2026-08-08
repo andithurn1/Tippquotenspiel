@@ -12,6 +12,7 @@ import { muenzStand } from "@/lib/muenzstand";
 import { narrenStand } from "@/lib/narrenstand";
 import Waehrungen from "@/components/Waehrungen";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 const SCREENS = [
   { href: "/erstellen", title: "Spiel erstellen", desc: "Regelwerk einstellen, Runde anlegen und per Code teilen.", tone: C.indigo, tag: "Admin" },
@@ -164,11 +165,11 @@ export default function Hauptmenu() {
           textAlign: "center", fontFamily: MONO, fontSize: 11, color: C.muted,
           paddingTop: 6, borderTop: `1px solid ${C.line}`,
         }}>
-          <Link href="/datenschutz" style={{ color: C.muted, textDecoration: "none" }}>Datenschutz</Link>
+          <Link href="/datenschutz" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "none", padding: "0 6px" }}>Datenschutz</Link>
           <span style={{ opacity: 0.5 }}>{"  ·  "}</span>
-          <Link href="/impressum" style={{ color: C.muted, textDecoration: "none" }}>Impressum</Link>
+          <Link href="/impressum" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "none", padding: "0 6px" }}>Impressum</Link>
           <span style={{ opacity: 0.5 }}>{"  ·  "}</span>
-          <Link href="/konto" style={{ color: C.muted, textDecoration: "none" }}>Konto</Link>
+          <Link href="/konto" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "none", padding: "0 6px" }}>Konto</Link>
         </div>
       </div>
     </main>
