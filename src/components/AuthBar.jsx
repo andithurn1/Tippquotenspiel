@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 import { C, MONO } from "@/lib/theme";
+import { leseAnmeldung } from "@/lib/anmeldung";
+import { TAPZIEL } from "@/lib/tapziel";
 
 
 // Kopfzeile mit Login-Status. Im Mock-Betrieb nur ein dezenter Demo-Hinweis;
@@ -19,11 +21,15 @@ export default function AuthBar() {
   const [pruefe, setPruefe] = useState(false);
   const [codeFehler, setCodeFehler] = useState("");
 
+  // Der Knopf wird erst scharf, wenn die Eingabe überhaupt etwas Verwertbares
+  // ist — dieselbe Prüfung wie beim Absenden, damit sie nicht auseinanderläuft.
+  const bereit = leseAnmeldung(code).art === "code" || leseAnmeldung(code).art === "link";
+
   const pruefeCode = async () => {
     setPruefe(true); setCodeFehler("");
     try { await verifyCode(email.trim(), code); }
     catch (ex) {
-      setCodeFehler(ex?.message || "Der Code stimmt nicht — oder er ist abgelaufen.");
+      setCodeFehler(ex?.message || "Code oder Link stimmen nicht — oder sie sind abgelaufen.");
     } finally { setPruefe(false); }
   };
 
@@ -97,37 +103,42 @@ export default function AuthBar() {
             Deshalb steht der Code OBEN und der Link nur als Nebensatz. */}
         <div style={{ marginTop: 10 }}>
           <label style={{ fontSize: 12, color: C.muted, display: "block", marginBottom: 5 }}>
-            Code aus der Mail eingeben
+            Code oder Link aus der Mail einsetzen
           </label>
           <div style={{ display: "flex", gap: 8 }}>
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              inputMode="numeric"
               autoComplete="one-time-code"
-              placeholder="000000"
+              placeholder="000000 oder Link einfügen"
               style={{
                 flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 10,
                 border: `1px solid ${C.line}`, background: C.ink, color: C.text,
-                fontSize: 17, fontFamily: MONO, letterSpacing: 3, outline: "none",
+                fontSize: 15, fontFamily: MONO, outline: "none",
               }} />
             <button type="button" onClick={pruefeCode}
-              disabled={code.trim().length < 6 || pruefe}
+              disabled={!bereit || pruefe}
               style={{
+                ...TAPZIEL,
                 padding: "12px 18px", borderRadius: 10, border: "none",
-                background: code.trim().length < 6 ? C.surface : C.mint,
-                color: code.trim().length < 6 ? C.muted : C.ink,
+                background: bereit ? C.mint : C.surface,
+                color: bereit ? C.ink : C.muted,
                 fontWeight: 700, fontSize: 15,
-                cursor: code.trim().length < 6 ? "default" : "pointer",
+                cursor: bereit ? "pointer" : "default",
               }}>{pruefe ? "…" : "Los"}</button>
           </div>
           {codeFehler && (
             <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{codeFehler}</div>
           )}
+          {/* 🔴 Steht hier, weil die Mail auf dem Gratis-Tarif von Supabase
+              KEINEN Zahlencode enthalten kann (die Vorlagen sind dort nicht
+              bearbeitbar). Der Link ist also nicht die Ausweichlösung, sondern
+              der Normalfall — deshalb die Anleitung zum Kopieren, und nicht
+              nur der Hinweis, dass es auch ginge. */}
           <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
-            Am Rechner kannst du stattdessen den Link in der Mail anklicken. Auf dem
-            Handy nimm den Code — der Link öffnet den Browser, und die App auf dem
-            Home-Bildschirm bliebe abgemeldet.
+            <b style={{ color: C.text }}>Kein Code in der Mail?</b> Dann den Link
+            <b> gedrückt halten → „Link kopieren"</b> und hier einsetzen. Nicht antippen —
+            der Link gilt nur einmal, und er würde den Browser öffnen statt dieser App.
           </div>
         </div>
       </div>

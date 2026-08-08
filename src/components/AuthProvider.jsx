@@ -5,6 +5,7 @@ import { hasSupabaseEnv, getSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { getStore } from "@/lib/store";
 import { DEMO_ROUND_ID } from "@/lib/constants";
 import { DEMO_USER } from "@/lib/session";
+import { leseAnmeldung } from "@/lib/anmeldung";
 
 // ── Auth-Context: EINE Quelle für den eingeloggten Nutzer ────
 // Mock-Betrieb (keine Supabase-Env): immer der Demo-Nutzer „Du".
@@ -76,15 +77,30 @@ export default function AuthProvider({ children }) {
   // eintippen, fertig. Der Link bleibt daneben bestehen, weil er auf dem
   // Rechner der bequemere Weg ist.
   //
-  // ⚠️ Damit die Mail den Code ENTHÄLT, muss in Supabase unter
-  // Authentication → Email Templates → „Magic Link" `{{ .Token }}` im Text
-  // stehen. Ohne das kommt weiterhin nur der Link, und das Eingabefeld hier
-  // findet nichts zum Eintippen.
-  const verifyCode = async (email, code) => {
+  // 🔴 GEÄNDERT am 08.08.2026, weil die Voraussetzung nicht herstellbar war:
+  // Damit die Mail einen sechsstelligen Code enthält, müsste in Supabase unter
+  // Authentication → Emails → „Magic Link" `{{ .Token }}` stehen — und genau
+  // das lässt der GRATIS-Tarif nicht zu („Set up custom SMTP to edit
+  // templates"). Die Standard-Mail trägt nur den Link.
+  //
+  // Deshalb nimmt dieses Feld BEIDES: den Code, falls er je in der Mail steht,
+  // und den KOPIERTEN LINK aus der Standard-Mail — in ihm steckt derselbe
+  // Token als `token_hash`. Damit funktioniert die Anmeldung in der
+  // Home-Bildschirm-App, ohne dass an Supabase etwas geändert werden muss.
+  // Was drinsteht, entscheidet `leseAnmeldung` (`src/lib/anmeldung.js`).
+  const verifyCode = async (email, eingabe) => {
     const sb = getSupabaseBrowserClient();
     if (!sb) throw new Error("Supabase nicht konfiguriert.");
-    const token = String(code ?? "").replace(/\s/g, "");
-    const { error } = await sb.auth.verifyOtp({ email, token, type: "email" });
+    const gelesen = leseAnmeldung(eingabe);
+    if (gelesen.art === "leer") throw new Error("Bitte den Code oder den Link aus der Mail einsetzen.");
+    if (gelesen.art === "unklar") throw new Error(gelesen.grund);
+
+    // ⚠️ Beim LINK darf `email` NICHT mitgeschickt werden: `verifyOtp` prüft
+    // dann Adresse UND Token gegeneinander, und der token_hash-Weg ist auf
+    // sich allein gestellt gedacht. Beim getippten Code gehört sie dazu.
+    const { error } = gelesen.art === "link"
+      ? await sb.auth.verifyOtp({ token_hash: gelesen.token, type: gelesen.typ })
+      : await sb.auth.verifyOtp({ email, token: gelesen.token, type: "email" });
     if (error) throw error;
   };
 
