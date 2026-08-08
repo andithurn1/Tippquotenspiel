@@ -126,6 +126,39 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-08 (III) · 🔴 **`claude/koordinierte-arbeitsweise-fe6w1v` IST NACH `main` GEMERGT**
+
+**Andi hat es ausdrücklich angeordnet** („was ist der Grund das noch zu lassen
+und den Branch nicht zu mergen"), nachdem er auf dem Handy nach dem Fortschritt
+gesucht hatte — die Homescreen-App zeigt die Produktion, und die kommt von
+`main`. Push-Regel 3 („Branch-Merges vorher ankündigen") ist damit durch seine
+Entscheidung erledigt, nicht übergangen.
+
+```
+main   600b3e0 → 714e50b   (Fast-Forward, 128 Commits, kein Konflikt)
+Tests  2089 grün · 39 skipped (Balance, ABSICHTLICH)
+Build  sauber — vor dem Push auf `main` selbst nachgeprüft, nicht nur auf dem Branch
+```
+
+**Was damit auf `main` und in der Produktion liegt** (stand vorher nur auf dem
+Branch): Münz-Takt · Regel-Grammatik samt WIE-LANGE-Achse · Ereignis-Bibliothek
+· Duell-Schutzregeln am Store · Zwischenabrechnung nach Spielende · Anmeldung
+per CODE · helles Theme + Platzkulisse · 2. Bundesliga mit echtem Spielplan und
+echten Quoten · die Abnahmen `sicht` und `gleich` · der Oberflächen-Umbau
+Schritt 1 + 2.
+
+⚠️ **Für Account 2:** `main` ist um 128 Commits gewachsen, aber nichts wurde
+umgeschrieben — ein normaler `git pull` reicht. **Ab jetzt wird wieder direkt
+auf `main` gearbeitet**, der Branch ist deckungsgleich und braucht niemanden
+mehr.
+
+⚠️ **Für Andi, bevor die Live-Runde zählt:** `supabase/seed-matches-bl2.sql`
+ausführen (306 Spiele der 2. Liga) — der Code dafür ist jetzt live, die Daten
+noch nicht.
+
+---
+
+
 ### 2026-08-08 (II) · 🔴 **ÜBERGABE** — Schritt 1 + 2 stehen, Schritt 3 ist geplant und ANGEKÜNDIGT
 
 > **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
