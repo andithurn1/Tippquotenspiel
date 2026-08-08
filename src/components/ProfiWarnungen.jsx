@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { C, MONO } from "@/lib/theme";
 import { pruefe, korrigieren, zusammenfassung } from "@/lib/reglerWarnung";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Leitplanken der Profi-Stufe ─────────────────────────────
 // Die Profi-Stufe gibt jeden Regler frei — deshalb braucht sie eine Stimme,
@@ -27,7 +28,7 @@ export default function ProfiWarnungen({ rules, onChange }) {
     }}>
       <button onClick={() => setOffen((o) => !o)} disabled={!warnungen.length} style={{
         width: "100%", display: "flex", alignItems: "center", gap: 9, textAlign: "left",
-        background: "transparent", border: "none", padding: 0, fontFamily: "inherit",
+        ...TAPZIEL, background: "transparent", border: "none", padding: 0, fontFamily: "inherit",
         cursor: warnungen.length ? "pointer" : "default",
       }}>
         <span style={{ color: farbe, fontSize: 14 }}>{z.stufe === "ok" ? "✓" : "!"}</span>

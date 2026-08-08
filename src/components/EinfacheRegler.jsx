@@ -2,6 +2,7 @@
 
 import { C, MONO } from "@/lib/theme";
 import { REGLER, anwenden, erkenneStufe, beispiele, naeheSatz } from "@/lib/einfachRegler";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Stufe 2 „Anpassen" ──────────────────────────────────────
 // Vier Fragen statt zwanzig Regler. Jede Stufe setzt ein Bündel geprüfter
@@ -40,7 +41,7 @@ export default function EinfacheRegler({ rules, onChange }) {
                   <button key={stufe.key}
                     onClick={() => onChange(anwenden(rules, regler.key, stufe.key))}
                     style={{
-                      flex: "1 1 92px", cursor: "pointer", fontFamily: "inherit", padding: "9px 6px",
+                      ...TAPZIEL, flex: "1 1 92px", cursor: "pointer", fontFamily: "inherit", padding: "9px 6px",
                       borderRadius: 11, fontSize: 12.5, fontWeight: 700,
                       background: an ? `${C.gold}22` : C.surface,
                       color: an ? C.gold : C.muted,

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 import {
   VERTEIL_MODI, SICHTBARKEIT, VERTEILUNG_LIMITS,
   sanitizeVerteilung, jokerPlan, kontingent, beschreibeVerteilung,
@@ -87,7 +88,7 @@ export default function JokerVerteilung({ verteilung, onChange }) {
                 const an = v.sichtbarkeit === s.key;
                 return (
                   <button key={s.key} onClick={() => patch({ sichtbarkeit: s.key })} style={{
-                    flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
+                    ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
                     borderRadius: 11, fontSize: 12, fontWeight: 700,
                     background: an ? `${C.gold}22` : C.surface,
                     color: an ? C.gold : C.muted,

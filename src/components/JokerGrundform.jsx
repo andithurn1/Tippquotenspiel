@@ -10,6 +10,7 @@ import {
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { WETTBEWERBE, PHASEN } from "@/lib/wettbewerbe";
 import { Zahl as ZahlInput } from "@/components/Eingaben";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ============================================================
 //  JOKER-GRUNDFORM — der Editor für die EINE Karte, die jeder Joker teilt
@@ -191,7 +192,7 @@ function ArtZeile({ art, rules, abweichung, onBeginnen, onZuruecksetzen, onPatch
         <button onClick={onBeginnen} style={{
           cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, flexShrink: 0,
           background: C.surface2, color: C.gold, border: `1px solid ${C.gold}44`,
-          borderRadius: 10, padding: "7px 12px", whiteSpace: "nowrap",
+          ...TAPZIEL, borderRadius: 10, padding: "7px 12px", whiteSpace: "nowrap",
         }}>abweichen</button>
       </div>
     );
@@ -378,7 +379,7 @@ function Katalog({ katalog, aktiv, onWahl }) {
 function ChipButton({ aktiv, titel, onClick, children }) {
   return (
     <button title={titel} onClick={onClick} style={{
-      cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
+      ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
       background: aktiv ? `${C.indigo}22` : C.surface2, color: aktiv ? C.indigo : C.muted,
       border: `1px solid ${aktiv ? C.indigo + "66" : C.line}`,
     }}>{children}</button>
@@ -391,7 +392,7 @@ function ToggleKnopf({ an, onChange, textAn, textAus }) {
       display: "flex", alignItems: "center", gap: 10, width: "100%",
       textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
       background: C.surface2, border: `1px solid ${an ? C.mint + "55" : C.line}`,
-      borderRadius: 10, padding: "8px 10px",
+      ...TAPZIEL, borderRadius: 10, padding: "8px 10px",
     }}>
       <span style={{
         flexShrink: 0, width: 34, height: 20, borderRadius: 999, position: "relative",

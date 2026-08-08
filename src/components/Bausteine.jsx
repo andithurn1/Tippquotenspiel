@@ -4,6 +4,7 @@ import { useState } from "react";
 import { C, MONO } from "@/lib/theme";
 import { ASPEKTE } from "@/lib/presetMerge";
 import { bildeTeilCode, zerlegeTeilCode } from "@/lib/teilbibliothek";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Bausteine — Teil-Codes je Aspekt erzeugen ──────────────────
 // „Nicht nur ganze Regelwerke teilen, sondern einzelne Bausteine" (design/
@@ -77,7 +78,7 @@ export default function Bausteine({ rules }) {
                 marginTop: 8, width: "100%", cursor: "pointer",
                 background: istKopiert ? C.mint : C.surface2, color: istKopiert ? C.ink : C.text,
                 fontWeight: 700, fontSize: 12, fontFamily: "inherit",
-                border: `1px solid ${C.line}`, borderRadius: 10, padding: "8px 0",
+                ...TAPZIEL, border: `1px solid ${C.line}`, borderRadius: 10, padding: "8px 0",
               }}>{istKopiert ? "✓ kopiert" : "Code kopieren"}</button>
               {fallbackCode && (
                 <div style={{

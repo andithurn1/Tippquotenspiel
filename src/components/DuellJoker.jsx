@@ -6,6 +6,7 @@ import {
   sanitizeDuellJoker, beschreibeDuell,
 } from "@/lib/duellJoker";
 import { Zahl } from "@/components/Eingaben";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Der Duell-Joker: der einzige Baustein, bei dem man einem ANDEREN etwas
 //    wegnimmt ──────────────────────────────────────────────────
@@ -34,7 +35,7 @@ export default function DuellJoker({ rules, onChange }) {
     <button key={key} type="button" onClick={onClick} title={titel} style={{
       border: `1px solid ${aktiv ? C.coral : C.line}`, borderRadius: 999,
       background: aktiv ? `${C.coral}1a` : "transparent", color: aktiv ? C.coral : C.text,
-      cursor: "pointer", padding: "5px 11px", fontSize: 11.5, fontWeight: aktiv ? 700 : 500,
+      ...TAPZIEL, cursor: "pointer", padding: "5px 11px", fontSize: 11.5, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
   );
 

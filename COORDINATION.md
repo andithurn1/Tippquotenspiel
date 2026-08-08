@@ -126,6 +126,42 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-08 (V) · ✅ **Tippziele: alle drei Stufen bei null** — `TAPZIEL` ist ab jetzt Pflicht
+
+```
+main   (gepusht)
+Tests  2105 grün · 39 skipped (Balance, ABSICHTLICH)
+Build  sauber · lint · stufen · sicht ohne neuen Befund
+```
+
+Gemessen bei 390 px (iPhone 14), Tippziele unter 44 px — einfach 18 → **0** ·
+anpassen 17 → **0** · profi 113 → **0**.
+
+🔴 **Für jeden neuen Knopf gilt ab jetzt:** `style={{ ...TAPZIEL, … }}` aus
+`src/lib/tapziel.js`. Apple verlangt 44 pt, Google 48 dp — das ist keine
+Geschmacksfrage, ein 27 px hoher Knopf wird auf dem Handy danebengetroffen.
+
+⚠️ **Und die Falle, die dabei umgangen wurde** (sie steht auch in der Datei):
+eine globale CSS-Regel `button { min-height: 44px }` wäre eine Zeile und an
+zwei Stellen falsch — `min-height` schlägt `height`, aus dem 30×30-Stepper
+würde ein 30×44-Streifen, und jeder Text-Link im Fließtext bekäme eine
+Kastenhöhe mitten im Satz. Deshalb eine Konstante in den Inline-Styles, plus
+`TAPZIEL_QUADRAT` für quadratische Knöpfe.
+
+Angefasst: 14 Komponenten, **29 Code-Stellen** — mehr waren es nie, die 113
+Knöpfe entstehen durch Wiederholung. Berührt sind auch Dateien, die in
+Spieler-Screens vorkommen (`Zeitachse`, `Mitbestimmung`, `JokerGrundform`,
+`JokerOekonomie`, `Ereignisse`, `DuellJoker`, `Drehrad`, `LimitKlassen`,
+`PresetMischen`, `Bausteine`, `ProfiWarnungen`, `EinfacheRegler`,
+`JokerVerteilung`, `Spielerstellung`).
+
+**Offen und ausdrücklich nicht gemessen:** die Tippziele der SPIELER-Screens
+(`/tippen`, `/ranking`, `/rad`, `/joker`, `/abrechnung`). Sie laden fehlerfrei,
+gezählt hat sie niemand. Steht in `design/roadmap.md`.
+
+---
+
+
 ### 2026-08-08 (IV) · ✅ **Schritt 3 liegt auf `main`** — Spielauswahl je Liga
 
 Gebaut nach `design/spielauswahl-je-liga.md`, angekündigt war er im Eintrag

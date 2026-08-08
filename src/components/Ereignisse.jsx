@@ -8,6 +8,7 @@ import {
 } from "@/lib/ereignisse";
 import { Zahl } from "@/components/Eingaben";
 import { trefferAnteil } from "@/lib/auswahl";
+import { TAPZIEL } from "@/lib/tapziel";
 import {
   AUSWERTBARE_WIRKUNGEN, WIRKUNG, WIRKUNG_LIMITS,
   sanitizeWirkung, beschreibeWirkung, konflikte as wirkungsKonflikte,
@@ -347,7 +348,7 @@ export default function Ereignisse({ rules, onChange }) {
                   border: `1px solid ${aktiv ? C.mint : C.line}`, borderRadius: 999,
                   background: aktiv ? `${C.mint}1a` : "transparent",
                   color: aktiv ? C.mint : C.text, cursor: "pointer",
-                  padding: "5px 11px", fontSize: 11.5, fontWeight: aktiv ? 700 : 500,
+                  ...TAPZIEL, padding: "5px 11px", fontSize: 11.5, fontWeight: aktiv ? 700 : 500,
                 }}>
                 {p.label}
                 {/* ⚠️ Die Wirkrichtung ist ABGELEITET, nicht gemessen (siehe

@@ -55,6 +55,7 @@ import Zeitachse from "@/components/Zeitachse";
 import { C, MONO } from "@/lib/theme";
 import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
 import { Zahl } from "@/components/Eingaben";
+import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
 // Bundesliga und Premier League mischt.
@@ -976,7 +977,7 @@ export default function Spielerstellung() {
               <button onClick={() => patch({ displayScale: empfohleneSkala })} style={{
                 cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 700,
                 background: C.surface2, color: C.gold, border: `1px solid ${C.gold}44`,
-                borderRadius: 10, padding: "7px 12px", whiteSpace: "nowrap",
+                ...TAPZIEL, borderRadius: 10, padding: "7px 12px", whiteSpace: "nowrap",
               }}>übernehmen</button>
             </div>
           )}
@@ -1024,7 +1025,7 @@ export default function Spielerstellung() {
                   const an = (g.modus ?? "proTeam") === m.key;
                   return (
                     <button key={m.key} title={m.hint} onClick={() => patchGoals({ modus: m.key })} style={{
-                      flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
+                      ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
                       borderRadius: 11, fontSize: 12, fontWeight: 700,
                       background: an ? `${C.sky}22` : C.surface, color: an ? C.sky : C.muted,
                       border: `1px solid ${an ? C.sky + "66" : C.line}`,
@@ -1076,7 +1077,7 @@ export default function Spielerstellung() {
                 const on = te.staerke === s.v;
                 return (
                   <button key={s.v} onClick={() => patchTippEinfluss({ staerke: s.v })} style={{
-                    cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                    ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
                     background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
                     border: `1px solid ${on ? C.gold + "66" : C.line}`,
                   }}>{s.label}</button>
@@ -1226,7 +1227,7 @@ export default function Spielerstellung() {
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
                     {j.faktoren.map((f) => (
                       <span key={f} style={{
-                        fontSize: 12, fontFamily: MONO, padding: "5px 10px", borderRadius: 999,
+                        ...TAPZIEL, fontSize: 12, fontFamily: MONO, padding: "5px 10px", borderRadius: 999,
                         background: f > 1 ? `${C.gold}18` : C.surface,
                         color: f > 1 ? C.gold : C.muted,
                         border: `1px solid ${f > 1 ? C.gold + "44" : C.line}`,
@@ -1302,7 +1303,7 @@ export default function Spielerstellung() {
                               textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
                               background: an ? `${C.gold}18` : C.surface,
                               border: `1px solid ${an ? C.gold + "66" : C.line}`,
-                              borderRadius: 12, padding: "9px 12px",
+                              ...TAPZIEL, borderRadius: 12, padding: "9px 12px",
                             }}>
                               <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.gold : C.text }}>{p.label}</div>
                               <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
@@ -1657,7 +1658,7 @@ export default function Spielerstellung() {
                     return (
                       <button key={b.key} onClick={() => patchAufholen({ betrifft: b.key })}
                         title={b.desc} style={{
-                          cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                          ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
                           background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                           border: `1px solid ${on ? C.mint + "66" : C.line}`,
                         }}>{b.label}</button>
@@ -1692,7 +1693,7 @@ export default function Spielerstellung() {
                 const on = sf.streich === n;
                 return (
                   <button key={n} onClick={() => patchSaisonform({ streich: n })} style={{
-                    cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                    ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
                     background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                     border: `1px solid ${on ? C.mint + "66" : C.line}`,
                   }}>{n === 0 ? "keine" : `${n} streichen`}</button>
@@ -1726,7 +1727,7 @@ export default function Spielerstellung() {
                 return (
                   <button key={k.key} onClick={() => patchSaisonform({ kurve: k.key })}
                     title={k.text} style={{
-                      cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                      ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
                       background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
                       border: `1px solid ${on ? C.gold + "66" : C.line}`,
                     }}>{k.label}</button>
@@ -1882,7 +1883,7 @@ export default function Spielerstellung() {
                        sobald jemand den Vorlauf einmal anfasste — lautlos. */
                     onClick={() => { touched(); setRules((r) => ({ ...r, tippfenster: { ...r.tippfenster, vorlaufStunden: st.stunden } })); }}
                     style={{
-                      flex: "1 1 70px", cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
+                      ...TAPZIEL, flex: "1 1 70px", cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
                       borderRadius: 11, fontSize: 12, fontWeight: 700,
                       background: an ? `${C.gold}22` : C.surface,
                       color: an ? C.gold : C.muted,
@@ -1998,7 +1999,7 @@ export default function Spielerstellung() {
               <button onClick={createRound} disabled={creating || !user || teamFilterInvalid} style={{
                 width: "100%", cursor: creating || !user || teamFilterInvalid ? "default" : "pointer",
                 background: C.mint, color: C.ink, fontWeight: 700, fontSize: 14,
-                border: "none", borderRadius: 14, padding: "13px 0", opacity: creating || !user || teamFilterInvalid ? 0.6 : 1,
+                ...TAPZIEL, border: "none", borderRadius: 14, padding: "13px 0", opacity: creating || !user || teamFilterInvalid ? 0.6 : 1,
               }}>
                 {creating ? "wird angelegt …" : "Runde jetzt erstellen"}
               </button>
@@ -2030,7 +2031,7 @@ export default function Spielerstellung() {
           <button onClick={copy} style={{
             marginTop: 10, width: "100%", cursor: "pointer",
             background: copied ? C.mint : C.gold, color: C.ink, fontWeight: 700, fontSize: 14,
-            border: "none", borderRadius: 14, padding: "13px 0", transition: "background .2s",
+            ...TAPZIEL, border: "none", borderRadius: 14, padding: "13px 0", transition: "background .2s",
           }}>{copied ? "✓ kopiert" : "Langen Code kopieren & teilen"}</button>
 
           {/* Kurzcode (Content-Creator) */}
@@ -2213,8 +2214,11 @@ function Toggle({ label, on, onChange }) {
 }
 
 function Stepper({ value, min, max, onStep }) {
+  // ⚠️ Hier reicht `TAPZIEL` NICHT: `min-height` schlägt `height`, aus dem
+  // 30×30-Quadrat würde ein 30 breiter, 44 hoher Streifen. Quadratische
+  // Knöpfe brauchen beide Maße — dafür gibt es die zweite Konstante.
   const b = (dis) => ({
-    width: 30, height: 30, borderRadius: 8, cursor: dis ? "default" : "pointer",
+    ...TAPZIEL_QUADRAT, borderRadius: 10, cursor: dis ? "default" : "pointer",
     background: C.surface2, color: dis ? C.muted : C.text, border: `1px solid ${C.line}`,
     fontSize: 18, lineHeight: 1,
   });

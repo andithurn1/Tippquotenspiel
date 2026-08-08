@@ -8,6 +8,7 @@ import {
   preisFuer, BUDGET_LIMITS, beschreibeBudget,
 } from "@/lib/jokerBudget";
 import { Zahl } from "@/components/Eingaben";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // Vorgabe je Quellen-Typ beim Hinzufügen — deckt sich mit den Fallbacks in
 // `sanitizeQuelle` (jokerBudget.js), damit ein frisch hinzugefügter Block
@@ -124,7 +125,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
               }}>
                 <button onClick={() => umschaltenQuelle(q.key)} style={{
                   width: "100%", textAlign: "left", background: "transparent", border: "none",
-                  padding: 0, fontFamily: "inherit", color: C.text, cursor: "pointer",
+                  ...TAPZIEL, padding: 0, fontFamily: "inherit", color: C.text, cursor: "pointer",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 12.5, fontWeight: 700, flex: 1 }}>{q.label}</span>
@@ -159,7 +160,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                             const kan = wert(q.key, "kurve") === kv;
                             return (
                               <button key={kv} onClick={() => setzeQuelleFeld(q.key, "kurve", kv)} style={{
-                                cursor: "pointer", fontSize: 11.5, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
+                                ...TAPZIEL, cursor: "pointer", fontSize: 11.5, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
                                 background: kan ? `${C.gold}22` : C.surface2, color: kan ? C.gold : C.muted,
                                 border: `1px solid ${kan ? C.gold + "66" : C.line}`,
                               }}>{kv}</button>
@@ -182,7 +183,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
               const an = (budget.takt ?? "spieltag") === t.key;
               return (
                 <button key={t.key} title={t.desc} onClick={() => patchBudgetFeld({ takt: t.key })} style={{
-                  flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
+                  ...TAPZIEL, flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
                   borderRadius: 11, textAlign: "left",
                   background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
                   border: `1px solid ${an ? C.gold + "66" : C.line}`,
@@ -204,7 +205,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
               const an = (budget.verfall ?? "deckel") === v.key;
               return (
                 <button key={v.key} title={v.desc} onClick={() => patchBudgetFeld({ verfall: v.key })} style={{
-                  flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
+                  ...TAPZIEL, flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
                   borderRadius: 11, textAlign: "left",
                   background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
                   border: `1px solid ${an ? C.gold + "66" : C.line}`,
@@ -240,7 +241,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
               const an = (budget.preisModus ?? "fix") === m.key;
               return (
                 <button key={m.key} title={m.desc} onClick={() => patchBudgetFeld({ preisModus: m.key })} style={{
-                  flex: "1 1 90px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
+                  ...TAPZIEL, flex: "1 1 90px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
                   borderRadius: 11, textAlign: "left",
                   background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
                   border: `1px solid ${an ? C.gold + "66" : C.line}`,

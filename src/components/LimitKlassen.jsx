@@ -9,6 +9,7 @@ import {
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { EREIGNIS_TYPEN } from "@/lib/ereignisse";
 import { Zahl } from "@/components/Eingaben";
+import { TAPZIEL } from "@/lib/tapziel";
 
 const SPIELTAGE = 34;
 
@@ -181,7 +182,7 @@ export default function LimitKlassen({ rules, onChange }) {
       </div>
       <button onClick={hinzufuegen} style={{
         cursor: "pointer", background: "transparent", color: C.muted,
-        border: `1px dashed ${C.line}`, borderRadius: 14, padding: "10px 12px",
+        ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: 14, padding: "10px 12px",
         fontFamily: "inherit", fontSize: 13, textAlign: "left", width: "100%", boxSizing: "border-box",
       }}>+ Klasse anlegen</button>
     </div>
@@ -230,7 +231,7 @@ function KlasseZeile({
             const an = mitglieder.includes(art.key);
             return (
               <button key={art.key} title={art.desc} onClick={() => onToggleMitglied(art.key)} style={{
-                cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
                 background: an ? `${C.indigo}22` : C.surface2, color: an ? C.indigo : C.muted,
                 border: `1px solid ${an ? C.indigo + "66" : C.line}`,
               }}>{art.label}</button>
@@ -258,7 +259,7 @@ function KlasseZeile({
             const an = (klasse.proZeitraum ?? "saison") === p.key;
             return (
               <button key={p.key} title={p.desc} onClick={() => onPatch({ proZeitraum: p.key })} style={{
-                cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
                 background: an ? `${C.gold}22` : C.surface2, color: an ? C.gold : C.muted,
                 border: `1px solid ${an ? C.gold + "66" : C.line}`,
               }}>{p.label}</button>
@@ -281,7 +282,7 @@ function KlasseZeile({
             const an = aktivierung.typ === t.key;
             return (
               <button key={t.key} title={t.desc} onClick={() => onAktivierungsTyp(t.key)} style={{
-                cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
                 background: an ? `${C.mint}22` : C.surface2, color: an ? C.mint : C.muted,
                 border: `1px solid ${an ? C.mint + "66" : C.line}`,
               }}>{t.label}</button>

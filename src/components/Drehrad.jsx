@@ -11,6 +11,7 @@ import Gluecksrad from "@/components/Gluecksrad";
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { WER } from "@/lib/jokerBasis";
 import { Zahl } from "@/components/Eingaben";
+import { TAPZIEL } from "@/lib/tapziel";
 
 const SPIELTAGE = 34;
 // Beispiel-Spieler nur für die Vorschau — dieselbe Bauart wie in
@@ -224,7 +225,7 @@ export default function Drehrad({ rules, onChange }) {
       </div>
       <button onClick={hinzufuegen} style={{
         cursor: "pointer", background: "transparent", color: C.muted,
-        border: `1px dashed ${C.line}`, borderRadius: 14, padding: "10px 12px",
+        ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: 14, padding: "10px 12px",
         fontFamily: "inherit", fontSize: 13, textAlign: "left", width: "100%", boxSizing: "border-box",
       }}>+ Feld hinzufügen</button>
 
@@ -515,7 +516,7 @@ function FeldZeile({
           const an = belohnung.typ === t.key;
           return (
             <button key={t.key} title={t.desc} onClick={() => onBelohnungsTyp(t.key)} style={{
-              cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
+              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
               background: an ? `${C.indigo}22` : C.surface2, color: an ? C.indigo : C.muted,
               border: `1px solid ${an ? C.indigo + "66" : C.line}`,
             }}>{t.label}</button>

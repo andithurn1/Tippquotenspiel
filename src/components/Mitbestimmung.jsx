@@ -3,6 +3,7 @@
 import { C } from "@/lib/theme";
 import { Zahl } from "@/components/Eingaben";
 import { ASPEKTE, ASPEKT_KEYS } from "@/lib/presetMerge";
+import { TAPZIEL } from "@/lib/tapziel";
 import {
   WAEHLER, MEHRHEITEN, ANTRAGSRECHT, WIRKUNG_AB, STIMM_SICHT,
   ABSTIMMUNG_LIMITS, MITBESTIMMUNG_ASPEKT,
@@ -155,7 +156,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                       <button key={m.key} onClick={() => setzeVerfassung(
                         m.key === "sperre" ? { aenderbar: [] } : { aenderbar: waehlbar.map((x) => x.key), gesperrt: [] })
                       } style={{
-                        flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px",
+                        ...TAPZIEL, flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px",
                         borderRadius: 11, textAlign: "left", fontSize: 12, fontWeight: 700,
                         background: m.an ? `${C.gold}22` : C.surface, color: m.an ? C.gold : C.muted,
                         border: `1px solid ${m.an ? C.gold + "66" : C.line}`,
@@ -233,7 +234,7 @@ function Karten({ label, katalog, wert, onWaehlen }) {
           const an = wert === e.key;
           return (
             <button key={e.key} title={e.desc} onClick={() => onWaehlen(e.key)} style={{
-              flex: "1 1 110px", cursor: "pointer", fontFamily: "inherit", padding: "8px",
+              ...TAPZIEL, flex: "1 1 110px", cursor: "pointer", fontFamily: "inherit", padding: "8px",
               borderRadius: 11, textAlign: "left",
               background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
               border: `1px solid ${an ? C.gold + "66" : C.line}`,
@@ -262,7 +263,7 @@ function Toggle({ label, on, onChange }) {
       display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
       textAlign: "left", gap: 12, marginBottom: 8, cursor: "pointer", color: C.text,
       background: C.surface, border: `1px solid ${on ? C.mint + "55" : C.line}`,
-      borderRadius: 12, padding: "10px 14px", fontSize: 13, fontFamily: "inherit",
+      ...TAPZIEL, borderRadius: 12, padding: "10px 14px", fontSize: 13, fontFamily: "inherit",
     }}>
       <span>{label}</span>
       <span style={{

@@ -230,7 +230,37 @@ Bausteine. Der Simulator bleibt für die Frage „**sieht er die Ebene
 zurückgestellt. Begründung im Nachrichten-Log von `COORDINATION.md`,
 Eintrag 2026-08-05 (IV).
 
-### 📱 Tippziele: Spielerstellung ✅, Profi-Stufe offen (08.08.2026)
+### 📱 Tippziele: ALLE DREI STUFEN sauber (08.08.2026) — ✅ erledigt
+
+Gemessen bei 390 px (iPhone 14), Tippziele unter 44 px:
+
+| Stufe | vorher | nachher |
+|---|---|---|
+| einfach | 18 | **0** |
+| anpassen | 17 | **0** |
+| profi | 113 | **0** |
+
+**Wie, ohne die Kachelwand:** `src/lib/tapziel.js` — eine Konstante `TAPZIEL`
+(`minHeight: 44`), die in die vorhandenen Inline-Styles gespreizt wird, dazu
+`TAPZIEL_QUADRAT` für quadratische Knöpfe. Die 113 zu kleinen Knöpfe kamen aus
+nur **29 Code-Stellen** in 14 Dateien; jede rendert vielfach. Deshalb war es
+auch kein Kahlschlag: die dichten Modus-Reihen bleiben Reihen, sie sind nur
+hoch genug.
+
+⚠️ **Warum keine globale CSS-Regel** (`button { min-height: 44px }`), obwohl
+sie eine Zeile wäre: `min-height` schlägt `height` — aus dem 30×30-Stepper
+würde ein 30×44-Streifen, und jeder Text-Link im Fließtext bekäme eine
+Kastenhöhe mitten im Satz. Die Begründung steht in `tapziel.js`, damit sie
+nicht bei der nächsten „Vereinfachung" verloren geht.
+
+**Für jeden neuen Knopf:** `style={{ ...TAPZIEL, … }}`.
+
+⚠️ **Was NICHT gemessen ist:** die Spieler-Screens (`/tippen`, `/ranking`,
+`/rad`, `/joker`, `/abrechnung`). Sie laden fehlerfrei, aber ihre Tippziele hat
+niemand gezählt — das ist der nächste Durchgang, und er ist nicht mehr groß:
+die gemeinsamen Bauformen sind jetzt versorgt.
+
+<details><summary>Ursprünglicher Eintrag (Stand vor dem Profi-Durchgang)</summary>
 
 **Erledigt:** die Spielerstellung in Stufe „einfach" hatte bei 390 px Breite
 **18 Tippziele unter 40 px**, jetzt **0** — der Umbau auf große Zeilen
@@ -253,6 +283,8 @@ Messbefehl, damit niemand raten muss:
 ```js
 [...document.querySelectorAll('button,a')].filter(el=>{const b=el.getBoundingClientRect();return b.height>0&&b.height<40;}).length
 ```
+
+</details>
 
 ### 🔴 Ereignisse: der Trost-Joker war nicht angeschlossen (06.08.2026) — ✅ behoben
 

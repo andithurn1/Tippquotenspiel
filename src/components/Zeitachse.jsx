@@ -8,6 +8,7 @@ import {
 } from "@/lib/zeitachse";
 import { wettbewerbeIn, wettbewerbLabel } from "@/lib/wettbewerbe";
 import { C, MONO } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Zeitachse einstellen ────────────────────────────────────
 // Die Frage, die dieser Block beantwortet: was ist „Spieltag 5" in einer Runde
@@ -62,7 +63,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
           const an = z.modus === m.key;
           return (
             <button key={m.key} title={m.hint} onClick={() => patch({ modus: m.key })} style={{
-              flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
+              ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
               borderRadius: 11, fontSize: 12, fontWeight: 700,
               background: an ? `${C.sky}22` : C.surface, color: an ? C.sky : C.muted,
               border: `1px solid ${an ? C.sky + "66" : C.line}`,
@@ -81,7 +82,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
               const an = z.anker === opt.key;
               return (
                 <button key={opt.key ?? "auto"} onClick={() => patch({ anker: opt.key })} style={{
-                  cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px",
+                  ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px",
                   borderRadius: 999, background: an ? `${C.mint}22` : C.surface,
                   color: an ? C.mint : C.muted, border: `1px solid ${an ? C.mint + "66" : C.line}`,
                 }}>{opt.label}</button>
@@ -108,7 +109,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
               const an = z.pause === m.key;
               return (
                 <button key={m.key} title={m.hint} onClick={() => patch({ pause: m.key })} style={{
-                  flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "7px 6px",
+                  ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "7px 6px",
                   borderRadius: 11, fontSize: 11.5, fontWeight: 700,
                   background: an ? `${C.mint}22` : C.surface, color: an ? C.mint : C.muted,
                   border: `1px solid ${an ? C.mint + "66" : C.line}`,

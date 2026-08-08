@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { C, MONO } from "@/lib/theme";
 import { PRESETS } from "@/lib/presets";
 import { ASPEKTE, defaultAuswahl, mergePresets, unterschiede } from "@/lib/presetMerge";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Zwei Presets zu einem mischen ───────────────────────────
 // Der knifflige Teil ist laut Roadmap die BEDIENUNG. Lösung: nicht 20 Regler,
@@ -132,7 +133,7 @@ function Seite({ an, tone, label, onClick }) {
   return (
     <button onClick={onClick} style={{
       flex: 1, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
-      padding: "8px 6px", borderRadius: 10,
+      ...TAPZIEL, padding: "8px 6px", borderRadius: 10,
       background: an ? `${tone}22` : "transparent", color: an ? tone : C.muted,
       border: `1px solid ${an ? tone + "66" : C.line}`,
       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
