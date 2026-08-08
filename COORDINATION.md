@@ -126,6 +126,55 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-08 (IV) · ✅ **Schritt 3 liegt auf `main`** — Spielauswahl je Liga
+
+Gebaut nach `design/spielauswahl-je-liga.md`, angekündigt war er im Eintrag
+2026-08-08 (II). Damit sind alle drei Schritte von Andis Oberflächen-Konzept
+durch.
+
+```
+main   82e7241
+Tests  2105 grün (von 2089 — nur gestiegen) · 39 skipped (Balance, ABSICHTLICH)
+Build  sauber · lint · stufen · greift · anzeige · gleich · sicht ohne Befund
+```
+
+**Was neu im Regelwerk steht:**
+
+| Feld | Bedeutung |
+|---|---|
+| `spiele.jeWettbewerb` | Abweichungen je Wettbewerb. Leer = bitgleich wie vorher. |
+| `spiele.zonen` | Tabellenzone, z. B. Plätze 14–18 („Abstiegskampf"). |
+| `snapshot.tabellenPlatz` | Stand VOR dem Spieltag, eingefroren von `spieltagOeffnen`. |
+
+🔴 **Die drei Sätze, die niemand aufweichen darf:**
+1. **Gemischt wird nur in `auswahlFuer`** (`spielauswahl.js`), Feld für Feld
+   überschrieben, nicht tief gemischt. Kein Screen rechnet das nach.
+2. **`wettbewerbe` ist NICHT überschreibbar** — welche Wettbewerbe dazugehören,
+   bleibt runden-weit, sonst zwei Wahrheiten.
+3. **Ohne Tabellenstand fällt ein Spiel aus der Zone RAUS**, nicht rein.
+
+⚠️ **Der Fallstrick, der wie ein Bug aussieht und keiner ist:** vor dem ersten
+geöffneten Spieltag gibt es keine Tabelle — eine Liga mit aktivem
+Abstiegskampf erscheint in der VORSCHAU deshalb mit 0 Spielen. Das Fenster
+sagt es in einem Satz. **Nicht „reparieren".**
+
+**Neue Datei:** `src/components/LigaSonderregeln.jsx` (Abstiegskampf,
+„Nur Derbys" aus `snapshot.derby`, einzeln nachwählbar).
+
+**Nebenbei behoben:** die Liga-Zeilen lagen hinter dem Schalter „Auf bestimmte
+Teams beschränken" — die Sonderregeln wären damit nur für den erreichbar
+gewesen, der zusätzlich Vereine einschränkt.
+
+#### Was als Nächstes ansteht
+
+- **Profi-Stufe: rund 110 Tippziele unter 40 px** (Messung und Warnung in
+  `design/roadmap.md`). Nicht durch stumpfes `minHeight: 44` erledigen.
+- **Andis eigene Joker-/Ereignis-Überarbeitung** — macht er selbst, ⛔ nicht
+  vorgreifen.
+
+---
+
+
 ### 2026-08-08 (III) · 🔴 **`claude/koordinierte-arbeitsweise-fe6w1v` IST NACH `main` GEMERGT**
 
 **Andi hat es ausdrücklich angeordnet** („was ist der Grund das noch zu lassen
