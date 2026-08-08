@@ -167,6 +167,33 @@ abschauen, statt Neues zu erfinden.
   aufgeflogen, beide durch eine ANNAHME statt einer Messung (siehe `RHO` in
   `oddsApi.js`). Wo eine Zahl gebraucht wird: erst nachmessen.
 
+### 📋 Anweisungen an Andi IMMER Schritt für Schritt (Andi, 07.08.2026)
+
+**Jede Handlungsanweisung an den Nutzer wird als nummerierte Schrittfolge
+geschrieben — nie als Nebensatz im Fließtext.** Andi arbeitet an mehreren
+Stellen gleichzeitig (Vercel, Supabase, GitHub, ZWEI Arbeitskopien auf der
+Platte, mehrere Branches). Ein Satz wie „führ die Datei im SQL-Editor aus"
+setzt voraus, dass er weiß, WELCHE Datei, in WELCHER Version, an WELCHEM Ort —
+und genau das ist mehrfach schiefgegangen.
+
+**Zu jeder Anweisung gehören verbindlich:**
+
+1. **Der vollständige Pfad**, nicht der Dateiname: `C:\Dev\Tippquotenspiel\…`
+   ⚠️ Es gibt eine ZWEITE, veraltete Arbeitskopie unter
+   `C:\Users\andit\OneDrive\Tippprojekt\Tippquotenspiel` — ohne vollen Pfad
+   landet er womöglich dort.
+2. **Der Branch bzw. Commit**, sobald es über GitHub geht. Der aktuelle Stand
+   liegt oft NICHT auf `main`.
+3. **Wo genau geklickt wird** — Menüpunkt für Menüpunkt, mit den Namen, die
+   auf den Knöpfen stehen.
+4. **Eine Gegenprobe zum Schluss**: woran erkennt er, dass es geklappt hat?
+   Eine Anweisung ohne Erfolgskontrolle endet damit, dass er nachfragen muss.
+
+⚠️ **Wegwerf-Dateien ausdrücklich als solche benennen.**
+`supabase/_quoten-update.sql` ist nach dem nächsten Abruf veraltet; wer sie
+später noch einmal ausführt, schreibt alte Quoten über neue — ohne
+Fehlermeldung. Bei jeder Anweisung dazusagen, ob die Datei bleibt oder weg kann.
+
 ### ⚙️ Werkzeug-Fallen auf diesem Rechner (Account 1 / Andi)
 
 - **Node ist NICHT im PATH.** Vor jedem `npm`-Aufruf im Bash-Tool:

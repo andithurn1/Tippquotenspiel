@@ -259,6 +259,13 @@ laut `npm run tot` **keinen Aufrufer** — schon vor dieser Sitzung. Anschließe
 löschen oder in `GEDULDET` begründen. Bewusst nicht stillschweigend gelöscht,
 falls die andere Session sie in Arbeit hat.
 
+#### 📋 Anweisungen an Andi: IMMER Schritt für Schritt (07.08.2026)
+
+Voller Pfad statt Dateiname · Branch dazusagen · Klick für Klick · und eine
+Gegenprobe zum Schluss. Die verbindliche Fassung steht in `CLAUDE.md`.
+Grund: zwei Arbeitskopien, mehrere Branches, drei Web-Oberflaechen — ohne das
+landet er in der falschen Datei oder der falschen Version.
+
 #### Die Arbeitsweise, die Andi will (unverändert)
 
 Wenig Rückfragen, Entscheidungen aus Roadmap/Kanal/Code ableiten, Commit + Push
@@ -363,6 +370,13 @@ Ausdrücklich zurückgestellt („erstmal das Gehirn voll fertig").
   `scoreLeaderboardHistory` → `wirkungsVorgaenge`. Wer eine neue Stelle baut,
   die `auswerten()` ruft, gibt sie mit — sonst zieht dieselbe Regel dort andere
   Spieltage, und das ist die doppelte Wahrheit in Reinform.
+
+#### 📋 Anweisungen an Andi: IMMER Schritt für Schritt (07.08.2026)
+
+Voller Pfad statt Dateiname · Branch dazusagen · Klick für Klick · und eine
+Gegenprobe zum Schluss. Die verbindliche Fassung steht in `CLAUDE.md`.
+Grund: zwei Arbeitskopien, mehrere Branches, drei Web-Oberflaechen — ohne das
+landet er in der falschen Datei oder der falschen Version.
 
 #### Die Arbeitsweise, die Andi will (unverändert)
 
