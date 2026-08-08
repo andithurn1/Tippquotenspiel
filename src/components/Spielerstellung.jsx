@@ -103,6 +103,9 @@ export default function Spielerstellung() {
   // andere so weit nach unten, dass zwei offene Bereiche nicht mehr in einen
   // Blick passen — der Sinn der Zeilen war, den Screen kurz zu halten.
   const [auswahlOffen, setAuswahlOffen] = useState(null);
+  // Und innerhalb der Wettbewerbs-Zeile: welche LIGA zeigt ihre Mannschaften?
+  // Auch hier eine auf einmal — 18 Chips sind schon eine halbe Bildschirmhöhe.
+  const [offeneLiga, setOffeneLiga] = useState(null);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -565,36 +568,67 @@ export default function Spielerstellung() {
               <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.4 }}>
                 Mindestens 2 Vereine — ein Spiel zählt, sobald eine Seite dabei ist.
               </p>
-              {teamGruppen.map((g) => (
-                <div key={g.key} style={{ marginBottom: 10 }}>
-                  <div style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                    marginBottom: 5,
-                  }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{g.label}</span>
-                    {/* Alle einer Liga auf einmal — sonst klickt man 18-mal. */}
-                    <button onClick={() => toggleLiga(g.vereine)} style={{
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "3px 12px",
-                      minHeight: 44, boxSizing: "border-box",
-                      borderRadius: 999, background: "transparent", color: C.mint,
-                      border: `1px solid ${C.line}`,
-                    }}>{g.vereine.every((v) => selectedTeams.includes(v)) ? "keine" : "alle"}</button>
+              {/* ── Schritt 2: Liga anklicken → Mannschaften klappen auf ──
+                  Vorher lagen alle Vereine ALLER gewählten Ligen offen
+                  untereinander: bei sieben Wettbewerben über 90 Chips am
+                  Stück, und wer die Serie A suchte, scrollte an drei Ligen
+                  vorbei. Jetzt trägt jede Liga eine Zeile mit ihrem Stand
+                  (`3/18`) und klappt einzeln auf.
+                  ⚠️ Der „alle/keine"-Knopf steht NEBEN der Zeile, nicht
+                  darin: ein Knopf im Knopf ist kein gültiges HTML, und
+                  wichtiger — eine ganze Liga zu wählen darf nicht erst
+                  hinter dem Aufklappen liegen. Genau dafür gibt es ihn
+                  (sonst klickt man 18-mal). */}
+              {teamGruppen.map((g) => {
+                const drin = g.vereine.filter((v) => selectedTeams.includes(v)).length;
+                const alleDrin = drin === g.vereine.length;
+                const auf = offeneLiga === g.key;
+                return (
+                  <div key={g.key} style={{ marginBottom: 8 }}>
+                    <div style={{ display: "flex", gap: 6, alignItems: "stretch" }}>
+                      <button onClick={() => setOffeneLiga((o) => (o === g.key ? null : g.key))} style={{
+                        flex: 1, minWidth: 0, minHeight: 48, boxSizing: "border-box",
+                        display: "flex", alignItems: "center", gap: 10, textAlign: "left",
+                        cursor: "pointer", fontFamily: "inherit", color: C.text,
+                        background: auf ? C.ink2 : C.surface,
+                        border: `1px solid ${auf ? C.mint + "55" : C.line}`,
+                        borderRadius: 12, padding: "10px 12px",
+                      }}>
+                        <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700 }}>{g.label}</span>
+                        <span style={{ fontFamily: MONO, fontSize: 12, color: drin > 0 ? C.mint : C.muted }}>
+                          {drin}/{g.vereine.length}
+                        </span>
+                        <span style={{
+                          fontSize: 16, color: C.muted, lineHeight: 1,
+                          transform: auf ? "rotate(90deg)" : "none", transition: "transform .15s",
+                        }}>›</span>
+                      </button>
+                      {/* Alle einer Liga auf einmal — sonst klickt man 18-mal. */}
+                      <button onClick={() => toggleLiga(g.vereine)} style={{
+                        cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "3px 14px",
+                        minHeight: 48, boxSizing: "border-box", flexShrink: 0,
+                        borderRadius: 12, background: "transparent", color: C.mint,
+                        border: `1px solid ${C.line}`,
+                      }}>{alleDrin ? "keine" : "alle"}</button>
+                    </div>
+                    {auf && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 2px 2px" }}>
+                        {g.vereine.map((team) => {
+                          const on = selectedTeams.includes(team);
+                          return (
+                            <button key={team} onClick={() => toggleTeam(team)} style={{
+                              cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "6px 12px", borderRadius: 999,
+                              minHeight: 44, boxSizing: "border-box",
+                              background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
+                              border: `1px solid ${on ? C.mint + "66" : C.line}`,
+                            }}>{team}</button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {g.vereine.map((team) => {
-                      const on = selectedTeams.includes(team);
-                      return (
-                        <button key={team} onClick={() => toggleTeam(team)} style={{
-                          cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "6px 12px", borderRadius: 999,
-                          minHeight: 44, boxSizing: "border-box",
-                          background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
-                          border: `1px solid ${on ? C.mint + "66" : C.line}`,
-                        }}>{team}</button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               <div style={{ fontSize: 11, color: teamFilterInvalid ? C.coral : C.muted, marginTop: 8 }}>
                 {selectedTeams.length} von mindestens 2 Teams ausgewählt
