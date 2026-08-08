@@ -262,7 +262,10 @@ falls die andere Session sie in Arbeit hat.
 #### 📋 Anweisungen an Andi: IMMER Schritt für Schritt (07.08.2026)
 
 Voller Pfad statt Dateiname · Branch dazusagen · Klick für Klick · und eine
-Gegenprobe zum Schluss. Die verbindliche Fassung steht in `CLAUDE.md`.
+Gegenprobe zum Schluss. Dateien werden ueber den BROWSER geoeffnet
+(`file:///C:/Dev/...` in die Adresszeile, Strg+A, Strg+C) — nicht ueber
+Explorer, Notepad oder PowerShell. Die verbindliche Fassung steht in
+`CLAUDE.md`.
 Grund: zwei Arbeitskopien, mehrere Branches, drei Web-Oberflaechen — ohne das
 landet er in der falschen Datei oder der falschen Version.
 
@@ -374,7 +377,10 @@ Ausdrücklich zurückgestellt („erstmal das Gehirn voll fertig").
 #### 📋 Anweisungen an Andi: IMMER Schritt für Schritt (07.08.2026)
 
 Voller Pfad statt Dateiname · Branch dazusagen · Klick für Klick · und eine
-Gegenprobe zum Schluss. Die verbindliche Fassung steht in `CLAUDE.md`.
+Gegenprobe zum Schluss. Dateien werden ueber den BROWSER geoeffnet
+(`file:///C:/Dev/...` in die Adresszeile, Strg+A, Strg+C) — nicht ueber
+Explorer, Notepad oder PowerShell. Die verbindliche Fassung steht in
+`CLAUDE.md`.
 Grund: zwei Arbeitskopien, mehrere Branches, drei Web-Oberflaechen — ohne das
 landet er in der falschen Datei oder der falschen Version.
 

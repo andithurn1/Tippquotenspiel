@@ -189,6 +189,25 @@ und genau das ist mehrfach schiefgegangen.
 4. **Eine Gegenprobe zum Schluss**: woran erkennt er, dass es geklappt hat?
    Eine Anweisung ohne Erfolgskontrolle endet damit, dass er nachfragen muss.
 
+**🔴 Der Standard-Weg, eine Datei zu öffnen oder zu kopieren: der BROWSER.**
+Andi hat ihn am 07.08.2026 ausdrücklich als Vorgabe gesetzt, nachdem drei
+andere Wege zu lang waren.
+
+```
+file:///C:/Dev/Tippquotenspiel/<pfad>
+```
+in die Adresszeile, **Strg+A**, **Strg+C**. Zwei Schritte, fertig.
+
+⛔ **Nicht** anbieten, solange der Browser reicht: Explorer mit Rechtsklick
+(„Öffnen mit …", „ausgeblendete Elemente einblenden"), Notepad über
+Windows+R, `Get-Content | Set-Clipboard` in PowerShell. Alle drei sind länger
+und haben je einen Schritt, an dem es hakt — beim Rechtsklick die Frage, WO
+man klickt; bei `Set-Clipboard` die fehlende Ausgabe, die wie ein Fehler
+aussieht.
+
+⚠️ Für Befehle bleibt PowerShell natürlich der Weg — es geht hier nur ums
+ANSEHEN und KOPIEREN von Dateien.
+
 ⚠️ **Wegwerf-Dateien ausdrücklich als solche benennen.**
 `supabase/_quoten-update.sql` ist nach dem nächsten Abruf veraltet; wer sie
 später noch einmal ausführt, schreibt alte Quoten über neue — ohne
