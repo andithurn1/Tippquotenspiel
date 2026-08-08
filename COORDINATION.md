@@ -124,6 +124,108 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-07 (VI) · 🔴 **ÜBERGABE an das nächste Fenster** — Oberfläche ist dran
+
+> **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
+> außer `CLAUDE.md` brauchst du nichts zu lesen.
+
+#### Wo du landest
+
+```
+Branch   claude/koordinierte-arbeitsweise-fe6w1v   (gepusht)
+Tests    2089 grün · 39 skipped (Balance, ABSICHTLICH)
+Build    sauber · alle sieben Durchgänge ohne Befund
+```
+
+⛔ **„39 skipped" ist kein Fehler.** Balance-Tests sind stillgelegt, siehe
+`CLAUDE.md` ganz oben. Nicht reparieren.
+⚠️ `npm run lint` braucht ggf. einmal `npm install` (eslint kam später dazu).
+
+#### ▶️ DEIN AUFTRAG: Schritt 1 des Oberflächen-Umbaus zu Ende bringen
+
+Andi hat am 07.08. auf dem **iPhone 14** seinen Wunschaufbau begonnen und je
+Punkt aus vorgelegten Alternativen gewählt. Seine Auswahl ist verbindlich:
+
+| Punkt | Entscheidung |
+|---|---|
+| Menü-Knopf oben links | ✅ **erledigt** — `BackLink.jsx`, 48 px, gemessen |
+| Untertitel „Du als Admin" | **ganz weg** |
+| Überschrift „Teams" | → **„Wettbewerbe auswählen"** |
+| Text darunter | „Mannschaften und Begegnungen wählen, Regeln je Wettbewerb festlegen." |
+| Kachel-Aufbau | **Eine Spalte, große Zeilen**: `⚽ Wettbewerbe · Ligen & Teams · 3 gewählt ›` |
+| Bibliothek unten | **Eine Zeile**: „Empfehlungen verwalten ›" |
+
+Alles in `src/components/Spielerstellung.jsx` (die größte Datei im Projekt —
+in kleinen Schritten, nach jedem Build + Browser-Check).
+
+🔴 **Die Messung, an der du dich orientierst:** auf diesem Screen liegen
+**18 Tippziele unter 40 px** (bei 390 px Breite gemessen). Apple verlangt
+44 pt, Google 48 dp. Layout C räumt das größtenteils von selbst ab — große
+Zeilen sind große Ziele. Nach dem Umbau nachmessen:
+
+```js
+[...document.querySelectorAll('button,a')].filter(el=>{const b=el.getBoundingClientRect();return b.height>0&&b.height<40;}).length
+```
+
+#### ▶️ DANACH (Andis Konzept, in dieser Reihenfolge)
+
+**2. Ligen aufklappbar.** Liga anklicken → ihre Mannschaften klappen auf.
+
+**3. Sonderregeln JE LIGA.** Unter den Mannschaften ein Knopf, der ein
+Unterfenster öffnet: Derby-Vorauswahl, „Abstiegskampf" (letzte 5 Spieltage,
+Plätze 14–18 werden mitgetippt), weitere. Dazu einzelne Begegnungen von Hand
+hinzufügbar, mit unseren Derby-Empfehlungen.
+
+🔴 **Das ist der eigentliche Brocken, und der Grund steht hier:** die
+Spielauswahl (`rules.spiele`) gilt heute für die GANZE RUNDE. „Je Liga" heißt,
+sie muss je Wettbewerb werden — sonst gibt es zwei Wahrheiten darüber, welche
+Spiele zur Runde gehören. Nicht nebenbei machen.
+
+**Was es dafür schon gibt** (nicht neu erfinden):
+- **Derbys**: gepflegte Listen je Liga inkl. 2. Bundesliga (`DERBYS`/`findDerby`).
+- **Tabellenzonen**: `bigGame.js` kennt „oben Titel, unten Abstieg, Mitte
+  nichts" — die Logik für den Abstiegskampf liegt dort schon.
+- **Was fehlt**: Spiele NACH TABELLENPLATZ auswählen. `rules.spiele` kennt
+  Vereine, Spieltag-Bereich, Liste, Wettbewerbe, Phasen — keine Zone.
+
+⚠️ **Andis Frage dazu, beantwortet und verbindlich:** Tabellenplatz-Regeln
+gelten **nur zwischen Spieltagen**, nie zwischen zwei Spielen desselben
+Spieltags. Präzedenz ist das Big Game: `spieltagOeffnen` friert den Wert beim
+ÖFFNEN ein. Wer Freitag tippt, sähe sonst eine andere Tabelle als wer Sonntag
+tippt.
+
+#### ⚠️ Andis Vorgaben für JEDE Textänderung (stehen in `CLAUDE.md`)
+
+1. Anfrage beginnt mit `formulierungXXX` → **immer mehrere Alternativen**,
+   kurz und prägnant. Er wählt, DANN wird geändert. Nicht vorher bauen.
+2. **Weniger Text, dafür größer** — Beschriftungen wie Boxen.
+3. **Nominalstil**, nicht erklären: „Beschränke die Tipprunde auf …" statt
+   „Standardmäßig zählen alle Spiele …".
+4. Anweisungen an ihn **Schritt für Schritt**, Dateien über den **Browser**
+   (`file:///C:/Dev/…`, Strg+A, Strg+C).
+
+#### Was in dieser Sitzung sonst fertig wurde
+
+Regel-Grammatik vollständig (alle sechs Roadmap-Wünsche) · Duell-Schutzregeln
+am Store · Zwischenabrechnung nach Spielende samt Vergleich mit bis zu drei
+Mitspielern · Anmeldung per CODE (der Magic-Link scheitert in der
+Home-Bildschirm-App an iOS' eigenem Speicher) · Anzeige-Einstellungen am Konto
+· helles Theme + Platzkulisse · **2. Bundesliga mit echtem Spielplan und
+echten Quoten** · zwei neue Abnahmen (`sicht`, `gleich`).
+
+#### Offen bei ANDI (nicht bei dir)
+
+- Gegenprobe in Supabase: `select count(*) from matches where snapshot->>'quelle' = 'markt';` → erwartet **76**
+- `supabase/seed-matches-bl2.sql` ausführen, falls noch nicht geschehen
+- Supabase → Email Template „Magic Link" → `{{ .Token }}` ergänzen (sonst kommt kein Anmelde-Code)
+- Vercel: `ODDS_API_KEY` gesetzt? Spend Management: **Pause Projects auf `Off`** lassen
+
+⛔ **Nicht anfangen:** Balancing (Endphase, siehe `CLAUDE.md`), Symbolsystem,
+Animationen, Andis eigene Joker-Designs.
+
+---
+
+
 ### 2026-08-07 (V) · 🔴 **ÜBERGABE an das nächste Fenster** — die Grammatik steht, drei von vier Punkten sind ab
 
 > **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Alles darunter ist
