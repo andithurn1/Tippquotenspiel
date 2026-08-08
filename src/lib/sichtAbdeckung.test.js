@@ -75,9 +75,9 @@ describe("Jeder Regel-Block hat eine Spur oder eine Begründung", () => {
   // eine Zeile bekommen hat — genau so soll dieser Test sich verhalten. Er ist
   // kein „alles grün", sondern ein STAND: wird die letzte Anzeige gebaut,
   // schlägt er wieder an, und dann gehört die Zahl heruntergesetzt.
-  it("hält den bekannten Stand fest: 1 Block ohne Spieler-Anzeige", () => {
+  it("hält den bekannten Stand fest: KEIN Block mehr ohne Spieler-Anzeige", () => {
     const fehlend = ohneSpielerAnzeige(quellen);
-    expect(fehlend.sort()).toEqual(["tippEinfluss"]);
+    expect(fehlend).toEqual([]);
   });
 
   // 🔴 Die Gegenprobe zur Zeile darüber: dass `wrongPenalty` verschwunden ist,
@@ -87,5 +87,8 @@ describe("Jeder Regel-Block hat eine Spur oder eine Begründung", () => {
   it("`wrongPenalty` hat eine echte Zeile in der Aufschlüsselung", () => {
     expect(quellen["breakdown.js"]).toContain("wrongpenalty");
     expect(quellen["breakdown.js"]).toContain("Komplett daneben");
+    // Dito fuer den letzten Block: `tippEinfluss` ist verschwunden, weil die
+    // Abrechnung den Satz zeigt — nicht, weil ein Wort in `SPUREN` steht.
+    expect(quellen["Abrechnung.jsx"]).toContain("beschreibeTippEinfluss");
   });
 });

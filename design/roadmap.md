@@ -3163,3 +3163,14 @@ haben alle dasselbe Regelwerk → lohnt erst über mehrere Runden hinweg.
   häufiges Nachsehen zu Dauerfeuer trotz Obergrenze führte. Gemessen wird in
   einem rollenden 24-h-Fenster, nicht am Kalendertag.
   **Wirklich offen:** Web-Push/App als zweiter Kanal — die Naht dafür steht.
+
+### 🔎 Nebenbefund 07.08.2026: `public/reactions/sieger.mp4` fehlt
+
+Beim Browser-Check der Abrechnung: zwei 404 auf `/reactions/sieger.mp4`. Der
+Clip wird von `rankReaction` für den Tabellenführer angefordert und liegt nicht
+im `public`-Ordner. Bestand VOR den Änderungen dieser Sitzung und hat mit ihnen
+nichts zu tun — deshalb hier notiert statt nebenbei repariert.
+
+⚠️ Es fällt nicht auf, weil ein fehlendes `<video>` still bleibt: der Sieger
+sieht schlicht keine Reaktion. Beim Prüfen der übrigen Clips mitnehmen, ob noch
+weitere fehlen — die Liste der Namen steht in `reactions.js`.

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { createMockOddsSource, scoreTip, DEFAULT_RULES } from "@/lib/engine";
 import { getStore } from "@/lib/store";
+import { beschreibeTippEinfluss } from "@/lib/tippEinfluss";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -218,6 +219,26 @@ export default function Abrechnung() {
                 }}>{DATA.dist} {DATA.dist === 1 ? "Tor — hauchdünn" : "Tore"}</span>
               </div>
               <DistanceLadder active={stage >= 3} wertung={me} />
+            </div>
+          )}
+
+          {/* 🔴 Tipp-Einfluss — der letzte Regel-Block ohne Spieler-Anzeige
+              (gefunden mit `npm run sicht`, 07.08.2026). Die Regel bewegt das
+              Ergebnis-Raster mit den Tipps der Runde und greift beim WERTEN
+              (`mitTippEinfluss` in `scoreLeaderboard`), nicht beim Tippen —
+              deshalb steht der Satz hier und nicht in der Tippabgabe.
+              `beschreibeTippEinfluss()` gab es längst; aufgerufen wurde es nur
+              in der Spielerstellung, also im ADMIN-Screen.
+              ⚠️ Nur wenn die Regel wirklich an ist: ein Satz über eine
+              abgeschaltete Mechanik erklärt nichts und lässt den Spieler nach
+              einem Effekt suchen, den es nicht gibt. */}
+          {lvl === "voll" && gezeigt?.rules?.tippEinfluss?.staerke > 0 && (
+            <div style={{
+              ...show(3), marginTop: 14, fontSize: 11, color: C.muted, lineHeight: 1.5,
+              borderLeft: `2px solid ${C.line}`, paddingLeft: 10,
+            }}>
+              <strong style={{ color: C.text }}>Eure Tipps zählen mit: </strong>
+              {beschreibeTippEinfluss(gezeigt.rules.tippEinfluss)}
             </div>
           )}
 
