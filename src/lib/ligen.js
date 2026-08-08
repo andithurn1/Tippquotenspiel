@@ -16,11 +16,15 @@ import { getLaLigaMatches, PD_TEAM_RATINGS } from "./laLigaData";
 import { getSerieAMatches, SA_TEAM_RATINGS } from "./serieAData";
 import { getChampionsLeagueMatches, CL_TEAM_RATINGS } from "./championsLeagueData";
 import { getMlsMatches, MLS_TEAM_RATINGS } from "./mlsData";
+import { getZweiteLigaMatches, BL2_TEAM_RATINGS } from "./zweiteLigaData";
 
 // Reihenfolge = Anzeigereihenfolge. Die Champions League steht hinten, weil sie
 // keine eigene Klub-Heimat ist, sondern Teams aus den Ligen zusammenzieht.
 export const LIGEN = [
   { key: "bl", matches: getBundesligaMatches,     ratings: BL_RATINGS },
+  // Direkt hinter der Bundesliga: derselbe Verband, dieselbe Woche, und wer
+  // beide bespielt, will sie nebeneinander sehen.
+  { key: "bl2", matches: getZweiteLigaMatches,    ratings: BL2_TEAM_RATINGS },
   { key: "pl", matches: getPremierLeagueMatches,  ratings: PL_TEAM_RATINGS },
   { key: "pd", matches: getLaLigaMatches,         ratings: PD_TEAM_RATINGS },
   { key: "sa", matches: getSerieAMatches,         ratings: SA_TEAM_RATINGS },

@@ -16,6 +16,7 @@
 
 export const WETTBEWERBE = [
   { key: "bl", label: "Bundesliga",      kurz: "BL", land: "Deutschland" },
+  { key: "bl2", label: "2. Bundesliga",  kurz: "BL2", land: "Deutschland" },
   { key: "pl", label: "Premier League",  kurz: "PL", land: "England" },
   { key: "pd", label: "La Liga",         kurz: "PD", land: "Spanien" },
   { key: "sa", label: "Serie A",         kurz: "SA", land: "Italien" },

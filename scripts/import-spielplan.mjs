@@ -32,6 +32,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { normalisiereSpielplan, pruefeSpielplan } from "../src/lib/spielplan.js";
 import { TEAM_RATINGS } from "../src/lib/bundesligaData.js";
+import { BL2_TEAM_RATINGS } from "../src/lib/zweiteLigaData.js";
 import { PL_TEAM_RATINGS } from "../src/lib/premierLeagueData.js";
 import { PD_TEAM_RATINGS } from "../src/lib/laLigaData.js";
 import { SA_TEAM_RATINGS } from "../src/lib/serieAData.js";
@@ -49,6 +50,13 @@ const SAISON = 2026;
 // korrigiert, nicht der Alias.
 const ALIASE = {
   bl: { "SV 07 Elversberg": "SV Elversberg" },
+  // Leer: die Klubliste der 2. Liga ist direkt aus der Quelle uebernommen
+  // (getavailableteams), also stimmen die Schreibweisen ueberein. Ein Alias
+  // waere hier nur eine Stelle, an der eine veraltete Liste unauffaellig
+  // weiterlebt.
+  bl2: {},
+  // Die 2. Liga schreibt bei OpenLigaDB einige Klubs anders als unsere Liste.
+  // Wie oben: explizit, nie geraten.
   pl: {},
   pd: {},
   sa: {},
@@ -59,6 +67,7 @@ const ALIASE = {
 
 const LIGEN = {
   bl: { label: "Bundesliga", ratings: TEAM_RATINGS, openliga: "bl1" },
+  bl2: { label: "2. Bundesliga", ratings: BL2_TEAM_RATINGS, openliga: "bl2" },
   pl: { label: "Premier League", ratings: PL_TEAM_RATINGS, openliga: null },
   pd: { label: "La Liga", ratings: PD_TEAM_RATINGS, openliga: null },
   sa: { label: "Serie A", ratings: SA_TEAM_RATINGS, openliga: null },

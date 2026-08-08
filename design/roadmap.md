@@ -3220,3 +3220,35 @@ nur die Seite, sondern auch `/api/matchday/auto`. Ohne Cron öffnet sich kein
 Spieltag von selbst und der Big-Game-Wert wird nicht eingefroren. Bis zum
 28.08. folgenlos — danach nicht mehr. **Vor dem Launch prüfen, dass der Cron
 wirklich läuft**, nicht nur, dass die Seite lädt.
+
+### ⚽ 2. Bundesliga als siebter Wettbewerb (07.08.2026) — ECHTER Spielplan
+
+`zweiteLigaData.js` + Eintrag in `ligen.js` und `wettbewerbe.js`. Katalog wächst
+von 1636 auf **1942 Spiele** (bl 306 · bl2 306 · pl 380 · pd 380 · sa 380 ·
+cl 159 · mls 31). Spielplan echt von OpenLigaDB (`bl2-2026.js`, 306 Spiele,
+34 Spieltage); Quoten, Ergebnisse, Torschützen und Team-Stärken bleiben erzeugt.
+
+🔴 **Zwei Funde, die der Bau selbst geliefert hat:**
+
+1. **Klubs dürfen nicht in zwei Ligen stehen.** Der erste Anlauf hatte HSV,
+   1. FC Köln, Schalke und Paderborn in beiden Listen — der Vereinsfilter zog
+   damit bei einer reinen Bundesliga-Runde auch die 2. Liga mit, und
+   `spieltagsPunkte.test.js` schlug an („bei EINEM Wettbewerb ändert der
+   Schlüssel nichts": 38 statt 45 Spieltage). Ein Test, der eine Annahme über
+   die DATEN prüft, nicht über den Code — und genau deshalb hat er es gefunden.
+2. **Die Klubliste wird GEHOLT, nicht geraten.** Der zweite Anlauf stand auf
+   einer plausibel erfundenen Liste und wurde von `pruefeSpielplan` hart
+   abgebrochen: vier Klubs der echten Saison fehlten (Heidenheim, St. Pauli,
+   Wolfsburg, Cottbus), vier erfundene gab es nicht. Die endgültige Liste kommt
+   aus `getavailableteams/bl2/2026` — in der Schreibweise der Quelle, deshalb
+   ist `ALIASE.bl2` leer.
+
+⚠️ **Die Anstoßzeiten sind bewusst andere als in der 1. Liga** (Fr 18:30,
+Sa 13:00/20:30, So 13:30). Fielen beide auf dieselben Slots, lägen die
+Spieltage exakt übereinander, und die Zeitachse könnte sie nicht mehr staffeln
+— „Spieltag 5 der Runde" träfe dann 18 Spiele auf einmal. Beim echten
+Spielplan kommt das ohnehin aus der Quelle; die Slots greifen nur noch, falls
+die Plan-Datei fehlt.
+
+**Für den Live-Betrieb:** `supabase/seed-matches-bl2.sql` (306 Spiele) im
+SQL-Editor ausführen — oder die Gesamtdatei, wenn sie durchgeht.
