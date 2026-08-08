@@ -98,6 +98,11 @@ export default function Spielerstellung() {
   // Die Spielauswahl ist KEIN lokaler Zustand mehr, sondern Teil des
   // Regelwerks — nur so reist sie im Creator-Code mit.
   const [eigeneVereine, setEigeneVereine] = useState(false);
+  // Welche der großen Zeilen ist aufgeklappt (Andis Aufbau vom 07.08.2026)?
+  // Bewusst EINE auf einmal: auf 390 px schiebt eine offene Team-Liste alles
+  // andere so weit nach unten, dass zwei offene Bereiche nicht mehr in einen
+  // Blick passen — der Sinn der Zeilen war, den Screen kurz zu halten.
+  const [auswahlOffen, setAuswahlOffen] = useState(null);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -265,6 +270,19 @@ export default function Spielerstellung() {
   };
 
   const teamFilterInvalid = teamFilterOn && selectedTeams.length < 2;
+
+  // Der Stand, der RECHTS in der zugeklappten Zeile steht. Ohne ihn müsste man
+  // jede Zeile öffnen, um zu sehen, ob überhaupt etwas eingestellt ist — genau
+  // der Preis, den ein Aufklapp-Layout sonst kostet.
+  // „alle" ist dabei kein Platzhalter, sondern die Wahrheit: nichts angehakt
+  // heißt im Filter, dass alles dabei ist (`filterSpiele`).
+  const wettbewerbeStand = (() => {
+    const teile = [];
+    const w = sp.wettbewerbe?.length ?? 0;
+    if (w > 0) teile.push(`${w} gewählt`);
+    if (teamFilterOn && selectedTeams.length > 0) teile.push(`${selectedTeams.length} Teams`);
+    return teile.length > 0 ? teile.join(" · ") : "alle";
+  })();
 
   // ── „Was kommt am Ende dabei heraus?" ─────────────────────
   // Verteilung, Stärke und Ereignisse werden an drei Stellen eingestellt; der
@@ -456,17 +474,23 @@ export default function Spielerstellung() {
             </span>
             <button onClick={() => { setRules(DEFAULT_RULES); setPresetKey("standard"); }} style={{
               fontFamily: MONO, fontSize: 11, color: C.muted, cursor: "pointer",
-              background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 10px",
+              minHeight: 44, boxSizing: "border-box",
+              background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 14px",
             }}>zurücksetzen</button>
           </div>
           <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>
             {stufe === "einfach" ? "Wie soll eure Runde sein?" : "Regelwerk einstellen"}
           </div>
-          <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
-            {stufe === "einfach"
-              ? "Ein Klick genügt — den Rest stellen wir stimmig ein. Wer mag, geht danach ins Detail."
-              : "Du als Admin legst fest, wie mutig belohnt wird. Teile das fertige Regelwerk per Creator-Code — alle Mitspieler bekommen exakt dieselben Regeln."}
-          </p>
+          {/* Untertitel nur noch in Stufe 1. Der Erklärsatz „Du als Admin legst
+              fest …“ ist auf Andis Ansage (07.08.2026) GANZ weggefallen: er
+              stand über einem Screen, der sich selbst erklärt, kostete auf dem
+              iPhone drei Zeilen und wiederholte, was der Creator-Code-Block
+              weiter unten ohnehin sagt. */}
+          {stufe === "einfach" && (
+            <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+              Ein Klick genügt — den Rest stellen wir stimmig ein. Wer mag, geht danach ins Detail.
+            </p>
+          )}
 
           {/* Stufen-Umschalter: dieselbe Runde, nur mehr oder weniger sichtbar */}
           <div style={{ display: "flex", gap: 6, marginTop: 14, marginBottom: 4 }}>
@@ -503,26 +527,44 @@ export default function Spielerstellung() {
             />
           )}
 
-          {/* ⚠️ REIHENFOLGE: erst die Wettbewerbe, dann die Vereine.
-              Vorher stand die Vereins-Auswahl davor und zeigte ALLE Klubs aus
-              fünf Ligen in einer einzigen Wolke — über 90 Knöpfe, Bayern neben
-              Burnley neben Bologna. Das ist die grobe Entscheidung, also gehört
-              sie nach vorn; die Vereinsliste hängt dann davon ab. */}
-          <SectionTitle>Wettbewerbe</SectionTitle>
-          <SpielauswahlWettbewerbe spiele={sp} onChange={(neu) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...neu } })); }} />
-
-          {/* Teams — je Wettbewerb gruppiert, und nur aus den gewählten. */}
-          <SectionTitle>Teams</SectionTitle>
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Standardmäßig zählen alle Spiele der oben gewählten Wettbewerbe. Willst du
-            dich auf bestimmte Vereine beschränken (z. B. weniger Aufwand mit
-            Torschützen, oder ihr wollt nur eure Lieblingsklubs), wählt hier
-            mindestens 2 — ein Spiel zählt, sobald mindestens eine Seite dabei ist.
+          {/* ── Wettbewerbe auswählen ─────────────────────────────
+              Andis Aufbau vom 07.08.2026 (iPhone 14): EINE Spalte, große
+              Zeilen. Vorher lagen „Wettbewerbe" und „Teams" als zwei dauerhaft
+              offene Abschnitte untereinander — dreizehn Chips à 29 px, dazu
+              ein vierzeiliger Erklärabsatz. Von den 18 Tippzielen unter 40 px
+              auf diesem Screen saßen dreizehn allein hier.
+              Zwei Punkte, die den Umbau tragen: (1) große Zeilen SIND große
+              Ziele, die Messung erledigt sich mit dem Layout; (2) jede Zeile
+              trägt ihren Stand rechts, sonst müsste man sie öffnen, um zu
+              sehen, ob etwas eingestellt ist.
+              ⚠️ REIHENFOLGE innerhalb der Zeile: erst die Wettbewerbe, dann
+              die Vereine. Vorher stand die Vereins-Auswahl davor und zeigte
+              ALLE Klubs aus sieben Ligen in einer einzigen Wolke — über 90
+              Knöpfe, Bayern neben Burnley neben Bologna. Das ist die grobe
+              Entscheidung, also gehört sie nach vorn; die Vereinsliste hängt
+              dann davon ab. */}
+          <SectionTitle>Wettbewerbe auswählen</SectionTitle>
+          <p style={{ fontSize: 12.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.45 }}>
+            Mannschaften und Begegnungen wählen, Regeln je Wettbewerb festlegen.
           </p>
-          <Toggle label="Auf bestimmte Teams beschränken" on={teamFilterOn}
-            onChange={(on) => patchSpiele(on ? { modus: "teams" } : { modus: "alle", teams: [] })} />
+
+          <GrosseZeile
+            icon="⚽" titel="Wettbewerbe" unter="Ligen &amp; Teams" wert={wettbewerbeStand}
+            offen={auswahlOffen === "wettbewerbe"}
+            onClick={() => setAuswahlOffen((o) => (o === "wettbewerbe" ? null : "wettbewerbe"))}
+          >
+            <SpielauswahlWettbewerbe spiele={sp} onChange={(neu) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...neu } })); }} />
+
+            {/* Teams — je Wettbewerb gruppiert, und nur aus den gewählten. */}
+            <div style={{ marginTop: 14 }}>
+              <Toggle label="Auf bestimmte Teams beschränken" on={teamFilterOn}
+                onChange={(on) => patchSpiele(on ? { modus: "teams" } : { modus: "alle", teams: [] })} />
+            </div>
           {teamFilterOn && (
             <div style={{ marginTop: 8, marginBottom: 8 }}>
+              <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.4 }}>
+                Mindestens 2 Vereine — ein Spiel zählt, sobald eine Seite dabei ist.
+              </p>
               {teamGruppen.map((g) => (
                 <div key={g.key} style={{ marginBottom: 10 }}>
                   <div style={{
@@ -532,7 +574,8 @@ export default function Spielerstellung() {
                     <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{g.label}</span>
                     {/* Alle einer Liga auf einmal — sonst klickt man 18-mal. */}
                     <button onClick={() => toggleLiga(g.vereine)} style={{
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 10.5, padding: "3px 8px",
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "3px 12px",
+                      minHeight: 44, boxSizing: "border-box",
                       borderRadius: 999, background: "transparent", color: C.mint,
                       border: `1px solid ${C.line}`,
                     }}>{g.vereine.every((v) => selectedTeams.includes(v)) ? "keine" : "alle"}</button>
@@ -542,7 +585,8 @@ export default function Spielerstellung() {
                       const on = selectedTeams.includes(team);
                       return (
                         <button key={team} onClick={() => toggleTeam(team)} style={{
-                          cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
+                          cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "6px 12px", borderRadius: 999,
+                          minHeight: 44, boxSizing: "border-box",
                           background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                           border: `1px solid ${on ? C.mint + "66" : C.line}`,
                         }}>{team}</button>
@@ -583,20 +627,39 @@ export default function Spielerstellung() {
               })()}
             </div>
           )}
+          </GrosseZeile>
 
           {/* Die feste Liste — der Ausweg aus der UND-Verknüpfung aller
               anderen Dimensionen. Steht bewusst hinter ihnen: erst probiert
               man die Regel, dann zählt man einzeln auf. */}
-          <SpielauswahlListe spiele={sp} onChange={patchSpiele} />
+          <GrosseZeile
+            icon="📋" titel="Begegnungen" unter="Feste Liste statt Regel"
+            wert={listeOn ? `${(sp.matchIds ?? []).length} Spiele` : "aus"}
+            offen={auswahlOffen === "begegnungen"}
+            onClick={() => setAuswahlOffen((o) => (o === "begegnungen" ? null : "begegnungen"))}
+          >
+            <SpielauswahlListe spiele={sp} onChange={patchSpiele} />
+          </GrosseZeile>
 
           {/* Aufwand: wie viele Entscheidungen verlangt ein Spieltag? Eine
               Auskunft, kein Regler — deshalb in ALLEN drei Stufen sichtbar,
               nicht erst ab „anpassen" (design/gehaeuse-ui.md 1). */}
           <AufwandPanel rules={rules} kontext={aufwandKontext} />
 
-          {/* Presets: Startpunkt, danach bleibt alles frei einstellbar */}
-          {stufe !== "einfach" && <SectionTitle>Presets</SectionTitle>}
+          {/* Presets: Startpunkt, danach bleibt alles frei einstellbar.
+              Seit 08.08.2026 hinter EINER Zeile („Empfehlungen verwalten"),
+              wie Andi es am 07.08. für die Bibliothek festgelegt hat. Der
+              Baukasten-Grundsatz bleibt gewahrt: die kuratierten
+              Voreinstellungen sind jederzeit abrufbar — nur nicht mehr als
+              fünf offene Karten zwischen Auswahl und Reglern. Welche gerade
+              gilt, steht rechts in der Zeile. */}
           {stufe !== "einfach" && (<>
+          <GrosseZeile
+            icon="📚" titel="Empfehlungen verwalten"
+            wert={PRESETS.find((p) => p.key === presetKey)?.label ?? "eigenes"}
+            offen={auswahlOffen === "empfehlungen"}
+            onClick={() => setAuswahlOffen((o) => (o === "empfehlungen" ? null : "empfehlungen"))}
+          >
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 4 }}>
             {PRESETS.map((p) => {
               const active = presetKey === p.key;
@@ -651,6 +714,7 @@ export default function Spielerstellung() {
               </div>
             )}
           </div>
+          </GrosseZeile>
 
           {/* Name */}
           <Field label="Modus-Name">
@@ -1867,7 +1931,7 @@ export default function Spielerstellung() {
             </>
           ) : (
             <div style={{ background: `${C.mint}12`, border: `1px solid ${C.mint}44`, borderRadius: 14, padding: "14px 16px" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.mint }}>✓ „{created.name}" ist angelegt — deine aktive Runde</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.mint }}>✓ „{created.name}“ ist angelegt — deine aktive Runde</div>
               <div style={{ marginTop: 10, fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Beitritts-Code</div>
               <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: C.gold, marginTop: 4, letterSpacing: 3 }}>{created.join_code}</div>
               <button onClick={copyJoinCode} style={{
@@ -1905,7 +1969,8 @@ export default function Spielerstellung() {
               <button onClick={publish} disabled={publishing || !user} style={{
                 width: "100%", cursor: publishing || !user ? "default" : "pointer",
                 background: C.surface2, color: user ? C.text : C.muted, fontWeight: 700, fontSize: 13,
-                border: `1px solid ${C.line}`, borderRadius: 12, padding: "11px 0", opacity: publishing || !user ? 0.6 : 1,
+                border: `1px solid ${C.line}`, borderRadius: 12, padding: "11px 0", minHeight: 44,
+                opacity: publishing || !user ? 0.6 : 1,
               }}>{publishing ? "wird erstellt …" : user ? "Kurzcode erstellen & teilen" : "Zum Erstellen einloggen"}</button>
             ) : (
               <div>
@@ -1939,7 +2004,7 @@ export default function Spielerstellung() {
             <button onClick={load} disabled={!imp.trim()} style={{
               cursor: imp.trim() ? "pointer" : "default", background: C.surface2,
               color: imp.trim() ? C.text : C.muted, border: `1px solid ${C.line}`,
-              borderRadius: 12, padding: "0 16px", fontSize: 13, fontWeight: 600,
+              borderRadius: 12, padding: "0 16px", fontSize: 13, fontWeight: 600, minHeight: 44,
             }}>Laden</button>
           </div>
           {impErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{impErr}</div>}
@@ -1949,6 +2014,50 @@ export default function Spielerstellung() {
   );
 }
 
+
+// ── Große Zeile ────────────────────────────────────────────
+// Andis Aufbau vom 07.08.2026, wörtlich: „⚽ Wettbewerbe · Ligen & Teams ·
+// 3 gewählt ›“. Eine Spalte, große Zeilen — kein Kachelraster.
+//
+// Drei Dinge stecken darin, die nicht wegoptimiert werden dürfen:
+// 1. **Mindestens 56 px hoch.** Das ist der eigentliche Grund für dieses
+//    Layout: Apple verlangt 44 pt, Google 48 dp, und auf diesem Screen lagen
+//    18 Tippziele darunter. Ein großes Ziel entsteht hier von selbst.
+// 2. **Der Stand steht rechts, im zugeklappten Zustand.** Eine Zeile, die
+//    ihren Stand erst nach dem Öffnen zeigt, verlagert das Problem nur.
+// 3. **Aufklappen statt Unterseite.** Der eingestellte Wert und seine Wirkung
+//    (Spielzahl, Aufwand) bleiben auf demselben Screen — dieselbe Begründung
+//    wie bei der klebenden Ampel weiter unten.
+function GrosseZeile({ icon, titel, unter, wert, offen, onClick, children }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <button onClick={onClick} style={{
+        width: "100%", minHeight: 56, boxSizing: "border-box",
+        display: "flex", alignItems: "center", gap: 12,
+        textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
+        background: offen ? C.ink2 : C.surface,
+        border: `1px solid ${offen ? C.mint + "55" : C.line}`,
+        borderRadius: 14, padding: "12px 14px",
+      }}>
+        {icon && <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1 }}>{icon}</span>}
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontSize: 15, fontWeight: 700 }}>{titel}</span>
+          {unter && (
+            <span style={{ display: "block", fontSize: 12, color: C.muted, marginTop: 2 }}>{unter}</span>
+          )}
+        </span>
+        {wert && (
+          <span style={{ fontFamily: MONO, fontSize: 12, color: C.gold, flexShrink: 0 }}>{wert}</span>
+        )}
+        <span style={{
+          fontSize: 18, color: C.muted, flexShrink: 0, lineHeight: 1,
+          transform: offen ? "rotate(90deg)" : "none", transition: "transform .15s",
+        }}>›</span>
+      </button>
+      {offen && <div style={{ padding: "2px 2px 10px" }}>{children}</div>}
+    </div>
+  );
+}
 
 function SectionTitle({ children }) {
   return (
@@ -2011,6 +2120,8 @@ function Toggle({ label, on, onChange }) {
       textAlign: "left", gap: 12, marginBottom: 8, cursor: "pointer", color: C.text,
       background: C.surface, border: `1px solid ${on ? C.mint + "55" : C.line}`,
       borderRadius: 12, padding: "10px 14px", fontSize: 13, fontFamily: "inherit",
+      // 44 pt (Apple) / 48 dp (Google) — gilt für jeden Schalter dieses Screens.
+      minHeight: 44, boxSizing: "border-box",
     }}>
       <span>{label}</span>
       <span style={{

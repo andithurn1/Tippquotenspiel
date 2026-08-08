@@ -92,11 +92,11 @@ export default function SpielauswahlListe({ spiele, onChange }) {
 
   return (
     <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Feste Begegnungs-Liste</div>
-      <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
-        Für ein Turnier oder eine kurze Runde: es zählen genau die Spiele, die du
-        hier anhakst. Das ist auch der Weg für eine gemischte Auswahl — die
-        anderen Einschränkungen gelten sonst alle gleichzeitig.
+      {/* Keine eigene Überschrift mehr: der Block steht seit 08.08.2026 in der
+          aufgeklappten Zeile „Begegnungen" der Spielerstellung. */}
+      <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+        Genau die angehakten Spiele — für ein Turnier, eine kurze Runde oder eine
+        gemischte Auswahl. Die anderen Einschränkungen gelten sonst alle gleichzeitig.
       </p>
 
       <Toggle on={an} onChange={umschalten} />
@@ -196,7 +196,9 @@ function Toggle({ on, onChange }) {
   return (
     <button onClick={() => onChange(!on)} style={{
       display: "flex", alignItems: "center", gap: 9, cursor: "pointer",
-      fontFamily: "inherit", fontSize: 12.5, fontWeight: 700, padding: "9px 11px",
+      fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px 11px",
+      // 44 pt (Apple) / 48 dp (Google) — der Schalter maß 37 px.
+      minHeight: 44, boxSizing: "border-box",
       width: "100%", textAlign: "left", borderRadius: 11,
       background: on ? `${C.mint}18` : C.surface, color: on ? C.mint : C.muted,
       border: `1px solid ${on ? C.mint + "55" : C.line}`,

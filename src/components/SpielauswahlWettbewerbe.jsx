@@ -46,10 +46,12 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange }) {
 
   return (
     <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Wettbewerbe &amp; Phasen</div>
-      <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
-        Nichts ausgewählt = alles dabei. Für ein Spiel „nur aus dem Besten“ hier
-        eingrenzen — etwa nur die Champions League ab dem Achtelfinale.
+      {/* Keine eigene Überschrift mehr: seit 08.08.2026 steht dieser Block in
+          der aufgeklappten Zeile „Wettbewerbe" der Spielerstellung, die
+          Überschrift stand dadurch zweimal übereinander. */}
+      <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+        Nichts ausgewählt = alles dabei. Eingrenzen für „nur aus dem Besten“ —
+        etwa nur die Champions League ab dem Achtelfinale.
       </p>
 
       {wettbewerbe.length > 1 && (
@@ -103,11 +105,16 @@ function Gruppe({ titel, children }) {
   );
 }
 
+// ⚠️ `minHeight: 44` ist eine Vorgabe, kein Geschmack: Apple verlangt 44 pt,
+// Google 48 dp. Diese Chips waren 29 px hoch und stellten allein dreizehn der
+// 18 zu kleinen Tippziele auf dem Erstellungs-Screen (gemessen 07.08.2026 bei
+// 390 px Breite).
 function Chip({ an, label, zusatz, onClick }) {
   return (
     <button onClick={onClick} style={{
-      cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 10px",
-      borderRadius: 999, display: "flex", alignItems: "baseline", gap: 5,
+      cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "6px 13px",
+      minHeight: 44, boxSizing: "border-box",
+      borderRadius: 999, display: "flex", alignItems: "center", gap: 5,
       background: an ? `${C.mint}22` : C.surface,
       color: an ? C.mint : C.muted,
       border: `1px solid ${an ? C.mint + "66" : C.line}`,
