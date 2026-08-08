@@ -781,3 +781,23 @@ Datei JE WETTBEWERB, weil die Gesamtdatei (1,9 MB) den Supabase-SQL-Editor
 - Roadmap (Stand: Screens ✓, Spielerstellung ✓, Backend-Daten-Schicht ✓,
   UI an `getStore()` + E-Mail-Login ✓, Runden-Erstellung/-Beitritt ✓): als
   Nächstes echte Quoten-API mit Test-Key (Key nur serverseitig).
+
+### ✍️ Texte und Oberfläche: Andis Vorgaben (07.08.2026)
+
+**1. Beginnt eine Anfrage mit `formulierungXXX`, kommen IMMER mehrere
+Alternativen — ohne dass er darum bittet.** Kurz und prägnant, als Liste oder
+Schema. Er wählt aus, DANN wird geändert. Nicht vorher implementieren.
+
+**2. Weniger Text, dafür größer.** Sein Satz: „mir ist aufgefallen, dass oft
+weniger Text möglich ist, den man dafür größer darstellen kann — genauso wie
+die Boxen. Das ermöglicht, es später übersichtlicher zu gestalten." Gilt für
+Beschriftungen, Hinweise und Kartenzuschnitt gleichermaßen.
+
+**3. NOMINALSTIL statt Erklärsatz.** Nicht „Standardmäßig zählen alle Spiele
+…", sondern „Beschränke die Tipprunde auf einzelne Mannschaften mehrerer
+Wettbewerbe und konfiguriere, bei welchen Begegnungen welche Regeln,
+Modifikatoren und Joker gelten." Auffordernd und dicht, nicht erklärend.
+
+⚠️ Tippziele: gemessen mit `npm run sicht`/dem Handy-Durchgang lagen 17 Knöpfe
+der Spielerstellung unter 40 px. Apple verlangt 44 pt, Google 48 dp — neue
+Knöpfe nie darunter.
