@@ -101,3 +101,30 @@ die App ist also nie „kaputt", sie zeigt dann nur lokale Demo-Daten.
   `getStore()` statt aus den Hardcode-Arrays — inkl. Login-Flow (`supabase.auth`).
 - **Ergebnis-/Quoten-Job:** Ergebnisse landen serverseitig in `matches.result`
   (Roadmap Punkt 6: echte Quoten-API, Key nur serverseitig).
+
+## Anmeldung auf dem Handy: Code statt Link (07.08.2026)
+
+🔴 **Der Magic-Link funktioniert in der App auf dem Home-Bildschirm nicht** —
+und das ist kein Fehler im Code, sondern wie iOS es baut: eine zum
+Home-Bildschirm hinzugefügte Web-App bekommt einen EIGENEN Speicher, getrennt
+von Safari. Die Mail-App öffnet den Link in Safari, dort ist man danach
+angemeldet — die App-Kachel bleibt abgemeldet.
+
+Deshalb gibt es beide Wege: den Link (bequem am Rechner) und einen **Code zum
+Eintippen** (`verifyCode` in `AuthProvider`, Eingabefeld in `AuthBar`). Mit dem
+Code verlässt man die App nie.
+
+⚠️ **Einmalig im Supabase-Dashboard einzurichten, sonst enthält die Mail gar
+keinen Code:**
+
+Authentication → Email Templates → **Magic Link** → im Text `{{ .Token }}`
+ergänzen, z. B.:
+
+```
+Dein Code: {{ .Token }}
+
+Oder klick hier: {{ .ConfirmationURL }}
+```
+
+Ohne `{{ .Token }}` kommt weiterhin nur der Link, und das Eingabefeld in der App
+findet nichts zum Eintippen.

@@ -58,6 +58,30 @@ export default function AuthProvider({ children }) {
     if (error) throw error;
   };
 
+  // 🔴 Der zweite Weg hinein — und für die App auf dem HOME-BILDSCHIRM der
+  // einzige, der funktioniert (gemessen am 07.08.2026 auf Andis iPhone).
+  //
+  // Der Magic-Link scheitert dort bauartbedingt: die Mail-App öffnet ihn in
+  // SAFARI, und iOS gibt einer zum Home-Bildschirm hinzugefügten Web-App einen
+  // EIGENEN Speicher. Die Anmeldung landet im Browser, während die App-Kachel
+  // ausgeloggt bleibt. Das ist kein Fehler bei uns — so trennt iOS die beiden.
+  //
+  // Mit dem Code verlässt man die App nie: Mail lesen, sechs Ziffern
+  // eintippen, fertig. Der Link bleibt daneben bestehen, weil er auf dem
+  // Rechner der bequemere Weg ist.
+  //
+  // ⚠️ Damit die Mail den Code ENTHÄLT, muss in Supabase unter
+  // Authentication → Email Templates → „Magic Link" `{{ .Token }}` im Text
+  // stehen. Ohne das kommt weiterhin nur der Link, und das Eingabefeld hier
+  // findet nichts zum Eintippen.
+  const verifyCode = async (email, code) => {
+    const sb = getSupabaseBrowserClient();
+    if (!sb) throw new Error("Supabase nicht konfiguriert.");
+    const token = String(code ?? "").replace(/\s/g, "");
+    const { error } = await sb.auth.verifyOtp({ email, token, type: "email" });
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     const sb = getSupabaseBrowserClient();
     await sb?.auth.signOut();
@@ -134,7 +158,7 @@ export default function AuthProvider({ children }) {
   return (
     <AuthCtx.Provider value={{
       user, loading, isMock: !hasSupabaseEnv,
-      signInWithEmail, signOut, updateName, saveFanColors, exportMyData, deleteAccount,
+      signInWithEmail, verifyCode, signOut, updateName, saveFanColors, exportMyData, deleteAccount,
     }}>
       {children}
     </AuthCtx.Provider>

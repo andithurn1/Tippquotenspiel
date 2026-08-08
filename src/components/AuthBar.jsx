@@ -9,11 +9,23 @@ import { C, MONO } from "@/lib/theme";
 // Kopfzeile mit Login-Status. Im Mock-Betrieb nur ein dezenter Demo-Hinweis;
 // im Live-Betrieb E-Mail-Login (Magic-Link) bzw. Abmelden.
 export default function AuthBar() {
-  const { user, loading, isMock, signInWithEmail, signOut } = useAuth();
+  const { user, loading, isMock, signInWithEmail, verifyCode, signOut } = useAuth();
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [state, setState] = useState("idle"); // idle | sending | sent | error
   const [err, setErr] = useState("");
+  // Der Code aus der Mail — der Weg, der auf dem Handy als einziger trägt.
+  const [code, setCode] = useState("");
+  const [pruefe, setPruefe] = useState(false);
+  const [codeFehler, setCodeFehler] = useState("");
+
+  const pruefeCode = async () => {
+    setPruefe(true); setCodeFehler("");
+    try { await verifyCode(email.trim(), code); }
+    catch (ex) {
+      setCodeFehler(ex?.message || "Der Code stimmt nicht — oder er ist abgelaufen.");
+    } finally { setPruefe(false); }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -75,8 +87,49 @@ export default function AuthBar() {
         marginBottom: 18, background: `${C.mint}12`, border: `1px solid ${C.mint}44`,
         borderRadius: 12, padding: "12px 14px", fontSize: 13, color: C.text, lineHeight: 1.5,
       }}>
-        <b style={{ color: C.mint }}>✓ Mail unterwegs.</b> Öffne den Link in deiner E-Mail
-        ({email}) auf demselben Gerät — danach bist du eingeloggt.
+        <b style={{ color: C.mint }}>✓ Mail unterwegs</b> an {email}.
+
+        {/* 🔴 ZWEI Wege, und der zweite ist auf dem Handy der EINZIGE, der
+            trägt: eine zum Home-Bildschirm hinzugefügte Web-App hat unter iOS
+            einen eigenen Speicher. Der Link aus der Mail öffnet Safari — man
+            ist dann im Browser angemeldet und in der App-Kachel weiterhin
+            nicht. Mit dem Code verlässt man die App nie.
+            Deshalb steht der Code OBEN und der Link nur als Nebensatz. */}
+        <div style={{ marginTop: 10 }}>
+          <label style={{ fontSize: 12, color: C.muted, display: "block", marginBottom: 5 }}>
+            Code aus der Mail eingeben
+          </label>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              style={{
+                flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 10,
+                border: `1px solid ${C.line}`, background: C.ink, color: C.text,
+                fontSize: 17, fontFamily: MONO, letterSpacing: 3, outline: "none",
+              }} />
+            <button type="button" onClick={pruefeCode}
+              disabled={code.trim().length < 6 || pruefe}
+              style={{
+                padding: "12px 18px", borderRadius: 10, border: "none",
+                background: code.trim().length < 6 ? C.surface : C.mint,
+                color: code.trim().length < 6 ? C.muted : C.ink,
+                fontWeight: 700, fontSize: 15,
+                cursor: code.trim().length < 6 ? "default" : "pointer",
+              }}>{pruefe ? "…" : "Los"}</button>
+          </div>
+          {codeFehler && (
+            <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{codeFehler}</div>
+          )}
+          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+            Am Rechner kannst du stattdessen den Link in der Mail anklicken. Auf dem
+            Handy nimm den Code — der Link öffnet den Browser, und die App auf dem
+            Home-Bildschirm bliebe abgemeldet.
+          </div>
+        </div>
       </div>
     );
   }
