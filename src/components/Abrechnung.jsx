@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { createMockOddsSource, scoreTip, DEFAULT_RULES } from "@/lib/engine";
 import { getStore } from "@/lib/store";
-import { beschreibeTippEinfluss } from "@/lib/tippEinfluss";
+import { beschreibeTippEinfluss, mitTippEinfluss } from "@/lib/tippEinfluss";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -106,7 +106,20 @@ export default function Abrechnung() {
       if (!live) return;
       // Der JÜNGSTE gewertete Tipp — chronologisch, nicht nach Spieltags-Zahl:
       // über mehrere Wettbewerbe sagt die Zahl nichts über die Reihenfolge.
-      const meine = (entries ?? [])
+      // 🔴 GEMESSEN am 07.08.2026: 53 von 120 Tipps standen hier anders als im
+      // Leaderboard, bis zu 445 Punkte Unterschied. Grund: `scoreLeaderboard`
+      // rechnet über `mitTippEinfluss(entries, rules)` — das Ergebnis-Raster
+      // wird von den Tipps der Runde mitbewegt —, diese Ansicht nahm aber den
+      // ROHEN Snapshot des Eintrags. Bei eingeschaltetem `tippEinfluss` zeigte
+      // dieselbe Wertung zwei Zahlen: die große oben und die Tabellenzeile
+      // desselben Spielers darunter.
+      //
+      // ⚠️ Gemischt wird mit dem RUNDEN-Regelwerk, nicht mit dem des
+      // Spieltags: die Mischung ist eine Eigenschaft der Runde und muss
+      // dieselbe sein wie im Leaderboard. Ist die Regel aus (Vorgabe), kommen
+      // die Einträge unverändert zurück — kein Kopieren, kein Unterschied.
+      const gewertet = mitTippEinfluss(entries ?? [], round?.rules ?? DEFAULT_RULES);
+      const meine = gewertet
         .filter((e) => e.userId === meId && e.result && e.snapshot)
         .sort((a, b) => new Date(a.kickoff ?? 0) - new Date(b.kickoff ?? 0));
       const letzter = meine[meine.length - 1] ?? null;
