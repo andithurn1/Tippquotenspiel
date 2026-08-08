@@ -230,6 +230,36 @@ Bausteine. Der Simulator bleibt für die Frage „**sieht er die Ebene
 zurückgestellt. Begründung im Nachrichten-Log von `COORDINATION.md`,
 Eintrag 2026-08-05 (IV).
 
+### 📧 Anmelde-Mail: eigener SMTP-Versand ist ein LAUNCH-Blocker (08.08.2026)
+
+**Der Befund:** Supabase lässt auf dem Gratis-Tarif die Mail-Vorlagen nicht
+bearbeiten („Set up custom SMTP to edit templates"). Damit ist `{{ .Token }}`
+nicht in die Mail zu bekommen — der sechsstellige Anmelde-Code, der in
+`CLAUDE.md` und in mehreren Übergaben als „Andi muss nur die Vorlage ergänzen"
+stand, war **nicht herstellbar**, nicht bloß unerledigt.
+
+✅ **Sofort behoben, ohne Supabase anzufassen:** das Anmelde-Feld nimmt jetzt
+auch den KOPIERTEN LINK aus der Standard-Mail (`src/lib/anmeldung.js`); in ihm
+steckt derselbe Token als `token_hash`. Damit funktioniert die Anmeldung in der
+Home-Bildschirm-App wieder.
+
+🔴 **Was trotzdem offen bleibt und vor dem 28.08. erledigt sein muss:** der
+eingebaute Mailversand von Supabase ist ausdrücklich für die Entwicklung
+gedacht und stark mengenbegrenzt. Für eine Runde mit echten Mitspielern
+braucht es einen eigenen SMTP-Versand.
+
+**Zu prüfen, bevor jemand eingeladen wird** (in dieser Reihenfolge):
+1. Supabase → Authentication → **Rate Limits**: wie viele Mails pro Stunde
+   stehen dort wirklich? Die Zahl ist die harte Grenze, nicht die Vermutung.
+2. Testen, ob eine Mail an eine Adresse ankommt, die **nicht** im Supabase-Team
+   ist. Genau daran scheitern solche Aufbauten sonst still.
+3. Erst dann SMTP wählen. Ohne eigene Domain ist ein Anbieter nötig, der eine
+   einzelne Absenderadresse verifiziert; mit Domain ist die Auswahl größer.
+
+**Nebeneffekt, der die eigentliche Belohnung ist:** mit eigenem SMTP werden die
+Vorlagen bearbeitbar, und dann kann der sechsstellige Code doch noch in die
+Mail. Das Eingabefeld kann beides schon.
+
 ### 📱 Tippziele: ALLE DREI STUFEN sauber (08.08.2026) — ✅ erledigt
 
 Gemessen bei 390 px (iPhone 14), Tippziele unter 44 px:

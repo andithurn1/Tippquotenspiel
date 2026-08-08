@@ -110,21 +110,45 @@ Home-Bildschirm hinzugefügte Web-App bekommt einen EIGENEN Speicher, getrennt
 von Safari. Die Mail-App öffnet den Link in Safari, dort ist man danach
 angemeldet — die App-Kachel bleibt abgemeldet.
 
-Deshalb gibt es beide Wege: den Link (bequem am Rechner) und einen **Code zum
-Eintippen** (`verifyCode` in `AuthProvider`, Eingabefeld in `AuthBar`). Mit dem
-Code verlässt man die App nie.
+Deshalb gibt es beide Wege: den Link (bequem am Rechner) und ein Feld in der
+App (`verifyCode` in `AuthProvider`, Eingabefeld in `AuthBar`). Damit verlässt
+man die App nie.
 
-⚠️ **Einmalig im Supabase-Dashboard einzurichten, sonst enthält die Mail gar
-keinen Code:**
+### 🔴 Was in dieses Feld gehört — und warum nicht der Code (geprüft 08.08.2026)
 
-Authentication → Email Templates → **Magic Link** → im Text `{{ .Token }}`
-ergänzen, z. B.:
+Das Feld nimmt **zweierlei**: sechs Ziffern, oder den **kopierten Link** aus
+der Mail. Welches, entscheidet `leseAnmeldung` (`src/lib/anmeldung.js`).
+
+**Der Code ist derzeit nicht zu haben, und das ist keine vergessene
+Einstellung.** Um ihn in die Mail zu bekommen, müsste unter Authentication →
+Emails → „Magic Link" `{{ .Token }}` im Text stehen — und **Supabase lässt die
+Vorlagen auf dem Gratis-Tarif nicht bearbeiten**: über dem Formular steht
+„Set up custom SMTP to edit templates". Die Anleitung, die hier früher stand,
+war damit undurchführbar.
+
+**Der Link tut es genauso**, weil derselbe Token darin steckt:
 
 ```
-Dein Code: {{ .Token }}
-
-Oder klick hier: {{ .ConfirmationURL }}
+https://<projekt>.supabase.co/auth/v1/verify
+  ?token=pkce_abc123…&type=magiclink&redirect_to=https://…
 ```
 
-Ohne `{{ .Token }}` kommt weiterhin nur der Link, und das Eingabefeld in der App
-findet nichts zum Eintippen.
+`verifyOtp({ token_hash, type })` nimmt ihn entgegen. In der App: Link in der
+Mail **gedrückt halten → „Link kopieren"** → einsetzen.
+⚠️ Nicht antippen — der Link gilt einmal, und ein Antippen öffnet Safari statt
+der App.
+
+⚠️ Drei Dinge, die `leseAnmeldung` deshalb kann und die niemand wegkürzen
+sollte: `type` wird aus dem Link ÜBERNOMMEN (`magiclink` vs. `signup` — mit dem
+falschen Typ lehnt `verifyOtp` einen gültigen Token ab), `token` UND
+`token_hash` werden gelesen (die Schreibweise hängt an der Supabase-Version),
+und angehängte Klammern/Umbrüche der Mail-Programme fliegen weg.
+
+### 📧 Eigener SMTP-Versand — LAUNCH-Blocker
+
+Der eingebaute Mailversand von Supabase ist für die Entwicklung gedacht und
+mengenbegrenzt. Vor der ersten Runde mit echten Mitspielern: Rate Limits im
+Dashboard nachsehen und testen, ob eine Mail an eine Adresse **außerhalb des
+Supabase-Teams** ankommt. Details in `design/roadmap.md`.
+Mit eigenem SMTP werden die Vorlagen bearbeitbar — dann kann der sechsstellige
+Code doch noch in die Mail, das Eingabefeld kann ihn längst.

@@ -215,6 +215,15 @@ Fehlermeldung. Bei jeder Anweisung dazusagen, ob die Datei bleibt oder weg kann.
 
 ### ⚙️ Werkzeug-Fallen auf diesem Rechner (Account 1 / Andi)
 
+- 🔴 **Der Anmelde-CODE ist auf dem Gratis-Tarif nicht herstellbar** (geprüft
+  08.08.2026). „Ergänze `{{ .Token }}` in der Magic-Link-Vorlage" stand hier
+  und in drei Übergaben als offene Nutzer-Aufgabe — **Supabase lässt die
+  Vorlagen ohne eigenen SMTP-Versand gar nicht bearbeiten** („Set up custom
+  SMTP to edit templates"). Die Aufgabe war also nicht liegengeblieben, sie war
+  unmöglich. Gelöst über den **kopierten Link** aus der Standard-Mail: darin
+  steckt derselbe Token (`src/lib/anmeldung.js`, `docs/BACKEND.md`).
+  **Merksatz daraus:** eine Nutzer-Aufgabe, die dreimal offen bleibt, ist
+  vielleicht nicht vergessen worden — erst nachsehen, ob sie überhaupt geht.
 - **Node ist NICHT im PATH.** Vor jedem `npm`-Aufruf im Bash-Tool:
   ```bash
   export PATH="/c/Users/andit/AppData/Local/Microsoft/WinGet/Packages/OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe/node-v24.18.0-win-x64:$PATH"
