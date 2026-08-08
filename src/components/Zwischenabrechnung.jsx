@@ -96,14 +96,17 @@ export default function Zwischenabrechnung() {
       aria-modal="true"
       aria-label="Was passiert ist, seit du zuletzt da warst"
       style={{
-        position: "fixed", inset: 0, zIndex: 60, background: "rgba(6,8,20,0.86)",
+        // Heller Vorhang statt dunklem: auf weißem Grund wirkt ein dunkler
+        // Abdunkler wie ein Fremdkörper aus dem alten Theme.
+        position: "fixed", inset: 0, zIndex: 60, background: "rgba(17,20,28,0.35)",
+        backdropFilter: "blur(3px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: 16, fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
       }}>
       <div style={{
         background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 18,
         width: "100%", maxWidth: 460, maxHeight: "86vh", display: "flex", flexDirection: "column",
-        boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+        boxShadow: "0 24px 60px rgba(17,20,28,0.18)",
       }}>
         <div style={{ padding: "16px 18px 10px" }}>
           <div style={{

@@ -8,8 +8,8 @@ export default function manifest() {
       "Quoten-gewichtetes Tippspiel unter Freunden — mutige Tipps über echte Quoten statt fester Punkte.",
     start_url: "/",
     display: "standalone",
-    background_color: "#0B0E1F",
-    theme_color: "#0B0E1F",
+    background_color: "#FFFFFF",
+    theme_color: "#FFFFFF",
     lang: "de",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },

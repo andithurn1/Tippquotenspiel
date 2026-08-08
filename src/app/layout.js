@@ -4,6 +4,7 @@ import RoundProvider from "@/components/RoundProvider";
 import ThemeProvider from "@/components/ThemeProvider";
 import NotifyRunner from "@/components/NotifyRunner";
 import Zwischenabrechnung from "@/components/Zwischenabrechnung";
+import Platzkulisse from "@/components/Platzkulisse";
 
 export const metadata = {
   title: "Tippquotenspiel",
@@ -25,7 +26,7 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: "#0B0E1F",
+  themeColor: "#FFFFFF",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -34,7 +35,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="de">
-      <body style={{ margin: 0, background: "#0B0E1F", minHeight: "100vh" }}>
+      <body style={{ margin: 0, background: "#FFFFFF", minHeight: "100vh" }}>
         <AuthProvider>
           <RoundProvider>
             <PrefsProvider>
@@ -43,6 +44,9 @@ export default function RootLayout({ children }) {
                     Benachrichtigung fällig ist. Gehört ins Layout, weil eine
                     Erinnerung nicht davon abhängen darf, auf welchem Screen
                     man gerade steht. */}
+                {/* Fußball-Andeutung am Rand — reine Dekoration, ganz hinten
+                    und nicht anklickbar. Begründung in der Datei. */}
+                <Platzkulisse />
                 <NotifyRunner />
                 {/* Meldet sich beim Öffnen, wenn Spiele fertig geworden sind,
                     auf die man getippt hat — aus demselben Grund hier und

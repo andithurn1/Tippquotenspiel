@@ -15,32 +15,55 @@
 // ============================================================
 
 // ── Grundpalette ────────────────────────────────────────────
+// ── 🔴 HELL seit 07.08.2026 (Andi) ──────────────────────────
+// „Cleanes Weiß mit schwarzer Schrift, dezente Fußball-Akzente am Rand."
+//
+// Die Namen bleiben ALLE gleich — `ink` heißt weiter `ink`, obwohl es jetzt
+// Weiß ist. Das ist Absicht: 65 Komponenten sprechen diese Tokens an, und ein
+// Umbenennen wäre ein Cross-Cutting-Umbau ohne inhaltlichen Gewinn. Gemeint
+// war nie „die Farbe Tinte", sondern „die hinterste Fläche".
+//
+// ⚠️ Zwei Dinge, die beim Umdrehen kaputtgehen, wenn man sie übersieht:
+// (1) Die LINIEN waren weiß-transparent — auf Weiß sind sie unsichtbar. Sie
+//     müssen schwarz-transparent werden, nicht bloß heller.
+// (2) Die SIGNALFARBEN waren für dunklen Grund gewählt (hell und leuchtend).
+//     Auf Weiß haben Mint und Gold viel zu wenig Kontrast; sie sind hier
+//     abgedunkelt, damit sie als Schrift lesbar bleiben. Ihre BEDEUTUNG
+//     ändert sich nicht — grün gut, rot schlecht, gold „dein Wert".
 export const COLORS = {
   // Flächen, von hinten nach vorn
-  ink: "#0B0E1F",        // Seitenhintergrund
-  ink2: "#12172E",       // abgesetzte Karte
-  surface: "#1A2040",    // Bedienelement (Knopf, Feld)
-  surface2: "#232A50",   // Bedienelement, hervorgehoben
+  ink: "#FFFFFF",        // Seitenhintergrund
+  ink2: "#F7F8FA",       // abgesetzte Karte
+  surface: "#F0F2F5",    // Bedienelement (Knopf, Feld)
+  surface2: "#E6E9EF",   // Bedienelement, hervorgehoben
 
-  // Linien
-  line: "rgba(255,255,255,0.09)",        // Standard-Trennlinie
-  lineStrong: "rgba(255,255,255,0.14)",  // deutlichere Kante (z. B. Popover)
+  // Linien — schwarz-transparent, sonst auf Weiß unsichtbar
+  line: "rgba(17,20,28,0.10)",        // Standard-Trennlinie
+  lineStrong: "rgba(17,20,28,0.18)",  // deutlichere Kante (z. B. Popover)
 
   // Schrift
-  text: "#EDEEF6",       // Fließtext
-  muted: "#8A90B4",      // Nebeninfo, Beschriftung
-  ghost: "rgba(255,255,255,0.15)",  // kaum sichtbar (ausgeblendete Werte)
+  text: "#11141C",       // Fließtext — fast Schwarz, nicht reines #000
+  muted: "#5C6475",      // Nebeninfo, Beschriftung
+  ghost: "rgba(17,20,28,0.22)",  // kaum sichtbar (ausgeblendete Werte)
 
-  // Signalfarben — tragen im Spiel feste Bedeutung
-  gold: "#F5C451",       // Hervorhebung, Joker, „dein Wert"
-  mint: "#54E0A0",       // positiv, bestätigt, Erfolg
-  coral: "#FF5470",      // negativ, Warnung, Verlust
+  // Signalfarben — feste Bedeutung, für hellen Grund abgedunkelt
+  gold: "#B47B00",       // Hervorhebung, Joker, „dein Wert"
+  mint: "#0E9F6E",       // positiv, bestätigt, Erfolg
+  coral: "#D62B4E",      // negativ, Warnung, Verlust
 
   // Neutrale Akzente — reine Unterscheidung, ohne Wertung
-  sky: "#4FD1E8",        // Verlauf, Historie
-  indigo: "#8B9BFF",     // Admin-Bereiche, Tendenz-Ebene
-  violet: "#B98BFF",     // persönliche Einstellungen
-  bar: "#4A5488",        // neutraler Balken im Diagramm
+  sky: "#0E7C93",        // Verlauf, Historie
+  indigo: "#4453C4",     // Admin-Bereiche, Tendenz-Ebene
+  violet: "#7A45C4",     // persönliche Einstellungen
+  bar: "#9AA3B8",        // neutraler Balken im Diagramm
+
+  // ── Fußball-Akzente, bewusst sehr blass ───────────────────
+  // Für Ornamente am RAND (Rasen, Netz, Linien). Sie sind kein Signal und
+  // dürfen nie mit den Farben oben verwechselt werden — deshalb eigene Namen
+  // und ein Kontrast, der zum Lesen absichtlich zu schwach ist.
+  rasen: "#E8F2E4",      // Rasengrün, sehr blass
+  rasenLinie: "rgba(17,20,28,0.06)",  // Kreidelinie
+  netz: "rgba(17,20,28,0.05)",        // Tornetz-Raster
 };
 
 // Kurzname `C` — so heißen die Objekte in den Screens bisher schon, dadurch

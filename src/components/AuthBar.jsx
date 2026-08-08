@@ -143,7 +143,7 @@ function NameOnboarding() {
             borderRadius: 12, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={!name.trim() || state === "saving"} style={{
-          cursor: name.trim() && state !== "saving" ? "pointer" : "default", background: C.gold, color: "#0B0E1F",
+          cursor: name.trim() && state !== "saving" ? "pointer" : "default", background: C.gold, color: "#FFFFFF",
           fontWeight: 700, fontSize: 14, border: "none", borderRadius: 12, padding: "0 16px",
         }}>{state === "saving" ? "…" : "Los"}</button>
       </div>
