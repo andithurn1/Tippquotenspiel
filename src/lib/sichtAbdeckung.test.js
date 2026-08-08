@@ -71,8 +71,21 @@ describe("Jeder Regel-Block hat eine Spur oder eine Begründung", () => {
   // sind dem Spieler bis heute unsichtbar. Wird eine Anzeige gebaut, schlägt
   // sie an — und dann gehört die Zahl heruntergesetzt, nicht der Test
   // gelöscht.
-  it("hält den bekannten Stand fest: 2 Blöcke ohne Spieler-Anzeige", () => {
+  // Stand 07.08.2026: die Zahl ist von 2 auf 1 gesunken, weil `wrongPenalty`
+  // eine Zeile bekommen hat — genau so soll dieser Test sich verhalten. Er ist
+  // kein „alles grün", sondern ein STAND: wird die letzte Anzeige gebaut,
+  // schlägt er wieder an, und dann gehört die Zahl heruntergesetzt.
+  it("hält den bekannten Stand fest: 1 Block ohne Spieler-Anzeige", () => {
     const fehlend = ohneSpielerAnzeige(quellen);
-    expect(fehlend.sort()).toEqual(["tippEinfluss", "wrongPenalty"]);
+    expect(fehlend.sort()).toEqual(["tippEinfluss"]);
+  });
+
+  // 🔴 Die Gegenprobe zur Zeile darüber: dass `wrongPenalty` verschwunden ist,
+  // liegt an einer ECHTEN Anzeige und nicht an einer nachgetragenen Spur.
+  // Ohne diesen Fall könnte man jede Lücke wegdefinieren, indem man ein Wort
+  // in `SPUREN` schreibt — und der Stand-Test stünde weiter grün da.
+  it("`wrongPenalty` hat eine echte Zeile in der Aufschlüsselung", () => {
+    expect(quellen["breakdown.js"]).toContain("wrongpenalty");
+    expect(quellen["breakdown.js"]).toContain("Komplett daneben");
   });
 });

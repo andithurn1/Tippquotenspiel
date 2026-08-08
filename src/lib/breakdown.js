@@ -146,6 +146,27 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
     }
   }
 
+  // ── 3b) Abzug für einen komplett danebenliegenden Tipp ────
+  // 🔴 Gefunden mit `npm run sicht` (07.08.2026): `wrongPenalty` greift, ist
+  // einstellbar und reist im Creator-Code mit — kam aber in KEINER Anzeige für
+  // den Spieler vor. Wer den Abzug abbekam, sah eine kleinere Zahl und keinen
+  // Grund.
+  //
+  // ⚠️ Erkannt am ZUSTAND, nicht am Regelwert: `resultPart` ist genau dann
+  // negativ, wenn die Engine auf `rules.wrongPenalty` zurückgefallen ist
+  // (Sieger falsch UND nichts aus der Nähe). Über `rules.wrongPenalty < 0`
+  // geprüft stünde die Zeile auch bei einem Tipp da, den der Abzug gar nicht
+  // getroffen hat — eine Behauptung über den Tipp, die nicht stimmt.
+  if (s.resultPart < 0) {
+    posten.push({
+      key: "wrongpenalty",
+      label: "Komplett daneben",
+      art: "summe",
+      wert: zeige(s.resultPart),
+      hinweis: "Weder Sieger noch Ergebnis-Nähe getroffen — diese Runde zieht dafür ab.",
+    });
+  }
+
   // ── 4) Favoriten-Reinfall (schließt den Sieger-Boden aus) ─
   if (s.favFlop > 0) {
     posten.push({
