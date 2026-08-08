@@ -230,6 +230,30 @@ Bausteine. Der Simulator bleibt für die Frage „**sieht er die Ebene
 zurückgestellt. Begründung im Nachrichten-Log von `COORDINATION.md`,
 Eintrag 2026-08-05 (IV).
 
+### 📱 Tippziele: Spielerstellung ✅, Profi-Stufe offen (08.08.2026)
+
+**Erledigt:** die Spielerstellung in Stufe „einfach" hatte bei 390 px Breite
+**18 Tippziele unter 40 px**, jetzt **0** — der Umbau auf große Zeilen
+(Andis Layout, Schritt 1) hat dreizehn davon von selbst abgeräumt, der Rest
+kam über `minHeight: 44` an Chips, Schaltern und Knöpfen.
+
+**Offen, und nicht nebenbei zu machen:** dieselbe Messung in der **Profi-Stufe**
+zählt rund **110** zu kleine Ziele. Das sind die Regler- und Modus-Kataloge
+quer durch `JokerGrundform.jsx`, `LimitKlassen.jsx`, `Drehrad.jsx`,
+`Ereignisse.jsx`, `WettbewerbGewichte.jsx` und die Stepper in
+`Spielerstellung.jsx` selbst — überall dieselbe Bauform: eine Reihe kleiner
+Modus-Knöpfe à 22–30 px.
+
+⚠️ **Nicht durch stumpfes `minHeight: 44` erledigen.** Bei acht Modus-Knöpfen
+nebeneinander wird daraus eine Wand aus Kacheln; hier gehört dieselbe Frage
+gestellt wie in Schritt 1 — welche dieser Reihen ist überhaupt eine Reihe, und
+welche wäre eine Zeile mit Stand (`GrosseZeile` in `Spielerstellung.jsx`).
+Messbefehl, damit niemand raten muss:
+
+```js
+[...document.querySelectorAll('button,a')].filter(el=>{const b=el.getBoundingClientRect();return b.height>0&&b.height<40;}).length
+```
+
 ### 🔴 Ereignisse: der Trost-Joker war nicht angeschlossen (06.08.2026) — ✅ behoben
 
 Dritter Fund derselben Sorte wie beim Versäumnis (`autoTip.js`) und beim

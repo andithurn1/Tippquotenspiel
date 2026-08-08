@@ -59,6 +59,7 @@ ausführen.
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
+| 1 (Andi) | ~~**Oberflächen-Umbau Schritt 1** (`Spielerstellung.jsx`, `SpielauswahlWettbewerbe.jsx`, `SpielauswahlListe.jsx`)~~ — alle sechs Punkte aus Andis iPhone-Durchgang; 18 zu kleine Tippziele → 0. ⚠️ Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** `main`. Schritt 2 (Ligen aufklappbar) ist frei. | fertig | 2026-08-08 |
 | 1 (Andi) | ~~**Regel-Abstimmung & Verfassung** (`abstimmung-verfassung.md`)~~ — alle fünf Schritte der Spec; offen bleibt allein das Einhängen in die Wertung. ⚠️ Branch, nicht `main`. ⚠️ `schema.sql` muss der Nutzer ausführen. | fertig | 2026-08-05 |
 | 1 (Andi) | ~~**Münz-Takt** (`wettmodus.md` 3)~~ — `muenzTakt.js` + Verkabelung + alle drei Komplexitätsstufen, Build sauber. ⚠️ Liegt auf Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** auf `main`. | fertig | 2026-08-04 |
 | 2 (Andre) | ~~Joker-Baukasten: zehn Module + fünf Oberflächen-Bausteine~~ — alles auf `main`, 1472 Tests grün | fertig | 2026-08-02 |
@@ -124,7 +125,117 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
-### 2026-08-07 (VI) · 🔴 **ÜBERGABE an das nächste Fenster** — Oberfläche ist dran
+### 2026-08-08 (I) · 🔴 **ÜBERGABE** — Schritt 1 steht, Schritt 2 (Ligen aufklappbar) ist dran
+
+> **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
+> außer `CLAUDE.md` brauchst du nichts zu lesen.
+
+#### Wo du landest
+
+```
+Branch   claude/koordinierte-arbeitsweise-fe6w1v   (gepusht)
+Tests    2089 grün · 39 skipped (Balance, ABSICHTLICH — nicht reparieren)
+Build    sauber · lint · stufen · sicht · gleich · anzeige · greift · tot ohne neuen Befund
+```
+
+#### ✅ Was fertig ist: Schritt 1 des Oberflächen-Umbaus
+
+Alle sechs Punkte aus Andis iPhone-Durchgang sind umgesetzt
+(`Spielerstellung.jsx`, `SpielauswahlWettbewerbe.jsx`, `SpielauswahlListe.jsx`):
+
+| Punkt | Stand |
+|---|---|
+| Menü-Knopf oben links | ✅ war schon (`BackLink.jsx`) |
+| Untertitel „Du als Admin" | ✅ ganz weg (Stufe 1 behält ihren kurzen Satz) |
+| Überschrift „Teams" | ✅ → „Wettbewerbe auswählen" (fasst Wettbewerbe + Teams zusammen) |
+| Text darunter | ✅ „Mannschaften und Begegnungen wählen, Regeln je Wettbewerb festlegen." |
+| Kachel-Aufbau | ✅ `⚽ Wettbewerbe · Ligen & Teams · 3 gewählt ›` und `📋 Begegnungen · Feste Liste statt Regel · aus ›` |
+| Bibliothek unten | ✅ `📚 Empfehlungen verwalten ›` (die fünf Preset-Karten liegen dahinter) |
+
+**Die Messung, gemessen — nicht angenommen** (390 px, iPhone 14, Stufe
+„einfach"): **18 Tippziele unter 40 px → 0.** Auch aufgeklappt mit
+Team-Filter an bleibt es bei 0 (199 Knöpfe im Bild). Dreizehn der achtzehn
+waren die Wettbewerbs-Chips mit 29 px; sie tragen jetzt `minHeight: 44`.
+
+Neue Komponente in `Spielerstellung.jsx`: **`GrosseZeile`** — icon · titel ·
+unter · wert · aufklappbar, mindestens 56 px hoch. Zwei Dinge stecken darin,
+die nicht wegoptimiert werden dürfen: der STAND steht rechts im ZUGEKLAPPTEN
+Zustand (sonst verlagert das Aufklappen das Problem nur), und aufgeklappt wird
+IN der Seite, nicht auf einer Unterseite (Spielzahl und Aufwand müssen im Bild
+bleiben — dieselbe Begründung wie bei der klebenden Ampel).
+**Nimm sie für Schritt 2 und 3 wieder**, statt ein zweites Zeilen-Muster zu
+bauen.
+
+#### ▶️ DEIN AUFTRAG: Schritt 2 — Ligen aufklappbar
+
+Liga anklicken → ihre Mannschaften klappen auf. Heute liegt in der Zeile
+„Wettbewerbe" erst die Chip-Reihe der Wettbewerbe und darunter, hinter dem
+Schalter „Auf bestimmte Teams beschränken", eine nach Liga gruppierte
+Vereinsliste (`teamGruppen`). Gewünscht ist die Verschachtelung: je Liga eine
+Zeile, die ihre Vereine aufklappt.
+
+⚠️ Was dabei nicht verloren gehen darf, weil es jeweils aus einem Fund stammt:
+- der „alle/keine"-Knopf je Liga (sonst 18 Klicks),
+- die Warnung über **verwaiste Vereine** (gewählt, aber in keinem gewählten
+  Wettbewerb — ohne sie filtert die Runde still gegen Vereine, die gar nicht
+  vorkommen),
+- die Zeile „Bleiben X Spiele pro Spieltag",
+- „mindestens 2 Vereine" samt Sperre beim Anlegen.
+
+#### ▶️ DANACH: Schritt 3 — Sonderregeln JE LIGA
+
+Unverändert gültig, wortgleich aus der Übergabe vom 07.08.: Unterfenster je
+Liga mit Derby-Vorauswahl, „Abstiegskampf" (letzte 5 Spieltage, Plätze 14–18),
+einzelne Begegnungen von Hand dazu.
+
+🔴 **Der eigentliche Brocken:** die Spielauswahl (`rules.spiele`) gilt heute
+für die GANZE RUNDE. „Je Liga" heißt, sie muss je Wettbewerb werden — sonst
+gibt es zwei Wahrheiten darüber, welche Spiele zur Runde gehören. Nicht
+nebenbei machen.
+
+**Was es dafür schon gibt:** `DERBYS`/`findDerby` (gepflegte Listen je Liga
+inkl. 2. Bundesliga) · `bigGame.js` kennt die Tabellenzonen (oben Titel, unten
+Abstieg, Mitte nichts). **Was fehlt:** Spiele NACH TABELLENPLATZ auswählen —
+`rules.spiele` kennt Vereine, Spieltag-Bereich, Liste, Wettbewerbe, Phasen,
+aber keine Zone.
+
+⚠️ **Andis Frage dazu, beantwortet und verbindlich:** Tabellenplatz-Regeln
+gelten **nur zwischen Spieltagen**, nie zwischen zwei Spielen desselben
+Spieltags. Präzedenz ist das Big Game: `spieltagOeffnen` friert den Wert beim
+ÖFFNEN ein. Wer Freitag tippt, sähe sonst eine andere Tabelle als wer Sonntag
+tippt.
+
+#### 📋 Befund nebenbei — NICHT Teil von Schritt 2
+
+In der **Profi-Stufe** liegen rund **110 Tippziele unter 40 px** (dieselbe
+Messung, `stufe = "profi"`). Das ist nicht der Screen, den Andi vermessen hat,
+und keine Aufgabe für nebenbei — es betrifft die Regler-Kataloge quer durch
+`JokerGrundform`, `LimitKlassen`, `Drehrad`, `Ereignisse` und die
+Wettbewerbs-Gewichte. Steht als Zeile in `design/roadmap.md`.
+
+#### ⚠️ Andis Vorgaben für JEDE Textänderung (stehen in `CLAUDE.md`)
+
+1. Anfrage beginnt mit `formulierungXXX` → **immer mehrere Alternativen**,
+   kurz und prägnant. Er wählt, DANN wird geändert. Nicht vorher bauen.
+2. **Weniger Text, dafür größer** — Beschriftungen wie Boxen.
+3. **Nominalstil**, nicht erklären.
+4. Anweisungen an ihn **Schritt für Schritt**, Dateien über den **Browser**
+   (`file:///C:/Dev/…`, Strg+A, Strg+C).
+
+#### Offen bei ANDI (unverändert aus der Übergabe vom 07.08.)
+
+- Gegenprobe in Supabase: `select count(*) from matches where snapshot->>'quelle' = 'markt';` → erwartet **76**
+- `supabase/seed-matches-bl2.sql` ausführen, falls noch nicht geschehen
+- Supabase → Email Template „Magic Link" → `{{ .Token }}` ergänzen (sonst kommt kein Anmelde-Code)
+- Vercel: `ODDS_API_KEY` gesetzt? Spend Management: **Pause Projects auf `Off`** lassen
+
+⛔ **Nicht anfangen:** Balancing (Endphase, siehe `CLAUDE.md`), Symbolsystem,
+Animationen, Andis eigene Joker-Designs.
+
+---
+
+
+### 2026-08-07 (VI) · **ÜBERGABE** (erledigt) — Oberfläche ist dran
 
 > **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
 > außer `CLAUDE.md` brauchst du nichts zu lesen.
