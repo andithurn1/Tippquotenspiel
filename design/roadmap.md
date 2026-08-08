@@ -243,22 +243,36 @@ auch den KOPIERTEN LINK aus der Standard-Mail (`src/lib/anmeldung.js`); in ihm
 steckt derselbe Token als `token_hash`. Damit funktioniert die Anmeldung in der
 Home-Bildschirm-App wieder.
 
-🔴 **Was trotzdem offen bleibt und vor dem 28.08. erledigt sein muss:** der
-eingebaute Mailversand von Supabase ist ausdrücklich für die Entwicklung
-gedacht und stark mengenbegrenzt. Für eine Runde mit echten Mitspielern
-braucht es einen eigenen SMTP-Versand.
+🔴 **Was trotzdem offen bleibt und vor dem 28.08. erledigt sein muss** —
+nachgeschlagen am 09.08.2026, nicht vermutet:
 
-**Zu prüfen, bevor jemand eingeladen wird** (in dieser Reihenfolge):
-1. Supabase → Authentication → **Rate Limits**: wie viele Mails pro Stunde
-   stehen dort wirklich? Die Zahl ist die harte Grenze, nicht die Vermutung.
-2. Testen, ob eine Mail an eine Adresse ankommt, die **nicht** im Supabase-Team
-   ist. Genau daran scheitern solche Aufbauten sonst still.
-3. Erst dann SMTP wählen. Ohne eigene Domain ist ein Anbieter nötig, der eine
-   einzelne Absenderadresse verifiziert; mit Domain ist die Auswahl größer.
+> Der eingebaute Versand schickt **nur an Adressen, die Mitglied der
+> Supabase-Organisation sind**; alle anderen scheitern mit „Email address not
+> authorized". Dazu **2 Mails pro Stunde**.
+
+**Das heißt: Mitspieler können sich heute gar nicht anmelden.** Andi bekommt
+seine Mail nur, weil ihm das Projekt gehört. Mit eigenem SMTP sind es 30 neue
+Nutzer pro Stunde.
+
+⚠️ **Ein Supabase-Abo hilft dagegen NICHT** und wird auch für die Vorlagen
+nicht gebraucht: seit 03.06.2026 dürfen neue Gratis-Projekte die Vorlagen nur
+mit eigenem SMTP ändern — der ist auf dem Gratis-Tarif erlaubt. Pro (~25 $/Mon)
+kauft an dieser Stelle nichts dazu.
+
+**Entscheidung des Nutzers (09.08.2026): eigene Domain + Brevo.** Grund für die
+Domain: Post „von @icloud.com" über einen fremden Versender landet leicht im
+Spam, und die App soll ohnehin nicht dauerhaft `…vercel.app` heißen.
+
+⚠️ **Was beim Domain-Wechsel mitwandern muss** (sonst zeigen die Anmelde-Links
+weiter auf die alte Adresse): Supabase → Authentication → **URL Configuration**
+→ Site URL **und** Redirect URLs. Im CODE steht nichts fest verdrahtet —
+`emailRedirectTo` liest `window.location.origin`, die App zieht also von selbst
+mit. Und: die Kachel auf Andis Home-Bildschirm zeigt auf die ALTE Adresse und
+muss einmal neu abgelegt werden.
 
 **Nebeneffekt, der die eigentliche Belohnung ist:** mit eigenem SMTP werden die
 Vorlagen bearbeitbar, und dann kann der sechsstellige Code doch noch in die
-Mail. Das Eingabefeld kann beides schon.
+Mail. Das Eingabefeld kann beides schon (`src/lib/anmeldung.js`).
 
 ### 📱 Tippziele: ALLE DREI STUFEN sauber (08.08.2026) — ✅ erledigt
 
