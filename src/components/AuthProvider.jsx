@@ -25,6 +25,12 @@ const mapUser = (u) => ({
   email: u.email,
   nameSet: Boolean(u.user_metadata?.display_name),
   fanColors: Array.isArray(u.user_metadata?.fan_colors) ? u.user_metadata.fan_colors : [],
+  // 🔴 Anzeige-Einstellungen am KONTO statt nur im Browser. Dieselbe Ablage
+  // wie die Fanfarben: `user_metadata` reist mit dem Nutzer, ohne Schema- oder
+  // RLS-Änderung. Nach einem Zurücksetzen, einer Neuinstallation oder auf
+  // einem zweiten Gerät sind die Stufen damit wieder da — vorher lagen sie nur
+  // im localStorage und waren weg.
+  prefs: (u.user_metadata?.prefs && typeof u.user_metadata.prefs === "object") ? u.user_metadata.prefs : null,
 });
 
 export default function AuthProvider({ children }) {
@@ -114,6 +120,22 @@ export default function AuthProvider({ children }) {
     if (data?.user) setUser(mapUser(data.user));
   };
 
+  // Anzeige-Einstellungen am KONTO speichern → sie überleben Zurücksetzen,
+  // Neuinstallation und Gerätewechsel. Bauart wörtlich wie `saveFanColors`:
+  // `user_metadata` braucht weder Schema- noch RLS-Änderung.
+  //
+  // ⚠️ Ohne Login ein NO-OP, kein Fehler. Im Mock-Betrieb und vor der
+  // Anmeldung gibt es kein Konto, an dem etwas hängen könnte — dann trägt
+  // allein der localStorage. Ein Wurf an dieser Stelle würde die Einstellungen
+  // unbenutzbar machen, solange man nicht angemeldet ist.
+  const savePrefs = async (prefs) => {
+    const sb = getSupabaseBrowserClient();
+    if (!sb || !user) return;
+    const { data, error } = await sb.auth.updateUser({ data: { prefs } });
+    if (error) throw error;
+    if (data?.user) setUser(mapUser(data.user));
+  };
+
   // Auskunftsrecht (Art. 15 DSGVO): alle eigenen Daten als JSON-Objekt.
   // RLS erlaubt jedem, ausschließlich die eigenen Zeilen zu lesen.
   const exportMyData = async () => {
@@ -158,7 +180,8 @@ export default function AuthProvider({ children }) {
   return (
     <AuthCtx.Provider value={{
       user, loading, isMock: !hasSupabaseEnv,
-      signInWithEmail, verifyCode, signOut, updateName, saveFanColors, exportMyData, deleteAccount,
+      signInWithEmail, verifyCode, signOut, updateName, saveFanColors, savePrefs,
+      exportMyData, deleteAccount,
     }}>
       {children}
     </AuthCtx.Provider>

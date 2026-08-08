@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { DEFAULT_PREFS, sanitizePrefs } from "@/lib/prefs";
+import { useAuth } from "@/components/AuthProvider";
 
 // Anzeige-Einstellungen als Context. Persistiert im localStorage (pro Browser/
 // Nutzer). SSR startet mit den Defaults; nach dem Mounten werden die
@@ -12,6 +13,7 @@ const Ctx = createContext({ prefs: DEFAULT_PREFS, setPref: () => {}, ready: fals
 export const usePrefs = () => useContext(Ctx);
 
 export default function PrefsProvider({ children }) {
+  const { user, savePrefs } = useAuth();
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   const [ready, setReady] = useState(false);
 
@@ -22,6 +24,23 @@ export default function PrefsProvider({ children }) {
     } catch { /* localStorage nicht verfügbar → Defaults */ }
     setReady(true);
   }, []);
+
+  // 🔴 Die Einstellungen liegen zusätzlich am KONTO (`user_metadata`, wie die
+  // Fanfarben) — sonst wären sie nach einem Zurücksetzen, einer
+  // Neuinstallation oder auf einem zweiten Gerät weg. Der localStorage bleibt
+  // die schnelle Kopie: er trägt vor dem Login und ohne Netz.
+  //
+  // ⚠️ Beim Anmelden GEWINNT das Konto, und zwar nur EINMAL je Sitzung
+  // (`uebernommen`). Ohne diese Sperre überschriebe die Kontofassung jede
+  // Änderung sofort wieder, die man gerade vorgenommen hat — man verstellt
+  // etwas, und es springt zurück.
+  const [uebernommen, setUebernommen] = useState(false);
+  useEffect(() => {
+    if (!ready || uebernommen || !user?.prefs) return;
+    setPrefs(sanitizePrefs(user.prefs));
+    try { localStorage.setItem(KEY, JSON.stringify(sanitizePrefs(user.prefs))); } catch { /* egal */ }
+    setUebernommen(true);
+  }, [ready, uebernommen, user?.prefs]);
 
   // 🔴 `value` darf eine FUNKTION sein: `setPref("vergleich", (v) => …)` bekommt
   // den aktuellen Wert und liefert den neuen.
@@ -39,6 +58,10 @@ export default function PrefsProvider({ children }) {
       const neuerWert = typeof value === "function" ? value(p[key]) : value;
       const next = sanitizePrefs({ ...p, [key]: neuerWert });
       try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* ignorieren */ }
+      // Durchschreiben ans Konto — ohne `await`, weil eine Anzeige-Stufe nicht
+      // auf das Netz warten darf. Schlägt es fehl, bleibt der localStorage die
+      // gültige Fassung und der nächste Klick versucht es erneut.
+      savePrefs?.(next)?.catch?.(() => {});
       return next;
     });
 
