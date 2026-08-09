@@ -102,6 +102,15 @@ const FAELLE = [
     joker: { enabled: true, modus: "einzel", faktor: 3 }, modCap: 1.1,
   }, { joker: true, gegen: { joker: { enabled: true, modus: "einzel", faktor: 3 } } }],
   ["aufholen", { aufholen: { enabled: true, staerke: "stark", schwelle: 0.05 } }],
+  // ⚠️ Braucht GENUG Tipper auf demselben Spiel, sonst greift `minTipper` und
+  // die Messung meldete „bewegt nichts" für eine Regel, die in Ordnung ist —
+  // dieselbe Falle wie bei `tippEinfluss` ein paar Zeilen weiter unten.
+  ["alleinstellung", {
+    alleinstellung: {
+      enabled: true, ebene: "tendenz", modus: "anteil", maxAnteil: 0.5,
+      art: "anteil", anteil: 1, maxZuschlag: 5000, minTipper: 3,
+    },
+  }, { spieler: Array.from({ length: 10 }, (_, i) => `u-${i}`) }],
   ["saisonform (Kurve)", { saisonform: { kurve: "steigend", streich: 0 } }],
   ["saisonform (Streicher)", { saisonform: { kurve: "flach", streich: 3 } }],
   // ⚠️ Braucht mindestens `minTipper` Tipps OHNE den eigenen — bei drei

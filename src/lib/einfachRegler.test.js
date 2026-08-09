@@ -45,7 +45,19 @@ describe("Katalog", () => {
     // bestehende gewandert: `teamMods` (Derby) unter „Zählen manche Spiele
     // mehr?", `drehrad` unter „Wie viel soll nebenbei passieren?". Beides
     // hätte je einen zehnten und elften Regler ergeben.
-    expect(REGLER.length).toBeLessThanOrEqual(9);
+    //
+    // 09.08.2026: 9 → 10 für „Lohnt sich ein Alleingang?" (`alleinstellung`).
+    // Die Probe ist gemacht, und zwar gegen den nächstliegenden Kandidaten
+    // „Wie mutig soll es sein?": dorthin gehört sie NICHT. Jene Stufen
+    // bestehen aus `naeheFelder(preset)` — Bündeln aus VERMESSENEN Presets.
+    // Ein neuer, unvermessener Punkte-Kanal daran gekoppelt hieße, dass
+    // „Zahm" plötzlich etwas mitbringt, was in keinem Preset steckt.
+    // Und es sind wirklich zwei Fragen: eine milde Wertung MIT kräftigem
+    // Alleingang-Bonus ist eine sinnvolle Runde, die sonst nicht einstellbar
+    // wäre. Genau darin liegt der Unterschied zwischen „zwei Profi-Werte
+    // unter einer Frage" (richtig) und „zwei Fragen unter einem Regler"
+    // (falsch).
+    expect(REGLER.length).toBeLessThanOrEqual(10);
   });
 
   it("keine Stufe holt sich eine Warnung, die die Vorgabe nicht schon hat", () => {

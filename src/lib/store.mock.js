@@ -112,6 +112,12 @@ export function createMockStore() {
       userId: t.user_id, name: nameOf(t.user_id),
       tip: t.tip, snapshot: t.snapshot,
       result: m?.result ?? null,
+      // 🔴 `matchId` gehört dazu, seit es die Alleinstellung gibt (09.08.2026):
+      // „ich war der Einzige" ist eine Aussage über alle Tipps DESSELBEN
+      // Spiels, und ohne diesen Schlüssel lässt sich das nicht gruppieren.
+      // Gefunden hat die Lücke `npm run greift` — die Regel war gebaut,
+      // getestet und einstellbar und bewegte trotzdem keinen einzigen Punkt.
+      matchId: t.match_id,
       matchday: m?.matchday ?? null,
       wettbewerb: m ? wettbewerbVon(m) : null,
       kickoff: m?.kickoff ?? null,

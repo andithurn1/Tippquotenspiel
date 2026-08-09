@@ -51,6 +51,7 @@ import { VORLAUF_STUFEN, ANKER, beschreibeTippfenster, erklaereTippfenster } fro
 import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
 import SpielauswahlListe from "@/components/SpielauswahlListe";
 import LigaSonderregeln from "@/components/LigaSonderregeln";
+import Alleinstellung from "@/components/Alleinstellung";
 import Zeitachse from "@/components/Zeitachse";
 import { C, MONO } from "@/lib/theme";
 import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
@@ -864,6 +865,18 @@ export default function Spielerstellung() {
             <>
               <SectionTitle>Mitbestimmung</SectionTitle>
               <Mitbestimmung rules={rules}
+                onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
+            </>
+          )}
+
+          {/* Alleingang-Bonus (Andis Stadt-Land-Fluss-Mechanik, 09.08.2026).
+              In Stufe 2 beantwortet die Klartext-Frage „Lohnt sich ein
+              Alleingang?" dasselbe in vier Bündeln; hier stehen alle
+              Variablen einzeln, mit Regler UND Zahlenfeld. */}
+          {stufe === "profi" && (
+            <>
+              <SectionTitle>Alleingang-Bonus</SectionTitle>
+              <Alleinstellung rules={rules}
                 onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
             </>
           )}

@@ -70,6 +70,11 @@ export const SPUREN = {
   drehrad: ["drehrad", "drehradZiehungen"],
   saison: ["saison", "saisonwetten", "scoreSaison"],
   aufholen: ["aufholen", "catchup", "applyCatchup", "anschluss"],
+  // Alleinstellung: der Spieler sieht den Zuschlag als eigene Marke im
+  // Ranking (`alleinPunkte`). Ein Bonus, der nur im Total steckt, ist für den
+  // Empfänger nicht von einem Rechenfehler zu unterscheiden — dieselbe
+  // Begründung wie bei Anschluss-Bonus, Saison-Wetten und Rad.
+  alleinstellung: ["alleinstellung", "alleinPunkte", "Alleingang"],
   // Der Spieler sieht nicht den SCHALTER, sondern seine Wirkung in der
   // Aufschlüsselung — das ist die Anzeige, nach der hier gesucht wird.
   winnerFloor: ["winnerFloor", "Sieger-Boden", "tendBoden"],

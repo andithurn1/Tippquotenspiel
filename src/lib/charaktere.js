@@ -107,6 +107,18 @@ export const CHARAKTERE = [
       // die Ansage („große Ausschläge, viel Drama"), nicht ein Versehen.
       // Anderswo hat es nichts zu suchen.
       ereignisse: ereignisse("mut"),
+      // 🔴 Der Alleingang-Bonus gehört in genau DIESEN Charakter und in keinen
+      // anderen: „Außenseiter-Tipps sollen sich richtig lohnen" ist derselbe
+      // Satz aus einer anderen Richtung — wer als Einziger den Abstand trifft,
+      // hat gegen den Strom getippt.
+      // Bewusst der HALBE Zuschlag, nicht der volle: dieses Paket trägt schon
+      // Joker, Heimat, Mut, Topspiel und Derby. Ein zweiter voller Kanal
+      // obendrauf wäre die Ebene, die niemand mehr überblickt; `maxZuschlag`
+      // hält ihn zusätzlich in Sichtweite.
+      alleinstellung: {
+        enabled: true, ebene: "abstand", modus: "alleine",
+        art: "anteil", anteil: 0.5, maxZuschlag: 500, minTipper: 3,
+      },
     }),
   },
   {

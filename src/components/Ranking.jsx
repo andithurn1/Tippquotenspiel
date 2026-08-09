@@ -141,6 +141,18 @@ export default function Ranking() {
                     border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 7px",
                   }}>+{b.ersatzPunkte} Ersatz</span>
                 )}
+                {/* 🔴 Alleinstellung (Andis Stadt-Land-Fluss-Bonus, 09.08.2026).
+                    Eigene Marke aus demselben Grund wie beim Ersatz-Tipp: ein
+                    Zuschlag, der nur im Total steckt, ist für den Empfänger
+                    nicht von einem Rechenfehler zu unterscheiden. Dieser hier
+                    ist der auffälligste von allen, weil er nur EINEN trifft —
+                    ohne Marke sähe er nach Bevorzugung aus. */}
+                {b.alleinPunkte > 0 && (
+                  <span title="Bonus dafür, dass du als (fast) Einziger richtig lagst" style={{
+                    fontFamily: MONO, fontSize: 10, color: C.gold,
+                    border: `1px solid ${C.gold}55`, borderRadius: 999, padding: "2px 7px",
+                  }}>+{b.alleinPunkte} Alleingang</span>
+                )}
                 {/* 🔴 Was die Saison-KURVE verschoben hat. Die Streicher
                     hatten längst eine Marke, die Kurve nicht — sie verschob den
                     Stand gemessen um bis zu 186 Punkte, ohne dass irgendwo

@@ -77,7 +77,13 @@ export const ASPEKTE = [
     // nacheinander auf denselben Verlauf — wer das eine übernimmt, will das
     // andere mit, sonst gleicht ein Bonus einen Abstand aus, den die
     // Saisonform gar nicht entstehen lässt.
-    keys: ["aufholen", "versaeumnis", "saisonform"],
+    // `alleinstellung` gehört ebenfalls hierher und NICHT zu den
+    // Modifikatoren: sie ist kein Multiplikator im additiven Topf, sondern ein
+    // eigener Punkte-Kanal — und sie beantwortet dieselbe Frage wie der
+    // Anschluss-Bonus, nur von der anderen Seite: wie stark darf ein einzelner
+    // Spieltag die Abstände verschieben. Wer die eine Antwort übernimmt, will
+    // die andere mit.
+    keys: ["aufholen", "versaeumnis", "saisonform", "alleinstellung"],
   },
   {
     key: "saison",

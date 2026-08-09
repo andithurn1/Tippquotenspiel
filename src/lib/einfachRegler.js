@@ -343,6 +343,60 @@ export const REGLER = [
     ],
   },
   {
+    // 🔴 Andis Stadt-Land-Fluss-Mechanik (09.08.2026). Die Frage steht in
+    // KLARTEXT und nicht nach dem Feldnamen — ein Admin denkt nicht in
+    // „Alleinstellung", sondern in „lohnt es sich, mutig anders zu tippen".
+    //
+    // ⚠️ Jede Stufe setzt `minTipper` MIT, nicht nur die Stärke. Ohne diese
+    // Schutzregel ist in einer Runde zu zweit jeder Treffer ein Alleingang,
+    // und der Bonus wäre die Normalzahlung statt der Ausnahme — eine
+    // Einstellung, die genau dann kippt, wenn die Runde klein ist.
+    key: "alleingang",
+    label: "Lohnt sich ein Alleingang?",
+    hint: "Ob es extra Punkte gibt, wenn man als Einziger richtig lag.",
+    stufen: [
+      {
+        key: "nein", label: "Nein",
+        beschreibung: "Ein einsamer Treffer zählt wie jeder andere.",
+        werte: { alleinstellung: { enabled: false } },
+      },
+      {
+        key: "klein", label: "Ein bisschen",
+        beschreibung: "Wer als Einziger den Abstand trifft, bekommt die halbe Punktzahl obendrauf.",
+        werte: {
+          alleinstellung: {
+            enabled: true, ebene: "abstand", modus: "alleine",
+            art: "anteil", anteil: 0.5, maxZuschlag: 500, minTipper: 3,
+          },
+        },
+      },
+      {
+        key: "deutlich", label: "Deutlich",
+        beschreibung: "Als Einziger richtig heißt: die Punkte dieses Spiels noch einmal.",
+        werte: {
+          alleinstellung: {
+            enabled: true, ebene: "abstand", modus: "alleine",
+            art: "anteil", anteil: 1, maxZuschlag: 1000, minTipper: 3,
+          },
+        },
+      },
+      {
+        key: "sladefluss", label: "Stadt-Land-Fluss",
+        // Die großzügige Lesart: schon „unter den wenigen" reicht, und es
+        // genügt der richtige Sieger. Dadurch kommt der Bonus oft genug vor,
+        // dass er das Tippverhalten überhaupt beeinflusst — ein Bonus, den
+        // niemand je bekommt, ändert nichts.
+        beschreibung: "Schon wer zu den wenigen Richtigen gehört, bekommt kräftig dazu.",
+        werte: {
+          alleinstellung: {
+            enabled: true, ebene: "tendenz", modus: "anteil", maxAnteil: 0.25,
+            art: "anteil", anteil: 1.5, maxZuschlag: 1500, minTipper: 4,
+          },
+        },
+      },
+    ],
+  },
+  {
     // 🔴 Der Regler, den `rules.ereignisse` bis 06.08.2026 nicht hatte: die
     // ganze Ebene kam nur in der Profi-Ansicht vor. Die Frage ist bewusst in
     // KLARTEXT gestellt und nicht nach dem Feldnamen benannt — ein Regler in

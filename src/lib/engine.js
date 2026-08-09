@@ -22,6 +22,7 @@ import {
 // ── 1) QUOTEN-QUELLE (austauschbar: Mock → später echte API) ─
 import { sanitizeSaison } from "./saisonwetten";
 import { sanitizeVerteilung, DEFAULT_VERTEILUNG } from "./jokerPlan";
+import { sanitizeAlleinstellung, DEFAULT_ALLEINSTELLUNG, alleinstellungBoni } from "./alleinstellung";
 import { sanitizeBigGame, DEFAULT_BIGGAME, bigGameAufschlag } from "./bigGame";
 import { sanitizeSpiele, DEFAULT_SPIELE } from "./spielauswahl";
 import {
@@ -250,6 +251,12 @@ export const DEFAULT_RULES = {
   // Standard aus. Wird beim Bereinigen an sanitizeSaison delegiert, damit
   // Katalog und Regelwerk nicht auseinanderlaufen.
   saison: { enabled: false, gewicht: 1, wetten: [] },
+
+  // ── Alleinstellung: Bonus, wenn sonst (fast) niemand richtig lag ──
+  // Andis Stadt-Land-Fluss-Mechanik (09.08.2026). Liegt hier nur als Feld;
+  // gerechnet wird in `alleinstellung.js` und angewandt in `scoreLeaderboard`,
+  // weil die Ebene die Tipps der ANDEREN braucht. Standard aus.
+  alleinstellung: { ...DEFAULT_ALLEINSTELLUNG },
 
   // ── Spielauswahl: welche Spiele gehören zur Runde ──
   // Reist mit dem Creator-Code mit, damit ein Creator nicht nur seine Wertung
@@ -586,6 +593,10 @@ export function sanitizeRules(partial = {}) {
     // Big Game ebenso — der Katalog der Signale bleibt in bigGame.js.
     bigGame: sanitizeBigGame(src.bigGame),
     spiele: sanitizeSpiele(src.spiele),
+    // Alleinstellung ebenso — Katalog der Modi und Grenzen bleibt in
+    // alleinstellung.js, damit die Werte im Creator-Code dieselben Regeln
+    // durchlaufen wie in der Oberfläche.
+    alleinstellung: sanitizeAlleinstellung(src.alleinstellung),
     ereignisse: sanitizeEreignisse(src.ereignisse),
     wettbewerbe: sanitizeWettbewerbe(src.wettbewerbe),
     tippfenster: sanitizeTippfenster(src.tippfenster),
@@ -1389,30 +1400,58 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES, regelnFuer
   // ⚠️ Der Verlauf ruft diese Funktion je Spieltag erneut auf und mischt damit
   // jeweils nur mit den bis dahin sichtbaren Tipps — das ist richtig so: ein
   // Zwischenstand soll aus sich heraus stimmen.
-  for (const e of mitTippEinfluss(entries, rules)) {
+  // 🔴 ERSTER DURCHGANG: jeden Eintrag bewerten und die Ebene merken.
+  // Getrennt vom Aufsummieren, seit es die Alleinstellung gibt (09.08.2026):
+  // „ich war der Einzige" ist eine Aussage über ALLE Tipps desselben Spiels,
+  // die erst feststeht, wenn jeder Eintrag gerechnet ist. Ohne Alleinstellung
+  // kostet der zweite Durchgang nichts — es wird nichts doppelt gerechnet.
+  const bewertet = [];
+  for (const [i, e] of mitTippEinfluss(entries, rules).entries()) {
+    if (!e.result) { bewertet.push({ e, wert: null }); continue; }
+    const s = scoreTip(e.tip, e.result, e.snapshot,
+      e.rules || (regelnFuer ? regelnFuer(e) : null) || rules);
+    // Der Malus des Ersatz-Tipps greift GANZ ZULETZT auf die fertige Wertung
+    // dieses Spiels — dieselbe Stelle wie der Joker-Faktor, damit sich nichts
+    // multiplikativ aufschaukelt. Ohne `malusFaktor` (jeder normale Tipp)
+    // ändert sich nichts.
+    const wert = Number.isFinite(e.malusFaktor) ? Math.round(s.total * e.malusFaktor) : s.total;
+    bewertet.push({ e, wert, ebene: s.ebene, key: `${i}` });
+  }
+
+  // ⚠️ Der Bonus hängt am WERT nach allen Modifikatoren, nicht an einer
+  // Zwischengröße — sonst passte er nicht zu der Zahl, die daneben steht.
+  const boni = alleinstellungBoni(
+    bewertet.filter((b) => b.wert != null).map((b) => ({
+      key: b.key, userId: b.e.userId, matchId: b.e.matchId ?? b.e.match_id ?? null,
+      ebene: b.ebene, wert: b.wert, ersatz: b.e.ersatz === true,
+    })),
+    rules,
+  );
+
+  // ZWEITER DURCHGANG: aufsummieren.
+  for (const b of bewertet) {
+    const e = b.e;
     const cur = byUser.get(e.userId)
-      || { userId: e.userId, name: e.name, total: 0, tips: 0, gewertet: 0, ersatz: 0, ersatzPunkte: 0 };
+      || { userId: e.userId, name: e.name, total: 0, tips: 0, gewertet: 0, ersatz: 0, ersatzPunkte: 0, alleinPunkte: 0 };
     // 🔴 Ein ERSATZ-Tipp (Versäumnis, `autoTip.js`) ist kein abgegebener Tipp.
     // Er zählt in der Wertung mit, aber nicht in „x von y getippt" — sonst
     // stünde bei jemandem, der nie tippt, eine volle Tipp-Quote.
     // Dieselbe Trennung wie in `jokerBasis.js`, wo er auch nicht als Tipp gilt.
     if (e.ersatz) cur.ersatz += 1;
     else cur.tips += 1;
-    if (e.result) {
-      const roh = scoreTip(e.tip, e.result, e.snapshot,
-        e.rules || (regelnFuer ? regelnFuer(e) : null) || rules).total;
-      // Der Malus des Ersatz-Tipps greift GANZ ZULETZT auf die fertige Wertung
-      // dieses Spiels — dieselbe Stelle wie der Joker-Faktor, damit sich nichts
-      // multiplikativ aufschaukelt. Ohne `malusFaktor` (jeder normale Tipp)
-      // ändert sich nichts.
-      const wert = Number.isFinite(e.malusFaktor) ? Math.round(roh * e.malusFaktor) : roh;
-      cur.total += wert;
+    if (b.wert != null) {
+      cur.total += b.wert;
       // 🔴 Getrennt mitzählen, nicht nur im Total. Sonst sieht ein Spieler eine
       // Summe, zu der seine eigenen Tipps nicht führen — dieselbe Lücke wie bei
       // Anschluss-Bonus, Saison-Wetten und Rad, die alle eine Marke im Ranking
       // haben. Ein Ersatz-Tipp ist die Kulanz der Runde, keine eigene Leistung;
       // gerade deshalb muss er benannt sein.
-      if (e.ersatz) cur.ersatzPunkte += wert;
+      if (e.ersatz) cur.ersatzPunkte += b.wert;
+      // Und aus demselben Grund bekommt der Alleinstellungs-Bonus eine eigene
+      // Marke: ein Zuschlag, der nur im Total steckt, ist für den Empfänger
+      // nicht von einem Rechenfehler zu unterscheiden.
+      const bonus = boni.get(b.key);
+      if (bonus) { cur.total += bonus.zuschlag; cur.alleinPunkte += bonus.zuschlag; }
       cur.gewertet += 1;
     }
     byUser.set(e.userId, cur);

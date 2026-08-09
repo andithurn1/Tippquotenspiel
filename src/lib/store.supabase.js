@@ -48,6 +48,11 @@ const eintragVon = (t, nameOf, matchOf) => {
     userId: t.user_id, name: nameOf(t.user_id),
     tip: t.tip, snapshot: t.snapshot,
     result: m?.result ?? null,
+    // 🔴 Muss mit dem Mock übereinstimmen, sonst rechnet live etwas anderes
+    // als in der Entwicklung — dieselbe Zeile steht in `store.mock.js`. Ohne
+    // `matchId` lässt sich „ich war der Einzige" nicht gruppieren, und die
+    // Alleinstellung bewegt keinen Punkt.
+    matchId: t.match_id,
     matchday: m?.matchday ?? null,
     wettbewerb: m ? wettbewerbVon(m) : null,
     kickoff: m?.kickoff ?? null,
