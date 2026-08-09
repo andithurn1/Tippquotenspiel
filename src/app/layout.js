@@ -1,3 +1,7 @@
+// Die Stilebene (Tokens, Zustände, Bewegung). Sie ändert von sich aus NICHTS
+// am Aussehen — eine Komponente muss eine Klasse nehmen, damit etwas passiert.
+// Begründung dafür steht im Kopf der Datei.
+import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
 import PrefsProvider from "@/components/PrefsProvider";
 import RoundProvider from "@/components/RoundProvider";

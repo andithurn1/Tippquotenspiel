@@ -302,8 +302,33 @@ Fehlermeldung. Bei jeder Anweisung dazusagen, ob die Datei bleibt oder weg kann.
 
 ## Stack
 
-- **Next.js (App Router) + React**, JavaScript (kein TypeScript), Inline-Styles
-  (keine CSS-Framework-Abhängigkeit). Import-Alias `@/*` → `src/*`.
+- **Next.js (App Router) + React**, JavaScript (kein TypeScript). Import-Alias
+  `@/*` → `src/*`.
+- 🔴 **Styling seit 09.08.2026 ZWEISCHICHTIG** — Inline-Styles PLUS eine
+  Stilebene (`src/app/globals.css`, Tokens in `src/lib/cssVariablen.js`).
+  Kein CSS-Framework, aber auch nicht mehr nur Inline.
+
+  **Warum, und das ist die eigentliche Lehre:** Inline-Styles allein waren eine
+  bewusste Entscheidung — nur stand nie dabei, was sie AUSSCHLIESSEN. Sie
+  können kein `:hover`, kein `:active`, kein `:focus-visible`, keine
+  `@keyframes`, kein `prefers-reduced-motion` und kein `::before`. Das heißt:
+  eine Oberfläche, die auf eine Berührung nicht antwortet. Andi hat am
+  09.08.2026 nach Leuchten beim Klicken gefragt und zu Recht angemerkt, dass
+  ihm das vorher hätte gesagt werden müssen.
+
+  ⚠️ **Die Regel daraus, allgemein:** wer eine Architektur-Entscheidung hier
+  einträgt, schreibt dazu, was sie unmöglich macht — nicht nur, was sie
+  einspart. Eine Einschränkung, die niemand kennt, wird nicht entschieden,
+  sondern erlitten.
+
+  **Wie die zwei Schichten zusammenpassen:** `theme.js` bleibt die EINE Quelle
+  der Farben; `applyFanColors` ändert sie zur Laufzeit (Vereinsfarben), und
+  `schreibeCssVariablen()` spiegelt sie ins Dokument. Screens lesen `C.gold`,
+  das Stylesheet `var(--tqs-gold)` — derselbe Wert, eine Richtung.
+  ⚠️ `globals.css` enthält **bewusst keinen Reset**: sie ändert von sich aus
+  nichts, eine Komponente muss eine Klasse nehmen. Dadurch ist die Umstellung
+  Schritt für Schritt möglich statt als Big Bang über 67 Dateien.
+  **Musterseite mit allen Bausteinen und Kürzeln: `/stil`.**
 - **Tests:** Vitest (`npm test`). Getestet werden Engine + Mock-Store.
 - **Backend:** Supabase (`@supabase/supabase-js`). Daten-Schicht steht als
   austauschbarer Store (Mock ↔ Supabase); Live-Anbindung braucht nur ein

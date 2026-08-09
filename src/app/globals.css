@@ -1,0 +1,179 @@
+/* ============================================================
+   DIE STILEBENE — Tokens, Zustände, Bewegung
+   Angelegt 09.08.2026 auf Andis Ansage („Leuchten beim Klicken, flüssige
+   geringfügige Animationen").
+
+   🔴 WARUM ES DIESE DATEI ÜBERHAUPT GIBT
+   Das Projekt hatte bis heute NULL CSS-Dateien; alles lief über Inline-Styles
+   (CLAUDE.md, Stack). Das war eine bewusste Entscheidung — nur stand nie
+   dabei, was sie ausschließt, und das ist der eigentliche Punkt:
+
+     · `:hover`, `:active`, `:focus-visible`  — in Inline-Styles unmöglich
+     · `@keyframes`                            — unmöglich
+     · `prefers-reduced-motion` beachten       — unmöglich
+     · `::before` / `::after`                  — unmöglich
+
+   Eine Oberfläche, die auf einen Druck nicht antwortet, wirkt deshalb nicht
+   „schlicht", sondern tot. Diese Datei schließt genau diese Lücke.
+
+   ── ⚠️ WAS HIER BEWUSST FEHLT: ein Reset ──
+   Kein `* { box-sizing: border-box }`, kein Zurücksetzen von Rändern. 67
+   Komponenten sind gegen das heutige Verhalten gebaut; ein globaler Reset
+   verschöbe sie alle auf einmal, und niemand sähe, welche davon vorher schon
+   krumm waren. Diese Datei ändert von sich aus GAR NICHTS am Aussehen — sie
+   stellt nur bereit. Eine Komponente muss eine Klasse nehmen, damit etwas
+   passiert. Dadurch ist der Umbau Schritt für Schritt möglich und jederzeit
+   umkehrbar.
+
+   ── Die Farben stehen zweimal da, und das ist Absicht ──
+   Hier stehen die VORGABEN, damit die Seite schon vor dem ersten Javascript
+   richtig aussieht (Server-Rendering). Die WAHRHEIT bleibt `theme.js`:
+   `applyFanColors` verändert dort das gemeinsame Objekt, und
+   `cssVariablen.js` schreibt es anschließend hier hinein. Wer eine Farbe
+   ändert, ändert sie in `theme.js` — nicht hier.
+   ============================================================ */
+
+:root {
+  /* Flächen, von hinten nach vorn */
+  --tqs-ink: #FFFFFF;
+  --tqs-ink2: #F7F8FA;
+  --tqs-surface: #F0F2F5;
+  --tqs-surface2: #E6E9EF;
+
+  /* Linien */
+  --tqs-line: rgba(17, 20, 28, 0.10);
+  --tqs-line-strong: rgba(17, 20, 28, 0.18);
+
+  /* Schrift */
+  --tqs-text: #11141C;
+  --tqs-muted: #5C6475;
+  --tqs-ghost: rgba(17, 20, 28, 0.22);
+
+  /* Signalfarben */
+  --tqs-gold: #B47B00;
+  --tqs-mint: #0E9F6E;
+  --tqs-coral: #D62B4E;
+
+  /* ── Maßstäbe ──────────────────────────────────────────────
+     🔴 Gemessen am 09.08.2026, bevor diese Skalen entstanden:
+     16 verschiedene Eckenradien, 24 Schriftgrößen, 97 Innenabstände.
+     Daraus entsteht kein „reduzierter Look", sondern Unruhe, die man nicht
+     benennen kann. Wenige Werte, überall wiederholt — das ist der ganze
+     Trick an dem, was „harmonisch" genannt wird. */
+
+  /* Abstände */
+  --tqs-raum-1: 4px;
+  --tqs-raum-2: 8px;
+  --tqs-raum-3: 12px;
+  --tqs-raum-4: 16px;
+  --tqs-raum-5: 24px;
+  --tqs-raum-6: 32px;
+
+  /* Eckenradien — vier statt sechzehn */
+  --tqs-rund-klein: 8px;
+  --tqs-rund: 12px;
+  --tqs-rund-karte: 16px;
+  --tqs-rund-pille: 999px;
+
+  /* Schriftgrößen — sechs statt vierundzwanzig */
+  --tqs-schrift-mikro: 11px;
+  --tqs-schrift-klein: 12.5px;
+  --tqs-schrift: 14px;
+  --tqs-schrift-gross: 16px;
+  --tqs-schrift-titel: 20px;
+  --tqs-schrift-schlag: 26px;
+
+  /* ── Bewegung ──────────────────────────────────────────────
+     Drei Dauern, zwei Kurven. Mehr braucht es nicht, und mehr wäre der
+     Anfang desselben Wildwuchses wie oben. */
+  --tqs-dauer-schnell: 120ms;   /* Druck, Farbwechsel */
+  --tqs-dauer: 200ms;           /* Standard */
+  --tqs-dauer-ruhig: 320ms;     /* Ein-/Ausblenden größerer Flächen */
+  --tqs-kurve: cubic-bezier(0.2, 0.8, 0.2, 1);        /* weich auslaufend */
+  --tqs-kurve-feder: cubic-bezier(0.2, 1.5, 0.4, 1);  /* leichter Überschwung */
+}
+
+/* 🔴 NICHT VERHANDELBAR: wer am Gerät „Bewegung reduzieren" eingeschaltet
+   hat, hat einen Grund dafür — von Reisekrankheit bis Migräne. Die ZUSTÄNDE
+   bleiben (man sieht weiter, dass etwas gedrückt ist), nur die Bewegung
+   dahin fällt weg. Das ist der Unterschied zwischen „animiert" und
+   „professionell animiert". */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --tqs-dauer-schnell: 1ms;
+    --tqs-dauer: 1ms;
+    --tqs-dauer-ruhig: 1ms;
+  }
+  .tqs-laedt::after { animation: none; }
+}
+
+/* ── Bedienelemente: die Antwort auf eine Berührung ─────────
+   `.tqs-aktion` auf jeden Knopf, jede anklickbare Zeile.
+
+   ⚠️ `:active` steht VOR `:hover` mit höherer Gewichtung, sonst gewinnt am
+   Zeigegerät der Hover-Zustand über den Druck. Und `:focus-visible` statt
+   `:focus`: sonst leuchtet nach jedem Mausklick ein Fokusring nach, den nur
+   Tastaturnutzer sehen wollen. */
+.tqs-aktion {
+  transition:
+    background-color var(--tqs-dauer-schnell) var(--tqs-kurve),
+    border-color var(--tqs-dauer-schnell) var(--tqs-kurve),
+    box-shadow var(--tqs-dauer) var(--tqs-kurve),
+    transform var(--tqs-dauer-schnell) var(--tqs-kurve);
+  -webkit-tap-highlight-color: transparent;   /* iOS' graues Kästchen weg */
+}
+
+@media (hover: hover) {
+  .tqs-aktion:hover {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tqs-gold) 18%, transparent);
+  }
+}
+
+.tqs-aktion:active {
+  transform: scale(0.985);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--tqs-gold) 26%, transparent);
+}
+
+.tqs-aktion:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--tqs-ink),
+    0 0 0 4px var(--tqs-gold);
+}
+
+/* ── Das Leuchten, während die nächste Seite lädt ───────────
+   Andis Beispiel, wörtlich: „dass dann das Feld mehr leuchtet, bis neues
+   Fenster lädt." Gesetzt wird die Klasse von `useLinkStatus` (Next 15.3) —
+   der Link weiß selbst, dass sein Ziel noch lädt. Kein geratener Zeitwert,
+   kein Timer: das Leuchten hört auf, wenn die Seite da ist. */
+.tqs-laedt {
+  position: relative;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tqs-gold) 30%, transparent);
+}
+
+.tqs-laedt::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 14px 2px color-mix(in srgb, var(--tqs-gold) 45%, transparent);
+  animation: tqs-puls 1.1s var(--tqs-kurve) infinite;
+}
+
+@keyframes tqs-puls {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+
+/* Sanft hereinkommen — für Inhalte, die nachgeladen werden. Bewusst nur
+   Deckkraft und ein winziger Versatz: alles Größere sieht nach Effekt aus,
+   und Effekte nutzen sich ab. */
+.tqs-auf {
+  animation: tqs-auf var(--tqs-dauer-ruhig) var(--tqs-kurve) both;
+}
+
+@keyframes tqs-auf {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}

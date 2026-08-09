@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback, Fragment } from "react";
 import { applyFanColors, resetTheme, sanitizeFanColors } from "@/lib/theme";
+import { schreibeCssVariablen } from "@/lib/cssVariablen";
 import { useAuth } from "@/components/AuthProvider";
 
 // ── Fanfarben-Theme (Vereinsfarben) ─────────────────────────
@@ -42,10 +43,21 @@ export default function ThemeProvider({ children }) {
   const apply = useCallback((clean) => {
     if (clean.length) applyFanColors(clean);
     else resetTheme();
+    // 🔴 Direkt danach ins Dokument spiegeln (09.08.2026). Seit es eine
+    // Stilebene gibt, lesen ZWEI Seiten dieselben Farben: die Screens aus
+    // `C.gold`, das Stylesheet aus `var(--tqs-gold)`. Ohne diese Zeile
+    // leuchtete ein Knopf in einer anderen Farbe, als er gefüllt ist, sobald
+    // jemand Vereinsfarben wählt — und zwar still.
+    schreibeCssVariablen();
     appliedRef.current = clean;
     setColors(clean);
     setVersion((v) => v + 1); // Remount → Screens lesen die aktualisierten Tokens
   }, []);
+
+  // Auch ohne Fanfarben einmal schreiben: sonst stünden im Dokument allein die
+  // Vorgaben aus `globals.css`, und eine spätere Änderung an `theme.js` käme
+  // in den Zuständen nie an.
+  useEffect(() => { schreibeCssVariablen(); }, []);
 
   // Erst NACH der Hydration den Gerät-Cache anwenden: SSR und erster
   // Client-Render bleiben auf den Grundfarben → keine Hydration-Diskrepanz.
