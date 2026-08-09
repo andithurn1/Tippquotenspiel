@@ -77,9 +77,15 @@ export default function Hauptmenu() {
       padding: "48px 16px", display: "flex", justifyContent: "center",
     }}>
       <div style={{ width: "100%", maxWidth: 400 }}>
-        <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
-          Tippquotenspiel
-        </div>
+        {/* 🔴 Das Logo statt der Wortmarke in Schrift (Andi, 09.08.2026).
+            Die HELLE Fassung, weil die App seit dem 07.08. auf Weiß läuft; die
+            dunkle liegt als `logo-dunkel.png` daneben und wäre die richtige,
+            falls das Theme je zurückgedreht wird.
+            ⚠️ `alt` trägt den Namen: das Bild IST hier die Überschrift, und wer
+            es nicht sieht (Vorlesefunktion, kaputte Verbindung), stünde sonst
+            vor einer namenlosen Seite. */}
+        <img src="/logo-hell.png" alt="QuotenTippspiel"
+          style={{ display: "block", width: 148, height: "auto", marginBottom: 6 }} />
         <h1 style={{ fontSize: 26, fontWeight: 800, margin: "8px 0 6px" }}>Mut zahlt sich aus.</h1>
         <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.6, marginTop: 0, marginBottom: 24 }}>
           Quoten-gewichtetes Tippspiel unter Freunden. Kein Echtgeld — Ehre und
