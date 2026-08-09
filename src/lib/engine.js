@@ -1338,11 +1338,26 @@ export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
 // Anker ist hier bewusst das GETIPPTE Ergebnis — reine Aussicht, nicht die
 // echte Wertung (die ankert immer am realen Ergebnis). playerGoals=null heißt
 // „angenommen, die getippten Schützen treffen". Nur Anzeige, nie Fairness.
+// 🔴 Und seit 09.08.2026 eine ZWEITE Zahl, aus einem gemessenen Befund:
+// `points` setzt stillschweigend voraus, dass auch die getippten SCHÜTZEN
+// treffen. Der `gleich`-Durchgang hat nachgemessen, was das ausmacht —
+// **62 % der angezeigten Summe** über 120 Tipps. Wer „Wenn dein Tipp exakt
+// aufgeht: +2150" liest und dann bei richtigem Ergebnis 820 bekommt, hält die
+// Wertung für kaputt, obwohl beide Zahlen stimmen.
+// Deshalb liefert die Vorschau BEIDE, und zwar aus DIESER Funktion: eine
+// Oberfläche, die den zweiten Wert selbst nachrechnete, wäre die zweite
+// Wahrheit, vor der die Runden-Schicht in CLAUDE.md warnt.
 export function projectTip(tip, snap, rules = DEFAULT_RULES) {
   const actual = { home: tip.home, away: tip.away, playerGoals: null };
   const s = scoreTip(tip, actual, snap, rules);
+  // Dasselbe Ergebnis, aber kein getippter Schütze trifft. `playerGoals: {}`
+  // ist dabei bewusst ein LEERES Objekt und nicht `null` — `null` heißt in
+  // `scoreGoals` „angenommen, sie treffen", und wir bekämen zweimal dieselbe
+  // Zahl. Genau dieser Unterschied ist die ganze Aussage.
+  const ohne = scoreTip(tip, { home: tip.home, away: tip.away, playerGoals: {} }, snap, rules);
   return {
     points: s.total,                                        // mögliche Punkte (Display-Skala)
+    pointsOhneSchuetzen: ohne.total,                        // dasselbe Ergebnis, Schützen daneben
     exaktQuote: snap.correctScore?.[tip.home]?.[tip.away] ?? null,
     goalsNet: s.goals.net,                                  // roher Tor-Beitrag
     ergNaehe: s.parts.ergNaehe,                             // roher Ergebnis-Nähe-Anteil

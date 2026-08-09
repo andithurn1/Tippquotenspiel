@@ -410,6 +410,36 @@ describe("projectTip — Tipp-Vorschau (Potenzial)", () => {
     const p = projectTip({ home: 9, away: 9, goals: { home: [], away: [] } }, snap);
     expect(p.exaktQuote).toBeNull();
   });
+
+  // 🔴 Befund vom 09.08.2026 (`npm run gleich`, Teil 2): die große Zahl in der
+  // Vorschau setzt stillschweigend voraus, dass auch die getippten SCHÜTZEN
+  // treffen — gemessen 62 % der Summe über 120 Tipps. Seitdem liefert die
+  // Vorschau beide Werte, damit keine Oberfläche den zweiten selbst rechnet.
+  it("nennt auch, was dasselbe Ergebnis OHNE die getippten Schützen zahlt", () => {
+    const tip = { home: 5, away: 1, goals: { home: ["Al-Naimat"], away: [] } };
+    const mit = projectTip(tip, snap);
+    expect(mit.pointsOhneSchuetzen).toBeLessThan(mit.points);
+    // Und es ist wirklich der Wert, den die Wertung später ausrechnet — sonst
+    // hätten wir eine zweite Wahrheit gebaut statt eine aufgedeckt.
+    expect(mit.pointsOhneSchuetzen)
+      .toBe(scoreTip(tip, { home: 5, away: 1, playerGoals: {} }, snap).total);
+  });
+
+  it("ohne getippte Schützen sind beide Zahlen gleich", () => {
+    // Kein Versprechen, kein Abschlag — die Zeile in der Oberfläche darf dann
+    // gar nicht erst auftauchen.
+    const p = projectTip({ home: 5, away: 1, goals: { home: [], away: [] } }, snap);
+    expect(p.pointsOhneSchuetzen).toBe(p.points);
+  });
+
+  it("🔴 geht das Spiel aus wie getippt, zahlt die Wertung exakt das Versprochene", () => {
+    // Der gemeinsame Bezugspunkt, der dem `gleich`-Durchgang lange gefehlt hat.
+    // Bricht das, ist es ein gebrochenes Versprechen an genau der Stelle, an
+    // der ein Spieler seine Entscheidung trifft.
+    const tip = { home: 5, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: [] } };
+    expect(projectTip(tip, snap).points)
+      .toBe(scoreTip(tip, { home: 5, away: 1, playerGoals: { "Al-Naimat": 2 } }, snap).total);
+  });
 });
 
 describe("scoreLeaderboard — Aggregation & Rang", () => {

@@ -3314,10 +3314,27 @@ verglichen.**
 „gleich" womöglich nur, dass nichts geprüft wurde — dieselbe Sperrklinke wie in
 `sicht` (kein Spieler-Screen übrig) und `greift` (Einstellung verworfen).
 
-**Was noch NICHT verglichen wird:** die Vorschau beim Tippen (`projectTip`)
-gegen die spätere Wertung, und die Rundenansicht. Beides braucht einen
-gemeinsamen Bezugspunkt, den es noch nicht gibt — wer dort weitermacht, hängt
-es an diesen Durchgang statt einen sechsten zu bauen.
+**✅ Nachgezogen am 09.08.2026 — die Vorschau ist jetzt drin (`gleich` Teil 2).**
+Der gemeinsame Bezugspunkt, der angeblich fehlte, gibt es doch, und es ist der
+einzige, der trägt: **das Spiel geht genau so aus, wie getippt wurde.** Dann
+MUSS die versprochene Zahl die gutgeschriebene sein. 120 Tipps über fünf
+Regelwerke, inklusive Joker und Gewicht (die Ebenen, die `scoreTip` ganz
+zuletzt anwendet): **die Vorschau hält.** Ein Test in `engine.test.js` hält es
+zusätzlich fest.
+
+🔴 **Der Befund kam aus der ZWEITEN Zahl derselben Messung**, die gar kein
+Fehler-Kandidat war: „Wenn dein Tipp exakt aufgeht: +1070" setzt
+stillschweigend voraus, dass auch die getippten SCHÜTZEN treffen. Trifft
+keiner, zahlt dasselbe Ergebnis **+146** — über 120 Tipps im Schnitt **62 %
+weniger**. Beide Zahlen stimmen; nur stand die zweite nirgends, und wer sie
+später bekommt, hält die Wertung für kaputt.
+**Behoben:** `projectTip` liefert jetzt `pointsOhneSchuetzen` mit, die
+Tippabgabe zeigt eine Zeile „… ohne deine Torschützen". Gerechnet wird das in
+der ENGINE, nicht im Screen — ein Screen, der es selbst nachrechnete, wäre die
+zweite Wahrheit, vor der die Runden-Schicht warnt.
+
+**Was noch NICHT verglichen wird:** die Rundenansicht. Wer dort weitermacht,
+hängt es an diesen Durchgang statt einen siebten zu bauen.
 
 ### ⚠️ 07.08.2026: Vercel-Deployment pausiert — Pro Plan abgelaufen
 

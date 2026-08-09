@@ -31,7 +31,7 @@
 //  Zahlen mit einem Ideal (siehe CLAUDE.md, Block ganz oben).
 // ============================================================
 import { createMockStore } from "../src/lib/store.mock.js";
-import { DEFAULT_RULES, sanitizeRules } from "../src/lib/engine.js";
+import { DEFAULT_RULES, sanitizeRules, projectTip, scoreTip } from "../src/lib/engine.js";
 import { breakdown } from "../src/lib/breakdown.js";
 import { LIGEN } from "../src/lib/ligen.js";
 
@@ -132,6 +132,123 @@ for (const [name, extra] of FAELLE) {
   console.log(zeile);
   if (abwVerlauf || abwPunkte || ketteFehler) befunde.push(name);
 }
+
+// ============================================================
+//  TEIL 2 — die VORSCHAU beim Tippen gegen die spätere WERTUNG
+//
+//  🔴 Warum das bis 09.08.2026 fehlte, stand in der Roadmap: „beides braucht
+//  einen gemeinsamen Bezugspunkt, den es noch nicht gibt". Den gibt es doch,
+//  und es ist der einzige, der trägt:
+//
+//      **Das Spiel geht GENAU SO aus, wie getippt wurde.**
+//
+//  In diesem Fall — und nur in diesem — muss die Zahl, die beim Tippen
+//  versprochen wurde, exakt die Zahl sein, die später gutgeschrieben wird.
+//  Alles andere ist ein gebrochenes Versprechen an genau der Stelle, an der
+//  ein Spieler seine Entscheidung trifft.
+//
+//  `projectTip` rechnet mit `playerGoals: null` — die Engine nimmt dann an,
+//  dass jeder getippte Schütze trifft (ein doppelt gesetzter zweimal). Die
+//  Deckungsgleichheit wird hier genau so gebaut, sonst verglichen wir zwei
+//  verschiedene Annahmen und nennten die Differenz einen Fehler.
+//
+//  ⚠️ Die zweite Zahl ist KEIN Befund, sondern eine Auskunft: um wie viel
+//  weniger zahlt dasselbe Ergebnis, wenn KEIN getippter Schütze trifft? Das
+//  ist die Spanne hinter dem Wort „möglich". Sie gehört gemessen, damit die
+//  Oberfläche sie benennen kann — nicht wegkorrigiert.
+// ============================================================
+console.log(`\n${"=".repeat(88)}`);
+console.log("  TEIL 2 — hält die Vorschau beim Tippen, was sie verspricht?");
+console.log("  Bezugspunkt: das Spiel geht genau so aus wie getippt");
+console.log(`${"=".repeat(88)}\n`);
+
+// Aus den getippten Schützen die Wirklichkeit bauen, die `projectTip`
+// annimmt: jeder Genannte trifft, ein doppelt Genannter zweimal.
+const schuetzenTreffen = (goals) => {
+  const pg = {};
+  for (const seite of ["home", "away"]) {
+    for (const p of goals?.[seite] ?? []) if (p) pg[p] = (pg[p] || 0) + 1;
+  }
+  return pg;
+};
+
+const vorschauBefunde = [];
+for (const [name, extra] of FAELLE) {
+  const rules = sanitizeRules({ ...DEFAULT_RULES, ...extra });
+  const st = createMockStore();
+  const rnd = await st.createRound({ name: "V", adminId: "u-0", rules, teamFilter: blTeams });
+  const spiele = (await st.listRoundMatches(rnd.id)).slice(0, 30);
+
+  let geprueft = 0;
+  let abweichend = 0;
+  let maxAbw = 0;
+  let mitSchuetzen = 0;
+  let summeVersprochen = 0;
+  let summeOhneSchuetzen = 0;
+
+  for (const m of spiele) {
+    const snap = m.snapshot;
+    if (!snap?.players) continue;
+    const heim = Object.keys(snap.players.home ?? {});
+    const gast = Object.keys(snap.players.away ?? {});
+    if (!heim.length || !gast.length) continue;
+
+    // Vier Tipps je Spiel, damit Joker und Gewicht vorkommen — genau die
+    // Ebenen, die `scoreTip` GANZ ZULETZT anwendet und die eine Vorschau
+    // deshalb am leichtesten verfehlt.
+    const varianten = [
+      { home: 2, away: 1, goals: { home: [heim[0]], away: [] } },
+      { home: 1, away: 1, goals: { home: [], away: [gast[0]] } },
+      { home: 3, away: 0, goals: { home: [heim[0], heim[0]], away: [] }, joker: true },
+      { home: 0, away: 2, goals: { home: [], away: [gast[0]] }, gewicht: 2 },
+    ];
+
+    for (const tip of varianten) {
+      const proj = projectTip(tip, snap, rules);
+      const wirklich = { home: tip.home, away: tip.away, playerGoals: schuetzenTreffen(tip.goals) };
+      const ist = scoreTip(tip, wirklich, snap, rules).total;
+      geprueft++;
+      const d = Math.abs(proj.points - ist);
+      if (d > 0.5) { abweichend++; maxAbw = Math.max(maxAbw, d); }
+
+      if ((tip.goals.home.length + tip.goals.away.length) > 0) {
+        const ohne = scoreTip(tip, { home: tip.home, away: tip.away, playerGoals: {} }, snap, rules).total;
+        mitSchuetzen++;
+        summeVersprochen += proj.points;
+        summeOhneSchuetzen += ohne;
+      }
+    }
+  }
+
+  // Dieselbe Sperrklinke wie in Teil 1: null Vergleiche wären keine Ruhe,
+  // sondern eine Messung, die den Fall gar nicht trifft.
+  if (geprueft === 0) {
+    console.log(`  ${name.padEnd(18)} ⚠️  NICHTS VERGLICHEN — die Messung trifft diesen Fall nicht.`);
+    vorschauBefunde.push(`${name} (nichts verglichen)`);
+    continue;
+  }
+
+  const anteil = summeVersprochen > 0
+    ? Math.round((1 - summeOhneSchuetzen / summeVersprochen) * 100) : 0;
+  console.log(`  ${name.padEnd(18)}`
+    + ` Vorschau ${abweichend === 0 ? "hält" : `⚠️ ${abweichend} abw. (max ${maxAbw.toFixed(1)})`}`
+    + ` · ${geprueft} Tipps geprüft`
+    + ` · ohne Schützen ${anteil} % weniger (${mitSchuetzen} Tipps)`);
+  if (abweichend) vorschauBefunde.push(name);
+}
+
+console.log(`\n${"-".repeat(88)}`);
+if (vorschauBefunde.length) {
+  console.log("  ⚠️ Die Vorschau verspricht etwas anderes, als die Wertung zahlt —");
+  console.log("     und zwar im deckungsgleichen Fall, wo beide gleich sein MÜSSEN:");
+  for (const b of vorschauBefunde) console.log(`     - ${b}`);
+} else {
+  console.log("  ✅ Geht das Spiel aus wie getippt, zahlt die Wertung exakt das Versprochene.");
+}
+console.log();
+console.log("  ℹ️ „ohne Schützen X % weniger\" ist KEIN Befund, sondern die Spanne hinter dem");
+console.log("     Wort „möglich\": dasselbe Ergebnis, aber kein getippter Schütze trifft.");
+console.log("     Die Zahl gehört in die Oberfläche, nicht in eine Korrektur.");
 
 console.log(`\n${"-".repeat(88)}`);
 if (befunde.length) {

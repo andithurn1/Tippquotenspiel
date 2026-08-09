@@ -6,6 +6,7 @@ import {
   DEFAULT_RULES, projectTip, weightUsageForMatchday,
   einsatzPlanung, invalidEinsatzMatchdays, spieltagKey,
 } from "@/lib/engine";
+import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
 import { zeitachse, rundenSchluessel, rundenSpieltagVon, verlaufNachRundenSpieltag, bespielteSpieltage } from "@/lib/zeitachse";
@@ -1183,6 +1184,21 @@ export default function Tippabgabe({ matchId }) {
                   </span>
                   <span style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: C.gold }}>+{proj.points}</span>
                 </div>
+                {/* 🔴 Die zweite Zahl, aus einem gemessenen Befund (09.08.2026,
+                    `npm run gleich` Teil 2): die große Zahl darüber setzt
+                    stillschweigend voraus, dass auch die getippten SCHÜTZEN
+                    treffen — über 120 Tipps gemessen sind das 62 % der Summe.
+                    Ohne diese Zeile liest jemand „+2150", bekommt bei exakt
+                    richtigem Ergebnis 820 und hält die Wertung für kaputt.
+                    ⚠️ Der Wert wird NICHT hier gerechnet, sondern kommt aus
+                    `projectTip` — sonst wäre es die zweite Wahrheit, vor der
+                    die Runden-Schicht in CLAUDE.md warnt. */}
+                {proj.pointsOhneSchuetzen < proj.points && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 3 }}>
+                    <span style={{ fontSize: 11.5, color: C.muted }}>… ohne deine Torschützen</span>
+                    <span style={{ fontFamily: MONO, fontSize: 14, color: C.muted }}>+{proj.pointsOhneSchuetzen}</span>
+                  </div>
+                )}
                 <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 11, color: r.col, border: `1px solid ${r.col}55`, borderRadius: 999, padding: "2px 8px" }}>{r.label}</span>
                   <span style={{ fontSize: 11.5, color: C.muted }}>
@@ -1503,8 +1519,11 @@ function Section({ title, children }) {
 }
 
 function Stepper({ value, onStep }) {
+  // ⚠️ QUADRAT, nicht `TAPZIEL`: `min-height` schlägt `height`, aus dem
+  // 34×34-Knopf würde sonst ein schmaler hoher Streifen. Und das hier ist der
+  // meistgedrückte Knopf der ganzen App — jeder Tipp geht durch ihn.
   const btn = {
-    width: 34, height: 34, borderRadius: 10, cursor: "pointer",
+    ...TAPZIEL_QUADRAT, borderRadius: 10, cursor: "pointer",
     background: C.surface2, color: C.text, border: `1px solid ${C.line}`,
     fontSize: 20, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center",
   };
