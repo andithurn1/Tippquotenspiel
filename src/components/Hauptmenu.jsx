@@ -77,15 +77,18 @@ export default function Hauptmenu() {
       padding: "48px 16px", display: "flex", justifyContent: "center",
     }}>
       <div style={{ width: "100%", maxWidth: 400 }}>
-        {/* 🔴 Das Logo statt der Wortmarke in Schrift (Andi, 09.08.2026).
-            Die HELLE Fassung, weil die App seit dem 07.08. auf Weiß läuft; die
-            dunkle liegt als `logo-dunkel.png` daneben und wäre die richtige,
-            falls das Theme je zurückgedreht wird.
-            ⚠️ `alt` trägt den Namen: das Bild IST hier die Überschrift, und wer
-            es nicht sieht (Vorlesefunktion, kaputte Verbindung), stünde sonst
-            vor einer namenlosen Seite. */}
-        <img src="/logo-hell.png" alt="QuotenTippspiel"
-          style={{ display: "block", width: 148, height: "auto", marginBottom: 6 }} />
+        {/* ⛔ Hier stand kurz das volle Logo als Bild (09.08.2026). Wieder
+            raus auf Andis Ansage: „schaut sehr klobig aus." Und er hat recht —
+            ein 148 px hohes Wappen über einer 26-px-Überschrift kippt das
+            Verhältnis, die Seite fängt mit einem Klotz an statt mit einer
+            Aussage. Das Logo gehört auf die App-Kachel und später vielleicht
+            klein in eine Kopfzeile, nicht als Aufmacher über den Text.
+            Die Dateien bleiben (`logo-hell.png`, `logo-dunkel.png`,
+            `wappen-*.png`) — sie werden gebraucht, sobald die Kopfzeile
+            gestaltet ist. */}
+        <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+          QuotenTippspiel
+        </div>
         <h1 style={{ fontSize: 26, fontWeight: 800, margin: "8px 0 6px" }}>Mut zahlt sich aus.</h1>
         <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.6, marginTop: 0, marginBottom: 24 }}>
           Quoten-gewichtetes Tippspiel unter Freunden. Kein Echtgeld — Ehre und

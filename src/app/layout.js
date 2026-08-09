@@ -14,7 +14,21 @@ export const metadata = {
   appleWebApp: {
     capable: true,
     title: "Tippquoten",
-    statusBarStyle: "black-translucent",
+    // 🔴 `default` statt `black-translucent` (09.08.2026, Andi gemeldet:
+    // „auf dem Homebildschirm ist die Schrift unsichtbar").
+    //
+    // Ein Überbleibsel des Theme-Wechsels vom 07.08.: `black-translucent`
+    // heißt, dass die Seite UNTER die Statusleiste läuft und iOS deren
+    // Inhalt — Uhrzeit, Akku, Empfang — in WEISS zeichnet. Das war richtig,
+    // solange die App dunkel war. Auf dem jetzt weißen Hintergrund ist es
+    // weiß auf weiß.
+    //
+    // ⚠️ Nicht am Wort „black" hängenbleiben: es beschreibt nicht die Farbe
+    // der Leiste, sondern die erwartete Helligkeit des INHALTS darunter.
+    // `default` legt die Leiste über die Seite und zeichnet sie dunkel —
+    // das Richtige für eine helle App. Wer das Theme je zurückdreht, dreht
+    // diese Zeile mit.
+    statusBarStyle: "default",
   },
   icons: {
     icon: [
