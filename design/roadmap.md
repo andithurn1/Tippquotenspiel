@@ -3412,8 +3412,19 @@ Tippabgabe zeigt eine Zeile „… ohne deine Torschützen". Gerechnet wird das 
 der ENGINE, nicht im Screen — ein Screen, der es selbst nachrechnete, wäre die
 zweite Wahrheit, vor der die Runden-Schicht warnt.
 
-**Was noch NICHT verglichen wird:** die Rundenansicht. Wer dort weitermacht,
-hängt es an diesen Durchgang statt einen siebten zu bauen.
+**✅ Und die Rundenansicht ist seit 09.08.2026 als Teil 3 dabei** — damit ist
+Punkt 3 der Reihenfolge vom 05.08. abgearbeitet. Verglichen werden die vier
+Zahlen der Übersicht (Spiele der Runde · offen · selbst getippt · Münz-/
+Narrenstand) über vier Runden-Zuschnitte, und zwar auf den ZWEI Wegen, die es
+dafür gibt: `RundenHub` fragt den Store, `Hauptmenu` filtert den Katalog selbst
+(laut eigenem Kommentar „die eine Ausnahme"). Genau solche Doppelwege waren die
+17 Funde vom 05.08.
+
+⚠️ Die Stand-Spalte zeigt in drei der vier Zuschnitte ein `—`: dort führt die
+Runde weder Münzen noch Narren, es wurde also NICHTS verglichen. Das steht
+bewusst dran — eine ungeprüfte Zeile darf sich nicht wie eine geprüfte lesen
+(dieselbe Sperrklinke wie in Teil 1 und 2). **Wer den Stand breiter absichern
+will, ergänzt Zuschnitte mit Narren-Ökonomie.**
 
 ### ⚠️ 07.08.2026: Vercel-Deployment pausiert — Pro Plan abgelaufen
 

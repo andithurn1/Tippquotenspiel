@@ -261,3 +261,114 @@ if (befunde.length) {
   console.log("  ✅ Jeder geprüfte Weg kommt auf dieselbe Zahl.");
 }
 console.log();
+
+// ============================================================
+//  TEIL 3 — die RUNDENANSICHT gegen die Wertung
+//
+//  Der letzte Weg, den dieser Durchgang nicht verglichen hat. Die Übersicht
+//  (`RundenHub`, `Hauptmenu`) zeigt vier Zahlen, die anderswo ebenfalls
+//  vorkommen: wie viele Spiele die Runde hat, wie viele davon offen sind,
+//  wie viele man selbst getippt hat, und den Münz- bzw. Narrenstand.
+//
+//  🔴 Der Grund, warum gerade hier gemessen werden muss: die beiden Screens
+//  holen ihre Zahlen auf VERSCHIEDENEN Wegen. `RundenHub` fragt den Store
+//  (`listRoundMatches`), `Hauptmenu` filtert den Katalog selbst — es ist
+//  laut eigenem Kommentar „die eine Ausnahme". Zwei Wege zu derselben Zahl
+//  sind genau die Stelle, an der dieses Projekt schon 17 Fehler hatte.
+//
+//  ⚠️ Und seit dem 09.08. ist es keine reine Anzeige-Frage mehr: die
+//  Spielauswahl greift jetzt wirklich. Läuft einer der beiden Wege daneben,
+//  zeigt die Übersicht eine andere Runde an, als getippt wird.
+// ============================================================
+console.log(`\n${"=".repeat(88)}`);
+console.log("  TEIL 3 — zeigt die Rundenansicht dieselbe Runde, die gewertet wird?");
+console.log(`${"=".repeat(88)}\n`);
+
+{
+  const { rundenSpiele, computeMatchStatus, countTippedByUser } = await import("../src/lib/roundStatus.js");
+  const { muenzStand } = await import("../src/lib/muenzstand.js");
+  const { narrenStand } = await import("../src/lib/narrenstand.js");
+
+  // Vier Runden-Zuschnitte, damit die Auswahl wirklich etwas wegnimmt.
+  const ZUSCHNITTE = [
+    ["alle Spiele", {}],
+    ["nur Bundesliga", { spiele: { wettbewerbe: ["bl"] } }],
+    ["Endspurt", { spiele: { spieltagVon: 30, spieltagBis: 34 } }],
+    ["Münz-Modus", { joker: { enabled: true, modus: "einsatz", faktor: 1 } }],
+  ];
+
+  const befunde3 = [];
+  for (const [name, extra] of ZUSCHNITTE) {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, ...extra });
+    const st = createMockStore();
+    const rnd = await st.createRound({ name, adminId: "u-0", rules });
+    const runde = await st.getRound(rnd.id);
+
+    const spieleStore = await st.listRoundMatches(rnd.id);
+    const alle = await st.listMatches();
+    // Der Weg des Hauptmenüs: Katalog selbst filtern.
+    const spieleMenue = rundenSpiele(alle, runde);
+
+    for (const [i, m] of spieleStore.slice(0, 20).entries()) {
+      for (const u of SPIELER.slice(0, 4)) {
+        st.seedTip({
+          roundId: rnd.id, matchId: m.id, userId: u,
+          tip: { home: i % 3, away: (i + 1) % 3, goals: { home: [], away: [] } },
+          snapshot: m.snapshot,
+        });
+      }
+    }
+
+    const tips = await st.listTips({ roundId: rnd.id });
+    const board = await st.getLeaderboard(rnd.id);
+    const ich = SPIELER[0];
+    const ausUebersicht = countTippedByUser(tips, ich);
+    const ausWertung = board.find((z) => z.userId === ich)?.tips ?? 0;
+
+    // Die beiden Stände: beide Screens rechnen sie, aber mit den Spielen aus
+    // ihrem jeweiligen Weg. Kommen verschiedene Spiele an, kommen verschiedene
+    // Stände heraus — und der Spieler sieht sein Guthaben zweimal anders.
+    const argsA = { rules, matches: spieleStore, tips, userId: ich };
+    const argsB = { rules, matches: spieleMenue, tips, userId: ich };
+    const muenzA = muenzStand(argsA)?.budget ?? null;
+    const muenzB = muenzStand(argsB)?.budget ?? null;
+    const narrA = narrenStand({ ...argsA, stand: null, zusatz: [] })?.kontostand ?? null;
+    const narrB = narrenStand({ ...argsB, stand: null, zusatz: [] })?.kontostand ?? null;
+
+    const gleichSpiele = spieleStore.length === spieleMenue.length;
+    const gleichTipps = ausUebersicht === ausWertung;
+    const gleichStand = muenzA === muenzB && narrA === narrB;
+    const offen = computeMatchStatus(spieleStore).open;
+    // 🔴 Sperrklinke, dieselbe wie in Teil 1 und 2: sind BEIDE Stände `null`
+    // (Münzen aus, Narren aus), wäre „gleich" nur die Aussage, dass nichts
+    // geprüft wurde. Das muss dranstehen, sonst meldet die Zeile Ruhe.
+    const standGeprueft = muenzA != null || narrA != null;
+
+    if (spieleStore.length === 0) {
+      console.log(`  ${name.padEnd(16)} ⚠️  NICHTS VERGLICHEN — dieser Zuschnitt lässt keine Spiele übrig.`);
+      befunde3.push(`${name} (nichts verglichen)`);
+      continue;
+    }
+
+    console.log(`  ${name.padEnd(16)}`
+      + ` Spiele ${gleichSpiele ? `${spieleStore.length} gleich` : `⚠️ ${spieleStore.length} vs ${spieleMenue.length}`}`
+      + ` · offen ${String(offen).padStart(4)}`
+      + ` · getippt ${gleichTipps ? `${ausUebersicht} gleich` : `⚠️ ${ausUebersicht} vs ${ausWertung}`}`
+      + ` · Stand ${!standGeprueft ? "—" : gleichStand ? "gleich" : `⚠️ ${muenzA}/${muenzB} · ${narrA}/${narrB}`}`);
+    if (!gleichSpiele || !gleichTipps || !gleichStand) befunde3.push(name);
+  }
+
+  console.log(`\n${"-".repeat(88)}`);
+  if (befunde3.length) {
+    console.log("  ⚠️ Die Rundenansicht zeigt etwas anderes, als gewertet wird:");
+    for (const b of befunde3) console.log(`     - ${b}`);
+    process.exitCode = 1;
+  } else {
+    console.log("  ✅ Übersicht und Wertung meinen dieselbe Runde.");
+  }
+  // Ein „—" in der Stand-Spalte heißt: in diesem Zuschnitt gibt es weder
+  // Münzen noch Narren. Das ist kein Befund, aber es muss dastehen — sonst
+  // liest sich eine ungeprüfte Zeile wie eine geprüfte.
+  console.log("  ℹ️ „—“ bei Stand = dieser Zuschnitt führt weder Münzen noch Narren.");
+  console.log();
+}

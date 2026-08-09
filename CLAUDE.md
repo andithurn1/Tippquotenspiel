@@ -266,13 +266,21 @@ Fehlermeldung. Bei jeder Anweisung dazusagen, ob die Datei bleibt oder weg kann.
     einziger Test schlägt rot fehl;
   · in einem JSX-Attribut endet das Attribut mitten im Satz, und der Build
     meldet nur `Expected '</', got ','` ohne Zeilennummer.
-  **Erkennungsprobe:** ein `grep` darauf listet auch jeden Kommentar mit und
-  ist damit unbrauchbar (dieselbe Halden-Falle wie überall). Was WIRKLICH
-  trägt, sind zwei Zahlen:
-  · `npm test` — die Zahl der Tests darf nach einer Änderung nur STEIGEN.
-    Sinkt sie ohne roten Test, ist eine Suite nicht mehr geparst worden.
-  · `npm run build` — bei `Expected '</', got ','` ohne Zeilennummer zuerst
-    in der zuletzt angefassten `.jsx` nach `„…"` suchen, nicht im JSX-Aufbau.
+  🔴 **Die Erkennungsprobe ist `npm run lint` — nachgemessen am 09.08.2026.**
+  ESLint parst `src` UND `scripts` und meldet den Bruch mit DATEI UND
+  ZEILENNUMMER: `372:25 Parsing error: Unexpected token bei`. Damit ist es
+  in Sekunden gefunden, statt über Test-Zähler und Build-Meldung erschlossen.
+  **Also: `npm run lint` VOR `npm run build`.**
+  · Am 09.08. dreimal hineingelaufen (JSX-Attribut, Template-String,
+    `console.log`) — jedes Mal hat `lint` es sofort mit Zeile gezeigt.
+  ⛔ **Keine eigene Prüfung dafür bauen.** Am 09.08. einmal versucht: ein
+  Skript, das `„` ohne `“` sucht, meldete **1026 Treffer** — fast alle in
+  KOMMENTAREN, wo ein gerades `"` völlig harmlos ist. Genau die Halden-Falle,
+  vor der dieses Dokument überall warnt. Das Skript wurde wieder gelöscht;
+  `lint` kann es besser, weil es wirklich parst.
+  · Ergänzend, wenn `lint` einmal nicht läuft: `npm test` — die Zahl der Tests
+    darf nach einer Änderung nur STEIGEN. Sinkt sie ohne roten Test, ist eine
+    Suite nicht mehr geparst worden.
 - **Commit-Nachrichten über eine Datei** (`git commit -F <datei>`), nicht per
   `-m` mit Anführungszeichen: PowerShell zerlegt sie sonst.
   ℹ️ **Umlaute dürfen rein.** Die älteren Commits schreiben „Uebergabe",
