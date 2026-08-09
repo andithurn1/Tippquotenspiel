@@ -20,7 +20,7 @@ import { scoreSaison } from "./saisonwetten";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 import { einsaetzeAusTipps } from "./duellJoker";
-import { filterMatchesByTeams } from "./roundStatus";
+import { rundenSpiele as rundenSpieleVon, rundenAuswahl } from "./roundStatus";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { darfSaisonTippen } from "./saisonFenster";
@@ -145,7 +145,7 @@ export function createMockStore() {
     // Runde, sonst kämen zwei verschiedene Runden-Spieltage heraus, je nachdem
     // wer `beschlussLage` aufruft.
     achse: achse ?? zeitachse(
-      filterMatchesByTeams([...matches.values()], rounds.get(roundId)?.team_filter),
+      rundenSpieleVon([...matches.values()], rounds.get(roundId)),
       rules?.zeitachse,
     ),
   });
@@ -161,7 +161,7 @@ export function createMockStore() {
     // ⚠️ Über die Spiele DIESER Runde, nicht über den Katalog — siehe
     // `listRoundMatches`. Wird gleich mehrfach gebraucht (Ersatz-Tipps,
     // Zeitachse, Saison-Wetten).
-    const rundenSpiele = filterMatchesByTeams([...matches.values()], round?.team_filter);
+    const rundenSpiele = rundenSpieleVon([...matches.values()], round);
     // 🔴 Ersatz-Tipps (Versäumnis) gehören in DIESELBE Eintragsliste wie echte
     // Tipps — sonst müsste jeder Wertungs-Weg sie einzeln kennen. Sie tragen
     // `ersatz: true` und einen `malusFaktor`, `scoreLeaderboard` verrechnet
@@ -320,7 +320,7 @@ export function createMockStore() {
     // Rad und Freigaben über den Katalog.
     async listRoundMatches(roundId) {
       const round = rounds.get(roundId);
-      return filterMatchesByTeams([...matches.values()], round?.team_filter);
+      return rundenSpieleVon([...matches.values()], round);
     },
     async getMatch(id) { return matches.get(id) ?? null; },
 
@@ -423,6 +423,17 @@ export function createMockStore() {
         rules: applyEntitlements(sanitizeRules(rules), { premium: isPremium(admin) }),
         join_code: joinCode,
         team_filter: Array.isArray(teamFilter) && teamFilter.length >= 2 ? teamFilter : null,
+        // 🔴 Die GANZE Spielauswahl einfrieren, nicht nur die Vereinsliste
+        // (09.08.2026). Vorher hielt `team_filter` allein fest, was beim
+        // Anlegen herauskam — Wettbewerbe, Phasen, Spieltag-Bereich, feste
+        // Liste und die Liga-Sonderregeln gingen dabei verloren. Gemessen:
+        // „nur Bundesliga" ergab 1943 statt 306 Spiele.
+        //
+        // ⚠️ Eingefroren und NICHT live aus `rules.spiele` gelesen: eine Runde
+        // kann ihr Regelwerk per Abstimmung ändern, und ein Beschluss darf
+        // nicht rückwirkend ändern, welche Spiele je dazugehört haben. Dieselbe
+        // Kante wie beim Quoten-Snapshot.
+        spiele: rundenAuswahl({ spiele: sanitizeRules(rules).spiele, teamFilter }),
       };
       rounds.set(round.id, round);
       members.push({ round_id: round.id, user_id: adminId, name: adminName ?? adminId });
@@ -445,7 +456,7 @@ export function createMockStore() {
       const match = matches.get(matchId);
       const round = rounds.get(roundId);
       const status = tippStatus(match, round?.rules ?? DEFAULT_RULES, Date.now(),
-        spieltagStarts(filterMatchesByTeams([...matches.values()], round?.team_filter)));
+        spieltagStarts(rundenSpieleVon([...matches.values()], round)));
       if (!status.offen) {
         throw new Error(`Dieses Spiel ist nicht tippbar: ${status.text}.`);
       }
@@ -584,7 +595,7 @@ export function createMockStore() {
       const round = rounds.get(roundId);
       const grund = darfSaisonTippen({
         rules: round?.rules ?? DEFAULT_RULES, id: wettenId,
-        matches: filterMatchesByTeams([...matches.values()], round?.team_filter),
+        matches: rundenSpieleVon([...matches.values()], round),
       });
       if (grund) throw new Error(grund);
       return seedSeasonTip({ roundId, userId, wettenId, wert });
@@ -709,7 +720,7 @@ export function createMockStore() {
         .filter((t) => t.round_id === roundId && t.user_id === userId)
         .map((t) => [t.wetten_id, t.wert]));
       return scoreSaison({
-        matches: filterMatchesByTeams([...matches.values()], round?.team_filter),
+        matches: rundenSpieleVon([...matches.values()], round),
         tipps, saison: rules.saison,
       });
     },

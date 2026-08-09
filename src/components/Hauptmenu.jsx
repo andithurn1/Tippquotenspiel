@@ -7,7 +7,7 @@ import AuthBar from "@/components/AuthBar";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { getStore } from "@/lib/store";
-import { computeMatchStatus, countTippedByUser, filterMatchesByTeams } from "@/lib/roundStatus";
+import { computeMatchStatus, countTippedByUser, rundenSpiele } from "@/lib/roundStatus";
 import { muenzStand } from "@/lib/muenzstand";
 import { narrenStand } from "@/lib/narrenstand";
 import Waehrungen from "@/components/Waehrungen";
@@ -45,7 +45,7 @@ export default function Hauptmenu() {
         // — wächst die Regel dort, muss diese Zeile MIT (Runden-Schicht,
         // Frage 1). Die vier Einzelrunden-Screens sind am 06.08.2026 auf die
         // Store-Methode umgestellt worden; das hier ist die eine Ausnahme.
-        const relevant = filterMatchesByTeams(matches, r.team_filter);
+        const relevant = rundenSpiele(matches, r);
         const { total, open } = computeMatchStatus(relevant);
         const [tips, history, rad] = await Promise.all([
           getStore().listTips({ roundId: r.id }), getStore().getLeaderboardHistory(r.id),

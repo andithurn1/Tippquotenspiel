@@ -77,6 +77,22 @@ create table if not exists public.rounds (
 -- team_filter-Spalte hat: nachträglich ergänzen (idempotent).
 alter table public.rounds add column if not exists team_filter jsonb;
 
+-- 🔴 spiele = die GANZE Spielauswahl, beim Anlegen eingefroren (09.08.2026).
+-- `team_filter` konnte nur eine Vereinsliste festhalten; Wettbewerbe, Phasen,
+-- Spieltag-Bereich, feste Begegnungsliste und die Liga-Sonderregeln gingen
+-- beim Anlegen verloren. Gemessen: eine Runde „nur Bundesliga" umfasste 1943
+-- statt 306 Spiele.
+--
+-- ⚠️ EINGEFROREN und nicht live aus `rules.spiele` gelesen: eine Runde kann
+-- ihr Regelwerk per Abstimmung ändern, und ein Beschluss darf nicht
+-- rückwirkend ändern, welche Spiele je dazugehört haben — samt der Tipps
+-- darauf. Dieselbe Kante wie beim Quoten-Snapshot.
+--
+-- ⚠️ Bestehende Runden behalten `spiele = null` und laufen weiter über
+-- `team_filter` (Rückfall in `rundenSpiele`, roundStatus.js). Nichts an einer
+-- laufenden Runde ändert sich dadurch.
+alter table public.rounds add column if not exists spiele jsonb;
+
 -- ── Mitglieder einer Runde ──────────────────────────────────
 create table if not exists public.round_members (
   round_id  uuid not null references public.rounds(id) on delete cascade,

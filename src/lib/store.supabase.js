@@ -14,7 +14,7 @@ import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
 import { scoreSaison } from "./saisonwetten";
-import { filterMatchesByTeams } from "./roundStatus";
+import { rundenSpiele as rundenSpieleVon, rundenAuswahl } from "./roundStatus";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
@@ -84,7 +84,7 @@ export function createSupabaseStore() {
     // 🔴 Die Spiele DIESER RUNDE — Begründung im Mock-Store.
     async listRoundMatches(roundId) {
       const [round, matches] = await Promise.all([this.getRound(roundId), this.listMatches()]);
-      return filterMatchesByTeams(matches, round?.team_filter);
+      return rundenSpieleVon(matches, round);
     },
 
     async listMatches() {
@@ -204,7 +204,14 @@ export function createSupabaseStore() {
       for (let attempt = 0; attempt < 5; attempt++) {
         const { data, error } = await sb
           .from("rounds")
-          .insert({ name: (name ?? "").trim() || "Neue Runde", admin_id: adminId, rules: wirksameRegeln, join_code: joinCode, team_filter })
+          // `spiele`: die GANZE Spielauswahl, beim Anlegen eingefroren.
+          // Begründung im Mock-Store und in `rundenSpiele` (roundStatus.js).
+          // ⚠️ Braucht die Spalte `rounds.spiele` aus `schema.sql`.
+          .insert({
+            name: (name ?? "").trim() || "Neue Runde", admin_id: adminId,
+            rules: wirksameRegeln, join_code: joinCode, team_filter,
+            spiele: rundenAuswahl({ spiele: wirksameRegeln.spiele, teamFilter }),
+          })
           .select()
           .single();
         if (!error) { await this.joinRound({ roundId: data.id, userId: adminId }); return data; }
@@ -406,7 +413,7 @@ export function createSupabaseStore() {
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
       const rules = round?.rules ?? DEFAULT_RULES;
       // ⚠️ Über die Spiele DIESER Runde — siehe `listRoundMatches`.
-      const rundenSpiele = filterMatchesByTeams(matches, round?.team_filter);
+      const rundenSpiele = rundenSpieleVon(matches, round);
       // 🔴 Ersatz-Tipps (Versäumnis) in DERSELBEN Eintragsliste — siehe
       // Mock-Store. `autoTipsFor` war bis 06.08.2026 von niemandem aufgerufen.
       const entries = [
@@ -529,7 +536,7 @@ export function createSupabaseStore() {
       // heraus als im Leaderboard.
       return beschlussLage({
         rules, antraege, members, adminId: round?.admin_id ?? null,
-        matches: filterMatchesByTeams(matches, round?.team_filter),
+        matches: rundenSpieleVon(matches, round),
       });
     },
 

@@ -719,3 +719,62 @@ if (taubeTore.length) {
   console.log("  ✅ Jedes geprüfte Tor öffnet und schließt.");
 }
 console.log();
+
+// ============================================================
+//  TEIL 4 — kommt die SPIELAUSWAHL in der angelegten Runde an?
+//
+//  🔴 Der teuerste Fund vom 09.08.2026, und er stand in keiner Messung:
+//  eine Runde bestimmte ihre Spiele ausschließlich über `team_filter` — eine
+//  flache Vereinsliste. Wettbewerbe, Phasen, Spieltag-Bereich, feste Liste und
+//  die Liga-Sonderregeln verdampften beim Anlegen. „Nur Bundesliga" ergab 1943
+//  statt 306 Spiele.
+//
+//  Warum keine der bestehenden Abnahmen das sah: `greift` fragte, ob eine
+//  Einstellung die WERTUNG bewegt — nicht, ob sie die SPIELMENGE der Runde
+//  bewegt. Beide Seiten rechneten für sich korrekt. Genau das Muster der 17
+//  Funde vom 05.08.
+//
+//  Deshalb steht die Messung jetzt hier: sie vergleicht, was das Regelwerk
+//  sagt, mit dem, was die angelegte Runde liefert.
+// ============================================================
+{
+  console.log(`\n${"=".repeat(88)}`);
+  console.log("  TEIL 4 — kommt die Spielauswahl in der angelegten Runde an?");
+  console.log(`${"=".repeat(88)}\n`);
+
+  const { filterSpiele } = await import("../src/lib/spielauswahl.js");
+  const FAELLE = [
+    ["nur Bundesliga", { wettbewerbe: ["bl"] }],
+    ["nur CL ab Achtelfinale", { wettbewerbe: ["cl"], phasen: ["achtelfinale", "viertelfinale", "halbfinale", "finale"] }],
+    ["nur Spieltag 30-34", { spieltagVon: 30, spieltagBis: 34 }],
+    ["Sonderregeln je Liga", { jeWettbewerb: { bl: { spieltagVon: 30, zonen: [{ von: 14, bis: 18 }] } } }],
+    ["feste Vereinsliste", { modus: "teams", teams: ["FC Bayern München", "Borussia Dortmund"] }],
+  ];
+
+  const abweichungen = [];
+  for (const [name, spiele] of FAELLE) {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, spiele });
+    const st = createMockStore();
+    const rnd = await st.createRound({ name, adminId: "u-0", rules });
+    const inRunde = (await st.listRoundMatches(rnd.id)).length;
+    const nachRegel = filterSpiele(await st.listMatches(), rules.spiele).length;
+    const gleich = inRunde === nachRegel;
+    if (!gleich) abweichungen.push(`${name} (Regelwerk ${nachRegel}, Runde ${inRunde})`);
+    console.log(`  ${name.padEnd(24)} Regelwerk ${String(nachRegel).padStart(5)}`
+      + ` · Runde ${String(inRunde).padStart(5)} · ${gleich ? "gleich" : "⚠️ ABWEICHUNG"}`);
+  }
+
+  console.log(`\n${"-".repeat(88)}`);
+  if (abweichungen.length) {
+    console.log("  ⚠️ Diese Einstellungen kommen in der Runde NICHT an:");
+    for (const a of abweichungen) console.log(`     - ${a}`);
+    console.log();
+    console.log("  🔴 Der Admin stellt etwas ein, die Spielerstellung zeigt die richtige Zahl,");
+    console.log("     und die Runde spielt trotzdem etwas anderes. Beide Seiten rechnen für");
+    console.log("     sich korrekt — deshalb fällt es ohne diese Messung niemandem auf.");
+    process.exitCode = 1;
+  } else {
+    console.log("  ✅ Was eingestellt wurde, gilt auch in der angelegten Runde.");
+  }
+  console.log();
+}

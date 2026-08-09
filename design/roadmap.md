@@ -351,7 +351,43 @@ Messbefehl, damit niemand raten muss:
 
 </details>
 
-### 🔴🔴 DIE SPIELAUSWAHL KOMMT IN DER RUNDE GAR NICHT AN (gefunden 09.08.2026)
+### 🔴🔴 DIE SPIELAUSWAHL KOMMT IN DER RUNDE GAR NICHT AN — ✅ BEHOBEN (09.08.2026)
+
+**Behoben am selben Tag.** Die ganze `rules.spiele` wird beim Anlegen auf der
+Runde eingefroren (`rounds.spiele`), und `rundenSpiele(matches, round)` in
+`roundStatus.js` ist die EINE Stelle, die sie anwendet — alle elf Aufrufer in
+beiden Stores und im Hauptmenü gehen darüber.
+
+```
+                     Regelwerk   Runde vorher   Runde jetzt
+nur Bundesliga            306          1943           306  ✅
+nur CL ab Achtelfinale     15          1943            15  ✅
+nur Spieltag 30–34        240          1943           240  ✅
+Sonderregeln je Liga     1637          1943          1637  ✅
+feste Vereinsliste         85            85            85  ✅
+```
+
+🔴 **Drei Punkte, die nicht aufgeweicht werden dürfen:**
+1. **EINGEFROREN, nicht live gelesen.** Eine Runde kann ihr Regelwerk per
+   Abstimmung ändern; ein Beschluss darf nicht rückwirkend ändern, welche
+   Spiele je dazugehört haben — samt der Tipps darauf. Dieselbe Kante wie beim
+   Quoten-Snapshot.
+2. **Bestehende Runden ändern sich NICHT.** Sie haben `spiele = null` und
+   laufen weiter über `team_filter` (Rückfall in `rundenSpiele`). Damit ist
+   Andis Frage nach der laufenden Runde beantwortet: es passiert nichts.
+3. **Ein übergebener `teamFilter` gewinnt** über die Vereinsliste im
+   Regelwerk (`rundenAuswahl`) — „die Runde gewinnt", CLAUDE.md. Beim ersten
+   Anlauf hat genau diese Zusammenführung gefehlt, neun Tests haben es
+   gemeldet.
+
+**Die Messung steht jetzt in `npm run greift` (Teil 4)** und setzt bei einer
+Abweichung den Exit-Code. Sie kann damit nicht mehr still zurückfallen.
+
+⚠️ **Andi muss `supabase/schema.sql` einmal ausführen** — die Spalte
+`rounds.spiele` fehlt sonst live, und `createRound` schlägt fehl. Das Schema
+ist idempotent.
+
+<details><summary>Der ursprüngliche Befund</summary>
 
 **Der größte Fund seit dem 05.08., und er ist gemessen, nicht vermutet.** Eine
 Runde bestimmt ihre Spiele AUSSCHLIESSLICH über `rounds.team_filter` — eine
@@ -389,6 +425,10 @@ gefragt. Dieselbe Sorte Befund wie `autoTip.js` seinerzeit.
 ⚠️ **Vorher klären**, weil es eine Fairness-Kante ist: was passiert mit einer
 LAUFENDEN Runde, deren Spielmenge sich dadurch ändert? Tipps auf Spiele, die
 plötzlich nicht mehr dazugehören, dürfen nicht still verschwinden.
+→ **Beantwortet:** gar nichts. Bestehende Runden haben `spiele = null` und
+laufen weiter über `team_filter`.
+
+</details>
 
 ### 🔴 Ereignisse: der Trost-Joker war nicht angeschlossen (06.08.2026) — ✅ behoben
 
