@@ -126,6 +126,126 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-09 (II) · 🔴 **ÜBERGABE** — Gestaltung ist dran, Andi arbeitet mit Screenshots
+
+> **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
+> außer `CLAUDE.md` brauchst du nichts zu lesen.
+
+#### Wo du landest
+
+```
+main   bfd1e31   (alles gepusht, nichts hängt lokal)
+Tests  2141 grün · 43 skipped (Balance, ABSICHTLICH — nicht reparieren)
+Build  sauber · lint · greift · gleich · anzeige · stufen · sicht · tot ohne Befund
+Live   https://tippquotenspiel.vercel.app
+```
+
+#### 🔴 ZUERST: Andi legt Screenshots ab — sieh dort nach
+
+`design/screenshots/` ist neu. Andi zeigt darin, wie er Dinge aufgebaut haben
+will, statt es zu beschreiben. **Vor jeder Gestaltungsarbeit dort hineinsehen**
+— eine Datei `erstellen-soll.png` beantwortet mehr als drei Absätze im Chat.
+Die Namenskonvention steht in `design/screenshots/README.md`.
+
+#### ▶️ DEIN AUFTRAG: der Gestaltungs-Durchgang
+
+Andi hat am 09.08. ausdrücklich gesagt, dass ihm der bisherige Look zu weit weg
+ist von „nahtlos, einheitlich, natürlich harmonisch". **Der Launch-Termin ist
+dafür ausdrücklich zweitrangig** („launch ist nicht so wichtig, gerne gutes top
+design"). Das ändert die Abwägung: Gründlichkeit vor Tempo.
+
+**Seine konkreten Ansagen, wörtlich zu nehmen:**
+
+| Nr. | Ansage | Stand |
+|---|---|---|
+| 1 | **F7 (der Akzent, bisher Gold) soll LILA sein** | offen |
+| 2 | **R2 (12 px) ist der bevorzugte Eckenradius** | offen |
+| 3 | **Durchweg die Apple-Schrift — „Typ und Formatierung"**, also auch Apples Größenstaffel | offen |
+| 4 | **Die vom Nutzer gewählten Farben (primär/sekundär) nur noch für minimalistische Verzierungen und dynamische Übergänge zwischen Fenstern** | offen |
+| 5 | Erstkontakt-Ablauf: wie wird man beim ERSTEN Start durchgelotst, was sieht ein Wiederkehrer | offen |
+| 6 | Aufbau der Elemente in der **Admin-Einstellung** überarbeiten — will er einzeln mit Claude durchsprechen | offen, **auf ihn warten** |
+
+🔴 **Punkt 4 ist kein Farbwunsch, sondern ein Umbau der Bedeutung.** Heute
+überschreibt `applyFanColors` in `theme.js` die Akzente `gold`/`indigo`/`violet`
+mit den Vereinsfarben des Nutzers. Damit wäre Andis Lila sofort weg, sobald
+jemand Fanfarben wählt. Gewollt ist: **Lila bleibt die Marke**, die Nutzerfarben
+bekommen EIGENE Tokens und tauchen nur in Verzierungen und Übergängen auf.
+Das berührt `theme.js` (`deriveRoles`), `theme.test.js`, `Fanfarben.jsx` und die
+CSS-Variablen — **als EIN Schritt machen, nicht halb.** Wer nur Punkt 1 umsetzt
+und Punkt 4 liegen lässt, baut einen Zustand, in dem die Markenfarbe zufällig
+verschwindet.
+
+⚠️ Punkt 1 und 3 sind billig und sichtbar — sie trotzdem NICHT einzeln
+vorziehen, siehe oben.
+
+#### ⏳ Offene Entscheidung: Tailwind — RECHERCHE FEHLT
+
+Andi: *„ich denke wir sollten dennoch zum professionellen tool rüberwechseln …
+wenn das nicht alles zerschießt."* Er tendiert dazu, hat aber Sorge vor einem
+Scherbenhaufen.
+
+**Was den Fall gegenüber gestern verändert hat, und das ist entscheidend:** er
+sagt selbst, dass er „eh nochmal alles einzelne und den Aufbau der Elemente"
+überarbeiten will. Das Hauptargument gegen Tailwind war der Preis, 67
+Komponenten umzuschreiben — wenn die ohnehin angefasst werden, fällt es weg.
+
+⚠️ **Ich konnte es nicht zu Ende recherchieren** (Sitzungslimit beim Websuchen).
+Wer das aufgreift, klärt VOR einer Empfehlung:
+1. Tailwind v4 mit Next 15.3 — Installation, `@theme`, und ob die Tokens
+   wirklich CSS-Variablen sind.
+2. **Bleiben die Fanfarben dynamisch?** Sie ändern Farben ZUR LAUFZEIT. Das
+   war mein Hauptvorbehalt; mit variablenbasierten Tokens löst er sich
+   vermutlich auf — vermutlich reicht nicht.
+3. Wie groß der Schritt für `Spielerstellung.jsx` (2000+ Zeilen) wirklich ist.
+
+**Nicht anfangen, bevor das geklärt und Andi zugestimmt hat.**
+
+#### ✅ Was am 09.08. schon entstanden ist — darauf aufbauen, nicht neu erfinden
+
+- **Stilebene** `src/app/globals.css`: Tokens (Farben, Abstände, vier Radien,
+  sechs Schriftgrößen), Zustände (`:hover`/`:active`/`:focus-visible`),
+  Bewegung (drei Dauern, zwei Kurven), `prefers-reduced-motion`.
+  ⚠️ **Bewusst OHNE Reset** — die Datei ändert von sich aus nichts, eine
+  Komponente muss eine Klasse nehmen. Deshalb ist der Umbau Screen für Screen
+  möglich. Wer dort ein `* { box-sizing }` einträgt, verschiebt 67 Komponenten
+  auf einmal.
+- **`src/lib/cssVariablen.js`** spiegelt `theme.js` ins Dokument. `theme.js`
+  bleibt die EINE Quelle; Screens lesen `C.gold`, das Stylesheet
+  `var(--tqs-gold)`. Eine Richtung. Im Browser gegengeprüft: Fanfarbe wählen →
+  Variable zieht mit.
+- **`src/components/Aktion.jsx`** — Link, der über `useLinkStatus` (Next 15.3)
+  selbst weiß, dass sein Ziel lädt, und so lange leuchtet. **Kein Timer**: eine
+  geratene Dauer ist bei schneller Verbindung zu lang und bei langsamer zu kurz.
+- **Musterseite `/stil`** — jeder Baustein mit Kürzel (F1–F9, R1–R4, S1–S6,
+  B1–B6, L1–L2). Damit sagt Andi „B2 Ecken zu rund" statt es zu umschreiben.
+  **Neue Bausteine dort eintragen**, sonst verliert das Vokabular seinen Sinn.
+
+#### ⚠️ Zwei Dinge, die diese Sitzung teuer gemacht haben
+
+1. **Ich sehe nicht, was ich baue.** `screenshot` scheitert mit „the Browser
+   pane is not displayed". Messen geht (DOM, Pixelhöhen), sehen nicht. Bei
+   Layout ist das lästig, bei Animation fast blind. **Frag Andi früh, ob er die
+   Browser-Ansicht einblenden kann** — es ist der größte einzelne Hebel.
+2. **`„…“` niemals mit `"` schließen.** Am 09.08. dreimal hineingelaufen.
+   `npm run lint` findet es sofort mit Datei und Zeile — vor `npm run build`
+   laufen lassen. Und **keine eigene Prüfung dafür bauen**: einmal versucht,
+   1026 Treffer, fast alle in Kommentaren (steht in `CLAUDE.md`).
+
+#### Sonstiges Offene
+
+- **Eigener SMTP-Versand (Brevo + Domain)** — Launch-Blocker: Supabase' Versand
+  schickt NUR an Team-Mitglieder, Mitspieler können sich nicht anmelden. Die
+  Schritt-für-Schritt-Anleitung hat Andi; er ist am Zug.
+- **`supabase/seed-matches-pl/pd/sa.sql`** ausführen, falls die echten
+  Spielpläne live gebraucht werden (Mock läuft ohne).
+- **Champions League** bleibt erzeugt, bis die Auslosung Ende August steht.
+
+⛔ **Nicht anfangen:** Balancing (Endphase, siehe `CLAUDE.md` ganz oben), Andis
+eigene Joker-/Ereignis-Überarbeitung, Punkt 6 oben (Admin-Aufbau) ohne ihn.
+
+---
+
+
 ### 2026-08-09 · 🔴 **Was eingestellt wird, gilt jetzt auch in der Runde** — plus zwei neue Ebenen
 
 ```
