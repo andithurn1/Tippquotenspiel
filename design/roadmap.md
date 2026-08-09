@@ -351,6 +351,45 @@ Messbefehl, damit niemand raten muss:
 
 </details>
 
+### 🔴🔴 DIE SPIELAUSWAHL KOMMT IN DER RUNDE GAR NICHT AN (gefunden 09.08.2026)
+
+**Der größte Fund seit dem 05.08., und er ist gemessen, nicht vermutet.** Eine
+Runde bestimmt ihre Spiele AUSSCHLIESSLICH über `rounds.team_filter` — eine
+flache Vereinsliste. Alles andere aus `rules.spiele` verdampft beim Anlegen:
+
+```
+Regelwerk sagt          Runde liefert
+nur Bundesliga             306                1943   ⚠️
+nur CL ab Achtelfinale      15                1943   ⚠️
+nur Spieltag 30–34         240                1943   ⚠️
+Abstiegskampf BL          1637                1943   ⚠️
+```
+
+**Warum es niemandem auffiel:** die Spielerstellung zeigt die richtige Zahl —
+sie rechnet mit `filterSpiele`. Der Store rechnet mit `filterMatchesByTeams`
+über `team_filter`. Beide Seiten sind für sich korrekt, und `npm run greift`
+prüft, ob eine Einstellung die WERTUNG bewegt, nicht ob sie die
+Spielmenge der Runde bewegt. Exakt das Muster der 17 Funde vom 05.08.
+
+⚠️ **Betroffen ist damit auch Schritt 3 vom 08.08.** (`jeWettbewerb`, `zonen`):
+die Logik ist gebaut, getestet und einstellbar — und wird von der Runde nicht
+gefragt. Dieselbe Sorte Befund wie `autoTip.js` seinerzeit.
+
+**Der Weg, so wie ihn `listRoundMatches` schon vorgibt:**
+1. Beim Anlegen die GANZE `rules.spiele` auf der Runde festhalten, nicht nur
+   die Vereinsliste. `team_filter` bleibt für Altrunden lesbar.
+2. `listRoundMatches` filtert mit `filterSpiele(alle, round.spiele ?? aus
+   team_filter abgeleitet)`. **Eine Stelle**, wie bisher — sie rechnet nur
+   richtig.
+3. `store.supabase.js` mit (`rounds` braucht eine Spalte, `schema.sql` ist
+   idempotent), sonst laufen Mock und Live auseinander.
+4. Danach messen, nicht hoffen: das Skript oben gehört als Teil in
+   `npm run greift`, damit „die Auswahl greift" eine Zahl hat.
+
+⚠️ **Vorher klären**, weil es eine Fairness-Kante ist: was passiert mit einer
+LAUFENDEN Runde, deren Spielmenge sich dadurch ändert? Tipps auf Spiele, die
+plötzlich nicht mehr dazugehören, dürfen nicht still verschwinden.
+
 ### 🔴 Ereignisse: der Trost-Joker war nicht angeschlossen (06.08.2026) — ✅ behoben
 
 Dritter Fund derselben Sorte wie beim Versäumnis (`autoTip.js`) und beim
