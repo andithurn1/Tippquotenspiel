@@ -30,7 +30,7 @@
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { normalisiereSpielplan, pruefeSpielplan } from "../src/lib/spielplan.js";
+import { normalisiereSpielplan, pruefeSpielplan, parseOpenfootball } from "../src/lib/spielplan.js";
 import { TEAM_RATINGS } from "../src/lib/bundesligaData.js";
 import { BL2_TEAM_RATINGS } from "../src/lib/zweiteLigaData.js";
 import { PL_TEAM_RATINGS } from "../src/lib/premierLeagueData.js";
@@ -55,11 +55,70 @@ const ALIASE = {
   // waere hier nur eine Stelle, an der eine veraltete Liste unauffaellig
   // weiterlebt.
   bl2: {},
-  // Die 2. Liga schreibt bei OpenLigaDB einige Klubs anders als unsere Liste.
-  // Wie oben: explizit, nie geraten.
-  pl: {},
-  pd: {},
-  sa: {},
+  // 🔴 openfootball schreibt die Klubs vollständig aus („Arsenal FC"), unsere
+  // Listen kurz und teils eingedeutscht („FC Arsenal", „Inter Mailand").
+  // Beide Seiten haben exakt 20 Klubs und decken sich eins zu eins —
+  // nachgezählt beim Import am 09.08.2026. Diese Listen sind deshalb
+  // VOLLSTÄNDIG und keine Sammlung von Sonderfällen: fehlt ein Name, bricht
+  // `pruefeSpielplan` ab, statt still eine halbe Saison zu bauen.
+  pl: {
+    "Arsenal FC": "FC Arsenal",
+    "Aston Villa FC": "Aston Villa",
+    "Brentford FC": "FC Brentford",
+    "Brighton & Hove Albion FC": "Brighton & Hove Albion",
+    "Chelsea FC": "FC Chelsea",
+    "Coventry City FC": "Coventry City",
+    "Crystal Palace FC": "Crystal Palace",
+    "Everton FC": "FC Everton",
+    "Fulham FC": "FC Fulham",
+    "Hull City AFC": "Hull City",
+    "Ipswich Town FC": "Ipswich Town",
+    "Leeds United FC": "Leeds United",
+    "Liverpool FC": "FC Liverpool",
+    "Manchester City FC": "Manchester City",
+    "Manchester United FC": "Manchester United",
+    "Newcastle United FC": "Newcastle United",
+    "Nottingham Forest FC": "Nottingham Forest",
+    "Sunderland AFC": "AFC Sunderland",
+    "Tottenham Hotspur FC": "Tottenham Hotspur",
+    // „AFC Bournemouth“ schreiben beide gleich.
+  },
+  pd: {
+    "Athletic Club": "Athletic Bilbao",
+    "Club Atlético de Madrid": "Atlético Madrid",
+    "Elche CF": "FC Elche",
+    "Getafe CF": "FC Getafe",
+    "Levante UD": "UD Levante",
+    "Málaga CF": "Málaga",
+    "RC Celta de Vigo": "Celta Vigo",
+    "RC Deportivo La Coruña": "Deportivo La Coruña",
+    "RCD Espanyol de Barcelona": "Espanyol Barcelona",
+    "Rayo Vallecano de Madrid": "Rayo Vallecano",
+    "Real Betis Balompié": "Real Betis",
+    "Real Madrid CF": "Real Madrid",
+    "Real Racing Club de Santander": "Racing Santander",
+    "Real Sociedad de Fútbol": "Real Sociedad",
+    "Sevilla FC": "FC Sevilla",
+    "Valencia CF": "FC Valencia",
+    // Gleich: CA Osasuna · Deportivo Alavés · FC Barcelona · Villarreal CF.
+  },
+  sa: {
+    "AC Milan": "AC Mailand",
+    "ACF Fiorentina": "AC Florenz",
+    "AS Roma": "AS Rom",
+    "Atalanta BC": "Atalanta Bergamo",
+    "Bologna FC 1909": "Bologna FC",
+    "FC Internazionale Milano": "Inter Mailand",
+    "Genoa CFC": "CFC Genua",
+    "Juventus FC": "Juventus Turin",
+    "Parma Calcio 1913": "Parma Calcio",
+    "SS Lazio": "Lazio Rom",
+    "SSC Napoli": "SSC Neapel",
+    "Torino FC": "FC Turin",
+    "US Sassuolo Calcio": "US Sassuolo",
+    // Gleich: AC Monza · Cagliari Calcio · Como 1907 · Frosinone Calcio ·
+    // US Lecce · Udinese Calcio · Venezia FC.
+  },
   // MLS braucht keine: ihre Klubliste ist direkt aus der Quoten-API übernommen,
   // die auch den Spielplan liefert. Eine Quelle, eine Schreibweise.
   mls: {},
@@ -68,9 +127,15 @@ const ALIASE = {
 const LIGEN = {
   bl: { label: "Bundesliga", ratings: TEAM_RATINGS, openliga: "bl1" },
   bl2: { label: "2. Bundesliga", ratings: BL2_TEAM_RATINGS, openliga: "bl2" },
-  pl: { label: "Premier League", ratings: PL_TEAM_RATINGS, openliga: null },
-  pd: { label: "La Liga", ratings: PD_TEAM_RATINGS, openliga: null },
-  sa: { label: "Serie A", ratings: SA_TEAM_RATINGS, openliga: null },
+  // Die drei ausländischen Ligen kommen von openfootball (frei, kein
+  // Schlüssel). `zone` ist die ZEITZONE DER LIGA — die Quelle nennt Ortszeit,
+  // und ohne die Umrechnung läge die halbe Saison eine Stunde daneben.
+  pl: { label: "Premier League", ratings: PL_TEAM_RATINGS, openliga: null,
+    openfootball: "england/master/2026-27/1-premierleague.txt", zone: "Europe/London" },
+  pd: { label: "La Liga", ratings: PD_TEAM_RATINGS, openliga: null,
+    openfootball: "espana/master/2026-27/1-liga.txt", zone: "Europe/Madrid" },
+  sa: { label: "Serie A", ratings: SA_TEAM_RATINGS, openliga: null,
+    openfootball: "italy/master/2026-27/1-seriea.txt", zone: "Europe/Rome" },
   // MLS läuft, während die europäischen Ligen Sommerpause haben — und ist
   // dadurch die einzige Liga, an der sich die ganze Kette JETZT mit echten
   // Daten prüfen lässt, Torschützen eingeschlossen. Ihr Spielplan kommt aus
@@ -92,6 +157,16 @@ async function ausOpenLigaDB(key, liga) {
     away: alias(key, m.team2?.teamName),
     kickoff: m.matchDateTimeUTC,
   }));
+}
+
+async function ausOpenfootball(key, liga) {
+  const url = `https://raw.githubusercontent.com/openfootball/${liga.openfootball}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`openfootball antwortete mit ${res.status} (${url})`);
+  const text = await res.text();
+  const roh = parseOpenfootball(text, liga.zone);
+  if (!roh.length) throw new Error("openfootball lieferte keine Spiele — Format geändert?");
+  return roh.map((m) => ({ ...m, home: alias(key, m.home), away: alias(key, m.away) }));
 }
 
 // Dritter Weg: die anstehenden Begegnungen aus der Quoten-API. Der
@@ -137,13 +212,17 @@ async function importiere(key, { datei = null, nurPruefen = false } = {}) {
   const liga = LIGEN[key];
   if (!liga) throw new Error(`Unbekannte Liga „${key}" (bekannt: ${Object.keys(LIGEN).join(", ")})`);
 
+  // Reihenfolge: eine hereingereichte Datei gewinnt immer (Notweg und
+  // Testweg), dann die liga-eigene Quelle.
   const roh = datei
     ? ausDatei(key, datei)
     : liga.openliga
       ? await ausOpenLigaDB(key, liga)
-      : liga.oddsSport
-        ? await ausOddsApi(key, liga)
-        : null;
+      : liga.openfootball
+        ? await ausOpenfootball(key, liga)
+        : liga.oddsSport
+          ? await ausOddsApi(key, liga)
+          : null;
 
   if (!roh) {
     console.log(`⏭  ${liga.label}: keine Quelle konfiguriert — mit --datei <pfad> einlesen.`);

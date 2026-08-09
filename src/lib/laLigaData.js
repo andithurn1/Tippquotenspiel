@@ -15,6 +15,7 @@
 
 import { baueLiga, findeDerby, alsQuotenQuelle, NAMENSPOOLS } from "./ligaGenerator";
 import { QUOTEN } from "./quoten";
+import { SPIELPLAENE } from "./spielplaene";
 
 export const PD_TEAM_RATINGS = {
   "Real Madrid":         { code: "RMA", attack: 1.90, defense: 0.62 },
@@ -80,6 +81,12 @@ export function getLaLigaMatches() {
     _cache = baueLiga({
       wettbewerb: "pd", idPrefix: "pd26", ratings: PD_TEAM_RATINGS, derbys: PD_DERBYS,
       saisonStart: SEASON_START, utcOffset: 2, slotFuer, namensPool: NAMENSPOOLS.es,
+      // 🔴 Der ECHTE Kalender, seit 09.08.2026 (openfootball, frei).
+      // Fehlt die Datei, faellt die Liga auf die Circle-Methode zurueck —
+      // lieber eine erzeugte Saison als gar keine. Quoten, Ergebnisse und
+      // Torschuetzen bleiben erzeugt; `echterSpielplan` am Match haelt die
+      // Trennung fest, damit die Oberflaeche nichts Falsches behauptet.
+      spielplan: SPIELPLAENE.pd ?? null,
       quoten: QUOTEN.pd ?? null,
     });
   }

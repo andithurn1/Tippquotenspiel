@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   normalisiereSpielplan, pruefeSpielplan, spielplanHerkunft, herkunftLabel, quotenHerkunft,
-  quotenAlter,
+  quotenAlter, parseOpenfootball,
 } from "./spielplan";
 import { baueLiga } from "./ligaGenerator";
 
@@ -221,5 +221,74 @@ describe("quotenAlter", () => {
     for (const v of [null, undefined, "keine Ahnung"]) {
       expect(quotenAlter(v, jetzt)).toMatchObject({ bekannt: false, frisch: false });
     }
+  });
+});
+
+// ============================================================
+//  parseOpenfootball — die freie Quelle für PL, La Liga, Serie A
+//
+//  Zwei der drei Fallen erzeugen KEINEN Fehler, sondern falsche Daten. Genau
+//  dafür stehen diese Tests.
+// ============================================================
+describe("parseOpenfootball", () => {
+  const TEXT = [
+    "= English Premier League 2026/27",
+    "",
+    "▪ Matchday 1",
+    "  Fri Aug 21 2026",
+    "    20:00  Arsenal FC              v Coventry City FC",
+    "  Sat Aug 22",
+    "    15:00  Ipswich Town FC         v Sunderland AFC",
+    "           Everton FC              v Crystal Palace FC",
+    "",
+    "▪ Matchday 10",
+    "  Sat Nov 7",
+    "    15:00  Arsenal FC              v Hull City AFC",
+    "",
+    "▪ Matchday 19",
+    "  Sat Jan 2",
+    "    12:00  AFC Bournemouth         v Aston Villa FC",
+  ].join("\n");
+
+  const spiele = parseOpenfootball(TEXT, "Europe/London");
+
+  it("liest Spieltag, Mannschaften und Anpfiff", () => {
+    expect(spiele.length).toBe(5);
+    expect(spiele[0]).toMatchObject({
+      matchday: 1, home: "Arsenal FC", away: "Coventry City FC",
+    });
+  });
+
+  it("übernimmt die Uhrzeit für Spiele, die keine eigene nennen", () => {
+    // Im Format steht die Zeit nur beim ersten Spiel eines Blocks.
+    expect(spiele[1].kickoff).toBe(spiele[2].kickoff);
+    expect(spiele[2].home).toBe("Everton FC");
+  });
+
+  it("🔴 rechnet ORTSZEIT in UTC um — inklusive Sommerzeit-Wechsel", () => {
+    // 21.08.2026 ist BST (UTC+1): 20:00 Ortszeit → 19:00 UTC.
+    expect(spiele[0].kickoff).toBe("2026-08-21T19:00:00.000Z");
+    // 07.11.2026 ist GMT (UTC+0): 15:00 Ortszeit → 15:00 UTC.
+    // Mit einem festen Versatz läge die halbe Saison eine Stunde daneben —
+    // und ein Tippfenster, das am Anpfiff schließt, schlösse zur falschen
+    // Minute.
+    expect(spiele[3].kickoff).toBe("2026-11-07T15:00:00.000Z");
+  });
+
+  it("🔴 erhöht das Jahr, wenn der Monat zurückspringt", () => {
+    // Ab Januar fehlt die Jahreszahl weiterhin. Ohne diese Regel läge die
+    // ganze Rückrunde ein Jahr in der Vergangenheit — ohne Fehlermeldung.
+    expect(spiele[4].kickoff.startsWith("2027-01-02")).toBe(true);
+  });
+
+  it("dieselben Zeiten in einer anderen Zone ergeben andere UTC-Werte", () => {
+    // Gegenprobe, dass die Zone wirklich benutzt wird und nicht nur dasteht.
+    const rom = parseOpenfootball(TEXT, "Europe/Rome");
+    expect(rom[0].kickoff).toBe("2026-08-21T18:00:00.000Z");
+  });
+
+  it("ignoriert Zeilen ohne Begegnung statt zu raten", () => {
+    const müll = parseOpenfootball("= Titel\n\n▪ Matchday 1\n  Fri Aug 21 2026\n    Tabelle: irgendwas\n", "Europe/London");
+    expect(müll).toEqual([]);
   });
 });

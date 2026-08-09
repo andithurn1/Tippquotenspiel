@@ -15,6 +15,7 @@
 
 import { baueLiga, findeDerby, alsQuotenQuelle, NAMENSPOOLS } from "./ligaGenerator";
 import { QUOTEN } from "./quoten";
+import { SPIELPLAENE } from "./spielplaene";
 
 export const SA_TEAM_RATINGS = {
   "Inter Mailand":     { code: "INT", attack: 1.55, defense: 0.62 },
@@ -77,6 +78,12 @@ export function getSerieAMatches() {
     _cache = baueLiga({
       wettbewerb: "sa", idPrefix: "sa26", ratings: SA_TEAM_RATINGS, derbys: SA_DERBYS,
       saisonStart: SEASON_START, utcOffset: 2, slotFuer, namensPool: NAMENSPOOLS.it,
+      // 🔴 Der ECHTE Kalender, seit 09.08.2026 (openfootball, frei).
+      // Fehlt die Datei, faellt die Liga auf die Circle-Methode zurueck —
+      // lieber eine erzeugte Saison als gar keine. Quoten, Ergebnisse und
+      // Torschuetzen bleiben erzeugt; `echterSpielplan` am Match haelt die
+      // Trennung fest, damit die Oberflaeche nichts Falsches behauptet.
+      spielplan: SPIELPLAENE.sa ?? null,
       quoten: QUOTEN.sa ?? null,
     });
   }

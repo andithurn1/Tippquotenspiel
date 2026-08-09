@@ -5,7 +5,7 @@
 //  Neu holen:  npm run import:spielplan -- bl2
 //
 //  Quelle:     OpenLigaDB (bl2/2026)
-//  Geholt:     2026-08-08
+//  Geholt:     2026-08-09
 //  Umfang:     306 Spiele, 34 Spieltage
 //  Erster Anpfiff: 2026-08-07T18:30:00Z
 //

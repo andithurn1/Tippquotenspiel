@@ -16,6 +16,9 @@
 
 import bl from "./bl-2026";
 import bl2 from "./bl2-2026";
+import pl from "./pl-2026";
+import pd from "./pd-2026";
+import sa from "./sa-2026";
 import mls from "./mls-2026";
 
-export const SPIELPLAENE = { bl, bl2, mls };
+export const SPIELPLAENE = { bl, bl2, pl, pd, sa, mls };

@@ -17,6 +17,7 @@
 
 import { baueLiga, findeDerby, alsQuotenQuelle, NAMENSPOOLS } from "./ligaGenerator";
 import { QUOTEN } from "./quoten";
+import { SPIELPLAENE } from "./spielplaene";
 
 export const PL_TEAM_RATINGS = {
   "Manchester City":          { code: "MCI", attack: 1.88, defense: 0.60 },
@@ -81,6 +82,12 @@ export function getPremierLeagueMatches() {
       saisonStart: SEASON_START, utcOffset: 1, slotFuer, namensPool: NAMENSPOOLS.en,
       // Echte Marktquoten, wo es sie gibt. Ohne diese Zeile wurden sie zwar
       // geholt und abgelegt, kamen aber nie im Katalog an — still, ohne Fehler.
+      // 🔴 Der ECHTE Kalender, seit 09.08.2026 (openfootball, frei).
+      // Fehlt die Datei, faellt die Liga auf die Circle-Methode zurueck —
+      // lieber eine erzeugte Saison als gar keine. Quoten, Ergebnisse und
+      // Torschuetzen bleiben erzeugt; `echterSpielplan` am Match haelt die
+      // Trennung fest, damit die Oberflaeche nichts Falsches behauptet.
+      spielplan: SPIELPLAENE.pl ?? null,
       quoten: QUOTEN.pl ?? null,
     });
   }

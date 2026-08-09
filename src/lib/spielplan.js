@@ -198,3 +198,103 @@ export function herkunftLabel(matches = [], echteWettbewerbe = new Set(), saison
       : `echte Marktquoten für ${q.echt} Spiele`;
   return `${plan} · ${quoten}`;
 }
+
+// ── Vierter Weg: openfootball ───────────────────────────────
+// Freie Spielpläne für Premier League, La Liga und Serie A — ohne Schlüssel,
+// ohne Anmeldung, ohne Kontingent (09.08.2026 geprüft: alle drei Ligen liegen
+// für 2026/27 vor). Damit fällt der letzte Grund weg, diese drei Kalender
+// erzeugt zu lassen.
+//
+// ⚠️ Gegen `football-data.org` entschieden, obwohl es dieselben Ligen hat: es
+// verlangt eine Registrierung mit E-Mail und einen Schlüssel je Abruf. Für
+// einen Kalender, der sich einmal im Jahr ändert, ist das ein Konto zu viel.
+//
+// ── Das Format ──
+//   ▪ Matchday 1
+//     Fri Aug 21 2026          ← Datum; das Jahr steht nur beim ersten
+//       20:00  Arsenal FC              v Coventry City FC
+//     Sat Aug 22               ← Jahr fehlt: vom vorigen Datum übernehmen
+//       15:00  Ipswich Town FC         v Sunderland AFC
+//              Everton FC              v Crystal Palace FC   ← Zeit übernehmen
+//
+// 🔴 Zwei Fallen stecken darin, und beide erzeugen KEINEN Fehler, sondern
+// falsche Daten:
+//
+// 1. **Die Zeiten sind ORTSZEIT der Liga**, nicht UTC. England im August ist
+//    UTC+1, im November UTC+0; Spanien und Italien +2 bzw. +1. Wer stumpf
+//    „Z" anhängt, verschiebt die halbe Saison um eine Stunde und die andere
+//    Hälfte um zwei — und ein Tippfenster, das am Anpfiff schließt, schließt
+//    dann zur falschen Minute. Umgerechnet wird deshalb über die echte
+//    Zeitzone (`Intl`), nicht über einen festen Versatz.
+// 2. **Der Jahreswechsel.** Ab Januar fehlt die Jahreszahl weiterhin; springt
+//    der Monat zurück (Dez → Jan), gehört das Jahr erhöht. Ohne das läge die
+//    Rückrunde ein Jahr in der Vergangenheit.
+const MONATE = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// Welchen Versatz zu UTC hat diese Zeitzone in diesem Moment? Der Standardweg
+// ohne Fremdbibliothek: den Zeitpunkt in der Zone formatieren und die
+// Differenz zurückrechnen.
+function zonenVersatz(ms, zone) {
+  const teile = new Intl.DateTimeFormat("en-US", {
+    timeZone: zone, hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(new Date(ms));
+  const p = Object.fromEntries(teile.map((t) => [t.type, t.value]));
+  return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second) - ms;
+}
+
+// Ortszeit in der Liga-Zone → UTC-Zeitstempel.
+function ortszeitZuUTC(jahr, monat, tag, stunde, minute, zone) {
+  const alsWaereEsUTC = Date.UTC(jahr, monat, tag, stunde, minute);
+  // Zweimal rechnen: der Versatz kann sich genau an der Umstellungsgrenze
+  // ändern, und der erste Wert liegt dann eine Stunde daneben.
+  const grob = alsWaereEsUTC - zonenVersatz(alsWaereEsUTC, zone);
+  return new Date(alsWaereEsUTC - zonenVersatz(grob, zone)).toISOString();
+}
+
+export function parseOpenfootball(text, zone) {
+  const spiele = [];
+  let matchday = null;
+  let jahr = null;
+  let monat = null;
+  let tag = null;
+  let letzteZeit = null;
+
+  for (const roh of text.split("\n")) {
+    const zeile = roh.replace(/\s+$/, "");
+    if (!zeile.trim()) continue;
+
+    const md = zeile.match(/^▪\s*Matchday\s+(\d+)/i);
+    if (md) { matchday = +md[1]; continue; }
+
+    // Datumszeile: „Fri Aug 21 2026" oder „Sat Aug 22"
+    const dat = zeile.match(/^\s{0,4}[A-Z][a-z]{2}\s+([A-Z][a-z]{2})\s+(\d{1,2})(?:\s+(\d{4}))?\s*$/);
+    if (dat) {
+      const m = MONATE.indexOf(dat[1]);
+      if (m === -1) continue;
+      if (dat[3]) jahr = +dat[3];
+      // Jahreswechsel: der Monat springt zurück (Dez → Jan).
+      else if (monat !== null && m < monat) jahr += 1;
+      monat = m;
+      tag = +dat[2];
+      letzteZeit = null;
+      continue;
+    }
+
+    // Spielzeile: optionale Zeit, dann „Heim v Gast".
+    const sp = zeile.match(/^\s+(?:(\d{1,2}):(\d{2}))?\s+(.+?)\s+v\s+(.+?)\s*$/);
+    if (!sp || matchday === null || jahr === null) continue;
+    if (sp[1] != null) letzteZeit = { h: +sp[1], m: +sp[2] };
+    // Ohne jede Zeitangabe im Block ist der Anpfiff unbekannt. Lieber ohne
+    // Uhrzeit ablegen als eine erfundene setzen — `pruefeSpielplan` meldet es.
+    const z = letzteZeit ?? { h: 0, m: 0 };
+    spiele.push({
+      matchday,
+      home: sp[3].trim(),
+      away: sp[4].trim(),
+      kickoff: ortszeitZuUTC(jahr, monat, tag, z.h, z.m, zone),
+    });
+  }
+  return spiele;
+}
