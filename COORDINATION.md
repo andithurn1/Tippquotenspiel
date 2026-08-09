@@ -126,6 +126,78 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-09 · 🔴 **Was eingestellt wird, gilt jetzt auch in der Runde** — plus zwei neue Ebenen
+
+```
+main   (gepusht)
+Tests  2135 grün · 43 skipped (Balance, ABSICHTLICH — nicht reparieren)
+Build  sauber · lint · greift · anzeige · gleich · stufen · sicht · tot ohne Befund
+```
+
+#### 🔴🔴 Der Fund des Tages, und er ist behoben
+
+Eine Runde bestimmte ihre Spiele **ausschließlich über `team_filter`** — eine
+flache Vereinsliste. Wettbewerbe, Phasen, Spieltag-Bereich, feste Liste und die
+Liga-Sonderregeln **verdampften beim Anlegen**. Gemessen: „nur Bundesliga" ergab
+1943 statt 306 Spiele, „nur CL ab Achtelfinale" 1943 statt 15.
+
+Warum es niemand sah: die Spielerstellung zeigte die RICHTIGE Zahl
+(`filterSpiele`), der Store rechnete mit `filterMatchesByTeams`. Beide Seiten
+für sich korrekt — das Muster der 17 Funde vom 05.08.
+
+**Behoben:** `rundenSpiele(matches, round)` (`roundStatus.js`) ist die EINE
+Stelle; `createRound` friert die ganze Auswahl auf der Runde ein
+(`rounds.spiele`). Drei Punkte, die nicht aufgeweicht werden dürfen:
+1. **Eingefroren, nicht live gelesen** — sonst änderte ein Regel-Beschluss
+   rückwirkend, welche Spiele je dazugehört haben.
+2. **Bestehende Runden ändern sich nicht** (`spiele = null` → Rückfall auf
+   `team_filter`).
+3. **Ein übergebener `teamFilter` gewinnt** (`rundenAuswahl`). Genau das fehlte
+   im ersten Anlauf — neun Tests haben es gemeldet.
+
+**Die Messung steht als Teil 4 in `npm run greift`** und setzt bei Abweichung
+den Exit-Code.
+
+⚠️ **`schema.sql` wurde von Andi am 09.08. ausgeführt** (Spalte
+`rounds.spiele`). Wer eine frische DB aufsetzt: erneut ausführen, idempotent.
+
+#### Ebenfalls neu auf `main`
+
+- **Alleingang-Bonus** (`alleinstellung.js`, Andis Stadt-Land-Fluss-Mechanik):
+  extra Punkte, wenn sonst (fast) niemand richtig lag. Elf Variablen einzeln
+  einstellbar, alle drei Stufen bedient.
+  🔴 Zwei Regeln daran: die Ebene kann NICHT in `scoreTip` liegen (sie braucht
+  die Tipps der anderen → `scoreLeaderboard`, zwei Durchgänge), und die
+  Belohnung sind PUNKTE mit eigenem Deckel, kein vierter Multiplikator — ein
+  Faktor griffe nach `modCap` und machte den Deckel wirkungslos.
+  ⚠️ Sie bewegte zuerst NULL Punkte: den Leaderboard-Einträgen fehlte die
+  `matchId`. `greift` hat es gefunden.
+- **Tippziele: alle 26 Routen bei 0** unter 44 px (`src/lib/tapziel.js`,
+  `TAPZIEL` in jeden neuen Knopf spreizen). Zwei Stellen bleiben absichtlich
+  klein und stehen namentlich in der Datei — Glossar-Begriffe im Fließtext.
+- **`gleich` Teil 2: die Tipp-Vorschau hält.** Bezugspunkt ist „das Spiel geht
+  aus wie getippt". Der Befund kam aus der zweiten Zahl: die Vorschau setzt
+  voraus, dass auch die getippten SCHÜTZEN treffen — 62 % der Summe. Die
+  Tippabgabe zeigt jetzt beide Zahlen.
+- **Schritt 3 des Oberflächen-Umbaus** (Sonderregeln je Liga) und die
+  **Anmeldung per kopiertem Link** (Supabase erlaubt auf dem Gratis-Tarif keine
+  eigenen Mail-Vorlagen — siehe `docs/BACKEND.md`).
+
+#### Was als Nächstes ansteht
+
+1. **Rundenansicht** — der letzte Weg, den `gleich` noch nicht vergleicht.
+2. **Echte Spielpläne PL / La Liga / Serie A** — Importweg steht, es fehlt die
+   Quelle.
+3. **Eigener SMTP-Versand vor dem Launch** — der eingebaute Supabase-Versand
+   schickt NUR an Team-Mitglieder (2 Mails/Stunde). Mitspieler können sich
+   heute nicht anmelden. Entscheidung: eigene Domain + Brevo.
+
+⛔ **Nicht anfangen:** Balancing (Endphase), Andis eigene Joker-/Ereignis-
+Überarbeitung.
+
+---
+
+
 ### 2026-08-08 (V) · ✅ **Tippziele: alle drei Stufen bei null** — `TAPZIEL` ist ab jetzt Pflicht
 
 ```

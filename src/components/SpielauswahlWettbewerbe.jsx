@@ -11,7 +11,13 @@ import { filterSpiele, VERKNUEPFUNG_HINWEIS } from "@/lib/spielauswahl";
 // nicht das Filtern selbst, sondern was übrig bleibt: „nur Champions League ab
 // Achtelfinale" sind 29 Spiele statt 465 — eine ganz andere Runde. Deshalb
 // steht unter jeder Auswahl sofort die Zahl.
-export default function SpielauswahlWettbewerbe({ spiele, onChange }) {
+// `onZahl` meldet die übrig bleibende Spielzahl nach oben. 🔴 Seit die
+// Spielauswahl in der Runde WIRKLICH greift (09.08.2026), ist das kein
+// Anzeige-Detail mehr: eine Auswahl, die nichts übrig lässt, erzeugt eine
+// Runde ohne ein einziges Spiel. Die Zahl steht hier ohnehin — sie nach oben
+// zu reichen ist billiger, als sie in der Spielerstellung ein zweites Mal zu
+// rechnen (das wäre die zweite Wahrheit).
+export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
   const [matches, setMatches] = useState(null);
 
   useEffect(() => {
@@ -34,6 +40,14 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange }) {
   const gewaehltW = spiele?.wettbewerbe ?? [];
   const gewaehltP = spiele?.phasen ?? [];
   const uebrig = useMemo(() => filterSpiele(alle, spiele ?? {}), [alle, spiele]);
+
+  // ⚠️ Der Hook steht VOR dem frühen `return` weiter unten (CLAUDE.md: „Hooks
+  // stehen VOR jedem frühen return"). Genau so lag `Tippabgabe.jsx` einmal
+  // still kaputt.
+  useEffect(() => {
+    if (matches === null) return;   // noch nicht geladen — keine Aussage
+    onZahl?.({ uebrig: uebrig.length, gesamt: alle.length });
+  }, [matches, uebrig.length, alle.length, onZahl]);
 
   const umschalten = (feld, key, liste) => onChange({
     [feld]: liste.includes(key) ? liste.filter((k) => k !== key) : [...liste, key],

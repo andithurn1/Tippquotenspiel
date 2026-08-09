@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   DEFAULT_RULES, RULE_LIMITS,
   encodePreset, decodePreset, sanitizeRules, istCreatorCode,
@@ -279,6 +279,22 @@ export default function Spielerstellung() {
 
   const teamFilterInvalid = teamFilterOn && selectedTeams.length < 2;
 
+  // ── 🔴 Lässt die Auswahl überhaupt ein Spiel übrig? ────────
+  // Seit dem 09.08.2026 greift die Spielauswahl WIRKLICH in der Runde. Vorher
+  // war eine leere Auswahl folgenlos (es kamen ohnehin alle Spiele); jetzt
+  // erzeugte sie eine Runde ohne ein einziges Spiel. Die Zahl kommt aus
+  // `SpielauswahlWettbewerbe`, das sie ohnehin rechnet — nicht hier noch
+  // einmal, das wäre die zweite Wahrheit.
+  const [spielZahl, setSpielZahl] = useState(null);
+  const meldeSpielZahl = useCallback((z) => setSpielZahl(z), []);
+  // ⚠️ Zonen sind die Ausnahme, und zwar eine echte: der Tabellenstand steht
+  // erst, wenn ein Spieltag geöffnet ist. Eine Runde mit Abstiegskampf zeigt
+  // VOR dem Start zu Recht 0 Spiele und ist trotzdem in Ordnung. Sie hier zu
+  // blockieren hieße, eine korrekte Einstellung zu verbieten.
+  const mitZonen = (sp.zonen?.length ?? 0) > 0
+    || Object.values(sp.jeWettbewerb ?? {}).some((a) => (a.zonen?.length ?? 0) > 0);
+  const leereAuswahl = spielZahl != null && spielZahl.uebrig === 0 && !mitZonen;
+
   // Der Stand, der RECHTS in der zugeklappten Zeile steht. Ohne ihn müsste man
   // jede Zeile öffnen, um zu sehen, ob überhaupt etwas eingestellt ist — genau
   // der Preis, den ein Aufklapp-Layout sonst kostet.
@@ -380,6 +396,10 @@ export default function Spielerstellung() {
   const createRound = async () => {
     if (!user) { setCreateErr("Bitte zuerst einloggen (Startseite)."); return; }
     if (teamFilterInvalid) { setCreateErr("Bitte mindestens 2 Teams auswählen (oder Team-Auswahl ausschalten)."); return; }
+    if (leereAuswahl) {
+      setCreateErr("Diese Auswahl lässt kein einziges Spiel übrig — die Runde hätte nichts zu tippen.");
+      return;
+    }
     setCreating(true); setCreateErr("");
     try {
       const round = await getStore().createRound({
@@ -566,7 +586,8 @@ export default function Spielerstellung() {
             offen={auswahlOffen === "wettbewerbe"}
             onClick={() => setAuswahlOffen((o) => (o === "wettbewerbe" ? null : "wettbewerbe"))}
           >
-            <SpielauswahlWettbewerbe spiele={sp} onChange={(neu) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...neu } })); }} />
+            <SpielauswahlWettbewerbe spiele={sp} onZahl={meldeSpielZahl}
+              onChange={(neu) => { touched(); setRules((r) => ({ ...r, spiele: { ...(r.spiele || DEFAULT_RULES.spiele), ...neu } })); }} />
 
             {/* Teams — je Wettbewerb gruppiert, und nur aus den gewählten. */}
             <div style={{ marginTop: 14 }}>
@@ -2009,10 +2030,21 @@ export default function Spielerstellung() {
                   Bitte zuerst auf der Startseite einloggen.
                 </p>
               )}
-              <button onClick={createRound} disabled={creating || !user || teamFilterInvalid} style={{
-                width: "100%", cursor: creating || !user || teamFilterInvalid ? "default" : "pointer",
+              {/* 🔴 Die Sperre steht SICHTBAR über dem Knopf und nicht erst
+                  als Fehlermeldung nach dem Klick: seit die Spielauswahl in
+                  der Runde wirklich greift, wäre das Ergebnis eine Runde ohne
+                  ein einziges Spiel — und man sähe es erst darin. */}
+              {leereAuswahl && (
+                <p style={{ fontSize: 12, color: C.coral, marginBottom: 10, lineHeight: 1.45 }}>
+                  Diese Auswahl lässt kein einziges Spiel übrig. So angelegt hätte die
+                  Runde nichts zu tippen — oben eine Einschränkung zurücknehmen.
+                </p>
+              )}
+              <button onClick={createRound} disabled={creating || !user || teamFilterInvalid || leereAuswahl} style={{
+                width: "100%", cursor: creating || !user || teamFilterInvalid || leereAuswahl ? "default" : "pointer",
                 background: C.mint, color: C.ink, fontWeight: 700, fontSize: 14,
-                ...TAPZIEL, border: "none", borderRadius: 14, padding: "13px 0", opacity: creating || !user || teamFilterInvalid ? 0.6 : 1,
+                ...TAPZIEL, border: "none", borderRadius: 14, padding: "13px 0",
+                opacity: creating || !user || teamFilterInvalid || leereAuswahl ? 0.6 : 1,
               }}>
                 {creating ? "wird angelegt …" : "Runde jetzt erstellen"}
               </button>
