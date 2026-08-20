@@ -41,6 +41,30 @@ mich — sie wird beim nächsten Durchgang beantwortet, nicht überschrieben.
 
 ---
 
+### ❓ Offen: „Ranking“ ist ein schlechter Name (Andi, 20.08.2026)
+
+Andis Einwand, wörtlich: *„wieso heißt ausgerechnet dieser Rankingspielmodus
+Ranking, obwohl wir eigentlich alle gerankt werden.“*
+
+**Er hat recht.** Das Wort bezeichnet im Code, dass der TIPPER seine SPIELE in
+eine Rangfolge bringt. Umgangssprachlich heißt Ranking aber die Rangliste der
+SPIELER — die es zusätzlich und immer gibt. Ein Begriff, zwei Bedeutungen, und
+die geläufigere ist die falsche.
+
+Vorschlag zur Umbenennung (Andi entscheidet, sein Wort gewinnt):
+
+| Code-Wert | heute | Vorschlag | was der Tipper tut |
+|---|---|---|---|
+| `einzel` | „Einzel“ | **Joker** | markiert EIN Spiel |
+| `ranking` | „Ranking“ | **Wichtigkeit** | verteilt Stufen, jede nur einmal |
+| `einsatz` | „Einsatz“ | **Münzen** | verteilt ein Budget frei |
+
+⚠️ Der Code-Wert (`joker.modus: "ranking"`) muss dabei NICHT mitwandern — er
+steht in gespeicherten Runden und in Creator-Codes. Umbenannt wird, was der
+Nutzer liest.
+
+---
+
 ## Die sieben Ebenen — mehr gibt es nicht
 
 Jeder Einfluss im Spiel gehört in **genau eine** davon. Wer einen neuen baut
