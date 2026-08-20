@@ -9,8 +9,17 @@ ist nach dem Fenster weg.
 ## Für Andi: wie du hier schreibst
 
 **Eine Überschrift mit `##`, darunter was du willst.** Mehr nicht. Stichworte
-reichen, ganze Sätze auch. Du musst nichts einordnen, nichts durchdenken, keine
-Felder ausfüllen — genau das ist mein Teil.
+reichen, ganze Sätze auch.
+
+⚠️ **Du MUSST nichts einordnen — du DARFST aber alles.** Diese Datei gehört
+dir, nicht mir. Wenn du schon weißt, welche Ebene es ist, welche Werte du
+willst oder wie der Regler heißen soll: schreib es hin. Wenn du nur ein
+Stichwort hast: auch gut. Beides ist richtig, und je mehr von dir kommt, desto
+weniger muss ich raten.
+
+Und wenn eine Rückfrage (`❓`) in einem Eintrag steht: **antworte direkt
+darunter in der Datei.** Dann steht die Antwort dort, wo die Frage steht —
+auch in drei Wochen noch.
 
 ```
 ## Joker fürs Dranbleiben aufteilen

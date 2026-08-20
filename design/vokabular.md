@@ -12,7 +12,32 @@ Felder — weil „Game-Einfluss" nichts Bestimmtes bezeichnet. Gemessen am
 Tippspiel unter Freunden.
 
 Dieses Blatt legt fest, was die Wörter bedeuten. Danach ist „mach den Joker
-stärker" ein präziser Auftrag statt einer Einladung zum Erfinden.
+stärker“ ein präziser Auftrag statt einer Einladung zum Erfinden.
+
+🔴 **Es ist ein GEMEINSAMES Blatt, kein Vorschlag von Claude an Andi.** Andi
+schreibt hier genauso hinein wie ich: Ebenen umbenennen, Begriffe streichen,
+eigene ergänzen. **Im Zweifel gewinnt sein Wort** — ein Vokabular taugt nur,
+wenn es die Sprache dessen spricht, der die Aufträge gibt. Wenn er eine Ebene
+anders nennt als hier, wird sie hier umbenannt, nicht er korrigiert.
+
+---
+
+## ✍️ Andis Begriffe — hier schreibt er hinein
+
+**Die linke Spalte gehört Andi.** Er trägt ein, wie er etwas nennt; ich fülle
+rechts nach, was es im Code ist und in welche Ebene es gehört. Wo beides
+auseinandergeht, **wird die Tabelle geändert, nicht Andis Wort.**
+
+⚠️ Ein leeres Feld rechts ist kein Versäumnis, sondern eine offene Frage an
+mich — sie wird beim nächsten Durchgang beantwortet, nicht überschrieben.
+
+| Wenn Andi sagt … | meint er … | Ebene |
+|---|---|---|
+| „Game-Einfluss“ | *(zu unbestimmt — deshalb dieses Blatt)* | — |
+| „Joker-Ökonomie“ | woher Joker kommen, was sie kosten, wie oft es sie gibt | 6 |
+| „Preset-Modifikator“ | *(❓ Voreinstellung der Wertung? oder ein Aufschlag daraus?)* | ❓ |
+| | | |
+| | | |
 
 ---
 
