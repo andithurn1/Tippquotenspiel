@@ -1,6 +1,6 @@
 # Vokabular — wie wir über Spiel-Einflüsse reden
 
-**Angelegt 09.08.2026 auf Andis Vorschlag.** Anlass war sein Befund: „bei den
+**Angelegt 20.08.2026 auf Andis Vorschlag.** Anlass war sein Befund: „bei den
 Parametern ist extrem viel Müll dabei, die passen nicht ganz auf die
 Game-Einflüsse."
 
@@ -8,7 +8,7 @@ Game-Einflüsse."
 Anfrage lautet „du kannst dir sicher vorstellen, welche Parameter ein
 Game-Einfluss braucht", dann erfindet ein Modell zuverlässig zwanzig plausible
 Felder — weil „Game-Einfluss" nichts Bestimmtes bezeichnet. Gemessen am
-09.08.2026: **38 Regel-Blöcke mit 180 einzelnen Einstellwerten.** Für ein
+20.08.2026: **38 Regel-Blöcke mit 180 einzelnen Einstellwerten.** Für ein
 Tippspiel unter Freunden.
 
 Dieses Blatt legt fest, was die Wörter bedeuten. Danach ist „mach den Joker

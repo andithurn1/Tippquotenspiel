@@ -230,7 +230,7 @@ Bausteine. Der Simulator bleibt für die Frage „**sieht er die Ebene
 zurückgestellt. Begründung im Nachrichten-Log von `COORDINATION.md`,
 Eintrag 2026-08-05 (IV).
 
-### ⏱️ Hobby-Tarif: 10 Sekunden Zeitlimit — trifft `/api/matchday/auto` (09.08.2026)
+### ⏱️ Hobby-Tarif: 10 Sekunden Zeitlimit — trifft `/api/matchday/auto` (20.08.2026)
 
 **Gefunden bei der Recherche nach Vercel-Alternativen, nicht gesucht.** Auf dem
 Vercel-GRATIS-Tarif haben Funktionen **10 s Zeitlimit** (Pro: deutlich mehr).
@@ -255,7 +255,7 @@ Spiele, beides wächst. Vorschlag:
    dringendsten Spieltag öffnen und beim nächsten Lauf weiter).
 
 **Alternativen, falls es wirklich klemmt** (alle ohne Kreditkarte, geprüft
-09.08.2026): Cloudflare Workers (5 Cron-Trigger, beliebige Frequenz,
+20.08.2026): Cloudflare Workers (5 Cron-Trigger, beliebige Frequenz,
 unbegrenzte Bandbreite — Next.js braucht dort einen Adapter), Netlify
 (geplante Funktionen, ebenfalls 10 s). **Ein Umzug lohnt sich erst, wenn die
 Messung ihn begründet** — vorher ist er Aufwand ohne Gegenwert.

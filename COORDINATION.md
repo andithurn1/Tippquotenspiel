@@ -126,7 +126,137 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
-### 2026-08-09 (IV) · 🔴 **ÜBERGABE an das nächste Fenster** — Vokabular, dann Gestaltung
+### 2026-08-20 (V) · 🔴 **ÜBERGABE an das nächste Fenster** — Andi schreibt jetzt selbst mit
+
+> **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
+> außer `CLAUDE.md` brauchst du nichts zu lesen. Der Eintrag (IV) darunter ist
+> Historie; seine beiden Aufträge stehen hier vollständig wiederholt.
+
+#### Wo du landest
+
+```
+main    c76fa89 + dieser Commit · alles gepusht, nichts hängt lokal
+Live    https://clinquant-sorbet-695e02.netlify.app   ⚠️ NICHT mehr Vercel
+Tests   2141 grün · 43 skipped · 87 Dateien   (gemessen 20.08.2026, 20:55)
+Routen  / /menu /erstellen /tippen /ranking /stil → alle 200 (nachgemessen)
+```
+
+⏳ **Kein Termindruck.** Gründlichkeit vor Tempo, ausdrücklich Andis Ansage.
+
+#### ▶️ SCHRITT 0, JEDES MAL ZUERST: hat Andi etwas hineingeschrieben?
+
+🔴 **Neu seit 20.08.2026: Andi bearbeitet zwei Dateien direkt vom Desktop aus.**
+Zwei Verknüpfungen („Tippquotenspiel - Vokabular“ / „- Meine Ideen“) öffnen
+Notepad auf `design/vokabular.md` bzw. `design/ideen.md` im Repo.
+
+```bash
+git status --short          # seine Zeilen liegen UNCOMMITTED im Arbeitsbaum
+```
+
+⚠️ **`git checkout -- .`, `git stash` oder ein Branchwechsel löscht, was er
+getippt hat** — und er merkt es erst Wochen später, wenn eine Idee fehlt. Erst
+sichern, dann arbeiten. **Am Sitzungsende mitcommitten**, auch wenn es mit der
+Tagesaufgabe nichts zu tun hat.
+
+#### ▶️ AUFTRAG 1: Bestandsaufnahme gegen `design/vokabular.md`
+
+Andis Befund, wörtlich: *„beim Code ist übrigens extrem viel Müll dabei … die
+verschiedenen Parameter passen auf die Game-Einflüsse nicht ganz.“* Gemessen
+gibt ihm das recht: **38 Regel-Blöcke, 180 einzelne Einstellwerte.**
+
+🔴 **Die Ursache ist benannt:** „Game-Einfluss“ bezeichnete nichts Bestimmtes.
+Auf „du kannst dir sicher vorstellen, welche Parameter das braucht“ erfindet
+ein Modell zwanzig plausible Felder, statt zurückzumelden, dass die Frage zu
+offen ist. `design/vokabular.md` ist der Gegenentwurf: sieben Ebenen, fünf
+Pflichtfragen je Einfluss, eine Vorlage, die VOR dem Bauen ausgefüllt wird.
+
+🆕 **Das Blatt ist seit 20.08.2026 ein GEMEINSAMES, kein Vorschlag an Andi.**
+Ganz vorn steht der Abschnitt **„Andis Begriffe“** — eine Tabelle, deren linke
+Spalte ihm gehört („wenn Andi sagt …“); rechts wird nachgetragen, was es im
+Code ist und welche Ebene. **Wo beides auseinandergeht, wird die Tabelle
+geändert, nicht sein Wort.** Ein leeres Feld rechts ist keine Schlamperei,
+sondern eine offene Frage an uns.
+
+❓ **Offen und noch nicht beantwortet: was „Preset-Modifikator“ genau meint** —
+die Voreinstellung der Wertung selbst, oder ein Aufschlag, der aus einem Preset
+folgt? Steht als `❓` in der Tabelle. **Nicht raten, fragen.**
+
+**Die eigentliche Arbeit:** je Regel-Block eine Zeile — Ebene, die fünf
+Antworten, und die entscheidende Frage: **stammt er aus einem Wunsch von Andi
+(mit Datum aus dem Repo belegbar) oder ist er erfunden?** Erfundenes, das keine
+Ebene füllt, wird gestrichen.
+
+⚠️ Streichen heißt Felder aus `sanitizeRules` entfernen. Alte Creator-Codes
+überleben das (sie laufen ohnehin durch `sanitizeRules`, unbekannte Felder
+fallen weg) — aber `npm test` vorher als Ausgangszahl festhalten: **2141**.
+
+📅 **Für das „belegbar“ unbedingt `git blame --date=short` benutzen, nicht die
+Datumsangaben im Fließtext.** Am 20.08.2026 trugen 14 Zeilen ein falsches Datum
+(siehe Werkzeug-Fallen in `CLAUDE.md`); sie sind korrigiert, aber die Lehre
+gilt: das Datum steht in Git, nicht in der Prosa.
+
+#### ▶️ AUFTRAG 2: die Gestaltung (unverändert offen)
+
+| Nr. | Andis Ansage, wörtlich zu nehmen |
+|---|---|
+| 1 | **F7 (Akzent, bisher Gold) soll LILA sein** |
+| 2 | **R2 (12 px) ist der bevorzugte Eckenradius** |
+| 3 | **Durchweg Apple-Schrift — „Typ und Formatierung“**, also auch Apples Größenstaffel |
+| 4 | **Nutzerfarben nur noch für minimalistische Verzierungen und Übergänge zwischen Fenstern** |
+| 5 | Erstkontakt-Ablauf: erster Start vs. Wiederkehrer |
+| 6 | Aufbau der **Admin-Einstellungen** — will er einzeln durchsprechen, **auf ihn warten** |
+
+🔴 **1 und 4 sind EIN Schritt.** Heute überschreibt `applyFanColors` die Akzente
+mit den Vereinsfarben — Andis Lila wäre sofort weg, sobald jemand Fanfarben
+wählt. Wer nur Punkt 1 macht, baut einen Zustand, in dem die Markenfarbe
+zufällig verschwindet.
+
+**Vorlagen in `design/screenshots/`** — dort zeigt Andi, wie er es aufgebaut
+haben will. Vor jeder Gestaltungsarbeit hineinsehen.
+**Musterseite `/stil`** — jeder Baustein mit Kürzel (F1–F9, R1–R4, S1–S6,
+B1–B6, L1–L2). Andi sagt „B2 Ecken zu rund“; neue Bausteine dort eintragen.
+
+#### ⏳ Offen: Tailwind — Recherche fehlt weiterhin
+
+Andi tendiert dazu. **Beide früheren Gegenargumente sind hinfällig** (kein
+Termindruck; die Screens werden ohnehin überarbeitet). Vor einer Empfehlung
+klären: Tailwind v4 mit Next 15.3, und ob **die Fanfarben dynamisch bleiben** —
+sie ändern Farben zur LAUFZEIT. Fundament liegt (`globals.css` +
+`cssVariablen.js`).
+
+#### Offene Punkte bei ANDI
+
+- **Eigener SMTP-Versand (Brevo + Domain)** — der einzige echte Blocker vor der
+  ersten Runde mit Mitspielern: Supabase' Versand schickt NUR an
+  Team-Mitglieder. Anleitung hat er.
+- `supabase/seed-matches-pl/pd/sa.sql` ausführen, falls die echten Spielpläne
+  live gebraucht werden.
+- Speichern in Notepad: die neue Notepad-App **fragt beim Schließen nicht mehr
+  nach**. Ein Punkt statt des ✕ am Tab heißt ungespeichert — dann steht auf der
+  Platte noch die alte Fassung, und wir lesen seine Idee nicht.
+
+#### ⚠️ Was Sitzungen hier teuer gemacht hat
+
+1. **Ich sehe nicht, was ich baue.** `screenshot` scheitert („Browser pane is
+   not displayed“). Messen geht, sehen nicht. **Andi früh fragen, ob er die
+   Browser-Ansicht einblenden kann** — größter Hebel für Gestaltungsarbeit.
+2. **`„…“` niemals mit `"` schließen.** `npm run lint` findet es mit Zeile.
+   Keine eigene Prüfung dafür bauen (1026 Fehltreffer, siehe `CLAUDE.md`).
+3. **Platzhalter mit `…` in Anleitungen sind gefährlich.** Andi hat einen
+   Env-Block eins zu eins eingefügt — Netlify nahm `sb_publishable_…` klaglos
+   an, ein Build-Durchlauf war umsonst. **Echte Werte oder leeres Feld.**
+4. **Offene Aufforderungen erzeugen erfundene Regler.** Lieber eine Rückfrage
+   zu viel — genau dafür gibt es das `❓` in `design/ideen.md`.
+
+⛔ **Nicht anfangen:** Balancing (Endphase), Andis eigene Joker-/Ereignis-
+Überarbeitung, Auftrag 2 Punkt 6 ohne ihn.
+
+---
+
+### 2026-08-20 (IV) · 🔴 **ÜBERGABE an das nächste Fenster** — Vokabular, dann Gestaltung
+
+⬆️ **Überholt durch Eintrag (V) ganz oben** — dort steht der aktuelle Auftrag.
+Dieser Eintrag bleibt als Historie stehen.
 
 > **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
 > außer `CLAUDE.md` brauchst du nichts zu lesen.
@@ -157,7 +287,7 @@ passiert.**
 
 `design/vokabular.md` ist der Gegenentwurf: sieben Ebenen, fünf Pflichtfragen
 je Einfluss, eine Vorlage, die vor dem Bauen ausgefüllt wird. **Neu am
-09.08.2026 — Andi hat sie noch nicht durchgesehen. Erst seine Rückmeldung
+20.08.2026 — Andi hat sie noch nicht durchgesehen. Erst seine Rückmeldung
 einholen, dann anwenden.**
 
 **Danach die eigentliche Arbeit:** je Regel-Block eine Zeile — Ebene, die fünf
@@ -226,7 +356,7 @@ bleiben** — sie ändern Farben zur LAUFZEIT. Das Fundament dafür liegt schon
 
 ---
 
-### 2026-08-09 (III) · 🔴 **UMGEZOGEN: die App läuft jetzt auf NETLIFY**
+### 2026-08-20 (III) · 🔴 **UMGEZOGEN: die App läuft jetzt auf NETLIFY**
 
 ```
 Live      https://clinquant-sorbet-695e02.netlify.app

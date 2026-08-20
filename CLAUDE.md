@@ -4,7 +4,7 @@ Quoten-gewichtetes Fußball-Tippspiel unter Freunden. Kein Echtgeld (bewusste
 Glücksspiel-Abgrenzung — wichtig für App-Store-Zulassung). Details zur
 Strategie: `README.md`.
 
-## ⏳ KEIN TERMINDRUCK MEHR (Andi, 09.08.2026)
+## ⏳ KEIN TERMINDRUCK MEHR (Andi, 20.08.2026)
 
 **Der 28.08.2026 ist KEIN Launch-Termin mehr.** Andi wörtlich: „launch ist
 nicht so wichtig, gerne gutes top design“ und „wir planen eh nicht mehr
@@ -264,6 +264,20 @@ Fehlermeldung. Bei jeder Anweisung dazusagen, ob die Datei bleibt oder weg kann.
 
 ### ⚙️ Werkzeug-Fallen auf diesem Rechner (Account 1 / Andi)
 
+- 📅 **Datum NIE schätzen — immer `git log --date=short` oder den Dateizeit-
+  stempel nehmen.** Am 20.08.2026 stellte sich heraus, dass 14 Zeilen in
+  `CLAUDE.md`, `COORDINATION.md`, `README.md` und `design/*.md` „09.08.2026“
+  behaupteten, obwohl `git blame` den 20.08. zeigt: eine lange Sitzung lief
+  über mehrere Tage, und das Modell schrieb weiter das Datum, das am Anfang
+  stimmte. **Das ist nicht kosmetisch** — `COORDINATION.md` ist nach Datum
+  sortiert (die zweite Session liest den obersten Eintrag als aktuellen
+  Auftrag), und die Bestandsaufnahme der Regel-Blöcke entscheidet ANHAND DES
+  DATUMS, ob etwas von Andi gewünscht oder erfunden war.
+  Die Gegenprobe, die das gefunden hat:
+  ```bash
+  git blame -L <zeile>,<zeile> --date=short -- <datei>
+  ```
+
 - 🔴 **Der Anmelde-CODE ist auf dem Gratis-Tarif nicht herstellbar** (geprüft
   08.08.2026). „Ergänze `{{ .Token }}` in der Magic-Link-Vorlage" stand hier
   und in drei Übergaben als offene Nutzer-Aufgabe — **Supabase lässt die
@@ -362,7 +376,7 @@ Fehlermeldung. Bei jeder Anweisung dazusagen, ob die Datei bleibt oder weg kann.
   der GRATIS-Tarif erlaubt nur EINEN Cron-Lauf pro Tag. Ein stündlicher Plan
   lässt dort nicht den Job scheitern, sondern **den ganzen Build** — genau daran
   ist jedes Deployment vom 26.–29.07. gestorben, ohne dass es jemandem auffiel.
-  🔴 **Seit 09.08.2026 steht dort wieder `0 3 * * *` (täglich).** Andi hat
+  🔴 **Seit 20.08.2026 steht dort wieder `0 3 * * *` (täglich).** Andi hat
   keinen Zugang mehr zu einer Kreditkarte, der Pro-Tarif läuft also aus. Die
   Umstellung ist VORSORGLICH passiert, und zwar wegen der Asymmetrie: bleibt
   der stündliche Plan stehen und der Tarif fällt auf Hobby, scheitert **jeder

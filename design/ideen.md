@@ -1,7 +1,7 @@
 # Ideen — Andis Eingangskorb
 
 **Hier schreibt Andi rein, was ihm einfällt. Sonst niemand.**
-Angelegt 09.08.2026, weil Ideen bisher im Chat standen — und ein Chatverlauf
+Angelegt 20.08.2026, weil Ideen bisher im Chat standen — und ein Chatverlauf
 ist nach dem Fenster weg.
 
 ---
@@ -41,7 +41,7 @@ geschrieben", dann lese ich sie, arbeite sie ein und schiebe sie mit.
 Einstellwerte. Was sich daraus nicht beantworten lässt, kommt als `❓` in den
 Eintrag, **nicht in eine Vermutung**.
 
-Das ist der ganze Zweck dieser Datei. Andis Befund vom 09.08.2026: aus
+Das ist der ganze Zweck dieser Datei. Andis Befund vom 20.08.2026: aus
 Anfragen wie „du kannst dir sicher vorstellen, welche Parameter das braucht"
 sind 38 Regel-Blöcke mit 180 Einstellwerten geworden, von denen er einen
 Großteil nie bestellt hat. **Lieber eine Rückfrage zu viel als ein erfundener
@@ -71,7 +71,7 @@ sonst nicht mehr, wenn das Fenster zu ist.
 
 ## 🆕 Joker-Ökonomie — neue Einfälle
 
-*(Platzhalter vom 09.08.2026: Andi hat angekündigt, dass ihm hier noch etwas
+*(Platzhalter vom 20.08.2026: Andi hat angekündigt, dass ihm hier noch etwas
 einfällt. Zeile ersetzen, sobald er schreibt.)*
 
 ---

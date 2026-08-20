@@ -4,7 +4,7 @@ Quoten-gewichtetes Tippspiel unter Freunden. Belohnt mutige Tipps über echte
 Quoten statt fester Punkte. Kein Echtgeld — Ehre + kleines Wichtelgeschenk.
 Ziel: gesunder, spielerischer Ersatz zum Echtgeld-Wetten.
 
-**Kein Launch-Termin** (Andi, 09.08.2026). Der 28.08.2026 stand hier lange als
+**Kein Launch-Termin** (Andi, 20.08.2026). Der 28.08.2026 stand hier lange als
 Frist — er ist jetzt nur noch der Tag, an dem die Bundesliga anfängt.
 Gründlichkeit vor Tempo; Begründung und was daraus folgt: `CLAUDE.md` ganz oben.
 
