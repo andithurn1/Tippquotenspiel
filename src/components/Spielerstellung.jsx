@@ -24,6 +24,7 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
+import AnsichtSchalter from "@/components/AnsichtSchalter";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
@@ -481,7 +482,33 @@ export default function Spielerstellung() {
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
-      <BackLink href="/menu" label="Menü" />
+      {/* ── Kopfzeile: „Menü“ links, Ansichts-Schalter rechts ──────────────
+          🔴 20.08.2026, Andis Ansage. Zwei Dinge daran sind Absicht:
+
+          1. **Sie klebt.** Der Schalter soll MITTENDRIN erreichbar sein — wer
+             beim achten Regler merkt, dass ihm einer fehlt, soll umschalten
+             können, ohne hochzuscrollen und die Stelle zu verlieren.
+          2. **Sie liegt AUSSERHALB der Karte.** Die Karte hat
+             `overflow: "clip"` und runde Ecken; ein Kleber darin würde am
+             Kartenrand hängen, nicht am Fenster (dieselbe Falle wie bei der
+             Balance-Ampel, siehe Kommentar dort).
+
+          ⚠️ `zIndex: 20` liegt über der klebenden Ampel weiter unten (5) —
+          sonst schöbe sich die Ampel beim Scrollen darüber. */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 20,
+        width: "100%", maxWidth: 400,
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+        // Deckend, sonst scrollt der Inhalt sichtbar dahinter durch. Der
+        // negative Rand + Polsterung verbreitern den Deckel bis an die
+        // Bildschirmkanten, ohne den Aufbau zu verschieben.
+        background: C.ink, margin: "0 -16px", padding: "0 16px",
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <BackLink href="/menu" label="Menü" />
+        </div>
+        <AnsichtSchalter stufe={stufe} onWechsel={setStufe} />
+      </div>
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
         // `clip` statt `hidden`: beides schneidet den Inhalt an den runden Ecken
@@ -511,54 +538,57 @@ export default function Spielerstellung() {
               background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 14px",
             }}>zurücksetzen</button>
           </div>
+          {/* 🔴 EINE Überschrift für beide Ansichten (20.08.2026). Vorher
+              wechselte sie zwischen „Wie soll eure Runde sein?“ und
+              „Regelwerk einstellen“ — beim Umschalten sprang also die
+              Überschrift, obwohl es derselbe Bildschirm mit denselben
+              Abschnitten ist. Das widerspricht ST2 in seinem Kern: die
+              Ansicht ändert, WIE VIEL man sieht, nicht WO man ist.
+              Gemessen am 20.08.: die Abschnittsfolge beider Ansichten war
+              danach an jeder Stelle gleich. */}
           <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>
-            {stufe === "einfach" ? "Wie soll eure Runde sein?" : "Regelwerk einstellen"}
+            Wie soll eure Runde sein?
           </div>
-          {/* Untertitel nur noch in Stufe 1. Der Erklärsatz „Du als Admin legst
-              fest …“ ist auf Andis Ansage (07.08.2026) GANZ weggefallen: er
-              stand über einem Screen, der sich selbst erklärt, kostete auf dem
-              iPhone drei Zeilen und wiederholte, was der Creator-Code-Block
-              weiter unten ohnehin sagt. */}
-          {stufe === "einfach" && (
-            <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
-              Ein Klick genügt — den Rest stellen wir stimmig ein. Wer mag, geht danach ins Detail.
-            </p>
-          )}
-
-          {/* Stufen-Umschalter: dieselbe Runde, nur mehr oder weniger sichtbar */}
-          <div style={{ display: "flex", gap: 6, marginTop: 14, marginBottom: 4 }}>
-            {[
-              ["einfach", "Einfach", "Ein Klick"],
-              ["anpassen", "Anpassen", "Wenige Regler"],
-              ["profi", "Profi", "Alles"],
-            ].map(([key, label, unter]) => {
-              const an = stufe === key;
-              return (
-                <button key={key} onClick={() => setStufe(key)} style={{
-                  flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 4px",
-                  borderRadius: 11, textAlign: "center",
-                  background: an ? C.gold : C.surface, color: an ? C.ink : C.muted,
-                  border: `1px solid ${an ? C.gold : C.line}`,
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{label}</div>
-                  <div style={{ fontSize: 9.5, opacity: 0.75, marginTop: 1 }}>{unter}</div>
-                </button>
-              );
-            })}
-          </div>
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 2, marginBottom: 14, lineHeight: 1.4 }}>
-            Die Stufe ändert nur die ANSICHT — deine Einstellungen bleiben beim Wechsel erhalten.
+          {/* Der Erklärsatz „Du als Admin legst fest …“ ist auf Andis Ansage
+              (07.08.2026) GANZ weggefallen: er stand über einem Screen, der
+              sich selbst erklärt, kostete auf dem iPhone drei Zeilen und
+              wiederholte, was der Creator-Code-Block weiter unten ohnehin
+              sagt. Der Untertitel hier gilt seit 20.08. in BEIDEN Ansichten —
+              die Voreinstellungen stehen jetzt in beiden. */}
+          <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+            Ein Klick genügt — den Rest stellen wir stimmig ein. Wer mag, geht danach ins Detail.
           </p>
 
-          {/* ── Stufe 1: ganze Runden-Ideen statt Einzelregler ── */}
-          {stufe === "einfach" && (
-            <RundenCharaktere
-              gewaehlt={charakterKey}
-              onWaehlen={(ch) => { setCharakterKey(ch.key); setPresetKey(null); setShortCode(null); setRules(ch.rules); }}
-              onCodeLaden={(c) => { setImp(c); load(); }}
-              codeFehler={impErr}
-            />
-          )}
+          {/* 🔴 Der Umschalter steht seit 20.08.2026 NICHT mehr hier, sondern
+              oben rechts neben „Menü“ und klebt dort fest. Andi: „integriere
+              da bitte auch oben rechts genauso wie bei Menü zurück nen
+              Switchschalter der immer da ist."
+              Tragend ist seine Begründung, nicht der Platz: man will
+              MITTENDRIN wechseln, wenn ein Regler fehlt — nicht nur am Anfang.
+              Ein Umschalter, der nach oben wegscrollt, zwingt jedes Mal hoch
+              und wieder zurück. Hier bleibt nur der Hinweis darauf (ST8). */}
+          <p style={{ fontSize: 11.5, color: C.muted, marginTop: 12, marginBottom: 14, lineHeight: 1.45 }}>
+            Oben rechts schaltest du zwischen <b style={{ color: C.text }}>Einfach</b> und{" "}
+            <b style={{ color: C.text }}>Profi</b> um — jederzeit, auch mitten im Einstellen.
+            Die Ansicht ändert nur, WIE VIEL du siehst; deine Einstellungen bleiben
+            beim Wechsel erhalten.
+          </p>
+
+          {/* ── Voreinstellungen ──────────────────────────────────
+              🔴 Seit 20.08.2026 in BEIDEN Ansichten (ST2/ST3). Vorher standen
+              sie nur in „einfach“ — und weil der Wettbewerbs-Block darunter
+              für alle gilt, fing Profi mit den Teams an, Einfach dagegen mit
+              den Voreinstellungen. Andi hat genau das gefunden: „irgendwie
+              gibt man bei Profi direkt am Anfang die Teams ein."
+              Die Regel dagegen, von ihm bestätigt: Profi zeigt DIESELBEN
+              Abschnitte in DERSELBEN Folge, nur mit mehr Reglern je Abschnitt.
+              Kein Abschnitt existiert nur in einer Ansicht. */}
+          <RundenCharaktere
+            gewaehlt={charakterKey}
+            onWaehlen={(ch) => { setCharakterKey(ch.key); setPresetKey(null); setShortCode(null); setRules(ch.rules); }}
+            onCodeLaden={(c) => { setImp(c); load(); }}
+            codeFehler={impErr}
+          />
 
           {/* ── Wettbewerbe auswählen ─────────────────────────────
               Andis Aufbau vom 07.08.2026 (iPhone 14): EINE Spalte, große
@@ -751,7 +781,7 @@ export default function Spielerstellung() {
               Voreinstellungen sind jederzeit abrufbar — nur nicht mehr als
               fünf offene Karten zwischen Auswahl und Reglern. Welche gerade
               gilt, steht rechts in der Zeile. */}
-          {stufe !== "einfach" && (<>
+          {stufe === "profi" && (<>
           <GrosseZeile
             icon="📚" titel="Empfehlungen verwalten"
             wert={PRESETS.find((p) => p.key === presetKey)?.label ?? "eigenes"}
@@ -839,7 +869,7 @@ export default function Spielerstellung() {
               Gedeckelt auf 42 % der Höhe (mit eigenem Scroll), sonst frisst
               der Kasten auf dem Handy die ganze Fläche. */}
           <div style={{
-            position: "sticky", top: 0, zIndex: 5,
+            position: "sticky", top: 52, zIndex: 5,
             maxHeight: "42vh", overflowY: "auto",
             // Muss DECKEND sein, sonst scrollt der Inhalt sichtbar dahinter
             // durch. `C.ink` ist der Grundton des Rahmens an dieser Stelle.
@@ -857,7 +887,7 @@ export default function Spielerstellung() {
 
           {/* Schärfe */}
           {/* Stufe 2: vier grosse Fragen statt der Rohregler darunter */}
-          {stufe === "anpassen" && (
+          {stufe === "einfach" && (
             <>
               <SectionTitle>Die vier wichtigsten Fragen</SectionTitle>
               <EinfacheRegler rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
@@ -869,7 +899,7 @@ export default function Spielerstellung() {
               Komponente, sie entscheidet selbst anhand von `stufe`, wie viel
               sie zeigt. Bei „einfach" unsichtbar: dort entscheiden Charakter
               und Preset. */}
-          {stufe !== "einfach" && (
+          {stufe === "profi" && (
             <>
               <SectionTitle>Joker-Ökonomie</SectionTitle>
               <JokerOekonomie rules={rules} stufe={stufe} onChange={patchOekonomie} />
@@ -2108,7 +2138,7 @@ export default function Spielerstellung() {
           {/* Bausteine: einzelne Aspekte (Drehrad, Joker-Ökonomie, …) als
               eigener Teil-Code — nur ab „anpassen", weil in „einfach"
               Charakter und Preset die Entscheidung treffen. */}
-          {stufe !== "einfach" && (
+          {stufe === "profi" && (
             <>
               <SectionTitle>Bausteine</SectionTitle>
               <Bausteine rules={rules} />

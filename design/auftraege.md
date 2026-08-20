@@ -62,14 +62,14 @@ später; die Sonderregeln je Wettbewerb sind ausdrücklich noch offen.
 
 | Nr | Ansage | Stand | Beleg / was fehlt |
 |---|---|---|---|
-| ST1 | **Nur noch ZWEI Anzeigeebenen** (Einfach, Profi) — „Anpassen“ fällt weg | ⏳ | `Spielerstellung.jsx:531` führt weiterhin drei. ⚠️ Was heute NUR in Stufe 2 lebt (die vier großen Fragen), braucht einen neuen Platz |
-| ST2 | **Die Reihenfolge der Auswahlen ist in beiden Ebenen gleich** | ⏳ | heute nicht so — die Stufen bauen den Bildschirm unterschiedlich auf, statt nur mehr oder weniger davon zu zeigen |
-| ST3 | Reihenfolge: **Variante → Anzeigeebene → Voreinstellungen** | ⏳ | heute: Voreinstellungen zuerst, Variante nur als eine Kachel darunter |
+| ST1 | **Nur noch ZWEI Anzeigeebenen** (Einfach, Profi) — „Anpassen“ fällt weg | ✅ | 1 Bedingung `anpassen`→`einfach` (die vier großen Fragen sitzen jetzt in Einfach — „wenige und nur die wichtigsten Regler“), 3× `!== einfach`→`=== profi`. Build, 2141 Tests, `stufen`, `anzeige`, `sicht` grün |
+| ST2 | **Die Reihenfolge der Auswahlen ist in beiden Ebenen gleich** | ✅ | Im Browser gemessen: die Abschnittsfolge ist über **19 Abschnitte** identisch, danach hat Profi nur MEHR (167 statt 22). Auch die Überschrift springt nicht mehr |
+| ST3 | Reihenfolge: **Variante → Anzeigeebene → Voreinstellungen** | 🔨 | Voreinstellungen stehen jetzt in BEIDEN Ansichten ganz vorn. **Die Variantenwahl (Budget ⇄ Quotentippen) als eigene erste Frage fehlt noch** — sie steckt weiter im Joker-Abschnitt |
 | ST4 | **Thermometer rechts neben den Voreinstellungen** | 🔨 | `BalanceAmpel` ist gebaut, hängt aber in `Spielerstellung.jsx:849` **innerhalb** von `stufe !== "einfach"` — in der einfachen Ansicht also unsichtbar, genau dort, wo Andi sie haben will |
 | ST5 | **Kopfzeile: Bibliothek · Gamemode · GameCode einsetzen** | ⏳ | GameCode-Feld existiert, liegt aber nicht in einer Kopfzeile |
 | ST6 | Texte fehlerfrei | ✅ | `design/entwuerfe/texte-teil1.md` — zwei Stellen inhaltlich angemerkt, nicht still geändert |
-| ST7 | **Anzeige-Umschalter dauerhaft oben rechts**, „genauso wie bei Menü zurück“ — immer sichtbar, auch mittendrin | ⏳ | heute ein Block, der oben mitscrollt und dann weg ist (`Spielerstellung.jsx:529`). Grund für „immer da“: man will **während** des Einstellens wechseln können, nicht nur am Anfang |
-| ST8 | **Hinweis im Text** auf den Umschalter | ⏳ | — |
+| ST7 | **Anzeige-Umschalter dauerhaft oben rechts** | ✅ | `AnsichtSchalter.jsx`, in der klebenden Kopfzeile neben „Menü“. Gemessen bei 375×812: nach 900 px Scrollen weiterhin bei y=5, Tippziele 44 px, rechtsbündig |
+| ST8 | **Hinweis im Text** auf den Umschalter | ✅ | steht dort, wo der Umschalter vorher saß |
 | ST9 | Später **Pfeilanimation auf den Schalter**, als Teil eines kleinen Tutorials zur Spielerstellung | ⏳ | noch nichts gebaut. Hängt an B1/B3 (Bewegung) |
 
 **Bestätigt (Andi, 20.08.2026):** „gleiche Reihenfolge“ heißt — *Profi zeigt
