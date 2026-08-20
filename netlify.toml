@@ -1,0 +1,22 @@
+# ============================================================
+#  NETLIFY — Ersatz für Vercel (09.08.2026)
+#
+#  Warum diese Datei existiert: Vercel hat den Bereich gesperrt, nachdem der
+#  Pro-Tarif ausgelaufen ist, und lässt weder ein Downgrade auf Hobby noch das
+#  Anlegen eines kostenlosen Teams zu ("Create a team" bietet nur Pro und
+#  Pro-Trial). Netlifys Gratis-Tarif kommt ohne Kreditkarte aus.
+#
+#  ⚠️ Diese Datei ist auf Vercel WIRKUNGSLOS. Sie kann also liegen bleiben,
+#  auch wenn das Projekt je zurückzieht — sie stört nichts.
+#
+#  Den Next.js-Teil übernimmt Netlifys eigene Erweiterung (@netlify/plugin-nextjs),
+#  die beim Verbinden des Repos automatisch eingerichtet wird. Deshalb steht
+#  hier bewusst KEIN `publish`-Verzeichnis: wer `.next` von Hand einträgt,
+#  hebelt die Erweiterung aus und bekommt eine tote Seite.
+# ============================================================
+
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"
