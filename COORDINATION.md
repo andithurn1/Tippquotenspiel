@@ -126,6 +126,66 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-09 (III) · 🔴 **UMGEZOGEN: die App läuft jetzt auf NETLIFY**
+
+```
+Live      https://clinquant-sorbet-695e02.netlify.app
+Team      Quotentippen (Netlify, Gratis-Tarif, ohne Kreditkarte)
+Vercel    GESPERRT — nicht mehr benutzen (HTTP 402)
+```
+
+**Warum:** Vercels Pro-Tarif ist ausgelaufen (Andi hat keinen Zugang mehr zu
+einer Kreditkarte). Vercel sperrt dann Auslieferung UND Bauen. Der dokumentierte
+Rückweg — Downgrade auf Hobby — ist bei einem GESPERRTEN Team nicht anwählbar,
+und „Create a team" bietet nur noch Pro oder Pro-Trial. Es gab keinen
+kostenlosen Weg zurück.
+
+**Durchgemessen nach dem Umzug**, nicht angenommen:
+
+```
+/ /menu /erstellen /tippen /ranking /stil   alle 200
+/api/matchday/auto  ohne Passwort → 401     (CRON_SECRET greift)
+/api/odds           → 200                   (echte Marktquoten)
+publishable-Schlüssel im Bundle → echt, 46 Zeichen
+```
+
+#### ⚠️ Drei Fallen, die dabei Zeit gekostet haben
+
+1. **`publish = ".next"` ist Pflicht.** Meine erste `netlify.toml` hatte es
+   nicht, mit dem Kommentar, das würde Netlifys Next.js-Erweiterung aushebeln.
+   Falsch: ohne die Angabe liefert Netlify das Repo-Wurzelverzeichnis aus, und
+   dann kommt auf ALLEM 404 — auch auf `/logo-hell.png`.
+2. **`NEXT_PUBLIC_*` wird beim BAUEN ins JavaScript geschrieben.** Eine
+   geänderte Variable wirkt erst nach „Deploy project without cache". Server-
+   seitige Werte (`ODDS_API_KEY`, `CRON_SECRET`) greifen dagegen sofort — das
+   führte zu dem verwirrenden Zwischenstand: Quoten funktionierten, die
+   Anmeldung nicht.
+3. 🔴 **`NEXT_PUBLIC_SUPABASE_ANON_KEY` gewinnt über `…PUBLISHABLE_KEY`**
+   (`supabaseClient.js`, `||`-Reihenfolge). Steht dort ein leerer oder alter
+   Wert, wird der richtige Schlüssel daneben nie benutzt. Wer die Anmeldung
+   debuggt, prüft das ZUERST.
+
+#### Die fünf Variablen bei Netlify
+
+```
+NEXT_PUBLIC_SUPABASE_URL              https://wthhrjxhwnptguwkvymr.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY  sb_publishable_…
+SUPABASE_SECRET_KEY                   nur im Supabase-Dashboard (Reveal)
+ODDS_API_KEY                          auch in .env.local
+CRON_SECRET                           frei gewählt
+```
+
+**Der tägliche Spieltag-Öffner** läuft nicht mehr über `vercel.json`, sondern
+über `netlify/functions/spieltag-auto.mjs` (03:00 UTC). Sie rechnet nichts
+selbst, sondern ruft `/api/matchday/auto` auf — damit bleibt der Anbieter
+austauschbar und die Logik liegt nur einmal da.
+
+⚠️ **Noch offen bei Andi:** Supabase → Authentication → URL Configuration →
+Site URL und Redirect URLs auf die Netlify-Adresse. Ohne das zeigen die
+Anmelde-Links auf die tote Vercel-Adresse.
+
+---
+
 ### 2026-08-09 (II) · 🔴 **ÜBERGABE** — Gestaltung ist dran, Andi arbeitet mit Screenshots
 
 > **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
@@ -137,7 +197,7 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 main   bfd1e31   (alles gepusht, nichts hängt lokal)
 Tests  2141 grün · 43 skipped (Balance, ABSICHTLICH — nicht reparieren)
 Build  sauber · lint · greift · gleich · anzeige · stufen · sicht · tot ohne Befund
-Live   https://tippquotenspiel.vercel.app
+Live   https://clinquant-sorbet-695e02.netlify.app  (Vercel ist gesperrt, siehe Eintrag 09.08. III)
 ```
 
 #### 🔴 ZUERST: Andi legt Screenshots ab — sieh dort nach
