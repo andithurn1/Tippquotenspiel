@@ -105,6 +105,16 @@ Dateien sind lang:
    **Lieber eine Rückfrage zu viel als ein erfundener Regler.**
 3. `design/vokabular.md` — die sieben Ebenen und die fünf Pflichtfragen. Ohne
    sie ist „Game-Einfluss" ein Wort, das nichts bezeichnet.
+   🖥️ **Andi tippt in diese beiden Dateien über Desktop-Verknüpfungen**
+   („Tippquotenspiel - Vokabular“ / „- Meine Ideen“, beide öffnen Notepad auf
+   `C:\Dev\Tippquotenspiel\design\`). Zwei Folgen daraus:
+   - Seine Ergänzungen liegen **uncommitted im Arbeitsbaum**. Also `git status`
+     lesen, bevor irgendetwas verworfen wird. ⚠️ **Ein `git checkout -- .`,
+     `git stash` oder Branchwechsel löscht, was er getippt hat** — und er
+     merkt es erst Wochen später, wenn seine Notiz fehlt. Erst sichern.
+   - Was er hineingeschrieben hat, **wird am Ende der Sitzung mitcommittet**,
+     auch wenn es mit der Tagesaufgabe nichts zu tun hat. Sonst ist es beim
+     nächsten `git clone` weg.
 4. `design/roadmap.md` — was fertig ist und was als Nächstes ansteht. Wer
    etwas fertig macht, trägt es dort SOFORT ein.
    ⚡ **Kurzweg, wenn du nur die aktuelle Aufgabe brauchst:** der oberste
