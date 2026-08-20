@@ -68,6 +68,21 @@ später; die Sonderregeln je Wettbewerb sind ausdrücklich noch offen.
 | ST4 | **Thermometer rechts neben den Voreinstellungen** | 🔨 | `BalanceAmpel` ist gebaut, hängt aber in `Spielerstellung.jsx:849` **innerhalb** von `stufe !== "einfach"` — in der einfachen Ansicht also unsichtbar, genau dort, wo Andi sie haben will |
 | ST5 | **Kopfzeile: Bibliothek · Gamemode · GameCode einsetzen** | ⏳ | GameCode-Feld existiert, liegt aber nicht in einer Kopfzeile |
 | ST6 | Texte fehlerfrei | ✅ | `design/entwuerfe/texte-teil1.md` — zwei Stellen inhaltlich angemerkt, nicht still geändert |
+| ST7 | **Anzeige-Umschalter dauerhaft oben rechts**, „genauso wie bei Menü zurück“ — immer sichtbar, auch mittendrin | ⏳ | heute ein Block, der oben mitscrollt und dann weg ist (`Spielerstellung.jsx:529`). Grund für „immer da“: man will **während** des Einstellens wechseln können, nicht nur am Anfang |
+| ST8 | **Hinweis im Text** auf den Umschalter | ⏳ | — |
+| ST9 | Später **Pfeilanimation auf den Schalter**, als Teil eines kleinen Tutorials zur Spielerstellung | ⏳ | noch nichts gebaut. Hängt an B1/B3 (Bewegung) |
+
+**Bestätigt (Andi, 20.08.2026):** „gleiche Reihenfolge“ heißt — *Profi zeigt
+dieselben Abschnitte in derselben Folge, nur mit mehr Reglern in jedem
+Abschnitt.* Kein Abschnitt existiert nur in einer Ansicht, keiner sitzt woanders.
+
+🔴 **Belegter Verstoß, von Andi selbst gefunden:** *„irgendwie gibt man bei
+Profi direkt am Anfang die Teams ein."* Stimmt — `Spielerstellung.jsx:579`
+(„Wettbewerbe auswählen“) steht AUSSERHALB der Stufen-Bedingung, die
+Voreinstellungen darüber aber nur in `stufe === "einfach"`. In der einfachen
+Ansicht kommen also erst die Presets, dann die Wettbewerbe; in Profi stehen die
+Wettbewerbe ganz oben. Genau der Sprung, den ST2 verbietet.
+
 
 ## Betrieb
 
