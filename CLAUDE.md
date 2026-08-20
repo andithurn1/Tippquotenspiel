@@ -294,11 +294,19 @@ Fehlermeldung. Bei jeder Anweisung dazusagen, ob die Datei bleibt oder weg kann.
   der GRATIS-Tarif erlaubt nur EINEN Cron-Lauf pro Tag. Ein stündlicher Plan
   lässt dort nicht den Job scheitern, sondern **den ganzen Build** — genau daran
   ist jedes Deployment vom 26.–29.07. gestorben, ohne dass es jemandem auffiel.
-  ✅ **Seit 30.07. liegt ein Pro-Tarif vor, deshalb steht dort wieder
-  `0 * * * *`.** Der Spieltag öffnet sich damit wieder stündlich statt bis zu
-  24 h verzögert. **Fällt das Projekt je auf Hobby zurück, muss das hier sofort
-  wieder auf `0 3 * * *`** — sonst schlägt nicht der Cron fehl, sondern jeder
-  Build, und man sucht den Fehler im Code.
+  🔴 **Seit 09.08.2026 steht dort wieder `0 3 * * *` (täglich).** Andi hat
+  keinen Zugang mehr zu einer Kreditkarte, der Pro-Tarif läuft also aus. Die
+  Umstellung ist VORSORGLICH passiert, und zwar wegen der Asymmetrie: bleibt
+  der stündliche Plan stehen und der Tarif fällt auf Hobby, scheitert **jeder
+  Build** — und man sucht den Fehler im Code statt in einer Zeile Konfiguration.
+  Umgekehrt kostet der tägliche Plan auf Pro fast nichts.
+  ⚠️ **Was der tägliche Lauf wirklich kostet: kaum etwas.** Das Tippfenster
+  öffnet `vorlaufStunden` (Vorgabe: 1 Woche) vor Anpfiff. Ein Spieltag geht
+  dadurch höchstens ~24 h später auf als ideal — bei 168 h Vorlauf sind das
+  14 %. Der Big-Game-Wert friert aus einer einen Tag älteren Tabelle ein.
+  Beides ist folgenlos, solange der Lauf VOR dem ersten Anpfiff des Spieltags
+  liegt, und 03:00 UTC liegt davor.
+  ℹ️ Wer je wieder Pro hat, DARF auf `0 * * * *` zurück — muss aber nicht.
 
 ## Stack
 
