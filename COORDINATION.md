@@ -147,6 +147,22 @@ will, statt es zu beschreiben. **Vor jeder Gestaltungsarbeit dort hineinsehen**
 — eine Datei `erstellen-soll.png` beantwortet mehr als drei Absätze im Chat.
 Die Namenskonvention steht in `design/screenshots/README.md`.
 
+#### ⏳ KEIN TERMINDRUCK — das ändert die Abwägung
+
+**Der 28.08.2026 ist kein Launch-Termin mehr** (Andi, 09.08.: „wir planen eh
+nicht mehr schnell fertig zu sein, haben alle Ruhe“). Steht ausführlich in
+`CLAUDE.md` ganz oben, samt dem, was daraus folgt.
+
+⚠️ **Warum das hier nochmal steht:** das Datum klebt an einem Dutzend Stellen
+im Repo, und über genau solche Listen ist bei euch schon einmal etwas
+zurückgekommen, das längst entschieden war. Wer irgendwo „vor dem Launch“
+liest: gilt nicht mehr als Frist.
+
+🔴 **Für die Tailwind-Frage weiter unten heißt das etwas.** Mein Hauptargument
+dagegen war der Preis kurz vor dem Termin. Der Termin ist weg, und Andi will
+die Screens ohnehin überarbeiten — beide Gegenargumente sind damit hinfällig.
+Die Recherche fehlt trotzdem; erst klären, dann empfehlen.
+
 #### ▶️ DEIN AUFTRAG: der Gestaltungs-Durchgang
 
 Andi hat am 09.08. ausdrücklich gesagt, dass ihm der bisherige Look zu weit weg

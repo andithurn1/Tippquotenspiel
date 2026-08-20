@@ -1,8 +1,38 @@
 # Tippquotenspiel — Projektwissen für Claude Code
 
 Quoten-gewichtetes Fußball-Tippspiel unter Freunden. Kein Echtgeld (bewusste
-Glücksspiel-Abgrenzung — wichtig für App-Store-Zulassung). Launch-Ziel:
-vor Bundesliga-Start am 28.08.2026. Details zur Strategie: `README.md`.
+Glücksspiel-Abgrenzung — wichtig für App-Store-Zulassung). Details zur
+Strategie: `README.md`.
+
+## ⏳ KEIN TERMINDRUCK MEHR (Andi, 09.08.2026)
+
+**Der 28.08.2026 ist KEIN Launch-Termin mehr.** Andi wörtlich: „launch ist
+nicht so wichtig, gerne gutes top design“ und „wir planen eh nicht mehr
+schnell fertig zu sein, haben alle Ruhe“.
+
+Das steht hier oben, weil das Datum an einem Dutzend Stellen im Repo klebt —
+in `README.md`, in der Roadmap, an mehreren „Launch-Blockern“. Genau so ist
+schon einmal etwas zurückgekommen, das längst entschieden war (siehe den
+Balancing-Block darunter): **nicht über das Gespräch, sondern über die
+Aufgabenlisten.** Wer eine dieser Stellen liest, liest sie ab jetzt mit
+diesem Vorbehalt.
+
+**Was sich dadurch ändert — konkret, nicht als Stimmung:**
+
+- ⛔ **Keine Abkürzung mehr mit der Begründung „vor dem Launch“.** Stehen zwei
+  Wege offen und der gründlichere dauert länger, gewinnt der gründlichere.
+- ⛔ **„Launch-Blocker“ heißt ab jetzt nur noch:** das muss vor der ersten
+  echten Runde MIT MITSPIELERN stehen. Kein Datum, eine Reihenfolge. Der
+  einzige echte davon ist der eigene Mailversand — ohne ihn kann sich niemand
+  außer Andi anmelden.
+- ✅ **Gestaltung darf Zeit kosten.** Ausdrücklich gewünscht, siehe den
+  Gestaltungs-Auftrag im Kanal.
+- ⚠️ **Was NICHT gemeint ist:** Balancing bleibt Endphase. Ruhe heißt nicht,
+  dass jetzt alles drankommt.
+
+⚠️ Die Daten im Katalog bleiben echt: die Bundesliga startet am 28.08.2026,
+die Spielpläne rechnen damit. Das Datum ist weiter ein FAKT über den Fußball —
+nur keine Frist mehr für uns.
 
 ## ⛔ BALANCING IST ENDPHASE — NICHT ANFASSEN (Andi, mehrfach, zuletzt 07.08.2026)
 
