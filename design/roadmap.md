@@ -230,6 +230,36 @@ Bausteine. Der Simulator bleibt für die Frage „**sieht er die Ebene
 zurückgestellt. Begründung im Nachrichten-Log von `COORDINATION.md`,
 Eintrag 2026-08-05 (IV).
 
+### ⏱️ Hobby-Tarif: 10 Sekunden Zeitlimit — trifft `/api/matchday/auto` (09.08.2026)
+
+**Gefunden bei der Recherche nach Vercel-Alternativen, nicht gesucht.** Auf dem
+Vercel-GRATIS-Tarif haben Funktionen **10 s Zeitlimit** (Pro: deutlich mehr).
+Da Andi keinen Zugang mehr zu einer Kreditkarte hat, läuft Pro aus — das Limit
+wird also bald gelten.
+
+**Warum das gefährlich ist:** `/api/matchday/auto` liest ALLE Runden, sucht die
+fälligen Spieltage, baut je Wettbewerb den Tabellenstand und schreibt die
+Snapshots. Reißt das die 10 s, scheitert der Lauf **still**: kein Spieltag
+öffnet sich, kein Big-Game-Wert wird eingefroren, und es gibt keine
+Fehlermeldung, die jemandem auffiele. Genau das Muster, das hier schon dreimal
+Geld gekostet hat.
+
+⚠️ **Nicht schätzen — messen.** Der Lauf hängt an der Zahl der Runden und der
+Spiele, beides wächst. Vorschlag:
+1. Die Route misst ihre eigene Dauer und schreibt sie in die Antwort
+   (`{ dauerMs }`) — dann steht die Zahl im Vercel-Log, statt geraten zu werden.
+2. Grenze setzen: über ~7 s eine Warnung ausgeben, damit es auffällt, BEVOR es
+   reißt.
+3. Falls es reißt: die Arbeit stückeln (ein Wettbewerb pro Lauf, 5 statt 1
+   Cron-Trigger gibt es auf Hobby nicht — also eher: pro Lauf nur den
+   dringendsten Spieltag öffnen und beim nächsten Lauf weiter).
+
+**Alternativen, falls es wirklich klemmt** (alle ohne Kreditkarte, geprüft
+09.08.2026): Cloudflare Workers (5 Cron-Trigger, beliebige Frequenz,
+unbegrenzte Bandbreite — Next.js braucht dort einen Adapter), Netlify
+(geplante Funktionen, ebenfalls 10 s). **Ein Umzug lohnt sich erst, wenn die
+Messung ihn begründet** — vorher ist er Aufwand ohne Gegenwert.
+
 ### 📧 Anmelde-Mail: eigener SMTP-Versand ist ein LAUNCH-Blocker (08.08.2026)
 
 **Der Befund:** Supabase lässt auf dem Gratis-Tarif die Mail-Vorlagen nicht
