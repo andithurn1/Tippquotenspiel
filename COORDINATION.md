@@ -126,6 +126,106 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-09 (IV) · 🔴 **ÜBERGABE an das nächste Fenster** — Vokabular, dann Gestaltung
+
+> **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
+> außer `CLAUDE.md` brauchst du nichts zu lesen.
+
+#### Wo du landest
+
+```
+main    (alles gepusht, nichts hängt lokal)
+Live    https://clinquant-sorbet-695e02.netlify.app     ⚠️ NICHT mehr Vercel
+Tests   2141 grün · 43 skipped (Balance, ABSICHTLICH — nicht reparieren)
+Build   sauber · lint · greift · gleich · anzeige · stufen · sicht · tot ohne Befund
+```
+
+⏳ **Kein Termindruck** (steht ganz oben in `CLAUDE.md`). Gründlichkeit vor
+Tempo — ausdrücklich Andis Ansage.
+
+#### ▶️ AUFTRAG 1: Bestandsaufnahme gegen `design/vokabular.md`
+
+Andis Befund, wörtlich: *„beim Code ist übrigens extrem viel Müll dabei … die
+verschiedenen Parameter passen auf die Game-Einflüsse nicht ganz."* Gemessen
+gibt ihm das recht: **38 Regel-Blöcke, 180 einzelne Einstellwerte.**
+
+🔴 **Die Ursache ist benannt und behoben-bar:** „Game-Einfluss" bezeichnete
+nichts Bestimmtes. Auf eine Anfrage wie „du kannst dir sicher vorstellen,
+welche Parameter das braucht" erfindet ein Modell zwanzig plausible Felder,
+statt zurückzumelden, dass die Frage zu offen ist. **Genau das ist mehrfach
+passiert.**
+
+`design/vokabular.md` ist der Gegenentwurf: sieben Ebenen, fünf Pflichtfragen
+je Einfluss, eine Vorlage, die vor dem Bauen ausgefüllt wird. **Neu am
+09.08.2026 — Andi hat sie noch nicht durchgesehen. Erst seine Rückmeldung
+einholen, dann anwenden.**
+
+**Danach die eigentliche Arbeit:** je Regel-Block eine Zeile — Ebene, die fünf
+Antworten, und die entscheidende Frage: **stammt er aus einem Wunsch von Andi
+(mit Datum aus dem Repo belegbar) oder ist er erfunden?** Erfundenes, das keine
+Ebene füllt, wird gestrichen.
+
+⚠️ Streichen heißt Felder aus `sanitizeRules` entfernen. Alte Creator-Codes
+überleben das (sie laufen ohnehin durch `sanitizeRules`, unbekannte Felder
+fallen weg) — aber `npm test` vorher als Ausgangszahl festhalten.
+
+#### ▶️ AUFTRAG 2: die Gestaltung (unverändert offen)
+
+Andis sechs Ansagen vom 09.08., wörtlich zu nehmen:
+
+| Nr. | Ansage |
+|---|---|
+| 1 | **F7 (Akzent, bisher Gold) soll LILA sein** |
+| 2 | **R2 (12 px) ist der bevorzugte Eckenradius** |
+| 3 | **Durchweg Apple-Schrift — „Typ und Formatierung"**, also auch Apples Größenstaffel |
+| 4 | **Nutzerfarben nur noch für minimalistische Verzierungen und Übergänge zwischen Fenstern** |
+| 5 | Erstkontakt-Ablauf: erster Start vs. Wiederkehrer |
+| 6 | Aufbau der **Admin-Einstellungen** — will er einzeln durchsprechen, **auf ihn warten** |
+
+🔴 **1 und 4 sind EIN Schritt.** Heute überschreibt `applyFanColors` die Akzente
+mit den Vereinsfarben — Andis Lila wäre sofort weg, sobald jemand Fanfarben
+wählt. Wer nur Punkt 1 macht, baut einen Zustand, in dem die Markenfarbe
+zufällig verschwindet.
+
+**Vorlagen liegen in `design/screenshots/`** — Andi zeigt dort, wie er es
+aufgebaut haben will. **Vor jeder Gestaltungsarbeit dort hineinsehen.**
+
+**Musterseite `/stil`** — jeder Baustein mit Kürzel (F1–F9, R1–R4, S1–S6,
+B1–B6, L1–L2). Andi sagt „B2 Ecken zu rund"; neue Bausteine dort eintragen.
+
+#### ⏳ Offen: Tailwind — Recherche fehlt weiterhin
+
+Andi tendiert dazu. **Beide früheren Gegenargumente sind hinfällig** (kein
+Termindruck mehr; die Screens werden ohnehin überarbeitet). Vor einer
+Empfehlung klären: Tailwind v4 mit Next 15.3, und ob **die Fanfarben dynamisch
+bleiben** — sie ändern Farben zur LAUFZEIT. Das Fundament dafür liegt schon
+(`globals.css` + `cssVariablen.js`).
+
+#### Offene Punkte bei ANDI
+
+- **Eigener SMTP-Versand (Brevo + Domain)** — der einzige echte Blocker vor der
+  ersten Runde mit Mitspielern: Supabase' Versand schickt NUR an
+  Team-Mitglieder. Anleitung hat er.
+- `supabase/seed-matches-pl/pd/sa.sql` ausführen, falls die echten Spielpläne
+  live gebraucht werden.
+
+#### ⚠️ Was diese Sitzung teuer gemacht hat
+
+1. **Ich sehe nicht, was ich baue.** `screenshot` scheitert („Browser pane is
+   not displayed"). Messen geht, sehen nicht. **Andi früh fragen, ob er die
+   Browser-Ansicht einblenden kann** — größter Hebel für Gestaltungsarbeit.
+2. **`„…“` niemals mit `"` schließen.** `npm run lint` findet es mit Zeile.
+   Keine eigene Prüfung dafür bauen (1026 Fehltreffer, siehe `CLAUDE.md`).
+3. **Platzhalter mit `…` in Anleitungen sind gefährlich.** Andi hat einen
+   Env-Block eins zu eins eingefügt — Netlify nahm `sb_publishable_…` klaglos
+   an, und ein Build-Durchlauf war umsonst. **Echte Werte einsetzen oder das
+   Feld leer lassen.**
+
+⛔ **Nicht anfangen:** Balancing (Endphase), Andis eigene Joker-/Ereignis-
+Überarbeitung, Auftrag 2 Punkt 6 ohne ihn.
+
+---
+
 ### 2026-08-09 (III) · 🔴 **UMGEZOGEN: die App läuft jetzt auf NETLIFY**
 
 ```
