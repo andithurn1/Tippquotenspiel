@@ -96,7 +96,16 @@ Dateien sind lang:
 
 1. `git fetch origin main` + auf aktuellen Stand bringen. `main` bewegt sich,
    die andere Session pusht dazwischen.
-2. `design/roadmap.md` — was fertig ist und was als Nächstes ansteht. Wer
+2. 🔴 **`design/ideen.md` — Andis Eingangskorb. IMMER lesen.** Dort schreibt er
+   auf, was ihm zwischen zwei Sitzungen einfällt. Ein Eintrag mit `🆕` wird
+   **nie direkt gebaut**: erst die Vorlage aus `design/vokabular.md` ausfüllen,
+   und was unklar bleibt, als `❓` IN DEN EINTRAG schreiben statt zu raten.
+   ⚠️ Genau hier entstand der Wildwuchs: aus „du kannst dir sicher vorstellen,
+   welche Parameter das braucht" wurden 38 Regel-Blöcke mit 180 Einstellwerten.
+   **Lieber eine Rückfrage zu viel als ein erfundener Regler.**
+3. `design/vokabular.md` — die sieben Ebenen und die fünf Pflichtfragen. Ohne
+   sie ist „Game-Einfluss" ein Wort, das nichts bezeichnet.
+4. `design/roadmap.md` — was fertig ist und was als Nächstes ansteht. Wer
    etwas fertig macht, trägt es dort SOFORT ein.
    ⚡ **Kurzweg, wenn du nur die aktuelle Aufgabe brauchst:** der oberste
    Eintrag im Nachrichten-Log von `COORDINATION.md` ist immer der aktuelle
