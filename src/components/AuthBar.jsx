@@ -99,18 +99,46 @@ export default function AuthBar() {
             trägt: eine zum Home-Bildschirm hinzugefügte Web-App hat unter iOS
             einen eigenen Speicher. Der Link aus der Mail öffnet Safari — man
             ist dann im Browser angemeldet und in der App-Kachel weiterhin
-            nicht. Mit dem Code verlässt man die App nie.
-            Deshalb steht der Code OBEN und der Link nur als Nebensatz. */}
+            nicht. Mit kopiertem Link verlässt man die App nie.
+            Deshalb steht der LINK oben — siehe den Kommentar darunter, der
+            erklärt, warum die ursprüngliche Reihenfolge falsch war. */}
         <div style={{ marginTop: 10 }}>
           <label style={{ fontSize: 12, color: C.muted, display: "block", marginBottom: 5 }}>
-            Code oder Link aus der Mail einsetzen
+            Link aus der Mail hier einsetzen
           </label>
+          {/* 🔴 UMGEDREHT am 20.08.2026. Andi auf dem Handy: „fragt nach wie
+              vor nach Code in der App, wo ich Link angefordert habe, und
+              Supabase schickt dann kein Code nur Link.“
+
+              Er hat recht, und der Fehler war die REIHENFOLGE, nicht die
+              Technik: `leseAnmeldung` nimmt den Link längst entgegen. Aber
+              beschriftet war das Feld mit „Code oder Link“, und ein Code kann
+              auf dem Gratis-Tarif gar nicht kommen — die Mail-Vorlagen sind
+              dort nicht bearbeitbar, also lässt sich `{{ .Token }}` nicht
+              hineinholen. Wer zuerst „Code“ liest, sucht etwas, das es nicht
+              gibt, und hört beim Suchen auf.
+
+              Deshalb steht jetzt der LINK oben und mit Schritten, und der Code
+              nur noch als Nebensatz für später (mit eigenem Mailversand über
+              Brevo werden die Vorlagen bearbeitbar, dann gibt es beides). */}
+          <ol style={{
+            margin: "0 0 10px 0", paddingLeft: 20, fontSize: 12.5,
+            color: C.text, lineHeight: 1.6,
+          }}>
+            <li>Mail öffnen (Absender: Supabase)</li>
+            <li>Auf den Link <b>tippen und halten</b> → „Link kopieren“</li>
+            <li>Hier unten einsetzen → <b>Los</b></li>
+          </ol>
+          <div style={{ fontSize: 11.5, color: C.coral, marginBottom: 8, lineHeight: 1.5 }}>
+            ⚠️ Den Link <b>nicht antippen</b>. Er gilt nur einmal, und er öffnet
+            Safari — dort wärst du angemeldet, in dieser App weiterhin nicht.
+          </div>
           <div style={{ display: "flex", gap: 8 }}>
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}
               autoComplete="one-time-code"
-              placeholder="000000 oder Link einfügen"
+              placeholder="Link einfügen"
               style={{
                 flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 10,
                 border: `1px solid ${C.line}`, background: C.ink, color: C.text,
@@ -136,9 +164,9 @@ export default function AuthBar() {
               der Normalfall — deshalb die Anleitung zum Kopieren, und nicht
               nur der Hinweis, dass es auch ginge. */}
           <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
-            <b style={{ color: C.text }}>Kein Code in der Mail?</b> Dann den Link
-            <b> gedrückt halten → „Link kopieren"</b> und hier einsetzen. Nicht antippen —
-            der Link gilt nur einmal, und er würde den Browser öffnen statt dieser App.
+            <b style={{ color: C.text }}>Steht ein sechsstelliger Code in der Mail?</b> Dann
+            tut der es hier genauso. Aktuell verschickt Supabase keinen — das ändert
+            sich, sobald der eigene Mailversand steht.
           </div>
         </div>
       </div>
@@ -198,7 +226,7 @@ function NameOnboarding() {
     }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Willkommen! 👋 Wie sollen wir dich nennen?</div>
       <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
-        Dein Name im Leaderboard — jederzeit unter „Konto" änderbar.
+        Dein Name im Leaderboard — jederzeit unter „Konto“ änderbar.
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <input autoFocus value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
