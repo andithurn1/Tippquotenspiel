@@ -55,6 +55,20 @@ Erlaubte Stände, und jeder verlangt einen Beleg:
 | S4 | Sollen sich die Joker-Formen ausschließen oder kombinierbar sein? | ❓ | `joker.modus` speichert **einen** Wert — kombinierbar geht heute nicht. Entscheidung fehlt |
 | S5 | „beim code ist übrigens extrem viel müll dabei“ → Bestandsaufnahme der Regel-Blöcke | ⏳ | 38 Blöcke, 180 Einstellwerte, keiner davon geprüft |
 
+## Aufbau der Spielerstellung — aus `StrukturTeil1.docx` (20.08.2026)
+
+Gilt **nur bis zu den Wettbewerben**. Ab dort kommt die Komplettüberarbeitung
+später; die Sonderregeln je Wettbewerb sind ausdrücklich noch offen.
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| ST1 | **Nur noch ZWEI Anzeigeebenen** (Einfach, Profi) — „Anpassen“ fällt weg | ⏳ | `Spielerstellung.jsx:531` führt weiterhin drei. ⚠️ Was heute NUR in Stufe 2 lebt (die vier großen Fragen), braucht einen neuen Platz |
+| ST2 | **Die Reihenfolge der Auswahlen ist in beiden Ebenen gleich** | ⏳ | heute nicht so — die Stufen bauen den Bildschirm unterschiedlich auf, statt nur mehr oder weniger davon zu zeigen |
+| ST3 | Reihenfolge: **Variante → Anzeigeebene → Voreinstellungen** | ⏳ | heute: Voreinstellungen zuerst, Variante nur als eine Kachel darunter |
+| ST4 | **Thermometer rechts neben den Voreinstellungen** | 🔨 | `BalanceAmpel` ist gebaut, hängt aber in `Spielerstellung.jsx:849` **innerhalb** von `stufe !== "einfach"` — in der einfachen Ansicht also unsichtbar, genau dort, wo Andi sie haben will |
+| ST5 | **Kopfzeile: Bibliothek · Gamemode · GameCode einsetzen** | ⏳ | GameCode-Feld existiert, liegt aber nicht in einer Kopfzeile |
+| ST6 | Texte fehlerfrei | ✅ | `design/entwuerfe/texte-teil1.md` — zwei Stellen inhaltlich angemerkt, nicht still geändert |
+
 ## Betrieb
 
 | Nr | Ansage | Stand | Beleg / was fehlt |

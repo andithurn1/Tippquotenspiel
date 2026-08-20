@@ -75,24 +75,59 @@ function ausZip(buf, gesucht) {
 
 const xml = ausZip(readFileSync(datei), "word/document.xml").toString("utf8");
 
+// 🔴 Word legt Textfelder ZWEIMAL ab: einmal in <mc:Choice> (die moderne
+// Form) und einmal in <mc:Fallback> für alte Word-Versionen. Ohne diesen
+// Schnitt kommt jeder Kasten doppelt heraus — genau das passierte bei Andis
+// erstem Entwurf am 20.08.2026, jede Zeile stand zweimal da.
+const bereinigt = xml.replace(/<mc:Fallback>[\s\S]*?<\/mc:Fallback>/g, "");
+
 const entschaerfe = (t) => t
   .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
   .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
 
+// ── Textfelder nach ihrer LAGE sortieren ────────────────────────────────
+// 🔴 Ein frei gesetztes Textfeld steht im XML dort, wo es EINGEFÜGT wurde —
+// nicht dort, wo es auf der Seite liegt. Wer das ignoriert, liest einen
+// Bildschirmentwurf in der Reihenfolge, in der Andi die Kästen gemalt hat.
+// Genau das passierte beim ersten Entwurf: die Variantenwahl stand unten,
+// obwohl sie oben auf dem Bildschirm liegt.
+//
+// `wp:positionV` trägt den Abstand von oben in EMU (914400 pro Zoll). Danach
+// wird sortiert; der Wert wird mit ausgegeben, damit man einer krummen
+// Reihenfolge ansieht, dass sie krumm ist.
+function textfelder(quelle) {
+  const kaesten = [];
+  for (const m of quelle.matchAll(/<wp:anchor[\s\S]*?<\/wp:anchor>/g)) {
+    const block = m[0];
+    const y = block.match(/<wp:positionV[^>]*>[\s\S]*?<wp:posOffset>(-?\d+)</);
+    const text = [...block.matchAll(/<w:t(?: [^>]*)?>([\s\S]*?)<\/w:t>/g)]
+      .map((t) => entschaerfe(t[1])).join("").trim();
+    if (text) kaesten.push({ y: y ? Number(y[1]) : 0, text });
+  }
+  return kaesten.sort((a, b) => a.y - b.y);
+}
+
 // ── Absätze einzeln einsammeln ──────────────────────────────────────────
 // Absatzweise statt am Stück: sonst klebt das ganze Dokument zu einer Zeile
 // zusammen und die Gliederung — genau das Interessante — wäre weg.
+const kaesten = textfelder(bereinigt);
+// Was in einem Textfeld steckt, darf im Fließtext-Durchgang nicht nochmal
+// auftauchen — sonst steht wieder alles doppelt da.
+const ohneKaesten = bereinigt.replace(/<wp:anchor[\s\S]*?<\/wp:anchor>/g, "");
+
 const zeilen = [];
 let inTabelle = false;
-for (const stueck of xml.split(/(?=<w:p[ >]|<w:tbl[ >]|<\/w:tbl>)/)) {
+for (const stueck of ohneKaesten.split(/(?=<w:p[ >]|<w:tbl[ >]|<\/w:tbl>)/)) {
   if (/^<w:tbl[ >]/.test(stueck)) inTabelle = true;
   if (stueck.startsWith("</w:tbl>")) { inTabelle = false; zeilen.push(""); }
   if (!/^<w:p[ >]/.test(stueck)) continue;
 
-  const text = [...stueck.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g)]
+  const text = [...stueck.matchAll(/<w:t(?: [^>]*)?>([\s\S]*?)<\/w:t>/g)]
     .map((m) => entschaerfe(m[1])).join("").trim();
   if (!text) continue;
 
+  // ⚠️ Das Muster braucht `(?: [^>]*)?` — `<w:t[^>]*>` passt sonst auch auf
+  // `<w:txbxContent>`, und dann landet roher XML-Salat im Text.
   // „Heading1" im englischen Word, „Überschrift1" im deutschen. Das Ü kommt je
   // nach Fassung anders kodiert an — deshalb wird nur der Rest geprüft.
   const ueberschrift = /w:pStyle w:val="(Heading|[^"]*berschrift)/.test(stueck);
@@ -104,4 +139,13 @@ for (const stueck of xml.split(/(?=<w:p[ >]|<w:tbl[ >]|<\/w:tbl>)/)) {
   else zeilen.push(text);
 }
 
-console.log(zeilen.join("\n").replace(/\n{3,}/g, "\n\n").trim());
+const fliess = zeilen.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+if (fliess) console.log(fliess);
+
+if (kaesten.length) {
+  console.log(`\n── ${kaesten.length} Textfelder, von oben nach unten ──`);
+  for (const k of kaesten) {
+    const cm = (k.y / 360000).toFixed(1).padStart(5);
+    console.log(`${cm} cm  ${k.text}`);
+  }
+}

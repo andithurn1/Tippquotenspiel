@@ -56,6 +56,17 @@ hat daraus drei „Modi“ gemacht. Richtig ist:
 | **Das Spiel** | **Quoten-Auswertung.** Nicht abschaltbar, kein Modus, kein Preset. Wer aus einer unwahrscheinlichen Lage richtig liegt, bekommt mehr. Das ist die Idee, nicht eine von mehreren. |
 | **Zusätze** | Joker, Ereignisse, Game-Einflüsse. Optional, kombinierbar, **nie ein eigener Spielmodus**. |
 
+🔴 **Nachtrag 20.08.2026, aus `StrukturTeil1.docx`:** Die Überschrift oben ist
+zu absolut. Richtig ist:
+
+- **Budget** und **Quotentippen** SIND eine Variantenwahl — sie steht in Andis
+  Entwurf als **erste Frage** der Spielerstellung, noch vor der Anzeigeebene.
+- **Kein** eigener Modus sind Joker, Ereignisse und Game-Einflüsse. Die sind
+  Zusätze und werden dazugeschaltet.
+
+Der Satz „es gibt keine Spielmodi" gilt also für die Zusätze, nicht für die
+Variante. Zwei Varianten, beliebig viele Zusätze.
+
 Folgen, die daraus zu ziehen sind (noch nicht umgesetzt):
 
 - **Das Wort „Modus“ verschwindet aus allem, was der Nutzer liest.** Der
