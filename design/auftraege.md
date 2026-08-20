@@ -1,0 +1,76 @@
+# Auftragsbuch — jede Ansage von Andi, mit Stand
+
+**Angelegt 20.08.2026.** Anlass, wörtlich: *„habe bislang immer text gegeben und
+es wurde die hälfte ignoriert, es ist echt schwach was du rausliest teilweise.“*
+
+**Er hat recht, und es ist messbar** — die Belege stehen in der Tabelle.
+
+## Die Regel an dieser Datei
+
+🔴 **Sagt Andi in einer Nachricht fünf Dinge, kommen fünf Zeilen hierher** —
+nicht die eine, die gerade in die Arbeit passt. Eine Zeile verschwindet nie;
+sie ändert nur ihren Stand.
+
+Erlaubte Stände, und jeder verlangt einen Beleg:
+
+| Zeichen | heißt | verlangt |
+|---|---|---|
+| ✅ | umgesetzt | Nachweis: Datei, Zeile oder Messung |
+| 🔨 | angefangen | was fehlt noch |
+| ⏳ | offen | — |
+| ❓ | nicht verstanden | die Rückfrage, ausformuliert |
+| ⛔ | bewusst nicht | die Begründung, die Andi gelesen hat |
+| 👤 | liegt bei Andi | — |
+
+⚠️ **Es gibt kein „erledigt, glaub mir“.** Ein ✅ ohne Beleg ist ein ⏳.
+
+---
+
+## Gestaltung — Andis sechs Ansagen (09.08.2026, noch alle offen)
+
+| Nr | Ansage (seine Worte) | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| G1 | „F7 (Akzent, bisher Gold) soll LILA sein“ | ⏳ | `theme.js:50` steht weiterhin auf `gold: "#B47B00"` |
+| G2 | „R2 (12 px) ist der bevorzugte Eckenradius“ | 🔨 | Token `--tqs-rund: 12px` liegt in `globals.css`. In den Screens **acht verschiedene Radien**, gezählt: 999 (127×), 12 (91×), 14 (58×), 10 (47×), 11 (23×), 18, 26 … |
+| G3 | „durchwegs die apple schrift. typ und formatierung“ | ⏳ | **keine einzige `font-family` in der ganzen App** — weder in `globals.css` noch im Layout |
+| G4 | „die vom nutzer gewählten farben … in minimalistischen verzierungen und dynamischen übergängen“ | ⏳ | `applyFanColors` überschreibt weiterhin die Akzente. Hängt mit G1 zusammen: einzeln umgesetzt verschwindet das Lila wieder |
+| G5 | Erstkontakt: erster Start vs. Wiederkehrer | ⏳ | nichts gebaut |
+| G6 | Aufbau der Admin-Einstellungen | 👤 | will er einzeln durchsprechen — **auf ihn warten** |
+
+## Bewegung und Bausteine
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| B1 | „wenn was geklickt wird, dass dann das feld mehr leuchtet bis neues fenster lädt“ | 🔨 | `Aktion.jsx` ist gebaut — und wird an **genau einer** Stelle benutzt. Die Klassen `tqs-aktion`/`tqs-laedt`/`tqs-auf` kommen außerhalb der Musterseite **4×** vor |
+| B2 | Spickzettel mit den geteilten Werten für Canva und Code | ⏳ | am 20.08. zugesagt, **nicht gebaut** |
+| B3 | Bewegungsmuster M1…Mn auf `/stil` zum Antippen | ⏳ | am 20.08. zugesagt, **nicht gebaut** |
+
+## Struktur und Sprache
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| S1 | „Quoten-Auswertung ist der Standard bzw. meine Idee … das ist kein eigener Spielmodus“ | 🔨 | im Vokabular festgehalten; Oberfläche zeigt weiterhin drei „Modi“ |
+| S2 | Budget heißt „Budget mit festen Münzen jeden Spieltag“, *„finde ich blöder“* | 🔨 | Name vermerkt; in der Oberfläche steht noch „Wettbüro“ |
+| S3 | Name für die Form, wo man Stufen verteilt (`ranking` ist raus) | 👤 | Rückfrage steht, Andi hat noch nicht geantwortet |
+| S4 | Sollen sich die Joker-Formen ausschließen oder kombinierbar sein? | ❓ | `joker.modus` speichert **einen** Wert — kombinierbar geht heute nicht. Entscheidung fehlt |
+| S5 | „beim code ist übrigens extrem viel müll dabei“ → Bestandsaufnahme der Regel-Blöcke | ⏳ | 38 Blöcke, 180 Einstellwerte, keiner davon geprüft |
+
+## Betrieb
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| O1 | Tailwind: „ich denke wir sollten dennoch zum professionellen tool rüberwechseln“ | ⏳ | Recherche fehlt: Tailwind v4 mit Next 15.3, und ob die Fanfarben zur Laufzeit dynamisch bleiben |
+| O2 | Eigener Mailversand (Brevo + Domain) | 👤 | einziger echter Blocker, bevor Mitspieler dazukommen |
+| O3 | Echte Spielpläne live schalten (`seed-matches-pl/pd/sa.sql`) | 👤 | — |
+
+---
+
+## Was hier NICHT hingehört
+
+Fertiges. Sobald eine Zeile ✅ mit Beleg trägt und Andi es gesehen hat, wandert
+sie nach unten unter „Erledigt“ — gelöscht wird nichts, sonst entsteht wieder
+der Eindruck, es sei nie gesagt worden.
+
+## Erledigt
+
+*(noch leer — und das ist der Punkt)*

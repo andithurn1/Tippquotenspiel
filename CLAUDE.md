@@ -115,7 +115,17 @@ Dateien sind lang:
    - Was er hineingeschrieben hat, **wird am Ende der Sitzung mitcommittet**,
      auch wenn es mit der Tagesaufgabe nichts zu tun hat. Sonst ist es beim
      nächsten `git clone` weg.
-4. `design/roadmap.md` — was fertig ist und was als Nächstes ansteht. Wer
+4. 🔴 **`design/auftraege.md` — jede Ansage von Andi mit Stand. IMMER lesen,
+   IMMER nachführen.** Anlass war sein Befund vom 20.08.2026: *„habe bislang
+   immer text gegeben und es wurde die hälfte ignoriert.“* Nachgemessen hatte
+   er recht — von sechs Gestaltungs-Ansagen war keine umgesetzt, und die
+   Leucht-Komponente lag gebaut, aber an einer einzigen Stelle benutzt.
+   **Sagt er in einer Nachricht fünf Dinge, kommen fünf Zeilen dorthin** —
+   nicht die eine, die gerade in die Arbeit passt. Eine Zeile verschwindet
+   nie, sie ändert nur ihren Stand. ⚠️ **Ein ✅ ohne Beleg (Datei, Zeile oder
+   Messung) ist ein ⏳.**
+
+5. `design/roadmap.md` — was fertig ist und was als Nächstes ansteht. Wer
    etwas fertig macht, trägt es dort SOFORT ein.
    ⚡ **Kurzweg, wenn du nur die aktuelle Aufgabe brauchst:** der oberste
    Eintrag im Nachrichten-Log von `COORDINATION.md` ist immer der aktuelle
