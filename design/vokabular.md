@@ -41,27 +41,42 @@ mich — sie wird beim nächsten Durchgang beantwortet, nicht überschrieben.
 
 ---
 
-### ❓ Offen: „Ranking“ ist ein schlechter Name (Andi, 20.08.2026)
+### 🔴 ENTSCHIEDEN: Es gibt keine Spielmodi (Andi, 20.08.2026)
 
-Andis Einwand, wörtlich: *„wieso heißt ausgerechnet dieser Rankingspielmodus
-Ranking, obwohl wir eigentlich alle gerankt werden.“*
+Wörtlich: *„Quoten-Auswertung ist der Standard bzw. meine Idee, und natürlich
+können auch Joker, Ereignisse bzw. Game-Einflüsse hinzugefügt werden, das ist
+kein eigener Spielmodus.“*
 
-**Er hat recht.** Das Wort bezeichnet im Code, dass der TIPPER seine SPIELE in
-eine Rangfolge bringt. Umgangssprachlich heißt Ranking aber die Rangliste der
-SPIELER — die es zusätzlich und immer gibt. Ein Begriff, zwei Bedeutungen, und
-die geläufigere ist die falsche.
+**Damit ist die bisherige Darstellung falsch.** Der Code führt `einzel`,
+`ranking` und `einsatz` als drei Werte von `joker.modus`, und die Oberfläche
+hat daraus drei „Modi“ gemacht. Richtig ist:
 
-Vorschlag zur Umbenennung (Andi entscheidet, sein Wort gewinnt):
+| | |
+|---|---|
+| **Das Spiel** | **Quoten-Auswertung.** Nicht abschaltbar, kein Modus, kein Preset. Wer aus einer unwahrscheinlichen Lage richtig liegt, bekommt mehr. Das ist die Idee, nicht eine von mehreren. |
+| **Zusätze** | Joker, Ereignisse, Game-Einflüsse. Optional, kombinierbar, **nie ein eigener Spielmodus**. |
 
-| Code-Wert | heute | Vorschlag | was der Tipper tut |
-|---|---|---|---|
-| `einzel` | „Einzel“ | **Joker** | markiert EIN Spiel |
-| `ranking` | „Ranking“ | **Wichtigkeit** | verteilt Stufen, jede nur einmal |
-| `einsatz` | „Einsatz“ | **Münzen** | verteilt ein Budget frei |
+Folgen, die daraus zu ziehen sind (noch nicht umgesetzt):
 
-⚠️ Der Code-Wert (`joker.modus: "ranking"`) muss dabei NICHT mitwandern — er
-steht in gespeicherten Runden und in Creator-Codes. Umbenannt wird, was der
-Nutzer liest.
+- **Das Wort „Modus“ verschwindet aus allem, was der Nutzer liest.** Der
+  gespeicherte Wert `joker.modus` darf bleiben — er steht in bestehenden Runden
+  und Creator-Codes. Umbenannt wird, was auf dem Bildschirm steht.
+- Die Spielerstellung darf **nicht** mit einer Modus-Wahl beginnen. Die
+  Quoten-Auswertung wird gesetzt, nicht gewählt.
+- Die fünf Kacheln in Stufe 1 sind damit **Zusammenstellungen von Zusätzen**,
+  keine Spielarten.
+
+**Benennung der Joker-Formen:**
+
+| Code-Wert | Andis Wort | was der Tipper tut |
+|---|---|---|
+| `einzel` | **Joker** | markiert EIN Spiel |
+| `einsatz` | **Budget mit festen Münzen jeden Spieltag** | verteilt den Vorrat frei |
+| `ranking` | ❓ noch offen | verteilt Stufen, jede nur einmal |
+
+⚠️ Andi zum Budget: *„finde ich blöder“*. Es bleibt, aber es gehört **nicht
+nach vorn** — weder als erste Kachel noch als Beispiel, wenn eine Regel erklärt
+wird.
 
 ---
 
