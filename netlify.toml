@@ -3,20 +3,31 @@
 #
 #  Warum diese Datei existiert: Vercel hat den Bereich gesperrt, nachdem der
 #  Pro-Tarif ausgelaufen ist, und lässt weder ein Downgrade auf Hobby noch das
-#  Anlegen eines kostenlosen Teams zu ("Create a team" bietet nur Pro und
+#  Anlegen eines kostenlosen Teams zu („Create a team" bietet nur Pro und
 #  Pro-Trial). Netlifys Gratis-Tarif kommt ohne Kreditkarte aus.
 #
-#  ⚠️ Diese Datei ist auf Vercel WIRKUNGSLOS. Sie kann also liegen bleiben,
-#  auch wenn das Projekt je zurückzieht — sie stört nichts.
+#  ⚠️ Diese Datei ist auf Vercel WIRKUNGSLOS. Sie kann liegen bleiben, auch
+#  falls das Projekt je zurückzieht.
 #
-#  Den Next.js-Teil übernimmt Netlifys eigene Erweiterung (@netlify/plugin-nextjs),
-#  die beim Verbinden des Repos automatisch eingerichtet wird. Deshalb steht
-#  hier bewusst KEIN `publish`-Verzeichnis: wer `.next` von Hand einträgt,
-#  hebelt die Erweiterung aus und bekommt eine tote Seite.
+#  🔴 KORREKTUR vom selben Tag, damit es niemand wieder falsch macht:
+#  Hier stand zuerst KEIN `publish`, mit dem Kommentar, das Verzeichnis
+#  einzutragen würde Netlifys Next.js-Erweiterung aushebeln. **Das war falsch.**
+#  Ohne `publish` liefert Netlify das Repo-Wurzelverzeichnis aus, und dann
+#  antwortet ALLES mit 404 — auch statische Dateien wie `/logo-hell.png`.
+#  Genau so gemessen, bevor es korrigiert wurde. Richtig ist `.next`; die
+#  Erweiterung erwartet es dort.
 # ============================================================
 
 [build]
   command = "npm run build"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "22"
+
+# Die Next.js-Erweiterung wird von Netlify eigentlich automatisch erkannt und
+# installiert. Sie steht hier trotzdem ausdrücklich: beim ersten Anlauf war sie
+# offenbar NICHT aktiv (404 auf allen Pfaden), und eine automatische Erkennung,
+# die still ausbleibt, ist schwerer zu finden als eine Zeile zu viel.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
