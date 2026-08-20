@@ -318,6 +318,25 @@ Fehlermeldung. Bei jeder Anweisung dazusagen, ob die Datei bleibt oder weg kann.
   UTF-8-Datei nicht mehr nötig (am 03.08. gegengeprüft, `git log` zeigt sie
   korrekt). Die Krücke bitte nicht weiter abschreiben, sie liest sich wie ein
   Rechtschreibfehler.
+- 🔴 **„Die Seite lädt nicht" — erst die zwei Anbieter prüfen, dann den Code.**
+  Am 09.08.2026 lagen BEIDE gleichzeitig, und keins davon war ein Fehler im
+  Projekt:
+  · **Vercel: HTTP 402.** Der Pro-Tarif ist ausgelaufen (keine Kreditkarte
+    mehr), Vercel sperrt dann Auslieferung UND Bauen. Ein Downgrade auf Hobby
+    ist bei gesperrtem Team nicht anwählbar, und „Create a team" bietet nur
+    noch Pro — deshalb der Umzug zu Netlify (`netlify.toml`, geplante Funktion
+    unter `netlify/functions/`).
+  · **Supabase: Projekt pausiert.** Gratis-Projekte schlafen nach etwa einer
+    Woche ohne Zugriffe ein. Ein Klick auf **Resume project** genügt, kostenlos
+    — NICHT „Upgrade to Pro". Die Daten bleiben unberührt.
+  ⚠️ **Die beiden hängen zusammen:** solange die App offline ist, greift
+  niemand auf die Datenbank zu, und Supabase schläft wieder ein. Läuft die App,
+  hält allein die tägliche Spieltag-Automatik das Projekt wach.
+  **Erkennungsprobe, bevor irgendwer den Code verdächtigt:**
+  ```bash
+  curl -s -o /dev/null -w "%{http_code}\n" https://<adresse>/
+  ```
+  402 = Bezahlung/Sperre beim Hoster · 200 mit leerer Liste = eher Supabase.
 - **Der Mock-Store lebt im Arbeitsspeicher.** Ein voller Seitenwechsel im
   Browser setzt ihn zurück — angelegte Runden sind dann weg.
 - **`vercel.json` verträgt KEINE eigenen Felder** (auch kein `_hinweis`), und
