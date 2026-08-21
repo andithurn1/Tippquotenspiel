@@ -215,6 +215,125 @@ const FOLIEN = [
     ], 2.4 * CM, "auftrag", 1100));
     return teile;
   },
+
+  // 7 · Joker, Münzen, Narren — der Bestand
+  () => {
+    const l = setzer(); const r = setzer(); const teile = [];
+    teile.push(K(l, L_X, L_W, ["Was du gerade hast"], 0.8 * CM, "normal", 1400));
+    teile.push(T(l, L_X, L_W, [
+      "Alles GEBAUT: `MeineJoker.jsx` und `Waehrungen.jsx`. Offen ist nur, ob sie "
+      + "eigene Fenster bleiben oder in die Runden-Übersicht wandern.",
+    ], 1.6 * CM));
+    teile.push(K(l, L_X, L_W, ["Joker im Bestand", "welche · wie viele · woher sie kamen"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, ["Was wann verfällt", "Abklingzeit · Verfall zum Saisonende"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, ["Münzen", "Vorrat des Spieltags · nicht verteilter Rest"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, ["Narren", "das Vermögen über die Saison — anders als Münzen"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, [
+      "AUFTRAG: Ein Fenster oder zwei?",
+      "Münzen sind ein Spieltags-Werkzeug, Narren ein Vermögen. Getrennt ist ehrlicher, zusammen ist weniger Klicken.",
+    ], 2.6 * CM, "auftrag", 1100));
+
+    teile.push(K(r, R_X, R_W, ["Herkunft eines Jokers"], 0.8 * CM, "normal", 1400));
+    teile.push(K(r, R_X, R_W, ["erspielt", "am Spieltag 12 · Serie"], 1.3 * CM));
+    teile.push(K(r, R_X, R_W, ["vom Rad", "Ziehung Spieltag 9"], 1.3 * CM));
+    teile.push(K(r, R_X, R_W, ["gekauft", "80 Narren"], 1.3 * CM));
+    teile.push(K(r, R_X, R_W, ["… wie davor"], 0.9 * CM));
+    teile.push(pfeil({ id: nId(), x: L_X + L_W, y: 2.0 * CM, y2: 0.9 * CM, w: R_X - (L_X + L_W) }));
+    return teile;
+  },
+
+  // 8 · Saison-Wetten
+  () => {
+    const l = setzer(); const teile = [];
+    teile.push(K(l, L_X, L_W, ["Saison-Wetten"], 0.8 * CM, "normal", 1400));
+    teile.push(T(l, L_X, L_W, [
+      "Langzeit-Tipps, die der Admin ins Regelwerk gelegt hat. Gebaut in "
+      + "`SaisonTipps.jsx` — nach dem ersten Anpfiff gesperrt.",
+    ], 1.6 * CM));
+    teile.push(K(l, L_X, L_W, ["Meister", "Auswahl aus den Vereinen der Runde"], 1.3 * CM));
+    teile.push(K(l, L_X, L_W, ["Absteiger", "… wie davor"], 1.1 * CM));
+    teile.push(K(l, L_X, L_W, ["Torschützenkönig", "Auswahl aus den Kadern"], 1.3 * CM));
+    teile.push(K(l, L_X, L_W, ["Frist", "abgeben bis zum ersten Anpfiff"], 1.3 * CM));
+    teile.push(K(l, L_X, L_W, ["Was sie wert sind", "Punkte je Wette · Gewicht in der Saison"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, [
+      "AUFTRAG: Sieht man die Wetten der anderen?",
+      "Erst nach der Frist, sofort, oder gar nicht? Sofort verrät die eigene Einschätzung.",
+    ], 2.4 * CM, "auftrag", 1100));
+    return teile;
+  },
+
+  // 9 · Verlauf und Abrechnung
+  () => {
+    const l = setzer(); const r = setzer(); const teile = [];
+    teile.push(K(l, L_X, L_W, ["Verlauf"], 0.8 * CM, "normal", 1400));
+    teile.push(T(l, L_X, L_W, [
+      "Gebaut: `Historie.jsx` mit umschaltbaren Kriterien, `Abrechnung.jsx` je Spieltag.",
+    ], 1.3 * CM));
+    teile.push(K(l, L_X, L_W, ["Punkteverlauf", "Kurve je Spieler über die Spieltage"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, ["Umschaltbar", "Punkte · Platz · Trefferquote · Mut"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, ["Ein Spieltag im Detail", "wer was geholt hat, aufgeschlüsselt"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, ["Zwischenabrechnung", "was seit deinem letzten Besuch fertig wurde"], 1.5 * CM));
+    teile.push(K(l, L_X, L_W, [
+      "AUFTRAG: Gehört der Verlauf in die Übersicht?",
+      "Oder ist er ein eigenes Fenster, das man selten öffnet? Er ist das Einzige, was die Saison als Ganzes zeigt.",
+    ], 2.6 * CM, "auftrag", 1100));
+
+    teile.push(K(r, R_X, R_W, ["Ein Spieltag, aufgeschlüsselt"], 0.8 * CM, "normal", 1400));
+    teile.push(K(r, R_X, R_W, ["Grundpunkte aus der Quote", "180 Pkt"], 1.3 * CM));
+    teile.push(K(r, R_X, R_W, ["Joker", "×1,5"], 1.1 * CM));
+    teile.push(K(r, R_X, R_W, ["Außenseiter nach Tabelle", "+20 %"], 1.3 * CM));
+    teile.push(K(r, R_X, R_W, ["Torschützen", "+90 Pkt"], 1.1 * CM));
+    teile.push(K(r, R_X, R_W, ["Gedeckelt bei", "modCap 2,5"], 1.1 * CM));
+    teile.push(K(r, R_X, R_W, ["Summe", "340 Pkt"], 1.1 * CM));
+    teile.push(pfeil({ id: nId(), x: L_X + L_W, y: 6.5 * CM, y2: 0.9 * CM, w: R_X - (L_X + L_W) }));
+    return teile;
+  },
+
+  // 10 · Rad und Ereignisse aus Spielersicht
+  () => {
+    const l = setzer(); const teile = [];
+    teile.push(K(l, L_X, L_W, ["Rad & Ereignisse"], 0.8 * CM, "normal", 1400));
+    teile.push(T(l, L_X, L_W, [
+      "Gebaut: `MeinRad.jsx`. Bis dahin gab es das Rad nur beim Admin — die Punkte "
+      + "landeten still im Leaderboard, ohne dass jemand sah, woher.",
+    ], 1.8 * CM));
+    teile.push(K(l, L_X, L_W, ["Was zuletzt gezogen wurde", "Feld · was es gebracht hat"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, ["Wann wieder gedreht wird", "nächster Spieltag · Bedingung"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, ["Ereignisse dieser Runde", "welche greifen · wie oft schon"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, ["Was das für dich hieß", "je Ereignis dein Anteil"], 1.4 * CM));
+    teile.push(K(l, L_X, L_W, [
+      "AUFTRAG: Vorher oder nachher sichtbar?",
+      "Wer weiß, dass gleich gedreht wird, tippt anders. Wer es erst danach sieht, erlebt es als Willkür.",
+    ], 2.6 * CM, "auftrag", 1100));
+    return teile;
+  },
+
+  // 11 · Spott und Auszahlungs-Explorer
+  () => {
+    const l = setzer(); const teile = [];
+    teile.push(K(l, L_X, L_W, ["Beiwerk"], 0.8 * CM, "normal", 1400));
+    teile.push(T(l, L_X, L_W, [
+      "Zwei Fenster, die gebaut sind und heute kaum jemand findet.",
+    ], 1.2 * CM));
+    teile.push(K(l, L_X, L_W, [
+      "Spott senden",
+      "GIF an einen Mitspieler — geht über die Teilen-Funktion des Geräts raus",
+    ], 1.6 * CM));
+    teile.push(K(l, L_X, L_W, ["Bremse", "ein Spott je Ziel und Spieltag"], 1.3 * CM));
+    teile.push(K(l, L_X, L_W, [
+      "Auszahlungs-Explorer",
+      "durchspielen, was ein Ergebnis unter DIESEN Regeln gebracht hätte",
+    ], 1.6 * CM));
+    teile.push(K(l, L_X, L_W, [
+      "AUFTRAG: Wo hängen die beiden?",
+      "Der Explorer erklärt das Spiel besser als jede Anleitung — er ist derzeit von fast nirgends erreichbar.",
+    ], 2.6 * CM, "auftrag", 1100));
+    teile.push(K(l, L_X, L_W, [
+      "AUFTRAG: Was fehlt hier noch ganz?",
+      "Platz für alles, was dir beim Durchgehen einfällt.",
+    ], 2.2 * CM, "auftrag", 1100));
+    return teile;
+  },
 ];
 
 // ── Eigene Datei bauen ──────────────────────────────────────

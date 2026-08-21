@@ -103,6 +103,29 @@ Thema, Layout, Folienmaß und Trennstrich stimmen. ⚠️ Wer sie neu erzeugt,
 | 2 | Wettbewerbe: Bundesliga, 2. Bundesliga …, darin „alle" und einzelne Vereine |
 | 3 ff. | **in Arbeit** — als Nächstes die Teilbibliothek „Betippungsauswahl": wie die Varianten vorgestellt werden und welche Kurzbeschreibung dazu steht |
 
+## Stand `Quotentippen-Tippen.pptx` (22.08.2026)
+
+Elf Folien, alle gefüllt, **14 orange Rückfragen**:
+
+| Folie | Inhalt |
+|---|---|
+| 1 | Spieltag-Übersicht mit den Spielen der Runde |
+| 2 | **Ergebnis-Matrix** mit Punktanzeige · rechts die Vorschau naher Ergebnisse |
+| 3 | Torschützen · Kombi-Bonus · sichere gegen mögliche Punkte |
+| 4 | In der Tipprunde · rechts das Ranking aufgeklappt |
+| 5 | Abstimmung |
+| 6 | Reserve — Platz für Andi |
+| 7 | Joker, Münzen, Narren · rechts die Herkunft eines Jokers |
+| 8 | Saison-Wetten |
+| 9 | Verlauf · rechts ein Spieltag aufgeschlüsselt |
+| 10 | Rad & Ereignisse aus Spielersicht |
+| 11 | Beiwerk: Spott, Auszahlungs-Explorer |
+
+⚠️ **Alles auf den Folien 7–11 ist bereits GEBAUT** (`MeineJoker`,
+`Waehrungen`, `SaisonTipps`, `Historie`, `Abrechnung`, `MeinRad`,
+`SpottSenden`, `AuszahlungsExplorer`). Offen ist nur, wo diese Fenster hängen
+— mehrere sind heute von fast nirgends erreichbar.
+
 ## Reihenfolge der Arbeit — Andis Ansage
 
 1. **Erst die Masterdatei fertigstellen** (Andi, mit Beratung, was gut umsetzbar ist)
