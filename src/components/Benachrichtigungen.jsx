@@ -103,8 +103,8 @@ export default function Benachrichtigungen() {
         <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Benachrichtigungen
         </span>
-        <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>Nur, wenn du sonst was verpasst</div>
-        <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+        <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>Nur, wenn du sonst was verpasst</div>
+        <p style={{ fontSize: 13, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
           Wir melden uns nur zu zwei Anlässen — neuer Spieltag und kurz bevor
           dein ungetipptes Spiel beginnt. Kein „xy hat getippt", keine Werbung.
         </p>
@@ -119,16 +119,16 @@ export default function Benachrichtigungen() {
         }}>
           <Schalter an={prefs.enabled} />
           <span style={{ flex: 1 }}>
-            <span style={{ fontSize: 14, fontWeight: 700 }}>
+            <span style={{ fontSize: 15, fontWeight: 700 }}>
               {prefs.enabled ? "Eingeschaltet" : "Ausgeschaltet"}
             </span>
-            <span style={{ display: "block", fontSize: 11.5, color: C.muted, marginTop: 2 }}>
+            <span style={{ display: "block", fontSize: 12, color: C.muted, marginTop: 2 }}>
               {prefs.enabled ? "Du bekommst nur die unten gewählten Hinweise." : "Es kommt gar nichts an."}
             </span>
           </span>
         </button>
         {systemStatus && (
-          <div style={{ fontSize: 11.5, color: C.coral, marginTop: 8, lineHeight: 1.5 }}>{systemStatus}</div>
+          <div style={{ fontSize: 12, color: C.coral, marginTop: 8, lineHeight: 1.5 }}>{systemStatus}</div>
         )}
 
         {/* Der Zustand des GERÄTS, getrennt von der Einstellung in der App.
@@ -138,7 +138,7 @@ export default function Benachrichtigungen() {
           marginTop: 10, background: C.surface, border: `1px solid ${C.line}`,
           borderRadius: 12, padding: "10px 12px",
         }}>
-          <div style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
             {kanalZustand ? STATUS_TEXT[kanalZustand] : "Gerät wird geprüft …"}
           </div>
           <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
@@ -146,7 +146,7 @@ export default function Benachrichtigungen() {
           </div>
           {kanalZustand !== STATUS.nichtUnterstuetzt && (
             <button onClick={testen} style={{
-              marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, fontWeight: 700,
+              marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
               background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
               ...TAPZIEL, borderRadius: 999, padding: "5px 12px",
             }}>
@@ -156,7 +156,7 @@ export default function Benachrichtigungen() {
           {testHinweis && (
             <div style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>{testHinweis}</div>
           )}
-          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
             Hinweise erscheinen, solange die App geöffnet ist (auch im Hintergrund).
             Zustellung bei ganz geschlossener App kommt später — dafür braucht es
             Push-Schlüssel auf dem Server.
@@ -174,8 +174,8 @@ export default function Benachrichtigungen() {
               }}>
                 <Haken an={prefs[k]} />
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 13.5, fontWeight: 700 }}>{KANAL_META[k].title}</span>
-                  <span style={{ display: "block", fontSize: 11.5, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>{KANAL_META[k].title}</span>
+                  <span style={{ display: "block", fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
                     {KANAL_META[k].hint}
                   </span>
                 </span>
@@ -185,8 +185,8 @@ export default function Benachrichtigungen() {
 
           {/* Vorwarnzeiten */}
           <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 700 }}>Wie früh erinnern?</div>
-            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Wie früh erinnern?</div>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
               Mehrere möglich — z. B. einmal am Vortag und einmal kurz davor.
             </div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
@@ -194,7 +194,7 @@ export default function Benachrichtigungen() {
                 const an = prefs.vorlaufStunden.includes(h);
                 return (
                   <button key={h} onClick={() => toggleVorlauf(h)} style={{
-                    cursor: "pointer", fontFamily: MONO, fontSize: 12.5,
+                    cursor: "pointer", fontFamily: MONO, fontSize: 13,
                     background: an ? C.akzent : C.surface, color: an ? C.ink : C.muted,
                     border: `1px solid ${an ? C.akzent : C.line}`, borderRadius: 999,
                     ...TAPZIEL, padding: "6px 13px", fontWeight: 700,
@@ -206,8 +206,8 @@ export default function Benachrichtigungen() {
 
           {/* Ruhezeit */}
           <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 700 }}>Nachtruhe</div>
-            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Nachtruhe</div>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
               In diesem Zeitraum kommt nichts an — auch nichts Dringendes.
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
@@ -219,7 +219,7 @@ export default function Benachrichtigungen() {
 
           {/* Obergrenze */}
           <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 700 }}>Höchstens pro Tag: {prefs.maxProTag}</div>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Höchstens pro Tag: {prefs.maxProTag}</div>
             <input type="range" min={NOTIFY_LIMITS.maxProTag.min} max={NOTIFY_LIMITS.maxProTag.max} step={1}
               value={prefs.maxProTag} onChange={(e) => update({ maxProTag: Number(e.target.value) })}
               style={{ width: "100%", marginTop: 8, accentColor: C.akzent }} />
@@ -231,13 +231,13 @@ export default function Benachrichtigungen() {
           marginTop: 22, background: C.ink2, border: `1px solid ${C.line}`,
           borderRadius: 14, padding: "12px 14px",
         }}>
-          <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>
+          <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>
             Das kommt bei dir an
           </div>
-          <div style={{ fontSize: 12.5, color: C.text, marginTop: 6, lineHeight: 1.6 }}>{summarize(prefs)}</div>
+          <div style={{ fontSize: 13, color: C.text, marginTop: 6, lineHeight: 1.6 }}>{summarize(prefs)}</div>
         </div>
 
-        <p style={{ fontSize: 10.5, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
           Gilt für dieses Gerät. Der eigentliche Versand kommt mit der App —
           die Einstellung hier bleibt dieselbe.
         </p>
@@ -273,7 +273,7 @@ function Haken({ an }) {
 function Stunde({ label, value, onChange }) {
   return (
     <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-      <span style={{ fontSize: 11.5, color: C.muted }}>{label}</span>
+      <span style={{ fontSize: 12, color: C.muted }}>{label}</span>
       <select value={value} onChange={(e) => onChange(Number(e.target.value))} style={{
         background: C.surface, color: C.text, border: `1px solid ${C.line}`,
         borderRadius: 10, padding: "7px 9px", fontFamily: MONO, fontSize: 13,

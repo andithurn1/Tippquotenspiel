@@ -258,7 +258,7 @@ function Titel({ children }) {
 function Kuerzel({ children }) {
   return (
     <span style={{
-      fontFamily: "ui-monospace, monospace", fontSize: 10, fontWeight: 700,
+      fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 700,
       color: "var(--tqs-akzent)", border: "1px solid color-mix(in srgb, var(--tqs-akzent) 40%, transparent)",
       borderRadius: 999, padding: "1px 6px", whiteSpace: "nowrap",
     }}>{children}</span>

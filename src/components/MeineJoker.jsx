@@ -205,7 +205,7 @@ export default function MeineJoker() {
 
         {matches != null && jokerAn && (
           <>
-            <p style={{ fontSize: 12.5, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
               {beschreibeVerteilung(verteilung, spieltage)}
             </p>
 
@@ -226,7 +226,7 @@ export default function MeineJoker() {
             </div>
 
             {/* Die Spieltage. `null` = Modus „frei": jeder Spieltag trägt einen. */}
-            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
               {sichtbar === null ? "Jeder Spieltag" : "Deine Joker-Spieltage"}
             </div>
             {sichtbar === null ? (
@@ -258,7 +258,7 @@ export default function MeineJoker() {
                 })}
               </div>
             )}
-            <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+            <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
               {verteilung.sichtbarkeit === "verdeckt"
                 ? "Gezeigt sind nur die Spieltage, die schon dran waren — die kommenden bleiben verdeckt. "
                 : "Alle Spieltage stehen vorab fest. "}
@@ -268,7 +268,7 @@ export default function MeineJoker() {
             {/* ── Grenzen ── */}
             {meineKlassen.length > 0 && (
               <div style={{ marginTop: 18 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
                   Was dich gerade begrenzt
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -281,19 +281,19 @@ export default function MeineJoker() {
                         border: `1px solid ${voll ? C.coral + "55" : C.line}`,
                       }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                          <span style={{ flex: 1, minWidth: 0, fontSize: 12.5 }}>{k.label}</span>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{k.label}</span>
                           <span style={{ fontFamily: MONO, fontSize: 11, color: voll ? C.coral : C.muted }}>
                             {genutzt}/{k.max}
                           </span>
                         </div>
-                        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                        <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
                           {beschreibeKlasse(k, spieltage)}
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                   Gezeigt sind nur die Grenzen, die GERADE gelten — eine Klasse mit
                   Zeitfenster taucht auf, wenn ihr Fenster offen ist.
                 </p>
@@ -303,7 +303,7 @@ export default function MeineJoker() {
             {/* ── Zu erspielen ── */}
             {ereignisse.enabled && ereignisse.aktive.length > 0 && (
               <div style={{ marginTop: 18 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Zu erspielen</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Zu erspielen</div>
                 <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
                   {beschreibeEreignisse(ereignisse)}
                 </p>
@@ -317,7 +317,7 @@ export default function MeineJoker() {
                         border: `1px solid ${meins ? C.mint + "55" : C.line}`,
                       }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                          <span style={{ flex: 1, minWidth: 0, fontSize: 12.5 }}>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
                             {typ?.label ?? a.key}
                           </span>
                           <span style={{ fontFamily: MONO, fontSize: 11, color: meins ? C.mint : C.muted }}>
@@ -325,7 +325,7 @@ export default function MeineJoker() {
                           </span>
                         </div>
                         {typ?.hint && (
-                          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                          <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
                             {typ.hint}
                           </div>
                         )}
@@ -335,7 +335,7 @@ export default function MeineJoker() {
                             danach zwei Spieltage Ruhe hat — und wenn dann
                             nichts kam, sah es nach einem Fehler aus. */}
                         {(a.abstand > 0 || a.maxProSaison > 0) && (
-                          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                          <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
                             {[
                               a.maxProSaison > 0 && `höchstens ${a.maxProSaison}× pro Saison`,
                               a.abstand > 0 && `danach ${a.abstand} Spieltage Pause`,
@@ -362,10 +362,10 @@ export default function MeineJoker() {
                     background: `${C.akzent}12`, border: `1px solid ${C.line}`,
                     borderRadius: 12, padding: "9px 12px", marginTop: 8,
                   }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, marginBottom: 3 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3 }}>
                       Nicht alles wurde gutgeschrieben
                     </div>
-                    <div style={{ fontSize: 10.5, color: C.muted, lineHeight: 1.45 }}>
+                    <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>
                       {lage.gebremst > 0 && (
                         <div>
                           {lage.gebremst}× ausgelöst, aber an der eigenen Grenze des
@@ -382,7 +382,7 @@ export default function MeineJoker() {
                   </div>
                 )}
 
-                <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                   Rechts steht, was es gibt — und sobald du eines ausgelöst hast, wie
                   oft und wie viele Joker daraus wurden. Erspielte Joker sind auf{" "}
                   {ereignisse.maxErspielt} pro Saison gedeckelt; darüber hinaus zählt
@@ -397,7 +397,7 @@ export default function MeineJoker() {
                 dafür gibt es `uebersicht`. */}
             {andere.length > 1 && plan.modus === "kontingent" && (
               <div style={{ marginTop: 18 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
                   Bei den anderen
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -407,12 +407,12 @@ export default function MeineJoker() {
                       background: C.surface, border: `1px solid ${C.line}`,
                       borderRadius: 12, padding: "7px 12px",
                     }}>
-                      <span style={{ fontSize: 12.5 }}>{nameVon(o.userId)}</span>
+                      <span style={{ fontSize: 13 }}>{nameVon(o.userId)}</span>
                       <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>{o.text}</span>
                     </div>
                   ))}
                 </div>
-                <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                   Jeder hat eigene Joker-Spieltage. Dass mitten in der Saison
                   unterschiedlich viele davon dran waren, gehört dazu — über die
                   ganze Runde bekommt jeder gleich viele.

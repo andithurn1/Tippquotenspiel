@@ -58,8 +58,8 @@ export default function RundeBeitreten() {
           <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
             Runde beitreten
           </span>
-          <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>Beitritts-Code eingeben</div>
-          <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, marginBottom: 20, lineHeight: 1.5 }}>
+          <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>Beitritts-Code eingeben</div>
+          <p style={{ fontSize: 13, color: C.muted, marginTop: 4, marginBottom: 20, lineHeight: 1.5 }}>
             Von einem Freund bekommen, oder zurück zur Demo-Runde? Der Code{" "}
             <span style={{ fontFamily: MONO, color: C.akzent }}>DEMO</span>{" "}
             führt immer zur „Freundeskreis"-Runde.
@@ -98,12 +98,12 @@ export default function RundeBeitreten() {
           ) : (
             <div style={{ background: `${C.mint}12`, border: `1px solid ${C.mint}44`, borderRadius: 14, padding: "16px 18px" }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: C.mint }}>✓ Beigetreten: „{joinedName}"</div>
-              <p style={{ fontSize: 12.5, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Das ist jetzt deine aktive Runde für Tippen und Abrechnung.
               </p>
               <Link href="/tippen" style={{
                 marginTop: 14, display: "block", textAlign: "center", textDecoration: "none",
-                color: C.ink, background: C.akzent, fontWeight: 700, fontSize: 14,
+                color: C.ink, background: C.akzent, fontWeight: 700, fontSize: 15,
                 borderRadius: 14, padding: "12px 0",
               }}>
                 Jetzt tippen →

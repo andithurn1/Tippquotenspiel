@@ -33,14 +33,14 @@ export default function Begriff({ term, children }) {
             position: "absolute", left: 0, top: "100%", marginTop: 6, zIndex: 20,
             width: "min(260px, 78vw)", background: C.surface2, color: C.text,
             border: `1px solid ${C.lineStrong}`, borderRadius: 12, padding: "10px 12px",
-            boxShadow: "0 18px 40px -18px rgba(0,0,0,0.85)", fontSize: 12.5, lineHeight: 1.5,
+            boxShadow: "0 18px 40px -18px rgba(0,0,0,0.85)", fontSize: 13, lineHeight: 1.5,
             fontWeight: 400, textAlign: "left", cursor: "auto",
           }}
         >
           <span style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
             <strong style={{ color: C.akzent, fontSize: 12 }}>{entry.term}</strong>
             <button onClick={() => setOpen(false)} style={{
-              background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1,
+              background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 15, padding: 0, lineHeight: 1,
             }} aria-label="schließen">×</button>
           </span>
           {entry.text}

@@ -37,7 +37,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
 
   return (
     <div>
-      <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+      <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
         Läuft nebenher über die ganze Saison: einmal getippt, am Ende abgerechnet.
         <strong> Ohne Quoten</strong> — du legst selbst fest, was jede Wette wert ist.
       </p>
@@ -55,8 +55,8 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                 background: C.surface, border: `1px solid ${C.line}`,
                 borderRadius: 12, padding: "9px 11px", color: C.text,
               }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700 }}>{p.label}</div>
-                <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{p.label}</div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
               </button>
             ))}
           </div>
@@ -76,7 +76,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
           {/* Gewählte Wetten */}
           <Label>Gewählte Wetten ({s.wetten.length}/{SAISON_LIMITS.maxWetten})</Label>
           {s.wetten.length === 0 && (
-            <div style={{ fontSize: 11.5, color: C.muted, paddingBottom: 6 }}>
+            <div style={{ fontSize: 12, color: C.muted, paddingBottom: 6 }}>
               Noch keine — nimm eine Empfehlung oder wähle unten einzeln aus.
             </div>
           )}
@@ -88,7 +88,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                   background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 12px",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700 }}>{wettenLabel(w)}</span>
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>{wettenLabel(w)}</span>
                     <button onClick={() => entfernen(id)} aria-label="entfernen" style={{
                       cursor: "pointer", background: "transparent", border: "none",
                       color: C.muted, fontSize: 17, lineHeight: 1, padding: "0 2px",
@@ -109,7 +109,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                       einmal fest, wer die K.-o.-Runde erreicht. */}
                   <div style={{ display: "flex", alignItems: "flex-end", gap: 8, marginTop: 8 }}>
                     {[["abSpieltag", "offen ab Spieltag"], ["bisSpieltag", "bis Spieltag"]].map(([feld, label]) => (
-                      <label key={feld} style={{ flex: 1, fontSize: 10.5, color: C.muted }}>
+                      <label key={feld} style={{ flex: 1, fontSize: 11, color: C.muted }}>
                         {label}
                         <input type="number" inputMode="numeric" placeholder="—"
                           min={SAISON_LIMITS.spieltag.min} max={SAISON_LIMITS.spieltag.max}
@@ -125,7 +125,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                       </label>
                     ))}
                   </div>
-                  <p style={{ fontSize: 10, color: C.muted, marginTop: 5, lineHeight: 1.4 }}>
+                  <p style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.4 }}>
                     {w.abSpieltag == null
                       ? "Leer = von Anfang an abgebbar."
                       : `Abgabe nur zwischen Spieltag ${w.abSpieltag} und ${w.bisSpieltag ?? w.abSpieltag}. Die Frist ist wichtig: wer später tippt, weiß mehr.`}
@@ -151,14 +151,14 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                     }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{typ.label}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>{typ.label}</span>
                           {!auswertbar && (
                             <span title="Diese Statistik liefern unsere Ergebnisse noch nicht" style={{
-                              fontFamily: MONO, fontSize: 9, color: C.muted, marginLeft: 6,
+                              fontFamily: MONO, fontSize: 11, color: C.muted, marginLeft: 6,
                               border: `1px solid ${C.line}`, borderRadius: 999, padding: "1px 6px",
                             }}>noch keine Daten</span>
                           )}
-                          <span style={{ display: "block", fontSize: 10.5, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                          <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
                             {typ.hint}
                           </span>
                         </span>
@@ -176,7 +176,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                       {auswertbar && kannAusser && (
                         <div style={{ marginTop: 7 }}>
                           <button onClick={() => setOffen(offen === typ.key ? null : typ.key)} style={{
-                            cursor: "pointer", fontFamily: MONO, fontSize: 10.5, color: C.sky,
+                            cursor: "pointer", fontFamily: MONO, fontSize: 11, color: C.sky,
                             background: "transparent", border: `1px dashed ${C.sky}55`,
                             borderRadius: 999, padding: "3px 9px",
                           }}>
@@ -209,7 +209,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
 
 function Label({ children }) {
   return (
-    <div style={{ fontSize: 11.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1, margin: "16px 0 7px" }}>
+    <div style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1, margin: "16px 0 7px" }}>
       {children}
     </div>
   );
@@ -230,7 +230,7 @@ function Toggle({ an, onChange }) {
       }}>
         <span style={{ width: 16, height: 16, borderRadius: 999, background: an ? C.ink : C.muted }} />
       </span>
-      <span style={{ fontSize: 13.5, fontWeight: 700 }}>Saison-Wetten anbieten</span>
+      <span style={{ fontSize: 13, fontWeight: 700 }}>Saison-Wetten anbieten</span>
     </button>
   );
 }

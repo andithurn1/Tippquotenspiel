@@ -100,7 +100,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                 step={ABSTIMMUNG_LIMITS.quorum.step} value={a.quorum}
                 onChange={(e) => setzeAbstimmung({ quorum: Number(e.target.value) })}
                 style={{ flex: 1, accentColor: C.akzent, cursor: "pointer" }} />
-              <span style={{ fontSize: 12.5, color: C.akzent, fontWeight: 700, minWidth: 46, textAlign: "right" }}>
+              <span style={{ fontSize: 13, color: C.akzent, fontWeight: 700, minWidth: 46, textAlign: "right" }}>
                 {Math.round(a.quorum * 100)} %
               </span>
             </div>
@@ -135,7 +135,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
 
           {/* ── Verfassung ── */}
           <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 14, paddingTop: 12 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 2 }}>Verfassung</div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Verfassung</div>
             <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
               Der Rahmen, den auch eine Mehrheit nicht bricht. Zur Abstimmung steht
               immer ein ganzer Bereich, nie ein einzelner Regler — sonst käme eine
@@ -180,13 +180,13 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                         display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
                       }}>
                         <span>
-                          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{asp.label}</span>
-                          <span style={{ display: "block", fontSize: 10.5, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>{asp.label}</span>
+                          <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
                             {asp.hint}
                           </span>
                         </span>
                         <span style={{
-                          flexShrink: 0, fontSize: 10.5, padding: "3px 9px", borderRadius: 999,
+                          flexShrink: 0, fontSize: 11, padding: "3px 9px", borderRadius: 999,
                           color: frei ? C.muted : C.akzent,
                           border: `1px solid ${frei ? C.line : C.akzent + "66"}`,
                         }}>{frei ? "abstimmbar" : "festgeschrieben"}</span>
@@ -194,7 +194,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                     );
                   })}
                 </div>
-                <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                   Die Mitbestimmung selbst steht bewusst nicht in dieser Liste: über die
                   Verfassung und die Abstimmungsregeln wird nicht abgestimmt, sonst wäre
                   es keine Verfassung.
@@ -214,7 +214,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
               padding: "10px 12px", marginTop: 10,
             }}>
               {funde.map((k) => (
-                <div key={k.key} style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.45, marginBottom: 4 }}>
+                <div key={k.key} style={{ fontSize: 12, color: C.muted, lineHeight: 1.45, marginBottom: 4 }}>
                   {k.text}
                 </div>
               ))}

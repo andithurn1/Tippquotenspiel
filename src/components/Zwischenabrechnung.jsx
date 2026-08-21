@@ -110,13 +110,13 @@ export default function Zwischenabrechnung() {
       }}>
         <div style={{ padding: "16px 18px 10px" }}>
           <div style={{
-            fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.2, color: C.muted,
+            fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
             textTransform: "uppercase",
           }}>Seit du zuletzt da warst</div>
           <div style={{ fontSize: 17, fontWeight: 800, color: C.text, marginTop: 4 }}>
             {summe.anzahl === 1 ? "Ein Spiel ist durch" : `${summe.anzahl} Spiele sind durch`}
           </div>
-          <div style={{ fontSize: 12.5, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 13, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
             Das hat dir <strong style={{ color: C.mint }}>{summe.punkte} Punkte</strong> gebracht
             {summe.exakte > 0 && (
               <> — davon {summe.exakte === 1 ? "ein Volltreffer" : `${summe.exakte} Volltreffer`}</>
@@ -135,15 +135,15 @@ export default function Zwischenabrechnung() {
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div style={{ fontSize: 13, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {s.home} – {s.away}
                     </div>
-                    <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
                       dein Tipp {s.tip.home}:{s.tip.away} · Ergebnis {s.result.home}:{s.result.away}
                       {s.exakt && <span style={{ color: C.akzent }}> · exakt</span>}
                     </div>
                   </div>
-                  <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: s.punkte > 0 ? C.mint : C.muted }}>
+                  <div style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: s.punkte > 0 ? C.mint : C.muted }}>
                     {s.punkte}
                   </div>
                 </div>
@@ -160,7 +160,7 @@ export default function Zwischenabrechnung() {
                     {s.andere.map((a) => (
                       <div key={a.userId} style={{
                         display: "flex", alignItems: "center", gap: 8, marginTop: 3,
-                        fontSize: 10.5, color: C.muted,
+                        fontSize: 11, color: C.muted,
                       }}>
                         <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {a.name} · {a.tip.home}:{a.tip.away}
@@ -185,14 +185,14 @@ export default function Zwischenabrechnung() {
               wegklickt, hat sie gesehen — mehr will sie nicht. */}
           <button type="button" onClick={weiter} style={{
             width: "100%", padding: "13px 16px", borderRadius: 12, border: "none",
-            background: C.mint, color: C.ink, fontSize: 14.5, fontWeight: 800,
+            background: C.mint, color: C.ink, fontSize: 15, fontWeight: 800,
             cursor: "pointer", fontFamily: "inherit",
           }}>Weiter</button>
 
           {/* ⚠️ Der Hinweis gehört HIERHER und nicht ins Menü: wer die
               Einblendung nicht will, sucht den Schalter genau jetzt — nicht
               beim nächsten Mal. */}
-          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 9, textAlign: "center", lineHeight: 1.5 }}>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 9, textAlign: "center", lineHeight: 1.5 }}>
             Regle deine Einstellungen und Benachrichtigungen{" "}
             <Link href="/einstellungen" onClick={weiter} style={{ color: C.akzent, textDecoration: "none", fontWeight: 700 }}>
               hier

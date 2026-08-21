@@ -48,7 +48,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
 
   return (
     <div style={{ marginTop: 14 }}>
-      <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Spieltage der Runde</div>
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Spieltage der Runde</div>
       <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
         Eure Ligen starten versetzt und zählen jede für sich. Hier legst du fest,
         was ein Spieltag EURER Runde umfasst — daran hängen Joker, Zwischenstand
@@ -74,7 +74,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
 
       {z.modus === "anker" ? (
         <>
-          <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 5 }}>Taktgeber</div>
+          <div style={{ fontSize: 12, color: C.muted, marginBottom: 5 }}>Taktgeber</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
             {[{ key: null, label: `Automatisch (${wettbewerbLabel(automatisch)})` },
               ...wettbewerbe.filter((w) => w.key !== "demo").map((w) => ({ key: w.key, label: w.label }))
@@ -82,14 +82,14 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
               const an = z.anker === opt.key;
               return (
                 <button key={opt.key ?? "auto"} onClick={() => patch({ anker: opt.key })} style={{
-                  ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px",
+                  ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px",
                   borderRadius: 999, background: an ? `${C.mint}22` : C.surface,
                   color: an ? C.mint : C.muted, border: `1px solid ${an ? C.mint + "66" : C.line}`,
                 }}>{opt.label}</button>
               );
             })}
           </div>
-          <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 8, lineHeight: 1.45 }}>
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 8, lineHeight: 1.45 }}>
             Ohne Vorgabe nimmt die Runde die Liga, die zuerst anfängt. Spiele, die
             noch davor liegen, fallen in Spieltag 1 — sie gehen nie verloren.
           </div>
@@ -101,7 +101,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
               anderen Ligen spielen weiter. Ohne Antwort würde EIN Spieltag über
               die ganze Pause laufen — und ein Joker darin wäre etwas völlig
               anderes wert als in einer normalen Woche. */}
-          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 10, marginBottom: 5 }}>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>
             Wenn der Taktgeber pausiert
           </div>
           <div style={{ display: "flex", gap: 6 }}>
@@ -110,14 +110,14 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
               return (
                 <button key={m.key} title={m.hint} onClick={() => patch({ pause: m.key })} style={{
                   ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "7px 6px",
-                  borderRadius: 11, fontSize: 11.5, fontWeight: 700,
+                  borderRadius: 11, fontSize: 12, fontWeight: 700,
                   background: an ? `${C.mint}22` : C.surface, color: an ? C.mint : C.muted,
                   border: `1px solid ${an ? C.mint + "66" : C.line}`,
                 }}>{m.label}</button>
               );
             })}
           </div>
-          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
             {PAUSEN_MODI.find((m) => m.key === z.pause)?.hint}
           </div>
         </>
@@ -135,14 +135,14 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
           {matches == null ? "Vorschau lädt …" : `${achse.length} Spieltage — so beginnt eure Saison:`}
         </div>
         {achse.slice(0, 4).map((e) => (
-          <div key={e.nummer} style={{ display: "flex", gap: 8, fontSize: 11.5, padding: "2px 0" }}>
+          <div key={e.nummer} style={{ display: "flex", gap: 8, fontSize: 12, padding: "2px 0" }}>
             <span style={{ fontFamily: MONO, color: C.sky, minWidth: 22 }}>{e.nummer}</span>
             <span style={{ flex: 1, color: C.text }}>{achsenLabel(e).replace(/^Spieltag \d+ · /, "")}</span>
             <span style={{ fontFamily: MONO, color: C.muted }}>{e.spiele.length}</span>
           </div>
         ))}
         {achse.length > 4 && (
-          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 4 }}>… und {achse.length - 4} weitere</div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>… und {achse.length - 4} weitere</div>
         )}
       </div>
 
@@ -162,7 +162,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
 function Regler({ label, wert, limits, einheit, onChange }) {
   return (
     <div style={{ marginTop: 6 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: C.muted }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.muted }}>
         <span>{label}</span>
         <span style={{ fontFamily: MONO, color: C.text }}>{wert} {einheit}</span>
       </div>

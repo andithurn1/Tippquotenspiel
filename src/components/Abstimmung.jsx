@@ -70,7 +70,7 @@ export default function Abstimmung() {
         <h1 style={{ fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
           Joker-Abstimmung
         </h1>
-        <p style={{ fontSize: 12.5, color: C.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: C.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
           Stimmt gemeinsam ab, an welchen Spieltagen es einen Joker gibt. Mehrheit der
           abgegebenen Stimmen entscheidet; die Abstimmung schließt mit dem ersten Anpfiff.
         </p>
@@ -115,7 +115,7 @@ export default function Abstimmung() {
                     }}>
                       {t.beschlossen ? "🃏 Joker-Spieltag" : "kein Joker"}
                     </span>
-                    <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted }}>
+                    <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>
                       {t.ja} Ja · {t.nein} Nein
                     </span>
                   </div>
@@ -139,7 +139,7 @@ export default function Abstimmung() {
                       })}
                     </div>
                   ) : (
-                    <div style={{ fontSize: 11.5, color: C.muted, marginTop: 10 }}>
+                    <div style={{ fontSize: 12, color: C.muted, marginTop: 10 }}>
                       Abstimmung geschlossen (angepfiffen).
                     </div>
                   )}

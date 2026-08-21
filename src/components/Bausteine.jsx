@@ -40,7 +40,7 @@ export default function Bausteine({ rules }) {
 
   return (
     <div>
-      <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+      <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
         Teile nur EINEN Bereich eures Regelwerks — z. B. „nimm mein Drehrad" —
         statt des ganzen Regelwerks. Wer den Code lädt, übernimmt genau diesen
         Bereich; alles andere bleibt bei ihm unverändert.
@@ -63,14 +63,14 @@ export default function Bausteine({ rules }) {
               padding: "10px 12px", opacity: unveraendert ? 0.6 : 1,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: C.text }}>{aspekt.label}</span>
-                <span style={{ fontFamily: MONO, fontSize: 10.5, color: unveraendert ? C.muted : C.akzent, whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{aspekt.label}</span>
+                <span style={{ fontFamily: MONO, fontSize: 11, color: unveraendert ? C.muted : C.akzent, whiteSpace: "nowrap" }}>
                   {unveraendert ? "unverändert" : `${anzahl} ${anzahl === 1 ? "abweichendes Feld" : "abweichende Felder"}`}
                 </span>
               </div>
               <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>{aspekt.hint}</div>
               {unveraendert && (
-                <div style={{ fontSize: 10.5, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
                   Der Code enthält nur die Vorgabe — hier ist noch nichts geändert.
                 </div>
               )}
@@ -85,7 +85,7 @@ export default function Bausteine({ rules }) {
                   marginTop: 8, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 10,
                   padding: "8px 10px",
                 }}>
-                  <div style={{ fontSize: 10, color: C.muted, marginBottom: 4, lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 4, lineHeight: 1.4 }}>
                     Zwischenablage nicht verfügbar — Code markieren und kopieren:
                   </div>
                   <div style={{ fontFamily: MONO, fontSize: 11, color: C.akzent, wordBreak: "break-all", lineHeight: 1.5 }}>

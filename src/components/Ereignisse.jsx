@@ -60,7 +60,7 @@ function Ausloeserfeld({ wert, onChange }) {
   );
   return (
     <div style={{ width: "100%" }}>
-      <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 4 }}>Wann darf es überhaupt auslösen?</div>
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Wann darf es überhaupt auslösen?</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
         {AUSWERTBARE_AUSLOESER.map((x) =>
           knopf(a.typ === x.key, x.label, () => onChange({ ...a, typ: x.key }), x.key, x.text))}
@@ -74,7 +74,7 @@ function Ausloeserfeld({ wert, onChange }) {
           ))}
         </div>
       )}
-      <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+      <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
         Gilt <strong style={{ color: C.text }}>{beschreibeAusloeser(a)}</strong>
         {wieOft != null
           ? ` — etwa ${wieOft}× in ${BEISPIEL_SAISON} Spieltagen.`
@@ -120,7 +120,7 @@ function Geltungsfeld({ wert, wirkung, onChange }) {
   );
   return (
     <div style={{ width: "100%" }}>
-      <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 4 }}>Wie lange gilt das?</div>
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Wie lange gilt das?</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
         {AUSWERTBARE_GELTUNGEN.map((x) =>
           knopf(g.typ === x.key, x.label, () => onChange({ ...g, typ: x.key }), x.key, x.text))}
@@ -134,7 +134,7 @@ function Geltungsfeld({ wert, wirkung, onChange }) {
           ))}
         </div>
       )}
-      <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+      <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
         Gilt <strong style={{ color: C.text }}>{beschreibeGeltung(g)}</strong>
         {/* Die Live-Vorschau. „rest" ist die einzige, deren Antwort am
             Zeitpunkt hängt — deshalb wird die Annahme genannt statt eine Zahl
@@ -148,7 +148,7 @@ function Geltungsfeld({ wert, wirkung, onChange }) {
       </div>
       {warnungen.map((k) => (
         <div key={k.key} style={{
-          fontSize: 10.5, color: k.korrigieren ? C.coral : C.muted,
+          fontSize: 11, color: k.korrigieren ? C.coral : C.muted,
           marginTop: 4, lineHeight: 1.45,
         }}>{k.korrigieren ? "⚠️ " : "💡 "}{k.text}</div>
       ))}
@@ -178,7 +178,7 @@ function Wirkungsfeld({ wert, onChange }) {
   );
   return (
     <div style={{ width: "100%" }}>
-      <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 4 }}>Was passiert dann?</div>
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Was passiert dann?</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
         {AUSWERTBARE_WIRKUNGEN.map((x) =>
           knopf(w.typ === x.key, x.label, () => onChange({ ...w, typ: x.key }), x.key, x.text))}
@@ -204,12 +204,12 @@ function Wirkungsfeld({ wert, onChange }) {
             breite={130} onChange={(v) => onChange({ ...w, maxProSaison: v })} />
         )}
       </div>
-      <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+      <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
         Ergebnis: <strong style={{ color: C.text }}>{beschreibeWirkung(w)}</strong> · {info.topf}
       </div>
       {warnungen.map((k) => (
         <div key={k.key} style={{
-          fontSize: 10.5, color: k.korrigieren ? C.coral : C.muted,
+          fontSize: 11, color: k.korrigieren ? C.coral : C.muted,
           marginTop: 4, lineHeight: 1.45,
         }}>{k.korrigieren ? "⚠️ " : "💡 "}{k.text}</div>
       ))}
@@ -228,7 +228,7 @@ function Auswahlfeld({ wert, onChange }) {
   );
   return (
     <div style={{ width: "100%" }}>
-      <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 4 }}>Wen trifft es?</div>
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Wen trifft es?</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
         {AUSWAHL_MODI.map((m) => knopf(a.modus === m, MODUS_LABEL[m], () => onChange({ ...a, modus: m }), m))}
       </div>
@@ -272,7 +272,7 @@ function Auswahlfeld({ wert, onChange }) {
         })()}
       </div>
       {a.ende === "oben" && (
-        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
           ⚠️ Nach oben ausgezeichnet wirkt <strong>verstärkend</strong>: wer Spieltage
           gewinnt, bekommt ein Werkzeug, mit dem er wieder besser tippt. Eine
           Abklingzeit darunter hält das im Rahmen.
@@ -324,7 +324,7 @@ export default function Ereignisse({ rules, onChange }) {
 
   return (
     <div>
-      <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Neben den Jokern, die du verteilst, kann man sich welche <strong>verdienen</strong>.
         Belohnt wird immer dasselbe: eine Joker-Gutschrift — kein zweiter Punkte-Kanal,
         damit der Deckel weiter greift.
@@ -335,7 +335,7 @@ export default function Ereignisse({ rules, onChange }) {
           sie führt der Weg zurück zu einer stimmigen Einstellung nur über
           „alles wieder abwählen und neu raten". */}
       <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: C.muted, marginBottom: 6 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6 }}>
           Empfohlene Zusammenstellungen
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -348,7 +348,7 @@ export default function Ereignisse({ rules, onChange }) {
                   border: `1px solid ${aktiv ? C.mint : C.line}`, borderRadius: 999,
                   background: aktiv ? `${C.mint}1a` : "transparent",
                   color: aktiv ? C.mint : C.text, cursor: "pointer",
-                  ...TAPZIEL, padding: "5px 11px", fontSize: 11.5, fontWeight: aktiv ? 700 : 500,
+                  ...TAPZIEL, padding: "5px 11px", fontSize: 12, fontWeight: aktiv ? 700 : 500,
                 }}>
                 {p.label}
                 {/* ⚠️ Die Wirkrichtung ist ABGELEITET, nicht gemessen (siehe
@@ -373,7 +373,7 @@ export default function Ereignisse({ rules, onChange }) {
           padding: "10px 12px", marginBottom: 12,
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontSize: 12.5, fontWeight: 700 }}>Höchstens erspielbar</span>
+            <span style={{ fontSize: 13, fontWeight: 700 }}>Höchstens erspielbar</span>
             <span style={{ fontFamily: MONO, fontSize: 13, color: C.mint }}>
               {cfg.maxErspielt} Joker / Saison
             </span>
@@ -393,7 +393,7 @@ export default function Ereignisse({ rules, onChange }) {
       {warnungen.map((w) => (
         <div key={w.key} style={{
           background: `${C.akzent}12`, border: `1px solid ${C.akzent}55`, borderRadius: 12,
-          padding: "10px 12px", marginBottom: 10, fontSize: 11.5, color: C.text, lineHeight: 1.5,
+          padding: "10px 12px", marginBottom: 10, fontSize: 12, color: C.text, lineHeight: 1.5,
         }}>
           <strong style={{ color: C.akzent }}>Doppelt belohnt: </strong>{w.text}
         </div>
@@ -402,7 +402,7 @@ export default function Ereignisse({ rules, onChange }) {
       {["meilenstein", "widerfahrnis"].map((kat) => (
         <div key={kat} style={{ marginBottom: 12 }}>
           <div style={{
-            fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.2, color: C.muted,
+            fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
             textTransform: "uppercase", marginBottom: 6,
           }}>{KATEGORIE[kat]}</div>
 
@@ -419,7 +419,7 @@ export default function Ereignisse({ rules, onChange }) {
                   padding: 0, fontFamily: "inherit", color: C.text, cursor: "pointer",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, flex: 1 }}>{t.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{t.label}</span>
                     <span style={{ color: an ? C.akzent : C.muted, fontSize: 13 }}>{an ? "✓" : "+"}</span>
                   </div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{t.hint}</div>
@@ -459,7 +459,7 @@ export default function Ereignisse({ rules, onChange }) {
                         <Zahl label="Wertung über … Spieltage" wert={wert(t.key, "zeitraum")}
                           limits={EREIGNIS_LIMITS.zeitraum} breite={160}
                           onChange={(v) => setzeFeld(t.key, "zeitraum", v)} />
-                        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                        <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                           {(wert(t.key, "zeitraum") ?? 1) > 1
                             ? <>Gewertet wird die Summe über <strong style={{ color: C.text }}>
                                 {wert(t.key, "zeitraum")} Spieltage</strong>, ausgezeichnet wird am
@@ -481,7 +481,7 @@ export default function Ereignisse({ rules, onChange }) {
                         aber ohne Erklärung nach einer kaputten Regel aus. */}
                     {t.parameter.includes("metrik") && (
                       <div style={{ width: "100%" }}>
-                        <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 4 }}>Wonach wird gewertet?</div>
+                        <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Wonach wird gewertet?</div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                           {METRIKEN.map((m) => {
                             const aktiv = (wert(t.key, "metrik") ?? "punkte") === m.key;
@@ -497,7 +497,7 @@ export default function Ereignisse({ rules, onChange }) {
                             );
                           })}
                         </div>
-                        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+                        <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
                           {METRIKEN.find((m) => m.key === (wert(t.key, "metrik") ?? "punkte"))?.text}
                           {(wert(t.key, "metrik") ?? "punkte") !== "punkte" && (
                             <> ⚠️ Sind alle gleichauf, gewinnt niemand — bei „exakte Treffer“ heißt
@@ -537,11 +537,11 @@ export default function Ereignisse({ rules, onChange }) {
         border: `1px dashed ${C.line}`, borderRadius: 12, padding: "10px 12px", marginBottom: 8,
       }}>
         <div style={{
-          fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.2, color: C.muted,
+          fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
           textTransform: "uppercase", marginBottom: 5,
         }}>{KATEGORIE.herausforderung} · kommt später</div>
         {EREIGNIS_TYPEN.filter((t) => t.kategorie === "herausforderung").map((t) => (
-          <div key={t.key} style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.5, marginTop: 3 }}>
+          <div key={t.key} style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, marginTop: 3 }}>
             <strong style={{ color: C.text }}>{t.label}</strong> — {t.hint}
           </div>
         ))}

@@ -94,7 +94,7 @@ export default function SaisonVerlauf() {
 
         {matches != null && (
           <>
-            <p style={{ fontSize: 12.5, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
               {beschreibeFahrplan(zeilen, jetztTag)}
             </p>
 
@@ -114,7 +114,7 @@ export default function SaisonVerlauf() {
 
             {/* Was die Marken bedeuten. Ohne Legende ist ein Punkt am Rand
                 eine Frage statt einer Antwort. */}
-            <div style={{ fontSize: 10.5, color: C.muted, marginTop: 14, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 14, lineHeight: 1.6 }}>
               <b style={{ color: C.akzent }}>🃏</b> dein Joker-Spieltag ·{" "}
               <b style={{ color: C.sky }}>🎡</b> Drehung am Rad ·{" "}
               <b style={{ color: C.mint }}>★</b> Saison-Wette öffnet oder schließt.
@@ -145,7 +145,7 @@ function Zeile({ z, jetzt }) {
         }}>
           ST {z.nummer}
         </span>
-        <span style={{ flex: 1, minWidth: 0, fontSize: 12.5 }}>{z.label}</span>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{z.label}</span>
         <span style={{ display: "flex", gap: 5, fontSize: 13 }}>
           {z.joker && <span title="Dein Joker-Spieltag">🃏</span>}
           {z.rad && <span title="Drehung am Glücksrad">🎡</span>}
@@ -179,7 +179,7 @@ function Zeile({ z, jetzt }) {
       {/* Die Saison-Marken ausgeschrieben — ein Stern allein sagt nicht, WAS
           aufgeht, und genau danach fragt jemand an dieser Stelle. */}
       {z.saison.length > 0 && (
-        <div style={{ fontSize: 10.5, color: C.mint, marginTop: 4, lineHeight: 1.45 }}>
+        <div style={{ fontSize: 11, color: C.mint, marginTop: 4, lineHeight: 1.45 }}>
           {z.saison.map((s) => `${s.label} ${s.was === "oeffnet" ? "öffnet" : "schließt"}`).join(" · ")}
         </div>
       )}

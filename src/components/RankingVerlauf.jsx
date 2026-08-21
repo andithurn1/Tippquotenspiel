@@ -65,15 +65,15 @@ export default function RankingVerlauf() {
                     display: "flex", alignItems: "center", gap: 8, padding: "4px 0",
                     borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
                   }}>
-                    <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, width: 16 }}>{b.rank}</span>
+                    <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 16 }}>{b.rank}</span>
                     <span style={{ flex: 1, fontSize: 13, color: b.userId === meId ? C.akzent : C.text }}>{b.name}</span>
                     {/* Anschluss-Bonus (Aufhol-Mechanismus), falls angefallen */}
                     {b.bonus > 0 && (
-                      <span title="Anschluss-Bonus für Zurückliegende" style={{ fontFamily: MONO, fontSize: 10, color: C.sky }}>
+                      <span title="Anschluss-Bonus für Zurückliegende" style={{ fontFamily: MONO, fontSize: 11, color: C.sky }}>
                         +{b.bonus}
                       </span>
                     )}
-                    <span style={{ fontFamily: MONO, fontSize: 12.5 }}>{b.total}</span>
+                    <span style={{ fontFamily: MONO, fontSize: 13 }}>{b.total}</span>
                   </div>
                 ))}
               </div>

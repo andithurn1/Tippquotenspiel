@@ -128,7 +128,7 @@ export default function SaisonTipps() {
           Saison-Wetten
         </span>
         <h1 style={{ fontSize: 20, fontWeight: 800, margin: "8px 0 6px" }}>Deine Langzeit-Tipps</h1>
-        <p style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.5, marginTop: 0 }}>
+        <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.5, marginTop: 0 }}>
           Einmal vor der Saison getippt, am Ende abgerechnet — läuft nebenbei zu den Spieltagen.
         </p>
 
@@ -139,7 +139,7 @@ export default function SaisonTipps() {
         )}
 
         {!user && saison?.enabled && (
-          <div style={{ fontSize: 12.5, color: C.akzent, marginTop: 16 }}>
+          <div style={{ fontSize: 13, color: C.akzent, marginTop: 16 }}>
             Zum Abgeben bitte zuerst einloggen.
           </div>
         )}
@@ -162,7 +162,7 @@ export default function SaisonTipps() {
             background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`, borderRadius: 12,
             padding: "9px 12px", marginTop: 14,
           }}>
-            <span style={{ fontSize: 12.5 }}>
+            <span style={{ fontSize: 13 }}>
               Dein Stand: <strong>{stand.treffer}</strong> von {stand.zeilen.length} liegen vorn
             </span>
             <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>{stand.gesamt} Pkt.</span>
@@ -184,8 +184,8 @@ export default function SaisonTipps() {
                 background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "14px 16px",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700 }}>{wettenLabel(wette)}</span>
-                  <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.akzent, whiteSpace: "nowrap" }}>{wette.punkte} Pkt.</span>
+                  <span style={{ fontSize: 15, fontWeight: 700 }}>{wettenLabel(wette)}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 12, color: C.akzent, whiteSpace: "nowrap" }}>{wette.punkte} Pkt.</span>
                 </div>
                 {typ.hint && <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>{typ.hint}</div>}
                 {/* Zustand IMMER benennen: „gesperrt" allein lässt den Spieler
@@ -234,7 +234,7 @@ export default function SaisonTipps() {
                     style={{
                       flex: 1, background: C.ink2, color: tipps[id] ? C.text : C.muted,
                       border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 10px",
-                      fontSize: 13.5, fontFamily: "inherit", outline: "none",
+                      fontSize: 13, fontFamily: "inherit", outline: "none",
                     }}
                   >
                     <option value="" style={{ color: "#000" }}>

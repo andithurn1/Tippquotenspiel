@@ -95,14 +95,14 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
               background: C.surface, border: `1px solid ${C.line}`,
               borderRadius: 12, padding: "10px 12px",
             }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700 }}>{k.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{k.label}</div>
               <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{k.desc}</div>
               <MiniAchsen profil={kProfil} />
             </button>
           );
         })}
       </div>
-      <p style={{ fontSize: 10.5, color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
+      <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
         Die Balken zeigen nur eine <strong>Richtung</strong>, keine Bewertung — kein Balken
         ist „zu hoch".
       </p>
@@ -128,7 +128,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                   ...TAPZIEL, padding: 0, fontFamily: "inherit", color: C.text, cursor: "pointer",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, flex: 1 }}>{q.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{q.label}</span>
                     <span style={{ color: an ? C.akzent : C.muted, fontSize: 13 }}>{an ? "✓" : "+"}</span>
                   </div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{q.desc}</div>
@@ -160,7 +160,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                             const kan = wert(q.key, "kurve") === kv;
                             return (
                               <button key={kv} onClick={() => setzeQuelleFeld(q.key, "kurve", kv)} style={{
-                                ...TAPZIEL, cursor: "pointer", fontSize: 11.5, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
+                                ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
                                 background: kan ? `${C.akzent}22` : C.surface2, color: kan ? C.akzent : C.muted,
                                 border: `1px solid ${kan ? C.akzent + "66" : C.line}`,
                               }}>{kv}</button>
@@ -263,7 +263,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
               background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 12px",
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                <span style={{ fontSize: 12.5, fontWeight: 700 }}>{art.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700 }}>{art.label}</span>
                 <input type="number" value={preise[art.key] ?? 0}
                   min={BUDGET_LIMITS.preis.min} max={BUDGET_LIMITS.preis.max} step={BUDGET_LIMITS.preis.step}
                   onChange={(e) => setzePreis(art.key, Number(e.target.value))}
@@ -273,7 +273,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                     fontSize: 13, fontFamily: MONO, textAlign: "right", outline: "none",
                   }} />
               </div>
-              <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>{art.desc}</div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>{art.desc}</div>
               {/* Der eigentliche Punkt bei `preisModus: "steigend"`: sichtbar
                   machen, dass aus einem Startpreis von 10 beim vierten Einsatz
                   ein deutlich höherer Preis wird. */}

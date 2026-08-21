@@ -34,7 +34,7 @@ export default function NaheErgebnisse({ tip, snap, rules, kompakt = false }) {
       borderRadius: 14, padding: "12px 14px",
     }}>
       <div style={{
-        fontFamily: MONO, fontSize: 10, letterSpacing: 1, color: C.muted,
+        fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted,
         textTransform: "uppercase", marginBottom: 4,
       }}>
         Wenn es knapp anders ausgeht
@@ -65,16 +65,16 @@ function Zeile({ r, best }) {
         background: r.isTip ? `${C.akzent}20` : `${C.indigo}18`,
       }} />
       <span style={{
-        position: "relative", fontFamily: MONO, fontSize: 14, fontWeight: 700,
+        position: "relative", fontFamily: MONO, fontSize: 15, fontWeight: 700,
         color: r.isTip ? C.akzent : C.text, minWidth: 40,
       }}>
         {r.home}:{r.away}
       </span>
-      <span style={{ position: "relative", fontSize: 10.5, color: C.muted, flex: 1, minWidth: 0 }}>
+      <span style={{ position: "relative", fontSize: 11, color: C.muted, flex: 1, minWidth: 0 }}>
         {KIND_LABEL[r.kind]}
       </span>
       {r.quote != null && (
-        <span style={{ position: "relative", fontFamily: MONO, fontSize: 10.5, color: C.muted }}>
+        <span style={{ position: "relative", fontFamily: MONO, fontSize: 11, color: C.muted }}>
           Quote {r.quote.toFixed(1)}
         </span>
       )}
@@ -100,7 +100,7 @@ export function ErgebnisUebersicht({ snap, rules, limit = 3 }) {
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
       {rows.map((r) => (
         <span key={`${r.home}:${r.away}`} style={{
-          fontFamily: MONO, fontSize: 10.5, color: C.muted,
+          fontFamily: MONO, fontSize: 11, color: C.muted,
           border: `1px solid ${C.line}`, borderRadius: 999, padding: "3px 9px",
         }}>
           {r.home}:{r.away} <span style={{ color: C.mint, fontWeight: 700 }}>+{r.points}</span>

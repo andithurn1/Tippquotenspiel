@@ -43,7 +43,7 @@ export default function Datenschutz() {
         <H>2. Welche Daten wir verarbeiten</H>
         <ul style={{ margin: "6px 0", paddingLeft: 18 }}>
           {DATA_POINTS.map((d) => (
-            <li key={d.key} style={{ fontSize: 13.5, marginBottom: 6 }}>
+            <li key={d.key} style={{ fontSize: 13, marginBottom: 6 }}>
               <b>{d.label}:</b> <span style={{ color: C.muted }}>{d.zweck}</span>
             </li>
           ))}
@@ -100,5 +100,5 @@ function H({ children }) {
   return <h2 style={{ fontSize: 15, fontWeight: 700, margin: "18px 0 2px" }}>{children}</h2>;
 }
 function P({ children }) {
-  return <p style={{ fontSize: 13.5, color: "#D5D8EA", margin: "6px 0" }}>{children}</p>;
+  return <p style={{ fontSize: 13, color: "#D5D8EA", margin: "6px 0" }}>{children}</p>;
 }

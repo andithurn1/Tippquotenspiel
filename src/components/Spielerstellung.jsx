@@ -580,7 +580,7 @@ export default function Spielerstellung() {
               Ansicht ändert, WIE VIEL man sieht, nicht WO man ist.
               Gemessen am 20.08.: die Abschnittsfolge beider Ansichten war
               danach an jeder Stelle gleich. */}
-          <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>
+          <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>
             Wie soll eure Runde sein?
           </div>
           {/* Der Erklärsatz „Du als Admin legst fest …“ ist auf Andis Ansage
@@ -589,7 +589,7 @@ export default function Spielerstellung() {
               wiederholte, was der Creator-Code-Block weiter unten ohnehin
               sagt. Der Untertitel hier gilt seit 20.08. in BEIDEN Ansichten —
               die Voreinstellungen stehen jetzt in beiden. */}
-          <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
             Ein Klick genügt — den Rest stellen wir stimmig ein. Wer mag, geht danach ins Detail.
           </p>
 
@@ -601,7 +601,7 @@ export default function Spielerstellung() {
               MITTENDRIN wechseln, wenn ein Regler fehlt — nicht nur am Anfang.
               Ein Umschalter, der nach oben wegscrollt, zwingt jedes Mal hoch
               und wieder zurück. Hier bleibt nur der Hinweis darauf (ST8). */}
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: 12, marginBottom: 14, lineHeight: 1.45 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: 12, marginBottom: 14, lineHeight: 1.45 }}>
             Oben rechts schaltest du zwischen <b style={{ color: C.text }}>Einfach</b> und{" "}
             <b style={{ color: C.text }}>Profi</b> um — jederzeit, auch mitten im Einstellen.
             Die Ansicht ändert nur, WIE VIEL du siehst; deine Einstellungen bleiben
@@ -646,7 +646,7 @@ export default function Spielerstellung() {
               Entscheidung, also gehört sie nach vorn; die Vereinsliste hängt
               dann davon ab. */}
           <SectionTitle>Wettbewerbe auswählen</SectionTitle>
-          <p style={{ fontSize: 12.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.45 }}>
+          <p style={{ fontSize: 13, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.45 }}>
             Mannschaften und Begegnungen wählen, Regeln je Wettbewerb festlegen.
           </p>
 
@@ -675,7 +675,7 @@ export default function Spielerstellung() {
               zur VEREINSAUSWAHL — sie ergeben ohne sie keinen Sinn. */}
             <div style={{ marginTop: 8, marginBottom: 8 }}>
               {teamFilterOn && (
-                <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.4 }}>
+                <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.4 }}>
                   Mindestens 2 Vereine — ein Spiel zählt, sobald eine Seite dabei ist.
                 </p>
               )}
@@ -705,7 +705,7 @@ export default function Spielerstellung() {
                         border: `1px solid ${auf ? C.mint + "55" : C.line}`,
                         borderRadius: 12, padding: "10px 12px",
                       }}>
-                        <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700 }}>{g.label}</span>
+                        <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700 }}>{g.label}</span>
                         <span style={{ fontFamily: MONO, fontSize: 12, color: drin > 0 ? C.mint : C.muted }}>
                           {drin}/{g.vereine.length}
                         </span>
@@ -745,7 +745,7 @@ export default function Spielerstellung() {
                             wird ausschließlich in `auswahlFuer`. */}
                         <button onClick={() => setSonderregelnLiga((o) => (o === g.key ? null : g.key))} style={{
                           marginTop: 8, width: "100%", minHeight: 44, boxSizing: "border-box",
-                          cursor: "pointer", fontFamily: "inherit", fontSize: 12.5, textAlign: "left",
+                          cursor: "pointer", fontFamily: "inherit", fontSize: 13, textAlign: "left",
                           background: "transparent", color: sonderregelnLiga === g.key ? C.mint : C.muted,
                           border: `1px dashed ${sonderregelnLiga === g.key ? C.mint + "55" : C.line}`,
                           borderRadius: 10, padding: "8px 12px",
@@ -838,7 +838,7 @@ export default function Spielerstellung() {
                   borderRadius: 14, padding: "12px 14px", color: C.text,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700 }}>
                       {p.label}
                       {/* Ohne Premium greift der Joker-Anteil nicht — das gehört
                           sichtbar an den Preset, nicht erst in eine Fehlermeldung. */}
@@ -848,7 +848,7 @@ export default function Spielerstellung() {
                     </span>
                     {active && (
                       <span style={{
-                        fontFamily: MONO, fontSize: 10, color: C.akzent, border: `1px solid ${C.akzent}55`,
+                        fontFamily: MONO, fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}55`,
                         borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
                       }}>gewählt</span>
                     )}
@@ -867,7 +867,7 @@ export default function Spielerstellung() {
             <button onClick={() => setMischenOffen((o) => !o)} style={{
               width: "100%", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
               background: "transparent", color: C.muted, border: `1px dashed ${C.line}`,
-              borderRadius: 12, padding: "10px 12px", fontSize: 12.5,
+              borderRadius: 12, padding: "10px 12px", fontSize: 13,
             }}>
               {mischenOffen ? "▾" : "▸"} Zwei Presets mischen — „Schärfe von A, Kombi von B"
             </button>
@@ -889,7 +889,7 @@ export default function Spielerstellung() {
               placeholder="z. B. Hardcore-Runde" style={{
                 width: "100%", boxSizing: "border-box", background: C.surface, color: C.text,
                 border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 12px",
-                fontSize: 14, fontFamily: "inherit", outline: "none",
+                fontSize: 15, fontFamily: "inherit", outline: "none",
               }} />
           </Field>
 
@@ -1000,7 +1000,7 @@ export default function Spielerstellung() {
 
           {stufe === "profi" && (<>
           <SectionTitle>Regler-Feinheit</SectionTitle>
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Wie fein sich die Multiplikator-Regler weiter unten stellen lassen —
             eine Feineinstellung für Profis, keine Einstiegsfrage.
           </p>
@@ -1015,7 +1015,7 @@ export default function Spielerstellung() {
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
                   <div style={{ fontWeight: 700 }}>{f.label}</div>
-                  <div style={{ fontSize: 10.5, opacity: 0.8, marginTop: 2 }}>{f.desc}</div>
+                  <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>{f.desc}</div>
                 </button>
               );
             })}
@@ -1029,7 +1029,7 @@ export default function Spielerstellung() {
 
           {/* Underdog-Boost & Favoriten-Malus (teilen sich die Quoten-Ramp) */}
           <SectionTitle>Underdog-Boost & Favoriten-Malus</SectionTitle>
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Belohne das Vorhersagen von Überraschungen — und/oder bestrafe, wer stur auf den
             Favoriten setzt, wenn der patzt. Beide wirken nur bei echten Außenseiter-Siegen
             und werden über dieselbe Sieger-Quote skaliert.
@@ -1073,7 +1073,7 @@ export default function Spielerstellung() {
               background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
               padding: "9px 12px", marginBottom: 10,
             }}>
-              <span style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.4 }}>
+              <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
                 Empfohlen: <strong style={{ color: C.akzent }}>×{empfohleneSkala}</strong> — hält
                 exakte Tipps bei angenehmen Werten{j.enabled ? " (Gewichtung eingerechnet)" : ""}.
               </span>
@@ -1117,7 +1117,7 @@ export default function Spielerstellung() {
               {/* Wie die Namen gewählt werden. Mehr als Geschmack: bei echten
                   Marktquoten kommen die Torschützen OHNE Vereinszuordnung
                   herein — im Spiel-Modus lässt sich trotzdem tippen. */}
-              <div style={{ fontSize: 11.5, color: C.muted, marginTop: 6, marginBottom: 5 }}>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 6, marginBottom: 5 }}>
                 Wie viele Schützen?
               </div>
               <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
@@ -1149,7 +1149,7 @@ export default function Spielerstellung() {
                     onStep={(d) => patchGoals({ picksPerTeam: Math.min(L.picksPerTeam.max, Math.max(L.picksPerTeam.min, g.picksPerTeam + d)) })} />
                 </div>
               )}
-              <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 6, lineHeight: 1.45 }}>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6, lineHeight: 1.45 }}>
                 {(g.modus ?? "proTeam") === "proSpiel"
                   ? `${g.picksProSpiel} Namen aus beiden Mannschaften zusammen — wer sie verteilt, ist euch überlassen.`
                   : `${g.picksPerTeam} Namen je Mannschaft, also ${g.picksPerTeam * 2} im Spiel.`}
@@ -1163,7 +1163,7 @@ export default function Spielerstellung() {
 
           {/* Tipp-Einfluss auf die Quote (Totalisator-Anteil) */}
           <SectionTitle>Bewegt eure Runde die Quoten?</SectionTitle>
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Normalerweise gelten allein die Marktquoten. Ihr könnt aber einstellen, dass
             eure eigenen Tipps mitzählen — wie bei einem Totalisator. <strong>Wer tippt,
             was alle tippen, bekommt dann weniger</strong>; wer sich traut, mehr.
@@ -1218,7 +1218,7 @@ export default function Spielerstellung() {
                   Mischung" sagt niemandem etwas, „ein Tipp verschiebt 0,45 %"
                   schon. Dieselbe Rolle wie anteile() bei den Wettbewerben. */}
               <p style={{
-                fontSize: 11.5, color: C.text, lineHeight: 1.45,
+                fontSize: 12, color: C.text, lineHeight: 1.45,
                 padding: "8px 10px", borderRadius: 8, background: C.surface, border: `1px solid ${C.line}`,
               }}>
                 {beschreibeTippEinfluss(te, Math.max(te.minTipper, 12))}
@@ -1236,7 +1236,7 @@ export default function Spielerstellung() {
 
           {/* Joker / Gewichtung */}
           <SectionTitle>Joker &amp; Gewichtung</SectionTitle>
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Lässt Tipper einzelne Spiele höher gewichten. Der Faktor greift auf die
             fertige Wertung — Ergebnis <em>und</em> Torschützen zusammen — und wirkt in
             beide Richtungen: ein gewichtetes Spiel, das danebengeht, tut auch mehr weh.
@@ -1263,7 +1263,7 @@ export default function Spielerstellung() {
               <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>
                 🔒 Premium-Funktion
               </div>
-              <p style={{ fontSize: 11.5, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
+              <p style={{ fontSize: 12, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
                 Es genügt, wenn <strong>du als Admin</strong> Premium hast — die ganze
                 Runde kann dann gewichten. Alle anderen Regler bleiben frei nutzbar.
               </p>
@@ -1291,7 +1291,7 @@ export default function Spielerstellung() {
                         border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                       }}>
                         <div style={{ fontWeight: 700 }}>{m.label}</div>
-                        <div style={{ fontSize: 10.5, opacity: 0.8, marginTop: 2 }}>{m.hint}</div>
+                        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>{m.hint}</div>
                       </button>
                     );
                   })}
@@ -1408,7 +1408,7 @@ export default function Spielerstellung() {
                               border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                               ...TAPZIEL, borderRadius: 12, padding: "9px 12px",
                             }}>
-                              <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.akzent : C.text }}>{p.label}</div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{p.label}</div>
                               <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
                             </button>
                           );
@@ -1494,12 +1494,12 @@ export default function Spielerstellung() {
                       padding: "10px 12px", marginBottom: 10,
                     }}>
                       {einsatzKonfliktListe.map((k) => (
-                        <div key={k.key} style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.45, marginBottom: 4 }}>
+                        <div key={k.key} style={{ fontSize: 12, color: C.muted, lineHeight: 1.45, marginBottom: 4 }}>
                           {k.text}
                         </div>
                       ))}
                       {einsatzSpieleTypisch != null && (
-                        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                        <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
                           {spieltageJePeriode > 1
                             ? <>Angenommen bei etwa {einsatzSpieleTypisch} Spielen je Spieltag, macht das rund{" "}
                                 {einsatzSpieleJePeriode} Spiele über die {spieltageJePeriode} Spieltage einer
@@ -1518,7 +1518,7 @@ export default function Spielerstellung() {
                   desselben Jokers: ihre Aufschlaege werden ADDIERT und vom
                   gemeinsamen Deckel begrenzt. */}
               <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 6, paddingTop: 10 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 2 }}>Weitere Joker-Arten</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Weitere Joker-Arten</div>
                 <p style={{ fontSize: 11, color: C.muted, marginTop: 0, marginBottom: 8, lineHeight: 1.4 }}>
                   Greifen von allein, ohne dass jemand etwas markieren muss. Ihre
                   Aufschläge werden <strong>addiert</strong> und vom Deckel oben begrenzt.
@@ -1618,7 +1618,7 @@ export default function Spielerstellung() {
 
           {/* Team- & Derby-Regeln */}
           <SectionTitle>Team- &amp; Derby-Regeln</SectionTitle>
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Gilt für <strong>alle</strong> in der Runde (anders als der Joker, den jeder
             selbst setzt). Traditionsduelle oder bestimmte Vereine zählen mehr.
           </p>
@@ -1629,7 +1629,7 @@ export default function Spielerstellung() {
               borderRadius: 14, padding: "13px 15px", marginBottom: 8,
             }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
-              <p style={{ fontSize: 11.5, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
+              <p style={{ fontSize: 12, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
                 Es genügt, wenn <strong>du als Admin</strong> Premium hast.
               </p>
             </div>
@@ -1725,7 +1725,7 @@ export default function Spielerstellung() {
 
           {/* Aufhol-Mechanismus */}
           <SectionTitle>Anschluss halten</SectionTitle>
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Damit Zurückliegende dranbleiben: Wer abgehängt ist, bekommt je Spieltag
             einen Teil des Rückstands gutgeschrieben. <strong>Aufholen heißt nicht
             Überholen</strong> — der Führende bleibt vorn.
@@ -1747,7 +1747,7 @@ export default function Spielerstellung() {
                         border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                       }}>
                         <div style={{ fontWeight: 700 }}>{s.label}</div>
-                        <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>{s.hint}</div>
+                        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>{s.hint}</div>
                       </button>
                     );
                   })}
@@ -1785,7 +1785,7 @@ export default function Spielerstellung() {
 
           {/* Saisonform: Streichresultate + Gewichtung der Spieltage */}
           <SectionTitle>Streicher &amp; Saisonverlauf</SectionTitle>
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Wie stark darf ein einzelner Spieltag die Saison bestimmen? Beides greift
             auf die fertigen Spieltagspunkte — die Wertung eines Spiels bleibt unberührt.
           </p>
@@ -1853,7 +1853,7 @@ export default function Spielerstellung() {
               marginTop: 8, marginBottom: 8, padding: "9px 11px", borderRadius: 10,
               background: `${C.coral}14`, border: `1px solid ${C.coral}44`,
             }}>
-              <div style={{ fontSize: 11.5, color: C.coral, fontWeight: 700, marginBottom: 3 }}>
+              <div style={{ fontSize: 12, color: C.coral, fontWeight: 700, marginBottom: 3 }}>
                 Kein Ausgleich — ein Spannungsregler
               </div>
               <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>
@@ -1877,7 +1877,7 @@ export default function Spielerstellung() {
               „Jeder Spieltag zählt gleich viel." untereinander. */}
           {(sf.kurve !== "flach" || sf.streich > 0) && (
             <p style={{
-              fontSize: 11.5, color: C.text, marginTop: 4, marginBottom: 12, lineHeight: 1.45,
+              fontSize: 12, color: C.text, marginTop: 4, marginBottom: 12, lineHeight: 1.45,
               padding: "8px 10px", borderRadius: 8, background: C.surface, border: `1px solid ${C.line}`,
             }}>
               {beschreibeSaisonform(sf, 34)}
@@ -1904,7 +1904,7 @@ export default function Spielerstellung() {
           {/* Versäumnis: Spieltag vergessen */}
           {stufe === "profi" && (<>
           <SectionTitle>Spieltag vergessen</SectionTitle>
-          <p style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Wer mal keine Zeit hatte, steht sonst mit null Punkten da und steigt aus.
             Mit Kulanz bekommt er einen Ersatz-Tipp — <strong>immer schlechter als
             selbst tippen</strong>, aber besser als nichts.
@@ -1926,7 +1926,7 @@ export default function Spielerstellung() {
                         border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                       }}>
                         <div style={{ fontWeight: 700 }}>{VERSAEUMNIS_LABEL[s]}</div>
-                        <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>{VERSAEUMNIS_HINT[s]}</div>
+                        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>{VERSAEUMNIS_HINT[s]}</div>
                       </button>
                     );
                   })}
@@ -1970,7 +1970,7 @@ export default function Spielerstellung() {
               weil es dieselbe Frage beantwortet wie die Spielauswahl — WAS
               steht wann zum Tippen an. */}
           <div style={{ marginTop: 12, marginBottom: 4 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Ab wann tippbar?</div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Ab wann tippbar?</div>
             <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
               Quoten erscheinen erst einige Tage vor Anpfiff. Wie früh eure Runde
               tippt, entscheidest du — geschlossen wird immer beim Anpfiff.
@@ -2009,7 +2009,7 @@ export default function Spielerstellung() {
                     onClick={() => { touched(); setRules((r) => ({ ...r, tippfenster: { ...r.tippfenster, anker: a.key } })); }}
                     style={{
                       flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
-                      borderRadius: 11, fontSize: 11.5, fontWeight: 700,
+                      borderRadius: 11, fontSize: 12, fontWeight: 700,
                       background: an ? `${C.akzent}22` : C.surface,
                       color: an ? C.akzent : C.muted,
                       border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -2017,7 +2017,7 @@ export default function Spielerstellung() {
                 );
               })}
             </div>
-            <p style={{ fontSize: 10.5, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+            <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
               {beschreibeTippfenster(rules)}
             </p>
             {/* Die drei Fragen, die ein Spieler wirklich stellt — statt einer
@@ -2025,7 +2025,7 @@ export default function Spielerstellung() {
                 gebaut und hatte keinen Aufrufer (gefunden über `npm run tot`). */}
             <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
               {erklaereTippfenster(rules).map((z) => (
-                <div key={z.frage} style={{ fontSize: 10.5, lineHeight: 1.45 }}>
+                <div key={z.frage} style={{ fontSize: 11, lineHeight: 1.45 }}>
                   <span style={{ color: C.text, fontWeight: 700 }}>{z.frage}</span>{" "}
                   <span style={{ color: C.muted }}>{z.antwort}</span>
                 </div>
@@ -2042,14 +2042,14 @@ export default function Spielerstellung() {
 
           {/* Zeitraum — gilt zusätzlich zu jeder Vereins-Auswahl */}
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Zeitraum</div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Zeitraum</div>
             <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
               Leer = ganze Saison. Für kurze Runden („nur die Rückrunde", „die letzten
               fünf Spieltage") hier eingrenzen.
             </p>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               {[["spieltagVon", "von"], ["spieltagBis", "bis"]].map(([feld, label]) => (
-                <label key={feld} style={{ flex: 1, fontSize: 11.5, color: C.muted }}>
+                <label key={feld} style={{ flex: 1, fontSize: 12, color: C.muted }}>
                   Spieltag {label}
                   <input type="number" inputMode="numeric"
                     min={AUSWAHL_LIMITS.spieltag.min} max={AUSWAHL_LIMITS.spieltag.max}
@@ -2059,7 +2059,7 @@ export default function Spielerstellung() {
                     style={{
                       display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
                       background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-                      borderRadius: 10, padding: "8px 10px", fontSize: 13.5, fontFamily: MONO, outline: "none",
+                      borderRadius: 10, padding: "8px 10px", fontSize: 13, fontFamily: MONO, outline: "none",
                     }} />
                 </label>
               ))}
@@ -2070,7 +2070,7 @@ export default function Spielerstellung() {
             marginTop: 10, background: C.ink2, border: `1px solid ${C.line}`,
             borderRadius: 12, padding: "10px 12px",
           }}>
-            <div style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.2, color: C.muted, textTransform: "uppercase" }}>
+            <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted, textTransform: "uppercase" }}>
               Wandert mit dem Code
             </div>
             <div style={{ fontSize: 12, color: C.text, marginTop: 4, lineHeight: 1.45 }}>
@@ -2089,7 +2089,7 @@ export default function Spielerstellung() {
           <SectionTitle>Runde erstellen</SectionTitle>
           {!created ? (
             <>
-              <p style={{ fontSize: 12.5, color: C.muted, marginTop: -4, marginBottom: 10, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 13, color: C.muted, marginTop: -4, marginBottom: 10, lineHeight: 1.5 }}>
                 Legt mit diesem Regelwerk eine echte Runde an. Du wirst Admin,
                 bekommst einen Beitritts-Code zum Teilen, und diese Runde wird
                 deine aktive Runde zum Tippen.
@@ -2111,7 +2111,7 @@ export default function Spielerstellung() {
               )}
               <button onClick={createRound} disabled={creating || !user || teamFilterInvalid || leereAuswahl} style={{
                 width: "100%", cursor: creating || !user || teamFilterInvalid || leereAuswahl ? "default" : "pointer",
-                background: C.mint, color: C.ink, fontWeight: 700, fontSize: 14,
+                background: C.mint, color: C.ink, fontWeight: 700, fontSize: 15,
                 ...TAPZIEL, border: "none", borderRadius: 14, padding: "13px 0",
                 opacity: creating || !user || teamFilterInvalid || leereAuswahl ? 0.6 : 1,
               }}>
@@ -2144,13 +2144,13 @@ export default function Spielerstellung() {
           }}>{code}</div>
           <button onClick={copy} style={{
             marginTop: 10, width: "100%", cursor: "pointer",
-            background: copied ? C.mint : C.akzent, color: C.ink, fontWeight: 700, fontSize: 14,
+            background: copied ? C.mint : C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
             ...TAPZIEL, border: "none", borderRadius: 14, padding: "13px 0", transition: "background .2s",
           }}>{copied ? "✓ kopiert" : "Langen Code kopieren & teilen"}</button>
 
           {/* Kurzcode (Content-Creator) */}
           <div style={{ marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: "12px 14px" }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700 }}>Kurzcode statt langem Code</div>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Kurzcode statt langem Code</div>
             <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 10px", lineHeight: 1.4 }}>
               Speichert dein Regelwerk unter einem kurzen, merkbaren Code — perfekt zum
               Teilen (z. B. von Content-Creatorn). Andere laden ihn unten einfach ein.
@@ -2164,7 +2164,7 @@ export default function Spielerstellung() {
               }}>{publishing ? "wird erstellt …" : user ? "Kurzcode erstellen & teilen" : "Zum Erstellen einloggen"}</button>
             ) : (
               <div>
-                <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: C.akzent, letterSpacing: 3, textAlign: "center" }}>{shortCode}</div>
+                <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: C.akzent, letterSpacing: 3, textAlign: "center" }}>{shortCode}</div>
                 <button onClick={copyShort} style={{
                   marginTop: 8, width: "100%", cursor: "pointer",
                   background: shortCopied ? C.mint : C.surface2, color: shortCopied ? C.ink : C.text, fontWeight: 700, fontSize: 13,
@@ -2240,7 +2240,7 @@ function GrosseZeile({ icon, titel, unter, wert, offen, onClick, children }) {
           <span style={{ fontFamily: MONO, fontSize: 12, color: C.akzent, flexShrink: 0 }}>{wert}</span>
         )}
         <span style={{
-          fontSize: 18, color: C.muted, flexShrink: 0, lineHeight: 1,
+          fontSize: 20, color: C.muted, flexShrink: 0, lineHeight: 1,
           transform: offen ? "rotate(90deg)" : "none", transition: "transform .15s",
         }}>›</span>
       </button>
@@ -2334,12 +2334,12 @@ function Stepper({ value, min, max, onStep }) {
   const b = (dis) => ({
     ...TAPZIEL_QUADRAT, borderRadius: 10, cursor: dis ? "default" : "pointer",
     background: C.surface2, color: dis ? C.muted : C.text, border: `1px solid ${C.line}`,
-    fontSize: 18, lineHeight: 1,
+    fontSize: 20, lineHeight: 1,
   });
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <button onClick={() => onStep(-1)} disabled={value <= min} style={b(value <= min)}>−</button>
-      <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 18, color: C.akzent, width: 18, textAlign: "center" }}>{value}</span>
+      <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 20, color: C.akzent, width: 18, textAlign: "center" }}>{value}</span>
       <button onClick={() => onStep(1)} disabled={value >= max} style={b(value >= max)}>+</button>
     </div>
   );

@@ -94,7 +94,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
     <div style={{ marginTop: 12 }}>
       {/* Keine eigene Überschrift mehr: der Block steht seit 08.08.2026 in der
           aufgeklappten Zeile „Begegnungen" der Spielerstellung. */}
-      <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
         Genau die angehakten Spiele — für ein Turnier, eine kurze Runde oder eine
         gemischte Auswahl. Die anderen Einschränkungen gelten sonst alle gleichzeitig.
       </p>
@@ -118,7 +118,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
                   {ausgewaehlt.map((m) => (
                     <button key={m.id} onClick={() => toggle(m.id)} title="Entfernen" style={{
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "6px 10px",
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 10px",
                       borderRadius: 999, background: `${C.mint}22`, color: C.mint,
                       border: `1px solid ${C.mint}66`,
                     }}>{m.home} – {m.away} ×</button>
@@ -129,7 +129,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
               <input value={suche} onChange={(e) => setSuche(e.target.value)}
                 placeholder="Verein suchen …"
                 style={{
-                  width: "100%", boxSizing: "border-box", fontFamily: "inherit", fontSize: 12.5,
+                  width: "100%", boxSizing: "border-box", fontFamily: "inherit", fontSize: 13,
                   padding: "9px 11px", borderRadius: 10, background: C.surface,
                   color: C.text, border: `1px solid ${C.line}`, marginBottom: 8,
                 }} />
@@ -142,7 +142,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
                     const aktiv = wettbewerb === key;
                     return (
                       <button key={key ?? "alle"} onClick={() => setWettbewerb(key)} style={{
-                        cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px",
+                        cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px",
                         borderRadius: 999, background: aktiv ? `${C.akzent}22` : C.surface,
                         color: aktiv ? C.akzent : C.muted,
                         border: `1px solid ${aktiv ? C.akzent + "66" : C.line}`,
@@ -161,8 +161,8 @@ export default function SpielauswahlListe({ spiele, onChange }) {
                     color: voll ? C.muted : C.text, border: "none",
                     borderBottom: `1px solid ${C.line}`, opacity: voll ? 0.5 : 1,
                   }}>
-                    <span style={{ fontSize: 12.5 }}>{m.home} – {m.away}</span>
-                    <span style={{ fontSize: 10.5, color: C.muted, whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: 13 }}>{m.home} – {m.away}</span>
+                    <span style={{ fontSize: 11, color: C.muted, whiteSpace: "nowrap" }}>
                       {wettbewerbLabel(wettbewerbVon(m))}
                       {phaseVon(m) !== "liga" && ` · ${phasenLabel(phaseVon(m))}`}
                       {" · "}{zeitpunkt(m.kickoff)}
@@ -170,7 +170,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
                   </button>
                 ))}
                 {treffer.length === 0 && (
-                  <div style={{ fontSize: 11.5, color: C.muted, padding: "10px 11px" }}>
+                  <div style={{ fontSize: 12, color: C.muted, padding: "10px 11px" }}>
                     Keine anstehende Begegnung passt dazu.
                   </div>
                 )}
@@ -178,7 +178,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
 
               {/* Nie verschweigen, wie viel ausgeblendet ist. */}
               {treffer.length > MAX_ZEILEN && (
-                <div style={{ fontSize: 10.5, color: C.muted, marginTop: 6 }}>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
                   {treffer.length - MAX_ZEILEN} weitere — Suche verfeinern.
                 </div>
               )}

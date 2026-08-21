@@ -89,8 +89,8 @@ export default function Hauptmenu() {
         <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           QuotenTippspiel
         </div>
-        <h1 style={{ fontSize: 26, fontWeight: 800, margin: "8px 0 6px" }}>Mut zahlt sich aus.</h1>
-        <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.6, marginTop: 0, marginBottom: 24 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, margin: "8px 0 6px" }}>Mut zahlt sich aus.</h1>
+        <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.6, marginTop: 0, marginBottom: 24 }}>
           Quoten-gewichtetes Tippspiel unter Freunden. Kein Echtgeld — Ehre und
           ein Wichtelgeschenk.
         </p>
@@ -114,7 +114,7 @@ export default function Hauptmenu() {
                     <span style={{ fontSize: 15, fontWeight: 700 }}>{r.name}</span>
                     {active && (
                       <span style={{
-                        fontFamily: MONO, fontSize: 10, color: C.akzent, border: `1px solid ${C.akzent}55`,
+                        fontFamily: MONO, fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}55`,
                         borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
                       }}>aktiv</span>
                     )}
@@ -146,7 +146,7 @@ export default function Hauptmenu() {
                   <span style={{ fontSize: 16, fontWeight: 700 }}>{s.title}</span>
                   {s.tag && (
                     <span style={{
-                      marginLeft: "auto", fontFamily: MONO, fontSize: 10, color: s.tone,
+                      marginLeft: "auto", fontFamily: MONO, fontSize: 11, color: s.tone,
                       border: `1px solid ${s.tone}55`, borderRadius: 999, padding: "2px 8px",
                       textTransform: "uppercase", letterSpacing: 1,
                     }}>{s.tag}</span>
@@ -195,5 +195,5 @@ function Section({ title, children }) {
 }
 
 function Hint({ children }) {
-  return <div style={{ fontSize: 12.5, color: C.muted, fontFamily: MONO, padding: "4px 0 10px" }}>{children}</div>;
+  return <div style={{ fontSize: 13, color: C.muted, fontFamily: MONO, padding: "4px 0 10px" }}>{children}</div>;
 }

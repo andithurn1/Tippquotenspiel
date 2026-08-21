@@ -127,7 +127,7 @@ export default function AuszahlungsExplorer() {
           </div>
           {SIDES.map((side) => (
             <div key={side} style={{ display: "flex", gap: 6, marginBottom: side === "home" ? 8 : 0, alignItems: "center" }}>
-              <span style={{ width: 34, fontSize: 10.5, color: C.muted, fontFamily: MONO }}>{short(side)}</span>
+              <span style={{ width: 34, fontSize: 11, color: C.muted, fontFamily: MONO }}>{short(side)}</span>
               {goals[side].map((p, i) => (
                 <Sel key={i} side={side} value={p} fmt={fmt} onChange={(v) => setGoal(side, i, v)} />
               ))}
@@ -150,7 +150,7 @@ export default function AuszahlungsExplorer() {
               </div>
             </div>
           )}
-          <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
             Denselben Spieler zweimal = beide Tipps auf ihn. Trifft er zweifach, zählt die Doppelpack-Quote; trifft er nur einmal, immer noch die Einzelquote.
           </p>
         </div>
@@ -162,11 +162,11 @@ export default function AuszahlungsExplorer() {
 
         <div style={{ marginTop: 16 }}>
           <div style={{ display: "flex", gap: 4, marginLeft: 22, marginBottom: 4 }}>
-            {[0,1,2,3,4,5].map((a) => (<div key={a} style={{ flex: 1, textAlign: "center", fontSize: 10, color: C.muted, fontFamily: MONO }}>{a}</div>))}
+            {[0,1,2,3,4,5].map((a) => (<div key={a} style={{ flex: 1, textAlign: "center", fontSize: 11, color: C.muted, fontFamily: MONO }}>{a}</div>))}
           </div>
           {[0,1,2,3,4,5].map((h) => (
             <div key={h} style={{ display: "flex", gap: 4, marginBottom: 4, alignItems: "center" }}>
-              <div style={{ width: 18, textAlign: "center", fontSize: 10, color: C.muted, fontFamily: MONO }}>{h}</div>
+              <div style={{ width: 18, textAlign: "center", fontSize: 11, color: C.muted, fontFamily: MONO }}>{h}</div>
               {[0,1,2,3,4,5].map((a) => {
                 const cell = grid.cells[h * 6 + a];
                 const visible = !aroundOnly || cell.near;
@@ -185,7 +185,7 @@ export default function AuszahlungsExplorer() {
               })}
             </div>
           ))}
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 10.5, color: C.muted }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: C.muted }}>
             <span><span style={{ color: C.text }}>▢</span> dein Tipp</span>
             <span>Zeile = {SNAP.home} · Spalte = {SNAP.away}</span>
           </div>
@@ -197,7 +197,7 @@ export default function AuszahlungsExplorer() {
               Wenn es <b style={{ color: C.text, fontFamily: MONO }}>{sel.h}:{sel.a}</b> würde
               {!selScore.winnerRight && <span style={{ color: C.coral }}> · Sieger falsch</span>}
             </div>
-            <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: C.akzent, textShadow: `0 0 20px ${C.akzent}44` }}>{Math.round(selScore.total)}</div>
+            <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: C.akzent, textShadow: `0 0 20px ${C.akzent}44` }}>{Math.round(selScore.total)}</div>
           </div>
           <div style={{ height: 1, background: C.line, margin: "12px 0" }} />
           <BreakLine label="Tendenz (Sieger)" v={selScore.parts.tendBoden} won={selScore.ebene === "tendenz"} />
@@ -205,7 +205,7 @@ export default function AuszahlungsExplorer() {
           <BreakLine label="Ergebnis-Nähe" v={selScore.parts.ergNaehe} won={selScore.ebene === "exakt"} />
           <BreakLine label="Team-Tore-Nähe (siegerunabh.)" v={selScore.parts.teamTore} won={!selScore.winnerRight} />
           <div style={{ height: 1, background: C.line, margin: "10px 0" }} />
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
             <span style={{ color: C.muted }}>gewertet{withScorer ? " + Tore × Kombi" : ""}</span>
             <span style={{ fontFamily: MONO, color: C.text }}>
               {withScorer ? (selScore.ebene === "keiner"
@@ -236,7 +236,7 @@ function Sel({ side, value, onChange, fmt }) {
   return (
     <div style={{ flex: 1, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 8px", minWidth: 0 }}>
       <select value={value} onChange={(e) => onChange(e.target.value)} style={{
-        width: "100%", background: "transparent", color: value ? C.text : C.muted, border: "none", fontSize: 12.5, outline: "none", fontFamily: "inherit" }}>
+        width: "100%", background: "transparent", color: value ? C.text : C.muted, border: "none", fontSize: 13, outline: "none", fontFamily: "inherit" }}>
         <option value="" style={{ color: "#000" }}>– keiner –</option>
         {Object.keys(players).map((p) => (<option key={p} value={p} style={{ color: "#000" }}>{p} ({fmt(players[p].anytime)})</option>))}
       </select>
@@ -253,7 +253,7 @@ function Toggle({ on, onClick, label, tone }) {
 
 function BreakLine({ label, v, won }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 12.5 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 13 }}>
       <span style={{ color: won ? C.akzent : C.muted }}>{won ? "→ " : ""}{label}</span>
       <span style={{ fontFamily: MONO, color: won ? C.akzent : C.muted, fontVariantNumeric: "tabular-nums" }}>{v >= 0.05 ? "+" + v.toFixed(1) : "—"}</span>
     </div>

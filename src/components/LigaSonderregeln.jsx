@@ -96,7 +96,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
       borderRadius: 12, padding: "12px 12px 10px",
     }}>
       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Sonderregeln — {label}</div>
-      <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
+      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
         Gelten nur für diese Liga. Alles Übrige bleibt bei der Einstellung der Runde.
       </p>
 
@@ -207,7 +207,7 @@ function Schalter({ an, titel, unter, onChange }) {
       border: `1px solid ${an ? C.mint + "55" : C.line}`,
     }}>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontSize: 13.5, fontWeight: 700 }}>{titel}</span>
+        <span style={{ display: "block", fontSize: 13, fontWeight: 700 }}>{titel}</span>
         <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 1 }}>{unter}</span>
       </span>
       <span style={{
@@ -238,7 +238,7 @@ function Zahl({ label, value, min, max, onChange }) {
         style={{
           width: 72, minHeight: 44, boxSizing: "border-box",
           background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-          borderRadius: 10, padding: "8px 10px", fontSize: 14, fontFamily: MONO, outline: "none",
+          borderRadius: 10, padding: "8px 10px", fontSize: 15, fontFamily: MONO, outline: "none",
         }} />
     </label>
   );

@@ -108,12 +108,12 @@
   --tqs-apple-bild2: 11px;        /* Caption 2 */
 
   /* Schriftgrößen — sechs statt vierundzwanzig */
-  --tqs-schrift-mikro: 11px;
-  --tqs-schrift-klein: 12.5px;
-  --tqs-schrift: 14px;
-  --tqs-schrift-gross: 16px;
-  --tqs-schrift-titel: 20px;
-  --tqs-schrift-schlag: 26px;
+  --tqs-schrift-mikro: 11px;      /* Caption 2 */
+  --tqs-schrift-klein: 13px;      /* Footnote */
+  --tqs-schrift: 15px;            /* Subhead */
+  --tqs-schrift-gross: 17px;      /* Body */
+  --tqs-schrift-titel: 20px;      /* Title 3 */
+  --tqs-schrift-schlag: 28px;     /* Title 1 */
 
   /* ── Bewegung ──────────────────────────────────────────────
      Drei Dauern, zwei Kurven. Mehr braucht es nicht, und mehr wäre der

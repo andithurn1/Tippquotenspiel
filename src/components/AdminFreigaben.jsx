@@ -100,7 +100,7 @@ export default function AdminFreigaben() {
         <h1 style={{ fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
           Freigaben
         </h1>
-        <p style={{ fontSize: 12.5, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
           {WER.find((w) => w.key === "adminFreigabe")?.desc
             ?? "Einsetzen darf nur, wer für diesen Spieltag freigegeben ist."}
         </p>
@@ -135,7 +135,7 @@ export default function AdminFreigaben() {
             </div>
 
             <div style={{ overflowX: "auto" }}>
-              <table style={{ borderCollapse: "collapse", fontSize: 12.5, minWidth: 360 }}>
+              <table style={{ borderCollapse: "collapse", fontSize: 13, minWidth: 360 }}>
                 <thead>
                   <tr>
                     <th style={{ textAlign: "left", padding: "6px 10px 6px 0", color: C.muted, fontWeight: 400 }}>
@@ -181,7 +181,7 @@ export default function AdminFreigaben() {
               </table>
             </div>
 
-            <p style={{ fontSize: 10.5, color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
+            <p style={{ fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
               Eine Freigabe gilt für genau diesen Runden-Spieltag und lässt sich jederzeit
               zurücknehmen. Sie erlaubt das Einsetzen — sie erzwingt es nicht.
             </p>

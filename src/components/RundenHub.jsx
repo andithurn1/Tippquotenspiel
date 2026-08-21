@@ -97,13 +97,13 @@ export default function RundenHub() {
           <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
             Tippquotenspiel
           </span>
-          <Link href="/menu" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", fontFamily: MONO, fontSize: 11.5, color: C.mint, textDecoration: "none", paddingLeft: 10 }}>
+          <Link href="/menu" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", fontFamily: MONO, fontSize: 12, color: C.mint, textDecoration: "none", paddingLeft: 10 }}>
             Alle Tippspiele →
           </Link>
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, margin: "8px 0 6px" }}>{roundName ?? "…"}</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 800, margin: "8px 0 6px" }}>{roundName ?? "…"}</h1>
 
-        <div style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, marginBottom: 20 }}>
+        <div style={{ fontFamily: MONO, fontSize: 12, color: C.muted, marginBottom: 20 }}>
           {status
             ? `${status.total} Spiele · ${status.open} offen · ${status.tippedByMe} von dir getippt`
             : "Status lädt …"}
@@ -231,7 +231,7 @@ export default function RundenHub() {
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 16, fontWeight: 700 }}>{s.title}</span>
                 <span style={{
-                  marginLeft: "auto", fontFamily: MONO, fontSize: 10, color: C.muted,
+                  marginLeft: "auto", fontFamily: MONO, fontSize: 11, color: C.muted,
                   border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 8px",
                   textTransform: "uppercase", letterSpacing: 1,
                 }}>bald verfügbar</span>
@@ -244,7 +244,7 @@ export default function RundenHub() {
         <Link href="/menu" style={{
           marginTop: 16, display: "block", textDecoration: "none", textAlign: "center",
           color: C.text, background: C.surface2, border: `1px solid ${C.line}`,
-          borderRadius: 14, padding: "13px 0", fontSize: 14, fontWeight: 600,
+          borderRadius: 14, padding: "13px 0", fontSize: 15, fontWeight: 600,
         }}>
           Alle Tippspiele, erstellen, Einstellungen →
         </Link>

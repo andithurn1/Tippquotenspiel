@@ -133,7 +133,7 @@ export default function MeinRad() {
 
         {matches != null && aktiv && (
           <>
-            <p style={{ fontSize: 12.5, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
               {beschreibeDrehrad(cfg, achse.length || 34)}
             </p>
 
@@ -150,7 +150,7 @@ export default function MeinRad() {
                 <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1 }}>
                   Spieltag {letzte.spieltag}
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4 }}>
                   {feldVon.get(letzte.feldId)?.label || "—"}
                 </div>
                 <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
@@ -172,7 +172,7 @@ export default function MeinRad() {
             {/* Alle bisherigen Drehungen — nachvollziehbar, nicht nur die letzte. */}
             {gefallen.length > 1 && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>Bisher</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Bisher</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {[...gefallen].reverse().map((z) => (
                     <div key={z.spieltag} style={{
@@ -180,8 +180,8 @@ export default function MeinRad() {
                       background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: "8px 12px",
                     }}>
                       <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>ST {z.spieltag}</span>
-                      <span style={{ fontSize: 12.5, flex: 1 }}>{feldVon.get(z.feldId)?.label || "—"}</span>
-                      <span style={{ fontSize: 11.5, color: C.muted }}>
+                      <span style={{ fontSize: 13, flex: 1 }}>{feldVon.get(z.feldId)?.label || "—"}</span>
+                      <span style={{ fontSize: 12, color: C.muted }}>
                         {belohnungsText(gutschriftVon.get(`${z.spieltag}`)?.belohnung
                           ?? feldVon.get(z.feldId)?.belohnung, true)}
                       </span>

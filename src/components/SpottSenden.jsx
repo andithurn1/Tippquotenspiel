@@ -100,8 +100,8 @@ export default function SpottSenden() {
         <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Spott verschicken
         </span>
-        <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>Wen willst du ärgern?</div>
-        <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+        <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>Wen willst du ärgern?</div>
+        <p style={{ fontSize: 13, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
           Such dir ein Opfer, nimm einen Spruch — der Rest geht über deinen
           üblichen Chat raus. Einer pro Mitspieler und Spieltag, mehr wäre albern.
         </p>
@@ -123,7 +123,7 @@ export default function SpottSenden() {
                   ...TAPZIEL, borderRadius: 14, padding: "10px 12px", color: C.text, fontFamily: "inherit",
                 }}>
                   <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 18 }}>{z.rank}</span>
-                  <span style={{ flex: 1, fontSize: 14, fontWeight: aktiv ? 700 : 400 }}>{z.name}</span>
+                  <span style={{ flex: 1, fontSize: 15, fontWeight: aktiv ? 700 : 400 }}>{z.name}</span>
                   <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>{z.total}</span>
                 </button>
               );
@@ -160,7 +160,7 @@ export default function SpottSenden() {
                 borderRadius: 16, padding: "14px", display: "flex", gap: 12, alignItems: "center",
               }}>
                 <ReactionGif reaction={RANK_REACTIONS[spott.reaction] ?? RANK_REACTIONS.mittelfeld} size={84} />
-                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.5, flex: 1, minWidth: 0 }}>{spott.text}</p>
+                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, flex: 1, minWidth: 0 }}>{spott.text}</p>
               </div>
             )}
 
@@ -172,8 +172,8 @@ export default function SpottSenden() {
             }}>
               {blockiert ? `${ziel.name} hat diesen Spieltag genug` : "Spott verschicken"}
             </button>
-            {status && <div style={{ fontSize: 12.5, color: C.mint, marginTop: 8, textAlign: "center" }}>{status}</div>}
-            <p style={{ fontSize: 10.5, color: C.muted, marginTop: 10, lineHeight: 1.5, textAlign: "center" }}>
+            {status && <div style={{ fontSize: 13, color: C.mint, marginTop: 8, textAlign: "center" }}>{status}</div>}
+            <p style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.5, textAlign: "center" }}>
               Geht über deine normale Teilen-Funktion raus — wir speichern keinen Spott.
             </p>
           </>
@@ -184,5 +184,5 @@ export default function SpottSenden() {
 }
 
 function Hint({ children }) {
-  return <div style={{ fontSize: 12.5, color: C.muted, fontFamily: MONO, padding: "10px 0" }}>{children}</div>;
+  return <div style={{ fontSize: 13, color: C.muted, fontFamily: MONO, padding: "10px 0" }}>{children}</div>;
 }

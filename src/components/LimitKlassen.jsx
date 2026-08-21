@@ -108,7 +108,7 @@ export default function LimitKlassen({ rules, onChange }) {
 
   return (
     <div>
-      <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Eine Limitierungsklasse ist ein gemeinsames Kontingent für mehrere Joker-Arten.
         Mehrere Klassen dürfen sich <strong>überlagern</strong> — ein Einsatz zählt gegen
         JEDE Klasse, in der seine Art Mitglied ist.
@@ -138,7 +138,7 @@ export default function LimitKlassen({ rules, onChange }) {
             {abdeckung.map(({ art, treffer }) => (
               <div key={art.key} style={{
                 background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10,
-                padding: "8px 10px", fontSize: 11.5, lineHeight: 1.5,
+                padding: "8px 10px", fontSize: 12, lineHeight: 1.5,
               }}>
                 <span style={{ fontWeight: 700 }}>{art.label}</span>
                 {" → "}
@@ -163,7 +163,7 @@ export default function LimitKlassen({ rules, onChange }) {
         Klassen ({klassen.length})
       </div>
       {klassen.length === 0 && (
-        <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 8 }}>
+        <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
           Noch keine Klassen — leg die erste an.
         </div>
       )}
@@ -213,25 +213,25 @@ function KlasseZeile({
           }} />
         <button onClick={onEntfernen} aria-label="Klasse entfernen" style={{
           cursor: "pointer", background: "transparent", border: "none",
-          color: C.muted, fontSize: 18, lineHeight: 1, padding: "0 2px", flexShrink: 0,
+          color: C.muted, fontSize: 20, lineHeight: 1, padding: "0 2px", flexShrink: 0,
         }}>×</button>
       </div>
 
       {verworfenGrund && (
-        <div style={{ fontSize: 10.5, color: C.coral, marginTop: 6, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 11, color: C.coral, marginTop: 6, lineHeight: 1.4 }}>
           Zählt gerade nicht mit: {verworfenGrund}
         </div>
       )}
 
       {/* Mitglieder */}
       <div style={{ marginTop: 9 }}>
-        <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 5 }}>Mitglieder</div>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 5 }}>Mitglieder</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
           {JOKER_ARTEN.map((art) => {
             const an = mitglieder.includes(art.key);
             return (
               <button key={art.key} title={art.desc} onClick={() => onToggleMitglied(art.key)} style={{
-                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: 999,
                 background: an ? `${C.indigo}22` : C.surface2, color: an ? C.indigo : C.muted,
                 border: `1px solid ${an ? C.indigo + "66" : C.line}`,
               }}>{art.label}</button>
@@ -239,7 +239,7 @@ function KlasseZeile({
           })}
         </div>
         {mitglieder.length === 0 && (
-          <div style={{ fontSize: 10.5, color: C.akzent, marginTop: 5, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 11, color: C.akzent, marginTop: 5, lineHeight: 1.4 }}>
             Ohne Mitglieder greift diese Klasse für keine Joker-Art.
           </div>
         )}
@@ -253,13 +253,13 @@ function KlasseZeile({
 
       {/* Zeitraum */}
       <div style={{ marginTop: 9 }}>
-        <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 5 }}>Zeitraum</div>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 5 }}>Zeitraum</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
           {PRO_ZEITRAUM.map((p) => {
             const an = (klasse.proZeitraum ?? "saison") === p.key;
             return (
               <button key={p.key} title={p.desc} onClick={() => onPatch({ proZeitraum: p.key })} style={{
-                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: 999,
                 background: an ? `${C.akzent}22` : C.surface2, color: an ? C.akzent : C.muted,
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
               }}>{p.label}</button>
@@ -276,13 +276,13 @@ function KlasseZeile({
 
       {/* Aktivierung — nur die Parameter zeigen, die der gewählte Typ braucht. */}
       <div style={{ marginTop: 9 }}>
-        <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 5 }}>Aktivierung</div>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 5 }}>Aktivierung</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
           {AKTIVIERUNG_TYPEN.map((t) => {
             const an = aktivierung.typ === t.key;
             return (
               <button key={t.key} title={t.desc} onClick={() => onAktivierungsTyp(t.key)} style={{
-                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: 999,
                 background: an ? `${C.mint}22` : C.surface2, color: an ? C.mint : C.muted,
                 border: `1px solid ${an ? C.mint + "66" : C.line}`,
               }}>{t.label}</button>
@@ -349,7 +349,7 @@ function KlasseZeile({
       </div>
 
       {beschreibung && (
-        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 9, lineHeight: 1.4 }}>{beschreibung}</div>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 9, lineHeight: 1.4 }}>{beschreibung}</div>
       )}
     </div>
   );
@@ -362,7 +362,7 @@ function Banner({ ton, children }) {
   return (
     <div style={{
       background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: 12,
-      padding: "9px 11px", marginBottom: 10, fontSize: 11.5, color: C.text, lineHeight: 1.5,
+      padding: "9px 11px", marginBottom: 10, fontSize: 12, color: C.text, lineHeight: 1.5,
     }}>
       {children}
     </div>

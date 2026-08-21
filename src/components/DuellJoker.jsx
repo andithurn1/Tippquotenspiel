@@ -35,7 +35,7 @@ export default function DuellJoker({ rules, onChange }) {
     <button key={key} type="button" onClick={onClick} title={titel} style={{
       border: `1px solid ${aktiv ? C.coral : C.line}`, borderRadius: 999,
       background: aktiv ? `${C.coral}1a` : "transparent", color: aktiv ? C.coral : C.text,
-      ...TAPZIEL, cursor: "pointer", padding: "5px 11px", fontSize: 11.5, fontWeight: aktiv ? 700 : 500,
+      ...TAPZIEL, cursor: "pointer", padding: "5px 11px", fontSize: 12, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
   );
 
@@ -44,14 +44,14 @@ export default function DuellJoker({ rules, onChange }) {
       <div style={{ fontSize: 12, color: C.muted, marginBottom: 5 }}>{titel}</div>
       {children}
       {hinweis && (
-        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>{hinweis}</div>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>{hinweis}</div>
       )}
     </div>
   );
 
   return (
     <div>
-      <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Der einzige Joker, der jemand <strong>anderen</strong> trifft. Standardmäßig
         aus — eine Runde, die ihn einschaltet, spielt ein anderes Spiel.
       </p>
@@ -91,7 +91,7 @@ export default function DuellJoker({ rules, onChange }) {
                 sie nur in `reglerWarnung.js` zu melden: viele freie Einsätze
                 heißt, dass am Ende alle auf denselben gehen. */}
             {d.zielWahl === "frei" && d.anzahl >= EMPFEHLUNG.zielWahlBeiVielenEinsaetzen.abAnzahl && (
-              <div style={{ fontSize: 10.5, color: C.coral, marginTop: 4, lineHeight: 1.45 }}>
+              <div style={{ fontSize: 11, color: C.coral, marginTop: 4, lineHeight: 1.45 }}>
                 ⚠️ Freie Zielwahl bei {d.anzahl} Einsätzen: erfahrungsgemäß gehen dann
                 alle auf den Führenden. „Nur nach vorne“ ist die direkte Antwort darauf.
               </div>
@@ -108,7 +108,7 @@ export default function DuellJoker({ rules, onChange }) {
               {knopf(d.konter, "Konter erlaubt", () => setze({ konter: true }), "kt-an",
                 "Wer an diesem Spieltag getroffen wurde, darf seinen Angreifer zurückschlagen — auch entgegen der Zielwahl.")}
             </div>
-            <div style={{ fontSize: 10.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
               {d.konter
                 ? (d.zielWahl === "frei"
                     ? "Bei freier Zielwahl ändert der Konter wenig — jeder darf ohnehin jeden treffen."
@@ -163,7 +163,7 @@ export default function DuellJoker({ rules, onChange }) {
                 ändert am Ergebnis nichts mehr" — der Regler daneben wäre
                 wirkungslos. Deshalb hier direkt am Feld. */}
             {d.maxProSaison > 0 && d.maxProSaison < 150 && (
-              <div style={{ fontSize: 10.5, color: C.coral, marginTop: 4, lineHeight: 1.45 }}>
+              <div style={{ fontSize: 11, color: C.coral, marginTop: 4, lineHeight: 1.45 }}>
                 ⚠️ Ein Deckel unter ~150 greift schon beim ersten Duell — die Stärke
                 darunter ändert dann nichts mehr.
               </div>
@@ -221,7 +221,7 @@ export default function DuellJoker({ rules, onChange }) {
             fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.5,
             borderTop: `1px solid ${C.line}`, paddingTop: 8,
           }}>
-            <span style={{ fontFamily: MONO, fontSize: 10.5, color: C.coral }}>SO LIEST ES SICH: </span>
+            <span style={{ fontFamily: MONO, fontSize: 11, color: C.coral }}>SO LIEST ES SICH: </span>
             {beschreibeDuell(d)}
           </p>
         </>

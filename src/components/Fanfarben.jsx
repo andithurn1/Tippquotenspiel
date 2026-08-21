@@ -52,8 +52,8 @@ export default function Fanfarben() {
         <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Fanfarben
         </span>
-        <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>Deine Vereinsfarben</div>
-        <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+        <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>Deine Vereinsfarben</div>
+        <p style={{ fontSize: 13, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
           Wähle 2–3 Farben, um deinen Verein zu repräsentieren. Das Layout bleibt
           überall gleich — nur die Akzente tragen deine Farben. Zu dunkle Farben
           werden für die Lesbarkeit leicht aufgehellt.
@@ -98,7 +98,7 @@ export default function Fanfarben() {
                   {SLOTS[i]?.role || `Farbe ${i + 1}`}
                   {wasLightened(i) && (
                     <span title="Für Lesbarkeit leicht aufgehellt" style={{
-                      fontFamily: MONO, fontSize: 9, color: C.mint, textTransform: "uppercase",
+                      fontFamily: MONO, fontSize: 11, color: C.mint, textTransform: "uppercase",
                       border: `1px solid ${C.mint}55`, borderRadius: 999, padding: "1px 6px", letterSpacing: 0.5,
                     }}>aufgehellt</span>
                   )}
@@ -108,7 +108,7 @@ export default function Fanfarben() {
               <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{color.toUpperCase()}</span>
               <button onClick={() => removeColor(i)} aria-label="Farbe entfernen" style={{
                 cursor: "pointer", background: "transparent", border: "none",
-                ...TAPZIEL_QUADRAT, color: C.muted, fontSize: 18, lineHeight: 1, padding: "0 2px",
+                ...TAPZIEL_QUADRAT, color: C.muted, fontSize: 20, lineHeight: 1, padding: "0 2px",
               }}>×</button>
             </div>
           ))}
@@ -126,13 +126,13 @@ export default function Fanfarben() {
           <button onClick={save} disabled={!dirty} style={{
             ...TAPZIEL, flex: 1, cursor: dirty ? "pointer" : "default",
             background: dirty ? C.akzent : C.surface, color: dirty ? readableInk(preview.fan1) : C.muted,
-            fontWeight: 700, fontSize: 14, border: `1px solid ${dirty ? C.akzent : C.line}`,
+            fontWeight: 700, fontSize: 15, border: `1px solid ${dirty ? C.akzent : C.line}`,
             borderRadius: 12, padding: "11px 0", fontFamily: "inherit",
           }}>{dirty ? "Übernehmen" : "Gespeichert"}</button>
           <button onClick={clearAll} style={{
             cursor: "pointer", background: C.surface, color: C.muted,
             ...TAPZIEL, border: `1px solid ${C.line}`, borderRadius: 12, padding: "11px 16px",
-            fontFamily: "inherit", fontSize: 14, fontWeight: 700,
+            fontFamily: "inherit", fontSize: 15, fontWeight: 700,
           }}>Zurücksetzen</button>
         </div>
         <p style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
@@ -151,7 +151,7 @@ function Preview({ p }) {
       marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`,
       borderRadius: 16, padding: "16px 16px 18px",
     }}>
-      <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1, color: C.muted, textTransform: "uppercase", marginBottom: 12 }}>
+      <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted, textTransform: "uppercase", marginBottom: 12 }}>
         Vorschau
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -169,7 +169,7 @@ function Preview({ p }) {
           <span style={{ width: 9, height: 9, borderRadius: 999, background: p.indigo, boxShadow: `0 0 10px ${p.indigo}` }} />
           Admin
         </span>
-        <span style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: p.fan1, textShadow: `0 0 22px ${p.fan1}55` }}>
+        <span style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: p.fan1, textShadow: `0 0 22px ${p.fan1}55` }}>
           +18,4
         </span>
       </div>

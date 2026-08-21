@@ -31,8 +31,8 @@ export default function ProfiWarnungen({ rules, onChange }) {
         ...TAPZIEL, background: "transparent", border: "none", padding: 0, fontFamily: "inherit",
         cursor: warnungen.length ? "pointer" : "default",
       }}>
-        <span style={{ color: farbe, fontSize: 14 }}>{z.stufe === "ok" ? "✓" : "!"}</span>
-        <span style={{ fontSize: 13.5, fontWeight: 700, color: farbe, flex: 1 }}>
+        <span style={{ color: farbe, fontSize: 15 }}>{z.stufe === "ok" ? "✓" : "!"}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: farbe, flex: 1 }}>
           {z.stufe === "ok" ? "Im erprobten Bereich" : "Ungewöhnliche Einstellungen"}
         </span>
         {warnungen.length > 0 && (
@@ -40,7 +40,7 @@ export default function ProfiWarnungen({ rules, onChange }) {
         )}
       </button>
 
-      <p style={{ fontSize: 11.5, color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12, color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
         {z.text}{" "}
         {z.stufe === "ok"
           ? "Die Grenzwerte der Regler sind bewusst weiter als das, was sich in der Simulation bewährt hat."
@@ -61,7 +61,7 @@ export default function ProfiWarnungen({ rules, onChange }) {
         }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
             <span style={{
-              fontFamily: MONO, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase",
+              fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: "uppercase",
               color: w.stufe === "warnung" ? C.coral : C.akzent,
               border: `1px solid ${(w.stufe === "warnung" ? C.coral : C.akzent)}55`,
               borderRadius: 999, padding: "1px 7px", flexShrink: 0,
@@ -69,7 +69,7 @@ export default function ProfiWarnungen({ rules, onChange }) {
             <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{w.titel}</span>
           </div>
 
-          <p style={{ fontSize: 11.5, color: C.muted, margin: "5px 0 0", lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12, color: C.muted, margin: "5px 0 0", lineHeight: 1.5 }}>
             {w.text}
           </p>
 
@@ -80,7 +80,7 @@ export default function ProfiWarnungen({ rules, onChange }) {
           )}
 
           <button onClick={() => onChange(korrigieren(rules, w.id))} style={{
-            marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, fontWeight: 700,
+            marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
             background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
             borderRadius: 999, padding: "5px 12px",
           }}>{w.fix}</button>

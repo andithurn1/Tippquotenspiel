@@ -123,7 +123,7 @@ export default function Drehrad({ rules, onChange }) {
 
   return (
     <div>
-      <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Ein Rad aus Feldern, die <strong>du</strong> schreibst: Beschriftung, Größe, Belohnung.
         Keine Empfehlung, keine Vorgabe — was ein Feld auszahlt und wie groß es ist, entscheidest du.
       </p>
@@ -156,7 +156,7 @@ export default function Drehrad({ rules, onChange }) {
           }} />
         </span>
         <span>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: cfg.enabled ? C.akzent : C.text }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: cfg.enabled ? C.akzent : C.text }}>
             {cfg.enabled ? "Drehrad ist an" : "Drehrad ist aus"}
           </span>
           <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
@@ -204,7 +204,7 @@ export default function Drehrad({ rules, onChange }) {
         Felder ({felder.length})
       </div>
       {felder.length === 0 && (
-        <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 8 }}>
+        <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
           Noch keine Felder — leg das erste an.
         </div>
       )}
@@ -234,7 +234,7 @@ export default function Drehrad({ rules, onChange }) {
         <Zahl label="Sperrfrist-Vorgabe für alle Felder (Drehungen dieses Spielers, 0 = keine Sperre)"
           wert={cfg.sperrfrist} limits={DREHRAD_LIMITS.sperrfrist}
           onChange={(v) => setze({ sperrfrist: v })} />
-        <p style={{ fontSize: 10.5, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
+        <p style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
           Am einzelnen Feld gesetzt schlägt diese Vorgabe. Sind rechnerisch irgendwann alle
           Felder gleichzeitig gesperrt, wird die Sperre für diese eine Drehung ausnahmsweise
           ignoriert — eine Drehung ohne Ergebnis wäre der schlechtere Fehler.
@@ -250,7 +250,7 @@ export default function Drehrad({ rules, onChange }) {
 
         <div style={{ marginTop: 4 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
-            <span style={{ fontSize: 12.5 }}>Etwa jeder {cfg.frequenz}. Spieltag</span>
+            <span style={{ fontSize: 13 }}>Etwa jeder {cfg.frequenz}. Spieltag</span>
           </div>
           <input type="range" value={cfg.frequenz}
             min={DREHRAD_LIMITS.frequenz.min} max={DREHRAD_LIMITS.frequenz.max} step={DREHRAD_LIMITS.frequenz.step}
@@ -268,7 +268,7 @@ export default function Drehrad({ rules, onChange }) {
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 borderRadius: 12, padding: "9px 12px",
               }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
               </button>
             );
@@ -283,7 +283,7 @@ export default function Drehrad({ rules, onChange }) {
         )}
 
         <div style={{ marginTop: 14 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>Saison-Fenster</div>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Saison-Fenster</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {PHASEN.map((p) => {
               const an = cfg.phase === p.key;
@@ -294,7 +294,7 @@ export default function Drehrad({ rules, onChange }) {
                   border: `1px solid ${an ? C.indigo + "66" : C.line}`,
                   borderRadius: 12, padding: "9px 12px",
                 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.indigo : C.text }}>{p.label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.indigo : C.text }}>{p.label}</div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
                 </button>
               );
@@ -330,7 +330,7 @@ export default function Drehrad({ rules, onChange }) {
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 borderRadius: 12, padding: "9px 12px",
               }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.akzent : C.text }}>{w.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{w.label}</div>
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{w.desc}</div>
               </button>
             );
@@ -352,7 +352,7 @@ export default function Drehrad({ rules, onChange }) {
           padding: "10px 12px",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontSize: 12.5, fontWeight: 700 }}>Punkte-Deckel je Saison</span>
+            <span style={{ fontSize: 13, fontWeight: 700 }}>Punkte-Deckel je Saison</span>
             <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>
               {cfg.maxPunkteProSaison === 0 ? "kein Deckel" : `${cfg.maxPunkteProSaison} Punkte`}
             </span>
@@ -405,7 +405,7 @@ function Balken({ felder, anteile }) {
               }}>
               {prozent >= 9 && (
                 <span style={{
-                  fontSize: 10.5, fontWeight: 700, color: readableInk(farbe), padding: "0 4px",
+                  fontSize: 11, fontWeight: 700, color: readableInk(farbe), padding: "0 4px",
                   whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 }}>
                   {f.label || "…"} {prozent.toFixed(0)}%
@@ -426,7 +426,7 @@ function Leiste({ titel, tage = [], von, bis, gedimmt = false }) {
   return (
     <div style={{ marginTop: 11 }}>
       <div style={{
-        fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.2, color: C.muted,
+        fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
         textTransform: "uppercase", marginBottom: 5,
       }}>{titel}</div>
       <div style={{ display: "flex", gap: 2 }}>
@@ -445,7 +445,7 @@ function Leiste({ titel, tage = [], von, bis, gedimmt = false }) {
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
         {[1, 9, 17, 25, 34].map((md) => (
-          <span key={md} style={{ fontFamily: MONO, fontSize: 9, color: C.muted }}>{md}</span>
+          <span key={md} style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{md}</span>
         ))}
       </div>
     </div>
@@ -477,12 +477,12 @@ function FeldZeile({
             border: `1px solid ${C.line}`, borderRadius: 9, padding: "7px 9px",
             fontSize: 13, fontFamily: "inherit", outline: "none",
           }} />
-        <span style={{ fontFamily: MONO, fontSize: 12.5, color: C.akzent, width: 50, textAlign: "right", flexShrink: 0 }}>
+        <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent, width: 50, textAlign: "right", flexShrink: 0 }}>
           {(anteil * 100).toFixed(1)}%
         </span>
         <button onClick={onEntfernen} aria-label="Feld entfernen" style={{
           cursor: "pointer", background: "transparent", border: "none",
-          color: C.muted, fontSize: 18, lineHeight: 1, padding: "0 2px", flexShrink: 0,
+          color: C.muted, fontSize: 20, lineHeight: 1, padding: "0 2px", flexShrink: 0,
         }}>×</button>
       </div>
 
@@ -493,19 +493,19 @@ function FeldZeile({
           <Zahl label={`Sperrfrist (Vorgabe ${sperrfristVorgabe})`} wert={feld.sperrfrist ?? ""}
             limits={DREHRAD_LIMITS.sperrfrist} leerErlaubt leerText="Vorgabe"
             onChange={(v) => onPatch({ sperrfrist: v })} />
-          <div style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>
             {eigeneSperrfrist ? "eigener Wert" : `folgt der Vorgabe (${sperrfristVorgabe})`}
           </div>
         </div>
       </div>
 
       {gewichtNull && (
-        <div style={{ fontSize: 10.5, color: C.akzent, marginTop: 6, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 11, color: C.akzent, marginTop: 6, lineHeight: 1.4 }}>
           Gewicht 0 — liegt auf dem Rad, kann aber nicht fallen.
         </div>
       )}
       {verworfenGrund && (
-        <div style={{ fontSize: 10.5, color: C.coral, marginTop: 6, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 11, color: C.coral, marginTop: 6, lineHeight: 1.4 }}>
           Zählt gerade nicht mit: {verworfenGrund}
         </div>
       )}
@@ -516,7 +516,7 @@ function FeldZeile({
           const an = belohnung.typ === t.key;
           return (
             <button key={t.key} title={t.desc} onClick={() => onBelohnungsTyp(t.key)} style={{
-              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
+              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: 999,
               background: an ? `${C.indigo}22` : C.surface2, color: an ? C.indigo : C.muted,
               border: `1px solid ${an ? C.indigo + "66" : C.line}`,
             }}>{t.label}</button>
@@ -574,7 +574,7 @@ function Banner({ ton, children }) {
   return (
     <div style={{
       background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: 12,
-      padding: "9px 11px", marginBottom: 10, fontSize: 11.5, color: C.text, lineHeight: 1.5,
+      padding: "9px 11px", marginBottom: 10, fontSize: 12, color: C.text, lineHeight: 1.5,
     }}>
       {children}
     </div>

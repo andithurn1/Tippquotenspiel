@@ -93,13 +93,13 @@ export default function Profil() {
                 <div style={{ fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {sanitizeDisplayName(name) ?? "—"}
                 </div>
-                <div style={{ fontSize: 11.5, color: C.muted, marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
                   So sehen dich deine Mitspieler
                 </div>
               </div>
               {premium && (
                 <span style={{
-                  marginLeft: "auto", fontSize: 10, letterSpacing: 1, textTransform: "uppercase",
+                  marginLeft: "auto", fontSize: 11, letterSpacing: 1, textTransform: "uppercase",
                   color: C.akzent, border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "3px 9px",
                 }}>Premium</span>
               )}
@@ -111,16 +111,16 @@ export default function Profil() {
               border: `1px solid ${premium ? C.mint + "33" : C.line}`,
               borderRadius: 14, padding: "12px 15px",
             }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: premium ? C.mint : C.text }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: premium ? C.mint : C.text }}>
                 {premium ? "✓ Premium aktiv" : "Premium nicht aktiv"}
               </div>
-              <p style={{ fontSize: 11.5, color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
+              <p style={{ fontSize: 12, color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
                 {premium
                   ? "In Runden, die du als Admin anlegst, stehen die Zusatzfunktionen bereit."
                   : "Legst du eine Runde als Admin an, sind diese Funktionen gesperrt:"}
               </p>
               {!premium && (
-                <ul style={{ margin: "7px 0 0", paddingLeft: 18, fontSize: 11.5, color: C.muted, lineHeight: 1.6 }}>
+                <ul style={{ margin: "7px 0 0", paddingLeft: 18, fontSize: 12, color: C.muted, lineHeight: 1.6 }}>
                   {PREMIUM_FEATURES.map((f) => (
                     <li key={f.key}><strong style={{ color: C.text }}>{f.label}</strong> — {f.desc}</li>
                   ))}
@@ -137,7 +137,7 @@ export default function Profil() {
                 maxLength={NAME_LIMITS.max + 10} placeholder="Wie sollen dich alle nennen?"
                 style={{
                   width: "100%", marginTop: 7, boxSizing: "border-box",
-                  background: C.surface, color: C.text, fontFamily: "inherit", fontSize: 14,
+                  background: C.surface, color: C.text, fontFamily: "inherit", fontSize: 15,
                   border: `1px solid ${nameOk || name === "" ? C.line : C.coral}`,
                   borderRadius: 12, padding: "11px 13px", outline: "none",
                 }} />
@@ -177,7 +177,7 @@ export default function Profil() {
               marginTop: 22, width: "100%",
               cursor: !nameOk || status === "speichern" ? "default" : "pointer",
               background: status === "ok" ? C.mint : C.akzent, color: C.ink,
-              fontWeight: 700, fontSize: 14, fontFamily: "inherit",
+              fontWeight: 700, fontSize: 15, fontFamily: "inherit",
               border: "none", borderRadius: 14, padding: "13px 0",
               opacity: !nameOk || status === "speichern" ? 0.6 : 1,
             }}>

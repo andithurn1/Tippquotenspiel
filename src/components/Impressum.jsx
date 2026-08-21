@@ -25,13 +25,13 @@ export default function Impressum() {
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: "6px 0 10px" }}>Impressum</h1>
 
         <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px" }}>Angaben gemäß § 5 DDG</p>
-        <p style={{ fontSize: 14, color: "#D5D8EA", margin: "6px 0" }}>
+        <p style={{ fontSize: 15, color: "#D5D8EA", margin: "6px 0" }}>
           {LEGAL.betreiber}<br />
           {LEGAL.anschrift}
         </p>
 
         <h2 style={{ fontSize: 15, fontWeight: 700, margin: "16px 0 2px" }}>Kontakt</h2>
-        <p style={{ fontSize: 14, color: "#D5D8EA", margin: "6px 0" }}>E-Mail: {LEGAL.email}</p>
+        <p style={{ fontSize: 15, color: "#D5D8EA", margin: "6px 0" }}>E-Mail: {LEGAL.email}</p>
 
         <h2 style={{ fontSize: 15, fontWeight: 700, margin: "16px 0 2px" }}>Haftung & Inhalt</h2>
         <p style={{ fontSize: 13, color: C.muted, margin: "6px 0" }}>

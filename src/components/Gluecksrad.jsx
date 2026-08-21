@@ -90,7 +90,7 @@ export default function Gluecksrad({ felder = [], anteile = [], ergebnisId = nul
 
   if (!segmente.length) {
     return (
-      <div style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.45, padding: "10px 0" }}>
+      <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45, padding: "10px 0" }}>
         Noch kein Feld mit einer Größe über null — ein Rad braucht mindestens zwei,
         auf die es überhaupt fallen kann.
       </div>
@@ -133,7 +133,7 @@ export default function Gluecksrad({ felder = [], anteile = [], ergebnisId = nul
                 {beschriften && (
                   <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle"
                     transform={`rotate(${s.mitte} ${tx} ${ty})`}
-                    style={{ fontSize: 10, fontWeight: 700, fill: C.ink, pointerEvents: "none" }}>
+                    style={{ fontSize: 11, fontWeight: 700, fill: C.ink, pointerEvents: "none" }}>
                     {(s.label || "—").slice(0, 14)}
                   </text>
                 )}
@@ -145,12 +145,12 @@ export default function Gluecksrad({ felder = [], anteile = [], ergebnisId = nul
       </div>
 
       {ziel && (
-        <div style={{ fontFamily: MONO, fontSize: 12.5, color: C.akzent, fontWeight: 700 }}>
+        <div style={{ fontFamily: MONO, fontSize: 13, color: C.akzent, fontWeight: 700 }}>
           {ziel.label || "—"}
         </div>
       )}
 
-      <div style={{ fontSize: 10.5, color: C.muted, textAlign: "center", lineHeight: 1.45, maxWidth: 260 }}>
+      <div style={{ fontSize: 11, color: C.muted, textAlign: "center", lineHeight: 1.45, maxWidth: 260 }}>
         Die Fläche eines Feldes ist seine Wahrscheinlichkeit.
         {ohneGroesse > 0 && (ohneGroesse === 1
           ? " Ein Feld ohne Größe fehlt hier — darauf kann das Rad nicht fallen."

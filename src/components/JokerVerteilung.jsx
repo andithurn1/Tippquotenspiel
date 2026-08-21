@@ -42,7 +42,7 @@ export default function JokerVerteilung({ verteilung, onChange }) {
               border: `1px solid ${an ? C.akzent + "66" : C.line}`,
               borderRadius: 12, padding: "9px 12px",
             }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
               <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
             </button>
           );
@@ -53,8 +53,8 @@ export default function JokerVerteilung({ verteilung, onChange }) {
         <>
           <div style={{ marginTop: 13 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
-              <span style={{ fontSize: 12.5 }}>Etwa jeder {v.frequenz}. Spieltag</span>
-              <span style={{ fontFamily: MONO, fontSize: 12.5, color: C.akzent }}>
+              <span style={{ fontSize: 13 }}>Etwa jeder {v.frequenz}. Spieltag</span>
+              <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>
                 {kontingent(SPIELTAGE, v.frequenz)} Joker
               </span>
             </div>
@@ -82,7 +82,7 @@ export default function JokerVerteilung({ verteilung, onChange }) {
           )}
 
           <div style={{ marginTop: 13 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>Wer sieht die Spieltage?</div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Wer sieht die Spieltage?</div>
             <div style={{ display: "flex", gap: 6 }}>
               {SICHTBARKEIT.map((s) => {
                 const an = v.sichtbarkeit === s.key;
@@ -114,7 +114,7 @@ function Leiste({ titel, tage = [], gedimmt = false }) {
   return (
     <div style={{ marginTop: 11 }}>
       <div style={{
-        fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.2, color: C.muted,
+        fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
         textTransform: "uppercase", marginBottom: 5,
       }}>{titel}</div>
       <div style={{ display: "flex", gap: 2 }}>
@@ -131,7 +131,7 @@ function Leiste({ titel, tage = [], gedimmt = false }) {
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
         {[1, 9, 17, 25, 34].map((md) => (
-          <span key={md} style={{ fontFamily: MONO, fontSize: 9, color: C.muted }}>{md}</span>
+          <span key={md} style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{md}</span>
         ))}
       </div>
     </div>

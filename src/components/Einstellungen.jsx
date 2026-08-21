@@ -78,8 +78,8 @@ export default function Einstellungen() {
           <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
             Meine Anzeige
           </span>
-          <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>Wie viel Hintergrund willst du sehen?</div>
-          <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+          <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>Wie viel Hintergrund willst du sehen?</div>
+          <p style={{ fontSize: 13, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
             Nur für dich — ändert nichts an den Punkten, nur daran, wie viel Mathematik
             und Vorschau dir angezeigt wird. Jeder Mitspieler stellt das selbst ein.
           </p>
@@ -108,7 +108,7 @@ export default function Einstellungen() {
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
               Vergleich mit Mitspielern
             </div>
-            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
               Bis zu {MAX_VERGLEICH} aus dieser Runde. Ihre Tipps und Punkte stehen dann neben
               deinen — auch in der Einblendung nach dem Spiel. Nur für dich sichtbar.
             </div>
@@ -134,14 +134,14 @@ export default function Einstellungen() {
                         background: gewaehlt ? `${C.akzent}1a` : "transparent",
                         color: gewaehlt ? C.akzent : (voll ? C.ghost : C.text),
                         cursor: voll ? "not-allowed" : "pointer",
-                        ...TAPZIEL, padding: "5px 11px", fontSize: 11.5, fontWeight: gewaehlt ? 700 : 500,
+                        ...TAPZIEL, padding: "5px 11px", fontSize: 12, fontWeight: gewaehlt ? 700 : 500,
                       }}>
                       {gewaehlt ? "✓ " : ""}{m.name ?? m.user_id}
                     </button>
                   );
                 })}
             </div>
-            <div style={{ fontSize: 10.5, color: C.muted, marginTop: 7 }}>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 7 }}>
               {gewaehlteFreunde.length === 0
                 ? "Niemand ausgewählt — es stehen nur deine eigenen Zahlen da."
                 : `${gewaehlteFreunde.length} von ${MAX_VERGLEICH} ausgewählt.`}
@@ -151,8 +151,8 @@ export default function Einstellungen() {
           <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
 
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>App-Start</div>
-            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>App-Start</div>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
               Was du siehst, sobald du die App öffnest.
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
@@ -164,7 +164,7 @@ export default function Einstellungen() {
                 }}>{START_SCREEN_LABEL[s]}</button>
               ))}
             </div>
-            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
               {prefs.startScreen === "hub"
                 ? "Direkt rein ins Tippen: Tipp abgeben, Ranking & Co. deiner aktiven Runde."
                 : "Erst die Übersicht: eigene Tippspiele, erstellen, beitreten, Einstellungen."}
@@ -179,8 +179,8 @@ export default function Einstellungen() {
 function PrefSection({ meta, value, onChange }) {
   return (
     <div style={{ marginTop: 22 }}>
-      <div style={{ fontSize: 14, fontWeight: 700 }}>{meta.title}</div>
-      <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>{meta.hint}</div>
+      <div style={{ fontSize: 15, fontWeight: 700 }}>{meta.title}</div>
+      <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>{meta.hint}</div>
       <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
         {LEVELS.map((lv) => (
           <button key={lv} onClick={() => onChange(lv)} style={{
@@ -190,7 +190,7 @@ function PrefSection({ meta, value, onChange }) {
           }}>{LEVEL_LABEL[lv]}</button>
         ))}
       </div>
-      <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>{meta.levels[value]}</div>
+      <div style={{ fontSize: 12, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>{meta.levels[value]}</div>
     </div>
   );
 }
@@ -198,7 +198,7 @@ function PrefSection({ meta, value, onChange }) {
 function PreviewFrame({ label, children }) {
   return (
     <div style={{ marginTop: 12, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px" }}>
-      <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1, color: C.muted, textTransform: "uppercase", marginBottom: 10 }}>
+      <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted, textTransform: "uppercase", marginBottom: 10 }}>
         Vorschau · {label}
       </div>
       {children}
@@ -213,7 +213,7 @@ function AbrechnungPreview({ lvl, abr }) {
   return (
     <PreviewFrame label="Abrechnung">
       <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>gewertet</div>
+        <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>gewertet</div>
         <div style={{ fontFamily: MONO, fontWeight: 700, color: C.akzent, fontSize: 40, lineHeight: 1.1, textShadow: `0 0 24px ${C.akzent}55` }}>
           +{abr.total}
         </div>
@@ -244,7 +244,7 @@ function VorschauPreview({ lvl, proj }) {
   if (lvl === "aus") {
     return (
       <PreviewFrame label="Tippen">
-        <div style={{ fontSize: 12.5, color: C.muted, textAlign: "center", padding: "6px 0" }}>
+        <div style={{ fontSize: 13, color: C.muted, textAlign: "center", padding: "6px 0" }}>
           Keine Vorschau — du tippst blind.
         </div>
       </PreviewFrame>
@@ -262,7 +262,7 @@ function VorschauPreview({ lvl, proj }) {
         </span>
       </div>
       {lvl === "voll" && (
-        <div style={{ marginTop: 10, fontSize: 11.5, color: C.muted, lineHeight: 1.7 }}>
+        <div style={{ marginTop: 10, fontSize: 12, color: C.muted, lineHeight: 1.7 }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>Ergebnis-Nähe (roh)</span><span style={{ fontFamily: MONO }}>{proj.ergNaehe.toFixed(1)}</span>
           </div>
@@ -281,7 +281,7 @@ function VorschauPreview({ lvl, proj }) {
 function MiniChip({ children, tone }) {
   return (
     <span style={{
-      fontFamily: MONO, fontSize: 10.5, color: tone || C.muted,
+      fontFamily: MONO, fontSize: 11, color: tone || C.muted,
       border: `1px solid ${tone ? tone + "55" : C.line}`, borderRadius: 999, padding: "3px 8px",
     }}>{children}</span>
   );

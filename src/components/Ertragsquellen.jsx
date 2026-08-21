@@ -26,7 +26,7 @@ export default function Ertragsquellen({ tip, actual, snap, rules, stufe = "voll
       borderRadius: 14, padding: "14px 15px",
     }}>
       <div style={{
-        fontFamily: MONO, fontSize: 10, letterSpacing: 1.5, color: C.muted,
+        fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, color: C.muted,
         textTransform: "uppercase", marginBottom: 10,
       }}>
         Woher deine Punkte kamen
@@ -75,7 +75,7 @@ function Zeile({ p, zeigeHinweis }) {
     <div style={{ padding: "5px 0", opacity: istInfo ? 0.55 : 1 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
         <span style={{
-          flex: 1, minWidth: 0, fontSize: 12.5,
+          flex: 1, minWidth: 0, fontSize: 13,
           color: istInfo ? C.muted : C.text,
           textDecoration: istInfo ? "line-through" : "none",
         }}>{p.label}</span>
@@ -85,7 +85,7 @@ function Zeile({ p, zeigeHinweis }) {
         }}>{text}</span>
       </div>
       {zeigeHinweis && p.hinweis && (
-        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 1, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 1, lineHeight: 1.4 }}>
           {p.hinweis}
         </div>
       )}

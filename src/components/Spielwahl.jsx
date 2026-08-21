@@ -222,24 +222,24 @@ export default function Spielwahl() {
             background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12,
             padding: "10px 12px", marginBottom: 12,
           }}>
-            <div style={{ fontSize: 12.5, color: C.text, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: C.text, lineHeight: 1.5 }}>
               <strong style={{ color: C.mint }}>{stand.offen} tippbar</strong>
               {stand.zu > 0 && ` · ${stand.zu} kommen noch`}
               {stand.vorbei > 0 && ` · ${stand.vorbei} gelaufen`}
             </div>
             {stand.offen === 0 && naechste && (
-              <div style={{ fontSize: 11.5, color: C.sky, marginTop: 4, lineHeight: 1.45 }}>
+              <div style={{ fontSize: 12, color: C.sky, marginTop: 4, lineHeight: 1.45 }}>
                 Gerade ist nichts tippbar — das nächste Spiel öffnet am{" "}
                 {formatZeitpunkt(naechste.oeffnetAm)}. Bis dahin siehst du unten,
                 was als Nächstes ansteht.
               </div>
             )}
-            <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
               {beschreibeTippfenster(rules)}
             </div>
             {stand.zu > 0 && (
               <button onClick={() => setAlleZeigen((v) => !v)} style={{
-                marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, fontWeight: 700,
+                marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
                 background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
                 ...TAPZIEL, borderRadius: 999, padding: "5px 12px",
               }}>
@@ -250,7 +250,7 @@ export default function Spielwahl() {
         )}
 
         {teamFilter?.length > 0 && (
-          <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>
             Diese Runde ist beschränkt auf: {teamFilter.join(", ")}
           </div>
         )}
@@ -273,7 +273,7 @@ export default function Spielwahl() {
         {ladeFehler && (
           <div style={{
             background: `${C.akzent}0E`, border: `1px solid ${C.akzent}33`, borderRadius: 10,
-            padding: "10px 12px", fontSize: 11.5, color: C.text, lineHeight: 1.45,
+            padding: "10px 12px", fontSize: 12, color: C.text, lineHeight: 1.45,
           }}>
             Die Spiele konnten nicht geladen werden.
             <div style={{ fontFamily: MONO, color: C.muted, marginTop: 4 }}>{ladeFehler}</div>
@@ -320,23 +320,23 @@ export default function Spielwahl() {
                   background: `${C.coral}0E`, border: `1px solid ${C.coral}33`,
                   borderRadius: 10, padding: "8px 10px", marginBottom: 8,
                 }}>
-                  <div style={{ fontSize: 11.5, color: C.text, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: 12, color: C.text, lineHeight: 1.45 }}>
                     Spieltag noch nicht geöffnet — das Topspiel steht damit noch nicht fest.
                   </div>
-                  <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
                     Beim Öffnen wird der Spannungswert aus dem HEUTIGEN Tabellenstand
                     berechnet und eingefroren — danach unveränderlich, für alle gleich.
                   </div>
                   <button onClick={() => oeffneSpieltag(g)} disabled={oeffnet === g.key} style={{
                     marginTop: 7, cursor: oeffnet === g.key ? "default" : "pointer",
-                    fontFamily: "inherit", fontSize: 11.5, fontWeight: 700,
+                    fontFamily: "inherit", fontSize: 12, fontWeight: 700,
                     background: "transparent", color: C.coral, border: `1px solid ${C.coral}66`,
                     ...TAPZIEL, borderRadius: 999, padding: "5px 12px",
                   }}>
                     {oeffnet === g.key ? "öffnet …" : "Spieltag öffnen"}
                   </button>
                   {oeffnenFehler === g.key && (
-                    <div style={{ fontSize: 10.5, color: C.coral, marginTop: 5 }}>
+                    <div style={{ fontSize: 11, color: C.coral, marginTop: 5 }}>
                       Öffnen fehlgeschlagen — nur der Admin der Runde darf das, und nur angemeldet.
                     </div>
                   )}
@@ -348,7 +348,7 @@ export default function Spielwahl() {
                   background: `${C.akzent}0E`, border: `1px solid ${C.akzent}2E`,
                   borderRadius: 10, padding: "7px 10px", marginBottom: 8,
                 }}>
-                  <span style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Gewichte:</span>
+                  <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Gewichte:</span>
                   {belegung.belegt.filter((b) => b.gewicht !== 1).map((b) => (
                     <span key={b.gewicht} style={{
                       fontFamily: MONO, fontSize: 11, padding: "2px 7px", borderRadius: 999,
@@ -358,7 +358,7 @@ export default function Spielwahl() {
                       textDecoration: b.matchId ? "line-through" : "none",
                     }}>×{b.gewicht.toFixed(1)}</span>
                   ))}
-                  <span style={{ fontSize: 10.5, color: C.muted, marginLeft: "auto" }}>
+                  <span style={{ fontSize: 11, color: C.muted, marginLeft: "auto" }}>
                     {belegung.alleVergeben ? "alle vergeben" : `${belegung.frei.length} frei`}
                   </span>
                 </div>
@@ -398,7 +398,7 @@ function MatchRow({ match, status, tipped, gewicht, rules }) {
       padding: "12px 14px", opacity: open ? 1 : 0.55,
     }}>
       <div>
-        <div style={{ fontSize: 14, fontWeight: 700 }}>{match.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {match.away}</div>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>{match.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {match.away}</div>
         <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginTop: 3 }}>{timeFmt.format(new Date(match.kickoff))}</div>
         {/* Die eingefrorene Begründung mitliefern: ein Aufschlag ohne Grund
             sieht nach Willkür aus. Sie steht so im Snapshot, wie sie beim

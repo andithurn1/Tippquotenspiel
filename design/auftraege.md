@@ -32,30 +32,7 @@ Erlaubte Stände, und jeder verlangt einen Beleg:
 |---|---|---|---|
 | G1 | „F7 (Akzent, bisher Gold) soll LILA sein“ | ✅ | `theme.js`: `akzent: "#9A6BE8"`. Ton auf dasselbe Helligkeitsprofil gemessen wie das alte Gold (dunkler Text darauf 5,14 statt 5,26) — deshalb ohne Lesbarkeits-Umbau in 58 Dateien. Im Browser geprüft: `rgb(154,107,232)` |
 | G2 | „R2 (12 px) ist der bevorzugte Eckenradius“ | 🔨 | Token `--tqs-rund: 12px` liegt in `globals.css`. In den Screens **acht verschiedene Radien**, gezählt: 999 (127×), 12 (91×), 14 (58×), 10 (47×), 11 (23×), 18, 26 … |
-| G3 | „durchwegs die apple schrift. typ und formatierung“ | 🔨 | **Schriftart: erledigt.** `--tqs-schrift-familie` mit `-apple-system` zuerst, auf `body` gesetzt, Apples Glättung und Laufweite dazu; die 30 Kopien in den Komponenten sind durch eine gemeinsame Konstante ersetzt (jetzt 0). Im Browser geprüft. ⏳ **Offen: die Größen** — 1076 rohe Zahlen in 18 Abstufungen, Apples Leiter liegt als Token bereit. Siehe Entscheidung unten |
-| G4 | „die vom nutzer gewählten farben … in minimalistischen verzierungen“ | 🔨 | Fanfarben landen jetzt in eigenen Rollen `fan1–fan3` und lassen die Markenfarbe unangetastet — ein Test wacht darüber. Erste Verzierung: der Schein über der Karte. **Übergänge zwischen Fenstern fehlen noch** (hängt an B3) |
-| G5 | Erstkontakt: erster Start vs. Wiederkehrer | ⏳ | nichts gebaut |
-| G6 | Aufbau der Admin-Einstellungen | 👤 | will er einzeln durchsprechen — **auf ihn warten** |
-
-## Bewegung und Bausteine
-
-| Nr | Ansage | Stand | Beleg / was fehlt |
-|---|---|---|---|
-| B1 | „wenn was geklickt wird, dass dann das feld mehr leuchtet bis neues fenster lädt“ | 🔨 | `Aktion.jsx` ist gebaut — und wird an **genau einer** Stelle benutzt. Die Klassen `tqs-aktion`/`tqs-laedt`/`tqs-auf` kommen außerhalb der Musterseite **4×** vor |
-| B2 | Spickzettel mit den geteilten Werten für Canva und Code | ⏳ | am 20.08. zugesagt, **nicht gebaut** |
-| B3 | Bewegungsmuster M1…Mn auf `/stil` zum Antippen | ⏳ | am 20.08. zugesagt, **nicht gebaut** |
-
-## Struktur und Sprache
-
-| Nr | Ansage | Stand | Beleg / was fehlt |
-|---|---|---|---|
-| S1 | „Quoten-Auswertung ist der Standard bzw. meine Idee … das ist kein eigener Spielmodus“ | 🔨 | im Vokabular festgehalten; Oberfläche zeigt weiterhin drei „Modi“ |
-| S2 | Budget heißt „Budget mit festen Münzen jeden Spieltag“, *„finde ich blöder“* | 🔨 | Name vermerkt; in der Oberfläche steht noch „Wettbüro“ |
-| S3 | Name für die Form, wo man Stufen verteilt (`ranking` ist raus) | 👤 | Rückfrage steht, Andi hat noch nicht geantwortet |
-| S4 | Sollen sich die Joker-Formen ausschließen oder kombinierbar sein? | ❓ | `joker.modus` speichert **einen** Wert — kombinierbar geht heute nicht. Entscheidung fehlt |
-| S5 | „beim code ist übrigens extrem viel müll dabei“ → Bestandsaufnahme der Regel-Blöcke | ⏳ | 38 Blöcke, 180 Einstellwerte, keiner davon geprüft |
-
-## Aufbau der Spielerstellung — aus `StrukturTeil1.docx` (20.08.2026)
+| G3 | „durchwegs die apple schrift. typ und formatierung“ | ✅ | **Schrift:** `--tqs-schrift-familie` (`-apple-system` zuerst) auf `body`, Apples Glättung, Laufweite −0,16 px; 30 Kopien in Komponenten → 0. **Größen:** Andi wählte Weg A (echtes Apple-Maß) — 520 Stellen auf Apples Leiter gehoben, danach nur noch 11·12·13·15·16·17·20·22·28. Gemessen auf 375×812: kein Querlauf, kein Tippziel unter 40 px auf /erstellen, /tippen, /ranking |
 
 Gilt **nur bis zu den Wettbewerben**. Ab dort kommt die Komplettüberarbeitung
 später; die Sonderregeln je Wettbewerb sind ausdrücklich noch offen.

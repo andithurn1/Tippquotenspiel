@@ -122,14 +122,14 @@ export default function AuthBar() {
               nur noch als Nebensatz für später (mit eigenem Mailversand über
               Brevo werden die Vorlagen bearbeitbar, dann gibt es beides). */}
           <ol style={{
-            margin: "0 0 10px 0", paddingLeft: 20, fontSize: 12.5,
+            margin: "0 0 10px 0", paddingLeft: 20, fontSize: 13,
             color: C.text, lineHeight: 1.6,
           }}>
             <li>Mail öffnen (Absender: Supabase)</li>
             <li>Auf den Link <b>tippen und halten</b> → „Link kopieren“</li>
             <li>Hier unten einsetzen → <b>Los</b></li>
           </ol>
-          <div style={{ fontSize: 11.5, color: C.coral, marginBottom: 8, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12, color: C.coral, marginBottom: 8, lineHeight: 1.5 }}>
             ⚠️ Den Link <b>nicht antippen</b>. Er gilt nur einmal, und er öffnet
             Safari — dort wärst du angemeldet, in dieser App weiterhin nicht.
           </div>
@@ -163,7 +163,7 @@ export default function AuthBar() {
               bearbeitbar). Der Link ist also nicht die Ausweichlösung, sondern
               der Normalfall — deshalb die Anleitung zum Kopieren, und nicht
               nur der Hinweis, dass es auch ginge. */}
-          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
             <b style={{ color: C.text }}>Steht ein sechsstelliger Code in der Mail?</b> Dann
             tut der es hier genauso. Aktuell verschickt Supabase keinen — das ändert
             sich, sobald der eigene Mailversand steht.
@@ -184,18 +184,18 @@ export default function AuthBar() {
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
           placeholder="du@example.com" style={{
             flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: 12, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", outline: "none",
+            borderRadius: 12, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={!canSend} style={{
           cursor: canSend ? "pointer" : "default", background: canSend ? C.akzent : C.surface,
-          color: canSend ? C.ink : C.muted, fontWeight: 700, fontSize: 14,
+          color: canSend ? C.ink : C.muted, fontWeight: 700, fontSize: 15,
           border: `1px solid ${canSend ? C.akzent : C.line}`, borderRadius: 12, padding: "0 16px",
         }}>{state === "sending" ? "…" : "Link senden"}</button>
       </div>
       <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, cursor: "pointer" }}>
         <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
           style={{ marginTop: 2, accentColor: C.akzent }} />
-        <span style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.5 }}>
+        <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
           Ich habe die <Link href="/datenschutz" style={{ color: C.akzent }}>Datenschutzerklärung</Link> gelesen
           und bin mit der Verarbeitung meiner Daten für dieses Tippspiel einverstanden.
         </span>
@@ -225,18 +225,18 @@ function NameOnboarding() {
       borderRadius: 12, padding: "12px 14px",
     }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Willkommen! 👋 Wie sollen wir dich nennen?</div>
-      <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
         Dein Name im Leaderboard — jederzeit unter „Konto“ änderbar.
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <input autoFocus value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
           placeholder="Dein Name" style={{
             flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: 12, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", outline: "none",
+            borderRadius: 12, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={!name.trim() || state === "saving"} style={{
           cursor: name.trim() && state !== "saving" ? "pointer" : "default", background: C.akzent, color: "#FFFFFF",
-          fontWeight: 700, fontSize: 14, border: "none", borderRadius: 12, padding: "0 16px",
+          fontWeight: 700, fontSize: 15, border: "none", borderRadius: 12, padding: "0 16px",
         }}>{state === "saving" ? "…" : "Los"}</button>
       </div>
       {state === "error" && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{err}</div>}

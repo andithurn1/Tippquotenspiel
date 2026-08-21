@@ -1023,7 +1023,7 @@ export default function Tippabgabe({ matchId }) {
               </span>
               <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>Anpfiff {kickoffLabel}</span>
             </div>
-            <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>
+            <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>
               {SNAP.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {SNAP.away}
             </div>
 
@@ -1040,16 +1040,16 @@ export default function Tippabgabe({ matchId }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                   <span style={{ color: C.coral, fontSize: 13 }}>★</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: C.coral }}>Spiel des Spieltags</span>
-                  <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.coral, marginLeft: "auto" }}>
+                  <span style={{ fontFamily: MONO, fontSize: 12, color: C.coral, marginLeft: "auto" }}>
                     +{bigGameBonus.toFixed(1)}
                   </span>
                 </div>
                 {SNAP.bigGameGrund && (
-                  <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                     {SNAP.bigGameGrund}
                   </div>
                 )}
-                <div style={{ fontSize: 10.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                   Der Aufschlag liegt im selben Topf wie Derby und Wettbewerbs-Gewicht —
                   addiert, nicht multipliziert, und gedeckelt.
                 </div>
@@ -1092,7 +1092,7 @@ export default function Tippabgabe({ matchId }) {
                 und wunderte sich, wenn er sich später ändert. */}
             {scorer.enabled && SNAP.spielerPreiseOffen && (
               <div style={{
-                fontSize: 11.5, lineHeight: 1.45, color: C.muted, marginBottom: 10,
+                fontSize: 12, lineHeight: 1.45, color: C.muted, marginBottom: 10,
                 padding: "9px 11px", borderRadius: 10,
                 background: C.surface, border: `1px solid ${C.line}`,
               }}>
@@ -1132,7 +1132,7 @@ export default function Tippabgabe({ matchId }) {
                     )}
                   </div>
                 ))}
-                <p style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
                   Wie du sie auf die Mannschaften verteilst, ist dir überlassen — auch alle auf eine.
                   Steht deine Erstwahl ~1 h vor Anpfiff nicht in der Aufstellung, rückt der Backup nach.
                 </p>
@@ -1166,7 +1166,7 @@ export default function Tippabgabe({ matchId }) {
                     ))}
                   </div>
                 ))}
-                <p style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
                   Steht deine Erstwahl ~1 h vor Anpfiff nicht in der Aufstellung, rückt der Backup automatisch nach.
                 </p>
               </Section>
@@ -1195,18 +1195,18 @@ export default function Tippabgabe({ matchId }) {
                     die Runden-Schicht in CLAUDE.md warnt. */}
                 {proj.pointsOhneSchuetzen < proj.points && (
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 3 }}>
-                    <span style={{ fontSize: 11.5, color: C.muted }}>… ohne deine Torschützen</span>
-                    <span style={{ fontFamily: MONO, fontSize: 14, color: C.muted }}>+{proj.pointsOhneSchuetzen}</span>
+                    <span style={{ fontSize: 12, color: C.muted }}>… ohne deine Torschützen</span>
+                    <span style={{ fontFamily: MONO, fontSize: 15, color: C.muted }}>+{proj.pointsOhneSchuetzen}</span>
                   </div>
                 )}
                 <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 11, color: r.col, border: `1px solid ${r.col}55`, borderRadius: 999, padding: "2px 8px" }}>{r.label}</span>
-                  <span style={{ fontSize: 11.5, color: C.muted }}>
+                  <span style={{ fontSize: 12, color: C.muted }}>
                     {csQuote ? `Exakt-Quote ${csQuote.toFixed(1)}` : "seltenes Ergebnis"}
                   </span>
                 </div>
                 {prefs.vorschau === "voll" && (
-                  <div style={{ marginTop: 10, fontSize: 11.5, color: C.muted, lineHeight: 1.7 }}>
+                  <div style={{ marginTop: 10, fontSize: 12, color: C.muted, lineHeight: 1.7 }}>
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                       <span>Ergebnis-Nähe (roh)</span>
                       <span style={{ fontFamily: MONO }}>{proj.ergNaehe.toFixed(1)}</span>
@@ -1223,7 +1223,7 @@ export default function Tippabgabe({ matchId }) {
                     </div>
                   </div>
                 )}
-                <p style={{ fontSize: 10.5, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
                   Nur eine Aussicht auf dein getipptes Ergebnis — die echte Wertung richtet sich nach dem realen Ausgang.
                 </p>
               </div>
@@ -1255,7 +1255,7 @@ export default function Tippabgabe({ matchId }) {
                     (Abschnitt 4) — `narrenKontostand == null` (Budget aus/
                     kein Spieler) zeigt nichts an. */}
                 {!einsatzRegelwerk && narrenKontostand != null && (
-                  <div style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, marginTop: 4 }}>
+                  <div style={{ fontFamily: MONO, fontSize: 12, color: C.muted, marginTop: 4 }}>
                     🃏 <span style={{ color: C.akzent, fontWeight: 700 }}>{zahl(narrenKontostand)}</span> Narren
                   </div>
                 )}
@@ -1298,7 +1298,7 @@ export default function Tippabgabe({ matchId }) {
                         aktuellen Einsatz stimmen beide überein — und der
                         Balken wandert beim Schieben mit, was er soll. */}
                     <div style={{ marginTop: 12 }}>
-                      <div style={{ fontSize: 11.5, color: C.muted }}>
+                      <div style={{ fontSize: 12, color: C.muted }}>
                         {zahl(planung.verteilt + einsatzAktuell)} von {zahl(planung.budget)} Münzen für {muenzZeitraum} verteilt
                       </div>
                       <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>
@@ -1309,19 +1309,19 @@ export default function Tippabgabe({ matchId }) {
                       </div>
                     </div>
 
-                    <p style={{ fontSize: 10.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
+                    <p style={{ fontSize: 11, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
                       Auf dieses Spiel kannst du höchstens {zahl(planung.maxJetztSetzbar)} Münzen setzen.
                     </p>
 
                     {planung.noetigFuerOffene > 0 && (
-                      <p style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+                      <p style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
                         Noch {planung.offeneSpiele} {planung.offeneSpiele === 1 ? "Spiel" : "Spiele"} offen,
                         dafür brauchst du mindestens {zahl(planung.noetigFuerOffene)} Münzen.
                       </p>
                     )}
 
                     {planung.fehlbetrag > 0 && (
-                      <p style={{ fontSize: 10.5, color: C.coral, marginTop: 5, lineHeight: 1.45 }}>
+                      <p style={{ fontSize: 11, color: C.coral, marginTop: 5, lineHeight: 1.45 }}>
                         Dir fehlen {zahl(planung.fehlbetrag)} Münzen. Nimm auf einem anderen Spiel
                         zurück{skippenErlaubt ? " oder lass eines aus" : ""}.
                       </p>
@@ -1350,7 +1350,7 @@ export default function Tippabgabe({ matchId }) {
                         );
                       })}
                     </div>
-                    <p style={{ fontSize: 10.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
+                    <p style={{ fontSize: 11, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
                       Jedes Gewicht nur einmal pro Spieltag — vergebene sind ausgegraut. Übrige Spiele zählen ×1,0.
                     </p>
                   </>
@@ -1360,7 +1360,7 @@ export default function Tippabgabe({ matchId }) {
                       onClick={() => setJoker((v) => !v)} style={{
                         marginTop: 10, width: "100%",
                         cursor: gesperrt || (!joker && !jokerErlaubnis.erlaubt) ? "default" : "pointer",
-                        fontFamily: "inherit", fontSize: 13.5, fontWeight: 700,
+                        fontFamily: "inherit", fontSize: 13, fontWeight: 700,
                         background: joker ? `${C.akzent}22` : C.surface,
                         color: joker ? C.akzent : (!jokerErlaubnis.erlaubt ? "rgba(138,144,180,0.45)" : C.muted),
                         border: `1px solid ${joker ? C.akzent + "77" : C.line}`,
@@ -1371,13 +1371,13 @@ export default function Tippabgabe({ matchId }) {
                     {/* Die HERKUNFT nennen: „du setzt einen erspielten ein" ist
                         eine andere Aussage als „heute ist dein Joker-Spieltag". */}
                     <p style={{
-                      fontSize: 10.5, marginTop: 9, lineHeight: 1.45,
+                      fontSize: 11, marginTop: 9, lineHeight: 1.45,
                       color: jokerErlaubnis.quelle === "erspielt" ? C.mint
                         : jokerErlaubnis.erlaubt ? C.muted : C.coral,
                     }}>
                       {jokerErlaubnis.grund}
                     </p>
-                    <p style={{ fontSize: 10.5, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+                    <p style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
                       Zählt in beide Richtungen — auch ein Reinfall wiegt schwerer.
                       {jokerStand.zugeteilt.gesamt !== null && ` · ${standText(jokerStand)}`}
                     </p>
@@ -1418,7 +1418,7 @@ export default function Tippabgabe({ matchId }) {
                   </p>
                 )}
                 {duellZulaessig.length === 0 ? (
-                  <p style={{ fontSize: 11.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
+                  <p style={{ fontSize: 12, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
                     Aktuell kein zulässiges Ziel — z.&nbsp;B. weil niemand infrage kommt,
                     dein Immun-Fenster noch läuft oder du das Ziel-Limit schon erreicht hast.
                   </p>
@@ -1463,7 +1463,7 @@ export default function Tippabgabe({ matchId }) {
                         })}
                       </div>
                     )}
-                    <p style={{ fontSize: 10.5, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
+                    <p style={{ fontSize: 11, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
                       Wähle ein Ziel und eine Art — keine Auswahl heißt kein Duell an diesem Spieltag.
                     </p>
                   </>
@@ -1479,7 +1479,7 @@ export default function Tippabgabe({ matchId }) {
             {/* Snapshot-Hinweis + Absenden */}
             <div style={{
               marginTop: 20, display: "flex", gap: 8, alignItems: "flex-start",
-              fontSize: 11.5, color: C.muted, lineHeight: 1.5,
+              fontSize: 12, color: C.muted, lineHeight: 1.5,
             }}>
               <span style={{ color: C.akzent }}>◆</span>
               <span>Snapshot-Quote: alle Mitspieler bekommen dieselbe Quote, egal wann sie tippen. Gilt bis Anpfiff.</span>
@@ -1547,12 +1547,12 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
         borderRadius: 12, padding: "8px 10px",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-          <span style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
+          <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
           {quote != null && <span style={{ fontFamily: MONO, fontSize: 11, color: C.akzent }}>{quote.toFixed(1)}</span>}
         </div>
         <select value={value} onChange={(e) => onChange(e.target.value)} style={{
           width: "100%", background: "transparent", color: value ? C.text : C.muted,
-          border: "none", fontSize: 14, outline: "none", fontFamily: "inherit",
+          border: "none", fontSize: 15, outline: "none", fontFamily: "inherit",
         }}>
           {allowEmpty && <option value="" style={{ color: "#000" }}>– keiner –</option>}
           {Object.keys(players).map((p) => (
@@ -1603,10 +1603,10 @@ function Confirmation({
         width: 52, height: 52, borderRadius: 999, margin: "0 auto",
         background: `${C.mint}22`, border: `1px solid ${C.mint}66`,
         display: "flex", alignItems: "center", justifyContent: "center",
-        color: C.mint, fontSize: 26,
+        color: C.mint, fontSize: 28,
       }}>✓</div>
-      <div style={{ textAlign: "center", marginTop: 14, fontSize: 18, fontWeight: 700 }}>Tipp eingefroren</div>
-      <div style={{ textAlign: "center", fontSize: 12.5, color: C.muted, marginTop: 4 }}>
+      <div style={{ textAlign: "center", marginTop: 14, fontSize: 20, fontWeight: 700 }}>Tipp eingefroren</div>
+      <div style={{ textAlign: "center", fontSize: 13, color: C.muted, marginTop: 4 }}>
         Quote gesichert · gilt bis Anpfiff {kickoffLabel}
       </div>
       {hint && (
@@ -1622,7 +1622,7 @@ function Confirmation({
         <div style={{ height: 1, background: C.line, margin: "10px 0" }} />
         {teams.map((team, ti) => (
           <div key={team.side} style={{ marginBottom: 6 }}>
-            <div style={{ fontSize: 10.5, color: C.muted, fontFamily: MONO, letterSpacing: 1, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, color: C.muted, fontFamily: MONO, letterSpacing: 1, marginBottom: 4 }}>
               {team.name.toUpperCase()}
             </div>
             {picks[ti].map((p, pi) => (
@@ -1639,14 +1639,14 @@ function Confirmation({
 
       <button onClick={onEdit} style={{
         marginTop: 16, width: "100%", cursor: "pointer",
-        background: "transparent", color: C.text, fontWeight: 600, fontSize: 14,
+        background: "transparent", color: C.text, fontWeight: 600, fontSize: 15,
         border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 0",
       }}>
         Vor Anpfiff noch bearbeiten
       </button>
       <Link href="/ranking" style={{
         marginTop: 10, display: "block", textAlign: "center", textDecoration: "none",
-        color: C.ink, background: C.mint, fontWeight: 700, fontSize: 14,
+        color: C.ink, background: C.mint, fontWeight: 700, fontSize: 15,
         borderRadius: 14, padding: "12px 0",
       }}>
         Zum Leaderboard →

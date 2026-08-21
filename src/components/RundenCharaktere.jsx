@@ -17,7 +17,7 @@ export default function RundenCharaktere({ gewaehlt, onWaehlen, onCodeLaden, cod
 
   return (
     <div>
-      <p style={{ fontSize: 12.5, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 13, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
         Such dir aus, wie eure Runde sich anfühlen soll. Alles andere stellen wir
         passend ein — ändern kannst du es später jederzeit.
       </p>
@@ -39,7 +39,7 @@ export default function RundenCharaktere({ gewaehlt, onWaehlen, onCodeLaden, cod
                 <span style={{ fontSize: 16, fontWeight: 800, flex: 1 }}>{ch.label}</span>
                 {aktiv && (
                   <span style={{
-                    fontFamily: MONO, fontSize: 10, color: C.akzent, border: `1px solid ${C.akzent}66`,
+                    fontFamily: MONO, fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}66`,
                     borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
                   }}>gewählt</span>
                 )}
@@ -48,14 +48,14 @@ export default function RundenCharaktere({ gewaehlt, onWaehlen, onCodeLaden, cod
               <div style={{ fontSize: 13, color: C.akzent, marginTop: 5, fontStyle: "italic" }}>
                 {ch.tagline}
               </div>
-              <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 {ch.desc}
               </div>
 
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 9 }}>
                 {merkmale(ch).map((m) => (
                   <span key={m} style={{
-                    fontFamily: MONO, fontSize: 10, color: C.muted,
+                    fontFamily: MONO, fontSize: 11, color: C.muted,
                     border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 8px",
                   }}>{m}</span>
                 ))}
@@ -79,9 +79,9 @@ export default function RundenCharaktere({ gewaehlt, onWaehlen, onCodeLaden, cod
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <span style={{ fontSize: 20, lineHeight: 1 }}>🔗</span>
               <span style={{ fontSize: 16, fontWeight: 800, flex: 1 }}>…oder Code eingeben</span>
-              <span style={{ color: C.sky, fontSize: 14 }}>{codeOffen ? "▾" : "▸"}</span>
+              <span style={{ color: C.sky, fontSize: 15 }}>{codeOffen ? "▾" : "▸"}</span>
             </div>
-            <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
               Jemand hat euch seine Runden-Einstellung geschickt? Hier einsetzen —
               du bekommst genau dieselbe Runde und kannst sie trotzdem anpassen.
             </div>
@@ -93,19 +93,19 @@ export default function RundenCharaktere({ gewaehlt, onWaehlen, onCodeLaden, cod
                 placeholder="Code einsetzen" style={{
                   flex: 1, minWidth: 0, background: C.surface, color: C.text,
                   border: `1px solid ${C.line}`, borderRadius: 11, padding: "9px 11px",
-                  fontSize: 13.5, fontFamily: MONO, outline: "none",
+                  fontSize: 13, fontFamily: MONO, outline: "none",
                 }} />
               <button onClick={() => onCodeLaden(code)} disabled={!code.trim()} style={{
                 cursor: code.trim() ? "pointer" : "default",
                 background: code.trim() ? C.sky : C.surface,
                 color: code.trim() ? C.ink : C.muted,
-                fontWeight: 700, fontSize: 13.5, border: `1px solid ${code.trim() ? C.sky : C.line}`,
+                fontWeight: 700, fontSize: 13, border: `1px solid ${code.trim() ? C.sky : C.line}`,
                 borderRadius: 11, padding: "0 15px", fontFamily: "inherit",
               }}>Laden</button>
             </div>
           )}
           {codeFehler && (
-            <div style={{ fontSize: 11.5, color: C.coral, marginTop: 7 }}>{codeFehler}</div>
+            <div style={{ fontSize: 12, color: C.coral, marginTop: 7 }}>{codeFehler}</div>
           )}
         </div>
       </div>

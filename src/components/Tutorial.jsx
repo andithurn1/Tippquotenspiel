@@ -51,8 +51,8 @@ export default function Tutorial() {
         <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Tutorial
         </span>
-        <h1 style={{ fontSize: 24, fontWeight: 800, margin: "8px 0 6px" }}>Wie das Tippspiel funktioniert</h1>
-        <p style={{ fontSize: 13.5, color: C.muted, lineHeight: 1.6, marginTop: 0 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, margin: "8px 0 6px" }}>Wie das Tippspiel funktioniert</h1>
+        <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, marginTop: 0 }}>
           Tippe mutig — nicht nur richtig. Angetippte Wörter wie{" "}
           <Begriff term="quote" /> erklären sich selbst. Kein Echtgeld, nur Ehre.
         </p>
@@ -97,7 +97,7 @@ export default function Tutorial() {
           <Details summary="Beispiele: verschiedene Ausgänge im Vergleich">
             {ARCHE.map((r) => (
               <div key={r.key} style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
                   {r.label} <span style={{ color: C.muted, fontFamily: MONO, fontWeight: 400 }}>({r.real.home}:{r.real.away})</span>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -135,7 +135,7 @@ export default function Tutorial() {
           </p>
 
           <Details summary="Admin-Beispiel: wie der Favoriten-Malus wirkt">
-            <p style={{ fontSize: 11.5, color: C.muted, marginBottom: 8, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 12, color: C.muted, marginBottom: 8, lineHeight: 1.5 }}>
               Spielart „Außenseiter siegt" — dieselben Tipps, links ohne, rechts mit Favoriten-Malus:
             </p>
             {(() => {
@@ -143,8 +143,8 @@ export default function Tutorial() {
               const mal = ARCHE_MALUS.find((r) => r.key === "aussenseiter");
               return base.tips.map((t, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderTop: i === 0 ? "none" : `1px solid ${C.line}` }}>
-                  <span style={{ fontSize: 12.5 }}>{t.kind} <span style={{ fontFamily: MONO, color: C.muted }}>{t.tip.home}:{t.tip.away}</span></span>
-                  <span style={{ fontFamily: MONO, fontSize: 12.5 }}>
+                  <span style={{ fontSize: 13 }}>{t.kind} <span style={{ fontFamily: MONO, color: C.muted }}>{t.tip.home}:{t.tip.away}</span></span>
+                  <span style={{ fontFamily: MONO, fontSize: 13 }}>
                     <span style={{ color: C.muted }}>{t.points}</span>
                     <span style={{ color: C.muted }}> → </span>
                     <span style={{ color: mal.tips[i].points < t.points ? C.coral : C.text, fontWeight: 700 }}>{mal.tips[i].points}</span>
@@ -167,8 +167,8 @@ export default function Tutorial() {
   );
 }
 
-const ulStyle = { margin: "6px 0", paddingLeft: 18, fontSize: 13.5, lineHeight: 1.7, color: C.text };
-const pStyle = { fontSize: 13.5, color: C.text, lineHeight: 1.6, margin: "6px 0" };
+const ulStyle = { margin: "6px 0", paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: C.text };
+const pStyle = { fontSize: 13, color: C.text, lineHeight: 1.6, margin: "6px 0" };
 
 function Section({ n, title, children }) {
   return (
@@ -196,12 +196,12 @@ function Ebene({ tone, label, desc }) {
 }
 
 const exampleBox = { marginTop: 14, background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`, borderRadius: 14, padding: "12px 14px" };
-const exampleHead = { fontFamily: MONO, fontSize: 10.5, letterSpacing: 1, color: C.akzent, textTransform: "uppercase", marginBottom: 8 };
+const exampleHead = { fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.akzent, textTransform: "uppercase", marginBottom: 8 };
 
 function ExRow({ tip, note, pts, tone }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0" }}>
-      <span style={{ fontSize: 12.5 }}><span style={{ fontFamily: MONO, color: tone, fontWeight: 700 }}>{tip}</span> <span style={{ color: C.muted }}>· {note}</span></span>
+      <span style={{ fontSize: 13 }}><span style={{ fontFamily: MONO, color: tone, fontWeight: 700 }}>{tip}</span> <span style={{ color: C.muted }}>· {note}</span></span>
       <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: tone }}>{pts}</span>
     </div>
   );
@@ -209,7 +209,7 @@ function ExRow({ tip, note, pts, tone }) {
 
 function chip(best) {
   return {
-    fontFamily: MONO, fontSize: 11.5, padding: "4px 8px", borderRadius: 9,
+    fontFamily: MONO, fontSize: 12, padding: "4px 8px", borderRadius: 9,
     background: best ? `${C.akzent}18` : C.surface, color: best ? C.akzent : C.muted,
     border: `1px solid ${best ? C.akzent + "55" : C.line}`,
   };
@@ -232,7 +232,7 @@ function Details({ summary, children }) {
 function cta(bg, color) {
   return {
     flex: 1, textAlign: "center", textDecoration: "none", padding: "12px 0", borderRadius: 14,
-    background: bg, color: color ?? C.ink, fontWeight: 700, fontSize: 14,
+    background: bg, color: color ?? C.ink, fontWeight: 700, fontSize: 15,
     border: color ? `1px solid ${C.line}` : "none",
   };
 }

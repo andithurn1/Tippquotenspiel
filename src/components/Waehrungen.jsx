@@ -76,10 +76,10 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
             )}
           </div>
           {stand.aktiv === false ? (
-            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>{stand.grund}</div>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{stand.grund}</div>
           ) : (
             <>
-              <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>
                 {zahl(stand.verteilt)} von {zahl(stand.budget)} Münzen verteilt
               </div>
               <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>

@@ -49,10 +49,10 @@ export default function VariantenWahl({ rules, onWaehlen }) {
 
   return (
     <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
         Welche Variante willst du spielen?
       </div>
-      <p style={{ fontSize: 12.5, color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 13, color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.5 }}>
         Alles Weitere — Joker, Ereignisse, Regeln je Wettbewerb — kommt danach und
         gilt für beide.
       </p>
@@ -78,10 +78,10 @@ export default function VariantenWahl({ rules, onWaehlen }) {
                 WebkitTapHighlightColor: "transparent",
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 700, color: an ? C.akzent : C.text }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: an ? C.akzent : C.text }}>
                 {v.titel}
               </div>
-              <div style={{ fontSize: 11.5, marginTop: 3, lineHeight: 1.4 }}>{v.kurz}</div>
+              <div style={{ fontSize: 12, marginTop: 3, lineHeight: 1.4 }}>{v.kurz}</div>
             </button>
           );
         })}
@@ -90,7 +90,7 @@ export default function VariantenWahl({ rules, onWaehlen }) {
       {/* Der lange Satz nur zur GEWÄHLTEN Variante. Beide gleichzeitig zu
           erklären kostet auf dem Handy sechs Zeilen und wird überlesen —
           erklärt wird, was gerade gilt. */}
-      <p style={{ fontSize: 11.5, color: C.muted, marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12, color: C.muted, marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
         {VARIANTEN.find((v) => v.key === aktuell)?.lang}
       </p>
     </div>

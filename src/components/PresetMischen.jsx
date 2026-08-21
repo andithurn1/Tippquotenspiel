@@ -55,14 +55,14 @@ export default function PresetMischen({ onUebernehmen = null }) {
       </div>
 
       {relevante.length === 0 ? (
-        <div style={{ fontSize: 12.5, color: C.muted, marginTop: 16, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 13, color: C.muted, marginTop: 16, lineHeight: 1.5 }}>
           Diese beiden Regelwerke sind identisch — es gibt nichts zu mischen.
           Wähle zwei verschiedene Presets.
         </div>
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 18, marginBottom: 8 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 700, flex: 1 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>
               {relevante.length} Unterschied{relevante.length === 1 ? "" : "e"}
             </span>
             <MiniBtn onClick={() => setzeAlle("a")}>alles A</MiniBtn>
@@ -95,9 +95,9 @@ export default function PresetMischen({ onUebernehmen = null }) {
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40}
               placeholder={mix.name} style={{
                 width: "100%", background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: 12, padding: "10px 12px", fontSize: 13.5, fontFamily: "inherit", outline: "none",
+                borderRadius: 12, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none",
               }} />
-            <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5 }}>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>
               Name des Mixes — leer lassen für „{mix.name}".
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function PresetMischen({ onUebernehmen = null }) {
           {onUebernehmen && (
             <button onClick={() => onUebernehmen(mix)} style={{
               width: "100%", marginTop: 12, cursor: "pointer", background: C.akzent, color: C.ink,
-              fontWeight: 700, fontSize: 14.5, border: "none", borderRadius: 12, padding: "12px 0",
+              fontWeight: 700, fontSize: 15, border: "none", borderRadius: 12, padding: "12px 0",
               fontFamily: "inherit",
             }}>Mix als Regelwerk übernehmen</button>
           )}
@@ -118,7 +118,7 @@ export default function PresetMischen({ onUebernehmen = null }) {
 function PresetWahl({ label, value, onChange, tone }) {
   return (
     <label style={{ flex: 1, minWidth: 0 }}>
-      <span style={{ display: "block", fontFamily: MONO, fontSize: 10.5, color: tone, marginBottom: 4 }}>{label}</span>
+      <span style={{ display: "block", fontFamily: MONO, fontSize: 11, color: tone, marginBottom: 4 }}>{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} style={{
         width: "100%", background: C.surface, color: C.text, border: `1px solid ${tone}44`,
         borderRadius: 11, padding: "9px 10px", fontSize: 13, fontFamily: "inherit",
@@ -144,7 +144,7 @@ function Seite({ an, tone, label, onClick }) {
 function MiniBtn({ children, onClick }) {
   return (
     <button onClick={onClick} style={{
-      cursor: "pointer", fontFamily: MONO, fontSize: 10.5, color: C.muted,
+      cursor: "pointer", fontFamily: MONO, fontSize: 11, color: C.muted,
       background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 9px",
     }}>{children}</button>
   );

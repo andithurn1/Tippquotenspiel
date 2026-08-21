@@ -179,7 +179,7 @@ export default function Abrechnung() {
       <BackLink href="/menu" label="Menü" />
       <div style={{
         width: "100%", maxWidth: 400, display: "flex", justifyContent: "space-between",
-        alignItems: "center", marginBottom: 10, fontFamily: MONO, fontSize: 11.5, color: C.muted,
+        alignItems: "center", marginBottom: 10, fontFamily: MONO, fontSize: 12, color: C.muted,
       }}>
         <span>Runde: <span style={{ color: C.text }}>{roundName ?? "…"}</span></span>
         <Link href="/beitreten" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.mint, textDecoration: "none", paddingLeft: 10 }}>wechseln</Link>
@@ -284,7 +284,7 @@ export default function Abrechnung() {
               </div>
             )}
             {lvl !== "aus" && (
-              <p style={{ fontSize: 12.5, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 13, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
                 {wertungsSatz(me, gezeigt.result)}
               </p>
             )}
@@ -323,19 +323,19 @@ export default function Abrechnung() {
               </button>
             </div>
             {board == null ? (
-              <div style={{ fontSize: 12.5, color: C.muted, fontFamily: MONO, padding: "8px 0" }}>Tabelle lädt …</div>
+              <div style={{ fontSize: 13, color: C.muted, fontFamily: MONO, padding: "8px 0" }}>Tabelle lädt …</div>
             ) : shown.map((b, i) => (
               <div key={b.userId} style={{
                 display: "flex", alignItems: "center", gap: 10, padding: "7px 0",
                 borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
               }}>
                 <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 16 }}>{i + 1}</span>
-                <span style={{ flex: 1, fontSize: 14, color: b.userId === meId ? C.akzent : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
+                <span style={{ flex: 1, fontSize: 15, color: b.userId === meId ? C.akzent : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
                   {b.name}
                   {b.userId === meId && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● du</span>}
                 </span>
                 <span style={{
-                  fontFamily: MONO, fontSize: 14, fontVariantNumeric: "tabular-nums",
+                  fontFamily: MONO, fontSize: 15, fontVariantNumeric: "tabular-nums",
                   color: b.disp < 0 ? C.coral : C.text,
                 }}>
                   {b.disp > 0 && !fair ? "+" : ""}{b.disp}
@@ -347,7 +347,7 @@ export default function Abrechnung() {
           {/* Replay */}
           <button onClick={() => { setStage(0); setKey((k) => k + 1); }} style={{
             ...TAPZIEL, ...show(5), marginTop: 18, width: "100%", cursor: "pointer",
-            background: C.akzent, color: C.ink, fontWeight: 700, fontSize: 14,
+            background: C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
             border: "none", borderRadius: 14, padding: "13px 0",
           }}>
             Nochmal ansehen
@@ -400,7 +400,7 @@ function DistanceLadder({ active, wertung }) {
             boxShadow: s.hot && s.reached && active ? `0 0 16px ${C.coral}aa` : "none",
           }} />
           <div style={{
-            fontSize: 10.5, marginTop: 6, textAlign: "center",
+            fontSize: 11, marginTop: 6, textAlign: "center",
             color: s.reached ? (s.hot ? C.coral : C.muted) : C.muted,
             fontWeight: s.hot ? 700 : 400,
           }}>{s.label}</div>

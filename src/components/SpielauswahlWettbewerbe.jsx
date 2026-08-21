@@ -63,7 +63,7 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
       {/* Keine eigene Überschrift mehr: seit 08.08.2026 steht dieser Block in
           der aufgeklappten Zeile „Wettbewerbe" der Spielerstellung, die
           Überschrift stand dadurch zweimal übereinander. */}
-      <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
         Nichts ausgewählt = alles dabei. Eingrenzen für „nur aus dem Besten“ —
         etwa nur die Champions League ab dem Achtelfinale.
       </p>
@@ -93,12 +93,12 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
         marginTop: 9, background: C.ink2, border: `1px solid ${C.line}`,
         borderRadius: 11, padding: "9px 11px",
       }}>
-        <div style={{ fontSize: 12.5, color: uebrig.length === 0 ? C.coral : C.text }}>
+        <div style={{ fontSize: 13, color: uebrig.length === 0 ? C.coral : C.text }}>
           <strong style={{ fontFamily: MONO }}>{uebrig.length}</strong> von {alle.length} Spielen
           {uebrig.length === 0 && " — diese Auswahl lässt nichts übrig"}
         </div>
         {(gewaehltW.length > 0 || gewaehltP.length > 0) && (
-          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
             {VERKNUEPFUNG_HINWEIS}
           </div>
         )}
@@ -111,7 +111,7 @@ function Gruppe({ titel, children }) {
   return (
     <div style={{ marginBottom: 8 }}>
       <div style={{
-        fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.2, color: C.muted,
+        fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
         textTransform: "uppercase", marginBottom: 5,
       }}>{titel}</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{children}</div>
@@ -134,7 +134,7 @@ function Chip({ an, label, zusatz, onClick }) {
       border: `1px solid ${an ? C.mint + "66" : C.line}`,
     }}>
       <span style={{ fontWeight: 700 }}>{label}</span>
-      <span style={{ fontFamily: MONO, fontSize: 10, opacity: 0.75 }}>{zusatz}</span>
+      <span style={{ fontFamily: MONO, fontSize: 11, opacity: 0.75 }}>{zusatz}</span>
     </button>
   );
 }

@@ -54,13 +54,13 @@ export default function PresetRating({ rules }) {
             <div style={{ flex: 1, height: 7, borderRadius: 999, background: C.surface, overflow: "hidden" }}>
               <div style={{ width: `${(d.freq / MAX_FREQ) * 100}%`, height: "100%", background: d.key === "aussenseiter" ? C.coral : C.bar }} />
             </div>
-            <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, width: 34, textAlign: "right" }}>
+            <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 34, textAlign: "right" }}>
               {Math.round(d.freq * 100)}%
             </span>
           </div>
         ))}
       </div>
-      <p style={{ fontSize: 10.5, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
         Gerundete Richtwerte an realen Bundesliga-Saisons (Heim {Math.round(OUTCOME_SPLIT.heimsieg * 100)}% ·
         Remis {Math.round(OUTCOME_SPLIT.remis * 100)}% · Auswärts {Math.round(OUTCOME_SPLIT.auswaertssieg * 100)}%,
         ~{AVG_GOALS.toString().replace(".", ",")} Tore/Spiel) — kein exakter Datensatz.
@@ -74,9 +74,9 @@ export default function PresetRating({ rules }) {
 function Stat({ label, value, hint, tone }) {
   return (
     <div style={{ flex: 1, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10, padding: "8px 10px" }}>
-      <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
       <div style={{ fontFamily: MONO, fontSize: 16, fontWeight: 700, color: tone, marginTop: 2 }}>{value}</div>
-      <div style={{ fontSize: 9.5, color: C.muted, marginTop: 2, lineHeight: 1.3 }}>{hint}</div>
+      <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.3 }}>{hint}</div>
     </div>
   );
 }

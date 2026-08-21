@@ -47,7 +47,7 @@ export default function AufwandPanel({ rules, kontext }) {
 
       {/* Erst danach die Schätzung — ausdrücklich als solche markiert, nicht
           im Kleingedruckten. */}
-      <p style={{ fontSize: 11.5, color: C.text, marginTop: 12, marginBottom: 0, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12, color: C.text, marginTop: 12, marginBottom: 0, lineHeight: 1.5 }}>
         Etwa <strong style={{ color: farbe }}>{a.sekundenJeSpiel}</strong> Sekunden je Spiel
         <span style={{ color: C.muted }}> — geschätzt, nicht gemessen.</span>
       </p>
@@ -73,7 +73,7 @@ export default function AufwandPanel({ rules, kontext }) {
 function Stat({ label, value, tone }) {
   return (
     <div style={{ flex: 1, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10, padding: "8px 10px" }}>
-      <div style={{ fontSize: 9.5, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, lineHeight: 1.3 }}>
+      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, lineHeight: 1.3 }}>
         {label}
       </div>
       <div style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: tone ?? C.text, marginTop: 2 }}>

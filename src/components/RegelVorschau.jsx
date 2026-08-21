@@ -21,7 +21,7 @@ export default function RegelVorschau({ rules }) {
       <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
         Live-Vorschau · typische Spielarten
       </div>
-      <p style={{ fontSize: 10.5, color: C.muted, margin: "0 0 12px", lineHeight: 1.4 }}>
+      <p style={{ fontSize: 11, color: C.muted, margin: "0 0 12px", lineHeight: 1.4 }}>
         Punkte, die verschiedene nahe Tipps mit deinen aktuellen Reglern gäben. Dreh an
         k / Underdog-Boost / Favoriten-Malus und beobachte, wie sich die Spielarten spreizen.
         {jokerMax > 1 && (
@@ -35,7 +35,7 @@ export default function RegelVorschau({ rules }) {
           <div key={r.key}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
               <span style={{ fontSize: 13, fontWeight: 700 }}>{r.label}</span>
-              <span style={{ fontFamily: MONO, fontSize: 10.5, color: C.muted }}>
+              <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>
                 {r.real.home}:{r.real.away} · Sieger-Quote {r.winnerQuote}
               </span>
             </div>
@@ -49,7 +49,7 @@ export default function RegelVorschau({ rules }) {
                     border: `1px solid ${best ? C.akzent + "55" : C.line}`,
                   }}>
                     <span style={{ fontSize: 11, color: C.muted }}>{t.kind}</span>
-                    <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted }}>
+                    <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>
                       {t.tip.home}:{t.tip.away}
                     </span>
                     <span style={{
@@ -66,7 +66,7 @@ export default function RegelVorschau({ rules }) {
                 );
               })}
             </div>
-            <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>{r.hint}</div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>{r.hint}</div>
           </div>
         ))}
       </div>

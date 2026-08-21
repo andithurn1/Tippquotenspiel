@@ -25,7 +25,7 @@ export default function BackLink({ href = "/", label = "Übersicht" }) {
       <Link href={href} style={{
         display: "inline-flex", alignItems: "center", gap: 8,
         minHeight: 48, padding: "0 14px", marginLeft: -14, borderRadius: 12,
-        fontFamily: MONO, fontSize: 14, color: C.text, textDecoration: "none",
+        fontFamily: MONO, fontSize: 15, color: C.text, textDecoration: "none",
         WebkitTapHighlightColor: "transparent",
       }}>
         <span style={{ fontSize: 20, lineHeight: 1 }}>←</span> {label}

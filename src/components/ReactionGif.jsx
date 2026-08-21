@@ -42,7 +42,7 @@ export default function ReactionGif({ reaction, size = 120 }) {
         <>
           <div style={{ fontSize: size * 0.42, lineHeight: 1 }}>{reaction.emoji}</div>
           <div style={{
-            marginTop: 6, fontFamily: MONO, fontSize: 10, letterSpacing: 1,
+            marginTop: 6, fontFamily: MONO, fontSize: 11, letterSpacing: 1,
             color: reaction.tone, textTransform: "uppercase", textAlign: "center", padding: "0 6px",
           }}>{reaction.label}</div>
         </>

@@ -150,7 +150,7 @@ export default function Regelaenderungen() {
         <h1 style={{ fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
           Regeländerungen
         </h1>
-        <p style={{ fontSize: 12.5, color: C.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: C.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
           {beschreibeMitbestimmung(rules, { mitglieder: leute.length || null, aspektKeys: ASPEKT_KEYS })}
         </p>
 
@@ -215,7 +215,7 @@ export default function Regelaenderungen() {
                     {aspektDef?.hint}
                   </div>
 
-                  <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                     {laeuft
                       ? (frist != null ? `Läuft noch bis Spieltag ${frist}.` : "Läuft.")
                       : `Abgeschlossen: ${aus.angenommen ? "angenommen" : "abgelehnt"}.`}
@@ -230,13 +230,13 @@ export default function Regelaenderungen() {
                       {aus.ja} dafür · {aus.nein} dagegen ·{" "}
                       <span style={{ color: C.muted }}>{aus.abgegeben} von {aus.berechtigte}</span>
                       {aus.grund && (
-                        <div style={{ fontFamily: "inherit", fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                        <div style={{ fontFamily: "inherit", fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                           {aus.grund}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                    <div style={{ fontSize: 12, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                       Die Stimmen sind verdeckt und werden erst am Ende gezeigt —
                       bisher {aus.abgegeben} von {aus.berechtigte} abgegeben.
                     </div>
@@ -250,7 +250,7 @@ export default function Regelaenderungen() {
                           <button key={b.label} disabled={busy === antrag.id}
                             onClick={() => stimmen(antrag.id, b.ja)} style={{
                               flex: 1, cursor: busy === antrag.id ? "default" : "pointer",
-                              fontFamily: "inherit", fontSize: 12.5, fontWeight: 700, padding: "9px 6px",
+                              fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px 6px",
                               borderRadius: 11,
                               background: an ? `${C.akzent}22` : C.surface2, color: an ? C.akzent : C.muted,
                               border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -305,7 +305,7 @@ export default function Regelaenderungen() {
                         background: C.surface, border: `1px solid ${C.line}`,
                         borderRadius: 12, padding: "9px 12px",
                       }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 700 }}>{e.label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{e.label}</div>
                       <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{e.desc}</div>
                     </button>
                   ))}
@@ -316,7 +316,7 @@ export default function Regelaenderungen() {
             {/* Was ist bis heute wirklich wirksam geworden? */}
             <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 16, paddingTop: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Stand der Regeln</div>
-              <p style={{ fontSize: 11.5, color: C.muted, margin: "4px 0 0", lineHeight: 1.45 }}>
+              <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0", lineHeight: 1.45 }}>
                 {beschreibeBeschluesse(stand)}
                 {aktuellerSpieltag != null && ` Gerechnet für Spieltag ${aktuellerSpieltag}.`}
               </p>
@@ -327,7 +327,7 @@ export default function Regelaenderungen() {
               ))}
             </div>
 
-            <p style={{ fontSize: 10.5, color: C.muted, marginTop: 14, lineHeight: 1.45 }}>
+            <p style={{ fontSize: 11, color: C.muted, marginTop: 14, lineHeight: 1.45 }}>
               Die Wertung selbst rechnet noch mit dem Regelwerk, mit dem die Runde
               angelegt wurde — das Einhängen ist der letzte offene Schritt. Ein Beschluss
               wirkt nie rückwirkend: ein bereits abgegebener Tipp wird immer so gewertet,

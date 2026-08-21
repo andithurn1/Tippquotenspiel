@@ -224,13 +224,13 @@ export default function Historie() {
                   background: C.ink2, border: `1px solid ${r.holder.userId === meId ? C.akzent + "55" : C.line}`,
                   borderRadius: 14, padding: "11px 13px",
                 }}>
-                  <div style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+                  <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
                     {r.emoji} {r.label}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4, color: r.holder.userId === meId ? C.akzent : C.text }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4, color: r.holder.userId === meId ? C.akzent : C.text }}>
                     {r.holder.name}
                   </div>
-                  <div style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, marginTop: 1 }}>
+                  <div style={{ fontFamily: MONO, fontSize: 12, color: C.muted, marginTop: 1 }}>
                     {r.value} {r.einheit}
                   </div>
                 </div>
@@ -274,7 +274,7 @@ export default function Historie() {
                 );
               })}
             </div>
-            <div style={{ fontSize: 10.5, color: C.muted, marginBottom: 8 }}>{kritInfo.help}</div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{kritInfo.help}</div>
 
             {/* Plot */}
             <div style={{ background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 16, padding: "12px 12px 8px" }}>
@@ -282,7 +282,7 @@ export default function Historie() {
               {/* Legende */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 8 }}>
                 {series.players.map((p) => (
-                  <span key={p.userId} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: p.userId === meId ? C.text : C.muted }}>
+                  <span key={p.userId} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: p.userId === meId ? C.text : C.muted }}>
                     <span style={{ width: 10, height: 3, borderRadius: 2, background: p.color, display: "inline-block" }} />
                     {p.name}{p.userId === meId ? " (du)" : ""}
                   </span>

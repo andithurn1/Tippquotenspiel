@@ -27,15 +27,15 @@ export default function Konto() {
         <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Mein Konto
         </span>
-        <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>Konto & Daten</div>
+        <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>Konto & Daten</div>
 
         {isMock ? (
-          <p style={{ fontSize: 12.5, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
             Demo-Modus — ohne echtes Konto. Sobald Supabase verbunden ist, kannst du
             hier deinen Namen ändern, deine Daten exportieren oder dein Konto löschen.
           </p>
         ) : !user ? (
-          <p style={{ fontSize: 12.5, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
             Nicht angemeldet. Melde dich zuerst über die Übersicht an.
           </p>
         ) : (
@@ -49,7 +49,7 @@ export default function Konto() {
         )}
 
         <Divider />
-        <div style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.7 }}>
+        <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.7 }}>
           <Link href="/datenschutz" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "underline", paddingRight: 8 }}>Datenschutz</Link>
           {"  ·  "}
           <Link href="/impressum" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "underline", paddingLeft: 8 }}>Impressum</Link>
@@ -74,19 +74,19 @@ function NameCard({ user, updateName }) {
 
   return (
     <form onSubmit={save} style={{ marginTop: 18 }}>
-      <div style={{ fontSize: 14, fontWeight: 700 }}>Anzeigename</div>
-      <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 15, fontWeight: 700 }}>Anzeigename</div>
+      <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
         So erscheinst du im Leaderboard deiner Runden.
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <input value={name} maxLength={40} onChange={(e) => { setName(e.target.value); setState("idle"); }}
           placeholder="Dein Name" style={{
             flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: 12, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", outline: "none",
+            borderRadius: 12, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={state === "saving"} style={{
           cursor: state === "saving" ? "default" : "pointer", background: C.akzent, color: C.ink,
-          fontWeight: 700, fontSize: 14, border: "none", borderRadius: 12, padding: "0 16px",
+          fontWeight: 700, fontSize: 15, border: "none", borderRadius: 12, padding: "0 16px",
         }}>{state === "saving" ? "…" : "Speichern"}</button>
       </div>
       {state === "saved" && <div style={{ fontSize: 12, color: C.mint, marginTop: 6 }}>✓ Gespeichert.</div>}
@@ -116,8 +116,8 @@ function ExportCard({ exportMyData }) {
 
   return (
     <div>
-      <div style={{ fontSize: 14, fontWeight: 700 }}>Meine Daten exportieren</div>
-      <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 15, fontWeight: 700 }}>Meine Daten exportieren</div>
+      <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
         Lädt alles, was wir über dich gespeichert haben, als JSON-Datei herunter
         (Auskunftsrecht, Art. 15 DSGVO).
       </div>
@@ -146,8 +146,8 @@ function DeleteCard({ email, deleteAccount }) {
 
   return (
     <div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: C.coral }}>Konto löschen</div>
-      <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: C.coral }}>Konto löschen</div>
+      <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
         Entfernt dein Konto ({email}) mit allen Tipps und Mitgliedschaften
         unwiderruflich (Recht auf Löschung, Art. 17 DSGVO). Tippe zur Bestätigung
         <b style={{ color: C.text }}> LÖSCHEN</b> ins Feld.
@@ -156,17 +156,17 @@ function DeleteCard({ email, deleteAccount }) {
         <input value={confirm} onChange={(e) => setConfirm(e.target.value)}
           placeholder="LÖSCHEN" style={{
             flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: 12, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", outline: "none",
+            borderRadius: 12, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
           }} />
         <button onClick={run} disabled={!armed || state === "working"} style={{
           cursor: armed && state !== "working" ? "pointer" : "default",
           background: armed ? C.coral : C.surface, color: armed ? "#fff" : C.muted,
-          fontWeight: 700, fontSize: 14, border: `1px solid ${armed ? C.coral : C.line}`,
+          fontWeight: 700, fontSize: 15, border: `1px solid ${armed ? C.coral : C.line}`,
           borderRadius: 12, padding: "0 16px", fontFamily: "inherit",
         }}>{state === "working" ? "…" : "Löschen"}</button>
       </div>
       {state === "error" && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{err}</div>}
-      <div style={{ fontSize: 10.5, color: C.muted, marginTop: 10, lineHeight: 1.6 }}>
+      <div style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.6 }}>
         Wir speichern nur: {DATA_POINTS.map((d) => d.label).join(", ")}.
       </div>
     </div>
