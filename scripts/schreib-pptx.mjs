@@ -121,6 +121,70 @@ export function schreibeZip(pfad, dateienRoh) {
 }
 
 
+// ── Folien ANHÄNGEN ─────────────────────────────────────────
+// 🔴 Andis elf Folien sind voll (21.08.2026), der Tipp-Bereich braucht neue.
+//
+// Eine Folie hinzuzufügen heißt an FÜNF Stellen etwas eintragen — wer eine
+// vergisst, bekommt wieder ein „PowerPoint konnte die Datei nicht öffnen":
+//   1. `ppt/slides/slideN.xml`              die Folie selbst
+//   2. `ppt/slides/_rels/slideN.xml.rels`   ihr Verweis aufs Layout
+//   3. `[Content_Types].xml`                Override für die neue Datei
+//   4. `ppt/_rels/presentation.xml.rels`    Beziehung rIdX → slideN.xml
+//   5. `ppt/presentation.xml`               Eintrag in der `sldIdLst`
+//
+// ⚠️ Als Vorlage dient eine BESTEHENDE Folie aus derselben Datei. Damit
+// stimmen Layout-Verweis, Trennstrich und Maße automatisch — eine von Grund
+// auf gebaute Folie hätte nichts davon.
+export function haengeFolienAn(dateien, anzahl, vorlageNr = 3) {
+  const hol = (name) => dateien.find((d) => d.name === name);
+  const vorlage = hol(`ppt/slides/slide${vorlageNr}.xml`);
+  const vorlageRels = hol(`ppt/slides/_rels/slide${vorlageNr}.xml.rels`);
+  if (!vorlage || !vorlageRels) throw new Error(`Vorlagenfolie ${vorlageNr} fehlt.`);
+
+  // Ein leeres Gerüst: alles zwischen den Formen weg, Trennstrich behalten.
+  // Der Trennstrich ist ein `p:cxnSp` und steht in Andis Folien schon drin.
+  const roh = vorlage.daten.toString("utf8");
+  const anfang = roh.indexOf("</p:grpSpPr>") + "</p:grpSpPr>".length;
+  const ende = roh.indexOf("</p:spTree>");
+  const strich = roh.slice(anfang, ende).match(/<p:cxnSp>[\s\S]*?<\/p:cxnSp>/);
+  const leer = roh.slice(0, anfang) + (strich ? strich[0] : "") + roh.slice(ende);
+
+  const praesentation = hol("ppt/presentation.xml");
+  const praesRels = hol("ppt/_rels/presentation.xml.rels");
+  const typen = hol("[Content_Types].xml");
+  let praesXml = praesentation.daten.toString("utf8");
+  let relsXml = praesRels.daten.toString("utf8");
+  let typenXml = typen.daten.toString("utf8");
+
+  // Höchste vorhandene Nummern, damit nichts kollidiert.
+  const vorhandene = dateien
+    .map((d) => d.name.match(/^ppt\/slides\/slide(\d+)\.xml$/))
+    .filter(Boolean).map((m) => Number(m[1]));
+  let naechsteFolie = Math.max(...vorhandene) + 1;
+  let naechsteR = Math.max(...[...relsXml.matchAll(/Id="rId(\d+)"/g)].map((m) => Number(m[1]))) + 1;
+  let naechsteSldId = Math.max(...[...praesXml.matchAll(/<p:sldId id="(\d+)"/g)].map((m) => Number(m[1]))) + 1;
+
+  const neue = [];
+  for (let i = 0; i < anzahl; i++) {
+    const nr = naechsteFolie + i;
+    const rId = `rId${naechsteR + i}`;
+    dateien.push({ name: `ppt/slides/slide${nr}.xml`, daten: Buffer.from(leer, "utf8") });
+    dateien.push({ name: `ppt/slides/_rels/slide${nr}.xml.rels`, daten: Buffer.from(vorlageRels.daten) });
+    typenXml = typenXml.replace("</Types>",
+      `<Override PartName="/ppt/slides/slide${nr}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/></Types>`);
+    relsXml = relsXml.replace("</Relationships>",
+      `<Relationship Id="${rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${nr}.xml"/></Relationships>`);
+    praesXml = praesXml.replace("</p:sldIdLst>",
+      `<p:sldId id="${naechsteSldId + i}" r:id="${rId}"/></p:sldIdLst>`);
+    neue.push(nr);
+  }
+
+  praesentation.daten = Buffer.from(praesXml, "utf8");
+  praesRels.daten = Buffer.from(relsXml, "utf8");
+  typen.daten = Buffer.from(typenXml, "utf8");
+  return neue;
+}
+
 // 🔴 EMU MÜSSEN GANZE ZAHLEN SEIN. `2.2 * 360000` ergibt in JavaScript
 // 792000.0000000001, und PowerPoint lehnt die ganze Datei ab — ohne zu sagen,
 // warum: „PowerPoint konnte die Datei nicht öffnen." Nichts deutet auf eine

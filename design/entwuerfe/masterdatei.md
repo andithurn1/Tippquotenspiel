@@ -80,6 +80,21 @@ Berechtigt — die Voreinstellung gilt also ohne Beschriftung:
 
 ---
 
+## 🔴 ZWEI Dateien — die Ebenen sind getrennt (Andi, 21.08.2026)
+
+*„mach ne separate PowerPoint, wir trennen die Ebenen Tippfeld und
+Admin-Spielerstellung."*
+
+| Datei | Ebene |
+|---|---|
+| `Quotentippen.pptx` | Andis Original — **nie überschreiben** |
+| `Quotentippen-Vorschlag.pptx` | adminseitige Spielerstellung |
+| `Quotentippen-Tippen.pptx` | Tippeingabe und Runden-Übersicht |
+
+Beide Vorschlags-Dateien werden aus dem Original erzeugt (`scripts/`), damit
+Thema, Layout, Folienmaß und Trennstrich stimmen. ⚠️ Wer sie neu erzeugt,
+überschreibt Andis Änderungen darin — vorher fragen.
+
 ## Stand der Datei
 
 | Folie | Inhalt |
