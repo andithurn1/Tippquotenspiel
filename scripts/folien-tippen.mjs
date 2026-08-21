@@ -78,9 +78,23 @@ const FOLIEN = [
       "was genau dieses Ergebnis zahlt, groß und ohne Rechnen",
     ], 1.5 * CM));
     teile.push(K(l, L_X, L_W, [
-      "AUFTRAG: Wie groß ist die Matrix?",
-      "0–5 Tore je Seite sind 36 Felder — auf dem Handy sehr klein. Ausschnitt um den Tipp herum, oder alles mit Wischen?",
-    ], 2.4 * CM, "auftrag", 1100));
+      "Größe der Matrix — umschaltbar",
+      "automatisch · automatisch+ · bis 3 · 4 · 5 · 6 · 8 · 10 Tore",
+    ], 1.6 * CM));
+    // 🔴 Gemessen am 21.08.2026, statt geschätzt: ein festes 0–5-Quadrat (36
+    // Felder) deckt beim extremen Favoriten nur 87 % ab — die automatische
+    // Anpassung je Seite schafft 99 % mit 27 Feldern. Ein Quadrat ist der
+    // schlechteste Zuschnitt, weil die Torerwartung beider Seiten auseinander
+    // liegt.
+    teile.push(T(l, L_X, L_W, [
+      "Automatisch heißt: je Seite so weit, wie das SPIEL es hergibt. Ein festes "
+      + "0–5-Quadrat (36 Felder) deckt beim extremen Favoriten nur 87 % ab, die "
+      + "automatische Anpassung 99 % mit 27 Feldern.",
+    ], 1.8 * CM));
+    teile.push(K(l, L_X, L_W, [
+      "Sammelzeile für den Rest",
+      "„7 weitere Ergebnisse“ — sonst sieht ein fehlendes Feld wie ein Fehler aus",
+    ], 1.6 * CM));
     teile.push(K(l, L_X, L_W, [
       "AUFTRAG: Was zeigt ein Feld?",
       "Nur die Punktzahl — oder auch die Wahrscheinlichkeit? Beides ist vorhanden.",
@@ -123,6 +137,17 @@ const FOLIEN = [
       "Zwei Summen nebeneinander",
       "ohne Schützen: 340 Pkt  ·  mit allen: 520 Pkt",
     ], 1.6 * CM));
+    // 🔴 Andis Idee vom 21.08.2026: ein KOMBI-Bonus, wenn Ergebnis UND
+    // Torschütze aufgehen. Heute addieren sich beide Teile nur — das
+    // Zusammentreffen selbst wird nicht belohnt, obwohl es das Seltenere ist.
+    teile.push(K(l, L_X, L_W, [
+      "Kombi-Bonus",
+      "extra, wenn Ergebnis UND Torschütze stimmen — nicht nur die Summe beider",
+    ], 1.6 * CM));
+    teile.push(K(l, L_X, L_W, [
+      "AUFTRAG: Wie stark ist der Kombi-Bonus?",
+      "Und zählt er je getroffenem Schützen oder einmal? Zwei Schützen plus Ergebnis wären sonst schnell das Vielfache eines normalen Treffers.",
+    ], 2.6 * CM, "auftrag", 1100));
     teile.push(K(l, L_X, L_W, [
       "AUFTRAG: Welche Zahl steht groß?",
       "Die sichere oder die mögliche? Bisher stand die mögliche allein da — 62 % davon hingen an getroffenen Schützen, ohne dass es jemand sah.",

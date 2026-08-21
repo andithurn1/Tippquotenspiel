@@ -121,6 +121,17 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | ATE4 | In der Bibliothek die **beliebtesten Creator-Codes** auswählen | ⏳ | Braucht Beliebtheit und Urheber je Eintrag — hängt mit PP1/PP2 zusammen |
 | ATE5 | Anzeigen, welcher Code zuletzt geladen wurde | ✅ | `geladeneCodes` je Ebene, Anzeige unter dem Feld. **Ein Gesamt-Code leert die Merkliste** — Andis Regel vom 21.08.2026, an beiden Ladewegen umgesetzt |
 
+## Tipp-Oberfläche (21.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| TI1 | Ergebnis-Matrix mit **direkter Punktanzeige** je Feld | ⏳ | Die Matrix liegt als `snapshot.correctScore` vor, die Punkte je Feld sind rechenbar |
+| TI2 | **Viele Stufen** für die Matrixgröße, bis 10 | ⏳ | Vorschlag in der Folie: automatisch · automatisch+ · 3 · 4 · 5 · 6 · 8 · 10 |
+| TI3 | Je Spiel anpassen, beim klaren Außenseiter dessen hohe Ergebnisse weglassen | ⏳ | 🔴 **Gemessen:** die schwache Seite braucht über 5 Tore **0,00 %**, die starke aber **12,95 %** — die Matrix muss ASYMMETRISCH sein, nicht kleiner. Ein festes 0–5-Quadrat deckt beim extremen Favoriten nur 87 % ab, die automatische Anpassung 99 % mit 27 statt 36 Feldern |
+| TI4 | Vorschau: welches nahe Ergebnis wie viel zahlt | 🔨 | `nearResults.js` rechnet es, die Anzeige als Liste fehlt |
+| TI5 | Sichere gegen mögliche Punkte trennen | 🔨 | `projectTip` liefert beide (`pointsOhneSchuetzen`), gezeigt wird bisher nur eine |
+| TI6 | **Kombi-Bonus, wenn Ergebnis UND Torschütze aufgehen** | ⏳ | Neu. Als B16 im Modifikatoren-Katalog ausgearbeitet. Heute addieren sich beide Teile nur — das Zusammentreffen wird nicht belohnt, obwohl es das Seltenere ist |
+
 ## Betrieb
 
 | Nr | Ansage | Stand | Beleg / was fehlt |

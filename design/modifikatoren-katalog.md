@@ -337,6 +337,34 @@ Wie `bigGame`, nur mit der Tabelle statt der Quoten-Spannung.
 
 ---
 
+
+## B16 · Kombi-Bonus: Ergebnis UND Torschütze
+
+**Andis Idee vom 21.08.2026:** *„eigentlich müssen wir ja nen Kombi-Bonus bzw.
+Modifikator nehmen, wenn ausgerechnet der Torschütze trifft und die Wette auch
+noch aufgeht."*
+
+🔴 **Heute addieren sich beide Teile nur.** Ergebnis richtig gibt Punkte,
+Torschütze getroffen gibt Punkte — das ZUSAMMENTREFFEN selbst wird nicht
+belohnt, obwohl es das viel Seltenere ist. Zwei Ereignisse, die einzeln je 20 %
+wahrscheinlich sind, treffen zusammen nur in 4 % der Fälle zu; die Wertung
+behandelt das aber wie 20 % plus 20 %.
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `stufe` | Tendenz / Abstand / Exakt | Exakt | Wie genau das Ergebnis stimmen muss, damit die Kombi zählt |
+| `jeSchuetze` | an/aus | aus | Zählt der Bonus je getroffenem Schützen oder einmal? |
+| `mindestSchuetzen` | 1 … 4 | 1 | Wie viele Namen treffen müssen |
+
+⚠️ **`jeSchuetze` ist die gefährliche Stellschraube.** Zwei Schützen plus
+exaktes Ergebnis wären sonst schnell das Vielfache eines normalen Treffers —
+und das trifft ausgerechnet den, der ohnehin schon alles richtig hatte.
+
+⚠️ **Der Bonus liegt vollständig im „möglichen“ Teil der Vorschau**, nie im
+sicheren. Er verstärkt damit genau die Zahl, die heute allein groß auf dem
+Bildschirm steht — die Trennung der beiden Summen wird dadurch wichtiger, nicht
+unwichtiger.
+
 ## Was hier NICHT steht
 
 Die 15 bereits gebauten Modifikatoren aus Teil A haben ihre Regler schon — sie
