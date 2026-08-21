@@ -7,30 +7,44 @@ Bildschirme; gelesen wird sie mit
 node scripts/lies-pptx.mjs "C:\Users\andit\OneDrive\Dokumente\Quotentippen.pptx"
 ```
 
-🔴 **Der Leser wertet die ANORDNUNG aus, nicht nur den Text.** Bei einer Folie,
-auf der die Lage die Aussage trägt, wäre eine reine Textliste die halbe
-Information.
+🔴 **Der Leser wertet die ANORDNUNG und die FARBE aus, nicht nur den Text.** Bei
+Folien, auf denen die Lage die Aussage trägt, wäre eine reine Textliste die
+halbe Information.
 
 ---
 
-## Was der Leser versteht
+## 🟠 Orange = Auftrag
+
+**Andis Ansage vom 21.08.2026:** *„solche Funktionsweisen schreib ich ab jetzt
+in ne orangene Box für dich zur Umsetzung."*
+
+Ein orange gefüllter Kasten ist damit kein Aufbau-Element, sondern eine
+**Anweisung**. Der Leser markiert ihn im Fließtext mit 🟠 und listet alle am
+Ende der Folie noch einmal gesammelt — verstreut zwischen dreißig Kästen wird
+sonst einer übersehen.
+
+⚠️ **Erkannt wird am Farbton, nicht am Hexwert.** Andis Orange kommt aus dem
+Office-Thema (`accent2` = `#E97132`), aber ein selbst gemischtes Orange meint
+dasselbe. Geprüft gegen elf Farben: `E97132`, `FFA500`, `ED7D31`, `F4B183`,
+`C55A11` gelten als Auftrag; Rot, Gelb, Blau, Grün, Grau und Weiß nicht.
+**Rot ist bewusst draußen** — eine rote Warnung soll kein Auftrag sein.
+
+---
+
+## Was der Leser sonst versteht
 
 | Auf der Folie | Wird gelesen als |
 |---|---|
-| **senkrechter Strich** | Spaltengrenze. Links der Bildschirm, rechts das Fenster, das sich öffnet. **Mehrere Striche = mehrere Fenster** |
+| **senkrechter Strich** | Spaltengrenze. Spalte 1 ist der Bildschirm, jede weitere ein Fenster, das sich öffnet. **Mehrere Striche = mehrere Fenster** |
 | **Lage eines Kastens** | Reihenfolge von oben nach unten, je Spalte getrennt |
-| **Pfeil** | „dieses Element öffnet jenes Fenster". Beide Enden werden dem nächstliegenden Kasten zugeordnet (bis 2 cm Abstand) |
+| **Pfeil** | „dieses Element öffnet jenes Fenster". Beide Enden werden dem nächstliegenden Kasten zugeordnet (bis 2 cm) |
 | **mehrzeiliger Kasten** | bleibt mehrzeilig, mit `⏎` getrennt |
-
-⚠️ **Reiner Abstand ohne Strich reicht NICHT.** Andi arbeitet teils mit
-Abstand statt Trennstrich — ein Abstand ist für den Leser aber nicht von einem
-Absatz zu unterscheiden. **Wo ein neues Fenster anfängt, gehört ein Strich
-hin.**
 
 ## Was er NICHT sieht
 
-- **Farben und Rahmen.** Ein rot umrandeter Kasten sieht aus wie jeder andere.
-  Wenn Farbe etwas bedeutet, muss es im Text stehen.
+- **Reiner Abstand ohne Strich.** Ein Abstand ist nicht von einem Absatz zu
+  unterscheiden. **Wo ein neues Fenster anfängt, gehört ein Strich hin.**
+- **Andere Farben als Orange.** Nur Orange trägt Bedeutung.
 - **Gruppierungen.** Zwei Kästen übereinander sind zwei Kästen, kein Block.
 - **Stillschweigende Auslassungen.** Siehe unten.
 
@@ -38,12 +52,11 @@ hin.**
 
 ## 🔴 Wiederholende Blöcke weglassen — ja, aber SAGEN
 
-Andis Frage vom 21.08.2026: *„Verstehst du immer, wenn ich die wiederholenden
-Blöcke weglasse, wie bei den Preset-Auswahlen oder Ligen und Teams?"*
+Andis Frage: *„Verstehst du immer, wenn ich die wiederholenden Blöcke weglasse,
+wie bei den Preset-Auswahlen oder Ligen und Teams?"*
 
-**Wenn er es hinschreibt: ja. Wenn er es still weglässt: nein.**
-
-Zwei Beispiele aus seiner eigenen Datei, beide verstanden — weil sie es sagen:
+**Wenn er es hinschreibt: ja. Wenn er es still weglässt: nein.** Zwei Beispiele
+aus seiner Datei, beide angekommen — weil sie es sagen:
 
 ```
 „Presets wie Klassisch und fair et. Wie davor"
@@ -51,29 +64,29 @@ Zwei Beispiele aus seiner eigenen Datei, beide verstanden — weil sie es sagen:
 ```
 
 Ein leerer Bereich ist dagegen nicht von „hier kommt nichts" zu unterscheiden.
-Es genügt ein Wort im Kasten:
+Ein Wort im Kasten genügt: `… wie davor` · `… wie bei X` · `…` allein.
 
-| Kürzel | heißt |
-|---|---|
-| `… wie davor` | derselbe Block wie oben |
-| `… wie bei X` | derselbe Block wie in X |
-| `…` allein | die Aufzählung geht gleichförmig weiter |
+## Keine Folientitel nötig
 
-## Der Folientitel
+**Andi am 21.08.2026:** *„ich werde das nicht bei jedem einzigen Slide
+schreiben, weil alles was erstmal kommt die adminseitige Spielerstellung ist."*
 
-**Oben links den Namen des Bildschirms** (`erstellen`, `tippen`, `hub`, `rad`).
-Ohne ihn muss aus dem Inhalt geschlossen werden, um welchen Screen es geht —
-bei elf Folien wird das schnell falsch.
+Berechtigt — die Voreinstellung gilt also ohne Beschriftung:
+
+- **Spalte 1** ist die adminseitige **Spielerstellung**
+- **weitere Spalten** sind **Bibliotheken** (Teilbibliothek Joker,
+  Betippungsauswahl-Bibliothek …)
+- ⛔ **Nichts hiervon betrifft das Tippen.** Wenn doch, sagt Andi es.
 
 ---
 
-## Stand der Datei (21.08.2026)
+## Stand der Datei
 
 | Folie | Inhalt |
 |---|---|
 | 1 | Spiel erstellen · rechts: Bibliothek/Gamemode mit Suche, Filter, Bewertung |
 | 2 | Wettbewerbe: Bundesliga, 2. Bundesliga …, darin „alle" und einzelne Vereine |
-| 3–11 | leer |
+| 3 ff. | **in Arbeit** — als Nächstes die Teilbibliothek „Betippungsauswahl": wie die Varianten vorgestellt werden und welche Kurzbeschreibung dazu steht |
 
 ## Reihenfolge der Arbeit — Andis Ansage
 
@@ -84,6 +97,3 @@ bei elf Folien wird das schnell falsch.
 jeden Aufbau; wo ein Regler sitzt, entscheidet die Masterdatei. Wer vorher
 einsortiert, räumt zweimal — genau das ist am 21.08. beim Tabellen-Bonus
 passiert.
-
-⚠️ **Und es geht ausschließlich um „Spiel erstellen"**, bis Andi etwas anderes
-sagt.

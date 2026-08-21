@@ -63,8 +63,65 @@ const entschaerfe = (t) => t
 
 const EMU_PRO_CM = 360000;
 
+// ── Farben ──────────────────────────────────────────────────
+// 🔴 Andi am 21.08.2026: „solche Funktionsweisen schreib ich ab jetzt in ne
+// orangene Box für dich zur Umsetzung."
+//
+// Damit trägt die FARBE eine Bedeutung, und der Leser muss sie sehen — vorher
+// stand in `masterdatei.md` ausdrücklich das Gegenteil („Farben sieht er
+// nicht"). Diese Zeile ist damit hinfällig.
+//
+// ⚠️ Erkannt wird am FARBTON, nicht am exakten Wert. Andis Orange kommt aus
+// dem Office-Thema (`accent2` = #E97132), aber ein von Hand gewähltes Orange
+// hat einen anderen Hexwert und meint dasselbe. Ein Vergleich auf Gleichheit
+// würde bei der ersten selbst gemischten Farbe stumm danebengreifen.
+function themaFarben(eintraege) {
+  const karte = new Map();
+  const name = [...eintraege.keys()].find((k) => /^ppt\/theme\/theme\d+\.xml$/.test(k));
+  if (!name) return karte;
+  const xml = eintraege.get(name)();
+  for (const m of xml.matchAll(/<a:(accent\d|dk1|dk2|lt1|lt2)>[\s\S]*?<a:srgbClr val="([0-9A-Fa-f]{6})"/g)) {
+    karte.set(m[1], m[2].toUpperCase());
+  }
+  return karte;
+}
+
+function istOrange(hex) {
+  if (!/^[0-9A-F]{6}$/i.test(hex || "")) return false;
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  if (d < 0.15) return false;                 // zu grau
+  let ton = 0;
+  if (max === r) ton = 60 * (((g - b) / d) % 6);
+  else if (max === g) ton = 60 * ((b - r) / d + 2);
+  else ton = 60 * ((r - g) / d + 4);
+  if (ton < 0) ton += 360;
+  const helligkeit = (max + min) / 2;
+  // 15°–50° deckt Orange bis dunkles Gelborange ab; Rot (<15°) und Gelb (>50°)
+  // bleiben draußen, damit eine rote Warnung nicht als Auftrag gelesen wird.
+  return ton >= 15 && ton <= 50 && helligkeit > 0.2 && helligkeit < 0.85;
+}
+
+// Füllfarbe einer Form. Nur die ERSTE `solidFill` in `<p:spPr>` zählt — was
+// danach kommt, gehört zum Text oder zur Linie.
+function fuellfarbe(block, thema) {
+  const spPr = block.match(/<p:spPr[\s\S]*?<\/p:spPr>/);
+  const bereich = spPr ? spPr[0] : block;
+  const fill = bereich.match(/<a:solidFill>[\s\S]*?<\/a:solidFill>/);
+  if (!fill) return null;
+  const srgb = fill[0].match(/<a:srgbClr val="([0-9A-Fa-f]{6})"/);
+  if (srgb) return srgb[1].toUpperCase();
+  const schema = fill[0].match(/<a:schemeClr val="([a-z0-9]+)"/);
+  if (schema) return thema.get(schema[1]) ?? null;
+  return null;
+}
+
 // ── Ein Kasten (Form) je `<p:sp>` ───────────────────────────
-function formen(xml) {
+function formen(xml, thema) {
   const out = [];
   for (const m of xml.matchAll(/<p:sp>[\s\S]*?<\/p:sp>/g)) {
     const block = m[0];
@@ -78,12 +135,15 @@ function formen(xml) {
     if (!zeilen.length) continue;
     const off = block.match(/<a:off x="(-?\d+)" y="(-?\d+)"\/>/);
     const ext = block.match(/<a:ext cx="(\d+)" cy="(\d+)"\/>/);
+    const farbe = fuellfarbe(block, thema);
     out.push({
       text: zeilen,
       x: off ? Number(off[1]) : 0,
       y: off ? Number(off[2]) : 0,
       w: ext ? Number(ext[1]) : 0,
       h: ext ? Number(ext[2]) : 0,
+      farbe,
+      auftrag: istOrange(farbe),
     });
   }
   return out;
@@ -163,6 +223,7 @@ function pfeileAufloesen(xml, kaesten) {
 }
 
 const eintraege = zipEintraege(readFileSync(datei));
+const thema = themaFarben(eintraege);
 const folienNamen = [...eintraege.keys()]
   .filter((n) => /^ppt\/slides\/slide\d+\.xml$/.test(n))
   .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]));
@@ -178,7 +239,7 @@ console.log(`${folienNamen.length} Folien · Breite ${(breite / EMU_PRO_CM).toFi
 
 for (const name of folienNamen) {
   const xml = eintraege.get(name)();
-  const kaesten = formen(xml);
+  const kaesten = formen(xml, thema);
   const striche = verbinder(xml);
   const nr = name.match(/\d+/)[0];
 
@@ -211,8 +272,18 @@ for (const name of folienNamen) {
       const pos = roh
         ? `[${(k.x / EMU_PRO_CM).toFixed(1)}/${(k.y / EMU_PRO_CM).toFixed(1)} cm] `
         : `${(k.y / EMU_PRO_CM).toFixed(1).padStart(5)} cm  `;
-      console.log(pos + k.text.join(" ⏎ "));
+      console.log(pos + (k.auftrag ? "🟠 " : "") + k.text.join(" ⏎ "));
     }
+  }
+
+  // 🟠 Die Auftragskästen noch einmal gesammelt. Sie stehen zwischen den
+  // Aufbau-Kästen verstreut, sind aber das Einzige, was UMGESETZT werden soll
+  // — wer sie in der Folienreihenfolge sucht, übersieht einen.
+  const auftraege = kaesten.filter((k) => k.auftrag);
+  if (auftraege.length) {
+    console.log(`
+🟠 ${auftraege.length} AUFTRAG/AUFTRÄGE (orange Kästen) ──`);
+    for (const a of auftraege) console.log(`  · ${a.text.join(" ")}`);
   }
 
   const pfeile = pfeileAufloesen(xml, kaesten);
