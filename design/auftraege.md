@@ -103,6 +103,13 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | PP4 | Innerhalb einer Liga: **„alle" und einzelne Vereine** (Beispiel „Fc Köln“) | ✅ | `SpielauswahlWettbewerbe` kann beides |
 | PP5 | Folien 3–11 sind leer | 👤 | Andi füllt sie — dort steht der Rest des Aufbaus |
 
+## Layout (21.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| LAY1 | Feinschliff des Folien-Layouts im **zweiten Schritt** — Beispiel: „Suche/Filter oben rechts neben Bibliothek Betippungsauswahl“ | ⏳ | Andi: erst Aufbau klären, dann Anordnung. Sein Urteil zum bisherigen Layout: „hattest du bislang ja nicht schlecht gemacht, nur halt so nen riesen Teil rausgelassen“ |
+| LAY2 | `CLAUDE.md` kürzen — „soll nicht mehr als 180 Zeilen haben“ | ✅ | 1017 → 460 Zeilen. Ausgelagert nach `docs/`: Scoring-Kurzreferenz (361), Werkzeug-Fallen (127), Baukasten-Grundsatz und Schritt-für-Schritt-Regel (114). **Keine Regel gestrichen, nur verschoben** |
+
 ## Betrieb
 
 | Nr | Ansage | Stand | Beleg / was fehlt |
