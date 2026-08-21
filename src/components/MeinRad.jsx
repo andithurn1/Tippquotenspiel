@@ -10,7 +10,7 @@ import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { zeitachse, rundenSpieltagVon } from "@/lib/zeitachse";
 import { naechstesOffenesSpiel } from "@/lib/muenzstand";
 import { wahrscheinlichkeiten, auswerten, beschreibeDrehrad, drehradPlan, BELOHNUNGS_TYPEN } from "@/lib/drehrad";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 import { zahl } from "@/lib/format";
 
 // ── Das Rad aus Sicht des Spielers (design/drehrad.md 3c) ───
@@ -113,7 +113,7 @@ export default function MeinRad() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <div style={{ width: "100%", maxWidth: 480 }}>

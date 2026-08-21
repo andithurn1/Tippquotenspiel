@@ -75,6 +75,38 @@
   --tqs-rund-karte: 16px;
   --tqs-rund-pille: 999px;
 
+  /* ── Schrift ───────────────────────────────────────────────
+     🔴 Andis Ansage (09.08.2026): „durchwegs die apple schrift. typ und
+     formatierung." Umgesetzt am 21.08.2026 als EINE Quelle statt 30 Kopien
+     in den Komponenten.
+
+     ⚠️ `-apple-system` steht VOR `system-ui`. Auf Andis iPhone ist das San
+     Francisco — und zwar OHNE dass wir eine Schriftdatei ausliefern: das
+     Betriebssystem gibt seine eigene her. Eine mitgelieferte SF-Datei wäre
+     nicht lizenziert; sie ist nur für Apps auf Apple-Plattformen freigegeben.
+     Auf Android greift Roboto, auf Windows Segoe UI. Anders, nie falsch. */
+  --tqs-schrift-familie: -apple-system, BlinkMacSystemFont, system-ui,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --tqs-schrift-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Apples Textstufen, Originalgrößen (iOS Human Interface Guidelines).
+     ⚠️ Noch NICHT flächig angewandt — die App benutzt an 1076 Stellen eigene
+     Zahlen und ist durchweg kleiner als Apples Maß (Body 17 gegen heute 14).
+     Das umzustellen wächst jeden Screen und ist Andis Entscheidung, nicht
+     meine. Bis dahin stehen beide Leitern nebeneinander; neue Bausteine
+     nehmen diese hier. */
+  --tqs-apple-schlagzeile: 34px;  /* Large Title */
+  --tqs-apple-titel1: 28px;
+  --tqs-apple-titel2: 22px;
+  --tqs-apple-titel3: 20px;
+  --tqs-apple-kopf: 17px;         /* Headline — halbfett */
+  --tqs-apple-body: 17px;
+  --tqs-apple-ruf: 16px;          /* Callout */
+  --tqs-apple-unter: 15px;        /* Subhead */
+  --tqs-apple-fuss: 13px;         /* Footnote */
+  --tqs-apple-bild1: 12px;        /* Caption 1 */
+  --tqs-apple-bild2: 11px;        /* Caption 2 */
+
   /* Schriftgrößen — sechs statt vierundzwanzig */
   --tqs-schrift-mikro: 11px;
   --tqs-schrift-klein: 12.5px;
@@ -176,4 +208,26 @@
 @keyframes tqs-auf {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: none; }
+}
+
+/* ── Die Schrift, an EINER Stelle ────────────────────────────
+   🔴 21.08.2026. Vorher trug jeder Screen seine eigene Kopie von
+   `fontFamily: "system-ui, -apple-system, …"` — 30 Stück. Eine Schriftart zu
+   wechseln hieß, 30 Dateien anzufassen; genau die Sorte Vervielfältigung, die
+   `theme.js` für Farben schon abgeschafft hat.
+
+   ⚠️ Die Kopien in den Komponenten bleiben vorerst stehen und gewinnen, weil
+   Inline-Styles stärker sind als eine Regel. Sie tragen denselben Wert, also
+   ändert sich nichts — sie fallen beim nächsten Durchgang weg. Wer eine neue
+   Komponente baut, setzt KEINE Schriftfamilie mehr. */
+body {
+  font-family: var(--tqs-schrift-familie);
+  /* Apples eigene Glättung. Ohne sie wirkt SF auf macOS fetter, als Apple es
+     zeichnet — der häufigste Grund, warum eine Nachbildung „fast richtig"
+     aussieht. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Apple setzt bei größeren Graden enger. `-0.01em` ist der Unterschied
+     zwischen „Systemschrift benutzt" und „sieht aus wie iOS". */
+  letter-spacing: -0.01em;
 }

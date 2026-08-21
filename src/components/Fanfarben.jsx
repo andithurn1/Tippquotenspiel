@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTheme } from "@/components/ThemeProvider";
-import { C, MONO, deriveRoles, readableInk, CLUB_PRESETS } from "@/lib/theme";
+import { C, MONO, deriveRoles, readableInk, CLUB_PRESETS, SCHRIFT } from "@/lib/theme";
 import BackLink from "@/components/BackLink";
 import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
 
@@ -39,7 +39,7 @@ export default function Fanfarben() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink href="/menu" label="Menü" />

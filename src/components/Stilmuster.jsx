@@ -21,6 +21,7 @@
 // ============================================================
 
 import { useState } from "react";
+import { SCHRIFT } from "@/lib/theme";
 import Aktion from "@/components/Aktion";
 import BackLink from "@/components/BackLink";
 
@@ -68,7 +69,7 @@ export default function Stilmuster() {
   return (
     <main style={{
       minHeight: "100vh", background: "var(--tqs-ink)", color: "var(--tqs-text)",
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px 64px", display: "flex", justifyContent: "center",
     }}>
       <div style={{ width: "100%", maxWidth: 400 }}>

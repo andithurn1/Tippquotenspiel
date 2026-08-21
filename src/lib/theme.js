@@ -103,7 +103,18 @@ export const COLORS = {
 export const C = COLORS;
 
 // ── Schrift ─────────────────────────────────────────────────
+// 🔴 Die Fließschrift steht seit 21.08.2026 in `globals.css` als
+// `--tqs-schrift-familie` (Andi: „durchwegs die apple schrift"). Hier bleibt
+// nur die MONO-Schrift, weil sie punktuell gesetzt wird — für Codes, Zahlen
+// und Kürzel, nie für Fließtext.
+//
+// ⚠️ `SF Mono` ist Apples eigene und wird NICHT ausgeliefert: Auf iOS und
+// macOS gibt das System sie her, sonst greift die nächste in der Liste.
 export const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+
+// Dieselbe Leiter wie `--tqs-schrift-familie`, für Stellen, die inline
+// setzen müssen. Neue Komponenten brauchen sie NICHT — `body` trägt sie.
+export const SCHRIFT = "-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 export const SANS = "system-ui, -apple-system, 'Segoe UI', sans-serif";
 
 // ── Datenreihen-Farben (Plots) ──────────────────────────────

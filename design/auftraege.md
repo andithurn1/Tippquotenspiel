@@ -32,7 +32,7 @@ Erlaubte Stände, und jeder verlangt einen Beleg:
 |---|---|---|---|
 | G1 | „F7 (Akzent, bisher Gold) soll LILA sein“ | ✅ | `theme.js`: `akzent: "#9A6BE8"`. Ton auf dasselbe Helligkeitsprofil gemessen wie das alte Gold (dunkler Text darauf 5,14 statt 5,26) — deshalb ohne Lesbarkeits-Umbau in 58 Dateien. Im Browser geprüft: `rgb(154,107,232)` |
 | G2 | „R2 (12 px) ist der bevorzugte Eckenradius“ | 🔨 | Token `--tqs-rund: 12px` liegt in `globals.css`. In den Screens **acht verschiedene Radien**, gezählt: 999 (127×), 12 (91×), 14 (58×), 10 (47×), 11 (23×), 18, 26 … |
-| G3 | „durchwegs die apple schrift. typ und formatierung“ | ⏳ | **keine einzige `font-family` in der ganzen App** — weder in `globals.css` noch im Layout |
+| G3 | „durchwegs die apple schrift. typ und formatierung“ | 🔨 | **Schriftart: erledigt.** `--tqs-schrift-familie` mit `-apple-system` zuerst, auf `body` gesetzt, Apples Glättung und Laufweite dazu; die 30 Kopien in den Komponenten sind durch eine gemeinsame Konstante ersetzt (jetzt 0). Im Browser geprüft. ⏳ **Offen: die Größen** — 1076 rohe Zahlen in 18 Abstufungen, Apples Leiter liegt als Token bereit. Siehe Entscheidung unten |
 | G4 | „die vom nutzer gewählten farben … in minimalistischen verzierungen“ | 🔨 | Fanfarben landen jetzt in eigenen Rollen `fan1–fan3` und lassen die Markenfarbe unangetastet — ein Test wacht darüber. Erste Verzierung: der Schein über der Karte. **Übergänge zwischen Fenstern fehlen noch** (hängt an B3) |
 | G5 | Erstkontakt: erster Start vs. Wiederkehrer | ⏳ | nichts gebaut |
 | G6 | Aufbau der Admin-Einstellungen | 👤 | will er einzeln durchsprechen — **auf ihn warten** |

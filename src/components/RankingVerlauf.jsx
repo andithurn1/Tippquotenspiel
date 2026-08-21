@@ -5,7 +5,7 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 
 // Ranking-Verlauf: kumulativer Zwischenstand je Spieltag (getLeaderboardHistory
 // in der Engine/Store). Keine gespeicherte Historie — wird aus den vorhandenen
@@ -27,7 +27,7 @@ export default function RankingVerlauf() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink href="/hub" label="Tippspiel" />

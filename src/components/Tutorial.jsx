@@ -7,7 +7,7 @@ import { createMockOddsSource, scoreTip, sanitizeRules, DEFAULT_RULES } from "@/
 import { previewArchetypes } from "@/lib/rulePreview";
 import { getStore } from "@/lib/store";
 import { useCurrentRound } from "@/components/RoundProvider";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 
 // Ein echtes Rechenbeispiel (Engine, nicht ausgedacht): JOR-ESP real 5:1,
 // Tipp 4:1 → „hauchdünn" (richtiger Sieger, ein Tor daneben).
@@ -43,7 +43,7 @@ export default function Tutorial() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink href="/menu" label="Menü" />

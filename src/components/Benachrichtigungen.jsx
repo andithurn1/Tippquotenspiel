@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import BackLink from "@/components/BackLink";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 import {
   DEFAULT_NOTIFY, sanitizeNotify, summarize, KANAELE, KANAL_META,
   VORLAUF_OPTIONEN, NOTIFY_LIMITS,
@@ -90,7 +90,7 @@ export default function Benachrichtigungen() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink href="/menu" label="Menü" />

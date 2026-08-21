@@ -9,7 +9,7 @@ import {
   getAvatar, avatarColor, sanitizeDisplayName,
 } from "@/lib/avatars";
 import { isPremium, PREMIUM_FEATURES } from "@/lib/premium";
-import { C } from "@/lib/theme";
+import { C, SCHRIFT } from "@/lib/theme";
 
 
 // Avatar-Kreis — eine Stelle, damit Profil, Leaderboard & Co. gleich aussehen.
@@ -67,7 +67,7 @@ export default function Profil() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <div style={{ width: "100%", maxWidth: 520 }}>

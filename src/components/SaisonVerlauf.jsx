@@ -9,7 +9,7 @@ import BackLink from "@/components/BackLink";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { zeitachse } from "@/lib/zeitachse";
 import { fahrplan, aktuellerRundenSpieltag, beschreibeFahrplan } from "@/lib/saisonfahrplan";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Der Saison-Fahrplan aus Sicht des Spielers ──────────────
@@ -81,7 +81,7 @@ export default function SaisonVerlauf() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <div style={{ width: "100%", maxWidth: 520 }}>

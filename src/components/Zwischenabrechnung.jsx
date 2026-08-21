@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -101,7 +101,7 @@ export default function Zwischenabrechnung() {
         position: "fixed", inset: 0, zIndex: 60, background: "rgba(17,20,28,0.35)",
         backdropFilter: "blur(3px)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: 16, fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+        padding: 16, fontFamily: SCHRIFT,
       }}>
       <div style={{
         background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 18,

@@ -12,7 +12,7 @@ import BackLink from "@/components/BackLink";
 import ReactionGif from "@/components/ReactionGif";
 import Ertragsquellen from "@/components/Ertragsquellen";
 import { tipScenario, rankReaction } from "@/lib/reactions";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
@@ -173,7 +173,7 @@ export default function Abrechnung() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink href="/menu" label="Menü" />

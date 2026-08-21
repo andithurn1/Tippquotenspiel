@@ -55,7 +55,7 @@ import SpielauswahlListe from "@/components/SpielauswahlListe";
 import LigaSonderregeln from "@/components/LigaSonderregeln";
 import Alleinstellung from "@/components/Alleinstellung";
 import Zeitachse from "@/components/Zeitachse";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
 import { Zahl } from "@/components/Eingaben";
 import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
@@ -508,7 +508,7 @@ export default function Spielerstellung() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       {/* ── Kopfzeile: „Menü“ links, Ansichts-Schalter rechts ──────────────

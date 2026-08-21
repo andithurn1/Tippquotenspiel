@@ -7,7 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { WETT_TYP, wettenId, wettenLabel, istAuswertbar } from "@/lib/saisonwetten";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 
 // Saison-Wetten abgeben: die Langzeit-Tipps (Meister, Torschützenkönig …), die
 // der Admin ins Regelwerk gelegt hat. Je Wette ein Auswahlfeld — Team- oder
@@ -119,7 +119,7 @@ export default function SaisonTipps() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink href="/hub" label="Tippspiel" />

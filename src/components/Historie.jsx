@@ -10,7 +10,7 @@ import { ersatzEintraege } from "@/lib/versaeumnisBoard";
 import { einsaetzeAusTipps } from "@/lib/duellJoker";
 import { computeRecords, matchdayDeltas } from "@/lib/records";
 import { PRESETS } from "@/lib/presets";
-import { C, MONO, SERIES } from "@/lib/theme";
+import { C, MONO, SERIES, SCHRIFT } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 
@@ -198,7 +198,7 @@ export default function Historie() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <div style={{ width: "100%", maxWidth: 480 }}>

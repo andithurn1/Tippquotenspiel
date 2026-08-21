@@ -16,7 +16,7 @@ import { kontingent, erspielteLage, standText } from "@/lib/jokerKontingent";
 import { EREIGNIS, sanitizeEreignisse, beschreibeEreignisse } from "@/lib/ereignisse";
 import { offeneKlassen, beschreibeKlasse, sanitizeLimitKlassen } from "@/lib/limitKlassen";
 import { einsaetzeAllerArten } from "@/lib/jokerBudget";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 
 // ── „Meine Joker" — die fehlende Anzeige WÄHREND der Runde ───
 //
@@ -185,7 +185,7 @@ export default function MeineJoker() {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <div style={{ width: "100%", maxWidth: 480 }}>

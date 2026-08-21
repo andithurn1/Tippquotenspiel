@@ -11,7 +11,7 @@ import { computeMatchStatus, countTippedByUser, rundenSpiele } from "@/lib/round
 import { muenzStand } from "@/lib/muenzstand";
 import { narrenStand } from "@/lib/narrenstand";
 import Waehrungen from "@/components/Waehrungen";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 const SCREENS = [
@@ -73,7 +73,7 @@ export default function Hauptmenu() {
   return (
     <main style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "48px 16px", display: "flex", justifyContent: "center",
     }}>
       <div style={{ width: "100%", maxWidth: 400 }}>

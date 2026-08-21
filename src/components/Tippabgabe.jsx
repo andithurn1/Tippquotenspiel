@@ -26,7 +26,7 @@ import { usePrefs } from "@/components/PrefsProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import NaheErgebnisse from "@/components/NaheErgebnisse";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 // ⚠️ Der SPIELER bekam hier gerundete Joker-Faktoren zu sehen: bei einem
 // eingestellten ×1,15 stand „×1.2" auf dem Knopf. Seit die Faktoren auf dem
 // 0,05-Raster stehen, muss die Anzeige mitziehen — Begründung in format.js.
@@ -442,7 +442,7 @@ export default function Tippabgabe({ matchId }) {
     return (
       <div style={{
         minHeight: "100vh", background: C.ink, color: C.text,
-        fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+        fontFamily: SCHRIFT,
         padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
       }}>
         <BackLink href="/tippen" label="Spielwahl" />
@@ -998,7 +998,7 @@ export default function Tippabgabe({ matchId }) {
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink href="/tippen" label="Spielwahl" />

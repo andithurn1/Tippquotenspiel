@@ -5,7 +5,7 @@ import { createMockOddsSource, scoreResult, scoreGoals, applyCombo, sanitizeRule
 import { getStore } from "@/lib/store";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, SCHRIFT } from "@/lib/theme";
 import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
 
 
@@ -89,7 +89,7 @@ export default function AuszahlungsExplorer() {
 
   return (
     <div style={{ minHeight: "100vh", background: C.ink, color: C.text,
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", padding: "26px 14px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      fontFamily: SCHRIFT, padding: "26px 14px", display: "flex", flexDirection: "column", alignItems: "center" }}>
       <BackLink href="/menu" label="Menü" />
       <div style={{ width: "100%", maxWidth: 400, borderRadius: 24, position: "relative", overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
