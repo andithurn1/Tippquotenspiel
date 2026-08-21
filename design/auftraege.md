@@ -114,11 +114,12 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 
 | Nr | Ansage | Stand | Beleg / was fehlt |
 |---|---|---|---|
-| ATE1 | **Eigenes Code-Feld vor jeder Bibliothek**, nur für diesen Abschnitt | ⏳ | Heute gibt es EIN Feld für den Gesamt-Code. Teil-Codes funktionieren, müssen aber ins selbe Feld — dass sich nur ein Abschnitt ändert, ist nicht sichtbar |
+| ATE1 | **Eigenes Code-Feld vor jeder Bibliothek**, nur für diesen Abschnitt | ✅ | `TeilCodeFeld.jsx`, eingehängt bei der Betippungsauswahl und bei Joker/Modifikatoren. Im Browser geprüft: zwei Felder, richtig beschriftet, mit „teilen“-Knopf |
+| ATE6 | Ein fremder Teil-Code darf nicht still die falsche Ebene überschreiben | ✅ | `TeilCodeFeld` prüft die Ebene im Code und weist ab: „Dieser Code gehört zu X, nicht zu Y.“ Im Browser geprüft |
 | ATE2 | Schichtung: erst Gesamt-Code, dann Teilebenen einzeln überschreiben | ✅ | Mechanik gebaut: `wendeTeilCodeAn` ersetzt nur die Felder SEINES Aspekts. Mehrere nacheinander ergeben genau diese Schichtung |
 | ATE3 | Teil-Codes dürfen **von anderen Creatorn** stammen | ✅ | Ein Code trägt keine Herkunft — er wirkt unabhängig davon, wer ihn gebaut hat |
 | ATE4 | In der Bibliothek die **beliebtesten Creator-Codes** auswählen | ⏳ | Braucht Beliebtheit und Urheber je Eintrag — hängt mit PP1/PP2 zusammen |
-| ATE5 | Anzeigen, welcher Code zuletzt geladen wurde | ⏳ | Zwei Codes derselben Ebene überschreiben einander; ohne Anzeige wirkt das wie ein Fehler |
+| ATE5 | Anzeigen, welcher Code zuletzt geladen wurde | ✅ | `geladeneCodes` je Ebene, Anzeige unter dem Feld. **Ein Gesamt-Code leert die Merkliste** — Andis Regel vom 21.08.2026, an beiden Ladewegen umgesetzt |
 
 ## Betrieb
 

@@ -27,6 +27,7 @@ import BackLink from "@/components/BackLink";
 import AnsichtSchalter from "@/components/AnsichtSchalter";
 import VariantenWahl from "@/components/VariantenWahl";
 import TabellenBonus from "@/components/TabellenBonus";
+import TeilCodeFeld from "@/components/TeilCodeFeld";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
@@ -104,6 +105,11 @@ export default function Spielerstellung() {
   // Wert desselben Feldes, das Verlassen überschreibt also die vorige Wahl.
   // Wer von „Rangliste" ins Budget und zurück geht, will „Rangliste" wieder.
   const [letzterModus, setLetzterModus] = useState("einzel");
+  // 🔴 Welcher Teil-Code je Ebene zuletzt geladen wurde (Andi, 21.08.2026).
+  // Zwei Codes derselben Ebene überschreiben einander — ohne Anzeige wirkt
+  // der zweite Ladevorgang wie ein Fehlschlag des ersten.
+  const [geladeneCodes, setGeladeneCodes] = useState({});
+  const merkeCode = (aspekt, code) => setGeladeneCodes((g) => ({ ...g, [aspekt]: code }));
   const [charakterKey, setCharakterKey] = useState(null);
   const [mischenOffen, setMischenOffen] = useState(false);
   // Die Spielauswahl ist KEIN lokaler Zustand mehr, sondern Teil des
@@ -259,7 +265,16 @@ export default function Spielerstellung() {
       return;
     }
     if (istCreatorCode(val)) {
-      try { setPresetKey(null); setRules(sanitizeRules(decodePreset(val))); setImp(""); }
+      try {
+        setPresetKey(null);
+        setRules(sanitizeRules(decodePreset(val)));
+        // 🔴 Andis Regel (21.08.2026): ein GESAMT-Code setzt alle Teilebenen neu
+        // und überschreibt damit auch jede vorherige Teil-Anpassung. Bliebe die
+        // Merkliste stehen, behauptete die Oberfläche weiter „zuletzt geladen:
+        // …", obwohl davon nichts mehr gilt.
+        setGeladeneCodes({});
+        setImp("");
+      }
       catch { setImpErr("Kein gültiger Creator-Code."); }
       return;
     }
@@ -268,6 +283,8 @@ export default function Spielerstellung() {
       if (!preset) { setImpErr("Kein Regelwerk unter diesem Code gefunden."); return; }
       setPresetKey(null);
       setRules({ ...sanitizeRules(preset.rules), name: preset.name || sanitizeRules(preset.rules).name });
+      // Derselbe Fall wie beim langen Code — siehe dort.
+      setGeladeneCodes({});
       setImp("");
     } catch { setImpErr("Konnte den Code nicht laden. Später erneut versuchen."); }
   };
@@ -647,6 +664,11 @@ export default function Spielerstellung() {
               Entscheidung, also gehört sie nach vorn; die Vereinsliste hängt
               dann davon ab. */}
           <SectionTitle>Wettbewerbe auswählen</SectionTitle>
+          {/* Teil-Code für die Betippungsauswahl — direkt an der Ebene, nicht zentral */}
+          <TeilCodeFeld aspekt="spiele" rules={rules} geladen={geladeneCodes["spiele"]}
+            onGeladen={merkeCode}
+            onChange={(neu) => { touched(); setRules(neu); }} />
+
           <p style={{ fontSize: 13, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.45 }}>
             Mannschaften und Begegnungen wählen, Regeln je Wettbewerb festlegen.
           </p>
@@ -1247,6 +1269,11 @@ export default function Spielerstellung() {
           )}
 
           {/* Joker / Gewichtung */}
+          {/* Teil-Code für Joker, Ereignisse und Modifikatoren (Andi, 21.08.2026) */}
+          <TeilCodeFeld aspekt="modifikatoren" rules={rules} geladen={geladeneCodes["modifikatoren"]}
+            onGeladen={merkeCode}
+            onChange={(neu) => { touched(); setRules(neu); }} />
+
           <SectionTitle>Joker &amp; Gewichtung</SectionTitle>
           <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
             Lässt Tipper einzelne Spiele höher gewichten. Der Faktor greift auf die
