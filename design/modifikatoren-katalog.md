@@ -350,15 +350,41 @@ belohnt, obwohl es das viel Seltenere ist. Zwei Ereignisse, die einzeln je 20 %
 wahrscheinlich sind, treffen zusammen nur in 4 % der Fälle zu; die Wertung
 behandelt das aber wie 20 % plus 20 %.
 
+### 🔴 Der Bonus wird ABGELEITET, nicht festgelegt (Andi, 22.08.2026)
+
+Sein Einwand, der den Modifikator erst tragfähig macht: *„ist ja klar bei nem
+5:1, dass Kane und Olise ein Tor schießen — aber grade dafür … sodass es hier
+vielleicht nur nen Bonus gibt, wenn bei dem 5:1 auch ein Upamecano trifft."*
+
+**Ein fester Bonus wäre falsch.** Bei einem 5:1 ist der Stürmer fast sicher
+dabei; ein Pauschalbetrag belohnte dann das Naheliegende. Trifft dagegen der
+Innenverteidiger, ist genau DAS die seltene Kombination.
+
+⚠️ **Die Seltenheit steht bereits im Schnappschuss** — jeder Spieler trägt
+seine Torschützenquote (`snapshot.players`). Der Bonus muss also aus ihr
+abgeleitet werden, nicht aus einem Regler:
+
+- **niedrige Quote** (Stürmer, trifft ohnehin oft) → kleiner Aufschlag
+- **hohe Quote** (Verteidiger, Joker-Einwechselspieler) → großer Aufschlag
+
+Damit braucht es keine Sonderregel für „welcher Spieler ist unerwartet" — die
+Frage beantwortet der Markt.
+
 | Regler | Typ | Vorgabe | Bedeutung |
 |---|---|---|---|
 | `stufe` | Tendenz / Abstand / Exakt | Exakt | Wie genau das Ergebnis stimmen muss, damit die Kombi zählt |
-| `jeSchuetze` | an/aus | aus | Zählt der Bonus je getroffenem Schützen oder einmal? |
+| `staerke` | 0 … 1 | ⏳ Balancing | Wie stark die Schützenquote durchschlägt |
+| `maxAufschlag` | Deckel | ⏳ Balancing | Sonst zahlt ein 6:0 mit Torwart-Treffer unbegrenzt |
 | `mindestSchuetzen` | 1 … 4 | 1 | Wie viele Namen treffen müssen |
 
-⚠️ **`jeSchuetze` ist die gefährliche Stellschraube.** Zwei Schützen plus
-exaktes Ergebnis wären sonst schnell das Vielfache eines normalen Treffers —
-und das trifft ausgerechnet den, der ohnehin schon alles richtig hatte.
+⚠️ **`jeSchuetze` ist bewusst NICHT mehr dabei.** Mit der Ableitung aus der
+Quote erledigt sich die Frage: zwei häufige Schützen ergeben zwei kleine
+Beträge, nicht zweimal denselben Pauschalbonus.
+
+⏳ **Die Zahlen gehören ins Balancing** — Andi ausdrücklich am 22.08.2026: das
+Modell dafür entsteht am Ende, zusammen mit einer Hilfe, wie ein Admin so etwas
+ungefähr einstellt. Hier steht nur die MECHANIK; sie ist unabhängig davon
+richtig oder falsch.
 
 ⚠️ **Der Bonus liegt vollständig im „möglichen“ Teil der Vorschau**, nie im
 sicheren. Er verstärkt damit genau die Zahl, die heute allein groß auf dem

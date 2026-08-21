@@ -130,7 +130,9 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | TI3 | Je Spiel anpassen, beim klaren Außenseiter dessen hohe Ergebnisse weglassen | ⏳ | 🔴 **Gemessen:** die schwache Seite braucht über 5 Tore **0,00 %**, die starke aber **12,95 %** — die Matrix muss ASYMMETRISCH sein, nicht kleiner. Ein festes 0–5-Quadrat deckt beim extremen Favoriten nur 87 % ab, die automatische Anpassung 99 % mit 27 statt 36 Feldern |
 | TI4 | Vorschau: welches nahe Ergebnis wie viel zahlt | 🔨 | `nearResults.js` rechnet es, die Anzeige als Liste fehlt |
 | TI5 | Sichere gegen mögliche Punkte trennen | 🔨 | `projectTip` liefert beide (`pointsOhneSchuetzen`), gezeigt wird bisher nur eine |
-| TI6 | **Kombi-Bonus, wenn Ergebnis UND Torschütze aufgehen** | ⏳ | Neu. Als B16 im Modifikatoren-Katalog ausgearbeitet. Heute addieren sich beide Teile nur — das Zusammentreffen wird nicht belohnt, obwohl es das Seltenere ist |
+| TI6 | **Kombi-Bonus, wenn Ergebnis UND Torschütze aufgehen** | ⏳ | Als B16 ausgearbeitet. Heute addieren sich beide Teile nur — das Zusammentreffen wird nicht belohnt, obwohl es das Seltenere ist |
+| TI7 | Der Bonus wird aus der **Torschützenquote abgeleitet**, nicht festgelegt (Andi, 22.08.2026) | ⏳ | Mechanik in B16: niedrige Quote → kleiner Aufschlag, hohe Quote → großer. „Bei nem 5:1 ist klar, dass Kane trifft“ — ein Pauschalbetrag belohnte das Naheliegende |
+| TI8 | Mathematisches Modell + Hilfe, wie ein Admin das einstellt | ⏳ | ⛔ **Ausdrücklich Balancing, ausdrücklich am Ende** (Andi, 22.08.2026). Hier nur vermerkt, damit es nicht verlorengeht |
 
 ## Betrieb
 
