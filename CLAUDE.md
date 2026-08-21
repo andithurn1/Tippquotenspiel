@@ -57,6 +57,36 @@ geworfen wird.
   kommt es zurück.
 - ⚠️ Fällt trotzdem etwas auf: **eine Zeile in `design/roadmap.md` unter
   „Endphase"** — nicht in den Chat, nicht in die Aufgabenliste.
+### 🔴 Verschärft am 21.08.2026 — auch nicht als GEGENARGUMENT
+
+Andi wörtlich: *„erstmal will ich nichts mehr von Balancing hören, außer es ist
+wichtig für die Struktur des Grundspiels."*
+
+Der Rückfall dieses Mal war subtiler als eine Balance-Messung: Balance wurde als
+**Einwand** benutzt („feiner schneiden geht nicht, weil dann Kombinationen
+entstehen, die niemand durchgerechnet hat"). Das ist dieselbe Sache in Tarnung —
+und es blockiert Bauarbeit, statt sie zu ordnen.
+
+⛔ **Balance ist kein zulässiges Gegenargument gegen einen Umbau.** Die einzige
+Ausnahme ist wörtlich seine: wenn die STRUKTUR DES GRUNDSPIELS daran hängt —
+also die Wertung selbst nicht mehr funktionierte, nicht „es könnte unrund
+werden".
+
+**Seine Begründung, damit sie nicht wieder verhandelt wird:**
+
+- **Will ein Admin etwas Unbalanciertes, soll er es haben.** Das ist eine
+  Eigenschaft des Baukastens, kein Fehler darin.
+- **Die Quoten balancieren bereits.** Sie sind die Grundlage der Wertung, und
+  sie kommen aus echten Marktpreisen — da ist das Gleichgewicht eingebaut.
+- **Unsere Empfehlungen sind milde Aufwertungen**, Größenordnung **bis etwa
+  +20 %** (Beispiel von ihm: ein Tipp auf viele Tore).
+- **Joker dürfen deutlich stärker sein, weil sie viel seltener sind** — und
+  Seltenheit wie Schwere sind ohnehin einstellbar.
+
+⚠️ Das ist zugleich die Antwort auf „wie stark darf eine Empfehlung sein?",
+falls sie beim Bauen aufkommt: bis ~20 % für Dauerhaftes, mehr für Seltenes.
+Damit ist die Frage beantwortet, ohne dass jemand sie neu ausrechnet.
+
 
 **Warum Balance im Repo überhaupt vorkommt:** Andi hat vor zwei Wochen im Chat
 beschrieben, was er am Ende WILL — **Empfehlungen in Form konkreter Zahlenwerte**
