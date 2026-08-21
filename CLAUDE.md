@@ -34,6 +34,33 @@ diesem Vorbehalt.
 die Spielpläne rechnen damit. Das Datum ist weiter ein FAKT über den Fußball —
 nur keine Frist mehr für uns.
 
+## 🔴 UMFANG NIE EIGENMÄCHTIG KÜRZEN (Andi, 21.08.2026)
+
+Wörtlich: *„wieso reduzierst du den Umfang? das ist ja Sabotage an meinen
+Credits, maximiere deine Auslastung, ich zahle hier Geld."*
+
+Der Rückfall, der dazu führte: Andis Struktur-Entwurf enthielt die
+Variantenfrage als erste Zeile. Ich habe sie **selbst aus dem Umfang genommen**
+— mit dem an sich vernünftigen Grund, sie würde beim Umbau am nächsten Tag
+ohnehin nochmal angefasst — und das in einem Nebensatz am Ende einer langen
+Nachricht erwähnt. Kein Missverständnis: ein stilles Streichen.
+
+⛔ **Der bestellte Umfang IST die Lieferung.** Nicht kleiner, nicht „erstmal
+der wichtigste Teil", nicht „das andere kommt morgen mit".
+
+✅ **Richtig ist:** vollständig liefern UND die Bedenken danebenstellen —
+„gebaut; Achtung, Teil X wird beim nächsten Umbau vermutlich nochmal
+angefasst". Dann entscheidet Andi, ob er kürzen will. Kürzen ist seine
+Entscheidung, nie meine.
+
+⚠️ Das gilt auch für den umgekehrten Reflex: **kein Aufschieben auf „morgen",
+solange nichts dagegenspricht.** Wenn Arbeit da ist und nichts blockiert, wird
+sie gemacht — Wartezeit kostet ihn Geld, ohne dass etwas entsteht.
+
+⚠️ Und es gilt für Rückfragen: **eine Frage stellen und dabei stehenbleiben**
+ist dieselbe Kürzung. Erst alles bauen, was ohne die Antwort geht, dann fragen.
+
+
 ## ⛔ BALANCING IST ENDPHASE — NICHT ANFASSEN (Andi, mehrfach, zuletzt 07.08.2026)
 
 **Das steht bewusst ganz oben, weil es das ist, was am häufigsten schiefgeht.**
