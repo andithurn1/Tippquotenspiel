@@ -90,6 +90,19 @@ Wettbewerbe ganz oben. Genau der Sprung, den ST2 verbietet.
 | MOD5 | Ligen und Mannschaften einzeln höher gewichten | 🔨 | **War schon gebaut** (`wettbewerbe.aufschlaege`, `teamMods.teams`). ⏳ Offen bleibt Andis eigentlicher Punkt: sie liegen nicht bei den Sonderregeln je Wettbewerb |
 | MOD6 | Auswahl der Modifikatoren für die EINFACHE Ansicht | ⏳ | ausdrücklich nach Profi geplant („dann im Nachhinein") |
 
+## Aus Quotentippen.pptx (21.08.2026)
+
+Gelesen mit `scripts/lies-pptx.mjs` — MIT Anordnung, weil bei Andis Folien die
+Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| PP1 | **Bibliothek / Gamemode als eigenes Fenster** rechts vom Strich | ⏳ | Neu. Enthält laut Folie 1: Suche, Filter nach Relevanz und Beliebtheit, je Eintrag Kurzbeschreibung, **von wem**, Popularität und **Bewertung durch Admins mit Icons** |
+| PP2 | **Bewertungssystem für Einstellungen** („Anforderung Bewertungsystem der Einstellungen“) | ⏳ | Neu, im Repo gibt es nichts davon. Berührt `teilbibliotheken.md` (Teil-Codes) — die Bibliothek wäre der Ort, an dem sie gefunden werden |
+| PP3 | Wettbewerbe: **je Liga derselbe Aufbau** („Bundesliga selber Aufbau wie bei 2. Bundesliga“) | 🔨 | `LigaSonderregeln` gilt schon je Wettbewerb. Offen: dass die Liste aller Ligen sichtbar denselben Aufbau zeigt |
+| PP4 | Innerhalb einer Liga: **„alle" und einzelne Vereine** (Beispiel „Fc Köln“) | ✅ | `SpielauswahlWettbewerbe` kann beides |
+| PP5 | Folien 3–11 sind leer | 👤 | Andi füllt sie — dort steht der Rest des Aufbaus |
+
 ## Betrieb
 
 | Nr | Ansage | Stand | Beleg / was fehlt |
