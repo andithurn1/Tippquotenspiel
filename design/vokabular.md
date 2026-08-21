@@ -139,6 +139,25 @@ müssen alle Regel-Felder weiterhin lückenlos abdecken — ein Test sichert das
 
 ---
 
+### „Betippungsauswahl" (Andi, 21.08.2026)
+
+Andis Wort für **die Auswahl dessen, worauf getippt wird** — Ligen, Mannschaften
+und einzelne Begegnungen. Er hat es ausdrücklich als künftigen Begriff angemeldet.
+
+⚠️ Nicht zu verwechseln mit der **Gewichtung**. Das sind zwei Fragen:
+
+| Frage | Heutiges Feld |
+|---|---|
+| **Was wird betippt?** (Betippungsauswahl) | `rules.spiele` — Modus, Teams, Spieltag-Bereich, `jeWettbewerb` |
+| **Was zählt wie viel?** (Gewichtung) | `wettbewerbe.aufschlaege` je Liga, `teamMods.teams` je Mannschaft |
+
+🔴 **Beide sind gebaut, aber sie liegen an verschiedenen Stellen der
+Oberfläche.** Andi will sie am 21.08.2026 zusammen bei den Sonderregeln je
+Wettbewerb sehen: dort Ligen und Mannschaften auswählen UND höher gewichten.
+Die Mechanik dafür existiert vollständig — es fehlt nur der gemeinsame Ort.
+
+---
+
 ## Die sieben Ebenen — mehr gibt es nicht
 
 Jeder Einfluss im Spiel gehört in **genau eine** davon. Wer einen neuen baut
