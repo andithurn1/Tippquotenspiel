@@ -160,9 +160,13 @@ function verbinder(xml) {
     const ext = m[0].match(/<a:ext cx="(\d+)" cy="(\d+)"\/>/);
     if (!off || !ext) continue;
     const w = Number(ext[1]), h = Number(ext[2]);
+    // ⚠️ Eine Linie MIT Pfeilspitze ist nie ein Trennstrich, egal wie steil.
+    // Schräge Pfeile über mehrere Zentimeter Höhe sahen sonst aus wie eine
+    // Spaltengrenze und teilten die Folie an einer erfundenen Stelle.
+    const mitSpitze = /<a:(tailEnd|headEnd) type="(?!none)/.test(m[0]);
     out.push({
       x: Number(off[1]), y: Number(off[2]), w, h,
-      senkrecht: h > w * 3,
+      senkrecht: !mitSpitze && h > w * 3,
       waagerecht: w > h * 3,
     });
   }
@@ -207,14 +211,20 @@ function pfeileAufloesen(xml, kaesten) {
     if (!off || !ext) continue;
     const w = Number(ext[1]);
     const h = Number(ext[2]);
-    // Der senkrechte Trennstrich ist kein Pfeil.
-    if (h > w * 3) continue;
+    // Der senkrechte Trennstrich ist kein Pfeil — eine Linie MIT Spitze
+    // dagegen schon, auch wenn sie steil verläuft.
+    if (h > w * 3 && !/<a:(tailEnd|headEnd) type="(?!none)/.test(block)) continue;
     const x = Number(off[1]);
     const y = Number(off[2]);
     // `flipH` heißt: der Pfeil läuft von rechts nach links.
     const gedreht = /flipH="1"/.test(block);
-    const von = naechsterKasten(gedreht ? x + w : x, y + h / 2, kaesten);
-    const nach = naechsterKasten(gedreht ? x : x + w, y + h / 2, kaesten);
+    // Bei einem schrägen Pfeil liegen Anfang und Ende auf verschiedenen
+    // Höhen. `flipV` sagt, ob er nach oben läuft.
+    const hoch = /flipV="1"/.test(block);
+    const vonY = hoch ? y + h : y;
+    const nachY = hoch ? y : y + h;
+    const von = naechsterKasten(gedreht ? x + w : x, vonY, kaesten);
+    const nach = naechsterKasten(gedreht ? x : x + w, nachY, kaesten);
     if (von || nach) {
       out.push({ von: von ? von.text[0] : "(nichts)", nach: nach ? nach.text[0] : "(nichts)" });
     }
