@@ -110,6 +110,16 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | LAY1 | Feinschliff des Folien-Layouts im **zweiten Schritt** — Beispiel: „Suche/Filter oben rechts neben Bibliothek Betippungsauswahl“ | ⏳ | Andi: erst Aufbau klären, dann Anordnung. Sein Urteil zum bisherigen Layout: „hattest du bislang ja nicht schlecht gemacht, nur halt so nen riesen Teil rausgelassen“ |
 | LAY2 | `CLAUDE.md` kürzen — „soll nicht mehr als 180 Zeilen haben“ | ✅ | 1017 → 460 Zeilen. Ausgelagert nach `docs/`: Scoring-Kurzreferenz (361), Werkzeug-Fallen (127), Baukasten-Grundsatz und Schritt-für-Schritt-Regel (114). **Keine Regel gestrichen, nur verschoben** |
 
+## Code-Felder je Teilebene (21.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| ATE1 | **Eigenes Code-Feld vor jeder Bibliothek**, nur für diesen Abschnitt | ⏳ | Heute gibt es EIN Feld für den Gesamt-Code. Teil-Codes funktionieren, müssen aber ins selbe Feld — dass sich nur ein Abschnitt ändert, ist nicht sichtbar |
+| ATE2 | Schichtung: erst Gesamt-Code, dann Teilebenen einzeln überschreiben | ✅ | Mechanik gebaut: `wendeTeilCodeAn` ersetzt nur die Felder SEINES Aspekts. Mehrere nacheinander ergeben genau diese Schichtung |
+| ATE3 | Teil-Codes dürfen **von anderen Creatorn** stammen | ✅ | Ein Code trägt keine Herkunft — er wirkt unabhängig davon, wer ihn gebaut hat |
+| ATE4 | In der Bibliothek die **beliebtesten Creator-Codes** auswählen | ⏳ | Braucht Beliebtheit und Urheber je Eintrag — hängt mit PP1/PP2 zusammen |
+| ATE5 | Anzeigen, welcher Code zuletzt geladen wurde | ⏳ | Zwei Codes derselben Ebene überschreiben einander; ohne Anzeige wirkt das wie ein Fehler |
+
 ## Betrieb
 
 | Nr | Ansage | Stand | Beleg / was fehlt |

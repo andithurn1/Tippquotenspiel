@@ -158,6 +158,41 @@ Die Mechanik dafür existiert vollständig — es fehlt nur der gemeinsame Ort.
 
 ---
 
+### ATE — Admin-Teilebenen (Andi, 21.08.2026)
+
+Andis Kürzel für die Bereiche, die ein Admin einstellt und **die einzeln
+austauschbar sein müssen**: Joker · Ereignisse · Standard-Modifikatoren ·
+Team- und Wettbewerbsauswahl.
+
+🔴 **Der Ablauf, den er beschreibt — schichtweise:**
+
+1. **Ein Code für das Gesamtspiel** wird eingegeben. Damit stehen alle ATE auf
+   den Voreinstellungen dieses Codes.
+2. **Danach wird ATE für ATE einzeln überschrieben** — mit Teil-Codes, die
+   auch von anderen Creatorn stammen dürfen.
+3. In der Bibliothek soll zusätzlich die **Auswahl der beliebtesten
+   Creator-Codes** möglich sein.
+
+Wörtlich: *„erstmal nen Code für das Gesamtspiel … dann hat man hierfür alle
+Presets und dann kann man nach und nach die Teilebenen einzeln durch die
+jeweiligen Teilcodes abändern, die ja auch von anderen Creatorn kommen."*
+
+**Die Mechanik dafür ist gebaut** (`teilbibliothek.js`): `TS2-…` trägt das
+ganze Regelwerk, `TS2A-<aspekt>-…` genau eine Ebene, und `wendeTeilCodeAn`
+ersetzt NUR die Felder seines Aspekts — alles andere bleibt stehen. Mehrere
+nacheinander angewandt ergeben genau die Schichtung oben.
+
+⚠️ **Was fehlt, ist ein eigenes Code-Feld JE ABSCHNITT.** Heute gibt es ein
+Feld für den Gesamt-Code; ein Teil-Code funktioniert zwar, aber man muss ihn in
+dasselbe Feld tippen. Andi will das Feld dort, wo die Ebene eingestellt wird —
+sonst ist nicht sichtbar, dass sich nur dieser Abschnitt ändert.
+
+⚠️ **Reihenfolge ist bedeutsam.** Zwei Codes, die dieselbe Ebene tragen,
+überschreiben einander — der zuletzt eingesetzte gewinnt. Das muss die
+Oberfläche zeigen („zuletzt geladen: …"), sonst wirkt es wie ein Fehler.
+
+---
+
 ## Die sieben Ebenen — mehr gibt es nicht
 
 Jeder Einfluss im Spiel gehört in **genau eine** davon. Wer einen neuen baut

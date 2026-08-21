@@ -61,6 +61,13 @@ function folie3() {
   ], 0.9 * CM));
   teile.push(K(l, L_X, L_W, ["Nur bestimmte Spieltage", "ab Spieltag … bis Spieltag …"], 1.1 * CM));
   teile.push(K(l, L_X, L_W, ["Feste Begegnungsliste", "z. B. nur die Traditionsduelle"], 1.1 * CM));
+  // 🔴 Eigenes Code-Feld JE ABSCHNITT (Andi, 21.08.2026): „bei jedem Punkt
+  // vor der Bibliothek ein eigenes Codefeld, um exakt nur für diesen
+  // Teilabschnitt eine Anpassung zu laden."
+  teile.push(K(l, L_X, L_W, [
+    "Teil-Code für diese Ebene einsetzen",
+    "ändert NUR die Betippungsauswahl — alles andere bleibt",
+  ], 1.3 * CM));
   // Höhe merken, damit der Pfeil GENAU von hier zum Fenstertitel läuft.
   const yLaden = l.y + 0.45 * CM;
   teile.push(K(l, L_X, L_W, ["Betippungsauswahl aus Bibliothek laden"], 0.9 * CM));
@@ -81,6 +88,10 @@ function folie3() {
   ], 1.8 * CM));
   teile.push(K(r, R_X, R_W, ["Variante 3 … wie davor"], 1.2 * CM));
   teile.push(K(r, R_X, R_W, [
+    "Beliebteste Creator-Codes",
+    "sortiert nach Beliebtheit · Urheber sichtbar",
+  ], 1.3 * CM));
+  teile.push(K(r, R_X, R_W, [
     "AUFTRAG: Was steht in der Kurzbeschreibung?",
     "Vorschlag: Was ausgewählt wird · wie viele Spiele je Spieltag daraus folgen · wofür es sich eignet.",
   ], 2.2 * CM, "auftrag", 1100));
@@ -95,6 +106,16 @@ function folie4() {
   teile.push(T(l, L_X, L_W, [
     "Das Quotentippen steht schon. Alles hier ist freiwillig und lässt sich einzeln zuschalten.",
   ], 1.0 * CM));
+  // Andis Schichtung (21.08.2026) gehört an den Anfang der Zusätze — sie
+  // erklärt, warum es überhaupt Code-Felder je Ebene gibt.
+  teile.push(K(l, L_X, L_W, [
+    "Code für das GESAMTE Spiel einsetzen",
+    "setzt alle Teilebenen auf einmal — danach einzeln überschreibbar",
+  ], 1.4 * CM));
+  teile.push(T(l, L_X, L_W, [
+    "Reihenfolge: erst der Gesamt-Code, dann die Ebenen einzeln mit Teil-Codes "
+    + "überschreiben — auch von anderen Creatorn.",
+  ], 1.2 * CM));
   teile.push(K(l, L_X, L_W, ["Joker", "aus · an"], 1.1 * CM));
   teile.push(K(l, L_X, L_W, ["Ereignisse & Drehrad", "aus · an"], 1.1 * CM));
   teile.push(K(l, L_X, L_W, ["Modifikatoren", "aus · an"], 1.1 * CM));
@@ -114,7 +135,14 @@ function folieMitBibliothek(titel, links, bibTitel, bibEintraege, auftrag) {
   teile.push(K(l, L_X, L_W, [titel], 0.8 * CM, "normal", 1400));
   let yLaden = null;
   for (const z of links) {
-    if (Array.isArray(z) && /Bibliothek laden/.test(z[0])) yLaden = l.y + 0.45 * CM;
+    if (Array.isArray(z) && /Bibliothek laden/.test(z[0])) {
+      // Erst das Code-Feld, dann die Lade-Zeile — siehe Folie 3.
+      teile.push(K(l, L_X, L_W, [
+        "Teil-Code für diese Ebene einsetzen",
+        `ändert NUR ${titel} — alles andere bleibt`,
+      ], 1.3 * CM));
+      yLaden = l.y + 0.45 * CM;
+    }
     teile.push(Array.isArray(z)
       ? K(l, L_X, L_W, z, z.length > 1 ? 1.3 * CM : 0.9 * CM)
       : T(l, L_X, L_W, [z], 1.0 * CM));
@@ -126,6 +154,10 @@ function folieMitBibliothek(titel, links, bibTitel, bibEintraege, auftrag) {
     teile.push(K(r, R_X, R_W, ["Suche", "Filter: Relevanz · Beliebtheit"], 1.1 * CM));
     for (const e of bibEintraege) teile.push(K(r, R_X, R_W, e, 1.8 * CM));
     teile.push(K(r, R_X, R_W, ["… wie davor"], 0.9 * CM));
+    teile.push(K(r, R_X, R_W, [
+      "Beliebteste Creator-Codes",
+      "sortiert nach Beliebtheit · Urheber sichtbar",
+    ], 1.3 * CM));
     teile.push(pfeil({ id: naechsteId(), x: L_X + L_W, y: yLaden ?? 2.0 * CM, y2: 0.9 * CM, w: R_X - (L_X + L_W) }));
   }
   return teile;
@@ -183,6 +215,9 @@ const PLAN = {
       ["Derby und Team-Faktoren", "je Verein einstellbar"],
       ["Torarm / torreich", "nach erwarteter Torzahl"],
       ["Deckel", "wie viel ein Spiel höchstens zählen darf"],
+      // Auch ohne Bibliothek: die Standard-Modifikatoren sind eine ATE und
+      // müssen einzeln austauschbar sein (Andi, 21.08.2026).
+      ["Teil-Code für diese Ebene einsetzen", "ändert NUR die Modifikatoren"],
     ],
     null, [],
     [
