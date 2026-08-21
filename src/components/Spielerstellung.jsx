@@ -26,6 +26,7 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import AnsichtSchalter from "@/components/AnsichtSchalter";
 import VariantenWahl from "@/components/VariantenWahl";
+import TabellenBonus from "@/components/TabellenBonus";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
@@ -956,6 +957,17 @@ export default function Spielerstellung() {
               <SectionTitle>Mitbestimmung</SectionTitle>
               <Mitbestimmung rules={rules}
                 onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
+            </>
+          )}
+
+          {/* Außenseiter nach Tabelle (Andi, 21.08.2026). Steht neben dem
+              Alleingang, weil beides Modifikatoren sind, die auf denselben
+              additiven Topf einzahlen und von `modCap` gedeckelt werden. */}
+          {stufe === "profi" && (
+            <>
+              <SectionTitle>Außenseiter nach Tabelle</SectionTitle>
+              <TabellenBonus rules={rules}
+                onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
             </>
           )}
 

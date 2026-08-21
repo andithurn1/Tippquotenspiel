@@ -31,17 +31,38 @@ import { useEffect, useMemo, useState } from "react";
 import { C, MONO } from "@/lib/theme";
 import { getStore } from "@/lib/store";
 import { AUSWAHL_LIMITS } from "@/lib/spielauswahl";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // Unsere Voreinstellung für den Abstiegskampf. Keine Balance-Aussage — eine
 // Bequemlichkeit: die Zahlen sind sofort verstellbar.
 export const ABSTIEGSKAMPF = { von: 14, bis: 18, abSpieltag: 30 };
+
+// 🔴 MEHRERE Zonen seit 21.08.2026. Andi: „noch mehrere Zwischenintervalle,
+// sodass halt auch Platz 14–18 und noch 1–4 betippt werden kann … bisher nur
+// Abstiegskampf möglich."
+//
+// Das Datenmodell konnte das die ganze Zeit — `zonen` ist eine LISTE (siehe
+// spielauswahl.js) — nur die Oberfläche schrieb ausschließlich `zonen[0]`.
+// Ein Spiel zählt, sobald EINE Seite in EINER der Zonen steht.
+//
+// ⚠️ Die Vorlagen sind Bequemlichkeit, keine Balance-Aussage: jede Zahl bleibt
+// danach frei verstellbar (Baukasten-Grundsatz: Knopf UND Zahlenfeld).
+export const ZONEN_VORLAGEN = [
+  { key: "spitze", label: "Spitze", unter: "Meisterschaft und Europa", von: 1, bis: 4 },
+  { key: "europa", label: "Europapokal-Ränge", unter: "erweitertes oberes Drittel", von: 1, bis: 7 },
+  { key: "mittelfeld", label: "Mittelfeld", unter: "wo es um nichts mehr geht", von: 8, bis: 13 },
+  { key: "abstieg", label: "Abstiegskampf", unter: "unteres Tabellendrittel", von: 14, bis: 18 },
+];
 
 export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }) {
   const [matches, setMatches] = useState(null);
 
   const ab = spiele?.jeWettbewerb?.[wettbewerb] ?? null;
   const zonen = ab?.zonen ?? [];
-  const zone = zonen[0] ?? null;
+  // Eine Zonenliste schreiben. Leere Liste heißt „keine Einschränkung“ — dafür
+  // muss `undefined` gesetzt werden, nicht `[]`: eine leere Liste wäre eine
+  // Abweichung, die nichts abweicht, und bliebe im Creator-Code stehen.
+  const setzeZonen = (liste) => setzeAb({ zonen: liste.length ? liste : undefined });
   const matchIds = ab?.matchIds ?? [];
 
   // Der Katalog wird nur für die Derby-Empfehlung gebraucht — deshalb erst
@@ -75,7 +96,6 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
     onChange({ jeWettbewerb: karte });
   };
 
-  const abstiegAn = Boolean(zone);
   const derbysAn = matchIds.length > 0 && ab?.modus === "liste";
 
   const derbyUmschalten = (an) => setzeAb(an
@@ -100,32 +120,91 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
         Gelten nur für diese Liga. Alles Übrige bleibt bei der Einstellung der Runde.
       </p>
 
-      {/* ── Abstiegskampf ───────────────────────────────── */}
-      <Schalter
-        an={abstiegAn}
-        titel="Abstiegskampf"
-        unter="Endspurt im unteren Tabellendrittel"
-        onChange={(an) => setzeAb(an
-          ? { zonen: [{ von: ABSTIEGSKAMPF.von, bis: ABSTIEGSKAMPF.bis }], spieltagVon: ABSTIEGSKAMPF.abSpieltag }
-          : { zonen: undefined, spieltagVon: undefined })}
-      />
-      {abstiegAn && (
-        <div style={{ padding: "8px 2px 2px" }}>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Zahl label="Platz ab" value={zone.von} min={AUSWAHL_LIMITS.platz.min} max={AUSWAHL_LIMITS.platz.max}
-              onChange={(v) => setzeAb({ zonen: [{ von: v, bis: zone.bis }] })} />
-            <Zahl label="bis Platz" value={zone.bis} min={AUSWAHL_LIMITS.platz.min} max={AUSWAHL_LIMITS.platz.max}
-              onChange={(v) => setzeAb({ zonen: [{ von: zone.von, bis: v }] })} />
+      {/* ── Tabellenzonen ───────────────────────────────────
+          🔴 Seit 21.08.2026 MEHRERE. Vorher gab es genau einen Schalter
+          („Abstiegskampf"), der `zonen[0]` schrieb — Andi wollte 14–18 UND
+          1–4 gleichzeitig betippen können. Die Liste konnte das immer, nur
+          diese Anzeige nicht. */}
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Tabellenzonen</div>
+      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+        Getippt wird, wer in EINER der Zonen steht. Ohne Zone gilt die ganze Liga.
+      </p>
+
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+        {ZONEN_VORLAGEN.map((v) => {
+          const drin = zonen.some((z) => z.von === v.von && z.bis === v.bis);
+          return (
+            <button
+              key={v.key}
+              type="button"
+              title={v.unter}
+              aria-pressed={drin}
+              onClick={() => setzeZonen(drin
+                ? zonen.filter((z) => !(z.von === v.von && z.bis === v.bis))
+                : [...zonen, { von: v.von, bis: v.bis }])}
+              style={{
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                padding: "0 12px", borderRadius: 12,
+                background: drin ? `${C.akzent}1A` : C.surface,
+                color: drin ? C.akzent : C.muted,
+                border: `1px solid ${drin ? C.akzent : C.line}`,
+              }}
+            >
+              {drin ? "✓ " : "+ "}{v.label} {v.von}–{v.bis}
+            </button>
+          );
+        })}
+      </div>
+
+      {zonen.length > 0 && (
+        <div style={{ padding: "2px 2px 2px" }}>
+          {zonen.map((z, i) => (
+            <div key={`${z.von}-${z.bis}-${i}`}
+              style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 8 }}>
+              <Zahl label="Platz ab" value={z.von}
+                min={AUSWAHL_LIMITS.platz.min} max={AUSWAHL_LIMITS.platz.max}
+                onChange={(v) => setzeZonen(zonen.map((alt, k) => (k === i ? { ...alt, von: v } : alt)))} />
+              <Zahl label="bis Platz" value={z.bis}
+                min={AUSWAHL_LIMITS.platz.min} max={AUSWAHL_LIMITS.platz.max}
+                onChange={(v) => setzeZonen(zonen.map((alt, k) => (k === i ? { ...alt, bis: v } : alt)))} />
+              <button
+                type="button"
+                onClick={() => setzeZonen(zonen.filter((_, k) => k !== i))}
+                style={{
+                  ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                  padding: "0 12px", borderRadius: 12, background: C.surface,
+                  color: C.muted, border: `1px solid ${C.line}`,
+                }}
+              >
+                entfernen
+              </button>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => setzeZonen([...zonen, { von: 1, bis: 4 }])}
+            style={{
+              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+              padding: "0 12px", borderRadius: 12, background: C.surface,
+              color: C.text, border: `1px dashed ${C.line}`, marginBottom: 6,
+            }}
+          >
+            + eigene Zone
+          </button>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
             <Zahl label="ab Spieltag" value={ab?.spieltagVon ?? ABSTIEGSKAMPF.abSpieltag}
               min={AUSWAHL_LIMITS.spieltag.min} max={AUSWAHL_LIMITS.spieltag.max}
               onChange={(v) => setzeAb({ spieltagVon: v })} />
           </div>
+
           {/* Die Betreuung, die eine nackte Zahl nicht leistet — dieselbe
               Rolle wie `anteile()` bei den Wettbewerbs-Gewichten. */}
           <p style={{ fontSize: 11, color: C.akzent, margin: "8px 0 0", lineHeight: 1.45 }}>
-            Getippt wird, wer auf den Plätzen {zone.von}–{zone.bis} steht — abgelesen am
-            Tabellenstand beim Öffnen des Spieltags, nicht zwischen zwei Spielen desselben
-            Spieltags.
+            Getippt wird, wer auf {zonen.map((z) => `${z.von}–${z.bis}`).join(" oder ")} steht
+            — abgelesen am Tabellenstand beim Öffnen des Spieltags, nicht zwischen zwei
+            Spielen desselben Spieltags.
           </p>
           {/* 🔴 Der Satz muss stehen bleiben. Der Tabellenstand entsteht erst
               beim Öffnen eines Spieltags; VORHER kennt keine Vorschau ihn, und

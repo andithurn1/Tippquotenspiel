@@ -143,3 +143,203 @@ und der Unterschied entscheidet die Oberfläche:
 
 Ohne diese Trennung landen alle drei in derselben Liste, und die Sonderregeln
 je Wettbewerb bekommen Regler, die mit dem Wettbewerb nichts zu tun haben.
+
+---
+
+# TEIL B · Jeder Modifikator im Einzelnen
+
+**Ergänzt am 21.08.2026** auf Andis Frage: *„kannst du auch bitte jeweilig
+nochmal ausgestalten, welche Einzeldetails bzw. welche Parameter dazu jeweils
+einstellbar sein sollten."*
+
+## Was für ALLE gilt
+
+🔴 **Jeder Modifikator liefert einen AUFSCHLAG, keinen Faktor.** Die Aufschläge
+werden addiert und erst am Ende von `modCap` gedeckelt. Ein Faktor würde nach
+dem Deckel wirken und ihn damit aushebeln — dieser Fehler ist im Projekt schon
+einmal passiert (siehe `alleinstellung.js`).
+
+Deshalb hat **jeder** Eintrag unten dieselben drei Grundregler, und sie werden
+danach nicht mehr wiederholt:
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `enabled` | an/aus | aus | Ohne ihn passiert nichts. Alles Neue startet AUS. |
+| `aufschlag` | 0 … 1,5 | 0,2 | Wie viel er beisteuert. 0,2 heißt +20 % — Andis Größenordnung für Empfehlungen. |
+| `nurWennRichtig` | an/aus | an | Zählt er nur bei richtigem Tipp, oder als Grundgewicht des Spiels? |
+
+⚠️ **`nurWennRichtig` ist der wichtigste und am leichtesten übersehene
+Schalter.** Aus heißt: das Spiel zählt generell mehr — auch für den, der
+danebenliegt. An heißt: es ist eine Belohnung. Dieselbe Zahl bedeutet damit
+zwei völlig verschiedene Spiele.
+
+---
+
+## B1 · Torarmes Spiel
+
+**Was:** Spiele mit niedriger Torerwartung zählen mehr — sie sind schwerer zu
+tippen. Hängt am **Spiel**, nicht am Tipp.
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `schwelle` | 1,5 … 3,5 Tore | 2,3 | Ab welcher erwarteten Gesamt-Torzahl es als torarm gilt (darunter) |
+| `rampe` | 0 … 1,5 Tore | 0,5 | Weicher Übergang: volle Wirkung erst bei `schwelle − rampe`. Ohne Rampe springt der Aufschlag zwischen 2,29 und 2,31 hin und her |
+
+⚠️ Die Torerwartung liegt als `lamH + lamA` vor — keine Schätzung, sondern der
+Wert, aus dem auch die Quoten gerechnet sind.
+
+## B2 · Torreiches Spiel
+
+Spiegelbild von B1, gleiche Regler, `schwelle` als Untergrenze (Vorgabe 3,2).
+
+❓ **Frage an Andi:** B1 und B2 gleichzeitig eingeschaltet heißt, dass nur
+*mittlere* Spiele nichts bekommen. Gewollt — oder sollen sie sich ausschließen?
+
+## B3 · Zu-Null
+
+**Was:** Aufschlag, wenn richtig getippt wurde, dass eine Mannschaft nicht
+trifft. Hängt am **Tipp**.
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `seite` | beide / nur Heim / nur Auswärts | beide | Auswärts zu Null ist deutlich seltener und damit mehr wert |
+| `nurBeiSieg` | an/aus | aus | Zählt ein 0:0 mit? |
+
+## B4 · Kantersieg
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `abDifferenz` | 2 … 5 | 3 | Ab welchem Torabstand |
+| `genau` | an/aus | aus | Muss die Differenz exakt stimmen oder reicht „mindestens"? |
+| `staffeln` | an/aus | an | Wächst der Aufschlag mit jedem weiteren Tor Abstand? |
+
+## B5 · Unwahrscheinliches Ergebnis — der stärkste Kandidat
+
+**Was:** Der Aufschlag richtet sich nach der Wahrscheinlichkeit **genau dieses
+Ergebnisses**, nicht danach, wer gewonnen hat. Ein 3:2 des Favoriten kann
+unwahrscheinlicher sein als ein 1:0 des Außenseiters.
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `schwelle` | 1 … 15 % | 6 % | Ab welcher Einzelwahrscheinlichkeit es als unwahrscheinlich gilt |
+| `kurve` | flach / linear / steil | linear | Wie stark sehr seltene gegenüber knapp seltenen Ergebnissen bevorzugt werden |
+| `maxAufschlag` | 0 … 3 | 1,0 | Eigener Deckel |
+
+⚠️ **Ohne `maxAufschlag` ist dieser Modifikator gefährlich:** die
+Ergebnis-Matrix enthält Felder mit Wahrscheinlichkeiten unter 0,1 %.
+
+## B6 · Gegen den Markt
+
+**Was:** Belohnt Abstand zum wahrscheinlichsten Ergebnis — ein Maß für Mut,
+kein Treffer-Bonus.
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `mass` | Tendenz / Tordifferenz / Ergebnis | Tendenz | Woran der Abstand gemessen wird |
+| `mindestAbstand` | 0 … 50 % | 15 % | Ab wann ein Tipp als „gegen den Markt" gilt |
+
+## B7 · Außenseiter-Torschütze
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `abQuote` | 3 … 30 | 8 | Ab welcher Torschützen-Quote |
+| `nurErsterTreffer` | an/aus | aus | Nur der erste Treffer des Spiels? |
+| `proTreffer` | an/aus | an | Zählt jeder Treffer desselben Spielers oder nur einmal? |
+
+## B8 · Spieltag-Gewicht (Endspurt)
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `abSpieltag` | 1 … 34 | 28 | Ab wann |
+| `kurve` | Stufe / linear | linear | Sprung oder allmähliches Anwachsen |
+| `endwert` | 0 … 1 | 0,3 | Aufschlag am letzten Spieltag |
+
+⚠️ **Das ist eine Aufholmechanik in Verkleidung.** Zusammen mit `aufholen`
+wirkt beides in dieselbe Richtung und addiert sich.
+
+## B9 · Anstoßzeit
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `fenster` | Liste von Zeitfenstern | Fr 20:30 · So 19:30 | Welche Anstoßzeiten gemeint sind |
+| `jeFenster` | Aufschlag je Fenster | — | Getrennt einstellbar, sonst sind „Freitag" und „Sonntagabend" dasselbe |
+
+## B10 · Serie
+
+**Was:** N Spieltage in Folge über einer Trefferquote. Hängt am **Tipper**.
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `laenge` | 2 … 10 | 3 | Wie viele Spieltage in Folge |
+| `schwelle` | 30 … 100 % | 60 % | Was als „gut" zählt |
+| `wachsend` | an/aus | an | Wächst der Aufschlag mit jeder weiteren Runde? |
+| `maxStufen` | 1 … 10 | 5 | Deckel für das Wachsen |
+| `bruchVerhalten` | zurück auf null / eine Stufe runter | null | Was ein schlechter Spieltag kostet |
+
+⚠️ **`bruchVerhalten` entscheidet den Charakter.** „Zurück auf null" macht
+Serien zum Nervenspiel, „eine Stufe runter" zur Rangliste der Beständigkeit.
+
+## B11 · Perfekter Spieltag
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `genauigkeit` | Tendenz / Abstand / Exakt | Tendenz | Was „alles richtig" heißt |
+| `mindestSpiele` | 3 … 15 | 5 | Bei zwei Spielen ist perfekt kein Kunststück |
+| `punkte` | fester Betrag | 150 | ⚠️ Hier ausnahmsweise PUNKTE statt Aufschlag — es hängt an keinem einzelnen Spiel |
+
+## B12 · Kontra-Bonus
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `abAnteil` | 50 … 95 % | 70 % | Ab welchem Anteil falscher Mitspieler |
+| `skala` | Stufe / linear | linear | Sprung bei der Schwelle oder mitwachsend |
+| `minTipper` | 3 … 20 | 5 | Darunter ist „die Mehrheit" bedeutungslos |
+
+⚠️ **Überschneidet sich mit `alleinstellung`.** Vor dem Bauen entscheiden, ob
+der Kontra-Bonus sie ERSETZT oder ergänzt.
+
+## B13 · Wackelkandidat
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `anzahl` | 1 … 3 | 1 | Wie viele Spiele je Spieltag |
+| `mass` | Streuung der Tendenzen / der Ergebnisse | Tendenz | Woran Uneinigkeit gemessen wird |
+| `sichtbarVorher` | an/aus | aus | Sehen die Spieler vorher, welches Spiel es ist? |
+
+⚠️ **`sichtbarVorher` verändert das Spiel grundlegend** — und verrät nebenbei
+die Tipps der anderen, bevor abgegeben wurde.
+
+## B14 · Tabellenplatz und Punkteabstand  ✅ GEBAUT am 21.08.2026
+
+**Was:** Andis Wunsch. Der Aufschlag richtet sich danach, wie weit die beiden
+Mannschaften in der Tabelle auseinanderliegen — nicht danach, was der Markt
+sagt.
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `bezug` | Platzabstand / Punkteabstand | Platz | Womit gemessen wird |
+| `abAbstand` | 3 … 18 Plätze bzw. 5 … 40 Punkte | 8 | Ab wann es ein Außenseiter-Duell ist |
+| `abSpieltag` | 3 … 10 | 5 | Vorher ist die Tabelle nicht aussagekräftig |
+| `richtung` | nur Außenseiter / auch Favorit | nur Außenseiter | Gibt es auch einen Malus für erwartbare Siege? |
+| `fallback` | aus / Quote benutzen | Quote | Was gilt, solange keine Tabelle vorliegt |
+
+🔴 **`fallback` ist Pflicht, kein Komfort.** Ohne ihn wäre der Modifikator an
+den ersten Spieltagen still wirkungslos, und niemand merkt es.
+
+## B15 · Spitzenspiel nach Tabelle
+
+Wie `bigGame`, nur mit der Tabelle statt der Quoten-Spannung.
+
+| Regler | Typ | Vorgabe | Bedeutung |
+|---|---|---|---|
+| `beidePlatzBis` | 2 … 8 | 4 | Beide Mannschaften unter Platz N |
+| `oderAbstiegsduell` | an/aus | aus | Gilt dasselbe unten? |
+
+---
+
+## Was hier NICHT steht
+
+Die 15 bereits gebauten Modifikatoren aus Teil A haben ihre Regler schon — sie
+stehen vollständig in `design/entwuerfe/Ebenen-Parameter.docx`, Block für Block
+mit Vorgabewerten. Sie hier zu wiederholen hieße, zwei Wahrheiten über
+dieselben Felder zu pflegen.

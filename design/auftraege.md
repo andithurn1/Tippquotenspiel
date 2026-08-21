@@ -79,6 +79,17 @@ Wettbewerbe ganz oben. Genau der Sprung, den ST2 verbietet.
 | TC4 | **Ein Code nur für Ereignisse**, samt Auslosung am Rad | ⏳ | dito — `ereignisse` und `drehrad` liegen im selben Aspekt. Das Drehrad selbst ist gebaut (`/rad`) |
 | TC5 | „Jokercode“ ins Vokabular | ✅ | `design/vokabular.md`, Abschnitt „Teil-Codes“ mit dem vollständigen Feld-Bündel |
 
+## Modifikatoren (21.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| MOD1 | „mach hier ne Liste" sinnvoller Modifikatoren | ✅ | `design/modifikatoren-katalog.md` — nach DATENLAGE gegliedert: 15 gebaut, 17 sofort baubar, 3 mit eigenem Aufwand, der Rest braucht eine neue Datenquelle |
+| MOD2 | „welche Parameter dazu jeweils einstellbar sein sollten" | ✅ | Teil B des Katalogs: je Modifikator eine Regler-Tabelle mit Typ, Vorgabe und Bedeutung, plus die drei Grundregler, die für alle gelten |
+| MOD3 | **Underdog-Bonus nach Tabellenplatz / Punkteabstand** — „bitte umsetzen" | ✅ | `tabellenBonus.js` + `TabellenBonus.jsx` (Profi). 20 eigene Tests, alle Abnahmen ohne Befund. Tabelle aus eigenen Ergebnissen, beim Öffnen des Spieltags eingefroren |
+| MOD4 | **Mehrere Tabellenzonen** — „auch Platz 14–18 und noch 1–4" | ✅ | `LigaSonderregeln.jsx`: beliebig viele Zonen, vier Vorlagen (Spitze 1–4, Europa 1–7, Mittelfeld 8–13, Abstieg 14–18), jede Zahl frei verstellbar. Das Datenmodell konnte es immer, nur die Anzeige schrieb `zonen[0]` |
+| MOD5 | Ligen und Mannschaften einzeln höher gewichten | 🔨 | **War schon gebaut** (`wettbewerbe.aufschlaege`, `teamMods.teams`). ⏳ Offen bleibt Andis eigentlicher Punkt: sie liegen nicht bei den Sonderregeln je Wettbewerb |
+| MOD6 | Auswahl der Modifikatoren für die EINFACHE Ansicht | ⏳ | ausdrücklich nach Profi geplant („dann im Nachhinein") |
+
 ## Betrieb
 
 | Nr | Ansage | Stand | Beleg / was fehlt |

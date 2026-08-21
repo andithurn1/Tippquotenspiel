@@ -24,6 +24,7 @@ import { sanitizeSaison } from "./saisonwetten";
 import { sanitizeVerteilung, DEFAULT_VERTEILUNG } from "./jokerPlan";
 import { sanitizeAlleinstellung, DEFAULT_ALLEINSTELLUNG, alleinstellungBoni } from "./alleinstellung";
 import { sanitizeBigGame, DEFAULT_BIGGAME, bigGameAufschlag } from "./bigGame";
+import { sanitizeTabellenBonus, DEFAULT_TABELLENBONUS, tabellenBonusAufschlag } from "./tabellenBonus";
 import { sanitizeSpiele, DEFAULT_SPIELE } from "./spielauswahl";
 import {
   sanitizeEreignisse, DEFAULT_EREIGNISSE,
@@ -190,6 +191,8 @@ export const DEFAULT_RULES = {
   // nur `snap.bigGame`, das die Daten-Schicht beim Öffnen des Spieltags setzt
   // (eingefroren, wie der Quoten-Snapshot). Standard aus.
   bigGame: { ...DEFAULT_BIGGAME },
+  // Außenseiter nach TABELLE statt nach Markt (Andi, 21.08.2026).
+  tabellenBonus: { ...DEFAULT_TABELLENBONUS },
 
   // Deckel für ALLE Modifikatoren zusammen. Wichtig, weil es drei Ebenen gibt
   // (Joker pro Nutzer · Abstimmung pro Spieltag · Team-Mods pro Begegnung).
@@ -592,6 +595,7 @@ export function sanitizeRules(partial = {}) {
     saison: sanitizeSaison(src.saison),
     // Big Game ebenso — der Katalog der Signale bleibt in bigGame.js.
     bigGame: sanitizeBigGame(src.bigGame),
+    tabellenBonus: sanitizeTabellenBonus(src.tabellenBonus),
     spiele: sanitizeSpiele(src.spiele),
     // Alleinstellung ebenso — Katalog der Modi und Grenzen bleibt in
     // alleinstellung.js, damit die Werte im Creator-Code dieselben Regeln
@@ -915,10 +919,17 @@ export function teamModFactor(snap, rules = DEFAULT_RULES) {
 export function totalModifier(tip, snap, rules = DEFAULT_RULES, actual = null) {
   const joker = jokerFactor(tip, rules, snap, actual);
   const team = teamModFactor(snap, rules);
+  // 🔴 Der Tabellen-Bonus steht NEBEN dem Joker-Topf, nicht darin (21.08.2026).
+  // Zwei Gründe: er hängt am Tipp wie ein Joker, soll aber auch greifen, wenn
+  // gar keine Joker eingeschaltet sind — `jokerAufschlaege` steigt bei
+  // `joker.enabled === false` sofort aus. Und er darf NEGATIV sein
+  // (`richtung: "auchFavorit"` dämpft den erwartbaren Sieg), was der
+  // Joker-Topf unten bei 0 abschneidet.
+  const tabelle = tabellenBonusAufschlag(tip, snap, rules, actual);
   // Der Joker bleibt nach unten bei 0 gekappt — ein Joker, der SCHADET, ist
   // eine eigene Entscheidung (`jokerBasis.symmetrie`) und nicht Sache dieser
   // Stelle. Die Team-Ebene darf dagegen negativ beitragen: das ist der Dämpfer.
-  const aufschlag = Math.max(0, joker - 1) + (team - 1);
+  const aufschlag = Math.max(0, joker - 1) + (team - 1) + tabelle;
   const roh = 1 + aufschlag;
   const cap = Number.isFinite(rules?.modCap) ? rules.modCap : Infinity;
   // ⚠️ `modFloor` ist das Gegenstück zu `modCap`. Ohne ihn könnte ein Spiel
@@ -931,6 +942,7 @@ export function totalModifier(tip, snap, rules = DEFAULT_RULES, actual = null) {
     faktor: +faktor.toFixed(3),
     joker: +joker.toFixed(3),
     team: +team.toFixed(3),
+    tabelle: +tabelle.toFixed(3),
     gedeckelt: roh > cap,
     gedaempft: roh < floor,
   };

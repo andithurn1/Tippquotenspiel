@@ -90,6 +90,10 @@ export function spieltagOeffnen({
   // eigenen `zonen`. Ein Häkchen „Abstiegskampf" im Snapshot hieße, dass die
   // zuerst öffnende Runde für alle mitentscheidet — `matches` ist global.
   const platzVon = new Map(tabelle.map((t) => [t.team, t.rang]));
+  // 🔴 Die PUNKTE dazu (21.08.2026, Andis Tabellen-Bonus). Der Platz allein
+  // reicht nicht: zwischen Platz 5 und 13 können drei Punkte liegen oder
+  // dreißig, und der Abstand ist genau die Frage, die der Modifikator stellt.
+  const punkteVon = new Map(tabelle.map((t) => [t.team, t.punkte]));
 
   const snapshots = {};
   for (const m of matches) {
@@ -103,7 +107,12 @@ export function spieltagOeffnen({
       // schlimmer als keiner: „Zone nicht erfüllt" ist dann nicht mehr von
       // „steht nicht in der Zone" zu unterscheiden.
       ...(Number.isFinite(heim) && Number.isFinite(gast)
-        ? { tabellenPlatz: { home: heim, away: gast } }
+        ? {
+          tabellenPlatz: { home: heim, away: gast },
+          tabellenPunkte: { home: punkteVon.get(m.home ?? m.snapshot?.home) ?? null,
+            away: punkteVon.get(m.away ?? m.snapshot?.away) ?? null },
+          tabellenTeams: tabelle.length,
+        }
         : {}),
       ...(gewaehlt && gewaehlt.matchId === id
         ? { bigGameWert: gewaehlt.wert, bigGameGrund: gewaehlt.begruendung }

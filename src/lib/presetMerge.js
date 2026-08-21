@@ -56,7 +56,10 @@ export const ASPEKTE = [
     // in genau dieselben Töpfe. Ein Rad ohne die Ökonomie, aus der es schöpft,
     // wäre ein Auslöser ohne Wirkung.
     keys: ["joker", "teamMods", "modCap", "modFloor", "bigGame", "ereignisse", "wettbewerbe",
-           "duell", "budget", "limitKlassen", "jokerBasis", "drehrad"],
+           "duell", "budget", "limitKlassen", "jokerBasis", "drehrad",
+           // Tabellen-Bonus (21.08.2026): speist denselben additiven Topf und
+           // wird von modCap gedeckelt — er gehoert zu den Modifikatoren.
+           "tabellenBonus"],
   },
   {
     key: "spiele",

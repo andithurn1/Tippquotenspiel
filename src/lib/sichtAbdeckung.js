@@ -82,6 +82,7 @@ export const SPUREN = {
   saisonform: ["saisonform", "gestrichen"],
   versaeumnis: ["versaeumnis", "ersatz"],
   bigGame: ["bigGame", "bigGameAufschlag"],
+  tabellenBonus: ["tabellenBonus", "mod-tabelle", "Außenseiter nach Tabelle"],
   wettbewerbe: ["wettbewerbe", "wettbewerbGewicht", "anteile"],
   teamMods: ["teamMods", "derby", "findDerby"],
   tippfenster: ["tippfenster", "tippStatus"],

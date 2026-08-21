@@ -210,6 +210,26 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
     // ohne jedes Derby erklärt nichts, es verwirrt: der Spieler sucht ein Derby,
     // das es nicht gibt. Aufgeteilt wird über DIESELBEN Funktionen, die die
     // Engine benutzt, damit keine zweite Rechnung entsteht.
+    // 🔴 Tabellen-Bonus getrennt ausweisen (21.08.2026). Er steckt NICHT in
+    // `mod.team`, sondern liegt daneben — deshalb hier ein eigener Zweig und
+    // nicht im Block darüber. Ohne eigene Zeile sähe der Spieler nur einen
+    // größeren Gesamtfaktor und könnte ihn von einem Rechenfehler nicht
+    // unterscheiden.
+    if (Math.abs(mod.tabelle ?? 0) > 0.001) {
+      const tb = mod.tabelle;
+      const platz = snap?.tabellenPlatz;
+      const woher = platz
+        ? `Tabelle ${platz.home}. gegen ${platz.away}.`
+        : "ohne Tabelle über die Quote";
+      posten.push({
+        key: "mod-tabelle",
+        label: tb > 0 ? "Außenseiter nach Tabelle" : "Favoriten-Dämpfer",
+        art: "info",
+        wert: r2(tb),
+        hinweis: `${woher} · ${tb > 0 ? "Aufschlag +" : "Abzug "}${r2(tb)} (oben eingerechnet)`,
+      });
+    }
+
     if (mod.team > 1) {
       const bigGame = bigGameAufschlag(snap, rules);
       const wettbewerb = wettbewerbAufschlag(snap, rules);

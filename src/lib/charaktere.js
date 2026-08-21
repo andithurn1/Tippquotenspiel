@@ -92,6 +92,13 @@ export const CHARAKTERE = [
       // Fehlgriffe des Zockers, nicht nur seine Treffer — dieselbe Mechanik
       // wie beim Heimatbonus. Bewusst die mittlere Schwelle, nicht 0.
       bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 },
+      // 🔴 Außenseiter nach TABELLE (21.08.2026). Gehört genau hierher: die
+      // Kachel verspricht „Außenseiter-Tipps sollen sich richtig lohnen", und
+      // bis heute löste das nur der markt-basierte `underdogBoost` ein. Ohne
+      // diese Zeile käme der neue Modifikator in der einfachen Ansicht gar
+      // nicht vor — genau die Lücke, die `npm run stufen` misst.
+      // Bewusst milde: +20 %, nur bei eingelöstem Tipp, ab 8 Plätzen Abstand.
+      tabellenBonus: { enabled: true, aufschlag: 0.2, bezug: "platz", abAbstand: 8 },
       // Die Traditionsduelle dazu — sie stehen VORHER fest, anders als das
       // Topspiel, das erst aus dem Tabellenstand entsteht.
       // 🔴 GEMESSEN: 1,15 und nicht 1,5. Dieser Charakter trägt schon Joker
