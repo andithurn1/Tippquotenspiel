@@ -64,7 +64,7 @@ später; die Sonderregeln je Wettbewerb sind ausdrücklich noch offen.
 |---|---|---|---|
 | ST1 | **Nur noch ZWEI Anzeigeebenen** (Einfach, Profi) — „Anpassen“ fällt weg | ✅ | 1 Bedingung `anpassen`→`einfach` (die vier großen Fragen sitzen jetzt in Einfach — „wenige und nur die wichtigsten Regler“), 3× `!== einfach`→`=== profi`. Build, 2141 Tests, `stufen`, `anzeige`, `sicht` grün |
 | ST2 | **Die Reihenfolge der Auswahlen ist in beiden Ebenen gleich** | ✅ | Im Browser gemessen: die Abschnittsfolge ist über **19 Abschnitte** identisch, danach hat Profi nur MEHR (167 statt 22). Auch die Überschrift springt nicht mehr |
-| ST3 | Reihenfolge: **Variante → Anzeigeebene → Voreinstellungen** | 🔨 | Voreinstellungen stehen jetzt in BEIDEN Ansichten ganz vorn. **Die Variantenwahl (Budget ⇄ Quotentippen) als eigene erste Frage fehlt noch** — sie steckt weiter im Joker-Abschnitt |
+| ST3 | Reihenfolge: **Variante → Anzeigeebene → Voreinstellungen** | ✅ | `VariantenWahl.jsx` steht als erste Frage über den Voreinstellungen, in BEIDEN Ansichten. Im Browser geprüft: Variantenfrage bei Zeichen 355, erste Voreinstellung bei 839. Umschalten und Zurückschalten getestet |
 | ST4 | **Thermometer rechts neben den Voreinstellungen** | 🔨 | `BalanceAmpel` ist gebaut, hängt aber in `Spielerstellung.jsx:849` **innerhalb** von `stufe !== "einfach"` — in der einfachen Ansicht also unsichtbar, genau dort, wo Andi sie haben will |
 | ST5 | **Kopfzeile: Bibliothek · Gamemode · GameCode einsetzen** | ⏳ | GameCode-Feld existiert, liegt aber nicht in einer Kopfzeile |
 | ST6 | Texte fehlerfrei | ✅ | `design/entwuerfe/texte-teil1.md` — zwei Stellen inhaltlich angemerkt, nicht still geändert |

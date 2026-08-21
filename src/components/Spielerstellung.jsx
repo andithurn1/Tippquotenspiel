@@ -25,6 +25,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import AnsichtSchalter from "@/components/AnsichtSchalter";
+import VariantenWahl from "@/components/VariantenWahl";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
@@ -92,11 +93,16 @@ export default function Spielerstellung() {
   // Admin wäre das eine unausgewogene Runde.
   const [rules, setRules] = useState(() => sanitizeRules(PRESETS[0].rules));
   const [presetKey, setPresetKey] = useState("standard");
-  // Komplexitaets-Stufe: dieselbe Runde, nur unterschiedlich viel sichtbar.
-  // „einfach" = ein Klick auf einen Charakter · „anpassen" = wenige grosse
-  // Regler · „profi" = alles. Beim Wechsel geht NICHTS verloren, weil alle
-  // Stufen auf demselben `rules`-Objekt arbeiten.
+  // Ansicht: dieselbe Runde, nur unterschiedlich viel sichtbar.
+  // „einfach" = Voreinstellungen und die wichtigsten Regler · „profi" = alles.
+  // Beim Wechsel geht NICHTS verloren, weil beide auf demselben `rules`-Objekt
+  // arbeiten. Seit 20.08.2026 nur noch ZWEI (Andi) — „anpassen" ist entfallen.
   const [stufe, setStufe] = useState("einfach");
+  // 🔴 Welcher Joker-Modus galt, bevor auf „Budget" gewechselt wurde. Ohne das
+  // landet ein Rückwechsel stillschweigend auf „Ein Joker": `einsatz` ist EIN
+  // Wert desselben Feldes, das Verlassen überschreibt also die vorige Wahl.
+  // Wer von „Rangliste" ins Budget und zurück geht, will „Rangliste" wieder.
+  const [letzterModus, setLetzterModus] = useState("einzel");
   const [charakterKey, setCharakterKey] = useState(null);
   const [mischenOffen, setMischenOffen] = useState(false);
   // Die Spielauswahl ist KEIN lokaler Zustand mehr, sondern Teil des
@@ -135,6 +141,29 @@ export default function Spielerstellung() {
   const patchMarkets = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, ...p } })); };
   const patchGoals = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, goals: { ...r.markets.goals, ...p } } })); };
   const patchJoker = (p) => { touched(); setRules((r) => ({ ...r, joker: { ...r.joker, ...p } })); };
+
+  // ── Variantenwahl (Andis erste Frage, 20.08.2026) ─────────
+  // 🔴 Budget schaltet die Gewichtung MIT EIN. Ohne das wäre die Wahl folgenlos:
+  // `modus` gilt nur, wenn `joker.enabled` steht — ein Admin hätte „Budget"
+  // gewählt und bekäme ein Spiel ohne Münzen.
+  //
+  // ⚠️ Der Rückweg schaltet NICHT ab. Quotentippen ist das Grundspiel, Joker
+  // sind ein Zusatz darauf (Andi: „das ist kein eigener Spielmodus") — wer die
+  // Variante wechselt, will keine ausgeschaltete Gewichtung, sondern die
+  // vorige zurück.
+  //
+  // ⚠️ Hier steht bewusst `rules.joker` und nicht die Abkürzung `j` — die wird
+  // erst weiter unten gebunden. Über den Ereignispfad liefe es, weil der erst
+  // nach dem Rendern feuert; lesbar wäre es nicht.
+  const waehleVariante = (v) => {
+    const jetzt = rules.joker?.modus;
+    if (v === "budget") {
+      if (jetzt !== "einsatz") setLetzterModus(jetzt || "einzel");
+      patchJoker({ enabled: true, modus: "einsatz" });
+    } else if (jetzt === "einsatz") {
+      patchJoker({ modus: letzterModus });
+    }
+  };
   const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
   const patchSaisonform = (p) => { touched(); setRules((r) => ({ ...r, saisonform: { ...(r.saisonform || DEFAULT_RULES.saisonform), ...p } })); };
@@ -583,6 +612,11 @@ export default function Spielerstellung() {
               Die Regel dagegen, von ihm bestätigt: Profi zeigt DIESELBEN
               Abschnitte in DERSELBEN Folge, nur mit mehr Reglern je Abschnitt.
               Kein Abschnitt existiert nur in einer Ansicht. */}
+          {/* ── Variantenwahl: Andis ERSTE Frage ──────────────────
+              Steht vor den Voreinstellungen, weil sie als einzige alles
+              Nachfolgende verändert. In BEIDEN Ansichten (ST2). */}
+          <VariantenWahl rules={rules} onWaehlen={waehleVariante} />
+
           <RundenCharaktere
             gewaehlt={charakterKey}
             onWaehlen={(ch) => { setCharakterKey(ch.key); setPresetKey(null); setShortCode(null); setRules(ch.rules); }}
