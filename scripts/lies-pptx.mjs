@@ -109,6 +109,59 @@ function verbinder(xml) {
   return out;
 }
 
+// ── Pfeile AUFLÖSEN: was zeigt worauf? ──────────────────────
+// 🔴 Andi am 21.08.2026: „der Pfeil geht doch von der Bib rüber zum neuen
+// Fenster." Stimmt — nur hängt er FREI im Raum: PowerPoint speichert
+// `stCxn`/`endCxn` nur, wenn man das Pfeilende auf einen Kasten zieht, bis es
+// einrastet. Ohne das stehen dort nur Koordinaten.
+//
+// Deshalb wird der nächstliegende Kasten je Pfeilende gesucht. Andi muss seine
+// Arbeitsweise damit nicht ändern; wer einrastet, bekommt es exakt.
+//
+// ⚠️ Gemessen wird zum RAND des Kastens, nicht zum Mittelpunkt. Ein breiter
+// Kasten hat einen weit entfernten Mittelpunkt, obwohl der Pfeil direkt an
+// seiner Kante endet.
+function abstandZuKasten(px, py, k) {
+  const dx = Math.max(k.x - px, 0, px - (k.x + k.w));
+  const dy = Math.max(k.y - py, 0, py - (k.y + k.h));
+  return Math.hypot(dx, dy);
+}
+
+function naechsterKasten(px, py, kaesten) {
+  let beste = null;
+  let bestAbstand = Infinity;
+  for (const k of kaesten) {
+    const d = abstandZuKasten(px, py, k);
+    if (d < bestAbstand) { bestAbstand = d; beste = k; }
+  }
+  // Mehr als 2 cm daneben heißt: der Pfeil zeigt auf nichts Bestimmtes.
+  return bestAbstand <= 2 * EMU_PRO_CM ? beste : null;
+}
+
+function pfeileAufloesen(xml, kaesten) {
+  const out = [];
+  for (const m of xml.matchAll(/<p:cxnSp>[\s\S]*?<\/p:cxnSp>/g)) {
+    const block = m[0];
+    const off = block.match(/<a:off x="(-?\d+)" y="(-?\d+)"\/>/);
+    const ext = block.match(/<a:ext cx="(\d+)" cy="(\d+)"\/>/);
+    if (!off || !ext) continue;
+    const w = Number(ext[1]);
+    const h = Number(ext[2]);
+    // Der senkrechte Trennstrich ist kein Pfeil.
+    if (h > w * 3) continue;
+    const x = Number(off[1]);
+    const y = Number(off[2]);
+    // `flipH` heißt: der Pfeil läuft von rechts nach links.
+    const gedreht = /flipH="1"/.test(block);
+    const von = naechsterKasten(gedreht ? x + w : x, y + h / 2, kaesten);
+    const nach = naechsterKasten(gedreht ? x : x + w, y + h / 2, kaesten);
+    if (von || nach) {
+      out.push({ von: von ? von.text[0] : "(nichts)", nach: nach ? nach.text[0] : "(nichts)" });
+    }
+  }
+  return out;
+}
+
 const eintraege = zipEintraege(readFileSync(datei));
 const folienNamen = [...eintraege.keys()]
   .filter((n) => /^ppt\/slides\/slide\d+\.xml$/.test(n))
@@ -129,35 +182,43 @@ for (const name of folienNamen) {
   const striche = verbinder(xml);
   const nr = name.match(/\d+/)[0];
 
-  // Die Trennlinie: der senkrechte Strich am weitesten links, sonst die Mitte.
-  const senkrecht = striche.filter((s) => s.senkrecht).sort((a, b) => a.x - b.x);
-  const trenner = senkrecht.length ? senkrecht[0].x : null;
-  const grenze = trenner ?? breite / 2;
+  // 🔴 ALLE senkrechten Striche sind Spaltengrenzen, nicht nur der erste
+  // (21.08.2026). Andi: „ich mache zwischen Fenstern auch viel Abstand … oder
+  // dann nochmal Trennstriche." Mit nur einer Grenze landeten das zweite und
+  // dritte Fenster in derselben Spalte und läsen sich wie ein einziges.
+  const grenzen = striche.filter((s) => s.senkrecht).map((s) => s.x).sort((a, b) => a - b);
 
   console.log(`${"═".repeat(74)}`);
-  console.log(`FOLIE ${nr}${trenner !== null
-    ? `  · Trennlinie bei ${(trenner / EMU_PRO_CM).toFixed(1)} cm`
-    : "  · keine Trennlinie gefunden"}`);
+  console.log(`FOLIE ${nr}${grenzen.length
+    ? `  · ${grenzen.length} Trennstrich(e) bei ${grenzen.map((g) => (g / EMU_PRO_CM).toFixed(1)).join(", ")} cm`
+    : "  · kein Trennstrich"}`);
   console.log("═".repeat(74));
 
-  const links = kaesten.filter((k) => k.x + k.w / 2 < grenze).sort((a, b) => a.y - b.y || a.x - b.x);
-  const rechts = kaesten.filter((k) => k.x + k.w / 2 >= grenze).sort((a, b) => a.y - b.y || a.x - b.x);
+  // Spalte eines Kastens: wie viele Grenzen liegen links von seiner Mitte?
+  const spalteVon = (k) => grenzen.filter((g) => k.x + k.w / 2 >= g).length;
+  const spalten = new Map();
+  for (const k of kaesten) {
+    const s = spalteVon(k);
+    if (!spalten.has(s)) spalten.set(s, []);
+    spalten.get(s).push(k);
+  }
 
-  const zeige = (titel, liste) => {
-    if (!liste.length) return;
-    console.log(`\n── ${titel} ──`);
+  const NAMEN = ["Der Bildschirm selbst", "Fenster, das sich öffnet", "zweites Fenster", "drittes Fenster"];
+  for (const s of [...spalten.keys()].sort((a, b) => a - b)) {
+    const liste = spalten.get(s).sort((a, b) => a.y - b.y || a.x - b.x);
+    console.log(`\n── Spalte ${s + 1}: ${NAMEN[s] ?? `Fenster ${s}`} ──`);
     for (const k of liste) {
       const pos = roh
         ? `[${(k.x / EMU_PRO_CM).toFixed(1)}/${(k.y / EMU_PRO_CM).toFixed(1)} cm] `
         : `${(k.y / EMU_PRO_CM).toFixed(1).padStart(5)} cm  `;
       console.log(pos + k.text.join(" ⏎ "));
     }
-  };
+  }
 
-  zeige(trenner !== null ? "LINKS vom Strich" : "linke Hälfte", links);
-  zeige(trenner !== null ? "RECHTS vom Strich" : "rechte Hälfte", rechts);
-
-  const pfeile = striche.filter((s) => s.waagerecht);
-  if (pfeile.length) console.log(`\n(${pfeile.length} waagerechte Verbindung(en) — vermutlich Klick-Pfeile)`);
+  const pfeile = pfeileAufloesen(xml, kaesten);
+  if (pfeile.length) {
+    console.log("\n── Pfeile (was öffnet was) ──");
+    for (const pf of pfeile) console.log(`  ${pf.von}  →  ${pf.nach}`);
+  }
   console.log("");
 }

@@ -61,6 +61,21 @@ sie gemacht — Wartezeit kostet ihn Geld, ohne dass etwas entsteht.
 ist dieselbe Kürzung. Erst alles bauen, was ohne die Antwort geht, dann fragen.
 
 
+## 🎯 NUR „SPIEL ERSTELLEN" (Andi, 21.08.2026)
+
+Wörtlich: *„es geht jetzt sowieso erstmal nur um Aufbau von Spiel erstellen,
+außer ich sags anders."*
+
+Andis Reihenfolge, ausdrücklich von ihm gesetzt: **erst die Masterdatei fertig**
+(`Quotentippen.pptx`, gelesen über `scripts/lies-pptx.mjs`), **dann** intensive
+Sitzungen, in denen umgesetzt wird — gleich mit guter Bedienung.
+
+⚠️ **Bis dahin: Mechanik ja, Platzierung nein.** Wertungslogik überlebt jeden
+Aufbau; WO ein Regler sitzt, entscheidet die Masterdatei. Wer vorher
+einsortiert, räumt zweimal — am 21.08.2026 beim Tabellen-Bonus passiert.
+
+Konventionen der Folien: `design/entwuerfe/masterdatei.md`.
+
 ## ⛔ BALANCING IST ENDPHASE — NICHT ANFASSEN (Andi, mehrfach, zuletzt 07.08.2026)
 
 **Das steht bewusst ganz oben, weil es das ist, was am häufigsten schiefgeht.**
