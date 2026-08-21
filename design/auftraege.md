@@ -92,6 +92,16 @@ Wettbewerbe ganz oben. Genau der Sprung, den ST2 verbietet.
 | EB2 | „welche bei der einfachen Variante weggelassen werden“ | ✅ | ausgezählt: **128 von 180** werden von keiner Voreinstellung und keinem Regler angefasst — sie stehen nur in Profi und behalten sonst ewig ihre Vorgabe |
 | EB3 | „bei Profi soll jede denkbare Kombination und Art wie bzw. für wann dies bestimmt wird anpassbar sein“ | ❓ | Als **vier Achsen** ausgearbeitet (WER · WANN · WIE · WOFÜR) samt dem, was es dafür schon gibt. ⚠️ Frei kombiniert sind das über 700 Entscheidungen — **die Entscheidung, ob alle Achsen für jeden Parameter offenstehen, fehlt und trägt alles Weitere** |
 
+## Teil-Codes (21.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| TC1 | Teilbibliotheken: einzelne Bausteine als Code teilen | ✅ | `teilbibliothek.js`, Codes `TS2A-<aspekt>-…`, Oberfläche `Bausteine.jsx` (Profi) |
+| TC2 | „einzeln kombinierbar bzw. in Reihe geschaltet“ auf eine gewählte Voreinstellung | ✅ | `wendeTeilCodeAn` ersetzt nur die Felder SEINES Aspekts, alles andere bleibt — mehrere nacheinander gehen also |
+| TC3 | **Ein Code nur für Joker („Jokercode“)** | ❓ | **Gibt es nicht.** Joker liegt im Aspekt „Joker & Team-Faktoren“ zusammen mit 11 weiteren Blöcken (u.a. ereignisse, wettbewerbe, budget, drehrad). Aufteilen ist möglich, berührt aber das Balancing — Andis Entscheidung |
+| TC4 | **Ein Code nur für Ereignisse**, samt Auslosung am Rad | ❓ | dito — `ereignisse` und `drehrad` liegen im selben Aspekt. Das Drehrad selbst ist gebaut (`/rad`) |
+| TC5 | „Jokercode“ ins Vokabular | ✅ | `design/vokabular.md`, Abschnitt „Teil-Codes“ mit dem vollständigen Feld-Bündel |
+
 ## Betrieb
 
 | Nr | Ansage | Stand | Beleg / was fehlt |

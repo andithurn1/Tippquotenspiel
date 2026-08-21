@@ -91,6 +91,51 @@ wird.
 
 ---
 
+### Teil-Codes: „Jokercode“, „Ereignis-Code“ (Andi, 21.08.2026)
+
+Andis Frage: *„verschiedene Teilbibliotheken … also Klassisch und fair wird
+erstmal ausgewählt aber durch den Creator Code nur für Joker (Jokercode) oder
+Ereignis Codes sollen damit einzeln kombinierbar bzw. in Reihe geschaltet
+werden — ist das schon drin?“*
+
+**Die Mechanik: ja.** Der Bestand am 21.08.2026:
+
+| Begriff | Was es ist | Zustand |
+|---|---|---|
+| **Voll-Code** | `TS2-…` — das ganze Regelwerk | ✅ |
+| **Teil-Code** | `TS2A-<aspekt>-…` — genau EIN Aspekt | ✅ `teilbibliothek.js` |
+| **In Reihe schalten** | Voreinstellung wählen, dann Teil-Codes nacheinander drauf | ✅ `wendeTeilCodeAn` ersetzt nur die Felder seines Aspekts, alles andere bleibt |
+| **Aspekt** | die Einheit, die zusammen wandern MUSS | 10 Stück in `presetMerge.js` |
+
+🔴 **Der Zuschnitt ist aber nicht deiner.** Einen „Jokercode“ im Sinne von *nur
+die Joker* gibt es nicht. Joker liegt im Aspekt **„Joker & Team-Faktoren“**,
+und der trägt zwölf Blöcke auf einmal:
+
+```
+joker · teamMods · modCap · modFloor · bigGame · ereignisse
+wettbewerbe · duell · budget · limitKlassen · jokerBasis · drehrad
+```
+
+Wer „nimm meine Joker“ sagt, bekommt also **auch Ereignisse, Ligagewichte,
+Duelle, die Joker-Ökonomie, die Limitklassen und das Drehrad** — und einen
+Ereignis-Code allein gibt es aus demselben Grund nicht.
+
+⚠️ **Das ist kein Versäumnis, sondern eine begründete Entscheidung**, und die
+Begründung steht im Code: Ereignisse speisen denselben Joker-Topf, `budget`
+bepreist alle Joker-Arten, `limitKlassen` deckelt sie, das Drehrad zahlt in
+dieselben Töpfe. Ein halber Satz ergäbe eine Balance, die niemand vermessen
+hat. Die harte Regel dazu (`design/teilbibliotheken.md` 1): **ein Teil-Code
+trägt immer einen GANZEN Aspekt, nie einzelne Felder daraus.**
+
+❓ **Andis Entscheidung, nicht meine:** Soll der Aspekt aufgeteilt werden, damit
+es echte Joker- und Ereignis-Codes gibt? Dann sind Kombinationen möglich, die
+vorher niemand durchgerechnet hat — und das berührt das Balancing, das
+ausdrücklich Endphase ist. Der Mittelweg wäre, feiner zu schneiden und die
+**Kombination** zu prüfen statt sie zu verbieten (die Balance-Ampel könnte das
+melden).
+
+---
+
 ## Die sieben Ebenen — mehr gibt es nicht
 
 Jeder Einfluss im Spiel gehört in **genau eine** davon. Wer einen neuen baut
