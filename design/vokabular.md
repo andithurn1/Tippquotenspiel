@@ -127,12 +127,15 @@ dieselben Töpfe. Ein halber Satz ergäbe eine Balance, die niemand vermessen
 hat. Die harte Regel dazu (`design/teilbibliotheken.md` 1): **ein Teil-Code
 trägt immer einen GANZEN Aspekt, nie einzelne Felder daraus.**
 
-❓ **Andis Entscheidung, nicht meine:** Soll der Aspekt aufgeteilt werden, damit
-es echte Joker- und Ereignis-Codes gibt? Dann sind Kombinationen möglich, die
-vorher niemand durchgerechnet hat — und das berührt das Balancing, das
-ausdrücklich Endphase ist. Der Mittelweg wäre, feiner zu schneiden und die
-**Kombination** zu prüfen statt sie zu verbieten (die Balance-Ampel könnte das
-melden).
+🔴 **Nachtrag 21.08.2026 — der Einwand ist hinfällig.** Der Grund, den ich oben
+als Rechtfertigung des groben Zuschnitts angeführt habe, war Balance. Andi hat
+das Thema ausdrücklich nach ganz hinten geschoben, ausdrücklich auch als
+GEGENARGUMENT: *„will ein Admin was Unbalanciertes, soll ers machen."*
+
+Damit ist das Aufteilen in einen **Joker-Code** und einen **Ereignis-Code**
+keine Abwägung mehr, sondern eine Bauaufgabe. Was technisch bleibt: `ASPEKTE`
+müssen alle Regel-Felder weiterhin lückenlos abdecken — ein Test sichert das ab
+—, und zwei Codes, die dasselbe Feld tragen, wären eine Falle.
 
 ---
 

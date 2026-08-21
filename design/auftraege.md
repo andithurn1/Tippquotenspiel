@@ -98,8 +98,8 @@ Wettbewerbe ganz oben. Genau der Sprung, den ST2 verbietet.
 |---|---|---|---|
 | TC1 | Teilbibliotheken: einzelne Bausteine als Code teilen | ✅ | `teilbibliothek.js`, Codes `TS2A-<aspekt>-…`, Oberfläche `Bausteine.jsx` (Profi) |
 | TC2 | „einzeln kombinierbar bzw. in Reihe geschaltet“ auf eine gewählte Voreinstellung | ✅ | `wendeTeilCodeAn` ersetzt nur die Felder SEINES Aspekts, alles andere bleibt — mehrere nacheinander gehen also |
-| TC3 | **Ein Code nur für Joker („Jokercode“)** | ❓ | **Gibt es nicht.** Joker liegt im Aspekt „Joker & Team-Faktoren“ zusammen mit 11 weiteren Blöcken (u.a. ereignisse, wettbewerbe, budget, drehrad). Aufteilen ist möglich, berührt aber das Balancing — Andis Entscheidung |
-| TC4 | **Ein Code nur für Ereignisse**, samt Auslosung am Rad | ❓ | dito — `ereignisse` und `drehrad` liegen im selben Aspekt. Das Drehrad selbst ist gebaut (`/rad`) |
+| TC3 | **Ein Code nur für Joker („Jokercode“)** | ⏳ | **Gibt es nicht.** Joker liegt im Aspekt „Joker & Team-Faktoren“ zusammen mit 11 weiteren Blöcken (u.a. ereignisse, wettbewerbe, budget, drehrad). 🔴 **Der Einwand dagegen war Balance — hinfällig seit 21.08.2026.** Damit reine Bauaufgabe |
+| TC4 | **Ein Code nur für Ereignisse**, samt Auslosung am Rad | ⏳ | dito — `ereignisse` und `drehrad` liegen im selben Aspekt. Das Drehrad selbst ist gebaut (`/rad`) |
 | TC5 | „Jokercode“ ins Vokabular | ✅ | `design/vokabular.md`, Abschnitt „Teil-Codes“ mit dem vollständigen Feld-Bündel |
 
 ## Betrieb
