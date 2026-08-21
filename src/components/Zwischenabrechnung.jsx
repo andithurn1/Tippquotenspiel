@@ -140,7 +140,7 @@ export default function Zwischenabrechnung() {
                     </div>
                     <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2 }}>
                       dein Tipp {s.tip.home}:{s.tip.away} · Ergebnis {s.result.home}:{s.result.away}
-                      {s.exakt && <span style={{ color: C.gold }}> · exakt</span>}
+                      {s.exakt && <span style={{ color: C.akzent }}> · exakt</span>}
                     </div>
                   </div>
                   <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: s.punkte > 0 ? C.mint : C.muted }}>
@@ -164,7 +164,7 @@ export default function Zwischenabrechnung() {
                       }}>
                         <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {a.name} · {a.tip.home}:{a.tip.away}
-                          {a.exakt && <span style={{ color: C.gold }}> · exakt</span>}
+                          {a.exakt && <span style={{ color: C.akzent }}> · exakt</span>}
                         </span>
                         <span style={{
                           fontFamily: MONO, fontWeight: 700,
@@ -194,7 +194,7 @@ export default function Zwischenabrechnung() {
               beim nächsten Mal. */}
           <div style={{ fontSize: 10.5, color: C.muted, marginTop: 9, textAlign: "center", lineHeight: 1.5 }}>
             Regle deine Einstellungen und Benachrichtigungen{" "}
-            <Link href="/einstellungen" onClick={weiter} style={{ color: C.gold, textDecoration: "none", fontWeight: 700 }}>
+            <Link href="/einstellungen" onClick={weiter} style={{ color: C.akzent, textDecoration: "none", fontWeight: 700 }}>
               hier
             </Link>.
           </div>

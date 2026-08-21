@@ -5,7 +5,7 @@ import { simulateBalance } from "@/lib/balanceSim";
 import { C, MONO, AMPEL } from "@/lib/theme";
 
 
-const FARBE = { gruen: C.mint, gelb: C.gold, rot: C.coral };
+const FARBE = { gruen: C.mint, gelb: C.akzent, rot: C.coral };
 // „unbekannt" bekommt bewusst KEINEN gefüllten Punkt: eine Ampel, die nicht
 // alles gesehen hat, leuchtet nicht — sie hält sich zurück.
 const SYMBOL = { gruen: "●", gelb: "●", rot: "●", unbekannt: "○" };

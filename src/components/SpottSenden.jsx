@@ -118,8 +118,8 @@ export default function SpottSenden() {
               return (
                 <button key={z.userId} onClick={() => { setZielId(z.userId); setSpruchKey(null); setStatus(""); }} style={{
                   display: "flex", alignItems: "center", gap: 10, cursor: "pointer", textAlign: "left",
-                  background: aktiv ? `${C.gold}14` : C.surface,
-                  border: `1px solid ${aktiv ? C.gold + "55" : C.line}`,
+                  background: aktiv ? `${C.akzent}14` : C.surface,
+                  border: `1px solid ${aktiv ? C.akzent + "55" : C.line}`,
                   ...TAPZIEL, borderRadius: 14, padding: "10px 12px", color: C.text, fontFamily: "inherit",
                 }}>
                   <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 18 }}>{z.rank}</span>
@@ -146,8 +146,8 @@ export default function SpottSenden() {
                 return (
                   <button key={s.key} onClick={() => { setSpruchKey(s.key); setStatus(""); }} style={{
                     cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                    background: aktiv ? `${C.gold}18` : C.surface, color: aktiv ? C.gold : C.muted,
-                    border: `1px solid ${aktiv ? C.gold + "66" : C.line}`,
+                    background: aktiv ? `${C.akzent}18` : C.surface, color: aktiv ? C.akzent : C.muted,
+                    border: `1px solid ${aktiv ? C.akzent + "66" : C.line}`,
                     borderRadius: 999, padding: "6px 11px",
                   }}>{s.emoji} {s.label}</button>
                 );
@@ -166,8 +166,8 @@ export default function SpottSenden() {
 
             <button onClick={senden} disabled={blockiert} style={{
               width: "100%", marginTop: 16, cursor: blockiert ? "default" : "pointer",
-              background: blockiert ? C.surface : C.gold, color: blockiert ? C.muted : C.ink,
-              fontWeight: 700, fontSize: 15, border: `1px solid ${blockiert ? C.line : C.gold}`,
+              background: blockiert ? C.surface : C.akzent, color: blockiert ? C.muted : C.ink,
+              fontWeight: 700, fontSize: 15, border: `1px solid ${blockiert ? C.line : C.akzent}`,
               borderRadius: 14, padding: "13px 0", fontFamily: "inherit",
             }}>
               {blockiert ? `${ziel.name} hat diesen Spieltag genug` : "Spott verschicken"}

@@ -139,7 +139,7 @@ export default function SaisonTipps() {
         )}
 
         {!user && saison?.enabled && (
-          <div style={{ fontSize: 12.5, color: C.gold, marginTop: 16 }}>
+          <div style={{ fontSize: 12.5, color: C.akzent, marginTop: 16 }}>
             Zum Abgeben bitte zuerst einloggen.
           </div>
         )}
@@ -159,13 +159,13 @@ export default function SaisonTipps() {
         {stand && stand.zeilen.length > 0 && (
           <div style={{
             display: "flex", justifyContent: "space-between", alignItems: "baseline",
-            background: `${C.gold}12`, border: `1px solid ${C.gold}44`, borderRadius: 12,
+            background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`, borderRadius: 12,
             padding: "9px 12px", marginTop: 14,
           }}>
             <span style={{ fontSize: 12.5 }}>
               Dein Stand: <strong>{stand.treffer}</strong> von {stand.zeilen.length} liegen vorn
             </span>
-            <span style={{ fontFamily: MONO, fontSize: 13, color: C.gold }}>{stand.gesamt} Pkt.</span>
+            <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>{stand.gesamt} Pkt.</span>
           </div>
         )}
 
@@ -185,7 +185,7 @@ export default function SaisonTipps() {
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 700 }}>{wettenLabel(wette)}</span>
-                  <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.gold, whiteSpace: "nowrap" }}>{wette.punkte} Pkt.</span>
+                  <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.akzent, whiteSpace: "nowrap" }}>{wette.punkte} Pkt.</span>
                 </div>
                 {typ.hint && <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>{typ.hint}</div>}
                 {/* Zustand IMMER benennen: „gesperrt" allein lässt den Spieler

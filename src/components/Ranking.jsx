@@ -77,7 +77,7 @@ export default function Ranking() {
                 borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
               }}>
                 <span style={{ fontFamily: MONO, fontSize: 13, color: C.muted, width: 20 }}>{b.rank}</span>
-                <span style={{ flex: 1, fontSize: 15, color: b.userId === meId ? C.gold : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
+                <span style={{ flex: 1, fontSize: 15, color: b.userId === meId ? C.akzent : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
                   {b.name}
                   {b.userId === meId && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● du</span>}
                 </span>
@@ -149,8 +149,8 @@ export default function Ranking() {
                     ohne Marke sähe er nach Bevorzugung aus. */}
                 {b.alleinPunkte > 0 && (
                   <span title="Bonus dafür, dass du als (fast) Einziger richtig lagst" style={{
-                    fontFamily: MONO, fontSize: 10, color: C.gold,
-                    border: `1px solid ${C.gold}55`, borderRadius: 999, padding: "2px 7px",
+                    fontFamily: MONO, fontSize: 10, color: C.akzent,
+                    border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "2px 7px",
                   }}>+{b.alleinPunkte} Alleingang</span>
                 )}
                 {/* 🔴 Was die Saison-KURVE verschoben hat. Die Streicher
@@ -171,8 +171,8 @@ export default function Ranking() {
                     Dieselbe Begründung wie bei den drei Marken darüber. */}
                 {b.drehrad > 0 && (
                   <span title="Punkte vom Glücksrad" style={{
-                    fontFamily: MONO, fontSize: 10, color: C.gold,
-                    border: `1px solid ${C.gold}55`, borderRadius: 999, padding: "2px 7px",
+                    fontFamily: MONO, fontSize: 10, color: C.akzent,
+                    border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "2px 7px",
                   }}>+{b.drehrad} Rad</span>
                 )}
                 <span style={{

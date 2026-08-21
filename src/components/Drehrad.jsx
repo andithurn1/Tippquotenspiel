@@ -140,14 +140,14 @@ export default function Drehrad({ rules, onChange }) {
         style={{
           display: "flex", alignItems: "center", gap: 10, width: "100%",
           textAlign: "left", cursor: "pointer", fontFamily: "inherit",
-          background: cfg.enabled ? `${C.gold}18` : C.surface,
-          border: `1px solid ${cfg.enabled ? C.gold + "66" : C.line}`,
+          background: cfg.enabled ? `${C.akzent}18` : C.surface,
+          border: `1px solid ${cfg.enabled ? C.akzent + "66" : C.line}`,
           borderRadius: 12, padding: "10px 12px", marginBottom: 12, color: C.text,
         }}
       >
         <span style={{
           width: 34, height: 20, borderRadius: 999, flexShrink: 0, position: "relative",
-          background: cfg.enabled ? C.gold : C.surface2,
+          background: cfg.enabled ? C.akzent : C.surface2,
           border: `1px solid ${cfg.enabled ? "transparent" : C.line}`,
         }}>
           <span style={{
@@ -156,7 +156,7 @@ export default function Drehrad({ rules, onChange }) {
           }} />
         </span>
         <span>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: cfg.enabled ? C.gold : C.text }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: cfg.enabled ? C.akzent : C.text }}>
             {cfg.enabled ? "Drehrad ist an" : "Drehrad ist aus"}
           </span>
           <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
@@ -188,10 +188,10 @@ export default function Drehrad({ rules, onChange }) {
         <Banner ton="coral">{pruefung.grund}</Banner>
       )}
       {pruefung.warnung && (
-        <Banner ton="gold">{pruefung.warnung}</Banner>
+        <Banner ton="bernstein">{pruefung.warnung}</Banner>
       )}
       {pruefung.verworfen.length > 0 && (
-        <Banner ton="gold">
+        <Banner ton="bernstein">
           <strong>{pruefung.verworfen.length} Zeile(n) zählen nicht mit:</strong>
           <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
             {pruefung.verworfen.map((v) => <li key={v.index}>{v.grund}</li>)}
@@ -255,7 +255,7 @@ export default function Drehrad({ rules, onChange }) {
           <input type="range" value={cfg.frequenz}
             min={DREHRAD_LIMITS.frequenz.min} max={DREHRAD_LIMITS.frequenz.max} step={DREHRAD_LIMITS.frequenz.step}
             onChange={(e) => setze({ frequenz: +e.target.value })}
-            style={{ width: "100%", accentColor: C.gold, cursor: "pointer" }} />
+            style={{ width: "100%", accentColor: C.akzent, cursor: "pointer" }} />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
@@ -264,11 +264,11 @@ export default function Drehrad({ rules, onChange }) {
             return (
               <button key={m.key} onClick={() => setze({ modus: m.key })} style={{
                 textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
-                background: an ? `${C.gold}18` : C.surface,
-                border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                background: an ? `${C.akzent}18` : C.surface,
+                border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 borderRadius: 12, padding: "9px 12px",
               }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.gold : C.text }}>{m.label}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
               </button>
             );
@@ -326,11 +326,11 @@ export default function Drehrad({ rules, onChange }) {
             return (
               <button key={w.key} onClick={() => setze({ wer: w.key })} style={{
                 textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
-                background: an ? `${C.gold}18` : C.surface,
-                border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                background: an ? `${C.akzent}18` : C.surface,
+                border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 borderRadius: 12, padding: "9px 12px",
               }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.gold : C.text }}>{w.label}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.akzent : C.text }}>{w.label}</div>
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{w.desc}</div>
               </button>
             );
@@ -348,12 +348,12 @@ export default function Drehrad({ rules, onChange }) {
       {/* ── Punkte-Deckel — nur eine Frage, wenn es ein Punkte-Feld gibt ── */}
       {hatPunkteFeld && (
         <div style={{
-          marginTop: 14, background: `${C.gold}0e`, border: `1px solid ${C.gold}44`, borderRadius: 12,
+          marginTop: 14, background: `${C.akzent}0e`, border: `1px solid ${C.akzent}44`, borderRadius: 12,
           padding: "10px 12px",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ fontSize: 12.5, fontWeight: 700 }}>Punkte-Deckel je Saison</span>
-            <span style={{ fontFamily: MONO, fontSize: 13, color: C.gold }}>
+            <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>
               {cfg.maxPunkteProSaison === 0 ? "kein Deckel" : `${cfg.maxPunkteProSaison} Punkte`}
             </span>
           </div>
@@ -361,7 +361,7 @@ export default function Drehrad({ rules, onChange }) {
             min={DREHRAD_LIMITS.maxPunkteProSaison.min} max={DREHRAD_LIMITS.maxPunkteProSaison.max}
             step={DREHRAD_LIMITS.maxPunkteProSaison.step}
             onChange={(e) => setze({ maxPunkteProSaison: +e.target.value })}
-            style={{ width: "100%", accentColor: C.gold, cursor: "pointer", marginTop: 8 }} />
+            style={{ width: "100%", accentColor: C.akzent, cursor: "pointer", marginTop: 8 }} />
           <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.45 }}>
             Gilt nur für Felder vom Typ „Punkte". Ganz nach links (0) heißt <strong>kein Deckel</strong>,
             nicht „keine Punkte". Ohne Grenze hebelt ein Rad sonst die ganze Wertung aus.
@@ -436,7 +436,7 @@ function Leiste({ titel, tage = [], von, bis, gedimmt = false }) {
           return (
             <div key={md} title={`Spieltag ${md}`} style={{
               flex: 1, height: 18, borderRadius: 3,
-              background: an ? (gedimmt ? `${C.gold}77` : C.gold) : C.surface2,
+              background: an ? (gedimmt ? `${C.akzent}77` : C.akzent) : C.surface2,
               border: `1px solid ${an ? "transparent" : C.line}`,
               opacity: imFenster ? 1 : 0.35,
             }} />
@@ -477,7 +477,7 @@ function FeldZeile({
             border: `1px solid ${C.line}`, borderRadius: 9, padding: "7px 9px",
             fontSize: 13, fontFamily: "inherit", outline: "none",
           }} />
-        <span style={{ fontFamily: MONO, fontSize: 12.5, color: C.gold, width: 50, textAlign: "right", flexShrink: 0 }}>
+        <span style={{ fontFamily: MONO, fontSize: 12.5, color: C.akzent, width: 50, textAlign: "right", flexShrink: 0 }}>
           {(anteil * 100).toFixed(1)}%
         </span>
         <button onClick={onEntfernen} aria-label="Feld entfernen" style={{
@@ -500,7 +500,7 @@ function FeldZeile({
       </div>
 
       {gewichtNull && (
-        <div style={{ fontSize: 10.5, color: C.gold, marginTop: 6, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 10.5, color: C.akzent, marginTop: 6, lineHeight: 1.4 }}>
           Gewicht 0 — liegt auf dem Rad, kann aber nicht fallen.
         </div>
       )}
@@ -570,7 +570,7 @@ function FeldZeile({
 // ── Kleinteile ───────────────────────────────────────────────
 
 function Banner({ ton, children }) {
-  const farbe = ton === "coral" ? C.coral : C.gold;
+  const farbe = ton === "coral" ? C.coral : C.bernstein;
   return (
     <div style={{
       background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: 12,

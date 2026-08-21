@@ -50,7 +50,7 @@ export default function PresetMischen({ onUebernehmen = null }) {
 
       {/* Die beiden Quellen */}
       <div style={{ display: "flex", gap: 8 }}>
-        <PresetWahl label="A" value={aKey} onChange={setAKey} tone={C.gold} />
+        <PresetWahl label="A" value={aKey} onChange={setAKey} tone={C.akzent} />
         <PresetWahl label="B" value={bKey} onChange={setBKey} tone={C.sky} />
       </div>
 
@@ -80,7 +80,7 @@ export default function PresetMischen({ onUebernehmen = null }) {
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{asp.label}</div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{asp.hint}</div>
                   <div style={{ display: "flex", gap: 6, marginTop: 9 }}>
-                    <Seite an={seite === "a"} tone={C.gold} label={A.label}
+                    <Seite an={seite === "a"} tone={C.akzent} label={A.label}
                       onClick={() => setAuswahl((w) => ({ ...w, [asp.key]: "a" }))} />
                     <Seite an={seite === "b"} tone={C.sky} label={B.label}
                       onClick={() => setAuswahl((w) => ({ ...w, [asp.key]: "b" }))} />
@@ -104,7 +104,7 @@ export default function PresetMischen({ onUebernehmen = null }) {
 
           {onUebernehmen && (
             <button onClick={() => onUebernehmen(mix)} style={{
-              width: "100%", marginTop: 12, cursor: "pointer", background: C.gold, color: C.ink,
+              width: "100%", marginTop: 12, cursor: "pointer", background: C.akzent, color: C.ink,
               fontWeight: 700, fontSize: 14.5, border: "none", borderRadius: 12, padding: "12px 0",
               fontFamily: "inherit",
             }}>Mix als Regelwerk übernehmen</button>

@@ -145,7 +145,7 @@ export default function Gluecksrad({ felder = [], anteile = [], ergebnisId = nul
       </div>
 
       {ziel && (
-        <div style={{ fontFamily: MONO, fontSize: 12.5, color: C.gold, fontWeight: 700 }}>
+        <div style={{ fontFamily: MONO, fontSize: 12.5, color: C.akzent, fontWeight: 700 }}>
           {ziel.label || "—"}
         </div>
       )}

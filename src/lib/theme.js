@@ -47,7 +47,26 @@ export const COLORS = {
   ghost: "rgba(17,20,28,0.22)",  // kaum sichtbar (ausgeblendete Werte)
 
   // Signalfarben — feste Bedeutung, für hellen Grund abgedunkelt
-  gold: "#B47B00",       // Hervorhebung, Joker, „dein Wert"
+  // ── Markenfarbe ───────────────────────────────────────────
+  // 🔴 LILA seit 21.08.2026, auf Andis Ansage („F7 bitte lila"). Vorher Gold
+  // (#B47B00). Der Ton ist nicht frei gewählt, sondern auf dasselbe
+  // HELLIGKEITSPROFIL gemessen wie das alte Gold — sonst wäre der Tausch ein
+  // Lesbarkeits-Umbau in 58 Dateien:
+  //     dunkler Text darauf   5,14  (Gold: 5,26)
+  //     als Text auf Weiß     3,72  (Gold: 3,64)
+  // Deshalb bleibt jede Fläche mit dunkler Schrift lesbar, ohne dass eine
+  // einzige Komponente angefasst werden musste.
+  //
+  // ⚠️ Der Name ist bewusst `akzent` und nicht `lila`. Ein Farbname im Code
+  // ist eine Lüge, sobald jemand die Farbe wechselt — genau das ist hier
+  // gerade passiert (420 Stellen hießen `gold` und waren es nicht mehr).
+  akzent: "#9A6BE8",     // Hervorhebung, Joker, „dein Wert"
+
+  // 🔴 Der alte Goldton bleibt — er hatte ZWEI Aufgaben, und nur eine davon
+  // war die Markenfarbe. Als Warnton („noch kein Fehler, aber sieh hin") ist
+  // Bernstein durch nichts zu ersetzen: eine lila Ampelstufe zwischen grün und
+  // rot liest niemand als Warnung.
+  bernstein: "#B47B00",  // Warnton, gelbe Ampelstufe, erste Datenreihe
   mint: "#0E9F6E",       // positiv, bestätigt, Erfolg
   coral: "#D62B4E",      // negativ, Warnung, Verlust
 
@@ -56,6 +75,19 @@ export const COLORS = {
   indigo: "#4453C4",     // Admin-Bereiche, Tendenz-Ebene
   violet: "#7A45C4",     // persönliche Einstellungen
   bar: "#9AA3B8",        // neutraler Balken im Diagramm
+
+  // ── Vereinsfarben-Rollen (nur Verzierung) ─────────────────
+  // 🔴 Hier landen die vom Nutzer gewählten Farben (21.08.2026, Andi: „in
+  // minimalistischen Verzierungen und dynamischen Übergängen"). Ohne Auswahl
+  // tragen sie die Markenwerte — dann fällt niemandem etwas auf.
+  //
+  // ⚠️ Diese drei sind die EINZIGEN Tokens, die eine Vereinsfarbe annehmen
+  // dürfen. Wer eine Fanfarbe in ein bedeutungstragendes Token schreibt,
+  // nimmt der Bedeutung ihre Verlässlichkeit — genau der Fehler, der bis
+  // heute drinsteckte.
+  fan1: "#9A6BE8",       // Verzierung 1 — Grundton, Schein, Übergänge
+  fan2: "#4453C4",       // Verzierung 2
+  fan3: "#7A45C4",       // Verzierung 3
 
   // ── Fußball-Akzente, bewusst sehr blass ───────────────────
   // Für Ornamente am RAND (Rasen, Netz, Linien). Sie sind kein Signal und
@@ -78,7 +110,7 @@ export const SANS = "system-ui, -apple-system, 'Segoe UI', sans-serif";
 // Bewusst gut unterscheidbare Farbtöne, hell auf dunklem Grund. Reihenfolge
 // ist die Vergabereihenfolge — die ersten sind am besten unterscheidbar.
 export const SERIES = [
-  COLORS.gold, COLORS.mint, COLORS.coral, COLORS.sky,
+  COLORS.bernstein, COLORS.mint, COLORS.coral, COLORS.sky,
   "#A78BFA", "#FF9F43", "#F368E0", "#B4E04F",
 ];
 
@@ -87,7 +119,7 @@ export const SERIES = [
 // dieselbe Sprache sprechen.
 export const AMPEL = {
   gruen: COLORS.mint,
-  gelb: COLORS.gold,
+  gelb: COLORS.bernstein,
   rot: COLORS.coral,
   // 🔴 Die vierte Stufe, und sie ist kein Ton zwischen grün und gelb, sondern
   // das FEHLEN einer Aussage: „ich habe nicht alles angeschaut". Bewusst
@@ -112,12 +144,24 @@ export const AMPEL = {
 //  (SERIES) bleiben fix, weil sie oben als feste Werte kopiert wurden.
 // ============================================================
 
-// Die drei Rollen aus THEMING.md → auf diese Tokens abgebildet:
-//   Farbe 1 (Primär)  → gold   (CTAs, „dein Wert", Hervorhebung)
-//   Farbe 2 (Sekundär)→ indigo (Admin-/Sekundär-Akzente, Ränder)
-//   Farbe 3 (Signal)  → violet (persönliche Akzente, Badges)
-const ACCENT_KEYS = ["gold", "indigo", "violet"];
-const BASE_ACCENTS = Object.fromEntries(ACCENT_KEYS.map((k) => [k, COLORS[k]]));
+// 🔴 UMGEBAUT am 21.08.2026 auf Andis Ansage: „die vom nutzer gewählten farben
+// verwende in minimalistischen verzierungen und dynamischen übergängen."
+//
+// Vorher überschrieben die Vereinsfarben die AKZENT-Rollen — also genau die
+// Tokens, die CTAs, Hervorhebungen und „dein Wert" tragen. Folge: sobald
+// jemand Fanfarben wählte, war die Markenfarbe weg. Andis Lila wäre damit
+// zufällig verschwunden, und deshalb waren „F7 lila" und diese Ansage EIN
+// Schritt und nicht zwei.
+//
+// Jetzt landen die Vereinsfarben in EIGENEN Rollen `fan1/fan2/fan3`. Die
+// bleiben für Verzierungen und Übergänge reserviert; die Bedeutung tragenden
+// Tokens (`akzent`, `mint`, `coral`, `indigo`, `violet`) sind unantastbar.
+//
+// ⚠️ Damit ändert sich, was ein Nutzer nach der Farbwahl SIEHT: nicht mehr die
+// halbe Oberfläche, sondern die Verzierungen. Das ist der Zweck, aber es ist
+// eine sichtbare Änderung — wer sie für einen Fehler hält, liest hier nach.
+const FAN_KEYS = ["fan1", "fan2", "fan3"];
+const BASE_ACCENTS = Object.fromEntries(FAN_KEYS.map((k) => [k, COLORS[k]]));
 
 const HEX_RE = /^#([0-9a-f]{6})$/i;
 
@@ -187,9 +231,9 @@ export function deriveRoles(fanColors) {
   const [c1, c2, c3] = sanitizeFanColors(fanColors);
   if (!c1) return { ...BASE_ACCENTS };
   return {
-    gold: ensureReadable(c1, 3.2),
-    indigo: ensureReadable(c2 || c1, 2.4),
-    violet: ensureReadable(c3 || c1, 2.4),
+    fan1: ensureReadable(c1, 3.2),
+    fan2: ensureReadable(c2 || c1, 2.4),
+    fan3: ensureReadable(c3 || c1, 2.4),
   };
 }
 

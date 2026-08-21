@@ -130,9 +130,9 @@ export default function Einstellungen() {
                       onClick={() => setPref("vergleich", (v) => toggleVergleich(v, roundId, m.user_id))}
                       title={voll ? `Höchstens ${MAX_VERGLEICH} — erst einen abwählen.` : undefined}
                       style={{
-                        border: `1px solid ${gewaehlt ? C.gold : C.line}`, borderRadius: 999,
-                        background: gewaehlt ? `${C.gold}1a` : "transparent",
-                        color: gewaehlt ? C.gold : (voll ? C.ghost : C.text),
+                        border: `1px solid ${gewaehlt ? C.akzent : C.line}`, borderRadius: 999,
+                        background: gewaehlt ? `${C.akzent}1a` : "transparent",
+                        color: gewaehlt ? C.akzent : (voll ? C.ghost : C.text),
                         cursor: voll ? "not-allowed" : "pointer",
                         ...TAPZIEL, padding: "5px 11px", fontSize: 11.5, fontWeight: gewaehlt ? 700 : 500,
                       }}>
@@ -159,8 +159,8 @@ export default function Einstellungen() {
               {START_SCREENS.map((s) => (
                 <button key={s} onClick={() => setPref("startScreen", s)} style={{
                   ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: 10,
-                  background: prefs.startScreen === s ? C.gold : C.surface, color: prefs.startScreen === s ? C.ink : C.muted,
-                  border: `1px solid ${prefs.startScreen === s ? C.gold : C.line}`, fontFamily: "inherit",
+                  background: prefs.startScreen === s ? C.akzent : C.surface, color: prefs.startScreen === s ? C.ink : C.muted,
+                  border: `1px solid ${prefs.startScreen === s ? C.akzent : C.line}`, fontFamily: "inherit",
                 }}>{START_SCREEN_LABEL[s]}</button>
               ))}
             </div>
@@ -185,8 +185,8 @@ function PrefSection({ meta, value, onChange }) {
         {LEVELS.map((lv) => (
           <button key={lv} onClick={() => onChange(lv)} style={{
             ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: 10,
-            background: value === lv ? C.gold : C.surface, color: value === lv ? C.ink : C.muted,
-            border: `1px solid ${value === lv ? C.gold : C.line}`, fontFamily: "inherit",
+            background: value === lv ? C.akzent : C.surface, color: value === lv ? C.ink : C.muted,
+            border: `1px solid ${value === lv ? C.akzent : C.line}`, fontFamily: "inherit",
           }}>{LEVEL_LABEL[lv]}</button>
         ))}
       </div>
@@ -214,7 +214,7 @@ function AbrechnungPreview({ lvl, abr }) {
     <PreviewFrame label="Abrechnung">
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>gewertet</div>
-        <div style={{ fontFamily: MONO, fontWeight: 700, color: C.gold, fontSize: 40, lineHeight: 1.1, textShadow: `0 0 24px ${C.gold}55` }}>
+        <div style={{ fontFamily: MONO, fontWeight: 700, color: C.akzent, fontSize: 40, lineHeight: 1.1, textShadow: `0 0 24px ${C.akzent}55` }}>
           +{abr.total}
         </div>
         <div style={{ fontFamily: MONO, fontSize: 13, color: C.mint, marginTop: 2 }}>Rang #{abr.rank}</div>
@@ -254,10 +254,10 @@ function VorschauPreview({ lvl, proj }) {
     <PreviewFrame label="Tippen">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Wenn exakt (Tipp 3:1)</span>
-        <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: C.gold }}>+{proj.points}</span>
+        <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: C.akzent }}>+{proj.points}</span>
       </div>
       <div style={{ marginTop: 6 }}>
-        <span style={{ fontSize: 11, color: C.gold, border: `1px solid ${C.gold}55`, borderRadius: 999, padding: "2px 8px" }}>
+        <span style={{ fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "2px 8px" }}>
           Mutig · Quote {proj.exaktQuote?.toFixed(1)}
         </span>
       </div>

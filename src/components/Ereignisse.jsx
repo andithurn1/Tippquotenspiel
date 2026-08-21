@@ -53,8 +53,8 @@ function Ausloeserfeld({ wert, onChange }) {
   const wieOft = haeufigkeit(a, BEISPIEL_SAISON);
   const knopf = (aktiv, text, onClick, key, titel) => (
     <button key={key} type="button" onClick={onClick} title={titel} style={{
-      border: `1px solid ${aktiv ? C.gold : C.line}`, borderRadius: 999,
-      background: aktiv ? `${C.gold}1a` : "transparent", color: aktiv ? C.gold : C.text,
+      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: 999,
+      background: aktiv ? `${C.akzent}1a` : "transparent", color: aktiv ? C.akzent : C.text,
       cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
   );
@@ -113,8 +113,8 @@ function Geltungsfeld({ wert, wirkung, onChange }) {
   const warnungen = geltungsKonflikte(g, wirkung);
   const knopf = (aktiv, text, onClick, key, titel) => (
     <button key={key} type="button" onClick={onClick} title={titel} style={{
-      border: `1px solid ${aktiv ? C.gold : C.line}`, borderRadius: 999,
-      background: aktiv ? `${C.gold}1a` : "transparent", color: aktiv ? C.gold : C.text,
+      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: 999,
+      background: aktiv ? `${C.akzent}1a` : "transparent", color: aktiv ? C.akzent : C.text,
       cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
   );
@@ -171,8 +171,8 @@ function Wirkungsfeld({ wert, onChange }) {
   const warnungen = wirkungsKonflikte(w);
   const knopf = (aktiv, text, onClick, key, titel) => (
     <button key={key} type="button" onClick={onClick} title={titel} style={{
-      border: `1px solid ${aktiv ? C.gold : C.line}`, borderRadius: 999,
-      background: aktiv ? `${C.gold}1a` : "transparent", color: aktiv ? C.gold : C.text,
+      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: 999,
+      background: aktiv ? `${C.akzent}1a` : "transparent", color: aktiv ? C.akzent : C.text,
       cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
   );
@@ -221,8 +221,8 @@ function Auswahlfeld({ wert, onChange }) {
   const a = sanitizeAuswahl(wert);
   const knopf = (aktiv, text, onClick, key) => (
     <button key={key} type="button" onClick={onClick} style={{
-      border: `1px solid ${aktiv ? C.gold : C.line}`, borderRadius: 999,
-      background: aktiv ? `${C.gold}1a` : "transparent", color: aktiv ? C.gold : C.text,
+      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: 999,
+      background: aktiv ? `${C.akzent}1a` : "transparent", color: aktiv ? C.akzent : C.text,
       cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
   );
@@ -257,7 +257,7 @@ function Auswahlfeld({ wert, onChange }) {
           Aufrufer (gefunden über `npm run tot`).
           ⚠️ Die Rundengröße steht beim Einstellen noch nicht fest — deshalb
           eine ausdrücklich genannte Beispielgröße und keine erfundene Zahl. */}
-      <div style={{ fontSize: 11, color: C.gold, marginTop: 5 }}>
+      <div style={{ fontSize: 11, color: C.akzent, marginTop: 5 }}>
         Trifft: {beschreibeAuswahl(a)}
         {(() => {
           const anteil = trefferAnteil({ modus: a.modus, n: a.n, prozent: a.prozent, mitglieder: BEISPIEL_RUNDE });
@@ -392,10 +392,10 @@ export default function Ereignisse({ rules, onChange }) {
 
       {warnungen.map((w) => (
         <div key={w.key} style={{
-          background: `${C.gold}12`, border: `1px solid ${C.gold}55`, borderRadius: 12,
+          background: `${C.akzent}12`, border: `1px solid ${C.akzent}55`, borderRadius: 12,
           padding: "10px 12px", marginBottom: 10, fontSize: 11.5, color: C.text, lineHeight: 1.5,
         }}>
-          <strong style={{ color: C.gold }}>Doppelt belohnt: </strong>{w.text}
+          <strong style={{ color: C.akzent }}>Doppelt belohnt: </strong>{w.text}
         </div>
       ))}
 
@@ -410,8 +410,8 @@ export default function Ereignisse({ rules, onChange }) {
             const an = istAn(t.key);
             return (
               <div key={t.key} style={{
-                background: an ? `${C.gold}12` : C.surface,
-                border: `1px solid ${an ? C.gold + "55" : C.line}`,
+                background: an ? `${C.akzent}12` : C.surface,
+                border: `1px solid ${an ? C.akzent + "55" : C.line}`,
                 borderRadius: 12, padding: "10px 12px", marginBottom: 6,
               }}>
                 <button onClick={() => umschalten(t.key)} style={{
@@ -420,7 +420,7 @@ export default function Ereignisse({ rules, onChange }) {
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 12.5, fontWeight: 700, flex: 1 }}>{t.label}</span>
-                    <span style={{ color: an ? C.gold : C.muted, fontSize: 13 }}>{an ? "✓" : "+"}</span>
+                    <span style={{ color: an ? C.akzent : C.muted, fontSize: 13 }}>{an ? "✓" : "+"}</span>
                   </div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{t.hint}</div>
                 </button>
@@ -489,9 +489,9 @@ export default function Ereignisse({ rules, onChange }) {
                               <button key={m.key} type="button" title={m.text}
                                 onClick={() => setzeFeld(t.key, "metrik", m.key)}
                                 style={{
-                                  border: `1px solid ${aktiv ? C.gold : C.line}`, borderRadius: 999,
-                                  background: aktiv ? `${C.gold}1a` : "transparent",
-                                  color: aktiv ? C.gold : C.text, cursor: "pointer",
+                                  border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: 999,
+                                  background: aktiv ? `${C.akzent}1a` : "transparent",
+                                  color: aktiv ? C.akzent : C.text, cursor: "pointer",
                                   padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
                                 }}>{m.label}</button>
                             );

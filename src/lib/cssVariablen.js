@@ -4,8 +4,8 @@
 //  🔴 Das Problem, das diese Datei löst, ist genau die „zweite Wahrheit", vor
 //  der die Runden-Schicht in CLAUDE.md warnt — nur für Farben:
 //
-//    · Die Screens lesen `C.gold` aus `theme.js` (ein Objekt im Speicher).
-//    · Das Stylesheet liest `var(--tqs-gold)` (ein Wert im Dokument).
+//    · Die Screens lesen `C.akzent` aus `theme.js` (ein Objekt im Speicher).
+//    · Das Stylesheet liest `var(--tqs-akzent)` (ein Wert im Dokument).
 //
 //  Beides muss dasselbe sein, sonst leuchtet ein Knopf in einer anderen Farbe,
 //  als er gefüllt ist. Und es KANN auseinanderlaufen: `applyFanColors` ändert
@@ -33,7 +33,14 @@ const ABBILDUNG = {
   text: "--tqs-text",
   muted: "--tqs-muted",
   ghost: "--tqs-ghost",
-  gold: "--tqs-gold",
+  akzent: "--tqs-akzent",
+  bernstein: "--tqs-bernstein",
+  // Die Vereinsfarben-Rollen wandern MIT ins Stylesheet — nur so können
+  // Verzierungen und Fenster-Übergänge in CSS die gewählten Farben nutzen,
+  // ohne dass eine Komponente sie durchreicht (Andi, 21.08.2026).
+  fan1: "--tqs-fan1",
+  fan2: "--tqs-fan2",
+  fan3: "--tqs-fan3",
   mint: "--tqs-mint",
   coral: "--tqs-coral",
 };

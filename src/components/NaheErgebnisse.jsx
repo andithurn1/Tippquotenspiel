@@ -58,15 +58,15 @@ export default function NaheErgebnisse({ tip, snap, rules, kompakt = false }) {
 function Zeile({ r, best }) {
   const anteil = Math.max(0.04, r.points / best);
   return (
-    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: "5px 8px", borderRadius: 9, overflow: "hidden", background: r.isTip ? `${C.gold}14` : "transparent", border: `1px solid ${r.isTip ? C.gold + "44" : "transparent"}` }}>
+    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: "5px 8px", borderRadius: 9, overflow: "hidden", background: r.isTip ? `${C.akzent}14` : "transparent", border: `1px solid ${r.isTip ? C.akzent + "44" : "transparent"}` }}>
       {/* Balken als Hintergrund: relative Auszahlung auf einen Blick */}
       <span aria-hidden style={{
         position: "absolute", left: 0, top: 0, bottom: 0, width: `${anteil * 100}%`,
-        background: r.isTip ? `${C.gold}20` : `${C.indigo}18`,
+        background: r.isTip ? `${C.akzent}20` : `${C.indigo}18`,
       }} />
       <span style={{
         position: "relative", fontFamily: MONO, fontSize: 14, fontWeight: 700,
-        color: r.isTip ? C.gold : C.text, minWidth: 40,
+        color: r.isTip ? C.akzent : C.text, minWidth: 40,
       }}>
         {r.home}:{r.away}
       </span>
@@ -80,7 +80,7 @@ function Zeile({ r, best }) {
       )}
       <span style={{
         position: "relative", fontFamily: MONO, fontSize: 13, fontWeight: 700,
-        color: r.points > 0 ? (r.isTip ? C.gold : C.mint) : C.muted, minWidth: 52, textAlign: "right",
+        color: r.points > 0 ? (r.isTip ? C.akzent : C.mint) : C.muted, minWidth: 52, textAlign: "right",
       }}>
         {r.points > 0 ? `+${r.points}` : "0"}
       </span>

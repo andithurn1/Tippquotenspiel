@@ -61,7 +61,7 @@ export default function RundeBeitreten() {
           <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>Beitritts-Code eingeben</div>
           <p style={{ fontSize: 12.5, color: C.muted, marginTop: 4, marginBottom: 20, lineHeight: 1.5 }}>
             Von einem Freund bekommen, oder zurück zur Demo-Runde? Der Code{" "}
-            <span style={{ fontFamily: MONO, color: C.gold }}>DEMO</span>{" "}
+            <span style={{ fontFamily: MONO, color: C.akzent }}>DEMO</span>{" "}
             führt immer zur „Freundeskreis"-Runde.
           </p>
 
@@ -76,7 +76,7 @@ export default function RundeBeitreten() {
                 }} />
               <button type="submit" disabled={state === "joining" || !code.trim()} style={{
                 marginTop: 14, width: "100%", cursor: state === "joining" || !code.trim() ? "default" : "pointer",
-                background: C.gold, color: C.ink, fontWeight: 700, fontSize: 15,
+                background: C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
                 border: "none", borderRadius: 14, padding: "14px 0",
                 opacity: state === "joining" || !code.trim() ? 0.6 : 1,
               }}>
@@ -86,7 +86,7 @@ export default function RundeBeitreten() {
                 <div style={{ fontSize: 12, color: C.coral, marginTop: 8 }}>Keine Runde mit diesem Code gefunden.</div>
               )}
               {state === "error" && !user && (
-                <div style={{ fontSize: 12, color: C.gold, marginTop: 8 }}>Bitte zuerst auf der Startseite einloggen.</div>
+                <div style={{ fontSize: 12, color: C.akzent, marginTop: 8 }}>Bitte zuerst auf der Startseite einloggen.</div>
               )}
               {state === "error" && user && (
                 <div style={{ fontSize: 12, color: C.coral, marginTop: 8 }}>Beitritt fehlgeschlagen — später erneut versuchen.</div>
@@ -103,7 +103,7 @@ export default function RundeBeitreten() {
               </p>
               <Link href="/tippen" style={{
                 marginTop: 14, display: "block", textAlign: "center", textDecoration: "none",
-                color: C.ink, background: C.gold, fontWeight: 700, fontSize: 14,
+                color: C.ink, background: C.akzent, fontWeight: 700, fontSize: 14,
                 borderRadius: 14, padding: "12px 0",
               }}>
                 Jetzt tippen →

@@ -16,7 +16,7 @@ import { TAPZIEL } from "@/lib/tapziel";
 
 // Landing-Karten der aktiven Runde: Tipp abgeben / Ranking / Ranking-Verlauf.
 const CARDS = [
-  { href: "/tippen", title: "Tipp abgeben", desc: "Spiel wählen, Ergebnis + Torschützen tippen.", tone: C.gold },
+  { href: "/tippen", title: "Tipp abgeben", desc: "Spiel wählen, Ergebnis + Torschützen tippen.", tone: C.akzent },
   { href: "/fahrplan", title: "Saison-Fahrplan", desc: "Wo die Runde steht und was als Nächstes aufgeht.", tone: C.sky },
   { href: "/ranking", title: "Ranking", desc: "Wer in dieser Runde gerade vorne liegt.", tone: C.mint },
   { href: "/historie", title: "Historie & Rekorde", desc: "Verlauf, Auszeichnungen und „was wäre mit anderem Preset gewesen?“.", tone: C.sky },
@@ -123,10 +123,10 @@ export default function RundenHub() {
             <Link href="/abstimmung" style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.gold}44`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.akzent}44`, borderRadius: 18, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.gold, boxShadow: `0 0 12px ${C.gold}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>🃏 Joker-Abstimmung</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
@@ -138,10 +138,10 @@ export default function RundenHub() {
             <Link href="/regeln" style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.gold}44`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.akzent}44`, borderRadius: 18, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.gold, boxShadow: `0 0 12px ${C.gold}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>⚖️ Regeländerungen</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
@@ -168,10 +168,10 @@ export default function RundenHub() {
             <Link href="/joker" style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.gold}44`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.akzent}44`, borderRadius: 18, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.gold, boxShadow: `0 0 12px ${C.gold}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>🃏 Deine Joker</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>

@@ -45,7 +45,7 @@ export default function ThemeProvider({ children }) {
     else resetTheme();
     // 🔴 Direkt danach ins Dokument spiegeln (09.08.2026). Seit es eine
     // Stilebene gibt, lesen ZWEI Seiten dieselben Farben: die Screens aus
-    // `C.gold`, das Stylesheet aus `var(--tqs-gold)`. Ohne diese Zeile
+    // `C.akzent`, das Stylesheet aus `var(--tqs-akzent)`. Ohne diese Zeile
     // leuchtete ein Knopf in einer anderen Farbe, als er gefüllt ist, sobald
     // jemand Vereinsfarben wählt — und zwar still.
     schreibeCssVariablen();

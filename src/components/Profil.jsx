@@ -78,7 +78,7 @@ export default function Profil() {
         </h1>
 
         {!user ? (
-          <p style={{ fontSize: 13, color: C.gold, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: C.akzent, lineHeight: 1.5 }}>
             Bitte zuerst auf der Startseite einloggen — dein Profil hängt an deinem Konto.
           </p>
         ) : (
@@ -100,7 +100,7 @@ export default function Profil() {
               {premium && (
                 <span style={{
                   marginLeft: "auto", fontSize: 10, letterSpacing: 1, textTransform: "uppercase",
-                  color: C.gold, border: `1px solid ${C.gold}55`, borderRadius: 999, padding: "3px 9px",
+                  color: C.akzent, border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "3px 9px",
                 }}>Premium</span>
               )}
             </div>
@@ -160,7 +160,7 @@ export default function Profil() {
                     <button key={a.id} onClick={() => setAvatar(a.id)} title={a.label}
                       aria-pressed={on} style={{
                         cursor: "pointer", padding: 4, borderRadius: "50%", background: "transparent",
-                        border: `2px solid ${on ? C.gold : "transparent"}`, lineHeight: 0,
+                        border: `2px solid ${on ? C.akzent : "transparent"}`, lineHeight: 0,
                       }}>
                       <AvatarKreis id={a.id} size={44} />
                     </button>
@@ -176,7 +176,7 @@ export default function Profil() {
             <button onClick={speichern} disabled={!nameOk || status === "speichern" || !geladen} style={{
               marginTop: 22, width: "100%",
               cursor: !nameOk || status === "speichern" ? "default" : "pointer",
-              background: status === "ok" ? C.mint : C.gold, color: C.ink,
+              background: status === "ok" ? C.mint : C.akzent, color: C.ink,
               fontWeight: 700, fontSize: 14, fontFamily: "inherit",
               border: "none", borderRadius: 14, padding: "13px 0",
               opacity: !nameOk || status === "speichern" ? 0.6 : 1,

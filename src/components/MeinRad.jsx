@@ -144,10 +144,10 @@ export default function MeinRad() {
 
             {letzte && (
               <div style={{
-                background: C.surface, border: `1px solid ${C.gold}44`, borderRadius: 14,
+                background: C.surface, border: `1px solid ${C.akzent}44`, borderRadius: 14,
                 padding: "12px 15px", marginTop: 12,
               }}>
-                <div style={{ fontSize: 11, color: C.gold, textTransform: "uppercase", letterSpacing: 1 }}>
+                <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1 }}>
                   Spieltag {letzte.spieltag}
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4 }}>

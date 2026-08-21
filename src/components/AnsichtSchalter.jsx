@@ -55,7 +55,7 @@ export default function AnsichtSchalter({ stufe, onWechsel }) {
               cursor: "pointer", fontFamily: MONO, fontSize: 12,
               fontWeight: an ? 700 : 400,
               padding: "0 12px", borderRadius: 10, border: "none",
-              background: an ? C.gold : "transparent",
+              background: an ? C.akzent : "transparent",
               color: an ? C.ink : C.muted,
               WebkitTapHighlightColor: "transparent",
             }}

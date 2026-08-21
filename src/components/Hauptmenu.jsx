@@ -18,7 +18,7 @@ const SCREENS = [
   { href: "/erstellen", title: "Spiel erstellen", desc: "Regelwerk einstellen, Runde anlegen und per Code teilen.", tone: C.indigo, tag: "Admin" },
   { href: "/beitreten", title: "Runde beitreten", desc: "Mit Beitritts-Code einer Runde beitreten oder wechseln.", tone: C.sky },
   { href: "/einstellungen", title: "Meine Anzeige", desc: "Wie viel Mathematik & Vorschau du sehen willst.", tone: C.violet, tag: "persönlich" },
-  { href: "/farben", title: "Fanfarben", desc: "Deine Vereinsfarben als Akzent — 2–3 Farben wählen.", tone: C.gold, tag: "persönlich" },
+  { href: "/farben", title: "Fanfarben", desc: "Deine Vereinsfarben als Akzent — 2–3 Farben wählen.", tone: C.akzent, tag: "persönlich" },
   { href: "/benachrichtigungen", title: "Benachrichtigungen", desc: "Nur neuer Spieltag & Erinnerung vor Anpfiff — fein einstellbar.", tone: C.sky, tag: "persönlich" },
   { href: "/abrechnung", title: "Abrechnung", desc: "Dein zuletzt gewerteter Tipp, aufgeschlüsselt.", tone: C.coral },
   { href: "/explorer", title: "Auszahlungs-Explorer", desc: "Heat-Grid: was jeder mögliche Endstand zahlen würde.", tone: C.mint },
@@ -106,15 +106,15 @@ export default function Hauptmenu() {
               return (
                 <button key={r.id} onClick={() => switchTo(r.id)} style={{
                   textAlign: "left", cursor: "pointer", fontFamily: "inherit",
-                  background: active ? `${C.gold}14` : C.surface,
-                  border: `1px solid ${active ? C.gold + "55" : C.line}`,
+                  background: active ? `${C.akzent}14` : C.surface,
+                  border: `1px solid ${active ? C.akzent + "55" : C.line}`,
                   borderRadius: 16, padding: "14px 16px", color: C.text,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: 15, fontWeight: 700 }}>{r.name}</span>
                     {active && (
                       <span style={{
-                        fontFamily: MONO, fontSize: 10, color: C.gold, border: `1px solid ${C.gold}55`,
+                        fontFamily: MONO, fontSize: 10, color: C.akzent, border: `1px solid ${C.akzent}55`,
                         borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
                       }}>aktiv</span>
                     )}
@@ -162,7 +162,7 @@ export default function Hauptmenu() {
               border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.gold, boxShadow: `0 0 12px ${C.gold}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>Tutorial</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>Quoten, Punkte & das Admin-System — mit Beispielen erklärt.</div>

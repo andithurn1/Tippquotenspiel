@@ -34,32 +34,46 @@ describe("Luminanz & Kontrast", () => {
 describe("deriveRoles", () => {
   it("leere Auswahl → Grundwerte", () => {
     const roles = deriveRoles([]);
-    expect(roles.gold).toBeDefined();
-    expect(roles.indigo).toBeDefined();
+    expect(roles.fan1).toBeDefined();
+    expect(roles.fan2).toBeDefined();
   });
   it("fehlende Farbe 2/3 fällt auf Farbe 1 zurück", () => {
     const roles = deriveRoles(["#ff8800"]);
-    expect(roles.indigo).toBe(roles.gold);
-    expect(roles.violet).toBe(roles.gold);
+    expect(roles.fan2).toBe(roles.fan1);
+    expect(roles.fan3).toBe(roles.fan1);
   });
   it("hellt sehr dunkle Vereinsfarben auf, bis sie lesbar sind", () => {
     const roles = deriveRoles(["#0a0a0a"]); // fast schwarz
-    expect(contrastRatio(roles.gold, "#0B0E1F")).toBeGreaterThanOrEqual(3.2);
+    expect(contrastRatio(roles.fan1, "#0B0E1F")).toBeGreaterThanOrEqual(3.2);
   });
   it("lässt gut lesbare Farben unverändert", () => {
     const roles = deriveRoles(["#ffce00", "#1b4e9b", "#4fd18b"]);
-    expect(roles.gold).toBe("#ffce00");
+    expect(roles.fan1).toBe("#ffce00");
   });
 });
 
 describe("applyFanColors / resetTheme (mutiert das gemeinsame C)", () => {
-  it("setzt die Akzent-Rollen und stellt sie zurück", () => {
-    const base = C.gold;
+  it("setzt die Verzierungs-Rollen und stellt sie zurück", () => {
+    const base = C.fan1;
     applyFanColors(["#ff00aa"]);
-    expect(C.gold).not.toBe(base);
-    expect(C.gold).toBe("#ff00aa");
+    expect(C.fan1).not.toBe(base);
+    expect(C.fan1).toBe("#ff00aa");
     resetTheme();
-    expect(C.gold).toBe(base);
+    expect(C.fan1).toBe(base);
+  });
+
+  // 🔴 Die Zusage, um die es Andi am 21.08.2026 ging: „die vom Nutzer
+  // gewählten Farben verwende in minimalistischen Verzierungen." Vorher
+  // überschrieb eine Fanfarbe die MARKENFARBE — sein Lila wäre verschwunden,
+  // sobald jemand Vereinsfarben wählt. Dieser Test ist der Wächter davor.
+  it("lässt die MARKENFARBE unangetastet — auch bei Vereinsfarben", () => {
+    const marke = C.akzent;
+    applyFanColors(["#ff00aa", "#00ff88", "#0044ff"]);
+    expect(C.akzent).toBe(marke);
+    expect(C.indigo).toBeDefined();
+    expect(C.violet).toBeDefined();
+    resetTheme();
+    expect(C.akzent).toBe(marke);
   });
   it("tastet Wertungsfarben (mint/coral) und Gerüst nie an", () => {
     const { mint, coral, ink, text } = C;
@@ -76,7 +90,7 @@ describe("CLUB_PRESETS", () => {
     for (const p of CLUB_PRESETS) {
       expect(sanitizeFanColors(p.colors).length).toBeGreaterThanOrEqual(2);
       const roles = deriveRoles(p.colors);
-      expect(contrastRatio(roles.gold, "#0B0E1F")).toBeGreaterThanOrEqual(3.2);
+      expect(contrastRatio(roles.fan1, "#0B0E1F")).toBeGreaterThanOrEqual(3.2);
     }
   });
 });

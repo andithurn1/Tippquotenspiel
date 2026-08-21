@@ -27,7 +27,7 @@ const SIDES = ["home", "away"];
 const short = (side) => (side === "home" ? SNAP.home : SNAP.away).slice(0, 3).toUpperCase();
 
 const braceBtn = (on) => ({ ...TAPZIEL, fontFamily: MONO, fontSize: 11, cursor: "pointer", padding: "4px 12px", borderRadius: 999,
-  background: on ? `${C.gold}22` : C.surface2, color: on ? C.gold : C.muted, border: `1px solid ${on ? C.gold + "66" : C.line}` });
+  background: on ? `${C.akzent}22` : C.surface2, color: on ? C.akzent : C.muted, border: `1px solid ${on ? C.akzent + "66" : C.line}` });
 
 // Ein hypothetischer Endstand {h,a}: Engine wertet, Kombi-Regel obendrauf.
 function scoreOutcome(tip, r, withScorer, scorerNet, RULES) {
@@ -97,7 +97,7 @@ export default function AuszahlungsExplorer() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>Ergebnis-Auszahlung</span>
           <button onClick={() => setDec((v) => !v)} style={{ ...TAPZIEL, fontFamily: MONO, fontSize: 11, cursor: "pointer",
-            color: dec ? C.gold : C.muted, background: C.surface, border: `1px solid ${dec ? C.gold + "66" : C.line}`, borderRadius: 999, padding: "4px 10px" }}>
+            color: dec ? C.akzent : C.muted, background: C.surface, border: `1px solid ${dec ? C.akzent + "66" : C.line}`, borderRadius: 999, padding: "4px 10px" }}>
             Quoten {dec ? "1.xx" : "1.x"}
           </button>
         </div>
@@ -137,8 +137,8 @@ export default function AuszahlungsExplorer() {
             <div style={{ marginTop: 10 }}>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                 {sc.braces.map((b, i) => (
-                  <span key={i} style={{ fontFamily: MONO, fontSize: 11, color: C.gold,
-                    background: `${C.gold}18`, border: `1px solid ${C.gold}55`, borderRadius: 999, padding: "3px 9px" }}>
+                  <span key={i} style={{ fontFamily: MONO, fontSize: 11, color: C.akzent,
+                    background: `${C.akzent}18`, border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "3px 9px" }}>
                     ⚽ {b.player} · 1 Tor {fmt(b.single)} / 2 Tore {fmt(b.double)}
                   </span>
                 ))}
@@ -197,7 +197,7 @@ export default function AuszahlungsExplorer() {
               Wenn es <b style={{ color: C.text, fontFamily: MONO }}>{sel.h}:{sel.a}</b> würde
               {!selScore.winnerRight && <span style={{ color: C.coral }}> · Sieger falsch</span>}
             </div>
-            <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: C.gold, textShadow: `0 0 20px ${C.gold}44` }}>{Math.round(selScore.total)}</div>
+            <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: C.akzent, textShadow: `0 0 20px ${C.akzent}44` }}>{Math.round(selScore.total)}</div>
           </div>
           <div style={{ height: 1, background: C.line, margin: "12px 0" }} />
           <BreakLine label="Tendenz (Sieger)" v={selScore.parts.tendBoden} won={selScore.ebene === "tendenz"} />
@@ -225,7 +225,7 @@ function Mini({ value, onStep }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <button onClick={() => onStep(-1)} style={b}>−</button>
-      <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: 20, color: C.gold, width: 20, textAlign: "center" }}>{value}</div>
+      <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: 20, color: C.akzent, width: 20, textAlign: "center" }}>{value}</div>
       <button onClick={() => onStep(1)} style={b}>+</button>
     </div>
   );
@@ -254,8 +254,8 @@ function Toggle({ on, onClick, label, tone }) {
 function BreakLine({ label, v, won }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 12.5 }}>
-      <span style={{ color: won ? C.gold : C.muted }}>{won ? "→ " : ""}{label}</span>
-      <span style={{ fontFamily: MONO, color: won ? C.gold : C.muted, fontVariantNumeric: "tabular-nums" }}>{v >= 0.05 ? "+" + v.toFixed(1) : "—"}</span>
+      <span style={{ color: won ? C.akzent : C.muted }}>{won ? "→ " : ""}{label}</span>
+      <span style={{ fontFamily: MONO, color: won ? C.akzent : C.muted, fontVariantNumeric: "tabular-nums" }}>{v >= 0.05 ? "+" + v.toFixed(1) : "—"}</span>
     </div>
   );
 }

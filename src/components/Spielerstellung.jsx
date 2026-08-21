@@ -552,7 +552,12 @@ export default function Spielerstellung() {
         <div style={{
           position: "absolute", top: -90, left: "50%", transform: "translateX(-50%)",
           width: 320, height: 200, pointerEvents: "none",
-          background: `radial-gradient(circle, ${C.mint}22 0%, transparent 70%)`,
+          // 🔴 Der Schein trägt seit 21.08.2026 die VEREINSFARBE (`fan1`), nicht
+          // mehr Mint. Das ist Andis „minimalistische Verzierung": die gewählte
+          // Farbe taucht sichtbar auf, ohne eine Bedeutung zu überschreiben —
+          // Mint heißt in dieser App „bestätigt", und ein dekorativer Schein
+          // sagt gar nichts.
+          background: `radial-gradient(circle, ${C.fan1}22 0%, transparent 70%)`,
         }} />
 
         <div style={{ position: "relative", padding: "26px 22px 24px" }}>
@@ -768,7 +773,7 @@ export default function Spielerstellung() {
                   vorkommen. Ohne diesen Hinweis filtert die Runde still gegen
                   Vereine, die gar nicht mehr auftauchen. */}
               {verwaisteTeams.length > 0 && (
-                <div style={{ fontSize: 11, color: C.gold, marginTop: 4, lineHeight: 1.45 }}>
+                <div style={{ fontSize: 11, color: C.akzent, marginTop: 4, lineHeight: 1.45 }}>
                   {verwaisteTeams.length} gewählte{verwaisteTeams.length === 1 ? "r Verein spielt" : " Vereine spielen"} in
                   keinem der gewählten Wettbewerbe ({verwaisteTeams.join(", ")}) — {verwaisteTeams.length === 1 ? "er zählt" : "sie zählen"} nicht mit.
                 </div>
@@ -782,7 +787,7 @@ export default function Spielerstellung() {
                 const { min, max } = spieleProSpieltag(selectedTeams.length, gesamt);
                 const duenn = max < 3;
                 return (
-                  <div style={{ fontSize: 11, color: duenn ? C.gold : C.mint, marginTop: 4, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: 11, color: duenn ? C.akzent : C.mint, marginTop: 4, lineHeight: 1.45 }}>
                     Bleiben {min === max ? min : `${min} bis ${max}`} Spiele pro Spieltag
                     {duenn && " — das ist wenig; ein einzelner Tipp entscheidet dann fast den ganzen Spieltag"}.
                   </div>
@@ -828,8 +833,8 @@ export default function Spielerstellung() {
               return (
                 <button key={p.key} onClick={() => applyPreset(p)} style={{
                   textAlign: "left", cursor: "pointer", fontFamily: "inherit",
-                  background: active ? `${C.gold}14` : C.surface,
-                  border: `1px solid ${active ? C.gold + "66" : C.line}`,
+                  background: active ? `${C.akzent}14` : C.surface,
+                  border: `1px solid ${active ? C.akzent + "66" : C.line}`,
                   borderRadius: 14, padding: "12px 14px", color: C.text,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
@@ -838,12 +843,12 @@ export default function Spielerstellung() {
                       {/* Ohne Premium greift der Joker-Anteil nicht — das gehört
                           sichtbar an den Preset, nicht erst in eine Fehlermeldung. */}
                       {p.premium && !premium && (
-                        <span style={{ fontSize: 12, color: C.gold, marginLeft: 6 }} title="Premium-Funktion">🔒</span>
+                        <span style={{ fontSize: 12, color: C.akzent, marginLeft: 6 }} title="Premium-Funktion">🔒</span>
                       )}
                     </span>
                     {active && (
                       <span style={{
-                        fontFamily: MONO, fontSize: 10, color: C.gold, border: `1px solid ${C.gold}55`,
+                        fontFamily: MONO, fontSize: 10, color: C.akzent, border: `1px solid ${C.akzent}55`,
                         borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
                       }}>gewählt</span>
                     )}
@@ -1006,8 +1011,8 @@ export default function Spielerstellung() {
                 <button key={f.key} onClick={() => patch({ reglerFeinheit: f.wert })} style={{
                   cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
                   borderRadius: 10, flex: "1 1 120px", textAlign: "left",
-                  background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
-                  border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                  background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
+                  border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
                   <div style={{ fontWeight: 700 }}>{f.label}</div>
                   <div style={{ fontSize: 10.5, opacity: 0.8, marginTop: 2 }}>{f.desc}</div>
@@ -1065,16 +1070,16 @@ export default function Spielerstellung() {
           {rules.displayScale !== empfohleneSkala && (
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-              background: `${C.gold}12`, border: `1px solid ${C.gold}33`, borderRadius: 12,
+              background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
               padding: "9px 12px", marginBottom: 10,
             }}>
               <span style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.4 }}>
-                Empfohlen: <strong style={{ color: C.gold }}>×{empfohleneSkala}</strong> — hält
+                Empfohlen: <strong style={{ color: C.akzent }}>×{empfohleneSkala}</strong> — hält
                 exakte Tipps bei angenehmen Werten{j.enabled ? " (Gewichtung eingerechnet)" : ""}.
               </span>
               <button onClick={() => patch({ displayScale: empfohleneSkala })} style={{
                 cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 700,
-                background: C.surface2, color: C.gold, border: `1px solid ${C.gold}44`,
+                background: C.surface2, color: C.akzent, border: `1px solid ${C.akzent}44`,
                 ...TAPZIEL, borderRadius: 10, padding: "7px 12px", whiteSpace: "nowrap",
               }}>übernehmen</button>
             </div>
@@ -1176,8 +1181,8 @@ export default function Spielerstellung() {
                 return (
                   <button key={s.v} onClick={() => patchTippEinfluss({ staerke: s.v })} style={{
                     ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
-                    background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
-                    border: `1px solid ${on ? C.gold + "66" : C.line}`,
+                    background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
+                    border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                   }}>{s.label}</button>
                 );
               })}
@@ -1252,10 +1257,10 @@ export default function Spielerstellung() {
           )}
           {!premium ? (
             <div style={{
-              background: `${C.gold}12`, border: `1px solid ${C.gold}44`,
+              background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`,
               borderRadius: 14, padding: "13px 15px", marginBottom: 8,
             }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>
                 🔒 Premium-Funktion
               </div>
               <p style={{ fontSize: 11.5, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
@@ -1282,8 +1287,8 @@ export default function Spielerstellung() {
                       <button key={m.key} onClick={() => patchJoker({ modus: m.key })} style={{
                         cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
                         borderRadius: 10, flex: 1, textAlign: "left",
-                        background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
-                        border: `1px solid ${on ? C.gold + "66" : C.line}`,
+                        background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
+                        border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                       }}>
                         <div style={{ fontWeight: 700 }}>{m.label}</div>
                         <div style={{ fontSize: 10.5, opacity: 0.8, marginTop: 2 }}>{m.hint}</div>
@@ -1326,9 +1331,9 @@ export default function Spielerstellung() {
                     {j.faktoren.map((f) => (
                       <span key={f} style={{
                         ...TAPZIEL, fontSize: 12, fontFamily: MONO, padding: "5px 10px", borderRadius: 999,
-                        background: f > 1 ? `${C.gold}18` : C.surface,
-                        color: f > 1 ? C.gold : C.muted,
-                        border: `1px solid ${f > 1 ? C.gold + "44" : C.line}`,
+                        background: f > 1 ? `${C.akzent}18` : C.surface,
+                        color: f > 1 ? C.akzent : C.muted,
+                        border: `1px solid ${f > 1 ? C.akzent + "44" : C.line}`,
                       }}>{fmtFaktor(f)}</span>
                     ))}
                   </div>
@@ -1375,8 +1380,8 @@ export default function Spielerstellung() {
                           <button key={t.key} title={t.desc} onClick={() => patchJoker({ einsatzTakt: t.key })} style={{
                             flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
                             borderRadius: 11, textAlign: "left",
-                            background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
-                            border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                            background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
+                            border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                           }}>
                             <div style={{ fontSize: 12, fontWeight: 700 }}>{t.label}</div>
                           </button>
@@ -1399,11 +1404,11 @@ export default function Spielerstellung() {
                           return (
                             <button key={p.key} onClick={() => setzeFenster({ phase: p.key })} style={{
                               textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
-                              background: an ? `${C.gold}18` : C.surface,
-                              border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                              background: an ? `${C.akzent}18` : C.surface,
+                              border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                               ...TAPZIEL, borderRadius: 12, padding: "9px 12px",
                             }}>
-                              <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.gold : C.text }}>{p.label}</div>
+                              <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.akzent : C.text }}>{p.label}</div>
                               <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
                             </button>
                           );
@@ -1485,7 +1490,7 @@ export default function Spielerstellung() {
                       Größe markiert; verbindlich prüft erst die Tippabgabe. */}
                   {einsatzKonfliktListe.length > 0 && (
                     <div style={{
-                      background: `${C.gold}12`, border: `1px solid ${C.gold}33`, borderRadius: 12,
+                      background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
                       padding: "10px 12px", marginBottom: 10,
                     }}>
                       {einsatzKonfliktListe.map((k) => (
@@ -1527,7 +1532,7 @@ export default function Spielerstellung() {
                       min={L.joker.faktor.min} max={L.joker.faktor.max} step={reglerSchritt(rules, L.joker.faktor)}
                       value={jh.faktor ?? 1.2}
                       onChange={(e) => patchJoker({ heimat: { ...jh, faktor: Number(e.target.value) } })}
-                      style={{ width: "100%", accentColor: C.gold }} />
+                      style={{ width: "100%", accentColor: C.akzent }} />
                     <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
                       Jeder wählt seinen Verein selbst. Wirkt symmetrisch — auch auf
                       Minuspunkte, denn Fans tippen ihr Team gern zu optimistisch.
@@ -1545,7 +1550,7 @@ export default function Spielerstellung() {
                       min={L.joker.mutFaktor.min} max={L.joker.mutFaktor.max} step={reglerSchritt(rules, L.joker.mutFaktor)}
                       value={jm.faktor ?? 1.1}
                       onChange={(e) => patchJoker({ mut: { ...jm, faktor: Number(e.target.value) } })}
-                      style={{ width: "100%", accentColor: C.gold }} />
+                      style={{ width: "100%", accentColor: C.akzent }} />
                     <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
                       Zahlt nur, wenn der mutige Tipp <strong>aufgeht</strong> — sonst würde
                       blindes Dagegenhalten belohnt. Deshalb auch die engere Obergrenze
@@ -1620,10 +1625,10 @@ export default function Spielerstellung() {
 
           {!premium ? (
             <div style={{
-              background: `${C.gold}12`, border: `1px solid ${C.gold}44`,
+              background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`,
               borderRadius: 14, padding: "13px 15px", marginBottom: 8,
             }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>🔒 Premium-Funktion</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
               <p style={{ fontSize: 11.5, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
                 Es genügt, wenn <strong>du als Admin</strong> Premium hast.
               </p>
@@ -1650,7 +1655,7 @@ export default function Spielerstellung() {
                       // Aufschlag — vorher galt nur `f > 1`, wodurch ein
                       // gedämpfter Verein aussah wie ein unberührter.
                       const an = f !== 1;
-                      const ton = f > 1 ? C.gold : C.indigo;
+                      const ton = f > 1 ? C.akzent : C.indigo;
                       return (
                         <button key={team}
                           onClick={() => cycleTeamFaktor(team)}
@@ -1738,8 +1743,8 @@ export default function Spielerstellung() {
                       <button key={s.key} onClick={() => patchAufholen({ staerke: s.staerke, schwelle: s.schwelle })} style={{
                         cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
                         borderRadius: 10, flex: 1, textAlign: "left",
-                        background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
-                        border: `1px solid ${on ? C.gold + "66" : C.line}`,
+                        background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
+                        border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                       }}>
                         <div style={{ fontWeight: 700 }}>{s.label}</div>
                         <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>{s.hint}</div>
@@ -1826,8 +1831,8 @@ export default function Spielerstellung() {
                   <button key={k.key} onClick={() => patchSaisonform({ kurve: k.key })}
                     title={k.text} style={{
                       ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
-                      background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
-                      border: `1px solid ${on ? C.gold + "66" : C.line}`,
+                      background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
+                      border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                     }}>{k.label}</button>
                 );
               })}
@@ -1917,8 +1922,8 @@ export default function Spielerstellung() {
                       <button key={s} onClick={() => patchVersaeumnis({ strategie: s })} style={{
                         cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
                         borderRadius: 10, textAlign: "left",
-                        background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
-                        border: `1px solid ${on ? C.gold + "66" : C.line}`,
+                        background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
+                        border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                       }}>
                         <div style={{ fontWeight: 700 }}>{VERSAEUMNIS_LABEL[s]}</div>
                         <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>{VERSAEUMNIS_HINT[s]}</div>
@@ -1935,7 +1940,7 @@ export default function Spielerstellung() {
                   step={RULE_LIMITS.versaeumnis.malusProzent.step}
                   value={ve.malusProzent}
                   onChange={(e) => patchVersaeumnis({ malusProzent: Number(e.target.value) })}
-                  style={{ width: "100%", accentColor: C.gold }} />
+                  style={{ width: "100%", accentColor: C.akzent }} />
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
                   {ve.malusProzent === 0 && "Volle Wertung — sehr gnädig, macht Vergessen folgenlos."}
                   {ve.malusProzent > 0 && ve.malusProzent < 100 && `Der Ersatz-Tipp zählt nur zu ${100 - ve.malusProzent} %.`}
@@ -1950,7 +1955,7 @@ export default function Spielerstellung() {
                   step={RULE_LIMITS.versaeumnis.maxProSaison.step}
                   value={ve.maxProSaison}
                   onChange={(e) => patchVersaeumnis({ maxProSaison: Number(e.target.value) })}
-                  style={{ width: "100%", accentColor: C.gold }} />
+                  style={{ width: "100%", accentColor: C.akzent }} />
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
                   {ve.maxProSaison === 0
                     ? "Die Kulanz greift immer — auch bei Dauer-Aussetzern."
@@ -1983,9 +1988,9 @@ export default function Spielerstellung() {
                     style={{
                       ...TAPZIEL, flex: "1 1 70px", cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
                       borderRadius: 11, fontSize: 12, fontWeight: 700,
-                      background: an ? `${C.gold}22` : C.surface,
-                      color: an ? C.gold : C.muted,
-                      border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                      background: an ? `${C.akzent}22` : C.surface,
+                      color: an ? C.akzent : C.muted,
+                      border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                     }}>{st.label}</button>
                 );
               })}
@@ -2005,9 +2010,9 @@ export default function Spielerstellung() {
                     style={{
                       flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
                       borderRadius: 11, fontSize: 11.5, fontWeight: 700,
-                      background: an ? `${C.gold}22` : C.surface,
-                      color: an ? C.gold : C.muted,
-                      border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                      background: an ? `${C.akzent}22` : C.surface,
+                      color: an ? C.akzent : C.muted,
+                      border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                     }}>{a.label}</button>
                 );
               })}
@@ -2090,7 +2095,7 @@ export default function Spielerstellung() {
                 deine aktive Runde zum Tippen.
               </p>
               {!user && (
-                <p style={{ fontSize: 12, color: C.gold, marginBottom: 10 }}>
+                <p style={{ fontSize: 12, color: C.akzent, marginBottom: 10 }}>
                   Bitte zuerst auf der Startseite einloggen.
                 </p>
               )}
@@ -2118,7 +2123,7 @@ export default function Spielerstellung() {
             <div style={{ background: `${C.mint}12`, border: `1px solid ${C.mint}44`, borderRadius: 14, padding: "14px 16px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: C.mint }}>✓ „{created.name}“ ist angelegt — deine aktive Runde</div>
               <div style={{ marginTop: 10, fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Beitritts-Code</div>
-              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: C.gold, marginTop: 4, letterSpacing: 3 }}>{created.join_code}</div>
+              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: C.akzent, marginTop: 4, letterSpacing: 3 }}>{created.join_code}</div>
               <button onClick={copyJoinCode} style={{
                 marginTop: 10, width: "100%", cursor: "pointer",
                 background: codeCopied ? C.mint : C.surface2, color: codeCopied ? C.ink : C.text, fontWeight: 700, fontSize: 13,
@@ -2134,12 +2139,12 @@ export default function Spielerstellung() {
           <SectionTitle>Creator-Code</SectionTitle>
           <div style={{
             background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12,
-            padding: "10px 12px", fontFamily: MONO, fontSize: 12, color: C.gold,
+            padding: "10px 12px", fontFamily: MONO, fontSize: 12, color: C.akzent,
             wordBreak: "break-all", lineHeight: 1.5,
           }}>{code}</div>
           <button onClick={copy} style={{
             marginTop: 10, width: "100%", cursor: "pointer",
-            background: copied ? C.mint : C.gold, color: C.ink, fontWeight: 700, fontSize: 14,
+            background: copied ? C.mint : C.akzent, color: C.ink, fontWeight: 700, fontSize: 14,
             ...TAPZIEL, border: "none", borderRadius: 14, padding: "13px 0", transition: "background .2s",
           }}>{copied ? "✓ kopiert" : "Langen Code kopieren & teilen"}</button>
 
@@ -2159,7 +2164,7 @@ export default function Spielerstellung() {
               }}>{publishing ? "wird erstellt …" : user ? "Kurzcode erstellen & teilen" : "Zum Erstellen einloggen"}</button>
             ) : (
               <div>
-                <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: C.gold, letterSpacing: 3, textAlign: "center" }}>{shortCode}</div>
+                <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: C.akzent, letterSpacing: 3, textAlign: "center" }}>{shortCode}</div>
                 <button onClick={copyShort} style={{
                   marginTop: 8, width: "100%", cursor: "pointer",
                   background: shortCopied ? C.mint : C.surface2, color: shortCopied ? C.ink : C.text, fontWeight: 700, fontSize: 13,
@@ -2232,7 +2237,7 @@ function GrosseZeile({ icon, titel, unter, wert, offen, onClick, children }) {
           )}
         </span>
         {wert && (
-          <span style={{ fontFamily: MONO, fontSize: 12, color: C.gold, flexShrink: 0 }}>{wert}</span>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: C.akzent, flexShrink: 0 }}>{wert}</span>
         )}
         <span style={{
           fontSize: 18, color: C.muted, flexShrink: 0, lineHeight: 1,
@@ -2276,13 +2281,13 @@ function Slider({ label, hint, value, min, max, step, onChange, fmt, pfad }) {
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
         <span style={{ fontSize: 13 }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: 13, color: draussen ? C.coral : C.gold }}>
+        <span style={{ fontFamily: MONO, fontSize: 13, color: draussen ? C.coral : C.akzent }}>
           {fmt ? fmt(value) : value.toFixed(2)}
         </span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(+e.target.value)}
-        style={{ width: "100%", accentColor: draussen ? C.coral : C.gold, cursor: "pointer" }} />
+        style={{ width: "100%", accentColor: draussen ? C.coral : C.akzent, cursor: "pointer" }} />
       {b && (
         <div title="erprobter Bereich" style={{
           position: "relative", height: 3, borderRadius: 999, background: C.line, marginTop: 1,
@@ -2334,7 +2339,7 @@ function Stepper({ value, min, max, onStep }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <button onClick={() => onStep(-1)} disabled={value <= min} style={b(value <= min)}>−</button>
-      <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 18, color: C.gold, width: 18, textAlign: "center" }}>{value}</span>
+      <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 18, color: C.akzent, width: 18, textAlign: "center" }}>{value}</span>
       <button onClick={() => onStep(1)} disabled={value >= max} style={b(value >= max)}>+</button>
     </div>
   );

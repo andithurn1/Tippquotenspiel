@@ -31,9 +31,18 @@ const FARBEN = [
   ["F4", "--tqs-surface2", "hervorgehoben"],
   ["F5", "--tqs-text", "Fließtext"],
   ["F6", "--tqs-muted", "Nebeninfo"],
-  ["F7", "--tqs-gold", "Hervorhebung, dein Wert"],
+  ["F7", "--tqs-akzent", "Markenfarbe — Hervorhebung, dein Wert"],
   ["F8", "--tqs-mint", "positiv"],
   ["F9", "--tqs-coral", "negativ"],
+  // 🔴 Neu am 21.08.2026, als F7 von Gold auf Lila wechselte: der alte
+  // Goldton bleibt als eigener WARNTON. Er sagt „sieh hin", nicht „Fehler" —
+  // und eine lila Ampelstufe zwischen grün und rot liest niemand als Warnung.
+  ["F10", "--tqs-bernstein", "Warnton, gelbe Ampelstufe"],
+  // Die drei Verzierungs-Rollen tragen die VEREINSFARBEN des Nutzers. Ohne
+  // Auswahl stehen sie auf den Markenwerten.
+  ["F11", "--tqs-fan1", "Vereinsfarbe 1 — nur Verzierung"],
+  ["F12", "--tqs-fan2", "Vereinsfarbe 2 — nur Verzierung"],
+  ["F13", "--tqs-fan3", "Vereinsfarbe 3 — nur Verzierung"],
 ];
 
 const RUNDUNGEN = [
@@ -127,7 +136,7 @@ export default function Stilmuster() {
               <span style={{ display: "block", fontSize: "var(--tqs-schrift-gross)", fontWeight: 700 }}>Wettbewerbe</span>
               <span style={{ display: "block", fontSize: "var(--tqs-schrift-klein)", color: "var(--tqs-muted)" }}>Ligen &amp; Teams</span>
             </span>
-            <span style={{ color: "var(--tqs-gold)", fontFamily: "ui-monospace, monospace", fontSize: "var(--tqs-schrift-klein)" }}>3 gewählt</span>
+            <span style={{ color: "var(--tqs-akzent)", fontFamily: "ui-monospace, monospace", fontSize: "var(--tqs-schrift-klein)" }}>3 gewählt</span>
             <span style={{ color: "var(--tqs-muted)" }}>›</span>
           </Aktion>
         </Muster>
@@ -249,7 +258,7 @@ function Kuerzel({ children }) {
   return (
     <span style={{
       fontFamily: "ui-monospace, monospace", fontSize: 10, fontWeight: 700,
-      color: "var(--tqs-gold)", border: "1px solid color-mix(in srgb, var(--tqs-gold) 40%, transparent)",
+      color: "var(--tqs-akzent)", border: "1px solid color-mix(in srgb, var(--tqs-akzent) 40%, transparent)",
       borderRadius: 999, padding: "1px 6px", whiteSpace: "nowrap",
     }}>{children}</span>
   );

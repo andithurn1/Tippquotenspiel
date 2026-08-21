@@ -122,7 +122,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
           </div>
           {/* Die Betreuung, die eine nackte Zahl nicht leistet — dieselbe
               Rolle wie `anteile()` bei den Wettbewerbs-Gewichten. */}
-          <p style={{ fontSize: 11, color: C.gold, margin: "8px 0 0", lineHeight: 1.45 }}>
+          <p style={{ fontSize: 11, color: C.akzent, margin: "8px 0 0", lineHeight: 1.45 }}>
             Getippt wird, wer auf den Plätzen {zone.von}–{zone.bis} steht — abgelesen am
             Tabellenstand beim Öffnen des Spieltags, nicht zwischen zwei Spielen desselben
             Spieltags.

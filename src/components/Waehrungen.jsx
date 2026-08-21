@@ -44,14 +44,14 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
         {muenzenKompaktZeigen && (
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <span>🪙</span>
-            <span style={{ color: C.gold, fontWeight: 700 }}>{zahl(stand.frei)}</span>
+            <span style={{ color: C.akzent, fontWeight: 700 }}>{zahl(stand.frei)}</span>
             <span>von {zahl(stand.budget)}</span>
           </span>
         )}
         {narren != null && (
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <span>🃏</span>
-            <span style={{ color: C.gold, fontWeight: 700 }}>{zahl(narren)}</span>
+            <span style={{ color: C.akzent, fontWeight: 700 }}>{zahl(narren)}</span>
           </span>
         )}
       </div>
@@ -70,7 +70,7 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
               🪙 Münzen — {stand.periodeLabel ?? `Spieltag ${stand.spieltag?.matchday ?? "?"}`}
             </span>
             {stand.aktiv !== false && (
-              <span style={{ fontFamily: MONO, fontSize: 13, color: C.gold }}>
+              <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>
                 {zahl(stand.frei)} frei
               </span>
             )}
@@ -84,7 +84,7 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
               </div>
               <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>
                 <div style={{
-                  position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: 999, background: C.gold,
+                  position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: 999, background: C.akzent,
                   width: `${anteil}%`,
                 }} />
               </div>
@@ -97,7 +97,7 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
           <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
             🃏 Narren
           </span>
-          <span style={{ fontFamily: MONO, fontSize: 13, color: C.gold }}>{zahl(narren)}</span>
+          <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>{zahl(narren)}</span>
         </div>
       )}
     </div>

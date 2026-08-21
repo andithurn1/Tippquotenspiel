@@ -272,7 +272,7 @@ export default function Spielwahl() {
 
         {ladeFehler && (
           <div style={{
-            background: `${C.gold}0E`, border: `1px solid ${C.gold}33`, borderRadius: 10,
+            background: `${C.akzent}0E`, border: `1px solid ${C.akzent}33`, borderRadius: 10,
             padding: "10px 12px", fontSize: 11.5, color: C.text, lineHeight: 1.45,
           }}>
             Die Spiele konnten nicht geladen werden.
@@ -299,7 +299,7 @@ export default function Spielwahl() {
             <div key={g.key} style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
                 {mehrereWettbewerbe && (
-                  <span style={{ color: C.gold }}>{wettbewerbLabel(g.wettbewerb)} · </span>
+                  <span style={{ color: C.akzent }}>{wettbewerbLabel(g.wettbewerb)} · </span>
                 )}
                 {titel}
               </div>
@@ -345,16 +345,16 @@ export default function Spielwahl() {
               {belegung && (
                 <div style={{
                   display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6,
-                  background: `${C.gold}0E`, border: `1px solid ${C.gold}2E`,
+                  background: `${C.akzent}0E`, border: `1px solid ${C.akzent}2E`,
                   borderRadius: 10, padding: "7px 10px", marginBottom: 8,
                 }}>
                   <span style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Gewichte:</span>
                   {belegung.belegt.filter((b) => b.gewicht !== 1).map((b) => (
                     <span key={b.gewicht} style={{
                       fontFamily: MONO, fontSize: 11, padding: "2px 7px", borderRadius: 999,
-                      background: b.matchId ? "transparent" : `${C.gold}22`,
-                      color: b.matchId ? "rgba(138,144,180,0.5)" : C.gold,
-                      border: `1px solid ${b.matchId ? C.line : C.gold + "66"}`,
+                      background: b.matchId ? "transparent" : `${C.akzent}22`,
+                      color: b.matchId ? "rgba(138,144,180,0.5)" : C.akzent,
+                      border: `1px solid ${b.matchId ? C.line : C.akzent + "66"}`,
                       textDecoration: b.matchId ? "line-through" : "none",
                     }}>×{b.gewicht.toFixed(1)}</span>
                   ))}
@@ -413,11 +413,11 @@ function MatchRow({ match, status, tipped, gewicht, rules }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
         {bigGame > 0 && <Tag tone={C.coral}>★ Topspiel +{bigGame.toFixed(1)}</Tag>}
-        {gewichtet && <Tag tone={C.gold}>×{gewicht.toFixed(1)}</Tag>}
+        {gewichtet && <Tag tone={C.akzent}>×{gewicht.toFixed(1)}</Tag>}
         {open ? (
           tipped
             ? <Tag tone={C.mint}>✓ getippt</Tag>
-            : <Tag tone={C.gold}>{status.text}</Tag>
+            : <Tag tone={C.akzent}>{status.text}</Tag>
         ) : status?.zustand === "zu" ? (
           <Tag tone={C.sky}>{status.text}</Tag>
         ) : (

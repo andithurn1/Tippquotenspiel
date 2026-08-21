@@ -221,13 +221,13 @@ export default function Historie() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 18 }}>
               {records.map((r) => (
                 <div key={r.key} style={{
-                  background: C.ink2, border: `1px solid ${r.holder.userId === meId ? C.gold + "55" : C.line}`,
+                  background: C.ink2, border: `1px solid ${r.holder.userId === meId ? C.akzent + "55" : C.line}`,
                   borderRadius: 14, padding: "11px 13px",
                 }}>
                   <div style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
                     {r.emoji} {r.label}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4, color: r.holder.userId === meId ? C.gold : C.text }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4, color: r.holder.userId === meId ? C.akzent : C.text }}>
                     {r.holder.name}
                   </div>
                   <div style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, marginTop: 1 }}>
@@ -248,13 +248,13 @@ export default function Historie() {
                   <button key={o.key} onClick={() => setPresetKey(o.key)} style={{
                     cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 600,
                     ...TAPZIEL, padding: "7px 12px", borderRadius: 999,
-                    background: on ? `${C.gold}22` : C.surface, color: on ? C.gold : C.muted,
-                    border: `1px solid ${on ? C.gold + "77" : C.line}`,
+                    background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
+                    border: `1px solid ${on ? C.akzent + "77" : C.line}`,
                   }}>{o.label}</button>
                 );
               })}
             </div>
-            <p style={{ fontSize: 11, color: wasWaere ? C.gold : C.muted, margin: "0 0 16px", lineHeight: 1.4 }}>
+            <p style={{ fontSize: 11, color: wasWaere ? C.akzent : C.muted, margin: "0 0 16px", lineHeight: 1.4 }}>
               {wasWaere
                 ? `„Was wäre gewesen" mit Preset „${gewaehlt.label}" — nur zur Inspiration, die Runde bleibt unverändert gewertet.`
                 : "Die echte Wertung dieser Runde. Wähle ein Preset, um zu sehen, was mit anderen Regeln herausgekommen wäre."}

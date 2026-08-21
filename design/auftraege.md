@@ -30,10 +30,10 @@ Erlaubte Stände, und jeder verlangt einen Beleg:
 
 | Nr | Ansage (seine Worte) | Stand | Beleg / was fehlt |
 |---|---|---|---|
-| G1 | „F7 (Akzent, bisher Gold) soll LILA sein“ | ⏳ | `theme.js:50` steht weiterhin auf `gold: "#B47B00"` |
+| G1 | „F7 (Akzent, bisher Gold) soll LILA sein“ | ✅ | `theme.js`: `akzent: "#9A6BE8"`. Ton auf dasselbe Helligkeitsprofil gemessen wie das alte Gold (dunkler Text darauf 5,14 statt 5,26) — deshalb ohne Lesbarkeits-Umbau in 58 Dateien. Im Browser geprüft: `rgb(154,107,232)` |
 | G2 | „R2 (12 px) ist der bevorzugte Eckenradius“ | 🔨 | Token `--tqs-rund: 12px` liegt in `globals.css`. In den Screens **acht verschiedene Radien**, gezählt: 999 (127×), 12 (91×), 14 (58×), 10 (47×), 11 (23×), 18, 26 … |
 | G3 | „durchwegs die apple schrift. typ und formatierung“ | ⏳ | **keine einzige `font-family` in der ganzen App** — weder in `globals.css` noch im Layout |
-| G4 | „die vom nutzer gewählten farben … in minimalistischen verzierungen und dynamischen übergängen“ | ⏳ | `applyFanColors` überschreibt weiterhin die Akzente. Hängt mit G1 zusammen: einzeln umgesetzt verschwindet das Lila wieder |
+| G4 | „die vom nutzer gewählten farben … in minimalistischen verzierungen“ | 🔨 | Fanfarben landen jetzt in eigenen Rollen `fan1–fan3` und lassen die Markenfarbe unangetastet — ein Test wacht darüber. Erste Verzierung: der Schein über der Karte. **Übergänge zwischen Fenstern fehlen noch** (hängt an B3) |
 | G5 | Erstkontakt: erster Start vs. Wiederkehrer | ⏳ | nichts gebaut |
 | G6 | Aufbau der Admin-Einstellungen | 👤 | will er einzeln durchsprechen — **auf ihn warten** |
 

@@ -20,7 +20,7 @@
 // Farben aus der zentralen Design-Ebene — nicht erneut hart eintragen.
 import { COLORS } from "./theme";
 
-const GOLD = COLORS.gold;
+const GOLD = COLORS.akzent;
 const MINT = COLORS.mint;
 const CORAL = COLORS.coral;
 const MUTED = COLORS.muted;

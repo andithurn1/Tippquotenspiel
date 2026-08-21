@@ -43,9 +43,9 @@ export default function EinfacheRegler({ rules, onChange }) {
                     style={{
                       ...TAPZIEL, flex: "1 1 92px", cursor: "pointer", fontFamily: "inherit", padding: "9px 6px",
                       borderRadius: 11, fontSize: 12.5, fontWeight: 700,
-                      background: an ? `${C.gold}22` : C.surface,
-                      color: an ? C.gold : C.muted,
-                      border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                      background: an ? `${C.akzent}22` : C.surface,
+                      color: an ? C.akzent : C.muted,
+                      border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                     }}>{stufe.label}</button>
                 );
               })}
@@ -83,7 +83,7 @@ export default function EinfacheRegler({ rules, onChange }) {
             <span style={{ fontSize: 12.5, color: C.text, flex: 1, minWidth: 0 }}>{z.text}</span>
             <span style={{
               fontFamily: MONO, fontSize: 13, fontWeight: 700,
-              color: z.wert > 0 ? C.gold : z.wert < 0 ? C.coral : C.muted,
+              color: z.wert > 0 ? C.akzent : z.wert < 0 ? C.coral : C.muted,
               fontVariantNumeric: "tabular-nums",
             }}>{z.wert > 0 ? `+${z.wert}` : z.wert}</span>
           </div>

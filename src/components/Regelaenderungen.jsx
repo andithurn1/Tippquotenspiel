@@ -165,7 +165,7 @@ export default function Regelaenderungen() {
 
         {meldung && (
           <div style={{
-            background: `${C.gold}12`, border: `1px solid ${C.gold}33`, borderRadius: 12,
+            background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
             padding: "10px 12px", marginBottom: 12, fontSize: 12, color: C.muted, lineHeight: 1.45,
           }}>{meldung}</div>
         )}
@@ -207,7 +207,7 @@ export default function Regelaenderungen() {
 
               return (
                 <div key={antrag.id} style={{
-                  background: C.surface, border: `1px solid ${laeuft ? C.gold + "44" : C.line}`,
+                  background: C.surface, border: `1px solid ${laeuft ? C.akzent + "44" : C.line}`,
                   borderRadius: 14, padding: "13px 15px", marginBottom: 10,
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{aspektDef?.label ?? antrag.aspekt}</div>
@@ -252,8 +252,8 @@ export default function Regelaenderungen() {
                               flex: 1, cursor: busy === antrag.id ? "default" : "pointer",
                               fontFamily: "inherit", fontSize: 12.5, fontWeight: 700, padding: "9px 6px",
                               borderRadius: 11,
-                              background: an ? `${C.gold}22` : C.surface2, color: an ? C.gold : C.muted,
-                              border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                              background: an ? `${C.akzent}22` : C.surface2, color: an ? C.akzent : C.muted,
+                              border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                             }}>{b.label}</button>
                         );
                       })}
@@ -287,9 +287,9 @@ export default function Regelaenderungen() {
                         flex: "1 1 120px", cursor: pruef.erlaubt ? "pointer" : "default",
                         fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px",
                         borderRadius: 11, textAlign: "left",
-                        background: an ? `${C.gold}22` : C.surface,
-                        color: an ? C.gold : pruef.erlaubt ? C.muted : "rgba(138,144,180,0.4)",
-                        border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                        background: an ? `${C.akzent}22` : C.surface,
+                        color: an ? C.akzent : pruef.erlaubt ? C.muted : "rgba(138,144,180,0.4)",
+                        border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                         textDecoration: pruef.erlaubt ? "none" : "line-through",
                       }}>{asp.label}</button>
                   );

@@ -65,7 +65,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span style={{ fontSize: 13, fontWeight: 700 }}>{w.label}</span>
               <span
-                style={{ fontFamily: MONO, fontSize: 13, color: auf > 0 ? C.gold : auf < 0 ? C.indigo : C.muted }}
+                style={{ fontFamily: MONO, fontSize: 13, color: auf > 0 ? C.akzent : auf < 0 ? C.indigo : C.muted }}
                 title={auf > 0 ? "zählt mehr" : auf < 0 ? "zählt weniger" : "kein Aufschlag"}>
                 {fmtFaktorOderAus(1 + auf)}
               </span>
@@ -74,7 +74,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
               min={WETTBEWERB_LIMITS.aufschlag.min} max={WETTBEWERB_LIMITS.aufschlag.max}
               step={WETTBEWERB_LIMITS.aufschlag.step}
               onChange={(e) => setzeAufschlag(w.key, +e.target.value)}
-              style={{ width: "100%", accentColor: C.gold, cursor: "pointer" }} />
+              style={{ width: "100%", accentColor: C.akzent, cursor: "pointer" }} />
 
             {/* Das Entscheidende: was am Ende herauskommt. */}
             {a && (
@@ -82,7 +82,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
                 <div style={{ flex: 1, height: 6, borderRadius: 999, background: C.surface2, overflow: "hidden" }}>
                   <div style={{
                     width: `${Math.round(a.anteil * 100)}%`, height: "100%",
-                    background: auf > 0 ? C.gold : auf < 0 ? C.indigo : C.sky, borderRadius: 999,
+                    background: auf > 0 ? C.akzent : auf < 0 ? C.indigo : C.sky, borderRadius: 999,
                   }} />
                 </div>
                 <span style={{ fontFamily: MONO, fontSize: 11, color: C.text, minWidth: 92, textAlign: "right" }}>
@@ -103,7 +103,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
       <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 12, marginTop: 4 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <span style={{ fontSize: 13, fontWeight: 700 }}>Je K.-o.-Runde zusätzlich</span>
-          <span style={{ fontFamily: MONO, fontSize: 13, color: cfg.phasenStufe > 0 ? C.gold : C.muted }}>
+          <span style={{ fontFamily: MONO, fontSize: 13, color: cfg.phasenStufe > 0 ? C.akzent : C.muted }}>
             +{zahl(cfg.phasenStufe)}
           </span>
         </div>
@@ -111,7 +111,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
           min={WETTBEWERB_LIMITS.phasenStufe.min} max={WETTBEWERB_LIMITS.phasenStufe.max}
           step={WETTBEWERB_LIMITS.phasenStufe.step}
           onChange={(e) => setze({ ...cfg, enabled: true, phasenStufe: +e.target.value })}
-          style={{ width: "100%", accentColor: C.gold, cursor: "pointer" }} />
+          style={{ width: "100%", accentColor: C.akzent, cursor: "pointer" }} />
         <p style={{ fontSize: 10.5, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
           Achtelfinale +{zahl(cfg.phasenStufe)}, Viertelfinale +{zahl(cfg.phasenStufe * 2)},
           Halbfinale +{zahl(cfg.phasenStufe * 3)}, Finale +{zahl(cfg.phasenStufe * 4)} —
@@ -121,7 +121,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
 
       {hinweis && (
         <div style={{
-          background: `${C.gold}12`, border: `1px solid ${C.gold}55`, borderRadius: 12,
+          background: `${C.akzent}12`, border: `1px solid ${C.akzent}55`, borderRadius: 12,
           padding: "10px 12px", marginTop: 12, fontSize: 11.5, color: C.text, lineHeight: 1.5,
         }}>
           {hinweis}

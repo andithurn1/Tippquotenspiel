@@ -15,10 +15,10 @@ export default function RegelVorschau({ rules }) {
 
   return (
     <div style={{
-      marginTop: 18, background: `${C.gold}10`, border: `1px solid ${C.gold}33`,
+      marginTop: 18, background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`,
       borderRadius: 14, padding: "14px 16px",
     }}>
-      <div style={{ fontSize: 11, color: C.gold, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
+      <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
         Live-Vorschau · typische Spielarten
       </div>
       <p style={{ fontSize: 10.5, color: C.muted, margin: "0 0 12px", lineHeight: 1.4 }}>
@@ -45,8 +45,8 @@ export default function RegelVorschau({ rules }) {
                 return (
                   <div key={i} style={{
                     display: "flex", alignItems: "baseline", gap: 6, padding: "5px 9px", borderRadius: 10,
-                    background: best ? `${C.gold}18` : C.surface,
-                    border: `1px solid ${best ? C.gold + "55" : C.line}`,
+                    background: best ? `${C.akzent}18` : C.surface,
+                    border: `1px solid ${best ? C.akzent + "55" : C.line}`,
                   }}>
                     <span style={{ fontSize: 11, color: C.muted }}>{t.kind}</span>
                     <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted }}>
@@ -54,7 +54,7 @@ export default function RegelVorschau({ rules }) {
                     </span>
                     <span style={{
                       fontFamily: MONO, fontSize: 13, fontWeight: 700,
-                      color: t.points > 0 ? (best ? C.gold : C.text) : C.coral,
+                      color: t.points > 0 ? (best ? C.akzent : C.text) : C.coral,
                     }}>{t.points}</span>
                     {t.pointsJoker != null && (
                       <span style={{ fontFamily: MONO, fontSize: 11, color: C.mint }}

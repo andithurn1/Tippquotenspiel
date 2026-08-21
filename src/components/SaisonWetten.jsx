@@ -66,7 +66,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
           <input type="range"
             min={SAISON_LIMITS.gewicht.min} max={SAISON_LIMITS.gewicht.max} step={SAISON_LIMITS.gewicht.step}
             value={s.gewicht} onChange={(e) => setze({ gewicht: Number(e.target.value) })}
-            style={{ width: "100%", accentColor: C.gold }} />
+            style={{ width: "100%", accentColor: C.akzent }} />
           <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
             {s.gewicht < 0.8 && "Nur Würze — die Spieltage entscheiden die Runde."}
             {s.gewicht >= 0.8 && s.gewicht <= 1.4 && "Spürbar, aber nicht dominant."}
@@ -95,13 +95,13 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                     }}>×</button>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 7 }}>
-                    <span style={{ fontFamily: MONO, fontSize: 11, color: C.gold, minWidth: 54 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 11, color: C.akzent, minWidth: 54 }}>
                       {w.punkte} Pkt
                     </span>
                     <input type="range"
                       min={SAISON_LIMITS.punkte.min} max={SAISON_LIMITS.punkte.max} step={SAISON_LIMITS.punkte.step}
                       value={w.punkte} onChange={(e) => punkteSetzen(id, Number(e.target.value))}
-                      style={{ flex: 1, accentColor: C.gold }} />
+                      style={{ flex: 1, accentColor: C.akzent }} />
                   </div>
 
                   {/* Freischalt-Fenster. „Wer gewinnt die Champions League?"
@@ -219,13 +219,13 @@ function Toggle({ an, onChange }) {
   return (
     <button onClick={() => onChange(!an)} style={{
       display: "flex", alignItems: "center", gap: 10, cursor: "pointer", width: "100%",
-      textAlign: "left", background: an ? `${C.gold}14` : C.surface,
-      border: `1px solid ${an ? C.gold + "55" : C.line}`, borderRadius: 12,
+      textAlign: "left", background: an ? `${C.akzent}14` : C.surface,
+      border: `1px solid ${an ? C.akzent + "55" : C.line}`, borderRadius: 12,
       padding: "10px 12px", color: C.text, fontFamily: "inherit",
     }}>
       <span style={{
         width: 38, height: 22, borderRadius: 999, flex: "0 0 auto",
-        background: an ? C.gold : C.surface2, border: `1px solid ${an ? C.gold : C.line}`,
+        background: an ? C.akzent : C.surface2, border: `1px solid ${an ? C.akzent : C.line}`,
         display: "flex", alignItems: "center", padding: 2, justifyContent: an ? "flex-end" : "flex-start",
       }}>
         <span style={{ width: 16, height: 16, borderRadius: 999, background: an ? C.ink : C.muted }} />

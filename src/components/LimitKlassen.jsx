@@ -115,7 +115,7 @@ export default function LimitKlassen({ rules, onChange }) {
       </p>
 
       {klassen.length === 0 && (
-        <Banner ton="gold">
+        <Banner ton="bernstein">
           Noch keine Klassen angelegt — ohne eine einzige Klasse gibt es keine Kontingente,
           alle Joker-Arten sind unbegrenzt einsetzbar.
         </Banner>
@@ -239,7 +239,7 @@ function KlasseZeile({
           })}
         </div>
         {mitglieder.length === 0 && (
-          <div style={{ fontSize: 10.5, color: C.gold, marginTop: 5, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 10.5, color: C.akzent, marginTop: 5, lineHeight: 1.4 }}>
             Ohne Mitglieder greift diese Klasse für keine Joker-Art.
           </div>
         )}
@@ -260,8 +260,8 @@ function KlasseZeile({
             return (
               <button key={p.key} title={p.desc} onClick={() => onPatch({ proZeitraum: p.key })} style={{
                 ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px", borderRadius: 999,
-                background: an ? `${C.gold}22` : C.surface2, color: an ? C.gold : C.muted,
-                border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                background: an ? `${C.akzent}22` : C.surface2, color: an ? C.akzent : C.muted,
+                border: `1px solid ${an ? C.akzent + "66" : C.line}`,
               }}>{p.label}</button>
             );
           })}
@@ -358,7 +358,7 @@ function KlasseZeile({
 // ── Kleinteile ───────────────────────────────────────────────
 
 function Banner({ ton, children }) {
-  const farbe = ton === "coral" ? C.coral : C.gold;
+  const farbe = ton === "coral" ? C.coral : C.bernstein;
   return (
     <div style={{
       background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: 12,

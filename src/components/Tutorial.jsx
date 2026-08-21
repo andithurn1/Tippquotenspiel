@@ -75,7 +75,7 @@ export default function Tutorial() {
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, margin: "10px 0" }}>
             <Ebene tone={C.mint} label="Exakt" desc="Endstand genau getroffen — volle Punkte." />
-            <Ebene tone={C.gold} label="Abstand" desc="Tordifferenz stimmt (z.B. 3:1 statt 2:0)." />
+            <Ebene tone={C.akzent} label="Abstand" desc="Tordifferenz stimmt (z.B. 3:1 statt 2:0)." />
             <Ebene tone={C.indigo} label="Tendenz" desc="Nur der Sieger stimmt." />
             <Ebene tone={C.coral} label="Daneben" desc="Sieger falsch — aber die Toranzahl kann trotzdem zählen." />
           </div>
@@ -87,7 +87,7 @@ export default function Tutorial() {
           <div style={exampleBox}>
             <div style={exampleHead}>Rechenbeispiel · real 5:1</div>
             <ExRow tip="5:1" note="exakt getroffen" pts={EX_EXAKT.total} tone={C.mint} />
-            <ExRow tip="4:1" note="hauchdünn — 1 Tor daneben" pts={EX_HAUCH.total} tone={C.gold} />
+            <ExRow tip="4:1" note="hauchdünn — 1 Tor daneben" pts={EX_HAUCH.total} tone={C.akzent} />
             <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
               Sieh: Ein Tor daneben bei einem so unwahrscheinlichen 5:1 zahlt fast wie ein exakter Treffer —
               genau das ist der <Begriff term="naehebonus" />.
@@ -159,7 +159,7 @@ export default function Tutorial() {
         </Section>
 
         <div style={{ marginTop: 24, display: "flex", gap: 10 }}>
-          <a href="/tippen" style={cta(C.gold)}>Jetzt tippen →</a>
+          <a href="/tippen" style={cta(C.akzent)}>Jetzt tippen →</a>
           <a href="/erstellen" style={cta(C.surface2, C.text)}>Runde erstellen</a>
         </div>
       </div>
@@ -175,8 +175,8 @@ function Section({ n, title, children }) {
     <div style={{ marginTop: 22, paddingTop: 18, borderTop: `1px solid ${C.line}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
         <span style={{
-          width: 24, height: 24, borderRadius: 999, background: `${C.gold}22`, color: C.gold,
-          border: `1px solid ${C.gold}55`, display: "flex", alignItems: "center", justifyContent: "center",
+          width: 24, height: 24, borderRadius: 999, background: `${C.akzent}22`, color: C.akzent,
+          border: `1px solid ${C.akzent}55`, display: "flex", alignItems: "center", justifyContent: "center",
           fontFamily: MONO, fontSize: 12, fontWeight: 700, flexShrink: 0,
         }}>{n}</span>
         <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>{title}</h2>
@@ -195,8 +195,8 @@ function Ebene({ tone, label, desc }) {
   );
 }
 
-const exampleBox = { marginTop: 14, background: `${C.gold}10`, border: `1px solid ${C.gold}33`, borderRadius: 14, padding: "12px 14px" };
-const exampleHead = { fontFamily: MONO, fontSize: 10.5, letterSpacing: 1, color: C.gold, textTransform: "uppercase", marginBottom: 8 };
+const exampleBox = { marginTop: 14, background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`, borderRadius: 14, padding: "12px 14px" };
+const exampleHead = { fontFamily: MONO, fontSize: 10.5, letterSpacing: 1, color: C.akzent, textTransform: "uppercase", marginBottom: 8 };
 
 function ExRow({ tip, note, pts, tone }) {
   return (
@@ -210,8 +210,8 @@ function ExRow({ tip, note, pts, tone }) {
 function chip(best) {
   return {
     fontFamily: MONO, fontSize: 11.5, padding: "4px 8px", borderRadius: 9,
-    background: best ? `${C.gold}18` : C.surface, color: best ? C.gold : C.muted,
-    border: `1px solid ${best ? C.gold + "55" : C.line}`,
+    background: best ? `${C.akzent}18` : C.surface, color: best ? C.akzent : C.muted,
+    border: `1px solid ${best ? C.akzent + "55" : C.line}`,
   };
 }
 

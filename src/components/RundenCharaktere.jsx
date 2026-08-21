@@ -29,9 +29,9 @@ export default function RundenCharaktere({ gewaehlt, onWaehlen, onCodeLaden, cod
             <button key={ch.key} onClick={() => onWaehlen(ch)} style={{
               textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
               background: aktiv
-                ? `radial-gradient(120% 120% at 50% -20%, ${C.gold}22 0%, ${C.surface} 100%)`
+                ? `radial-gradient(120% 120% at 50% -20%, ${C.akzent}22 0%, ${C.surface} 100%)`
                 : `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${aktiv ? C.gold + "77" : C.line}`,
+              border: `1px solid ${aktiv ? C.akzent + "77" : C.line}`,
               borderRadius: 18, padding: "15px 16px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
@@ -39,13 +39,13 @@ export default function RundenCharaktere({ gewaehlt, onWaehlen, onCodeLaden, cod
                 <span style={{ fontSize: 16, fontWeight: 800, flex: 1 }}>{ch.label}</span>
                 {aktiv && (
                   <span style={{
-                    fontFamily: MONO, fontSize: 10, color: C.gold, border: `1px solid ${C.gold}66`,
+                    fontFamily: MONO, fontSize: 10, color: C.akzent, border: `1px solid ${C.akzent}66`,
                     borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
                   }}>gewählt</span>
                 )}
               </div>
 
-              <div style={{ fontSize: 13, color: C.gold, marginTop: 5, fontStyle: "italic" }}>
+              <div style={{ fontSize: 13, color: C.akzent, marginTop: 5, fontStyle: "italic" }}>
                 {ch.tagline}
               </div>
               <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>

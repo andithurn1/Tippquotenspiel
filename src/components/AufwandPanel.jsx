@@ -10,7 +10,7 @@ import { C, MONO } from "@/lib/theme";
 const STUFEN_FARBE = {
   entspannt: C.mint,
   normal: C.sky,
-  viel: C.gold,
+  viel: C.akzent,
   zuviel: C.coral,
 };
 

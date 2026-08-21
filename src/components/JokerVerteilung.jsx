@@ -38,11 +38,11 @@ export default function JokerVerteilung({ verteilung, onChange }) {
           return (
             <button key={m.key} onClick={() => patch({ modus: m.key })} style={{
               textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
-              background: an ? `${C.gold}18` : C.surface,
-              border: `1px solid ${an ? C.gold + "66" : C.line}`,
+              background: an ? `${C.akzent}18` : C.surface,
+              border: `1px solid ${an ? C.akzent + "66" : C.line}`,
               borderRadius: 12, padding: "9px 12px",
             }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.gold : C.text }}>{m.label}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
               <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
             </button>
           );
@@ -54,7 +54,7 @@ export default function JokerVerteilung({ verteilung, onChange }) {
           <div style={{ marginTop: 13 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
               <span style={{ fontSize: 12.5 }}>Etwa jeder {v.frequenz}. Spieltag</span>
-              <span style={{ fontFamily: MONO, fontSize: 12.5, color: C.gold }}>
+              <span style={{ fontFamily: MONO, fontSize: 12.5, color: C.akzent }}>
                 {kontingent(SPIELTAGE, v.frequenz)} Joker
               </span>
             </div>
@@ -62,7 +62,7 @@ export default function JokerVerteilung({ verteilung, onChange }) {
               min={VERTEILUNG_LIMITS.frequenz.min} max={VERTEILUNG_LIMITS.frequenz.max}
               step={VERTEILUNG_LIMITS.frequenz.step}
               onChange={(e) => patch({ frequenz: +e.target.value })}
-              style={{ width: "100%", accentColor: C.gold, cursor: "pointer" }} />
+              style={{ width: "100%", accentColor: C.akzent, cursor: "pointer" }} />
           </div>
 
           {/* Vorschau-Kalender: 34 Spieltage auf einen Blick */}
@@ -90,9 +90,9 @@ export default function JokerVerteilung({ verteilung, onChange }) {
                   <button key={s.key} onClick={() => patch({ sichtbarkeit: s.key })} style={{
                     ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
                     borderRadius: 11, fontSize: 12, fontWeight: 700,
-                    background: an ? `${C.gold}22` : C.surface,
-                    color: an ? C.gold : C.muted,
-                    border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                    background: an ? `${C.akzent}22` : C.surface,
+                    color: an ? C.akzent : C.muted,
+                    border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                   }}>{s.label}</button>
                 );
               })}
@@ -123,7 +123,7 @@ function Leiste({ titel, tage = [], gedimmt = false }) {
           return (
             <div key={md} title={`Spieltag ${md}`} style={{
               flex: 1, height: 18, borderRadius: 3,
-              background: an ? (gedimmt ? `${C.gold}77` : C.gold) : C.surface2,
+              background: an ? (gedimmt ? `${C.akzent}77` : C.akzent) : C.surface2,
               border: `1px solid ${an ? "transparent" : C.line}`,
             }} />
           );

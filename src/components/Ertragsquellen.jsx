@@ -43,7 +43,7 @@ export default function Ertragsquellen({ tip, actual, snap, rules, stufe = "voll
         <span style={{ fontSize: 13, fontWeight: 700 }}>Gesamt</span>
         <span style={{
           fontFamily: MONO, fontSize: 20, fontWeight: 700,
-          color: b.gesamt < 0 ? C.coral : C.gold,
+          color: b.gesamt < 0 ? C.coral : C.akzent,
         }}>
           {b.gesamt > 0 ? `+${b.gesamt}` : b.gesamt}
         </span>

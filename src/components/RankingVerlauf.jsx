@@ -66,7 +66,7 @@ export default function RankingVerlauf() {
                     borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
                   }}>
                     <span style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, width: 16 }}>{b.rank}</span>
-                    <span style={{ flex: 1, fontSize: 13, color: b.userId === meId ? C.gold : C.text }}>{b.name}</span>
+                    <span style={{ flex: 1, fontSize: 13, color: b.userId === meId ? C.akzent : C.text }}>{b.name}</span>
                     {/* Anschluss-Bonus (Aufhol-Mechanismus), falls angefallen */}
                     {b.bonus > 0 && (
                       <span title="Anschluss-Bonus für Zurückliegende" style={{ fontFamily: MONO, fontSize: 10, color: C.sky }}>

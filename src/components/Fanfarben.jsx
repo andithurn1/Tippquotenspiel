@@ -20,11 +20,11 @@ export default function Fanfarben() {
 
   // Vorschau lokal (reine Funktion, kein globales Umfärben beim Ziehen).
   const roles = draft.length ? deriveRoles(draft) : null;
-  const preview = roles || { gold: C.gold, indigo: C.indigo, violet: C.violet };
+  const preview = roles || { fan1: C.fan1, fan2: C.fan2, fan3: C.fan3 };
   const dirty = JSON.stringify(draft) !== JSON.stringify(fanColors);
 
   // Wurde eine gewählte Farbe zur Lesbarkeit aufgehellt? (Slot i → Rolle)
-  const ROLE_OF_SLOT = ["gold", "indigo", "violet"];
+  const ROLE_OF_SLOT = ["fan1", "fan2", "fan3"];
   const wasLightened = (i) =>
     roles && draft[i] && draft[i].toLowerCase() !== roles[ROLE_OF_SLOT[i]].toLowerCase();
 
@@ -125,8 +125,8 @@ export default function Fanfarben() {
         <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
           <button onClick={save} disabled={!dirty} style={{
             ...TAPZIEL, flex: 1, cursor: dirty ? "pointer" : "default",
-            background: dirty ? C.gold : C.surface, color: dirty ? readableInk(preview.gold) : C.muted,
-            fontWeight: 700, fontSize: 14, border: `1px solid ${dirty ? C.gold : C.line}`,
+            background: dirty ? C.akzent : C.surface, color: dirty ? readableInk(preview.fan1) : C.muted,
+            fontWeight: 700, fontSize: 14, border: `1px solid ${dirty ? C.akzent : C.line}`,
             borderRadius: 12, padding: "11px 0", fontFamily: "inherit",
           }}>{dirty ? "Übernehmen" : "Gespeichert"}</button>
           <button onClick={clearAll} style={{
@@ -145,7 +145,7 @@ export default function Fanfarben() {
 }
 
 function Preview({ p }) {
-  const onGold = readableInk(p.gold);
+  const onGold = readableInk(p.fan1);
   return (
     <div style={{
       marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`,
@@ -156,7 +156,7 @@ function Preview({ p }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{
-          background: p.gold, color: onGold, fontWeight: 700, fontSize: 13,
+          background: p.fan1, color: onGold, fontWeight: 700, fontSize: 13,
           borderRadius: 10, padding: "8px 14px",
         }}>Tipp abgeben</span>
         <span style={{
@@ -169,7 +169,7 @@ function Preview({ p }) {
           <span style={{ width: 9, height: 9, borderRadius: 999, background: p.indigo, boxShadow: `0 0 10px ${p.indigo}` }} />
           Admin
         </span>
-        <span style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: p.gold, textShadow: `0 0 22px ${p.gold}55` }}>
+        <span style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: p.fan1, textShadow: `0 0 22px ${p.fan1}55` }}>
           +18,4
         </span>
       </div>

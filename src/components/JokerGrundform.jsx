@@ -129,7 +129,7 @@ export default function JokerGrundform({ rules, onChange }) {
       </Banner>
 
       {konfliktListe.length > 0 && (
-        <Banner ton="gold">
+        <Banner ton="bernstein">
           <strong>{konfliktListe.length} Hinweis(e) — keine Sperren, nur doppelt abgesichert:</strong>
           <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
             {konfliktListe.map((k) => (
@@ -191,7 +191,7 @@ function ArtZeile({ art, rules, abweichung, onBeginnen, onZuruecksetzen, onPatch
         </div>
         <button onClick={onBeginnen} style={{
           cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, flexShrink: 0,
-          background: C.surface2, color: C.gold, border: `1px solid ${C.gold}44`,
+          background: C.surface2, color: C.akzent, border: `1px solid ${C.akzent}44`,
           ...TAPZIEL, borderRadius: 10, padding: "7px 12px", whiteSpace: "nowrap",
         }}>abweichen</button>
       </div>
@@ -200,11 +200,11 @@ function ArtZeile({ art, rules, abweichung, onBeginnen, onZuruecksetzen, onPatch
 
   return (
     <div style={{
-      background: C.surface, border: `1px solid ${C.gold}44`, borderRadius: 12,
+      background: C.surface, border: `1px solid ${C.akzent}44`, borderRadius: 12,
       padding: "10px 12px", marginBottom: 10,
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: C.gold }}>{art.label}</div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: C.akzent }}>{art.label}</div>
         <button onClick={onZuruecksetzen} style={{
           cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, flexShrink: 0,
           background: "transparent", color: C.muted, border: `1px solid ${C.line}`,
@@ -319,7 +319,7 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
       </Feldgruppe>
 
       <Feldgruppe titel="Bedingung — worauf der Joker überhaupt gilt">
-        <p style={{ fontSize: 10.5, color: C.gold, margin: "0 0 8px", lineHeight: 1.45 }}>
+        <p style={{ fontSize: 10.5, color: C.akzent, margin: "0 0 8px", lineHeight: 1.45 }}>
           ⚠️ Min./Max.-Quote messen die Außenseiter-Siegquote <strong>des Spiels</strong>, nicht die
           Quote deines Tipps — sonst ließe sich die Bedingung farmen (aussichtslos tippen, um
           freizuschalten, und dann auf das setzen, was man wirklich erwartet).
@@ -409,7 +409,7 @@ function ToggleKnopf({ an, onChange, textAn, textAus }) {
 }
 
 function Banner({ ton, children }) {
-  const farbe = ton === "coral" ? C.coral : ton === "indigo" ? C.indigo : C.gold;
+  const farbe = ton === "coral" ? C.coral : ton === "indigo" ? C.indigo : C.bernstein;
   return (
     <div style={{
       background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: 12,

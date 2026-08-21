@@ -35,7 +35,7 @@ export default function Alleinstellung({ rules, onChange }) {
         <div style={{ marginTop: 10 }}>
           {/* Die Betreuung zuerst: was bedeutet das Eingestellte konkret? */}
           <div style={{
-            background: `${C.gold}10`, border: `1px solid ${C.gold}33`,
+            background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`,
             borderRadius: 12, padding: "10px 12px", fontSize: 11.5,
             color: C.text, lineHeight: 1.5, marginBottom: 12,
           }}>
@@ -137,12 +137,12 @@ function Regler({ label, wert, limits, fmt, onChange, hint }) {
     <div style={{ marginTop: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
         <span style={{ fontSize: 12.5 }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: 13, color: C.gold }}>{fmt ? fmt(wert) : wert}</span>
+        <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>{fmt ? fmt(wert) : wert}</span>
       </div>
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <input type="range" min={min} max={max} step={step} value={wert}
           onChange={(e) => onChange(+e.target.value)}
-          style={{ flex: 1, minWidth: 0, accentColor: C.gold, cursor: "pointer" }} />
+          style={{ flex: 1, minWidth: 0, accentColor: C.akzent, cursor: "pointer" }} />
         <input type="number" min={min} max={max} step={step} value={wert}
           onChange={(e) => {
             const n = Number(e.target.value);

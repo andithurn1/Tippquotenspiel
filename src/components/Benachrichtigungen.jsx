@@ -113,8 +113,8 @@ export default function Benachrichtigungen() {
         <button onClick={einschalten} style={{
           width: "100%", marginTop: 16, cursor: "pointer", textAlign: "left",
           display: "flex", alignItems: "center", gap: 12,
-          background: prefs.enabled ? `${C.gold}14` : C.surface,
-          border: `1px solid ${prefs.enabled ? C.gold + "55" : C.line}`,
+          background: prefs.enabled ? `${C.akzent}14` : C.surface,
+          border: `1px solid ${prefs.enabled ? C.akzent + "55" : C.line}`,
           borderRadius: 14, padding: "13px 15px", color: C.text, fontFamily: "inherit",
         }}>
           <Schalter an={prefs.enabled} />
@@ -169,7 +169,7 @@ export default function Benachrichtigungen() {
             {KANAELE.map((k) => (
               <button key={k} onClick={() => update({ [k]: !prefs[k] })} style={{
                 textAlign: "left", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 11,
-                background: C.surface, border: `1px solid ${prefs[k] ? C.gold + "44" : C.line}`,
+                background: C.surface, border: `1px solid ${prefs[k] ? C.akzent + "44" : C.line}`,
                 borderRadius: 14, padding: "12px 14px", color: C.text, fontFamily: "inherit",
               }}>
                 <Haken an={prefs[k]} />
@@ -195,8 +195,8 @@ export default function Benachrichtigungen() {
                 return (
                   <button key={h} onClick={() => toggleVorlauf(h)} style={{
                     cursor: "pointer", fontFamily: MONO, fontSize: 12.5,
-                    background: an ? C.gold : C.surface, color: an ? C.ink : C.muted,
-                    border: `1px solid ${an ? C.gold : C.line}`, borderRadius: 999,
+                    background: an ? C.akzent : C.surface, color: an ? C.ink : C.muted,
+                    border: `1px solid ${an ? C.akzent : C.line}`, borderRadius: 999,
                     ...TAPZIEL, padding: "6px 13px", fontWeight: 700,
                   }}>{h} h</button>
                 );
@@ -222,7 +222,7 @@ export default function Benachrichtigungen() {
             <div style={{ fontSize: 13.5, fontWeight: 700 }}>Höchstens pro Tag: {prefs.maxProTag}</div>
             <input type="range" min={NOTIFY_LIMITS.maxProTag.min} max={NOTIFY_LIMITS.maxProTag.max} step={1}
               value={prefs.maxProTag} onChange={(e) => update({ maxProTag: Number(e.target.value) })}
-              style={{ width: "100%", marginTop: 8, accentColor: C.gold }} />
+              style={{ width: "100%", marginTop: 8, accentColor: C.akzent }} />
           </div>
         </div>
 
@@ -250,7 +250,7 @@ function Schalter({ an }) {
   return (
     <span style={{
       width: 42, height: 24, borderRadius: 999, flex: "0 0 auto",
-      background: an ? C.gold : C.surface2, border: `1px solid ${an ? C.gold : C.line}`,
+      background: an ? C.akzent : C.surface2, border: `1px solid ${an ? C.akzent : C.line}`,
       display: "flex", alignItems: "center", padding: 2,
       justifyContent: an ? "flex-end" : "flex-start",
     }}>
@@ -263,7 +263,7 @@ function Haken({ an }) {
   return (
     <span style={{
       width: 20, height: 20, borderRadius: 6, flex: "0 0 auto", marginTop: 1,
-      background: an ? C.gold : "transparent", border: `1px solid ${an ? C.gold : C.line}`,
+      background: an ? C.akzent : "transparent", border: `1px solid ${an ? C.akzent : C.line}`,
       display: "flex", alignItems: "center", justifyContent: "center",
       color: C.ink, fontSize: 13, fontWeight: 900,
     }}>{an ? "✓" : ""}</span>

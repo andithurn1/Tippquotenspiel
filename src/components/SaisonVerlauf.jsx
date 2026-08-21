@@ -115,7 +115,7 @@ export default function SaisonVerlauf() {
             {/* Was die Marken bedeuten. Ohne Legende ist ein Punkt am Rand
                 eine Frage statt einer Antwort. */}
             <div style={{ fontSize: 10.5, color: C.muted, marginTop: 14, lineHeight: 1.6 }}>
-              <b style={{ color: C.gold }}>🃏</b> dein Joker-Spieltag ·{" "}
+              <b style={{ color: C.akzent }}>🃏</b> dein Joker-Spieltag ·{" "}
               <b style={{ color: C.sky }}>🎡</b> Drehung am Rad ·{" "}
               <b style={{ color: C.mint }}>★</b> Saison-Wette öffnet oder schließt.
               {rules.joker?.verteilung?.sichtbarkeit === "verdeckt" && (
@@ -132,7 +132,7 @@ export default function SaisonVerlauf() {
 
 function Zeile({ z, jetzt }) {
   const vorbei = z.zustand === "vorbei";
-  const rand = jetzt ? C.gold : vorbei ? C.line : `${C.sky}33`;
+  const rand = jetzt ? C.akzent : vorbei ? C.line : `${C.sky}33`;
   return (
     <div style={{
       background: jetzt ? C.surface : C.ink2, border: `1px solid ${rand}`,
@@ -141,7 +141,7 @@ function Zeile({ z, jetzt }) {
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
         <span style={{
           fontFamily: MONO, fontSize: 12, fontWeight: jetzt ? 700 : 400,
-          color: jetzt ? C.gold : C.muted, minWidth: 34,
+          color: jetzt ? C.akzent : C.muted, minWidth: 34,
         }}>
           ST {z.nummer}
         </span>
@@ -165,7 +165,7 @@ function Zeile({ z, jetzt }) {
             : `${z.getippt} von ${z.spiele} getippt`}
         </span>
         {z.offen > 0 && (
-          <Link href="/tippen" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.gold, textDecoration: "none", paddingLeft: 8 }}>
+          <Link href="/tippen" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.akzent, textDecoration: "none", paddingLeft: 8 }}>
             {z.offen} {z.offen === 1 ? "Spiel" : "Spiele"} jetzt tippbar →
           </Link>
         )}

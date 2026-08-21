@@ -19,7 +19,7 @@ export default function ProfiWarnungen({ rules, onChange }) {
   const warnungen = useMemo(() => pruefe(rules), [rules]);
   const z = useMemo(() => zusammenfassung(rules), [rules]);
 
-  const farbe = z.stufe === "warnung" ? C.coral : z.stufe === "hinweis" ? C.gold : C.mint;
+  const farbe = z.stufe === "warnung" ? C.coral : z.stufe === "hinweis" ? C.akzent : C.mint;
 
   return (
     <div style={{
@@ -62,8 +62,8 @@ export default function ProfiWarnungen({ rules, onChange }) {
           <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
             <span style={{
               fontFamily: MONO, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase",
-              color: w.stufe === "warnung" ? C.coral : C.gold,
-              border: `1px solid ${(w.stufe === "warnung" ? C.coral : C.gold)}55`,
+              color: w.stufe === "warnung" ? C.coral : C.akzent,
+              border: `1px solid ${(w.stufe === "warnung" ? C.coral : C.akzent)}55`,
               borderRadius: 999, padding: "1px 7px", flexShrink: 0,
             }}>{w.stufe === "warnung" ? "kippt" : "unrund"}</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{w.titel}</span>

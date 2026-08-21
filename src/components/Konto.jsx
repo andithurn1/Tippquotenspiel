@@ -85,7 +85,7 @@ function NameCard({ user, updateName }) {
             borderRadius: 12, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={state === "saving"} style={{
-          cursor: state === "saving" ? "default" : "pointer", background: C.gold, color: C.ink,
+          cursor: state === "saving" ? "default" : "pointer", background: C.akzent, color: C.ink,
           fontWeight: 700, fontSize: 14, border: "none", borderRadius: 12, padding: "0 16px",
         }}>{state === "saving" ? "…" : "Speichern"}</button>
       </div>

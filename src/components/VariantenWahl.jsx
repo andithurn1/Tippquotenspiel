@@ -72,13 +72,13 @@ export default function VariantenWahl({ rules, onWaehlen }) {
                 textAlign: "left", padding: "12px 14px",
                 // R2 — Andis bevorzugter Radius.
                 borderRadius: 12,
-                background: an ? `${C.gold}1A` : C.surface,
+                background: an ? `${C.akzent}1A` : C.surface,
                 color: an ? C.text : C.muted,
-                border: `1px solid ${an ? C.gold : C.line}`,
+                border: `1px solid ${an ? C.akzent : C.line}`,
                 WebkitTapHighlightColor: "transparent",
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 700, color: an ? C.gold : C.text }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: an ? C.akzent : C.text }}>
                 {v.titel}
               </div>
               <div style={{ fontSize: 11.5, marginTop: 3, lineHeight: 1.4 }}>{v.kurz}</div>

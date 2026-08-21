@@ -18,8 +18,8 @@ export default function Begriff({ term, children }) {
       <button
         onClick={() => setOpen((o) => !o)}
         style={{
-          font: "inherit", color: C.gold, cursor: "pointer", background: "none", border: "none",
-          padding: 0, borderBottom: `1px dotted ${C.gold}88`, lineHeight: "inherit",
+          font: "inherit", color: C.akzent, cursor: "pointer", background: "none", border: "none",
+          padding: 0, borderBottom: `1px dotted ${C.akzent}88`, lineHeight: "inherit",
         }}
         aria-expanded={open}
       >
@@ -38,7 +38,7 @@ export default function Begriff({ term, children }) {
           }}
         >
           <span style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
-            <strong style={{ color: C.gold, fontSize: 12 }}>{entry.term}</strong>
+            <strong style={{ color: C.akzent, fontSize: 12 }}>{entry.term}</strong>
             <button onClick={() => setOpen(false)} style={{
               background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1,
             }} aria-label="schließen">×</button>

@@ -148,7 +148,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
 
       {hinweise.map((h) => (
         <div key={h.art} style={{
-          marginTop: 8, background: `${C.gold}0E`, border: `1px solid ${C.gold}33`,
+          marginTop: 8, background: `${C.akzent}0E`, border: `1px solid ${C.akzent}33`,
           borderRadius: 10, padding: "8px 10px", fontSize: 11, color: C.text, lineHeight: 1.45,
         }}>
           {h.text}

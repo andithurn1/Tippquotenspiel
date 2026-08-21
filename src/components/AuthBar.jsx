@@ -47,7 +47,7 @@ export default function AuthBar() {
         display: "flex", alignItems: "center", gap: 8, marginBottom: 18,
         fontFamily: MONO, fontSize: 11, color: C.muted,
       }}>
-        <span style={{ width: 7, height: 7, borderRadius: 999, background: C.gold }} />
+        <span style={{ width: 7, height: 7, borderRadius: 999, background: C.akzent }} />
         Demo-Modus — ohne Login, Daten nur lokal. Login erscheint, sobald Supabase verbunden ist.
       </div>
     );
@@ -187,16 +187,16 @@ export default function AuthBar() {
             borderRadius: 12, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={!canSend} style={{
-          cursor: canSend ? "pointer" : "default", background: canSend ? C.gold : C.surface,
+          cursor: canSend ? "pointer" : "default", background: canSend ? C.akzent : C.surface,
           color: canSend ? C.ink : C.muted, fontWeight: 700, fontSize: 14,
-          border: `1px solid ${canSend ? C.gold : C.line}`, borderRadius: 12, padding: "0 16px",
+          border: `1px solid ${canSend ? C.akzent : C.line}`, borderRadius: 12, padding: "0 16px",
         }}>{state === "sending" ? "…" : "Link senden"}</button>
       </div>
       <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, cursor: "pointer" }}>
         <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
-          style={{ marginTop: 2, accentColor: C.gold }} />
+          style={{ marginTop: 2, accentColor: C.akzent }} />
         <span style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.5 }}>
-          Ich habe die <Link href="/datenschutz" style={{ color: C.gold }}>Datenschutzerklärung</Link> gelesen
+          Ich habe die <Link href="/datenschutz" style={{ color: C.akzent }}>Datenschutzerklärung</Link> gelesen
           und bin mit der Verarbeitung meiner Daten für dieses Tippspiel einverstanden.
         </span>
       </label>
@@ -221,7 +221,7 @@ function NameOnboarding() {
 
   return (
     <form onSubmit={save} style={{
-      marginBottom: 18, background: `${C.gold}10`, border: `1px solid ${C.gold}44`,
+      marginBottom: 18, background: `${C.akzent}10`, border: `1px solid ${C.akzent}44`,
       borderRadius: 12, padding: "12px 14px",
     }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Willkommen! 👋 Wie sollen wir dich nennen?</div>
@@ -235,7 +235,7 @@ function NameOnboarding() {
             borderRadius: 12, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={!name.trim() || state === "saving"} style={{
-          cursor: name.trim() && state !== "saving" ? "pointer" : "default", background: C.gold, color: "#FFFFFF",
+          cursor: name.trim() && state !== "saving" ? "pointer" : "default", background: C.akzent, color: "#FFFFFF",
           fontWeight: 700, fontSize: 14, border: "none", borderRadius: 12, padding: "0 16px",
         }}>{state === "saving" ? "…" : "Los"}</button>
       </div>

@@ -84,7 +84,7 @@ export default function Datenschutz() {
           Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung,
           Datenübertragbarkeit und Widerspruch sowie das Recht, dich bei einer
           Aufsichtsbehörde zu beschweren. Auskunft (Export) und Löschung kannst du
-          jederzeit selbst unter <Link href="/konto" style={{ color: C.gold }}>Mein Konto</Link> auslösen.
+          jederzeit selbst unter <Link href="/konto" style={{ color: C.akzent }}>Mein Konto</Link> auslösen.
         </P>
 
         <div style={{ height: 1, background: C.line, margin: "18px 0" }} />

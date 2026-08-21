@@ -119,8 +119,8 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
             const an = istAn(q.key);
             return (
               <div key={q.key} style={{
-                background: an ? `${C.gold}12` : C.surface,
-                border: `1px solid ${an ? C.gold + "55" : C.line}`,
+                background: an ? `${C.akzent}12` : C.surface,
+                border: `1px solid ${an ? C.akzent + "55" : C.line}`,
                 borderRadius: 12, padding: "10px 12px",
               }}>
                 <button onClick={() => umschaltenQuelle(q.key)} style={{
@@ -129,7 +129,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 12.5, fontWeight: 700, flex: 1 }}>{q.label}</span>
-                    <span style={{ color: an ? C.gold : C.muted, fontSize: 13 }}>{an ? "✓" : "+"}</span>
+                    <span style={{ color: an ? C.akzent : C.muted, fontSize: 13 }}>{an ? "✓" : "+"}</span>
                   </div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{q.desc}</div>
                 </button>
@@ -161,8 +161,8 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                             return (
                               <button key={kv} onClick={() => setzeQuelleFeld(q.key, "kurve", kv)} style={{
                                 ...TAPZIEL, cursor: "pointer", fontSize: 11.5, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
-                                background: kan ? `${C.gold}22` : C.surface2, color: kan ? C.gold : C.muted,
-                                border: `1px solid ${kan ? C.gold + "66" : C.line}`,
+                                background: kan ? `${C.akzent}22` : C.surface2, color: kan ? C.akzent : C.muted,
+                                border: `1px solid ${kan ? C.akzent + "66" : C.line}`,
                               }}>{kv}</button>
                             );
                           })}
@@ -185,8 +185,8 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                 <button key={t.key} title={t.desc} onClick={() => patchBudgetFeld({ takt: t.key })} style={{
                   ...TAPZIEL, flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
                   borderRadius: 11, textAlign: "left",
-                  background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
-                  border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                  background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
+                  border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
                   <div style={{ fontSize: 12, fontWeight: 700 }}>{t.label}</div>
                 </button>
@@ -207,8 +207,8 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                 <button key={v.key} title={v.desc} onClick={() => patchBudgetFeld({ verfall: v.key })} style={{
                   ...TAPZIEL, flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
                   borderRadius: 11, textAlign: "left",
-                  background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
-                  border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                  background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
+                  border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
                   <div style={{ fontSize: 12, fontWeight: 700 }}>{v.label}</div>
                 </button>
@@ -243,8 +243,8 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                 <button key={m.key} title={m.desc} onClick={() => patchBudgetFeld({ preisModus: m.key })} style={{
                   ...TAPZIEL, flex: "1 1 90px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
                   borderRadius: 11, textAlign: "left",
-                  background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
-                  border: `1px solid ${an ? C.gold + "66" : C.line}`,
+                  background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
+                  border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
                   <div style={{ fontSize: 12, fontWeight: 700 }}>{m.label}</div>
                 </button>
@@ -281,7 +281,7 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
                 {EINSAETZE.map((n) => (
                   <span key={n} style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>
                     {n}. Einsatz{" "}
-                    <strong style={{ color: n > 1 ? C.gold : C.text }}>
+                    <strong style={{ color: n > 1 ? C.akzent : C.text }}>
                       {fmtGeld(preisFuer(art.key, budget, { bisherInPeriode: n - 1, spielerInPeriode: n - 1 }))}
                     </strong>
                   </span>

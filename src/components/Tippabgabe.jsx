@@ -44,7 +44,7 @@ import { Zahl } from "@/components/Eingaben";
 const risk = (q) =>
   q == null ? { label: "—", col: C.muted }
   : q < 10 ? { label: "Solide", col: C.mint }
-  : q < 40 ? { label: "Mutig", col: C.gold }
+  : q < 40 ? { label: "Mutig", col: C.akzent }
   : q < 100 ? { label: "Zocker", col: C.coral }
   : { label: "Wahnsinn", col: C.coral };
 
@@ -1011,7 +1011,7 @@ export default function Tippabgabe({ matchId }) {
         <div style={{
           position: "absolute", top: -90, left: "50%", transform: "translateX(-50%)",
           width: 320, height: 200, pointerEvents: "none",
-          background: `radial-gradient(circle, ${C.gold}22 0%, transparent 70%)`,
+          background: `radial-gradient(circle, ${C.akzent}22 0%, transparent 70%)`,
         }} />
 
         {!done ? (
@@ -1073,7 +1073,7 @@ export default function Tippabgabe({ matchId }) {
                     <span style={{ fontWeight: 600 }}>{winner}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontFamily: MONO, fontSize: 13, color: C.gold }}>
+                    <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>
                       {csQuote ? `Exakt ${csQuote.toFixed(1)}` : "seltenes Ergebnis"}
                     </span>
                     <span style={{
@@ -1175,14 +1175,14 @@ export default function Tippabgabe({ matchId }) {
             {/* Tipp-Vorschau (je nach persönlicher Einstellung) */}
             {prefs.vorschau !== "aus" && (
               <div style={{
-                marginTop: 20, background: `${C.gold}10`, border: `1px solid ${C.gold}33`,
+                marginTop: 20, background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`,
                 borderRadius: 14, padding: "12px 14px",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
                     Wenn dein Tipp exakt aufgeht
                   </span>
-                  <span style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: C.gold }}>+{proj.points}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: C.akzent }}>+{proj.points}</span>
                 </div>
                 {/* 🔴 Die zweite Zahl, aus einem gemessenen Befund (09.08.2026,
                     `npm run gleich` Teil 2): die große Zahl darüber setzt
@@ -1240,10 +1240,10 @@ export default function Tippabgabe({ matchId }) {
             {/* Gewichtung dieses Spiels (nur wenn das Regelwerk sie erlaubt) */}
             {jokerAktiv && (
               <div style={{
-                marginTop: 18, background: `${C.gold}0E`, border: `1px solid ${C.gold}33`,
+                marginTop: 18, background: `${C.akzent}0E`, border: `1px solid ${C.akzent}33`,
                 borderRadius: 14, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
               }}>
-                <div style={{ fontSize: 11, color: C.gold, textTransform: "uppercase", letterSpacing: 1 }}>
+                <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1 }}>
                   {einsatzRegelwerk ? "Einsatz dieses Spiels" : rankingModus ? "Gewicht dieses Spiels" : "Joker"}
                 </div>
                 {/* Narren-Kontostand (design/waehrungen.md Abschnitt 3.1) —
@@ -1256,7 +1256,7 @@ export default function Tippabgabe({ matchId }) {
                     kein Spieler) zeigt nichts an. */}
                 {!einsatzRegelwerk && narrenKontostand != null && (
                   <div style={{ fontFamily: MONO, fontSize: 11.5, color: C.muted, marginTop: 4 }}>
-                    🃏 <span style={{ color: C.gold, fontWeight: 700 }}>{zahl(narrenKontostand)}</span> Narren
+                    🃏 <span style={{ color: C.akzent, fontWeight: 700 }}>{zahl(narrenKontostand)}</span> Narren
                   </div>
                 )}
                 {/* Einsatz-Regelwerk, aber an DIESEM Spieltag keine Münzen
@@ -1274,9 +1274,9 @@ export default function Tippabgabe({ matchId }) {
                         value={Math.min(Math.round(einsatzAktuell), Math.max(0, planung.maxJetztSetzbar))}
                         disabled={gesperrt}
                         onChange={(e) => setzeEinsatz(Number(e.target.value))}
-                        style={{ flex: 1, accentColor: C.gold, cursor: gesperrt ? "default" : "pointer" }} />
+                        style={{ flex: 1, accentColor: C.akzent, cursor: gesperrt ? "default" : "pointer" }} />
                       <span style={{
-                        fontFamily: MONO, fontSize: 15, fontWeight: 700, color: C.gold,
+                        fontFamily: MONO, fontSize: 15, fontWeight: 700, color: C.akzent,
                         minWidth: 44, textAlign: "right",
                       }}>{zahl(einsatzAktuell)}</span>
                     </div>
@@ -1303,7 +1303,7 @@ export default function Tippabgabe({ matchId }) {
                       </div>
                       <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>
                         <div style={{
-                          position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: 999, background: C.gold,
+                          position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: 999, background: C.akzent,
                           width: `${Math.max(0, Math.min(100, ((planung.verteilt + einsatzAktuell) / (planung.budget || 1)) * 100))}%`,
                         }} />
                       </div>
@@ -1342,9 +1342,9 @@ export default function Tippabgabe({ matchId }) {
                             onClick={() => setGewicht(on ? 1 : f)} style={{
                               cursor: gesperrt || blockiert ? "default" : "pointer", fontFamily: MONO, fontSize: 13, fontWeight: 700,
                               padding: "8px 14px", borderRadius: 999,
-                              background: on ? `${C.gold}22` : C.surface,
-                              color: on ? C.gold : blockiert ? "rgba(138,144,180,0.4)" : C.muted,
-                              border: `1px solid ${on ? C.gold + "77" : C.line}`,
+                              background: on ? `${C.akzent}22` : C.surface,
+                              color: on ? C.akzent : blockiert ? "rgba(138,144,180,0.4)" : C.muted,
+                              border: `1px solid ${on ? C.akzent + "77" : C.line}`,
                               textDecoration: blockiert ? "line-through" : "none",
                             }}>{fmtFaktor(f)}</button>
                         );
@@ -1361,9 +1361,9 @@ export default function Tippabgabe({ matchId }) {
                         marginTop: 10, width: "100%",
                         cursor: gesperrt || (!joker && !jokerErlaubnis.erlaubt) ? "default" : "pointer",
                         fontFamily: "inherit", fontSize: 13.5, fontWeight: 700,
-                        background: joker ? `${C.gold}22` : C.surface,
-                        color: joker ? C.gold : (!jokerErlaubnis.erlaubt ? "rgba(138,144,180,0.45)" : C.muted),
-                        border: `1px solid ${joker ? C.gold + "77" : C.line}`,
+                        background: joker ? `${C.akzent}22` : C.surface,
+                        color: joker ? C.akzent : (!jokerErlaubnis.erlaubt ? "rgba(138,144,180,0.45)" : C.muted),
+                        border: `1px solid ${joker ? C.akzent + "77" : C.line}`,
                         borderRadius: 12, padding: "11px 0",
                       }}>
                       {joker ? `✓ Joker gesetzt · ${fmtFaktor(RULES.joker.faktor)}` : `Joker setzen · ${fmtFaktor(RULES.joker.faktor)}`}
@@ -1481,12 +1481,12 @@ export default function Tippabgabe({ matchId }) {
               marginTop: 20, display: "flex", gap: 8, alignItems: "flex-start",
               fontSize: 11.5, color: C.muted, lineHeight: 1.5,
             }}>
-              <span style={{ color: C.gold }}>◆</span>
+              <span style={{ color: C.akzent }}>◆</span>
               <span>Snapshot-Quote: alle Mitspieler bekommen dieselbe Quote, egal wann sie tippen. Gilt bis Anpfiff.</span>
             </div>
             <button onClick={submit} style={{
               marginTop: 14, width: "100%", cursor: "pointer",
-              background: C.gold, color: C.ink, fontWeight: 700, fontSize: 15,
+              background: C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
               border: "none", borderRadius: 14, padding: "14px 0",
             }}>
               Tipp abgeben & Quote einfrieren
@@ -1531,8 +1531,8 @@ function Stepper({ value, onStep }) {
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
       <button onClick={() => onStep(1)} style={btn}>+</button>
       <div style={{
-        fontFamily: MONO, fontWeight: 700, fontSize: 44, color: C.gold, width: 54, textAlign: "center",
-        fontVariantNumeric: "tabular-nums", textShadow: `0 0 24px ${C.gold}44`,
+        fontFamily: MONO, fontWeight: 700, fontSize: 44, color: C.akzent, width: 54, textAlign: "center",
+        fontVariantNumeric: "tabular-nums", textShadow: `0 0 24px ${C.akzent}44`,
       }}>{value}</div>
       <button onClick={() => onStep(-1)} style={btn}>−</button>
     </div>
@@ -1548,7 +1548,7 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
           <span style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
-          {quote != null && <span style={{ fontFamily: MONO, fontSize: 11, color: C.gold }}>{quote.toFixed(1)}</span>}
+          {quote != null && <span style={{ fontFamily: MONO, fontSize: 11, color: C.akzent }}>{quote.toFixed(1)}</span>}
         </div>
         <select value={value} onChange={(e) => onChange(e.target.value)} style={{
           width: "100%", background: "transparent", color: value ? C.text : C.muted,
@@ -1566,7 +1566,7 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
 
 const SAVE_HINT = {
   saving: { text: "wird gespeichert …", col: C.muted },
-  guest:  { text: "nicht eingeloggt — lokal eingefroren, aber nicht gespeichert", col: C.gold },
+  guest:  { text: "nicht eingeloggt — lokal eingefroren, aber nicht gespeichert", col: C.akzent },
   error:  { text: "Speichern fehlgeschlagen — später erneut versuchen", col: C.coral },
 };
 
@@ -1616,7 +1616,7 @@ function Confirmation({
       )}
 
       <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginTop: 20 }}>
-        <Row label="Endstand" value={`${h}:${a}`} accent={C.gold} mono />
+        <Row label="Endstand" value={`${h}:${a}`} accent={C.akzent} mono />
         <Row label="Sieger" value={winner} />
         <Row label="Exakt-Quote" value={csQuote ? csQuote.toFixed(1) : "seltenes Ergebnis"} mono />
         <div style={{ height: 1, background: C.line, margin: "10px 0" }} />
@@ -1628,7 +1628,7 @@ function Confirmation({
             {picks[ti].map((p, pi) => (
               <div key={pi} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "2px 0" }}>
                 <span>{p.main}{p.backup && <span style={{ color: C.muted }}> · Backup {p.backup}</span>}</span>
-                <span style={{ fontFamily: MONO, color: C.gold }}>
+                <span style={{ fontFamily: MONO, color: C.akzent }}>
                   {snap.players[team.side][p.main].anytime.toFixed(1)}
                 </span>
               </div>

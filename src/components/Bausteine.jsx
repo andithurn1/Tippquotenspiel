@@ -64,7 +64,7 @@ export default function Bausteine({ rules }) {
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
                 <span style={{ fontSize: 12.5, fontWeight: 700, color: C.text }}>{aspekt.label}</span>
-                <span style={{ fontFamily: MONO, fontSize: 10.5, color: unveraendert ? C.muted : C.gold, whiteSpace: "nowrap" }}>
+                <span style={{ fontFamily: MONO, fontSize: 10.5, color: unveraendert ? C.muted : C.akzent, whiteSpace: "nowrap" }}>
                   {unveraendert ? "unverändert" : `${anzahl} ${anzahl === 1 ? "abweichendes Feld" : "abweichende Felder"}`}
                 </span>
               </div>
@@ -88,7 +88,7 @@ export default function Bausteine({ rules }) {
                   <div style={{ fontSize: 10, color: C.muted, marginBottom: 4, lineHeight: 1.4 }}>
                     Zwischenablage nicht verfügbar — Code markieren und kopieren:
                   </div>
-                  <div style={{ fontFamily: MONO, fontSize: 11, color: C.gold, wordBreak: "break-all", lineHeight: 1.5 }}>
+                  <div style={{ fontFamily: MONO, fontSize: 11, color: C.akzent, wordBreak: "break-all", lineHeight: 1.5 }}>
                     {fallbackCode}
                   </div>
                 </div>

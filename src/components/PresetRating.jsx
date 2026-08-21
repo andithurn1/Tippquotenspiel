@@ -10,7 +10,7 @@ const MAX_FREQ = Math.max(...DIST.map((d) => d.freq));
 
 // Farbe der Underdog-Neigung: favoritenfreundlich (kühl) → underdog-lastig (heiß).
 function leanColor(lean) {
-  return lean >= 66 ? C.coral : lean >= 45 ? C.gold : lean >= 25 ? C.mint : C.indigo;
+  return lean >= 66 ? C.coral : lean >= 45 ? C.akzent : lean >= 25 ? C.mint : C.indigo;
 }
 
 // Panel: reale Verteilung der Spielarten + wie „underdog-freundlich" das aktuelle
@@ -38,7 +38,7 @@ export default function PresetRating({ rules }) {
         <div style={{ width: `${rating.underdogLean}%`, height: "100%", background: lc, transition: "width .25s" }} />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-        <Stat label="Überraschungs-Prämie" value={premium} hint="Außenseiter-Sieg vs. Favoritensieg" tone={C.gold} />
+        <Stat label="Überraschungs-Prämie" value={premium} hint="Außenseiter-Sieg vs. Favoritensieg" tone={C.akzent} />
         <Stat label="Favoriten-Risiko" value={rating.favFlopEffect > 0 ? "−" + rating.favFlopEffect + "%" : "keins"}
           hint="Einbruch, wenn der Favorit patzt" tone={rating.favFlopEffect > 0 ? C.coral : C.muted} />
       </div>

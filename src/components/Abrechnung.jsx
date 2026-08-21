@@ -195,7 +195,7 @@ export default function Abrechnung() {
         <div style={{
           position: "absolute", top: -90, left: "50%", transform: "translateX(-50%)",
           width: 320, height: 200, pointerEvents: "none",
-          background: `radial-gradient(circle, ${C.gold}22 0%, transparent 70%)`,
+          background: `radial-gradient(circle, ${C.akzent}22 0%, transparent 70%)`,
         }} />
 
         <div style={{ position: "relative", padding: "26px 22px 22px" }}>
@@ -215,7 +215,7 @@ export default function Abrechnung() {
             <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
               <ScoreBox label="Dein Tipp" a={DATA.tippHome} b={DATA.tippAway} tone={C.muted} />
               <div style={{ display: "flex", alignItems: "center", color: C.muted, fontSize: 20 }}>→</div>
-              <ScoreBox label="Endstand" a={DATA.realHome} b={DATA.realAway} tone={C.gold}
+              <ScoreBox label="Endstand" a={DATA.realHome} b={DATA.realAway} tone={C.akzent}
                 stamped={stage >= 2} big />
             </div>
           </div>
@@ -267,10 +267,10 @@ export default function Abrechnung() {
               gewertet
             </div>
             <div style={{
-              fontFamily: MONO, fontWeight: 700, color: C.gold,
+              fontFamily: MONO, fontWeight: 700, color: C.akzent,
               fontSize: 68, lineHeight: 1, marginTop: 4,
               fontVariantNumeric: "tabular-nums",
-              textShadow: `0 0 34px ${C.gold}66`,
+              textShadow: `0 0 34px ${C.akzent}66`,
             }}>
               +{Math.round(punkte)}
             </div>
@@ -330,7 +330,7 @@ export default function Abrechnung() {
                 borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
               }}>
                 <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 16 }}>{i + 1}</span>
-                <span style={{ flex: 1, fontSize: 14, color: b.userId === meId ? C.gold : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
+                <span style={{ flex: 1, fontSize: 14, color: b.userId === meId ? C.akzent : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
                   {b.name}
                   {b.userId === meId && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● du</span>}
                 </span>
@@ -347,7 +347,7 @@ export default function Abrechnung() {
           {/* Replay */}
           <button onClick={() => { setStage(0); setKey((k) => k + 1); }} style={{
             ...TAPZIEL, ...show(5), marginTop: 18, width: "100%", cursor: "pointer",
-            background: C.gold, color: C.ink, fontWeight: 700, fontSize: 14,
+            background: C.akzent, color: C.ink, fontWeight: 700, fontSize: 14,
             border: "none", borderRadius: 14, padding: "13px 0",
           }}>
             Nochmal ansehen
@@ -371,7 +371,7 @@ function ScoreBox({ label, a, b, tone, big, stamped }) {
         fontFamily: MONO, fontWeight: 700, color: tone,
         fontSize: big ? 30 : 26, letterSpacing: 1,
         fontVariantNumeric: "tabular-nums",
-        textShadow: big && stamped ? `0 0 22px ${C.gold}55` : "none",
+        textShadow: big && stamped ? `0 0 22px ${C.akzent}55` : "none",
       }}>
         {a}:{b}
       </div>
@@ -392,7 +392,7 @@ function DistanceLadder({ active, wertung }) {
         <div key={s.label} style={{ flex: 1 }}>
           <div style={{
             height: 8, borderRadius: 999,
-            background: s.reached ? (s.hot ? C.coral : C.gold) : C.surface,
+            background: s.reached ? (s.hot ? C.coral : C.akzent) : C.surface,
             border: s.reached ? "none" : `1px solid ${C.line}`,
             transform: active ? "scaleX(1)" : "scaleX(0)",
             transformOrigin: "left",

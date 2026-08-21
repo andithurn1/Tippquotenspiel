@@ -85,7 +85,7 @@ export default function Abstimmung() {
         )}
 
         {matches != null && aktiv && !user && (
-          <div style={{ fontSize: 13, color: C.gold }}>Bitte zuerst einloggen, um abzustimmen.</div>
+          <div style={{ fontSize: 13, color: C.akzent }}>Bitte zuerst einloggen, um abzustimmen.</div>
         )}
 
         {matches != null && aktiv && user && (
@@ -96,7 +96,7 @@ export default function Abstimmung() {
               const meine = eigeneStimme(votes, user.id, md);
               return (
                 <div key={md} style={{
-                  background: C.ink2, border: `1px solid ${t.beschlossen ? C.gold + "55" : C.line}`,
+                  background: C.ink2, border: `1px solid ${t.beschlossen ? C.akzent + "55" : C.line}`,
                   borderRadius: 16, padding: "13px 15px", opacity: zu ? 0.6 : 1,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -109,9 +109,9 @@ export default function Abstimmung() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                     <span style={{
                       fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999,
-                      color: t.beschlossen ? C.gold : C.muted,
-                      background: t.beschlossen ? `${C.gold}18` : C.surface,
-                      border: `1px solid ${t.beschlossen ? C.gold + "55" : C.line}`,
+                      color: t.beschlossen ? C.akzent : C.muted,
+                      background: t.beschlossen ? `${C.akzent}18` : C.surface,
+                      border: `1px solid ${t.beschlossen ? C.akzent + "55" : C.line}`,
                     }}>
                       {t.beschlossen ? "🃏 Joker-Spieltag" : "kein Joker"}
                     </span>

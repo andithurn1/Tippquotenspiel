@@ -99,8 +99,8 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                 min={ABSTIMMUNG_LIMITS.quorum.min} max={ABSTIMMUNG_LIMITS.quorum.max}
                 step={ABSTIMMUNG_LIMITS.quorum.step} value={a.quorum}
                 onChange={(e) => setzeAbstimmung({ quorum: Number(e.target.value) })}
-                style={{ flex: 1, accentColor: C.gold, cursor: "pointer" }} />
-              <span style={{ fontSize: 12.5, color: C.gold, fontWeight: 700, minWidth: 46, textAlign: "right" }}>
+                style={{ flex: 1, accentColor: C.akzent, cursor: "pointer" }} />
+              <span style={{ fontSize: 12.5, color: C.akzent, fontWeight: 700, minWidth: 46, textAlign: "right" }}>
                 {Math.round(a.quorum * 100)} %
               </span>
             </div>
@@ -158,8 +158,8 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                       } style={{
                         ...TAPZIEL, flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px",
                         borderRadius: 11, textAlign: "left", fontSize: 12, fontWeight: 700,
-                        background: m.an ? `${C.gold}22` : C.surface, color: m.an ? C.gold : C.muted,
-                        border: `1px solid ${m.an ? C.gold + "66" : C.line}`,
+                        background: m.an ? `${C.akzent}22` : C.surface, color: m.an ? C.akzent : C.muted,
+                        border: `1px solid ${m.an ? C.akzent + "66" : C.line}`,
                       }}>{m.label}</button>
                     ))}
                   </div>
@@ -176,7 +176,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                       <button key={asp.key} onClick={() => umschalten(asp.key)} style={{
                         textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
                         background: C.surface, borderRadius: 12, padding: "9px 12px",
-                        border: `1px solid ${frei ? C.line : C.gold + "66"}`,
+                        border: `1px solid ${frei ? C.line : C.akzent + "66"}`,
                         display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
                       }}>
                         <span>
@@ -187,8 +187,8 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                         </span>
                         <span style={{
                           flexShrink: 0, fontSize: 10.5, padding: "3px 9px", borderRadius: 999,
-                          color: frei ? C.muted : C.gold,
-                          border: `1px solid ${frei ? C.line : C.gold + "66"}`,
+                          color: frei ? C.muted : C.akzent,
+                          border: `1px solid ${frei ? C.line : C.akzent + "66"}`,
                         }}>{frei ? "abstimmbar" : "festgeschrieben"}</span>
                       </button>
                     );
@@ -210,7 +210,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
 
           {funde.length > 0 && (
             <div style={{
-              background: `${C.gold}12`, border: `1px solid ${C.gold}33`, borderRadius: 12,
+              background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
               padding: "10px 12px", marginTop: 10,
             }}>
               {funde.map((k) => (
@@ -236,8 +236,8 @@ function Karten({ label, katalog, wert, onWaehlen }) {
             <button key={e.key} title={e.desc} onClick={() => onWaehlen(e.key)} style={{
               ...TAPZIEL, flex: "1 1 110px", cursor: "pointer", fontFamily: "inherit", padding: "8px",
               borderRadius: 11, textAlign: "left",
-              background: an ? `${C.gold}22` : C.surface, color: an ? C.gold : C.muted,
-              border: `1px solid ${an ? C.gold + "66" : C.line}`,
+              background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
+              border: `1px solid ${an ? C.akzent + "66" : C.line}`,
             }}>
               <div style={{ fontSize: 12, fontWeight: 700 }}>{e.label}</div>
             </button>

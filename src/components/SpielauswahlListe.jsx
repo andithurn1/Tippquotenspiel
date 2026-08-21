@@ -108,7 +108,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
           ) : (
             <>
               {/* Die Auswahl zuerst — sie darf nie hinter einem Suchbegriff verschwinden. */}
-              <div style={{ fontSize: 11, color: voll ? C.gold : C.muted, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: voll ? C.akzent : C.muted, marginBottom: 8 }}>
                 {gewaehlt.size} von höchstens {AUSWAHL_LIMITS.maxSpiele} Begegnungen gewählt
                 {gewaehlt.size === 0 && " — ohne Auswahl zählen wieder alle Spiele"}
                 {voll && " — mehr geht nicht"}.
@@ -143,9 +143,9 @@ export default function SpielauswahlListe({ spiele, onChange }) {
                     return (
                       <button key={key ?? "alle"} onClick={() => setWettbewerb(key)} style={{
                         cursor: "pointer", fontFamily: "inherit", fontSize: 11.5, padding: "5px 10px",
-                        borderRadius: 999, background: aktiv ? `${C.gold}22` : C.surface,
-                        color: aktiv ? C.gold : C.muted,
-                        border: `1px solid ${aktiv ? C.gold + "66" : C.line}`,
+                        borderRadius: 999, background: aktiv ? `${C.akzent}22` : C.surface,
+                        color: aktiv ? C.akzent : C.muted,
+                        border: `1px solid ${aktiv ? C.akzent + "66" : C.line}`,
                       }}>{key === null ? "Alle" : wettbewerbLabel(key)}</button>
                     );
                   })}

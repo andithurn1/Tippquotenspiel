@@ -143,7 +143,7 @@ export default function AdminFreigaben() {
                     </th>
                     {spieltage.map((t) => (
                       <th key={t} title={achsenLabel(achse[t - 1]) || undefined} style={{
-                        padding: "6px 8px", color: t === jetzt ? C.gold : C.muted,
+                        padding: "6px 8px", color: t === jetzt ? C.akzent : C.muted,
                         fontFamily: MONO, fontWeight: t === jetzt ? 700 : 400,
                       }}>{t}</th>
                     ))}
