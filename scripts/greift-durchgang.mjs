@@ -122,6 +122,10 @@ const FAELLE = [
     { oeffnen: true, bigGameWert: 0.8, erwartetNull: true,
       gegen: { bigGame: { enabled: true, aufschlag: 1, minSpannung: 0 } },
       hinweis: "SOLL nichts bewegen: der eingefrorene Wert liegt unter der Schwelle" }],
+  // Der Kombi-Bonus (B16): greift nur, wenn ein Schuetze getippt UND die
+  // Ergebnis-Ebene erreicht ist — deshalb mit mehreren Schuetzen messen.
+  ["kombi (seltener Schuetze)", { kombi: { enabled: true, stufe: "tendenz", staerke: 1, maxAufschlag: 3, mindestSchuetzen: 1 } },
+    { mehrSchuetzen: true }],
   ["modCap", {
     joker: { enabled: true, modus: "einzel", faktor: 3 }, modCap: 1.1,
   }, { joker: true, gegen: { joker: { enabled: true, modus: "einzel", faktor: 3 } } }],

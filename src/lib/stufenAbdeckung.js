@@ -55,6 +55,12 @@ export const NUR_PROFI = {
     "Was „Spieltag 5“ in einer Runde über mehrere Ligen heißt. Struktur, keine "
     + "Wertung: sie folgt aus der Spielauswahl und hat auf Stufe 1/2 keine "
     + "Frage, die ein Admin beantworten könnte.",
+  kombi:
+    "Der Kombi-BONUS (B16): dass ein SELTENER Schuetze extra zaehlt. Die "
+    + "Mechanik steht, die Zahlen darin sind ausdruecklich Balancing und "
+    + "werden am Ende festgelegt (Andi, 22.08.2026). Ein Charakter, der sie "
+    + "jetzt setzte, behauptete eine Empfehlung, die es noch nicht gibt — "
+    + "deshalb steht der Block hier und nicht in einem Buendel.",
   spiele:
     "Welche Spiele zur Runde gehören, wird beim ANLEGEN gewählt (eigene "
     + "Oberfläche mit Wettbewerben, Vereinen und Spieltag-Bereich) und nicht "

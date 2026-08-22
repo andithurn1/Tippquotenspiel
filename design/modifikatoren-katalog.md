@@ -344,7 +344,9 @@ Wie `bigGame`, nur mit der Tabelle statt der Quoten-Spannung.
 Modifikator nehmen, wenn ausgerechnet der Torschütze trifft und die Wette auch
 noch aufgeht."*
 
-🔴 **Heute addieren sich beide Teile nur.** Ergebnis richtig gibt Punkte,
+⚠️ **RICHTIGSTELLUNG (22.08.2026, am Code nachgeprüft):** der Satz unten stimmte nicht. `applyCombo` multipliziert die Summe aus Ergebnis- und Tor-Anteil längst mit `combo[ebene]`, sobald ein Schütze trifft — das Zusammentreffen wird also belohnt. Was fehlte, ist Andis zweiter Punkt: dass der Aufschlag aus der QUOTE des Schützen kommt. Genau der ist jetzt gebaut (`kombiBonus.js`, `rules.kombi`, Standard aus).
+
+~~🔴 **Heute addieren sich beide Teile nur.**~~ Ergebnis richtig gibt Punkte,
 Torschütze getroffen gibt Punkte — das ZUSAMMENTREFFEN selbst wird nicht
 belohnt, obwohl es das viel Seltenere ist. Zwei Ereignisse, die einzeln je 20 %
 wahrscheinlich sind, treffen zusammen nur in 4 % der Fälle zu; die Wertung

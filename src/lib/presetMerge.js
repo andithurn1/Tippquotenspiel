@@ -31,8 +31,12 @@ export const ASPEKTE = [
   {
     key: "kombi",
     label: "Kombi-Stufen",
-    hint: "Wie stark exakt/Abstand/Tendenz die Torschützen-Gewinne vervielfachen.",
-    keys: ["combo"],
+    hint: "Wie stark exakt/Abstand/Tendenz die Torschützen-Gewinne vervielfachen — und ob ein seltener Schütze extra zählt.",
+    // ⚠️ `kombi` (der Bonus aus B16) gehört in DENSELBEN Aspekt wie `combo`:
+    // beide beantworten „was ist das Zusammentreffen wert?". Getrennt könnte
+    // ein Teil-Code den Bonus mitbringen, ohne die Stufen, auf die er sich
+    // bezieht — zwei Hälften einer Regel, die einzeln reisen.
+    keys: ["combo", "kombi"],
   },
   {
     key: "underdog",

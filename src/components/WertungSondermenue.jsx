@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DEFAULT_RULES, RULE_LIMITS, REGLER_FEINHEITEN, reglerSchritt } from "@/lib/engine";
 import { TIPPEINFLUSS_LIMITS, beschreibeTippEinfluss } from "@/lib/tippEinfluss";
+import { KOMBI_STUFEN, KOMBI_LIMITS, DEFAULT_KOMBI, beschreibeKombi } from "@/lib/kombiBonus";
 import { C } from "@/lib/theme";
 import { fmtFaktor } from "@/lib/format";
 import { TAPZIEL } from "@/lib/tapziel";
@@ -45,12 +46,14 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
   const L = RULE_LIMITS;
   const g = rules.markets.goals;
   const te = rules.tippEinfluss || DEFAULT_RULES.tippEinfluss;
+  const kombi = rules.kombi || DEFAULT_KOMBI;
 
   const setze = (p) => onChange(p);
   const setzeCombo = (p) => onChange({ combo: { ...rules.combo, ...p } });
   const setzeMarkets = (p) => onChange({ markets: { ...rules.markets, ...p } });
   const setzeGoals = (p) => onChange({ markets: { ...rules.markets, goals: { ...g, ...p } } });
   const setzeTippEinfluss = (p) => onChange({ tippEinfluss: { ...te, ...p } });
+  const setzeKombi = (p) => onChange({ kombi: { ...kombi, ...p } });
 
   return (
     <div>
@@ -171,6 +174,70 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
             onChange={(v) => setzeCombo({ abstand: v })} fmt={(x) => "×" + x.toFixed(2)} />
           <Slider label="bei exaktem Ergebnis" value={rules.combo.exakt} {...L.combo.exakt} step={reglerSchritt(rules, L.combo.exakt)} pfad="combo.exakt"
             onChange={(v) => setzeCombo({ exakt: v })} fmt={fmtFaktor} />
+
+          {/* 🔴 Kombi-BONUS (B16) — der Aufschlag, der aus der Quote des
+              Schützen kommt statt aus einem Regler. Andis Begründung steht in
+              einem Satz darüber, weil sie den ganzen Block trägt: bei einem
+              5:1 ist klar, dass der Stürmer trifft. */}
+          <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 12, paddingTop: 12 }}>
+            <Toggle label="Seltener Schütze zählt extra" on={kombi.enabled}
+              onChange={(on) => setzeKombi({ enabled: on })} />
+            <p style={{ fontSize: 11, color: C.muted, marginTop: 2, marginBottom: 8, lineHeight: 1.45 }}>
+              Bei einem 5:1 ist klar, dass der Stürmer trifft — ein pauschaler Aufschlag
+              belohnt genau das. Mit dieser Regel wächst der Kombi-Faktor mit der
+              <strong> Quote des Schützen</strong>: der Innenverteidiger bringt mehr als
+              der Torjäger, ohne dass jemand Spieler einteilen müsste.
+            </p>
+
+            {kombi.enabled && (
+              <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}` }}>
+                <Field label="Ab welcher Ergebnis-Ebene zählt die Kombination?">
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {KOMBI_STUFEN.map((s) => {
+                      const an = kombi.stufe === s.key;
+                      return (
+                        <button key={s.key} title={s.desc} onClick={() => setzeKombi({ stufe: s.key })} style={{
+                          ...TAPZIEL, flex: "1 1 110px", cursor: "pointer", fontFamily: "inherit",
+                          padding: "8px 10px", borderRadius: 11, fontSize: 12, fontWeight: 700,
+                          background: an ? `${C.akzent}22` : C.surface,
+                          color: an ? C.akzent : C.muted,
+                          border: `1px solid ${an ? C.akzent + "66" : C.line}`,
+                        }}>{s.label}</button>
+                      );
+                    })}
+                  </div>
+                </Field>
+
+                <Slider label="Wie stark schlägt die Quote durch?" value={kombi.staerke}
+                  {...KOMBI_LIMITS.staerke}
+                  onChange={(v) => setzeKombi({ staerke: v })} fmt={(x) => x.toFixed(2)}
+                  hint="0 = der Bonus ist aus. Höher = die Seltenheit des Schützen wiegt mehr." />
+                <Slider label="Deckel für den Aufschlag" value={kombi.maxAufschlag}
+                  {...KOMBI_LIMITS.maxAufschlag}
+                  onChange={(v) => setzeKombi({ maxAufschlag: v })} fmt={(x) => `+${x.toFixed(2)}`}
+                  hint="Ohne ihn zahlt ein 6:0 mit Torwart-Treffer unbegrenzt." />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0" }}>
+                  <span style={{ fontSize: 13, color: C.muted }}>Wie viele Schützen müssen treffen?</span>
+                  <Stepper value={kombi.mindestSchuetzen}
+                    min={KOMBI_LIMITS.mindestSchuetzen.min} max={KOMBI_LIMITS.mindestSchuetzen.max}
+                    onStep={(d) => setzeKombi({ mindestSchuetzen: kombi.mindestSchuetzen + d })} />
+                </div>
+
+                {/* Live-Rechnung statt einer Zahl ohne Bedeutung — dieselbe
+                    Rolle wie `anteilHinweis()` bei den Wettbewerben. */}
+                <p style={{
+                  fontSize: 12, color: C.text, lineHeight: 1.45, marginTop: 8,
+                  padding: "8px 10px", borderRadius: 8, background: C.surface, border: `1px solid ${C.line}`,
+                }}>
+                  {beschreibeKombi(rules)}
+                </p>
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+                  ⏳ Welche Werte hier gut sind, wird am Ende zusammen mit dem übrigen
+                  Balancing entschieden. Die Mechanik steht unabhängig davon.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </GrosseZeile>
 

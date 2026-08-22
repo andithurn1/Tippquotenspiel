@@ -5,6 +5,7 @@
 // ============================================================
 
 import { ergebnisQuote, reihenQuote } from "./randquoten";
+import { kombiAufschlag, sanitizeKombi, DEFAULT_KOMBI } from "./kombiBonus";
 import { applyCatchup, BETRIFFT, betrifftWert } from "./catchup";
 import { applySaisonform, sanitizeSaisonform, DEFAULT_SAISONFORM } from "./saisonform";
 import { mitTippEinfluss, sanitizeTippEinfluss, DEFAULT_TIPPEINFLUSS } from "./tippEinfluss";
@@ -87,6 +88,10 @@ export const DEFAULT_RULES = {
   winnerFloor: true,
   wrongPenalty: 0,     // Minus bei komplett falsch (opt-in, z.B. -1)
   combo: { tendenz: 1.15, abstand: 1.5, exakt: 2.3 },
+  // Kombi-BONUS (B16): Aufschlag auf den Kombi-Faktor, abgeleitet aus der
+  // Quote der getroffenen Schuetzen. Standard aus — die Zahlen darin sind
+  // Balancing und damit Endphase (kombiBonus.js).
+  kombi: { ...DEFAULT_KOMBI },
   displayScale: 15,    // roh × 15 → schöne hohe Zahlen (Fairness/Rang unberührt)
   perGameCap: null,    // optionaler harter Deckel pro Spiel (z.B. 1000), null = offen
   // `goals.modus` entscheidet, WIE Torschützen getippt werden:
@@ -597,6 +602,9 @@ export function sanitizeRules(partial = {}) {
     // Big Game ebenso — der Katalog der Signale bleibt in bigGame.js.
     bigGame: sanitizeBigGame(src.bigGame),
     tabellenBonus: sanitizeTabellenBonus(src.tabellenBonus),
+    // Kombi-Bonus: Katalog und Grenzen bleiben in kombiBonus.js, damit ein
+    // Creator-Code dieselben Regeln durchlaeuft wie die Oberflaeche.
+    kombi: sanitizeKombi(src.kombi),
     spiele: sanitizeSpiele(src.spiele),
     // Alleinstellung ebenso — Katalog der Modi und Grenzen bleibt in
     // alleinstellung.js, damit die Werte im Creator-Code dieselben Regeln
@@ -753,9 +761,21 @@ export function toDisplay(raw, rules = DEFAULT_RULES) {
 }
 
 // Kombi-Regel: Tor-Gewinne verstärken das Ergebnis nur bei richtiger Tendenz.
-export function applyCombo(resultPart, ebene, goalsNet, rules = DEFAULT_RULES) {
+//
+// 🔴 `goalsDetail` (aus `scoreGoals`) schaltet den KOMBI-BONUS frei (B16, Andi
+// 22.08.2026): der pauschale Faktor bekommt einen Aufschlag, der aus der QUOTE
+// der getroffenen Schützen abgeleitet wird. Ohne die Liste — und mit
+// `rules.kombi.enabled === false`, der Vorgabe — ändert sich nichts.
+//
+// Seine Begründung in einem Satz: bei einem 5:1 ist klar, dass der Stürmer
+// trifft; ein pauschaler Aufschlag belohnt genau das Naheliegende. Trifft
+// dagegen der Innenverteidiger, ist DAS die seltene Kombination
+// (`kombiBonus.js` erklärt, warum logarithmisch).
+export function applyCombo(resultPart, ebene, goalsNet, rules = DEFAULT_RULES, goalsDetail = null) {
   if (goalsNet <= 0) return resultPart;
-  return ebene === "keiner" ? resultPart + goalsNet : (resultPart + goalsNet) * rules.combo[ebene];
+  if (ebene === "keiner") return resultPart + goalsNet;
+  const faktor = rules.combo[ebene] * (1 + kombiAufschlag(ebene, goalsDetail, rules));
+  return (resultPart + goalsNet) * faktor;
 }
 
 // Joker-Faktor eines Tipps: 1 (No-op), wenn der Joker im Regelwerk aus ist oder
@@ -1353,7 +1373,7 @@ export function einsatzPlanung({ tips = [], spieltag, spieleImSpieltag, rules = 
 export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   const res = scoreResult(tip, actual, snap, rules);
   const goals = scoreGoals(tip.goals || { home: [], away: [] }, snap, rules, actual.playerGoals);
-  const combined = applyCombo(res.resultPart, res.ebene, goals.net, rules);
+  const combined = applyCombo(res.resultPart, res.ebene, goals.net, rules, goals.detail);
   // Favoriten-Reinfall: Abzug vom Gesamt-Roh-Wert, aber nicht unter 0
   // (kein tiefes Minus — die richtig getippten Underdog-Tore federn ab).
   const favFlop = favoriteFlopPenalty(tip, actual, snap, rules);
