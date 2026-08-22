@@ -34,6 +34,46 @@ dieselbe austauschbare Stelle wie bei den Quoten.
 
 ---
 
+## 🧱 Sondermenüs — der Umbau zur EINEN Ansicht (Andi EB2/EB4, 22.08.2026)
+
+**Reihenfolge ist zwingend: erst alle Sondermenüs, DANN der Umschalter weg.**
+Andersherum liegt alles flach auf einer Seite — schlechter als heute.
+
+| Bereich | Stand |
+|---|---|
+| **Joker** (84 Einstellwerte, fünf Karten) | ✅ `JokerSondermenue.jsx`, Commit `4030f5c` |
+| **Modifikatoren** (Derby · Vereine · Big Game · Außenseiter, ein Deckel) | ✅ `ModifikatorenSondermenue.jsx`, Commit `b10d2da` |
+| **Wertung** (Nähe, Underdog/Favorit, Kombi, Sieger-Boden, Anzeige & Cutoffs, Märkte, Regler-Feinheit) | ⏳ der größte verbliebene Block |
+| **Verlauf** (Anschluss halten, Streicher & Saisonverlauf, Spieltag vergessen) | ⏳ |
+| **Saison & Zeit** (Saison-Wetten, Zeitachse, Tippfenster) | ⏳ |
+| **Mitbestimmung** | ⏳ klein, kann an die Wertung anschließen |
+| Danach: `AnsichtSchalter.jsx` + Zustand `stufe` entfernen | ⏳ |
+
+**Das Muster steht** und ist zweimal durchgehalten: eine `GrosseZeile` mit
+Stand-Anzeige, dahinter entweder Karten (wenn es viele Werte sind) oder
+verschachtelte Zeilen (wenn es Unterbereiche sind). Der gemeinsame Deckel
+gehört ans Ende, nicht zu einem der Teile. Ein Bereich, der in einem anderen
+Menü sitzt, bekommt einen **Verweis statt einer zweiten Kopie**.
+
+## 🔍 Zwei stehende Abnahme-Befunde (gemessen 22.08.2026)
+
+Beide **älter als der Sondermenü-Umbau** — auf dem Stand davor gegengeprüft und
+dort identisch. Sie stehen hier, damit sie nicht bei der nächsten Messung als
+neuer Schaden gelesen werden.
+
+1. **`npm run stufen` meldet eine Lücke:** `wettbewerbe` ist nur in der
+   Profi-Ansicht erreichbar und trägt keine Begründung in `NUR_PROFI`.
+   Zwei mögliche Auflösungen: entweder ein einfacher Regler / Charakter fasst
+   das Feld an, oder es bekommt seinen Begründungssatz. **Nicht einfach
+   begründen, ohne zu prüfen, ob es nicht doch in Stufe 2 gehört** — genau
+   dafür ist die Lücke da.
+2. **`npm run greift` meldet zwei Blöcke als „bewegt nichts":** `bigGame` und
+   `markets (Picks je Team)`. Das ist die teuerste Sorte Befund (eine
+   Einstellung, die ins Leere läuft — Baukasten-Grundsatz), aber es kann auch
+   am Messfall liegen: `bigGame` hängt an `snap.bigGameWert`, den der Messfall
+   möglicherweise gar nicht setzt. **Erst den Messfall prüfen, dann die
+   Mechanik** — andersherum sucht man einen Fehler, den es nicht gibt.
+
 ## ⛔ ENDPHASE — hier steht, was ERST GANZ AM SCHLUSS drankommt
 
 **Nicht anfangen. Nicht messen. Nicht melden.** Ausdrückliche Anweisung von
