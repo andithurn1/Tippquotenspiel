@@ -302,7 +302,11 @@ gemeinsam, oder bekommt jede Art ihre eigene?
 
 ---
 
-# TEIL D · Eingriffe in fremde Tipps
+# TEIL D · FREMDJOKER — Eingriffe in fremde Tipps
+
+🔴 **Der Name steht seit 22.08.2026 fest: Fremdjoker** (Andi). Er umfasst
+**Block · Trittbrettfahrer · Gegenwette · Klau** — jeden Joker, der in den Tipp
+eines anderen greift. Begriff im `vokabular.md`.
 
 **Andi am 22.08.2026:** *„finde die generelle Option interessant und spassig,
 bei anderen Tippern oder Freunden reinzugehen und eben nen einzelnen Tipp, den
@@ -361,10 +365,83 @@ Regler, davon drei schon vorhanden:
 | `sperrfristJeZiel` | Dass DERSELBE jemanden wieder und wieder trifft | ⏳ neu |
 | `immun` | Erholung nach einem Treffer | ✅ da |
 | `zielWahl` | frei · nur nach vorn · nur nach hinten | ✅ da |
+| `zielWahl: ausgelost` | Dass man sich sein Opfer überhaupt aussucht — die vierte Stufe, siehe oben | ⏳ neu |
 
 ⚠️ **`sperrfristJeZiel` ist der neue und der wichtigste.** `maxProZiel` begrenzt
 nur, wie oft jemand insgesamt getroffen wird — nicht, ob es immer derselbe
 Gegner ist. Genau das meint Andi mit „nicht von allen und immer regelmäßig".
+
+## 🔴 Das ausgeloste Ziel — Andis Ansage vom 22.08.2026
+
+Wörtlich: *„dass man eine fest ausgeloste Person bekommt und eben nur bei
+dieser Person, man kann sich also sein Opfer nicht genau aussuchen, aber muss
+eben bei seiner Tippabgabe schauen, bei welchem Einzelspiel man den jeweiligen
+Joker einsetzt. Die Option dazu halt."*
+
+**Die Entscheidung wird verschoben, nicht weggenommen.** Wer sein Ziel frei
+wählt, entscheidet ÜBER WEN; wer ein Los bekommt, entscheidet WO — bei welchem
+Einzelspiel des Zugelosten der Fremdjoker sitzt. Es bleibt genau eine
+Entscheidung, und sie fällt bei der Tippabgabe.
+
+**Drei Dinge, die diese Option von allein löst** — deshalb ist sie mehr als ein
+weiterer Regler:
+
+1. **Kein Rudelbilden.** Bei freier Wahl gehen alle auf den Führenden; das ist
+   heute schon in `reglerWarnung.js` als Kombinationsregel vermerkt und wird
+   bisher nur GEMELDET. Ein Los macht es unmöglich statt es zu bemängeln.
+2. **Niemand wird zum Dauer-Opfer.** Genau der Zweck, den `sperrfristJeZiel`
+   (JK5) mit einer Sperre erreichen will — das Los braucht dafür keine Sperre.
+3. **Der Zeitpunkt bleibt egal.** Andis Grundsatz vom 22.08.2026: wer zuletzt
+   tippt, sieht bei freier Wahl, wer noch frei ist. Ein Los, das vor dem
+   Spieltag gezogen wird, kennt diesen Vorteil nicht.
+
+### Die Vorlage, ausgefüllt (`vokabular.md`)
+
+```
+Name          Ausgelostes Ziel
+Ebene         6 (Ökonomie — „gegen wen darf eingesetzt werden")
+Hängt an      Spieler (das Los) + Tipp (das gewählte Einzelspiel)
+Steht fest    das LOS beim Öffnen des Spieltags · das SPIEL beim Tippen
+Wirkt als     Auswahl — die Wirkung des Fremdjokers bleibt unverändert
+Deckel        keiner neu; maxProZiel/immun/modCap gelten weiter
+Entscheidet   System/Los (das Ziel) · Spieler (das Spiel)
+Stufe         3, je Fremdjoker — Vorgabe „frei", damit sich für bestehende
+              Runden nichts ändert
+Anzeige       bei der Tippabgabe: „Dein Ziel diesen Spieltag: Lena"
+Einstellwerte zielModus (frei | ausgelost) · losTakt · losSichtbar
+```
+
+**Drei Einstellwerte, nicht mehr** — und `zielModus` ist streng genommen die
+vierte Stufe des vorhandenen `duell.zielWahl` (frei · nach vorn · nach hinten ·
+**ausgelost**). Die anderen beiden sind neu.
+
+🔴 **Je Fremdjoker einzeln** (Andis Ansage): der Block darf ausgelost sein,
+während der Trittbrettfahrer frei bleibt. Bauform ist die vorhandene aus
+`jokerBasis` — ein Standard oben, Abweichung je Art. Kein zweites Muster.
+
+### ❓ Was Andi noch entscheiden muss
+
+Fünf Fragen, die sich aus seinem Satz NICHT beantworten lassen. Ich rate sie
+bewusst nicht — bitte direkt hier darunter antworten:
+
+1. **Wie oft wird neu ausgelost?** Je Spieltag neu · einmal für die ganze
+   Saison · nach jedem Einsatz. *(„fest ausgelost" klingt nach selten, aber
+   eine Saison lang derselbe Gegner trifft dieselbe Person 34-mal.)*
+2. **Gegenseitig oder einseitig?** Wenn ich Lena ziehe — zieht Lena dann
+   automatisch mich (ein Paar, ein Duell), oder ist mein Los unabhängig von
+   ihrem?
+3. **Sieht man sein Los, und sieht das Ziel es auch?** JK6 verlangt, dass ein
+   Eingriff vor der Frist sichtbar ist. Gilt das schon fürs LOS („Lena hat dich
+   diesen Spieltag") oder erst für den gesetzten Joker?
+4. **Was, wenn das Los nicht tippt?** Die zugeloste Person gibt keinen Tipp ab
+   oder hat kein gemeinsames Spiel — verfällt der Fremdjoker, oder darf man
+   ersatzweise frei wählen?
+5. **Ein Los für alle Fremdjoker oder je Fremdjoker ein eigenes?** Bei
+   getrennten Losen könnte man denselben Spieltag drei verschiedene Personen
+   treffen.
+
+⚠️ Frage 4 ist die einzige, die BAUEN blockiert — die übrigen vier haben eine
+naheliegende Vorgabe, die sich später ändern lässt.
 
 ## Für wen das gedacht ist
 

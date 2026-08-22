@@ -158,6 +158,9 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | JK9 | ⚠️ `minPayout` muss für Gegenwetten AUS sein | ⏳ | Sonst würden aus 1,01 volle Punkte und das Abgrasen sicherer Wetten wäre wieder lohnend |
 | JK10 | ⚠️ Gegenwette braucht einen EINSATZ, keinen Gratis-Bonus | ⏳ | Wer gegen ein 4:1 wettet, riskiert 100 um 1 zu gewinnen — damit erledigt sich das Abgrasen ohne Sperre |
 | JK7 | Die ganze Familie **in einem Griff** aus-/einschaltbar | ⏳ | Andi: Büro-Runde nein, Freundesrunde ja. Ein `eingriffe.enabled` über allem statt sechs Häkchen |
+| JK11 | **„Fremdjoker"** ist der Name der Familie (Block, Trittbrettfahrer, Gegenwette, Klau) | ✅ | `design/vokabular.md`, Abschnitt „Fremdjoker“; `joker-sondermenue.md` Teil D umbenannt |
+| JK12 | **Ausgeloste Zielperson** statt freier Opferwahl — man sucht sich das Ziel nicht aus, entscheidet aber bei der Tippabgabe, bei welchem EINZELSPIEL man einsetzt | ⏳ | Vorlage ausgefüllt in `joker-sondermenue.md` Teil D („Das ausgeloste Ziel“): Ebene 6, drei Einstellwerte (`zielModus` · `losTakt` · `losSichtbar`), `zielWahl` bekommt die vierte Stufe `ausgelost`. **Fünf ❓ stehen im Eintrag** — Frage 4 (Los tippt nicht) blockiert das Bauen |
+| JK13 | Die Option **je Fremdjoker einzeln** einstellbar, nicht einmal für alle | ⏳ | Bauform steht fest: dasselbe Muster wie `jokerBasis` (Standard oben, Abweichung je Art), kein zweites erfinden |
 
 ## Betrieb
 

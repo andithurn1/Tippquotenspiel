@@ -193,6 +193,35 @@ Oberfläche zeigen („zuletzt geladen: …"), sonst wirkt es wie ein Fehler.
 
 ---
 
+### 🔴 „Fremdjoker" (Andi, 22.08.2026)
+
+**Andis Sammelname für alle Joker, die in den Tipp eines ANDEREN eingreifen.**
+Wörtlich: *„Die 3 Joker, Block, Trittbrettfahrer etc. heissen Fremdjoker, und
+für die gibts eben die Option einzeln einzustellen."*
+
+Damit hat die Familie aus `joker-sondermenue.md` Teil D endlich einen Namen —
+bis dahin hieß sie „Eingriffe in fremde Tipps", was kein Wort ist, sondern eine
+Umschreibung. **Ab jetzt: Fremdjoker.**
+
+| Fremdjoker | Was er tut | Stand |
+|---|---|---|
+| **Block** | Der fremde Tipp zählt nicht oder weniger | halb gebaut (`duell.block`) |
+| **Trittbrettfahrer** | Man hängt sich an den fremden Tipp und bekommt einen Anteil | Spec (J4) |
+| **Gegenwette** | Man setzt darauf, dass der fremde Tipp NICHT aufgeht | Spec (Teil E) |
+| **Klau** | Nimmt dem Getroffenen einen Anteil seiner Punkte | halb gebaut (`duell.klau`) |
+
+⚠️ **Ein Fremdjoker ist kein eigener Ebenen-Typ**, sondern die Frage „gegen
+WEN". Die Wirkung selbst bleibt Ebene 2 (Block, Trittbrettfahrer) bzw. Ebene 3
+(Klau, Gegenwette) — die Deckel-Grenze verschiebt sich dadurch nicht.
+
+🔴 **Jede Einstellung der Familie ist JE FREMDJOKER einzeln zu stellen**, nicht
+einmal für alle. Ausdrücklich seine Ansage. Das gilt zusätzlich zu JK7 (die
+ganze Familie in EINEM Griff aus- und einschaltbar): ein Hauptschalter oben,
+darunter je Fremdjoker die eigene Form. Das ist genau das Muster, das
+`jokerBasis` schon kennt — Standard oben, Abweichung je Art.
+
+---
+
 ## 🔴 NUR NOCH EINE ANSICHT — die Detail-Version (Andi, 22.08.2026)
 
 Wörtlich: *„ich denke wir sollten generell nur die Detail-Version machen, und
