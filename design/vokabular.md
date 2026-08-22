@@ -240,6 +240,29 @@ zusammen mit dem Balancing am Ende. ⏳ Nicht vorher.
 
 ---
 
+### 🔴 GRUNDSATZ: Der Zeitpunkt darf möglichst egal sein (Andi, 22.08.2026)
+
+Wörtlich: *„generell ist es mir wichtig, dass der Zeitpunkt der Tippabgabe und
+Jokerauswahl möglichst unwesentlich ist."*
+
+**Das ist kein Detail, sondern ein Grundsatz** — und er erklärt rückwirkend
+mehrere Entscheidungen, die bisher einzeln begründet wurden:
+
+- Der **Quoten-Schnappschuss wird eingefroren** (45 min vor Anpfiff), damit
+  nicht gewinnt, wer die Quotenbewegung abwartet.
+- Der **Tabellenstand wird beim Öffnen des Spieltags eingefroren** — wer
+  Freitag tippt, sieht dieselben Plätze wie wer Sonntag tippt.
+- Das **Big Game** wird ebenso eingefroren statt laufend neu berechnet.
+
+⚠️ **Woran man einen Verstoß erkennt:** wenn es sich lohnt, mit der Abgabe zu
+WARTEN — oder umgekehrt, früh zu sein. Beides macht aus einem Tippspiel ein
+Reaktionsspiel und benachteiligt den, der Freitagabend keine Zeit hat.
+
+**Prüffrage bei jeder neuen Mechanik:** *Ändert sich mein bester Zug, je
+nachdem WANN ich ihn mache?* Wenn ja, gehört etwas eingefroren.
+
+---
+
 ## Die sieben Ebenen — mehr gibt es nicht
 
 Jeder Einfluss im Spiel gehört in **genau eine** davon. Wer einen neuen baut

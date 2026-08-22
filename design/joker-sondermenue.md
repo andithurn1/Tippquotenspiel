@@ -461,3 +461,30 @@ Getippte verliert nichts? Das erste ist schärfer, das zweite verträglicher.
 
 ❓ **Sieht der Betroffene es vorher?** Für Andis Tischgespräch ja — dann kann er
 auch nachlegen. Verdeckt wäre es ein Hinterhalt.
+
+## 🔴 ENTSCHIEDEN: worauf sich die Gegenwette bezieht (Andi, 22.08.2026)
+
+*„nur verstärkt durch Standard-Spieleinstellungs-Mods und nicht durch
+Ereignisse oder selbst gewählte Joker."*
+
+| | zählt für die Gegenwette |
+|---|---|
+| Grundpunkte aus der Quote | ✅ |
+| **Standard-Modifikatoren** (Außenseiter, Derby, Spitzenspiel, Liga-Gewicht, Tabellen-Bonus) | ✅ |
+| Selbst gesetzte Joker | ⛔ |
+| Ereignisse und Drehrad | ⛔ |
+
+**Die Begründung ist ein Grundsatz, kein Sonderfall:** *„generell ist es mir
+wichtig, dass der Zeitpunkt der Tippabgabe und Jokerauswahl möglichst
+unwesentlich ist."* Bezöge sich die Gegenwette auf gejokerte Punkte, hinge ihr
+Wert davon ab, WANN das Opfer seinen Joker setzt — und wer zuletzt tippt,
+entkäme oder liefe hinein. Genau das soll es nicht geben.
+
+⚠️ **Damit fällt meine eigene Idee von vorhin weg**, den Joker mit einem
+sozialen Risiko zu belegen. Sie war reizvoll, verstößt aber gegen den
+Grundsatz: sie hätte den Zeitpunkt der Jokerwahl entscheidend gemacht.
+
+⚠️ **Praktische Folge:** die Gegenwette braucht eine Punktzahl OHNE Joker und
+Ereignisse. Die gibt es schon in ähnlicher Form — `projectTip` liefert bereits
+`pointsOhneSchuetzen` nach demselben Muster: dieselbe Rechnung, ein Teil
+weggelassen.
