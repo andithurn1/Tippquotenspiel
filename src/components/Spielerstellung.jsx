@@ -22,7 +22,6 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import AnsichtSchalter from "@/components/AnsichtSchalter";
 import VariantenWahl from "@/components/VariantenWahl";
-import TabellenBonus from "@/components/TabellenBonus";
 import TeilCodeFeld from "@/components/TeilCodeFeld";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
@@ -37,7 +36,6 @@ import ProfiWarnungen from "@/components/ProfiWarnungen";
 import Mitbestimmung from "@/components/Mitbestimmung";
 import Bausteine from "@/components/Bausteine";
 import AufwandPanel from "@/components/AufwandPanel";
-import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } from "@/lib/spielauswahl";
 import { VORLAUF_STUFEN, ANKER, beschreibeTippfenster, erklaereTippfenster } from "@/lib/tippfenster";
 import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
@@ -46,9 +44,10 @@ import LigaSonderregeln from "@/components/LigaSonderregeln";
 import Alleinstellung from "@/components/Alleinstellung";
 import Zeitachse from "@/components/Zeitachse";
 import { C, MONO, SCHRIFT } from "@/lib/theme";
-import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
+import { zahl, fmtFaktor } from "@/lib/format";
 import { Zahl, Slider, Toggle, Field, Stepper, GrosseZeile } from "@/components/Eingaben";
 import JokerSondermenue, { jokerZeileStand } from "@/components/JokerSondermenue";
+import ModifikatorenSondermenue, { modifikatorenStand } from "@/components/ModifikatorenSondermenue";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
@@ -86,7 +85,6 @@ export default function Spielerstellung() {
   const [mischenOffen, setMischenOffen] = useState(false);
   // Die Spielauswahl ist KEIN lokaler Zustand mehr, sondern Teil des
   // Regelwerks — nur so reist sie im Creator-Code mit.
-  const [eigeneVereine, setEigeneVereine] = useState(false);
   // Welche der großen Zeilen ist aufgeklappt (Andis Aufbau vom 07.08.2026)?
   // Bewusst EINE auf einmal: auf 390 px schiebt eine offene Team-Liste alles
   // andere so weit nach unten, dass zwei offene Bereiche nicht mehr in einen
@@ -102,6 +100,7 @@ export default function Spielerstellung() {
   // Betippungsauswahl nichts zu tun — gemeinsam geführt würde ein Klick
   // auf „Wettbewerbe“ das gerade geöffnete Joker-Menü zuklappen.
   const [jokerOffen, setJokerOffen] = useState(false);
+  const [modsOffen, setModsOffen] = useState(false);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -148,12 +147,10 @@ export default function Spielerstellung() {
       patchJoker({ modus: letzterModus });
     }
   };
-  const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
   const patchSaisonform = (p) => { touched(); setRules((r) => ({ ...r, saisonform: { ...(r.saisonform || DEFAULT_RULES.saisonform), ...p } })); };
   const patchTippEinfluss = (p) => { touched(); setRules((r) => ({ ...r, tippEinfluss: { ...(r.tippEinfluss || DEFAULT_RULES.tippEinfluss), ...p } })); };
   const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
-  const patchBigGame = (p) => { touched(); setRules((r) => ({ ...r, bigGame: { ...r.bigGame, ...p } })); };
   const setSaison = (saison) => { touched(); setRules((r) => ({ ...r, saison })); };
   // Faktor eines Vereins durch feste Stufen weiterdrehen. 1 = kein
   // Modifikator und fliegt aus der Liste, damit das Regelwerk klein bleibt.
@@ -169,19 +166,6 @@ export default function Spielerstellung() {
   // Feste Stufen statt +0,1: Mit Dämpfern wären es sonst 17 Antipper für einen
   // vollen Durchlauf. Sechs benannte Stufen sind bedienbar, liegen alle auf dem
   // 0,05-Raster, und wer es genauer will, hat den Regler in der Profi-Stufe.
-  const TEAM_STUFEN = [1.25, 1.5, 2, 0.75, 0.5, 1];
-  const cycleTeamFaktor = (team) => {
-    touched();
-    setRules((r) => {
-      const teams = { ...(r.teamMods?.teams || {}) };
-      const jetzt = teams[team] ?? 1;
-      const i = TEAM_STUFEN.indexOf(jetzt);
-      const naechster = TEAM_STUFEN[(i + 1) % TEAM_STUFEN.length];
-      if (naechster !== 1) teams[team] = naechster; else delete teams[team];
-      return { ...r, teamMods: { ...r.teamMods, teams } };
-    });
-  };
-
   // Empfohlene Anzeige-Skalierung — hängt am Regelwerk inkl. Joker-Faktor.
   const empfohleneSkala = useMemo(() => recommendedDisplayScale(rules), [rules]);
 
@@ -410,14 +394,10 @@ export default function Spielerstellung() {
   const L = RULE_LIMITS;
   const g = rules.markets.goals;
   const j = rules.joker;
-  const tm = rules.teamMods || { derbyFaktor: 1, teams: {} };
-  const tmTeams = tm.teams || {};
-  const tmAktiv = tm.derbyFaktor > 1 || Object.keys(tmTeams).length > 0;
   const au = rules.aufholen || DEFAULT_RULES.aufholen;
   const sf = rules.saisonform || DEFAULT_RULES.saisonform;
   const te = rules.tippEinfluss || DEFAULT_RULES.tippEinfluss;
   const ve = rules.versaeumnis || DEFAULT_RULES.versaeumnis;
-  const bg = rules.bigGame || DEFAULT_RULES.bigGame;
   // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
   const auStufe = STAERKE_STUFEN.find((s) => s.staerke === au.staerke && s.schwelle === au.schwelle)?.key ?? "custom";
 
@@ -868,17 +848,6 @@ export default function Spielerstellung() {
             </>
           )}
 
-          {/* Außenseiter nach Tabelle (Andi, 21.08.2026). Steht neben dem
-              Alleingang, weil beides Modifikatoren sind, die auf denselben
-              additiven Topf einzahlen und von `modCap` gedeckelt werden. */}
-          {stufe === "profi" && (
-            <>
-              <SectionTitle>Außenseiter nach Tabelle</SectionTitle>
-              <TabellenBonus rules={rules}
-                onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
-            </>
-          )}
-
           {/* Alleingang-Bonus (Andis Stadt-Land-Fluss-Mechanik, 09.08.2026).
               In Stufe 2 beantwortet die Klartext-Frage „Lohnt sich ein
               Alleingang?" dasselbe in vier Bündeln; hier stehen alle
@@ -1161,112 +1130,28 @@ export default function Spielerstellung() {
               onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
           </GrosseZeile>
 
-          {/* Team- & Derby-Regeln */}
-          <SectionTitle>Team- &amp; Derby-Regeln</SectionTitle>
-          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Gilt für <strong>alle</strong> in der Runde (anders als der Joker, den jeder
-            selbst setzt). Traditionsduelle oder bestimmte Vereine zählen mehr.
-          </p>
+          {/* 🔴 MODIFIKATOREN — eine Zeile für das, was für ALLE gilt
+              (zweites Sondermenü nach dem Joker, Andi EB2/EB4).
 
-          {!premium ? (
-            <div style={{
-              background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`,
-              borderRadius: 14, padding: "13px 15px", marginBottom: 8,
-            }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
-              <p style={{ fontSize: 12, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
-                Es genügt, wenn <strong>du als Admin</strong> Premium hast.
-              </p>
-            </div>
-          ) : (
-            <>
-              <Slider label="Derby zählt" value={tm.derbyFaktor} {...L.teamMods.derbyFaktor} step={reglerSchritt(rules, L.teamMods.derbyFaktor)} pfad="teamMods.derbyFaktor"
-                onChange={(v) => patchTeamMods({ derbyFaktor: v })}
-                fmt={fmtFaktorOderAus}
-                hint="Traditionsduelle (Revierderby, Klassiker, Nordderby …) zählen mehr. 1,0 = aus." />
+              Zusammengefasst ist hier kein Sammelsurium ähnlicher Regler,
+              sondern EIN Rechenweg: Derby, einzelne Vereine, Big Game und der
+              Tabellen-Bonus zahlen in DENSELBEN additiven Topf und teilen sich
+              DENSELBEN Deckel. Vorher standen sie an drei Stellen des Screens —
+              man verstellte einen und verschob die anderen mit, ohne es zu
+              sehen. Der Deckel steht deshalb am Ende der Zeile, nicht bei
+              einem der vier.
 
-              <Toggle label="Einzelne Vereine hervorheben" on={eigeneVereine}
-                onChange={(on) => { setEigeneVereine(on); if (!on) patchTeamMods({ teams: {} }); }} />
-              {eigeneVereine && (
-                <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
-                  <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 8px", lineHeight: 1.4 }}>
-                    Antippen wandert durch ×1,25, ×1,5, ×2, ×0,75, ×0,5 und zurück auf „aus".
-                    Werte unter ×1 dämpfen den Verein: er zählt dann weniger, nicht mehr.
-                  </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {ALL_TEAMS.map((team) => {
-                      const f = tmTeams[team] ?? 1;
-                      // Ein DÄMPFER (unter 1) ist genauso „an" wie ein
-                      // Aufschlag — vorher galt nur `f > 1`, wodurch ein
-                      // gedämpfter Verein aussah wie ein unberührter.
-                      const an = f !== 1;
-                      const ton = f > 1 ? C.akzent : C.indigo;
-                      return (
-                        <button key={team}
-                          onClick={() => cycleTeamFaktor(team)}
-                          title={f > 1 ? "zählt mehr" : f < 1 ? "zählt weniger" : "kein Modifikator"}
-                          style={{
-                            cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
-                            background: an ? `${ton}22` : C.surface, color: an ? ton : C.muted,
-                            border: `1px solid ${an ? ton + "66" : C.line}`,
-                          }}>
-                          {team}{an && (
-                            // ⚠️ Zwei Nachkommastellen: mit `toFixed(1)` würde
-                            // aus einem Dämpfer von 0,75 die Anzeige „×0.8".
-                            <strong style={{ marginLeft: 5, fontFamily: MONO }}>{fmtFaktor(f)}</strong>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Big Game: dieselbe Aussage wie ein Derby („dieses Spiel zählt
-                  mehr"), nur wird es erst WÄHREND der Saison bestimmt. Deshalb
-                  steht es hier und nicht in einem eigenen Abschnitt. */}
-              <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 12, marginBottom: 10 }}>
-                <Toggle label="Big Game — das Topspiel des Spieltags" on={bg.enabled}
-                  onChange={(on) => patchBigGame({ enabled: on })} />
-                <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 0", lineHeight: 1.45 }}>
-                  Ein Derby steht vorher fest, „Erster gegen Zweiter am 31. Spieltag"
-                  nicht. Beim Öffnen jedes Spieltags sucht die App das brisanteste
-                  Spiel — aus Tabellenzone, Rangnähe, Quoten und Derby — und hebt es
-                  hervor. Es steht <strong>fest, bevor getippt wird</strong>, und wird
-                  begründet angezeigt.
-                </p>
-
-                {bg.enabled && (
-                  <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginTop: 10 }}>
-                    <Slider label="Big Game zählt zusätzlich" value={bg.aufschlag}
-                      {...BIGGAME_LIMITS.aufschlag} step={reglerSchritt(rules, BIGGAME_LIMITS.aufschlag)}
-                      onChange={(v) => patchBigGame({ aufschlag: v })}
-                      fmt={(x) => `+${zahl(x)} → ${fmtFaktor(1 + x)}`}
-                      hint="Fließt in denselben Topf wie Derby und Team-Faktoren — addiert, nicht multipliziert." />
-                    <Slider label="Mindest-Brisanz" value={bg.minSpannung}
-                      {...BIGGAME_LIMITS.minSpannung} step={reglerSchritt(rules, BIGGAME_LIMITS.minSpannung)}
-                      onChange={(v) => patchBigGame({ minSpannung: v })}
-                      fmt={(x) => x.toFixed(2)}
-                      hint="Reißt kein Spiel diese Schwelle, hat der Spieltag kein Big Game — besser als ein aufgeblasenes Mittelfeldduell." />
-                  </div>
-                )}
-              </div>
-
-              {/* Deckel — erscheint erst, wenn es überhaupt etwas zu deckeln gibt */}
-              {(tmAktiv || j.enabled || bg.enabled) && (
-                <>
-                  <Slider label="Deckel für alle Modifikatoren" value={rules.modCap} {...L.modCap} step={reglerSchritt(rules, L.modCap)} pfad="modCap"
-                    onChange={(v) => patch({ modCap: v })} fmt={fmtFaktor}
-                    hint="Obergrenze, wenn Joker und Team-Regeln zusammentreffen." />
-                  <p style={{ fontSize: 11, color: C.muted, marginTop: -2, marginBottom: 8, lineHeight: 1.45 }}>
-                    Modifikatoren werden <strong>addiert, nicht multipliziert</strong>: Joker ×2,0
-                    und Derby ×1,5 ergeben <strong>×2,5</strong> (nicht ×3,0). Das bleibt
-                    berechenbar — der Deckel fängt den Rest ab.
-                  </p>
-                </>
-              )}
-            </>
-          )}
+              ⚠️ Der Alleingang-Bonus bleibt bewusst DRAUSSEN: er ist ein
+              Punkte-Kanal (Ebene 3) mit eigenem Deckel, kein Modifikator. */}
+          <SectionTitle>Modifikatoren</SectionTitle>
+          <GrosseZeile
+            icon="⚖️" titel="Modifikatoren" unter="Derby · Vereine · Big Game · Außenseiter"
+            wert={modifikatorenStand(rules)}
+            offen={modsOffen} onClick={() => setModsOffen((o) => !o)}
+          >
+            <ModifikatorenSondermenue rules={rules} premium={premium}
+              onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
+          </GrosseZeile>
 
           {/* Aufhol-Mechanismus */}
           <SectionTitle>Anschluss halten</SectionTitle>

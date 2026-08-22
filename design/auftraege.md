@@ -139,7 +139,7 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | Nr | Ansage | Stand | Beleg / was fehlt |
 |---|---|---|---|
 | EB1 | **Nur die Detail-Version** — kein Umschalten mehr zwischen Einfach und Profi | ⏳ | Grund von Andi: „wir können schnell Fehler machen, wenn zwischen den Ebenen geswitched wird“. Hebt ST1/ST2/ST7 auf |
-| EB2 | Verfeinerungen je Einstellung in ein **eigenes Sondereinstellungs-Menü**, wie bei den Mannschaften | ⏳ | Beispiel von ihm: bei Joker „wie und wann sie verteilt werden“. Das Muster gibt es schon — `GrosseZeile` klappt auf, `LigaSonderregeln` ist die Vorlage |
+| EB2 | Verfeinerungen je Einstellung in ein **eigenes Sondereinstellungs-Menü**, wie bei den Mannschaften | 🔨 | **Joker ist gebaut** (`JokerSondermenue.jsx`, `4030f5c`): eine Zeile, dahinter fünf Karten nach der Frage statt nach dem Regel-Block; `Spielerstellung.jsx` 2386 → 1761 Zeilen. Im Browser auf 375×812 durchgeklickt, kein Tippziel unter 44 px. ⏳ Offen sind die übrigen Bereiche (Modifikatoren, Saison-Wetten, Wertung, Betippungsauswahl) |
 | EB3 | Trotzdem bedienbar **ohne alles durchzulesen und einzeln einzustellen** | ⏳ | Damit werden die Voreinstellungen wichtiger, nicht unwichtiger: sie tragen die eine Ansicht |
 | EB4 | **Reihenfolge des Umbaus**: erst die Sondermenüs, dann der Umschalter weg | ⏳ | ⚠️ Andersherum entsteht ein Zwischenzustand, in dem alles flach auf einer Seite liegt — schlechter als heute |
 | EB5 | „Klassische Playlist“ als Voreinstellung, *„so wie ich mir eine Tipprunde erstellen würde“* | ⏳ | ⛔ Ausdrücklich **gemeinsam am Ende, mit dem Balancing** |
