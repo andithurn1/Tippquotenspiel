@@ -39,13 +39,13 @@ später; die Sonderregeln je Wettbewerb sind ausdrücklich noch offen.
 
 | Nr | Ansage | Stand | Beleg / was fehlt |
 |---|---|---|---|
-| ST1 | **Nur noch ZWEI Anzeigeebenen** (Einfach, Profi) — „Anpassen“ fällt weg | ✅ | 1 Bedingung `anpassen`→`einfach` (die vier großen Fragen sitzen jetzt in Einfach — „wenige und nur die wichtigsten Regler“), 3× `!== einfach`→`=== profi`. Build, 2141 Tests, `stufen`, `anzeige`, `sicht` grün |
-| ST2 | **Die Reihenfolge der Auswahlen ist in beiden Ebenen gleich** | ✅ | Im Browser gemessen: die Abschnittsfolge ist über **19 Abschnitte** identisch, danach hat Profi nur MEHR (167 statt 22). Auch die Überschrift springt nicht mehr |
+| ST1 | ~~Nur noch ZWEI Anzeigeebenen~~ ⬆️ **überholt am 22.08.2026: nur noch EINE** | ⛔ | 1 Bedingung `anpassen`→`einfach` (die vier großen Fragen sitzen jetzt in Einfach — „wenige und nur die wichtigsten Regler“), 3× `!== einfach`→`=== profi`. Build, 2141 Tests, `stufen`, `anzeige`, `sicht` grün |
+| ST2 | ~~Reihenfolge in beiden Ebenen gleich~~ ⬆️ **gegenstandslos — es gibt nur noch eine Ebene** | ⛔ | Im Browser gemessen: die Abschnittsfolge ist über **19 Abschnitte** identisch, danach hat Profi nur MEHR (167 statt 22). Auch die Überschrift springt nicht mehr |
 | ST3 | Reihenfolge: **Variante → Anzeigeebene → Voreinstellungen** | ✅ | `VariantenWahl.jsx` steht als erste Frage über den Voreinstellungen, in BEIDEN Ansichten. Im Browser geprüft: Variantenfrage bei Zeichen 355, erste Voreinstellung bei 839. Umschalten und Zurückschalten getestet |
 | ST4 | **Thermometer rechts neben den Voreinstellungen** | 🔨 | `BalanceAmpel` ist gebaut, hängt aber in `Spielerstellung.jsx:849` **innerhalb** von `stufe !== "einfach"` — in der einfachen Ansicht also unsichtbar, genau dort, wo Andi sie haben will |
 | ST5 | **Kopfzeile: Bibliothek · Gamemode · GameCode einsetzen** | ⏳ | GameCode-Feld existiert, liegt aber nicht in einer Kopfzeile |
 | ST6 | Texte fehlerfrei | ✅ | `design/entwuerfe/texte-teil1.md` — zwei Stellen inhaltlich angemerkt, nicht still geändert |
-| ST7 | **Anzeige-Umschalter dauerhaft oben rechts** | ✅ | `AnsichtSchalter.jsx`, in der klebenden Kopfzeile neben „Menü“. Gemessen bei 375×812: nach 900 px Scrollen weiterhin bei y=5, Tippziele 44 px, rechtsbündig |
+| ST7 | ~~Anzeige-Umschalter oben rechts~~ ⬆️ **fällt weg, sobald die Sondermenüs stehen** | ⛔ | `AnsichtSchalter.jsx`, in der klebenden Kopfzeile neben „Menü“. Gemessen bei 375×812: nach 900 px Scrollen weiterhin bei y=5, Tippziele 44 px, rechtsbündig |
 | ST8 | **Hinweis im Text** auf den Umschalter | ✅ | steht dort, wo der Umschalter vorher saß |
 | ST9 | Später **Pfeilanimation auf den Schalter**, als Teil eines kleinen Tutorials zur Spielerstellung | ⏳ | noch nichts gebaut. Hängt an B1/B3 (Bewegung) |
 
@@ -133,6 +133,16 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | TI6 | **Kombi-Bonus, wenn Ergebnis UND Torschütze aufgehen** | ⏳ | Als B16 ausgearbeitet. Heute addieren sich beide Teile nur — das Zusammentreffen wird nicht belohnt, obwohl es das Seltenere ist |
 | TI7 | Der Bonus wird aus der **Torschützenquote abgeleitet**, nicht festgelegt (Andi, 22.08.2026) | ⏳ | Mechanik in B16: niedrige Quote → kleiner Aufschlag, hohe Quote → großer. „Bei nem 5:1 ist klar, dass Kane trifft“ — ein Pauschalbetrag belohnte das Naheliegende |
 | TI8 | Mathematisches Modell + Hilfe, wie ein Admin das einstellt | ⏳ | ⛔ **Ausdrücklich Balancing, ausdrücklich am Ende** (Andi, 22.08.2026). Hier nur vermerkt, damit es nicht verlorengeht |
+
+## Eine Ansicht statt zwei (22.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| EB1 | **Nur die Detail-Version** — kein Umschalten mehr zwischen Einfach und Profi | ⏳ | Grund von Andi: „wir können schnell Fehler machen, wenn zwischen den Ebenen geswitched wird“. Hebt ST1/ST2/ST7 auf |
+| EB2 | Verfeinerungen je Einstellung in ein **eigenes Sondereinstellungs-Menü**, wie bei den Mannschaften | ⏳ | Beispiel von ihm: bei Joker „wie und wann sie verteilt werden“. Das Muster gibt es schon — `GrosseZeile` klappt auf, `LigaSonderregeln` ist die Vorlage |
+| EB3 | Trotzdem bedienbar **ohne alles durchzulesen und einzeln einzustellen** | ⏳ | Damit werden die Voreinstellungen wichtiger, nicht unwichtiger: sie tragen die eine Ansicht |
+| EB4 | **Reihenfolge des Umbaus**: erst die Sondermenüs, dann der Umschalter weg | ⏳ | ⚠️ Andersherum entsteht ein Zwischenzustand, in dem alles flach auf einer Seite liegt — schlechter als heute |
+| EB5 | „Klassische Playlist“ als Voreinstellung, *„so wie ich mir eine Tipprunde erstellen würde“* | ⏳ | ⛔ Ausdrücklich **gemeinsam am Ende, mit dem Balancing** |
 
 ## Betrieb
 

@@ -193,6 +193,53 @@ Oberfläche zeigen („zuletzt geladen: …"), sonst wirkt es wie ein Fehler.
 
 ---
 
+## 🔴 NUR NOCH EINE ANSICHT — die Detail-Version (Andi, 22.08.2026)
+
+Wörtlich: *„ich denke wir sollten generell nur die Detail-Version machen, und
+dabei halt die Verfeinerung für jede Einstellung … unter einem eigenen
+Sondereinstellungsmenü wie bei den Mannschaften … weil glaube wir können
+schnell Fehler machen, wenn zwischen den Ebenen Einfach und Detailliert
+geswitched wird."*
+
+**Das hebt die Entscheidung vom 20.08.2026 auf** (zwei Ansichten, gleiche
+Reihenfolge). Es gibt künftig **eine** Ansicht.
+
+### Die Tiefe kommt aus VERSCHACHTELUNG, nicht aus einem Umschalter
+
+Statt „mehr oder weniger sichtbar" gilt: jede Einstellung steht als **eine
+Zeile** da, und ihre Feinheiten liegen hinter einem eigenen
+**Sondereinstellungs-Menü** — genau wie die Sonderregeln je Mannschaft.
+
+| | Zeile | dahinter im Sondermenü |
+|---|---|---|
+| Joker | „Joker: an · Faktor 1,5" | wie und wann sie verteilt werden, Ökonomie, Grundform, Limitklassen |
+| Ereignisse | „Ereignisse: 3 aktiv" | Auslöser, Zeitraum, Höchstzahl je Saison |
+| Wettbewerbe | „3 Ligen · 18 Teams" | Sonderregeln je Liga (gibt es schon) |
+
+🔴 **Andis zweite Bedingung, die genauso wichtig ist:** *„weiterhin sollts so
+sein, dass man auch ohne viel durchzulesen und alles einzeln einstellen muss."*
+
+Eine Ansicht heißt also NICHT „alle 180 Regler auf einer Seite". Es heißt:
+**die Voreinstellung trägt**, und wer es genauer will, klappt eine Zeile auf.
+Damit werden die Voreinstellungen wichtiger, nicht unwichtiger — sie sind das,
+was die eine Ansicht bedienbar hält.
+
+⚠️ **Die Reihenfolge des Umbaus ist nicht beliebig.** Erst die Sondermenüs,
+DANN der Umschalter weg. Andersherum entstünde ein Zwischenzustand, in dem
+alles flach auf einer Seite liegt — schlechter als heute.
+
+⚠️ **Was dadurch hinfällig wird:** `AnsichtSchalter.jsx` (gebaut am
+20.08.2026), der Zustand `stufe` in `Spielerstellung.jsx` und die Regel ST2
+(„gleiche Reihenfolge in beiden Ansichten"). Kein Verlust an Mechanik — die
+Regler bleiben alle, sie ziehen nur um.
+
+### Die klassische Playlist
+
+Andis Voreinstellung, *„so wie ich mir eine Tipprunde erstellen würde"* —
+zusammen mit dem Balancing am Ende. ⏳ Nicht vorher.
+
+---
+
 ## Die sieben Ebenen — mehr gibt es nicht
 
 Jeder Einfluss im Spiel gehört in **genau eine** davon. Wer einen neuen baut
