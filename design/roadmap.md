@@ -56,24 +56,32 @@ verschachtelte Zeilen (wenn es Unterbereiche sind). Der gemeinsame Deckel
 gehört ans Ende, nicht zu einem der Teile. Ein Bereich, der in einem anderen
 Menü sitzt, bekommt einen **Verweis statt einer zweiten Kopie**.
 
-## 🔍 Zwei stehende Abnahme-Befunde (gemessen 22.08.2026)
+## 🔍 Die zwei „Befunde" vom 22.08.2026 — beide waren schon bekannt
 
-Beide **älter als der Sondermenü-Umbau** — auf dem Stand davor gegengeprüft und
-dort identisch. Sie stehen hier, damit sie nicht bei der nächsten Messung als
-neuer Schaden gelesen werden.
+🔴 **Lehre für den nächsten Durchgang: erst nachsehen, ob eine Meldung schon
+erklärt ist, dann melden.** Beide standen hier zuerst als offene Befunde, und
+beide waren beim Nachsehen keine.
 
-1. **`npm run stufen` meldet eine Lücke:** `wettbewerbe` ist nur in der
-   Profi-Ansicht erreichbar und trägt keine Begründung in `NUR_PROFI`.
-   Zwei mögliche Auflösungen: entweder ein einfacher Regler / Charakter fasst
-   das Feld an, oder es bekommt seinen Begründungssatz. **Nicht einfach
-   begründen, ohne zu prüfen, ob es nicht doch in Stufe 2 gehört** — genau
-   dafür ist die Lücke da.
-2. **`npm run greift` meldet zwei Blöcke als „bewegt nichts":** `bigGame` und
-   `markets (Picks je Team)`. Das ist die teuerste Sorte Befund (eine
-   Einstellung, die ins Leere läuft — Baukasten-Grundsatz), aber es kann auch
-   am Messfall liegen: `bigGame` hängt an `snap.bigGameWert`, den der Messfall
-   möglicherweise gar nicht setzt. **Erst den Messfall prüfen, dann die
-   Mechanik** — andersherum sucht man einen Fehler, den es nicht gibt.
+1. **`npm run stufen`: `wettbewerbe` nur in der Detailansicht, ohne
+   Begründung.** Das ist ABSICHT, und ein Test hält es fest
+   (`stufenAbdeckung.test.js`: „die eine verbliebene Lücke ist `wettbewerbe` —
+   und die ist bewusst vertagt"). Die Wettbewerbs-Gewichte gehören in den
+   Gewichtungs-Durchgang der Endphase; sie vorher mit erfundenen Stufen zu
+   belegen wäre Balance-Arbeit an der falschen Stelle.
+   ⚠️ Ich hatte am 22.08. eine Begründung in `NUR_PROFI` ergänzt und die Lücke
+   damit geschlossen — der Test hat es sofort gemeldet, die Änderung ist
+   zurückgenommen. **Die Lücke soll sichtbar bleiben.**
+2. **`npm run greift`: `bigGame` und `markets (Picks je Team)` „bewegen
+   nichts".** Keine toten Einstellungen, sondern Grenzen des Messfalls — und
+   das Werkzeug schreibt es selbst daneben („└ erklärt: …"). Big Game braucht
+   einen Tabellenstand, den es am 1. Spieltag nicht gibt; die Picks je Team
+   brauchen ein Spiel mit mindestens drei plausiblen Schützen.
+
+   ⏳ **Was daran trotzdem offen bleibt:** eine erklärte Blindstelle ist immer
+   noch eine Blindstelle. `bigGame` ist von keiner Abnahme gedeckt — wer die
+   Mechanik bricht, merkt es nicht. Der Messfall müsste einen SPÄTEREN Spieltag
+   benutzen (die simulierte Saison trägt alle Ergebnisse vorab, ein
+   Tabellenstand wäre also da). Lohnt sich, ist aber kein Fehler im Spiel.
 
 ## ⛔ ENDPHASE — hier steht, was ERST GANZ AM SCHLUSS drankommt
 
