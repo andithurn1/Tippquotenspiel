@@ -18,8 +18,9 @@ import { Slider, Toggle, Field, GrosseZeile } from "@/components/Eingaben";
 //  Anschluss-Bonus, Streicher und Ersatz-Tipp greifen alle NICHT in die
 //  Wertung eines Spiels ein, sondern in den Stand — Ebene 4 im Vokabular.
 //  Genau deshalb sieht man ihre Wechselwirkung nur, wenn sie beieinander
-//  stehen: Streicher OHNE „nur getippte" hebeln die Versäumnis-Regel aus,
-//  und der Anschluss-Bonus verschiebt sich mit jedem gestrichenen Spieltag.
+//  stehen: die Streicher werfen die SCHWÄCHSTEN Wertungen weg — und das sind
+//  die Ersatz-Tipps, die die Versäumnis-Regel gerade vergeben hat. Ohne
+//  „Keine Ersatz-Tipps streichen" heben sich die beiden gegenseitig auf.
 //
 //  ⚠️ Reihenfolge ist Absicht: erst wer zurückliegt (Anschluss), dann was
 //  wegfallen darf (Streicher), dann was passiert, wenn jemand gar nicht
@@ -118,7 +119,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
       </GrosseZeile>
 
       {/* ── Streicher & Saisonverlauf ── */}
-      <GrosseZeile icon="📆" titel="Streicher &amp; Saisonverlauf" unter="was ein einzelner Spieltag wiegt"
+      <GrosseZeile icon="📆" titel="Streicher &amp; Saisonverlauf" unter="was ein einzelnes Spiel wiegt"
         wert={sf.streich > 0 || sf.kurve !== "flach"
           ? [sf.streich > 0 ? `${sf.streich} Streicher` : null, sf.kurve !== "flach" ? KURVE[sf.kurve]?.label : null].filter(Boolean).join(" · ")
           : "gleichmäßig"}
@@ -128,7 +129,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
           auf die fertigen Spieltagspunkte — die Wertung eines Spiels bleibt unberührt.
         </p>
 
-        <Field label="Streichresultate">
+        <Field label="Streichresultate — die schwächsten EINZELSPIELE zählen nicht">
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {[0, 1, 2, 3, 5].map((n) => {
               const on = sf.streich === n;
@@ -137,26 +138,28 @@ export default function VerlaufSondermenue({ rules, onChange }) {
                   ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
                   background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                   border: `1px solid ${on ? C.mint + "66" : C.line}`,
-                }}>{n === 0 ? "keine" : `${n} streichen`}</button>
+                }}>{n === 0 ? "keine" : `${n} Spiele`}</button>
               );
             })}
           </div>
         </Field>
         <p style={{ fontSize: 11, color: C.muted, marginTop: 2, marginBottom: 10, lineHeight: 1.4 }}>
-          Die schwächsten Spieltage zählen nicht — verzeiht einen Ausrutscher oder
-          einen Urlaub. <strong>Gemessen der einzige milde Ausgleich hier</strong>:
-          senkt den Vorsprung des Ersten leicht, ohne das Können zu entwerten.
+          Die schwächsten <strong>Einzelspiele</strong> zählen nicht — verzeiht einen
+          Fehlgriff. Ein ganzer Spieltag fällt dabei nie weg: von einem Spieltag mit
+          mehreren Spielen bleibt immer eines stehen. <strong>Gemessen der einzige
+          milde Ausgleich hier</strong>: senkt den Vorsprung des Ersten leicht, ohne
+          das Können zu entwerten.
         </p>
 
         {sf.streich > 0 && (
           <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 10 }}>
-            <Toggle label="Nur Spieltage streichen, an denen getippt wurde"
+            <Toggle label="Keine Ersatz-Tipps streichen"
               on={sf.nurGetippte}
               onChange={(on) => setzeSaisonform({ nurGetippte: on })} />
             <p style={{ fontSize: 11, color: sf.nurGetippte ? C.muted : C.coral, marginTop: 2, lineHeight: 1.4 }}>
               {sf.nurGetippte
-                ? "Ein vergessener Spieltag bleibt stehen und wird nicht verschenkt."
-                : "⚠️ Aus: ein vergessener Spieltag wird als Nullrunde gestrichen — Auslassen kostet dann nichts mehr und arbeitet gegen die Versäumnis-Regel unten."}
+                ? "Ein Ersatz-Tipp aus der Versäumnis-Regel bleibt stehen. Ein gar nicht getippter Spieltag hat ohnehin keine Spiele, die gestrichen werden könnten."
+                : "⚠️ Aus: auch Ersatz-Tipps sind Streichkandidaten — und weil sie die schwächsten Wertungen tragen, fliegen genau sie zuerst raus. Vergessen kostet dann fast nichts mehr."}
             </p>
           </div>
         )}
@@ -298,9 +301,9 @@ export default function VerlaufSondermenue({ rules, onChange }) {
           fontSize: 12, color: C.muted, lineHeight: 1.5,
         }}>
           <strong style={{ color: C.coral }}>Diese beiden arbeiten gegeneinander:</strong> die
-          Streicher entfernen einen vergessenen Spieltag als Nullrunde, obwohl der
-          Ersatz-Tipp ihn gerade auffangen soll. Wer beides will, schaltet oben
-          <strong> „Nur Spieltage streichen, an denen getippt wurde"</strong> ein.
+          Streicher werfen zuerst die schwächsten Wertungen weg — und das sind die
+          Ersatz-Tipps, die die Versäumnis-Regel gerade vergeben hat. Wer beides will,
+          schaltet oben <strong>„Keine Ersatz-Tipps streichen"</strong> ein.
         </div>
       )}
     </div>

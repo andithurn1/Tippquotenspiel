@@ -314,7 +314,7 @@ export const REGLER = [
         // was es soll: 6 Streicher senken den Vorsprung von 3,66 auf 3,45 %
         // bei nur 1,5 Punkten weniger Können-Ausdruck (siehe saisonform.js).
         // Kein Aufhol-Bonus — der käme oben drauf.
-        beschreibung: "Die zwei schlechtesten Spieltage werden gestrichen. Sonst ändert sich nichts.",
+        beschreibung: "Die zwei schwächsten Einzelspiele werden gestrichen. Sonst ändert sich nichts.",
         werte: {
           aufholen: { enabled: false, staerke: 0.2, schwelle: 0.2, betrifft: "unteres-drittel" },
           saisonform: { kurve: "flach", staerke: 1.5, streich: 2, nurGetippte: true },

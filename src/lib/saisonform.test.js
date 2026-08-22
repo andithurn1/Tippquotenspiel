@@ -105,76 +105,129 @@ describe("Ein früher Vorsprung schmilzt", () => {
   });
 });
 
-describe("Streichresultate", () => {
-  const saison = [s("a", 100), s("b", 10), s("c", 80), s("d", 5), s("e", 60)];
+// Ein SPIEL, wie es `punkteJeSpiel` (engine.js) liefert. Seit 22.08.2026 die
+// Einheit, die gestrichen wird — nicht mehr der Spieltag.
+const sp = (key, wert, opt = {}) => ({
+  key, wert, ersatz: opt.ersatz === true, matchId: opt.matchId ?? `${key}-${wert}`,
+});
 
-  it("streicht die schlechtesten und nur so viele wie eingestellt", () => {
+describe("Streichresultate", () => {
+  // Fünf Spieltage mit je zwei Spielen. Die Spieltagssumme ist die Summe
+  // seiner Spiele — so, wie sie auch aus dem Verlauf käme.
+  const saison = [s("a", 100), s("b", 10), s("c", 80), s("d", 5), s("e", 60)];
+  const spiele = [
+    sp("a", 60, { matchId: "a1" }), sp("a", 40, { matchId: "a2" }),
+    sp("b", 8, { matchId: "b1" }), sp("b", 2, { matchId: "b2" }),
+    sp("c", 50, { matchId: "c1" }), sp("c", 30, { matchId: "c2" }),
+    sp("d", 4, { matchId: "d1" }), sp("d", 1, { matchId: "d2" }),
+    sp("e", 35, { matchId: "e1" }), sp("e", 25, { matchId: "e2" }),
+  ];
+
+  it("streicht die schlechtesten EINZELSPIELE, nicht ganze Spieltage", () => {
+    const r = anwenden(saison, { streich: 2 }, spiele);
+    // Die beiden schwächsten Spiele sind d2 (1) und b2 (2) — NICHT der ganze
+    // Spieltag „d" (5 Punkte), wie es bis zum 22.08.2026 war.
+    expect(r.gestrichen.sort()).toEqual(["b2", "d2"]);
+    expect(r.total).toBe(255 - 3);
+  });
+
+  it("ohne Spiele-Liste wird gar nicht gestrichen", () => {
+    // Lieber keine Streicher als heimlich wieder ganze Spieltage: wer die
+    // Liste nicht mitgibt (heute `balanceSim.js`), bekommt nur die Kurve.
     const r = anwenden(saison, { streich: 2 });
-    expect(r.gestrichen.sort()).toEqual(["b", "d"]);
-    expect(r.total).toBe(240);
+    expect(r.gestrichen).toEqual([]);
+    expect(r.total).toBe(255);
   });
 
   it("null streichen heißt nichts streichen", () => {
-    expect(anwenden(saison, { streich: 0 }).gestrichen).toEqual([]);
+    expect(anwenden(saison, { streich: 0 }, spiele).gestrichen).toEqual([]);
   });
 
-  it("es bleibt immer mindestens ein Spieltag stehen", () => {
-    // Sonst stünden am 2. Spieltag einer Runde mit „3 Streichern" alle bei
-    // null, und die Tabelle wäre so lange leer, bis genug Spieltage zusammen
-    // sind. Ein Zwischenstand, den es aus Regelgründen nicht gibt, sieht wie
-    // ein Fehler aus — und der Spieler kann nicht wissen, dass er keiner ist.
-    const r = anwenden(saison, { streich: 8 });
-    expect(r.gestrichen).toHaveLength(4);
-    expect(r.total).toBe(100);          // der beste Spieltag bleibt
-    const zwei = anwenden([s("a", 40), s("b", 10)], { streich: 3 });
+  it("ein Spieltag mit mehreren Spielen fällt nie ganz weg", () => {
+    // Andis Vorgabe wörtlich: „nie den gesamten Spieltag aussetzen". Bei
+    // acht Streichern auf fünf Spieltage à zwei Spielen könnte das Kontingent
+    // vier Spieltage komplett räumen — von jedem bleibt eines stehen.
+    const r = anwenden(saison, { streich: 8 }, spiele);
+    const jeSpieltag = {};
+    for (const g of r.gestrichen) jeSpieltag[g[0]] = (jeSpieltag[g[0]] ?? 0) + 1;
+    for (const anzahl of Object.values(jeSpieltag)) expect(anzahl).toBeLessThanOrEqual(1);
+    expect(r.total).toBeGreaterThan(0);
+  });
+
+  it("hat ein Spieltag nur EIN Spiel, darf es gestrichen werden", () => {
+    // Sonst stünde der Regler in einer Runde mit einem Spiel je Spieltag da
+    // und täte nichts — eine Einstellung, die ins Leere läuft.
+    const einzeln = [s("a", 100), s("b", 5), s("c", 80)];
+    const einzelSpiele = [sp("a", 100, { matchId: "a1" }), sp("b", 5, { matchId: "b1" }), sp("c", 80, { matchId: "c1" })];
+    const r = anwenden(einzeln, { streich: 1 }, einzelSpiele);
+    expect(r.gestrichen).toEqual(["b1"]);
+    expect(r.total).toBe(180);
+  });
+
+  it("es bleibt immer mindestens ein Spiel stehen", () => {
+    const zwei = anwenden([s("a", 40)], { streich: 3 }, [sp("a", 40, { matchId: "a1" })]);
     expect(zwei.total).toBe(40);
+    expect(zwei.gestrichen).toEqual([]);
   });
 
-  // ⚠️ Die Falle, an der dieses Feature sonst scheitert.
-  it("ein NICHT getippter Spieltag wird nicht verschenkt", () => {
-    // Sonst wird aus „ein Ausrutscher wird verziehen" ein „zwei Spieltage
-    // darfst du schwänzen" — und das arbeitet gegen das Versäumnis-Modul.
-    const mitLuecke = [s("a", 100), s("b", 0, false), s("c", 20)];
-    const sicher = anwenden(mitLuecke, { streich: 1 });
-    expect(sicher.gestrichen).toEqual(["c"]);   // nicht "b"
+  // ⚠️ Die Falle, an der dieses Feature sonst scheitert — in neuer Gestalt.
+  it("ein ERSATZ-Tipp wird nicht weggestrichen", () => {
+    // Ein verpasster Spieltag ist gar nicht erst Kandidat (er hat keine
+    // Spiele). Läuft aber `versaeumnis`, bekommt der Vergessliche gewertete
+    // Spiele mit Malus — und genau die wären die billigsten Kandidaten.
+    const tage = [s("a", 100), s("b", 3), s("c", 20)];
+    const mitErsatz = [
+      sp("a", 100, { matchId: "a1" }),
+      sp("b", 3, { matchId: "b1", ersatz: true }),
+      sp("c", 20, { matchId: "c1" }),
+    ];
+    const sicher = anwenden(tage, { streich: 1 }, mitErsatz);
+    expect(sicher.gestrichen).toEqual(["c1"]);   // nicht der Ersatz-Tipp
 
-    const offen = anwenden(mitLuecke, { streich: 1, nurGetippte: false });
-    expect(offen.gestrichen).toEqual(["b"]);
+    const offen = anwenden(tage, { streich: 1, nurGetippte: false }, mitErsatz);
+    expect(offen.gestrichen).toEqual(["b1"]);
   });
 
   it("gestrichen wird nach dem GEWICHTETEN Wert, nicht nach rohen Punkten", () => {
-    // Ein schwacher Spieltag mit hohem Gewicht kostet mehr als ein schwacher
-    // mit niedrigem — genau den will man loswerden.
+    // Ein schwaches Spiel an einem hoch gewichteten Spieltag kostet mehr als
+    // dasselbe an einem niedrig gewichteten — genau das will man loswerden.
     const liste = [s("frueh", 30), s("mitte", 30), s("spaet", 32)];
-    const r = anwenden(liste, { kurve: "endspurt", staerke: 2.5, streich: 1 });
-    // „spaet" hat mehr rohe Punkte, wiegt aber so viel mehr, dass es NICHT
-    // der kleinste Beitrag ist — gestrichen wird einer der frühen.
-    expect(r.gestrichen[0]).not.toBe("spaet");
+    const einzel = [sp("frueh", 30, { matchId: "f1" }), sp("mitte", 30, { matchId: "m1" }), sp("spaet", 32, { matchId: "s1" })];
+    const r = anwenden(liste, { kurve: "endspurt", staerke: 2.5, streich: 1 }, einzel);
+    expect(r.gestrichen[0]).not.toBe("s1");
   });
 
-  it("bei Gleichstand entscheidet der frühere — nicht die Eingabereihenfolge", () => {
-    const a = anwenden([s("x", 10), s("y", 10), s("z", 90)], { streich: 1 });
-    expect(a.gestrichen).toEqual(["x"]);
+  it("bei Gleichstand entscheidet das frühere — nicht die Eingabereihenfolge", () => {
+    const tage = [s("x", 10), s("y", 10), s("z", 90)];
+    const einzel = [sp("x", 10, { matchId: "x1" }), sp("y", 10, { matchId: "y1" }), sp("z", 90, { matchId: "z1" })];
+    expect(anwenden(tage, { streich: 1 }, einzel).gestrichen).toEqual(["x1"]);
   });
 
   it("ein Zwischenstand mit Streichern ist vorläufig, und das steht dran", () => {
-    expect(anwenden(saison, { streich: 1 }).vorlaeufig).toBe(true);
-    expect(anwenden(saison, { streich: 0 }).vorlaeufig).toBe(false);
+    expect(anwenden(saison, { streich: 1 }, spiele).vorlaeufig).toBe(true);
+    expect(anwenden(saison, { streich: 0 }, spiele).vorlaeufig).toBe(false);
   });
 });
 
 describe("Aufschlüsselung", () => {
-  it("jeder Spieltag nennt seinen Faktor und ob er zählte", () => {
-    const r = anwenden([s("a", 100), s("b", 10)], { kurve: "endspurt", staerke: 2, streich: 1 });
+  it("jeder Spieltag nennt seinen Faktor und was aus ihm wegfiel", () => {
+    const tage = [s("a", 100), s("b", 10)];
+    const einzel = [
+      sp("a", 60, { matchId: "a1" }), sp("a", 40, { matchId: "a2" }),
+      sp("b", 8, { matchId: "b1" }), sp("b", 2, { matchId: "b2" }),
+    ];
+    const r = anwenden(tage, { kurve: "endspurt", staerke: 2, streich: 1 }, einzel);
     expect(r.detail).toHaveLength(2);
     for (const d of r.detail) {
       expect(d.key).toBeTruthy();
       expect(typeof d.faktor).toBe("number");
-      expect(typeof d.gestrichen).toBe("boolean");
+      // Seit dem Umbau eine ZAHL (wie viele Spiele wegfielen), kein Ja/Nein.
+      expect(typeof d.gestrichen).toBe("number");
     }
-    expect(r.detail.filter((d) => d.gestrichen)).toHaveLength(1);
+    expect(r.detail.reduce((n, d) => n + d.gestrichen, 0)).toBe(1);
   });
 });
+
 
 describe("Klartext für die Spielerstellung", () => {
   it("die Vorgabe sagt schlicht, dass alles gleich zählt", () => {
@@ -208,6 +261,21 @@ describe("applySaisonform", () => {
     }));
   };
 
+  // Die Spiele je Nutzer, wie `punkteJeSpiel` sie liefert: hier zwei Spiele je
+  // Spieltag, deren Summe der Spieltagspunktzahl entspricht.
+  const spieleAus = (proNutzer) => {
+    const out = [];
+    for (const [userId, punkte] of Object.entries(proNutzer)) {
+      punkte.forEach((p, i) => {
+        const key = `bl#${i + 1}`;
+        const halb = Math.round(p / 2);
+        out.push({ userId, key, matchId: `${userId}-${i + 1}a`, wert: halb, ersatz: false });
+        out.push({ userId, key, matchId: `${userId}-${i + 1}b`, wert: p - halb, ersatz: false });
+      });
+    }
+    return out;
+  };
+
   it("ist die Regel aus, bleibt der Verlauf unangetastet", () => {
     const v = verlauf({ a: [10, 20, 30] });
     expect(applySaisonform(v, {})).toBe(v);
@@ -215,45 +283,54 @@ describe("applySaisonform", () => {
   });
 
   it("Streicher wirken auf jede Stufe des Verlaufs", () => {
-    const v = verlauf({ a: [100, 5, 90], b: [70, 70, 70] });
-    const r = applySaisonform(v, { saisonform: { streich: 1 } });
-    // Letzte Stufe: A verliert seinen 5er, B einen 70er.
+    const stand = { a: [100, 5, 90], b: [70, 70, 70] };
+    const v = verlauf(stand);
+    const r = applySaisonform(v, { saisonform: { streich: 1 } }, spieleAus(stand));
+    // A verliert die schwächste HÄLFTE seines 5er-Spieltags (2), nicht den
+    // ganzen Spieltag — vor dem 22.08.2026 waren es 5.
     const letzte = r[r.length - 1].board;
-    expect(letzte.find((z) => z.userId === "a").total).toBe(190);
-    expect(letzte.find((z) => z.userId === "b").total).toBe(140);
+    expect(letzte.find((z) => z.userId === "a").total).toBe(193);
+    expect(letzte.find((z) => z.userId === "b").total).toBe(175);
     expect(letzte[0].userId).toBe("a");
   });
 
   it("jede Stufe rechnet nur mit den bis dahin gespielten Spieltagen", () => {
     // Der Zwischenstand muss aus sich heraus stimmen, nicht aus der Sicht
     // des Saisonendes.
-    const v = verlauf({ a: [100, 5, 90] });
-    const r = applySaisonform(v, { saisonform: { streich: 1 } });
-    expect(r[0].board[0].total).toBe(100);   // ein Spieltag → nichts gestrichen
-    expect(r[1].board[0].total).toBe(100);   // der 5er fällt weg
-    expect(r[2].board[0].total).toBe(190);
+    const stand = { a: [100, 5, 90] };
+    const r = applySaisonform(verlauf(stand), { saisonform: { streich: 1 } }, spieleAus(stand));
+    expect(r[0].board[0].total).toBe(50);    // ein Spieltag: die schwächere Hälfte fällt
+    expect(r[1].board[0].total).toBe(103);   // jetzt ist der 2er das schwächste Spiel
+    expect(r[2].board[0].total).toBe(193);
   });
 
   it("die Tabelle wird nach der neuen Summe neu sortiert", () => {
-    const v = verlauf({ fuehrend: [100, 100, 0], stetig: [70, 70, 70] });
-    const r = applySaisonform(v, { saisonform: { streich: 1 } });
+    const stand = { fuehrend: [100, 100, 0], stetig: [70, 70, 70] };
+    const r = applySaisonform(verlauf(stand), { saisonform: { streich: 1 } }, spieleAus(stand));
     const letzte = r[r.length - 1].board;
     expect(letzte[0].userId).toBe("fuehrend");
     expect(letzte[0].total).toBe(200);
   });
 
   // ⚠️ Nicht getippt ist nicht dasselbe wie null Punkte.
-  it("ein ausgelassener Spieltag wird nicht als Nullrunde gestrichen", () => {
+  it("ein ausgelassener Spieltag hat gar keine Spiele — es gibt nichts zu streichen", () => {
     const v = [
       { wettbewerb: "bl", matchday: 1, board: [{ userId: "a", name: "a", total: 80, tips: 1, gewertet: 1 }] },
       // Spieltag 2 ausgelassen: Summe unverändert, `gewertet` unverändert.
       { wettbewerb: "bl", matchday: 2, board: [{ userId: "a", name: "a", total: 80, tips: 1, gewertet: 1 }] },
       { wettbewerb: "bl", matchday: 3, board: [{ userId: "a", name: "a", total: 100, tips: 2, gewertet: 2 }] },
     ];
-    const r = applySaisonform(v, { saisonform: { streich: 1 } });
-    // Gestrichen wird der schwächere GETIPPTE (20), nicht die Nichtteilnahme.
-    expect(r[2].board[0].total).toBe(80);
+    // Nur die beiden getippten Spiele existieren. Der ausgelassene Spieltag
+    // taucht in der Liste nicht auf — die alte Falle kann gar nicht mehr
+    // eintreten.
+    const spiele = [
+      { userId: "a", key: "bl#1", matchId: "m1", wert: 80, ersatz: false },
+      { userId: "a", key: "bl#3", matchId: "m3", wert: 20, ersatz: false },
+    ];
+    const r = applySaisonform(v, { saisonform: { streich: 1 } }, spiele);
+    expect(r[2].board[0].total).toBe(80);   // der 20er fällt, nicht die Lücke
   });
+
 });
 
 // ── Verdrahtung in der Engine ───────────────────────────────
@@ -359,14 +436,22 @@ describe("applySaisonform beschriftet die Zeilen", () => {
     board: [{ userId: "a", name: "a", total: [100, 105, 195][md - 1], tips: md, gewertet: md }],
   }));
 
-  it("nennt, wie viele Spieltage gestrichen wurden", () => {
-    const r = applySaisonform(verlauf3, { saisonform: { streich: 1 } });
+  // Ein Spiel je Spieltag — dann sind Spiel und Spieltag dasselbe, und das
+  // Kontingent greift auch hier (Ausnahme in `streichSpiele`).
+  const spiele3 = [
+    { userId: "a", key: "bl#1", matchId: "m1", wert: 100, ersatz: false },
+    { userId: "a", key: "bl#2", matchId: "m2", wert: 5, ersatz: false },
+    { userId: "a", key: "bl#3", matchId: "m3", wert: 90, ersatz: false },
+  ];
+
+  it("nennt, wie viele SPIELE gestrichen wurden", () => {
+    const r = applySaisonform(verlauf3, { saisonform: { streich: 1 } }, spiele3);
     expect(r[2].board[0].gestrichen).toBe(1);
     expect(r[2].board[0].vorlaeufig).toBe(true);
   });
 
   it("ohne Streicher steht dort nichts Irreführendes", () => {
-    const r = applySaisonform(verlauf3, { saisonform: { kurve: "endspurt" } });
+    const r = applySaisonform(verlauf3, { saisonform: { kurve: "endspurt" } }, spiele3);
     expect(r[2].board[0].gestrichen).toBe(0);
     expect(r[2].board[0].vorlaeufig).toBe(false);
   });
@@ -391,6 +476,11 @@ describe("Was die Saisonform am Board verändert, bekommt einen Namen", () => {
     return out;
   };
 
+  // Ein Spiel je Spieltag, Wert = Spieltagspunkte.
+  const spieleZu = (n) => Array.from({ length: n }, (_, k) => ({
+    userId: "u1", key: `bl#${k + 1}`, matchId: `m${k + 1}`, wert: 100 + k + 1, ersatz: false,
+  }));
+
   it("das Total ist ganzzahlig — auch wenn die Kurve mit Faktoren rechnet", () => {
     const v = applySaisonform(verlauf(10), { saisonform: { kurve: "steigend", streich: 0 } });
     for (const stufe of v) {
@@ -409,7 +499,7 @@ describe("Was die Saisonform am Board verändert, bekommt einen Namen", () => {
   });
 
   it("bei flacher Kurve gibt es nichts zu erklären: `form` ist null", () => {
-    const v = applySaisonform(verlauf(10), { saisonform: { kurve: "flach", streich: 2 } });
+    const v = applySaisonform(verlauf(10), { saisonform: { kurve: "flach", streich: 2 } }, spieleZu(10));
     expect(v[v.length - 1].board[0].form).toBeNull();
   });
 
@@ -420,7 +510,7 @@ describe("Was die Saisonform am Board verändert, bekommt einen Namen", () => {
   // Punkte doppelt gezählt.
   it("Kurve und Streicher zusammen: die Gleichung geht auf", () => {
     const roh = verlauf(12);
-    const v = applySaisonform(roh, { saisonform: { kurve: "steigend", streich: 2 } });
+    const v = applySaisonform(roh, { saisonform: { kurve: "steigend", streich: 2 } }, spieleZu(12));
     const z = v[v.length - 1].board[0];
     const rohTotal = roh[roh.length - 1].board[0].total;
     // Genau die Rechnung, die ein Spieler im Ranking aufmacht.
@@ -431,10 +521,10 @@ describe("Was die Saisonform am Board verändert, bekommt einen Namen", () => {
   });
 
   it("`gestrichenPunkte` nennt den Betrag, nicht nur die Anzahl", () => {
-    const v = applySaisonform(verlauf(10), { saisonform: { kurve: "flach", streich: 2 } });
+    const v = applySaisonform(verlauf(10), { saisonform: { kurve: "flach", streich: 2 } }, spieleZu(10));
     const z = v[v.length - 1].board[0];
     expect(z.gestrichen).toBe(2);
-    // Zwei Spieltage à gut 100 Punkte — der Betrag muss in dieser Größenordnung
+    // Zwei SPIELE à gut 100 Punkte — der Betrag muss in dieser Größenordnung
     // liegen, nicht bei 2.
     expect(z.gestrichenPunkte).toBeGreaterThan(100);
   });

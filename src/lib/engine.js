@@ -1403,23 +1403,25 @@ export function projectTip(tip, snap, rules = DEFAULT_RULES) {
 // Ergebnis-Raster aus allen Tipps eines Spiels, ist also keine Frage des
 // einzelnen Eintrags. Wer das je spieltagsweise machen will, muss zuerst
 // beantworten, welcher Spieltag bei einem gemischten Raster gemeint ist.
-export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES, regelnFuer = null) {
-  const byUser = new Map();
+// ── Die EINE Bewertung je Eintrag ───────────────────────────
+// Herausgezogen am 22.08.2026, weil die Streichresultate seither auf EINZELNE
+// SPIELE gehen (Andi: „die Streicher gelten natürlich nur für einzelne Spiele
+// und nie den gesamten Spieltag aussetzen"). Damit braucht `saisonform.js` die
+// Punkte je Spiel — und die dürfen NICHT ein zweites Mal gerechnet werden.
+//
+// 🔴 Genau das ist die Fehlerklasse, an der dieses Projekt am meisten Zeit
+// verloren hat: zwei Stellen rechnen dieselbe Zahl, laufen auseinander, und
+// beide Seiten sind für sich richtig. Deshalb summiert `scoreLeaderboard`
+// dieses Ergebnis nur noch, statt es selbst zu erzeugen — und `punkteJeSpiel`
+// liest dieselbe Liste.
+function bewerteEintraege(entries = [], rules = DEFAULT_RULES, regelnFuer = null) {
   // Tipp-Einfluss: die Runde bewegt das Ergebnis-Raster mit. Ist die Regel aus
   // (Vorgabe), kommen die Einträge unverändert zurück — dieselben Objekte, kein
   // Kopieren. Hier und nicht beim Speichern des Tipps, weil die Mischung erst
   // feststehen darf, wenn ALLE Tipps da sind (siehe tippEinfluss.js).
-  // ⚠️ Der Verlauf ruft diese Funktion je Spieltag erneut auf und mischt damit
-  // jeweils nur mit den bis dahin sichtbaren Tipps — das ist richtig so: ein
-  // Zwischenstand soll aus sich heraus stimmen.
-  // 🔴 ERSTER DURCHGANG: jeden Eintrag bewerten und die Ebene merken.
-  // Getrennt vom Aufsummieren, seit es die Alleinstellung gibt (09.08.2026):
-  // „ich war der Einzige" ist eine Aussage über ALLE Tipps desselben Spiels,
-  // die erst feststeht, wenn jeder Eintrag gerechnet ist. Ohne Alleinstellung
-  // kostet der zweite Durchgang nichts — es wird nichts doppelt gerechnet.
   const bewertet = [];
   for (const [i, e] of mitTippEinfluss(entries, rules).entries()) {
-    if (!e.result) { bewertet.push({ e, wert: null }); continue; }
+    if (!e.result) { bewertet.push({ e, wert: null, key: `${i}` }); continue; }
     const s = scoreTip(e.tip, e.result, e.snapshot,
       e.rules || (regelnFuer ? regelnFuer(e) : null) || rules);
     // Der Malus des Ersatz-Tipps greift GANZ ZULETZT auf die fertige Wertung
@@ -1439,6 +1441,48 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES, regelnFuer
     })),
     rules,
   );
+  return { bewertet, boni };
+}
+
+// Was hat ein Nutzer an EINEM Spiel geholt? Die Einheit, die seit 22.08.2026
+// gestrichen wird.
+//
+// ⚠️ Der Alleinstellungs-Bonus ist eingerechnet: er hängt am Spiel, nicht am
+// Spieltag — ein Spiel ohne ihn zu streichen ließe den Zuschlag stehen, obwohl
+// das Spiel gar nicht mehr zählt.
+//
+// ⚠️ `ersatz` wandert mit, weil `nurGetippte` genau daran hängt: ein
+// Ersatz-Tipp (Versäumnis) darf nicht weggestrichen werden, sonst kostet
+// Vergessen wieder nichts.
+export function punkteJeSpiel(entries = [], rules = DEFAULT_RULES, regelnFuer = null) {
+  const { bewertet, boni } = bewerteEintraege(entries, rules, regelnFuer);
+  const out = [];
+  for (const b of bewertet) {
+    if (b.wert == null) continue;
+    const bonus = boni.get(b.key);
+    out.push({
+      userId: b.e.userId,
+      key: spieltagKey(b.e),
+      matchId: b.e.matchId ?? b.e.match_id ?? null,
+      wert: b.wert + (bonus ? bonus.zuschlag : 0),
+      ersatz: b.e.ersatz === true,
+    });
+  }
+  return out;
+}
+
+export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES, regelnFuer = null) {
+  const byUser = new Map();
+  // 🔴 ERSTER DURCHGANG: jeden Eintrag bewerten und die Ebene merken.
+  // Getrennt vom Aufsummieren, seit es die Alleinstellung gibt (09.08.2026):
+  // „ich war der Einzige" ist eine Aussage über ALLE Tipps desselben Spiels,
+  // die erst feststeht, wenn jeder Eintrag gerechnet ist. Ohne Alleinstellung
+  // kostet der zweite Durchgang nichts — es wird nichts doppelt gerechnet.
+  //
+  // ⚠️ Der Verlauf ruft diese Funktion je Spieltag erneut auf und mischt damit
+  // jeweils nur mit den bis dahin sichtbaren Tipps — das ist richtig so: ein
+  // Zwischenstand soll aus sich heraus stimmen.
+  const { bewertet, boni } = bewerteEintraege(entries, rules, regelnFuer);
 
   // ZWEITER DURCHGANG: aufsummieren.
   for (const b of bewertet) {
@@ -1588,7 +1632,15 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
       }))
     : roh;
 
-  return applyCatchup(applySaisonform(applyDuellJoker(mitWirkungen, rules, einsaetze, sammeln), rules), rules, regelnFuer);
+  // ⚠️ `punkteJeSpiel` NUR rechnen, wenn die Streicher überhaupt an sind — es
+  // ist ein voller Bewertungsdurchgang über alle Einträge. Bei
+  // `streich: 0` (Vorgabe) kostet die Zeile nichts.
+  const spielPunkte = sanitizeSaisonform(rules?.saisonform).streich > 0
+    ? punkteJeSpiel(entries, rules, regelnFuer)
+    : null;
+  return applyCatchup(
+    applySaisonform(applyDuellJoker(mitWirkungen, rules, einsaetze, sammeln), rules, spielPunkte),
+    rules, regelnFuer);
 }
 
 

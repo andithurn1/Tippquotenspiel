@@ -126,6 +126,48 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-22 (VII) · ⚠️ **ENGINE-ÄNDERUNG angekündigt** — Streicher gelten für EINZELSPIELE
+
+**Push-Regel 3.** Diese Änderung fasst `engine.js` und die Wertungskette an,
+deshalb steht sie hier, bevor jemand dagegen arbeitet.
+
+**Anlass, Andi wörtlich (22.08.2026):** *„ich meine die Streicher gelten
+natürlich nur für einzelne Spiele und nie den gesamten Spieltag aussetzen."*
+
+Bis dahin strich `saisonform.streich` ganze SPIELTAGE — bei neun Spielen also
+das Neunfache dessen, was gemeint war. Ein Creator-Code mit `streich: 2`
+bedeutet ab jetzt zwei Spiele statt zwei Spieltage; alte Codes werden dadurch
+milder, nicht ungültig.
+
+**Was sich im Code geändert hat:**
+
+| Wo | Was |
+|---|---|
+| `engine.js` | neu `punkteJeSpiel()` + interner `bewerteEintraege()`; `scoreLeaderboard` summiert dieselbe Liste, statt sie ein zweites Mal zu rechnen |
+| `saisonform.js` | `streichIndizes` → `streichSpiele`; `anwenden(tage, cfg, spiele)`; `applySaisonform(verlauf, rules, spielPunkte)` |
+| `scoreLeaderboardHistory` | reicht die Spiel-Punkte durch, aber NUR wenn `streich > 0` (sonst ein voller Bewertungsdurchgang umsonst) |
+
+**Drei Entscheidungen, die drinstecken:**
+
+1. **Ein Spieltag mit MEHREREN Spielen fällt nie ganz weg** — von ihm bleibt
+   immer eines stehen. Bei einem Spieltag mit nur EINEM getippten Spiel gilt
+   das bewusst nicht: sonst stünde der Regler in kleinen Runden da und täte
+   nichts, und eine Einstellung, die ins Leere läuft, ist kein Baukastenteil.
+2. **`nurGetippte` bewacht jetzt den ERSATZ-TIPP.** Ein verpasster Spieltag hat
+   gar keine Spiele mehr in der Liste — die alte Falle („Streicher machen
+   Auslassen kostenlos") ist damit strukturell weg. Geblieben ist ihr Zwilling:
+   Ersatz-Tipps tragen die schwächsten Wertungen und wären die billigsten
+   Kandidaten.
+3. **Ohne Spiel-Liste wird NICHT gestrichen.** `balanceSim.js` ruft
+   `applySaisonform` ohne sie auf und bekommt nur die Kurve — sichtbar
+   unvollständig statt still falsch. (Balance ist Endphase, deshalb dort
+   bewusst nicht nachgezogen.)
+
+**Gemessen:** 2170 Tests grün (43 skipped), lint sauber, Build sauber.
+13 Tests in `saisonform.test.js` mussten umgeschrieben werden — sie kodierten
+die alte Regel.
+
+
 ### 2026-08-22 (VI) · 🔴 **ÜBERGABE an das nächste Fenster** — Masterdatei vor Umsetzung
 
 > **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —

@@ -351,6 +351,61 @@ Die Felder dafür gibt es: `duell.sichtbarkeit` (offen/verdeckt) und
 `jokerBasis.widerruf` (bis Anpfiff / N Stunden vorher / gar nicht).
 **Voreinstellung für diese Familie: offen und widerrufbar.**
 
+## 🔴 Geschützte Spiele — der Tipper wehrt sich (Andi, 22.08.2026)
+
+Wörtlich: *„dass die Option für jeden Tippabgeber besteht, ausgewählte Spiele
+für jeden Spieltag vor jedem Fremdjoker zu schützen (weil man die halt evtl
+selber live verfolgen will, und's deswegen blöd wäre)."*
+
+🔴 **Das ist die erste Schutzregel, die dem SPIELER gehört und nicht dem
+Admin.** Alles andere in diesem Abschnitt — `maxProZiel`, `immun`, `zielWahl`,
+`sperrfristJeZiel` — stellt der Admin für alle ein. Hier entscheidet jeder für
+sich, und zwar aus einem Grund, den keine Regel kennen kann: an welchem Spiel
+sein Abend hängt.
+
+**Der Zweck ist nicht Fairness, sondern der Abend.** Wer Samstag im Stadion
+sitzt oder mit Freunden vor dem Spiel hockt, will nicht erleben, dass genau
+dieses Spiel ihm weggeblockt wurde. Ein Fremdjoker, der das trifft, nimmt keine
+Punkte weg, sondern den Spaß — und dann schaltet die Runde die ganze Familie ab.
+Der Schutz ist damit die Bedingung dafür, dass Fremdjoker überhaupt
+eingeschaltet bleiben.
+
+### Die Vorlage, ausgefüllt
+
+```
+Name          Geschütztes Spiel
+Ebene         6 (Ökonomie — worauf ein Einsatz überhaupt wirken darf)
+Hängt an      Tipp (ein Spiel, ein Spieltag, ein Spieler)
+Steht fest    beim Tippen — dieselbe Frist wie der Tipp selbst
+Wirkt als     Auswahl — ein geschütztes Spiel ist für Fremdjoker unsichtbar
+Deckel        `schutzProSpieltag` (wie viele Spiele je Spieltag)
+Entscheidet   der SPIELER (Admin stellt nur die Anzahl ein)
+Stufe         3 für die Anzahl; die Wahl selbst gehört in die Tippabgabe
+Anzeige       Schild-Marke am Spiel, in der eigenen Tippliste
+Einstellwerte schutzProSpieltag · schutzSichtbar
+```
+
+**Zwei Einstellwerte, mehr nicht.** `schutzProSpieltag: 0` schaltet den Schutz
+ab (dann ist alles angreifbar), 1 ist die naheliegende Vorgabe.
+
+⚠️ **Die Zahl ist die ganze Balance-Frage, und sie gehört dem Admin:** bei
+„alle Spiele schützbar" gibt es keine Fremdjoker mehr. Deshalb ein Kontingent
+je Spieltag, kein Häkchen je Spiel.
+
+⚠️ **Der Schutz muss VOR der Frist stehen und danach fest sein** — sonst
+schützt man nach, sobald man einen Angriff kommen sieht. Dieselbe Kante wie der
+Tipp selbst (Anpfiff), damit der Zeitpunkt der Abgabe egal bleibt.
+
+### ❓ Was noch zu klären ist
+
+1. **Sieht der Angreifer den Schutz?** Offen liegt näher: ein Fremdjoker, der
+   an einem geschützten Spiel wirkungslos verpufft, verbrennt einen Einsatz für
+   nichts — das fühlt sich nach Willkür an. Sichtbar heißt aber auch: der
+   Angreifer weiß, welches Spiel dir wichtig ist. (`schutzSichtbar`)
+2. **Was passiert mit einem Fremdjoker, der auf ein geschütztes Spiel gesetzt
+   wurde?** Verfällt er, oder kommt er zurück ins Kontingent? Bei sichtbarem
+   Schutz kann man ihn zurückgeben, bei verdecktem wäre das ein Hinweis.
+
 ## Die Schutzschicht
 
 **Andi:** *„Option zu Cooldowns, dass einzelne nicht von allen und immer

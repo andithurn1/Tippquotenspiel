@@ -161,6 +161,13 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | JK11 | **„Fremdjoker"** ist der Name der Familie (Block, Trittbrettfahrer, Gegenwette, Klau) | ✅ | `design/vokabular.md`, Abschnitt „Fremdjoker“; `joker-sondermenue.md` Teil D umbenannt |
 | JK12 | **Ausgeloste Zielperson** statt freier Opferwahl — man sucht sich das Ziel nicht aus, entscheidet aber bei der Tippabgabe, bei welchem EINZELSPIEL man einsetzt | ⏳ | Vorlage ausgefüllt in `joker-sondermenue.md` Teil D („Das ausgeloste Ziel“): Ebene 6, drei Einstellwerte (`zielModus` · `losTakt` · `losSichtbar`), `zielWahl` bekommt die vierte Stufe `ausgelost`. **Fünf ❓ stehen im Eintrag** — Frage 4 (Los tippt nicht) blockiert das Bauen |
 | JK13 | Die Option **je Fremdjoker einzeln** einstellbar, nicht einmal für alle | ⏳ | Bauform steht fest: dasselbe Muster wie `jokerBasis` (Standard oben, Abweichung je Art), kein zweites erfinden |
+| JK14 | **Jeder Tipper darf je Spieltag ausgewählte Spiele vor JEDEM Fremdjoker schützen** — „weil man die evtl. selber live verfolgen will" | ⏳ | Vorlage ausgefüllt in `joker-sondermenue.md`, Abschnitt „Geschützte Spiele": Ebene 6, zwei Einstellwerte (`schutzProSpieltag` · `schutzSichtbar`), Wahl gehört in die Tippabgabe. 🔴 Die erste Schutzregel, die dem SPIELER gehört statt dem Admin — und die Bedingung dafür, dass eine Runde die Fremdjoker überhaupt anlässt. Zwei ❓ im Eintrag |
+
+## Wertung & Verlauf (22.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| VL1 | **Streicher gelten nur für EINZELNE SPIELE, nie für einen ganzen Spieltag** — „ich meine die Streicher gelten natürlich nur für einzelne Spiele und nie den gesamten Spieltag aussetzen" | ✅ | `saisonform.js` (`streichSpiele`) + `engine.js` (`punkteJeSpiel`); 13 Tests umgeschrieben, 2170 grün. Kanal-Eintrag (VII) mit den drei Entscheidungen. ⚠️ Alte Creator-Codes werden dadurch milder: `streich: 2` heißt jetzt zwei Spiele |
 
 ## Betrieb
 
