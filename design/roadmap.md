@@ -77,11 +77,16 @@ beide waren beim Nachsehen keine.
    einen Tabellenstand, den es am 1. Spieltag nicht gibt; die Picks je Team
    brauchen ein Spiel mit mindestens drei plausiblen Schützen.
 
-   ⏳ **Was daran trotzdem offen bleibt:** eine erklärte Blindstelle ist immer
-   noch eine Blindstelle. `bigGame` ist von keiner Abnahme gedeckt — wer die
-   Mechanik bricht, merkt es nicht. Der Messfall müsste einen SPÄTEREN Spieltag
-   benutzen (die simulierte Saison trägt alle Ergebnisse vorab, ein
-   Tabellenstand wäre also da). Lohnt sich, ist aber kein Fehler im Spiel.
+   ✅ **Für `bigGame` ist die Blindstelle am 22.08.2026 halb geschlossen.**
+   Der Messfall setzt den eingefrorenen Spannungswert jetzt selbst
+   (`bigGameWert`), so wie ihn ein geöffneter Spieltag ablegen würde — damit ist
+   die WERTUNG gedeckt (bewegt 13 151 Punkte), dazu eine Gegenprobe, dass
+   `minSpannung` als Schwelle wirklich sperrt. Neu im Werkzeug: ein Messfall
+   darf jetzt „soll nichts bewegen" erklären (`erwartetNull`) — sonst sieht eine
+   greifende Schwelle aus wie eine tote Regel.
+   ⏳ Offen bleibt der ERSTE Schritt: dass das Öffnen den Wert richtig
+   BERECHNET, kann erst eine laufende Saison zeigen (die simulierte beginnt am
+   28.08.2026, vorher ist die Tabelle leer). Steht als `hinweis` am Messfall.
 
 ## ⛔ ENDPHASE — hier steht, was ERST GANZ AM SCHLUSS drankommt
 

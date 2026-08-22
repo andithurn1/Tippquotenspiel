@@ -95,9 +95,33 @@ const FAELLE = [
   // Der Big-Game-Wert entsteht erst beim ÖFFNEN des Spieltags (Admin-Handlung,
   // siehe `spieltagOeffnen`). Ohne das Öffnen ist die Regel folgenlos — das ist
   // so gewollt und muss im Messfall nachgestellt werden.
-  ["bigGame", { bigGame: { enabled: true, aufschlag: 1, minSpannung: 0 } }, { oeffnen: true,
-    hinweis: "braucht eine laufende Saison — der Spannungswert kommt aus dem Tabellenstand, "
-      + "und am 1. Spieltag gibt es keinen" }],
+  // 🔴 Big Game wird in ZWEI Schritten wirksam, und dieser Fall misst nur den
+  // zweiten: `spieltagOeffnen` friert einen Spannungswert ein (aus dem
+  // Tabellenstand), und die Wertung macht daraus einen Aufschlag.
+  //
+  // ⚠️ Den ersten Schritt kann dieser Durchgang NICHT messen: die simulierte
+  // Saison beginnt in der Zukunft, kein Spiel ist angepfiffen, die Tabelle ist
+  // leer — und aus einer leeren Tabelle kommt kein Spannungswert. Bis zum
+  // 22.08.2026 endete die Zeile deshalb bei „bewegt nichts (erklärt)", und
+  // damit war die ganze Mechanik von keiner Abnahme gedeckt.
+  //
+  // Jetzt wird der Wert im Messfall GESETZT (`bigGameWert`), so wie ihn ein
+  // geöffneter Spieltag ablegen würde. Damit ist wenigstens die Wertung
+  // gedeckt: greift der Aufschlag, und greift `minSpannung` als Schwelle?
+  // Was weiterhin fehlt, steht im `hinweis` — eine halb gedeckte Mechanik ist
+  // besser als eine ungedeckte, aber sie darf sich nicht als ganz gedeckt
+  // ausgeben.
+  ["bigGame (Aufschlag)", { bigGame: { enabled: true, aufschlag: 1, minSpannung: 0 } },
+    { oeffnen: true, bigGameWert: 0.8,
+      hinweis: "misst die WERTUNG des eingefrorenen Werts; dass das Öffnen ihn "
+        + "richtig BERECHNET, kann erst eine laufende Saison zeigen" }],
+  // Die Gegenprobe zur Schwelle: derselbe Wert, aber `minSpannung` darüber —
+  // dann darf es KEINEN Aufschlag geben. Ohne diese Zeile wäre eine Schwelle,
+  // die gar nicht prüft, von der Messung nicht zu unterscheiden.
+  ["bigGame (Schwelle)", { bigGame: { enabled: true, aufschlag: 1, minSpannung: 0.95 } },
+    { oeffnen: true, bigGameWert: 0.8, erwartetNull: true,
+      gegen: { bigGame: { enabled: true, aufschlag: 1, minSpannung: 0 } },
+      hinweis: "SOLL nichts bewegen: der eingefrorene Wert liegt unter der Schwelle" }],
   ["modCap", {
     joker: { enabled: true, modus: "einzel", faktor: 3 }, modCap: 1.1,
   }, { joker: true, gegen: { joker: { enabled: true, modus: "einzel", faktor: 3 } } }],
@@ -188,7 +212,12 @@ async function board(extra, opt = {}) {
       };
       if (opt.joker && u === "u-du" && i % 9 === 0) tip.joker = true;
       if (opt.duell && u === "u-du") tip.duell = { auf: "u-lena", typ: "klau" };
-      await st.seedTip({ roundId: rnd.id, matchId: m.id, userId: u, tip, snapshot: m.snapshot });
+      // Ein eingefrorener Big-Game-Wert, wie ihn `spieltagOeffnen` ablegt.
+      // Nur für den Messfall — im Betrieb kommt er aus dem Tabellenstand.
+      const snapshot = opt.bigGameWert != null
+        ? { ...m.snapshot, bigGameWert: opt.bigGameWert }
+        : m.snapshot;
+      await st.seedTip({ roundId: rnd.id, matchId: m.id, userId: u, tip, snapshot });
     }
   }
   if (opt.saisonTipp) {
@@ -241,11 +270,22 @@ for (const [name, extra, opt = {}] of FAELLE) {
   const basis = await board(opt.gegen ?? {}, opt);
   const jetzt = await board(extra, opt);
   const d = abstand(basis, jetzt, opt.spieler ?? SPIELER);
+  // 🔴 Ein Fall darf auch NICHTS bewegen SOLLEN: eine Schwelle, die greift,
+  // sieht in Punkten aus wie eine Regel, die nicht greift. Ohne diesen Zweig
+  // müsste man die Gegenprobe entweder weglassen (dann prüft niemand, ob die
+  // Schwelle überhaupt etwas tut) oder sie dauerhaft als „erklärt" mitführen
+  // (dann steht ein Warnzeichen an einem gesunden Ergebnis, und ein echtes
+  // Warnzeichen fällt daneben nicht mehr auf).
+  if (opt.erwartetNull) {
+    const ok = d === 0;
+    console.log(`  ${name.padEnd(26)} ${ok ? "✅ bewegt erwartungsgemäß nichts" : `⚠️  BEWEGT ${Math.round(d)} PUNKTE — sollte nichts bewegen`}`);
+    if (!ok) tot.push(`${name} (sollte nichts bewegen)`);
+    continue;
+  }
   console.log(`  ${name.padEnd(26)} ${d === 0 ? "⚠️  BEWEGT NICHTS" : `bewegt ${Math.round(d)} Punkte`}`);
   if (d === 0) {
     // 🔴 Ein Fall, der nichts bewegt, MUSS erklärt sein. Ohne Erklärung ist er
     // ein Verdacht; mit Erklärung ist er eine bekannte Grenze des Szenarios.
-    // Ein unerklärtes „bewegt nichts" ist der Versäumnis-Fall von vorhin.
     if (opt.hinweis) console.log(`  ${" ".repeat(26)} └ erklärt: ${opt.hinweis}`);
     tot.push(opt.hinweis ? `${name} (erklärt)` : name);
   }
