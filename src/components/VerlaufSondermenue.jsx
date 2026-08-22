@@ -33,7 +33,7 @@ export function verlaufStand(rules) {
   const ve = rules?.versaeumnis || DEFAULT_RULES.versaeumnis;
   const teile = [
     au.enabled ? "Anschluss" : null,
-    sf.streich > 0 ? `${sf.streich} Streicher` : null,
+    sf.streich > 0 ? `${sf.streich} Spiel${sf.streich === 1 ? "" : "e"} gestrichen` : null,
     sf.kurve && sf.kurve !== "flach" ? KURVE[sf.kurve]?.label ?? sf.kurve : null,
     ve.enabled ? "Ersatz-Tipp" : null,
   ].filter(Boolean);
@@ -138,7 +138,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
                   ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
                   background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                   border: `1px solid ${on ? C.mint + "66" : C.line}`,
-                }}>{n === 0 ? "keine" : `${n} Spiele`}</button>
+                }}>{n === 0 ? "keine" : `${n} Spiel${n === 1 ? "" : "e"}`}</button>
               );
             })}
           </div>
