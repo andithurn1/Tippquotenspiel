@@ -144,6 +144,18 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | EB4 | **Reihenfolge des Umbaus**: erst die Sondermenüs, dann der Umschalter weg | ⏳ | ⚠️ Andersherum entsteht ein Zwischenzustand, in dem alles flach auf einer Seite liegt — schlechter als heute |
 | EB5 | „Klassische Playlist“ als Voreinstellung, *„so wie ich mir eine Tipprunde erstellen würde“* | ⏳ | ⛔ Ausdrücklich **gemeinsam am Ende, mit dem Balancing** |
 
+## Joker-Sondermenü (22.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| JK1 | Übersicht aller einstellbaren Joker-Sachen + Struktur, vor dem Bauen | ✅ | `design/joker-sondermenue.md` — 84 Einzelwerte aus dem Regelwerk gezogen, geordnet in fünf Karten nach der Frage, die ein Admin stellt |
+| JK2 | Shop mit eigener Währung, auch in der reinen Quotenversion | ✅ | **Gibt es schon** (`budget` = Narren-Shop) — und er läuft in der Quotenversion. Im Budget-Modus abgeschaltet, also andersherum als vermutet |
+| JK3 | „einige mehr Joker bzw. Wirkprinzipien" | ✅ | Teil C: zwölf Arten in vier Gruppen, jede mit Wirkprinzip und Reglern |
+| JK4 | **Eingriffe in fremde Tipps**: blocken · mitprofitieren · dagegen wetten | ⏳ | Teil D. Blocken und Klauen gibt es halb (`duell`), neu ist der Bezug auf einen EINZELNEN Tipp und das Dagegenwetten |
+| JK5 | **Cooldown je Ziel**, damit nicht immer dieselben getroffen werden | ⏳ | `maxProZiel` begrenzt nur die Gesamtzahl, nicht ob es immer derselbe Gegner ist. `sperrfristJeZiel` ist neu |
+| JK6 | 🔴 Eingriffe müssen **vor der Frist sichtbar und zurücknehmbar** sein | ⏳ | Andis Zweck ist der Austausch („nimm den Block bei mir raus"). Ein still verrechneter Eingriff leistet davon nichts. Felder da: `duell.sichtbarkeit`, `jokerBasis.widerruf` |
+| JK7 | Die ganze Familie **in einem Griff** aus-/einschaltbar | ⏳ | Andi: Büro-Runde nein, Freundesrunde ja. Ein `eingriffe.enabled` über allem statt sechs Häkchen |
+
 ## Betrieb
 
 | Nr | Ansage | Stand | Beleg / was fehlt |

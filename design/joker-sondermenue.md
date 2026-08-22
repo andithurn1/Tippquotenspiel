@@ -299,3 +299,92 @@ erfunden werden**; das ist der ganze Zweck der Grundform.
 
 ❓ Offen bleibt die Frage aus Teil B: gilt die Grundform weiter für alle
 gemeinsam, oder bekommt jede Art ihre eigene?
+
+---
+
+# TEIL D · Eingriffe in fremde Tipps
+
+**Andi am 22.08.2026:** *„finde die generelle Option interessant und spassig,
+bei anderen Tippern oder Freunden reinzugehen und eben nen einzelnen Tipp, den
+man selber für gut findet, für den anderen zu blocken oder selber davon
+mitzuprofitieren oder auch dagegen zu wetten."*
+
+🔴 **Das ist eine eigene Familie, kein einzelner Joker.** Drei Handlungen auf
+DENSELBEN fremden Tipp, dazu eine Schutzschicht darüber.
+
+## Die drei Handlungen
+
+| | Was man tut | Konsequenz-Optionen |
+|---|---|---|
+| **Blocken** | Der fremde Tipp zählt nicht oder weniger | Restanteil (0 … 100 %) · nur bei Gewinn oder auch bei Verlust · Beute für den Blocker |
+| **Mitprofitieren** | Man hängt sich an den Tipp und bekommt einen Anteil | Anteil · ob der Kopierte etwas abbekommt oder verliert |
+| **Dagegen wetten** | Man setzt darauf, dass der Tipp NICHT aufgeht | Einsatz · Auszahlung bei Erfolg · Verlust bei Irrtum |
+
+⚠️ **Blocken und Mitprofitieren gibt es halb schon** (`duell.klau`,
+`duell.block` samt `restanteil`, `nurGewinn`, `beute`). Neu ist, dass sie sich
+auf **einen einzelnen TIPP** richten statt auf den ganzen Spieltag — und dass
+„dagegen wetten" als dritte Handlung dazukommt.
+
+## 🔴 Andis eigentliche Anforderung: es muss VORHER sichtbar sein
+
+Sein Beispiel: *„hey du Arschloch, nimm den Block bei mir fürs Bayern-Spiel
+raus, ich habe da ein zu gutes Gefühl."*
+
+**Damit dieses Gespräch überhaupt stattfinden kann, müssen drei Dinge gelten:**
+
+1. **Der Eingriff ist sichtbar, bevor die Frist läuft.** Ein Block, den man erst
+   hinterher sieht, erzeugt Ärger statt Austausch.
+2. **Er ist zurücknehmbar.** Ohne das ist die Bitte sinnlos — der andere KANN
+   ihn gar nicht rausnehmen.
+3. **Man sieht, WER es war.** Anonym gibt es niemanden, den man ansprechen kann.
+
+⚠️ **Das ist keine Feinheit, sondern der ganze Zweck.** Andi will damit
+Tischgespräche und Mundpropaganda anregen. Ein Eingriff, der still im
+Hintergrund verrechnet wird, leistet davon nichts — er ist dann nur eine
+Punkteverschiebung.
+
+Die Felder dafür gibt es: `duell.sichtbarkeit` (offen/verdeckt) und
+`jokerBasis.widerruf` (bis Anpfiff / N Stunden vorher / gar nicht).
+**Voreinstellung für diese Familie: offen und widerrufbar.**
+
+## Die Schutzschicht
+
+**Andi:** *„Option zu Cooldowns, dass einzelne nicht von allen und immer
+regelmäßig getroffen werden können."*
+
+Ohne sie wird der Beste zum Ziel aller — oder der Schwächste zum Opfer. Vier
+Regler, davon drei schon vorhanden:
+
+| Regler | Was er verhindert | Stand |
+|---|---|---|
+| `maxProZiel` | Dass einer mehrfach im selben Zeitraum getroffen wird | ✅ da |
+| `sperrfristJeZiel` | Dass DERSELBE jemanden wieder und wieder trifft | ⏳ neu |
+| `immun` | Erholung nach einem Treffer | ✅ da |
+| `zielWahl` | frei · nur nach vorn · nur nach hinten | ✅ da |
+
+⚠️ **`sperrfristJeZiel` ist der neue und der wichtigste.** `maxProZiel` begrenzt
+nur, wie oft jemand insgesamt getroffen wird — nicht, ob es immer derselbe
+Gegner ist. Genau das meint Andi mit „nicht von allen und immer regelmäßig".
+
+## Für wen das gedacht ist
+
+**Andis eigene Einordnung:** *„bei hoch seriösen Tipprunden, bspw. auf Arbeit,
+wird das wohl nicht greifen, aber bei Freundschaftsgruppen finde ich das lustig
+und macht nen coolen Austausch."*
+
+⚠️ Daraus folgt eine Anforderung an die VOREINSTELLUNGEN, nicht an die Mechanik:
+die ganze Familie muss **in einem Griff aus- und einschaltbar** sein. Eine
+Büro-Runde darf davon nichts sehen; eine Freundesrunde schaltet sie mit einem
+Klick zu. Ein Feld `eingriffe.enabled` über allem, nicht sechs einzelne Häkchen.
+
+## Offene Fragen
+
+❓ **Kostet ein Eingriff etwas?** Ein Block, der nichts kostet, wird bei jedem
+Spiel gesetzt. Möglich: eigener Joker-Bestand, Narren, oder das Risiko, selbst
+Punkte zu verlieren, wenn der geblockte Tipp aufgeht.
+
+❓ **Darf man auf denselben Tipp mehrere Handlungen legen?** Zwei Leute blocken,
+einer profitiert mit — die Rechnung wird schnell unübersichtlich.
+
+❓ **Was sieht der Betroffene genau?** „Lena blockt dein Bayern-Spiel" ist die
+Grundlage des Gesprächs. „Jemand blockt eines deiner Spiele" wäre es nicht.
