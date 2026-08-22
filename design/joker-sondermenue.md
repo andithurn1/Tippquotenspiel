@@ -379,7 +379,12 @@ lohnendste Ziel ist, gibt es keine Zielwahl mehr, sondern eine Rechenaufgabe
 mit bekannter Lösung. Alle gehen auf dasselbe Spiel — und ein Fremdjoker, den
 alle gleich einsetzen, ist kein Spielzug.
 
-### ✅ Empfehlung: die WIRKUNG normieren, nicht den Preis
+### 🔴 ENTSCHIEDEN (Andi, 22.08.2026): die WIRKUNG normieren, nicht den Preis
+
+*„ja mach so wie du meinst, und ja auch Gegenwette wie du sagst."* — gebaut in
+`punkteJeSpiel` (`grundwert`) und `applyDuellJoker`; fünf Tests in
+`duellJoker.test.js`, darunter der entscheidende: **dasselbe Spiel ist als Ziel
+gleich viel wert, ob es mit oder ohne CL-Aufschlag läuft.**
 
 **Ein Fremdjoker rechnet auf dem Wert des Spiels OHNE die rundenweiten
 Gewichte** — also so, als zählten alle Spiele gleich viel. Technisch: der
@@ -688,9 +693,24 @@ Ereignisse oder selbst gewählte Joker."*
 | | zählt für die Gegenwette |
 |---|---|
 | Grundpunkte aus der Quote | ✅ |
-| **Standard-Modifikatoren** (Außenseiter, Derby, Spitzenspiel, Liga-Gewicht, Tabellen-Bonus) | ✅ |
+| ~~Standard-Modifikatoren~~ (Außenseiter, Derby, Spitzenspiel, Liga-Gewicht, Tabellen-Bonus) | ⛔ **seit 22.08.2026 (II)** |
 | Selbst gesetzte Joker | ⛔ |
 | Ereignisse und Drehrad | ⛔ |
+
+🔴 **NACHTRAG, Andi am 22.08.2026 (II): auch die Standard-Modifikatoren fallen
+raus** — „und ja auch Gegenwette wie du sagst". Damit gilt für die ganze
+Fremdjoker-Familie DIESELBE Rechengrundlage: der **Grundwert**, also die nackte
+Quoten-Wertung des Tipps ohne jeden Aufschlag.
+
+**Warum die Kehrtwende:** die erste Fassung dieser Tabelle beantwortete nur die
+ZEITPUNKT-Frage (ein selbst gesetzter Joker macht den Wert davon abhängig, wann
+das Opfer tippt). Die Gewichte waren dabei nicht im Blick. Sie werfen aber ein
+zweites Problem auf, das die Zeitpunkt-Regel nicht löst: wenn das schwerste
+Spiel auch das lohnendste Ziel ist, gehen alle auf dasselbe Spiel.
+
+⚠️ **Eine Regel statt einer Ausschlussliste.** „Der Grundwert" bleibt richtig,
+wenn morgen ein neuer Modifikator dazukommt — eine Liste müsste nachgepflegt
+werden und würde es irgendwann nicht.
 
 **Die Begründung ist ein Grundsatz, kein Sonderfall:** *„generell ist es mir
 wichtig, dass der Zeitpunkt der Tippabgabe und Jokerauswahl möglichst

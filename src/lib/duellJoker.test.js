@@ -642,3 +642,85 @@ describe("EMPFEHLUNG", () => {
     expect(EMPFEHLUNG.blockRestanteil.max).toBeLessThanOrEqual(DUELL_LIMITS.blockRestanteil.max);
   });
 });
+
+// ── Fremdjoker rechnen auf dem GRUNDWERT eines EINZELSPIELS ──
+// Andi, 22.08.2026: alle Fremdjoker treffen einzelne Spiele — und die
+// rundenweiten Gewichte (CL, Derby, Big Game) dürfen den Wert eines Ziels
+// nicht bestimmen, sonst ist das schwerste Spiel immer das lohnendste und die
+// Zielwahl keine Entscheidung mehr.
+describe("Fremdjoker: Einzelspiel statt Spieltag", () => {
+  const verlauf = [
+    {
+      wettbewerb: "bl", matchday: 1,
+      board: [
+        { userId: "a", name: "A", total: 0, tips: 1, gewertet: 1 },
+        { userId: "b", name: "B", total: 300, tips: 3, gewertet: 3 },
+      ],
+    },
+  ];
+  const rules = {
+    // ⚠️ `maxProSaison: 0` = kein Punkte-Deckel. Ohne das misst dieser Block
+    // nicht die Rechengrundlage, sondern die Vorgabe 60 — der Deckel greift
+    // hier bei jedem der Fälle und macht sie ununterscheidbar.
+    duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau"], maxProSaison: 0, klau: { anteil: 0.5, modus: "nullsumme" } },
+  };
+
+  it("ohne Spiel-Angabe bleibt es beim ganzen Spieltag (Übergang)", () => {
+    const r = applyDuellJoker(verlauf, rules, [
+      { spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "klau" },
+    ]);
+    // 50 % von 300 Spieltagspunkten.
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(150);
+  });
+
+  it("mit Spiel-Angabe zählt nur DIESES Spiel", () => {
+    const spielPunkte = [
+      { userId: "b", key: "bl#1", matchId: "m1", wert: 200, grundwert: 200, ersatz: false },
+      { userId: "b", key: "bl#1", matchId: "m2", wert: 100, grundwert: 100, ersatz: false },
+    ];
+    const r = applyDuellJoker(verlauf, rules, [
+      { spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "klau", matchId: "m2" },
+    ], null, spielPunkte);
+    // 50 % von 100 — nicht von 300.
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(50);
+  });
+
+  it("🔴 das rundenweite GEWICHT des Spiels zählt nicht mit", () => {
+    // Dasselbe Spiel, einmal als CL-Spiel mit Aufschlag (wert 300 bei Faktor
+    // 1,5) und einmal ohne. Für den Angreifer muss beides dasselbe wert sein —
+    // sonst geht jeder auf das schwerste Spiel.
+    const mitGewicht = [
+      { userId: "b", key: "bl#1", matchId: "m1", wert: 300, grundwert: 200, ersatz: false },
+    ];
+    const ohneGewicht = [
+      { userId: "b", key: "bl#1", matchId: "m1", wert: 200, grundwert: 200, ersatz: false },
+    ];
+    const einsatz = [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "klau", matchId: "m1" }];
+    const schwer = applyDuellJoker(verlauf, rules, einsatz, null, mitGewicht);
+    const leicht = applyDuellJoker(verlauf, rules, einsatz, null, ohneGewicht);
+    expect(schwer[0].board.find((z) => z.userId === "a").total)
+      .toBe(leicht[0].board.find((z) => z.userId === "a").total);
+    expect(schwer[0].board.find((z) => z.userId === "a").total).toBe(100);
+  });
+
+  it("ein ausdrückliches `basis` schlägt beides", () => {
+    const spielPunkte = [
+      { userId: "b", key: "bl#1", matchId: "m1", wert: 200, grundwert: 200, ersatz: false },
+    ];
+    const r = applyDuellJoker(verlauf, rules, [
+      { spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "klau", matchId: "m1", basis: 40 },
+    ], null, spielPunkte);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(20);
+  });
+
+  it("ein Spiel, das das Ziel gar nicht getippt hat, fällt auf den Spieltag zurück", () => {
+    // Sonst verschluckte ein Tippfehler in der Spiel-Id den Einsatz stumm.
+    const spielPunkte = [
+      { userId: "b", key: "bl#1", matchId: "m1", wert: 200, grundwert: 200, ersatz: false },
+    ];
+    const r = applyDuellJoker(verlauf, rules, [
+      { spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "klau", matchId: "gibtsnicht" },
+    ], null, spielPunkte);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(150);
+  });
+});

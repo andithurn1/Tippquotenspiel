@@ -1429,7 +1429,9 @@ function bewerteEintraege(entries = [], rules = DEFAULT_RULES, regelnFuer = null
     // multiplikativ aufschaukelt. Ohne `malusFaktor` (jeder normale Tipp)
     // ändert sich nichts.
     const wert = Number.isFinite(e.malusFaktor) ? Math.round(s.total * e.malusFaktor) : s.total;
-    bewertet.push({ e, wert, ebene: s.ebene, key: `${i}` });
+    // Der Modifikator-Faktor wandert mit: die FREMDJOKER rechnen auf dem Wert
+    // OHNE ihn (siehe `grundwert` in `punkteJeSpiel`).
+    bewertet.push({ e, wert, ebene: s.ebene, faktor: s.modifier?.faktor ?? 1, key: `${i}` });
   }
 
   // ⚠️ Der Bonus hängt am WERT nach allen Modifikatoren, nicht an einer
@@ -1465,6 +1467,26 @@ export function punkteJeSpiel(entries = [], rules = DEFAULT_RULES, regelnFuer = 
       key: spieltagKey(b.e),
       matchId: b.e.matchId ?? b.e.match_id ?? null,
       wert: b.wert + (bonus ? bonus.zuschlag : 0),
+      // 🔴 Der GRUNDWERT: dieselbe Wertung ohne jeden Aufschlag — ohne Joker,
+      // ohne Derby, ohne Big Game, ohne Liga-Gewicht, ohne Tabellen-Bonus.
+      //
+      // Das ist die Rechengrundlage der FREMDJOKER (Andi, 22.08.2026). Zwei
+      // Entscheidungen fallen damit in EINER Zahl zusammen:
+      //
+      // 1. **Selbst gesetzte Joker zählen nicht** — sonst hinge der Wert eines
+      //    Angriffs davon ab, WANN das Opfer seinen Joker setzt. „Der Zeitpunkt
+      //    der Tippabgabe muss egal sein" ist Andis Grundsatz vom selben Tag.
+      // 2. **Rundenweite Gewichte zählen nicht** — sonst wäre das schwerste
+      //    Spiel (CL, Derby, Spitzenspiel) immer das lohnendste Ziel, und die
+      //    Zielwahl wäre keine Entscheidung mehr, sondern eine Rechenaufgabe mit
+      //    bekannter Lösung. Das Gewicht bleibt beim OPFER, wo es hingehört: für
+      //    den Tipper zählt die CL weiter mehr, nur der Angreifer nicht.
+      //
+      // ⚠️ Bewusst EINE Regel statt einer Ausschlussliste („die nackte
+      // Quoten-Wertung des Tipps"). Eine Liste müsste bei jedem neuen
+      // Modifikator nachgepflegt werden — und würde es irgendwann nicht.
+      grundwert: Math.round((b.wert + (bonus ? bonus.zuschlag : 0))
+        / (Number.isFinite(b.faktor) && b.faktor > 0 ? b.faktor : 1)),
       ersatz: b.e.ersatz === true,
     });
   }
@@ -1635,11 +1657,18 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
   // ⚠️ `punkteJeSpiel` NUR rechnen, wenn die Streicher überhaupt an sind — es
   // ist ein voller Bewertungsdurchgang über alle Einträge. Bei
   // `streich: 0` (Vorgabe) kostet die Zeile nichts.
-  const spielPunkte = sanitizeSaisonform(rules?.saisonform).streich > 0
-    ? punkteJeSpiel(entries, rules, regelnFuer)
-    : null;
+  // ⚠️ `punkteJeSpiel` ist ein voller Bewertungsdurchgang über alle Einträge —
+  // deshalb nur rechnen, wenn ihn jemand braucht. Zwei Regeln fragen danach:
+  // die Streicher (welches EINZELSPIEL fällt weg) und die Fremdjoker (auf
+  // welchem Grundwert rechnet ein Klau/Block). Bei Vorgabe kostet die Zeile
+  // nichts.
+  const brauchtSpiele = sanitizeSaisonform(rules?.saisonform).streich > 0
+    || (sanitizeDuellJoker(rules?.duell).enabled && (einsaetze?.length ?? 0) > 0);
+  const spielPunkte = brauchtSpiele ? punkteJeSpiel(entries, rules, regelnFuer) : null;
   return applyCatchup(
-    applySaisonform(applyDuellJoker(mitWirkungen, rules, einsaetze, sammeln), rules, spielPunkte),
+    applySaisonform(
+      applyDuellJoker(mitWirkungen, rules, einsaetze, sammeln, spielPunkte),
+      rules, spielPunkte),
     rules, regelnFuer);
 }
 

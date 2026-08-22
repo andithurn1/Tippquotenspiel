@@ -542,7 +542,7 @@ export function einsaetzeAusTipps(tipps = [], { spieltagVon = null } = {}) {
 // `sammeln` ist eine optionale Liste, in die die Einzel-Vorgänge geschrieben
 // werden (siehe `duellVorgaenge`). Ohne sie verhält sich die Funktion exakt
 // wie bisher — die Wertung bleibt unberührt.
-export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = [], sammeln = null) {
+export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = [], sammeln = null, spielPunkte = null) {
   const cfg = sanitizeDuellJoker(rules?.duell);
   const liste = Array.isArray(einsaetze) ? einsaetze : [];
   if (!cfg.enabled || !Array.isArray(verlauf) || verlauf.length === 0 || liste.length === 0) {
@@ -563,6 +563,23 @@ export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = [], sammel
     }
   });
 
+  // 🔴 FREMDJOKER treffen EINZELNE SPIELE (Andi, 22.08.2026) — und rechnen
+  // auf dem GRUNDWERT des getroffenen Tipps: der nackten Quoten-Wertung ohne
+  // Joker, Derby, Big Game, Liga-Gewicht und Tabellen-Bonus (`punkteJeSpiel`
+  // in engine.js erklärt, warum das EINE Regel statt einer Ausschlussliste
+  // ist). Ohne diese Normierung wäre das schwerste Spiel des Spieltags immer
+  // das lohnendste Ziel — und die Zielwahl keine Entscheidung mehr.
+  //
+  // ⚠️ Ein Einsatz OHNE `matchId` rechnet weiterhin auf den ganzen Spieltag.
+  // Das ist der Übergangszustand, solange die Store-Anbindung fehlt; sobald
+  // sie steht, erzeugt sie nur noch Einsätze MIT Spiel (design/
+  // joker-sondermenue.md, JK15). Ein stiller Wechsel der Rechengrundlage wäre
+  // schlimmer als der benannte Übergang.
+  const grundwertVon = new Map();   // `${userId}#${matchId}` -> Grundwert
+  for (const sp of Array.isArray(spielPunkte) ? spielPunkte : []) {
+    if (sp && sp.matchId != null) grundwertVon.set(`${sp.userId}#${sp.matchId}`, sp.grundwert);
+  }
+
   // Chronologisch anwenden, damit `maxProSaison` die SPÄTEREN Einsätze
   // deckelt — dieselbe Regel wie der Deckel in `ereignisse.js`.
   const geordnet = [...liste].sort((a, b) => (a.spieltag ?? 0) - (b.spieltag ?? 0));
@@ -582,7 +599,18 @@ export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = [], sammel
     // RECHENGRUNDLAGE, wenn sie eine endliche Zahl ist. Der spätere ABZUG
     // wirkt trotzdem auf `zielVoll` (die vollen Spieltagspunkte) — `basis`
     // bestimmt nur, WORAUF gerechnet wird, nicht WO abgezogen wird.
-    const zielPunkte = Number.isFinite(e.basis) ? e.basis : zielVoll;
+    // Reihenfolge der Rechengrundlage:
+    //   1. ein ausdrücklich mitgegebenes `basis` (Abschnitt 8b (b)),
+    //   2. der GRUNDWERT des getroffenen Einzelspiels (der Normalfall, s.o.),
+    //   3. die Spieltagspunkte (Übergang, solange kein Spiel benannt ist).
+    // Der spätere ABZUG wirkt in allen drei Fällen auf `zielVoll` — die
+    // Grundlage bestimmt, WORAUF gerechnet wird, nicht WO abgezogen wird.
+    const ausSpiel = e.matchId != null
+      ? grundwertVon.get(`${e.aufUserId}#${e.matchId}`)
+      : undefined;
+    const zielPunkte = Number.isFinite(e.basis) ? e.basis
+      : Number.isFinite(ausSpiel) ? ausSpiel
+      : zielVoll;
 
     let transfer = 0; // was der Von-Nutzer bekommt (vor dem Deckel)
     let abzug = 0;     // was der Ziel-Nutzer verliert — UNABHÄNGIG vom Deckel
