@@ -21,7 +21,6 @@ import TeilCodeFeld from "@/components/TeilCodeFeld";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
-import SaisonWetten from "@/components/SaisonWetten";
 import WettbewerbGewichte from "@/components/WettbewerbGewichte";
 import RundenCharaktere from "@/components/RundenCharaktere";
 import EinfacheRegler from "@/components/EinfacheRegler";
@@ -31,13 +30,11 @@ import ProfiWarnungen from "@/components/ProfiWarnungen";
 import Mitbestimmung from "@/components/Mitbestimmung";
 import Bausteine from "@/components/Bausteine";
 import AufwandPanel from "@/components/AufwandPanel";
-import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } from "@/lib/spielauswahl";
-import { VORLAUF_STUFEN, ANKER, beschreibeTippfenster, erklaereTippfenster } from "@/lib/tippfenster";
+import { sanitizeSpiele, spieleProSpieltag } from "@/lib/spielauswahl";
 import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
 import SpielauswahlListe from "@/components/SpielauswahlListe";
 import LigaSonderregeln from "@/components/LigaSonderregeln";
 import Alleinstellung from "@/components/Alleinstellung";
-import Zeitachse from "@/components/Zeitachse";
 import { C, MONO, SCHRIFT } from "@/lib/theme";
 import { zahl, fmtFaktor } from "@/lib/format";
 import { Zahl, Slider, Toggle, Field, Stepper, GrosseZeile } from "@/components/Eingaben";
@@ -45,6 +42,7 @@ import JokerSondermenue, { jokerZeileStand } from "@/components/JokerSondermenue
 import ModifikatorenSondermenue, { modifikatorenStand } from "@/components/ModifikatorenSondermenue";
 import WertungSondermenue, { wertungStand } from "@/components/WertungSondermenue";
 import VerlaufSondermenue, { verlaufStand } from "@/components/VerlaufSondermenue";
+import SaisonZeitSondermenue, { saisonZeitStand } from "@/components/SaisonZeitSondermenue";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
@@ -100,6 +98,7 @@ export default function Spielerstellung() {
   const [modsOffen, setModsOffen] = useState(false);
   const [wertungOffen, setWertungOffen] = useState(false);
   const [verlaufOffen, setVerlaufOffen] = useState(false);
+  const [saisonOffen, setSaisonOffen] = useState(false);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -143,7 +142,6 @@ export default function Spielerstellung() {
       patchJoker({ modus: letzterModus });
     }
   };
-  const setSaison = (saison) => { touched(); setRules((r) => ({ ...r, saison })); };
   // Faktor eines Vereins durch feste Stufen weiterdrehen. 1 = kein
   // Modifikator und fliegt aus der Liste, damit das Regelwerk klein bleibt.
   // Der nächste Wert wird IM Updater aus dem vorherigen Stand berechnet —
@@ -956,15 +954,28 @@ export default function Spielerstellung() {
               onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
           </GrosseZeile>
 
-          {/* Saison-Wetten (Langzeit-Ebene) */}
-          </>)}
+          {/* 🔴 SAISON & ZEIT — die fünfte und letzte Zeile (Andi, 22.08.2026:
+              „eigene zeile").
 
-          <SectionTitle>Saison-Wetten</SectionTitle>
-          <SaisonWetten
-            saison={rules.saison || DEFAULT_RULES.saison}
-            onChange={setSaison}
-            teams={ALL_TEAMS}
-          />
+              Zusammengefasst sind Saison-Wetten, Tipp-Fenster, Zeitachse und
+              Zeitraum. Was sie verbindet, ist nicht das Thema, sondern die
+              ACHSE: alle vier beantworten WANN etwas gilt, nicht wie viel es
+              zählt. Vorher lagen sie an drei Stellen, der Zeitraum sogar
+              hinter dem Versäumnis.
+
+              ⚠️ Der Zeitraum ist streng genommen Betippungsauswahl
+              (`rules.spiele`) — er steht hier, weil ein Admin ihn dort sucht,
+              wo er auch das Tipp-Fenster einstellt. Im Sondermenü steht die
+              Begründung. */}
+          <SectionTitle>Saison &amp; Zeit</SectionTitle>
+          <GrosseZeile
+            icon="📅" titel="Saison &amp; Zeit" unter="Saison-Wetten · Tippbar ab · Zeitachse · Zeitraum"
+            wert={saisonZeitStand(rules)}
+            offen={saisonOffen} onClick={() => setSaisonOffen((o) => !o)}
+          >
+            <SaisonZeitSondermenue rules={rules} teams={ALL_TEAMS}
+              onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
+          </GrosseZeile>
 
           {/* Wettbewerbs-Gewichte — gehört zu den Modifikatoren, steht aber
               hier unten, weil es nur Runden mit mehreren Wettbewerben betrifft. */}
@@ -972,123 +983,6 @@ export default function Spielerstellung() {
           <WettbewerbGewichte rules={rules}
             onChange={(wettbewerbe) => { touched(); setRules((r) => ({ ...r, wettbewerbe })); }} />
 
-
-          {stufe === "profi" && (<>
-          {/* Tipp-Fenster: wie früh vor Anpfiff getippt wird. Gehört hierher,
-              weil es dieselbe Frage beantwortet wie die Spielauswahl — WAS
-              steht wann zum Tippen an. */}
-          <div style={{ marginTop: 12, marginBottom: 4 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Ab wann tippbar?</div>
-            <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
-              Quoten erscheinen erst einige Tage vor Anpfiff. Wie früh eure Runde
-              tippt, entscheidest du — geschlossen wird immer beim Anpfiff.
-            </p>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {VORLAUF_STUFEN.map((st) => {
-                const an = (rules.tippfenster?.vorlaufStunden ?? 168) === st.stunden;
-                return (
-                  <button key={st.stunden} title={st.hint}
-                    /* ⚠️ `...r.tippfenster` mitnehmen: die frühere Fassung
-                       ersetzte das GANZE Objekt und warf damit den Anker weg.
-                       Ein Creator-Code mit `anker: "spieltag"` verlor ihn,
-                       sobald jemand den Vorlauf einmal anfasste — lautlos. */
-                    onClick={() => { touched(); setRules((r) => ({ ...r, tippfenster: { ...r.tippfenster, vorlaufStunden: st.stunden } })); }}
-                    style={{
-                      ...TAPZIEL, flex: "1 1 70px", cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
-                      borderRadius: 11, fontSize: 12, fontWeight: 700,
-                      background: an ? `${C.akzent}22` : C.surface,
-                      color: an ? C.akzent : C.muted,
-                      border: `1px solid ${an ? C.akzent + "66" : C.line}`,
-                    }}>{st.label}</button>
-                );
-              })}
-            </div>
-            {/* 🔴 Der ANKER hatte bis 06.08.2026 überhaupt keine Oberfläche.
-                Er stand im Regelwerk, war über den Creator-Code teilbar, wurde
-                von `sanitizeRules` gesäubert — und niemand konnte ihn
-                einstellen. Dazu lief er ins Leere, weil die Aufrufer die
-                `starts`-Map nicht mitgaben (siehe tippfenster.js). Drei
-                Schichten übereinander, und keine davon meldete sich. */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-              {ANKER.map((a) => {
-                const an = (rules.tippfenster?.anker ?? "spiel") === a.key;
-                return (
-                  <button key={a.key} title={a.erklaerung}
-                    onClick={() => { touched(); setRules((r) => ({ ...r, tippfenster: { ...r.tippfenster, anker: a.key } })); }}
-                    style={{
-                      flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
-                      borderRadius: 11, fontSize: 12, fontWeight: 700,
-                      background: an ? `${C.akzent}22` : C.surface,
-                      color: an ? C.akzent : C.muted,
-                      border: `1px solid ${an ? C.akzent + "66" : C.line}`,
-                    }}>{a.label}</button>
-                );
-              })}
-            </div>
-            <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
-              {beschreibeTippfenster(rules)}
-            </p>
-            {/* Die drei Fragen, die ein Spieler wirklich stellt — statt einer
-                Beschreibung der Einstellung. `erklaereTippfenster` war dafür
-                gebaut und hatte keinen Aufrufer (gefunden über `npm run tot`). */}
-            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
-              {erklaereTippfenster(rules).map((z) => (
-                <div key={z.frage} style={{ fontSize: 11, lineHeight: 1.45 }}>
-                  <span style={{ color: C.text, fontWeight: 700 }}>{z.frage}</span>{" "}
-                  <span style={{ color: C.muted }}>{z.antwort}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Zeitachse — was ein Spieltag DER RUNDE umfasst, wenn mehrere Ligen
-              versetzt laufen. Zeigt sich selbst nur bei mehreren Wettbewerben. */}
-          <Zeitachse
-            zeitachse={rules.zeitachse}
-            onChange={(neu) => { touched(); setRules((r) => ({ ...r, zeitachse: neu })); }}
-          />
-
-          {/* Zeitraum — gilt zusätzlich zu jeder Vereins-Auswahl */}
-          <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Zeitraum</div>
-            <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
-              Leer = ganze Saison. Für kurze Runden („nur die Rückrunde", „die letzten
-              fünf Spieltage") hier eingrenzen.
-            </p>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              {[["spieltagVon", "von"], ["spieltagBis", "bis"]].map(([feld, label]) => (
-                <label key={feld} style={{ flex: 1, fontSize: 12, color: C.muted }}>
-                  Spieltag {label}
-                  <input type="number" inputMode="numeric"
-                    min={AUSWAHL_LIMITS.spieltag.min} max={AUSWAHL_LIMITS.spieltag.max}
-                    value={sp[feld] ?? ""}
-                    onChange={(e) => patchSpiele({ [feld]: e.target.value === "" ? null : Number(e.target.value) })}
-                    placeholder="—"
-                    style={{
-                      display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
-                      background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-                      borderRadius: 10, padding: "8px 10px", fontSize: 13, fontFamily: MONO, outline: "none",
-                    }} />
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div style={{
-            marginTop: 10, background: C.ink2, border: `1px solid ${C.line}`,
-            borderRadius: 12, padding: "10px 12px",
-          }}>
-            <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted, textTransform: "uppercase" }}>
-              Wandert mit dem Code
-            </div>
-            <div style={{ fontSize: 12, color: C.text, marginTop: 4, lineHeight: 1.45 }}>
-              {beschreibeAuswahl(sp)}
-            </div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
-              Wer deinen Creator-Code lädt, bekommt diese Auswahl gleich mit — und
-              kann sie danach trotzdem ändern.
-            </div>
-          </div>
 
           {/* Runde erstellen */}
           </>)}

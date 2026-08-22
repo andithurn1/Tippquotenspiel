@@ -45,9 +45,10 @@ Andersherum liegt alles flach auf einer Seite — schlechter als heute.
 | **Modifikatoren** (Derby · Vereine · Big Game · Außenseiter, ein Deckel) | ✅ `ModifikatorenSondermenue.jsx`, Commit `b10d2da` |
 | **Wertung** (Nähe, Underdog/Favorit, Kombi, Sieger-Boden, Anzeige & Cutoffs, Märkte, Regler-Feinheit) | ✅ `WertungSondermenue.jsx`, Commit `dee81ed` |
 | **Verlauf** (Anschluss halten, Streicher & Saisonverlauf, Spieltag vergessen) | ✅ `VerlaufSondermenue.jsx` |
-| **Saison & Zeit** (Saison-Wetten, Zeitachse, Tippfenster, Zeitraum) | ⏳ liegt noch verstreut zwischen Versäumnis und „Runde erstellen"; gehört eher zur Betippungsauswahl als zum Verlauf |
+| **Saison & Zeit** (Saison-Wetten, Zeitachse, Tippfenster, Zeitraum) | ✅ `SaisonZeitSondermenue.jsx` — eigene Zeile (Andi, 22.08.2026). Der Zeitraum steht bewusst hier statt bei der Betippungsauswahl: er beantwortet dieselbe Frage wie Tipp-Fenster und Zeitachse |
 | **Mitbestimmung** | ⏳ klein, kann an die Wertung anschließen |
-| Danach: `AnsichtSchalter.jsx` + Zustand `stufe` entfernen | ⏳ |
+| **Mitbestimmung** und **Alleingang-Bonus** | ⏳ die letzten zwei Einzelabschnitte; beide klein genug, dass eine eigene Zeile sie eher versteckt als ordnet — vor dem Umschalter-Ausbau entscheiden |
+| Danach: `AnsichtSchalter.jsx` + Zustand `stufe` entfernen | ⏳ **jetzt dran** — alle fünf Sondermenüs stehen |
 
 **Das Muster steht** und ist zweimal durchgehalten: eine `GrosseZeile` mit
 Stand-Anzeige, dahinter entweder Karten (wenn es viele Werte sind) oder
