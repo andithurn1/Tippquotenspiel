@@ -15,7 +15,6 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
-import AnsichtSchalter from "@/components/AnsichtSchalter";
 import VariantenWahl from "@/components/VariantenWahl";
 import TeilCodeFeld from "@/components/TeilCodeFeld";
 import RegelVorschau from "@/components/RegelVorschau";
@@ -65,7 +64,6 @@ export default function Spielerstellung() {
   // „einfach" = Voreinstellungen und die wichtigsten Regler · „profi" = alles.
   // Beim Wechsel geht NICHTS verloren, weil beide auf demselben `rules`-Objekt
   // arbeiten. Seit 20.08.2026 nur noch ZWEI (Andi) — „anpassen" ist entfallen.
-  const [stufe, setStufe] = useState("einfach");
   // 🔴 Welcher Joker-Modus galt, bevor auf „Budget" gewechselt wurde. Ohne das
   // landet ein Rückwechsel stillschweigend auf „Ein Joker": `einsatz` ist EIN
   // Wert desselben Feldes, das Verlassen überschreibt also die vorige Wahl.
@@ -416,7 +414,6 @@ export default function Spielerstellung() {
         <div style={{ flex: 1, minWidth: 0 }}>
           <BackLink href="/menu" label="Menü" />
         </div>
-        <AnsichtSchalter stufe={stufe} onWechsel={setStufe} />
       </div>
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
@@ -705,7 +702,6 @@ export default function Spielerstellung() {
               Voreinstellungen sind jederzeit abrufbar — nur nicht mehr als
               fünf offene Karten zwischen Auswahl und Reglern. Welche gerade
               gilt, steht rechts in der Zeile. */}
-          {stufe === "profi" && (<>
           <GrosseZeile
             icon="📚" titel="Empfehlungen verwalten"
             wert={PRESETS.find((p) => p.key === presetKey)?.label ?? "eigenes"}
@@ -804,19 +800,13 @@ export default function Spielerstellung() {
 
             {/* Leitplanken: nur in der Profi-Stufe, weil nur dort einzelne Regler
                 bis an ihre harte Grenze laufen können. */}
-            {stufe === "profi" && (
-              <ProfiWarnungen rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
-            )}
+            <ProfiWarnungen rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
           </div>
 
           {/* Schärfe */}
           {/* Stufe 2: vier grosse Fragen statt der Rohregler darunter */}
-          {stufe === "einfach" && (
-            <>
-              <SectionTitle>Die vier wichtigsten Fragen</SectionTitle>
-              <EinfacheRegler rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
-            </>
-          )}
+          <SectionTitle>Die vier wichtigsten Fragen</SectionTitle>
+          <EinfacheRegler rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
 
           {/* Mitbestimmung: Regel-Abstimmung + Verfassung
               (design/abstimmung-verfassung.md). Nur in der Profi-Stufe — bei
@@ -824,28 +814,19 @@ export default function Spielerstellung() {
               ändern?" dasselbe in drei Bündeln, und bei „einfach" entscheidet
               der Charakter. Wer Quorum, Fristen und eine Verfassung je Bereich
               einzeln stellen will, ist genau hier richtig. */}
-          {stufe === "profi" && (
-            <>
-              <SectionTitle>Mitbestimmung</SectionTitle>
-              <Mitbestimmung rules={rules}
-                onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
-            </>
-          )}
+          <SectionTitle>Mitbestimmung</SectionTitle>
+          <Mitbestimmung rules={rules}
+            onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
 
           {/* Alleingang-Bonus (Andis Stadt-Land-Fluss-Mechanik, 09.08.2026).
               In Stufe 2 beantwortet die Klartext-Frage „Lohnt sich ein
               Alleingang?" dasselbe in vier Bündeln; hier stehen alle
               Variablen einzeln, mit Regler UND Zahlenfeld. */}
-          {stufe === "profi" && (
-            <>
-              <SectionTitle>Alleingang-Bonus</SectionTitle>
-              <Alleinstellung rules={rules}
-                onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
-            </>
-          )}
+          <SectionTitle>Alleingang-Bonus</SectionTitle>
+          <Alleinstellung rules={rules}
+            onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
 
 
-          {stufe === "profi" && (<>
           {/* 🔴 WERTUNG — eine Zeile für das, was aus Quote und Tipp Punkte
               macht (drittes Sondermenü, Andi EB2/EB4).
 
@@ -903,7 +884,7 @@ export default function Spielerstellung() {
             wert={jokerZeileStand(rules)}
             offen={jokerOffen} onClick={() => setJokerOffen((o) => !o)}
           >
-            <JokerSondermenue rules={rules} stufe={stufe} premium={premium}
+            <JokerSondermenue rules={rules} premium={premium}
               spieleJeSpieltag={aufwandKontext.spieleJeSpieltag}
               onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
           </GrosseZeile>
@@ -985,8 +966,6 @@ export default function Spielerstellung() {
 
 
           {/* Runde erstellen */}
-          </>)}
-          </>)}
 
           <SectionTitle>Runde erstellen</SectionTitle>
           {!created ? (
@@ -1079,12 +1058,8 @@ export default function Spielerstellung() {
           {/* Bausteine: einzelne Aspekte (Drehrad, Joker-Ökonomie, …) als
               eigener Teil-Code — nur ab „anpassen", weil in „einfach"
               Charakter und Preset die Entscheidung treffen. */}
-          {stufe === "profi" && (
-            <>
-              <SectionTitle>Bausteine</SectionTitle>
-              <Bausteine rules={rules} />
-            </>
-          )}
+          <SectionTitle>Bausteine</SectionTitle>
+          <Bausteine rules={rules} />
 
           {/* Import: langer ODER kurzer Code */}
           <div style={{ marginTop: 14, display: "flex", gap: 8 }}>

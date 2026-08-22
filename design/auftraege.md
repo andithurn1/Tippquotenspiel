@@ -65,8 +65,8 @@ Wettbewerbe ganz oben. Genau der Sprung, den ST2 verbietet.
 
 | Nr | Ansage | Stand | Beleg / was fehlt |
 |---|---|---|---|
-| EB1 | „arbeite in nem separatem word mal sehr umfangreich aus, welche Parameter bei den jeweiligen Ebenen geändert werden sollen“ | ✅ | `design/entwuerfe/Ebenen-Parameter.docx` — **erzeugt** aus dem Regelwerk (`scripts/ebenen-dokument.mjs`), 38 Blöcke, 180 Parameter, jeder mit Vorgabe und mit der Quelle, die ihn in Einfach setzt |
-| EB2 | „welche bei der einfachen Variante weggelassen werden“ | ✅ | ausgezählt: **128 von 180** werden von keiner Voreinstellung und keinem Regler angefasst — sie stehen nur in Profi und behalten sonst ewig ihre Vorgabe |
+| EB1 | **Nur die Detail-Version** — kein Umschalten mehr zwischen Einfach und Profi | ✅ | `AnsichtSchalter.jsx` gelöscht, Zustand `stufe` raus, alle 7 Stufen-Bedingungen aufgelöst — auch die durchgereichte in `JokerSondermenue`/`JokerOekonomie`. Im Browser geprüft: kein Umschalter mehr, alle sechs Zeilen sichtbar, „Die vier wichtigsten Fragen" bleiben. Auf 375×812: 76 Knöpfe, keiner unter 44 px, kein Querlauf |
+| EB2 | Verfeinerungen je Einstellung in ein **eigenes Sondereinstellungs-Menü**, wie bei den Mannschaften | ✅ | **Fünf Menüs**: Wertung · Joker · Modifikatoren · Verlauf · Saison & Zeit (`*Sondermenue.jsx`). `Spielerstellung.jsx` 2386 → 1109 Zeilen |
 | EB3 | „bei Profi soll jede denkbare Kombination und Art wie bzw. für wann dies bestimmt wird anpassbar sein“ | ❓ | Als **vier Achsen** ausgearbeitet (WER · WANN · WIE · WOFÜR) samt dem, was es dafür schon gibt. ⚠️ Frei kombiniert sind das über 700 Entscheidungen — **die Entscheidung, ob alle Achsen für jeden Parameter offenstehen, fehlt und trägt alles Weitere** |
 
 ## Teil-Codes (21.08.2026)
@@ -141,7 +141,7 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | EB1 | **Nur die Detail-Version** — kein Umschalten mehr zwischen Einfach und Profi | ⏳ | Grund von Andi: „wir können schnell Fehler machen, wenn zwischen den Ebenen geswitched wird“. Hebt ST1/ST2/ST7 auf |
 | EB2 | Verfeinerungen je Einstellung in ein **eigenes Sondereinstellungs-Menü**, wie bei den Mannschaften | 🔨 | **Joker ist gebaut** (`JokerSondermenue.jsx`, `4030f5c`): eine Zeile, dahinter fünf Karten nach der Frage statt nach dem Regel-Block; `Spielerstellung.jsx` 2386 → 1761 Zeilen. Im Browser auf 375×812 durchgeklickt, kein Tippziel unter 44 px. ⏳ Offen sind die übrigen Bereiche (Modifikatoren, Saison-Wetten, Wertung, Betippungsauswahl) |
 | EB3 | Trotzdem bedienbar **ohne alles durchzulesen und einzeln einzustellen** | ⏳ | Damit werden die Voreinstellungen wichtiger, nicht unwichtiger: sie tragen die eine Ansicht |
-| EB4 | **Reihenfolge des Umbaus**: erst die Sondermenüs, dann der Umschalter weg | ⏳ | ⚠️ Andersherum entsteht ein Zwischenzustand, in dem alles flach auf einer Seite liegt — schlechter als heute |
+| EB4 | **Reihenfolge des Umbaus**: erst die Sondermenüs, dann der Umschalter weg | ✅ | Genau so gelaufen: fünf Menüs zuerst (`4030f5c` … `a513efc`), der Umschalter erst danach |
 | EB5 | „Klassische Playlist“ als Voreinstellung, *„so wie ich mir eine Tipprunde erstellen würde“* | ⏳ | ⛔ Ausdrücklich **gemeinsam am Ende, mit dem Balancing** |
 
 ## Joker-Sondermenü (22.08.2026)
@@ -164,6 +164,7 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | JK14 | **Jeder Tipper darf je Spieltag ausgewählte Spiele vor JEDEM Fremdjoker schützen** — „weil man die evtl. selber live verfolgen will" | ⏳ | Vorlage ausgefüllt in `joker-sondermenue.md`, Abschnitt „Geschützte Spiele": Ebene 6, zwei Einstellwerte (`schutzProSpieltag` · `schutzSichtbar`), Wahl gehört in die Tippabgabe. 🔴 Die erste Schutzregel, die dem SPIELER gehört statt dem Admin — und die Bedingung dafür, dass eine Runde die Fremdjoker überhaupt anlässt. Zwei ❓ im Eintrag |
 | JK15 | **Alle Fremdjoker treffen EINZELNE SPIELE**, nicht ganze Spieltage | 🔨 | Rechengrundlage gebaut: ein Einsatz mit `matchId` rechnet auf genau diesem Spiel (`applyDuellJoker`, 5 Tests). ⏳ Offen ist die Store-Anbindung — solange sie fehlt, gibt es keine Einsätze, und ein Einsatz OHNE `matchId` rechnet weiter auf den Spieltag (benannter Übergang, im Code begründet) |
 | JK16 | **Wie geht das mit höher gewichteten Spielen (CL) zusammen?** | ✅ | **Entschieden am 22.08.2026** (Andi: „mach so wie du meinst, und ja auch Gegenwette wie du sagst“): die WIRKUNG wird normiert, nicht der Preis. Ein Fremdjoker rechnet auf dem `grundwert` — der nackten Quoten-Wertung ohne Joker, Derby, Big Game, Liga-Gewicht und Tabellen-Bonus. Gebaut in `engine.js` (`punkteJeSpiel`) + `duellJoker.js`; der entscheidende Test: dasselbe Spiel ist als Ziel gleich viel wert, ob mit oder ohne CL-Aufschlag. **Gilt auch für die Gegenwette** — die frühere Festlegung (Standard-Mods zählen mit) ist damit überholt und in Teil E durchgestrichen |
+| JK17 | Im **Budget-Spielmodus zwei Währungen**: eine für Joker, eine für die Tippabgabe — „aber das kommt dann" | ✅ | **Gibt es schon** und heißt so: 🃏 **Narren** kaufen Joker im Shop, 🪙 **Münzen** sind der Einsatz beim Tippen (`design/waehrungen.md`, gebaut am 03.08.2026). Seine Bestätigung ist damit belegt, nicht offen. ⏳ Was beim Budget-Modus noch offen ist, steht in `joker-sondermenue.md` Abschnitt 0: soll der Narren-Shop dort wirklich abgeschaltet bleiben? |
 
 ## Wertung & Verlauf (22.08.2026)
 

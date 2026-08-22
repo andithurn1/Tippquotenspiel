@@ -72,7 +72,7 @@ export function jokerZeileStand(rules) {
   return `${modus} · ${staerke}`;
 }
 
-export default function JokerSondermenue({ rules, stufe, premium, spieleJeSpieltag = [], onChange }) {
+export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = [], onChange }) {
   // Eine Karte zur Zeit — dieselbe Entscheidung wie bei den Liga-Zeilen in der
   // Betippungsauswahl: zwei offene Karten sind wieder eine lange Seite.
   const [karte, setKarte] = useState(null);
@@ -509,7 +509,7 @@ export default function JokerSondermenue({ rules, stufe, premium, spieleJeSpielt
           <GrosseZeile icon="🃏" titel="Gekauft — der Narren-Shop" unter="Zufluss, Preise, Verfall"
             wert={budgetAn ? "an" : "aus"}
             offen={unter === "shop"} onClick={() => aufUnter("shop")}>
-            <JokerOekonomie rules={rules} stufe={stufe} onChange={setzeOekonomie} />
+            <JokerOekonomie rules={rules} onChange={setzeOekonomie} />
           </GrosseZeile>
 
           {/* ── erspielt ── */}

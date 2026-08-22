@@ -27,13 +27,13 @@ const EINSAETZE = [1, 2, 3, 4];
 // „Acht Module liegen fertig und getestet in src/lib/. Kein einziges ist über
 // die Oberfläche erreichbar." (design/gehaeuse-ui.md). Diese Komponente macht
 // vier davon bedienbar: die kuratierte Bibliothek (`jokerBibliothek.js`), die
-// gemeinsame Währung samt Preisen (`jokerBudget.js`) und — nur in der
-// Profi-Stufe — das Achsenprofil über das GANZE Regelwerk.
+// gemeinsame Währung samt Preisen (`jokerBudget.js`) und
+// das Achsenprofil über das GANZE Regelwerk.
 //
 // Sprache in sichtbaren Texten: „Narren" und „Shop", nie „Budget"
 // (design/waehrungen.md Abschnitt 2). Die Code-Bezeichner bleiben wie sie
 // sind.
-export default function JokerOekonomie({ rules, onChange, stufe }) {
+export default function JokerOekonomie({ rules, onChange }) {
   const budget = rules.budget || {};
   const quellen = budget.quellen || [];
   const preise = budget.preise || {};
@@ -292,36 +292,38 @@ export default function JokerOekonomie({ rules, onChange, stufe }) {
         </div>
       </div>
 
-      {/* 2.4 Achsenprofil — nur Profi-Stufe. Das Profil des GANZEN aktuellen
-          Regelwerks, nicht nur der Bibliothek-Kombination. */}
-      {stufe === "profi" && (
-        <div style={{
-          marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`,
-          borderRadius: 14, padding: "14px 16px",
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 700 }}>Achsenprofil des gesamten Regelwerks</div>
-          {/* ⚠️ Muss sichtbar stehen, nicht im Kleingedruckten: die Zuordnung
-              ist geschätzt, keine Messung. */}
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 6, marginBottom: 12, lineHeight: 1.5 }}>
-            <strong style={{ color: C.text }}>Geschätzt, nicht gemessen:</strong> welches Feld
-            wie stark auf welche Achse zählt, ist eine Annahme, keine Messung. Die Balken
-            zeigen eine Richtung, keine Bewertung — kein Wert ist „zu hoch".
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            {ACHSEN.map((a) => (
-              <AchsenZeile key={a.key} achse={a} eintrag={profil[a.key]} />
-            ))}
-          </div>
-          {konflikte.map((k) => (
-            <div key={k.achse} style={{
-              background: `${C.indigo}12`, border: `1px solid ${C.indigo}44`, borderRadius: 12,
-              padding: "9px 11px", marginTop: 10, fontSize: 11, color: C.muted, lineHeight: 1.5,
-            }}>
-              {k.text}
-            </div>
+      {/* 2.4 Achsenprofil — das Profil des GANZEN aktuellen Regelwerks,
+          nicht nur der Bibliothek-Kombination.
+
+          ⚠️ Stand bis zum 22.08.2026 hinter `stufe === "profi"`. Mit dem Wegfall
+          des Anzeige-Umschalters (Andi EB1) gibt es nur noch EINE Ansicht — die
+          Abfrage wäre ab hier immer wahr gewesen und damit toter Code. */}
+      <div style={{
+        marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`,
+        borderRadius: 14, padding: "14px 16px",
+      }}>
+        <div style={{ fontSize: 13, fontWeight: 700 }}>Achsenprofil des gesamten Regelwerks</div>
+        {/* ⚠️ Muss sichtbar stehen, nicht im Kleingedruckten: die Zuordnung
+            ist geschätzt, keine Messung. */}
+        <p style={{ fontSize: 11, color: C.muted, marginTop: 6, marginBottom: 12, lineHeight: 1.5 }}>
+          <strong style={{ color: C.text }}>Geschätzt, nicht gemessen:</strong> welches Feld
+          wie stark auf welche Achse zählt, ist eine Annahme, keine Messung. Die Balken
+          zeigen eine Richtung, keine Bewertung — kein Wert ist „zu hoch".
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          {ACHSEN.map((a) => (
+            <AchsenZeile key={a.key} achse={a} eintrag={profil[a.key]} />
           ))}
         </div>
-      )}
+        {konflikte.map((k) => (
+          <div key={k.achse} style={{
+            background: `${C.indigo}12`, border: `1px solid ${C.indigo}44`, borderRadius: 12,
+            padding: "9px 11px", marginTop: 10, fontSize: 11, color: C.muted, lineHeight: 1.5,
+          }}>
+            {k.text}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
