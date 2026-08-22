@@ -159,3 +159,143 @@ man Zeitfenster an zwei Orten.
 ❓ **`jokerBasis` gilt heute für „standard"** — also alle Arten gleich. Soll
 jede Joker-Art ihre eigene Form bekommen (18 Werte × Anzahl Arten), oder bleibt
 es eine gemeinsame Grundform mit Ausnahmen?
+
+---
+
+# TEIL C · Weitere Joker-Arten
+
+**Andi am 22.08.2026:** *„ich denke wir können einige mehr Joker bzw.
+Wirkprinzipien reinbringen, mach mal ne Liste was dir noch einfällt … bspw.
+Underdog-Joker … will ich noch ne Form von Steal-Joker oder
+Trittbrettfahrer-Joker."*
+
+⚠️ Gegliedert wie der Modifikatoren-Katalog: nach dem, **was ein Joker
+braucht**, um überhaupt zu funktionieren. Alles hier ist mit vorhandenen Daten
+baubar — steht ausdrücklich dabei, wo nicht.
+
+🔴 **Der Unterschied zu einem Modifikator:** ein Joker kostet eine
+ENTSCHEIDUNG. Ein Modifikator greift von allein; ein Joker muss gesetzt werden,
+ist begrenzt und tut woanders weh. Wo diese Entscheidung fehlt, ist es kein
+Joker, sondern ein Modifikator mit falschem Namen.
+
+## Schon gebaut
+
+| Joker | Wirkprinzip |
+|---|---|
+| **Gesetzter Joker** | Der Tipper hebt ein Spiel hervor (einzeln, verteilt oder per Münzen) |
+| **Heimatbonus** | Spiele des eigenen Vereins zählen mehr — passiv |
+| **Mut-Bonus** | Zahlt bei eingelöstem Tipp gegen den Favoriten — passiv |
+| **Klau-Joker** | Nimmt einem Mitspieler einen Anteil seiner Punkte |
+| **Block-Joker** | Wehrt einen Klau ab, behält einen Restanteil |
+
+---
+
+## Gegen den Markt
+
+### J1 · Underdog-Joker
+**Wirkprinzip:** Zählt NUR auf Spielen über einer Quotenschwelle.
+⚠️ Andis Einwand stimmt: die Quote steckt schon in der Wertung. Der Unterschied
+ist die **Verknappung** — man hat nur zwei davon, und sie zwingen zur Wahl,
+welchem Außenseiter man wirklich traut.
+`abQuote` · `faktor` · `anzahlProSaison`
+
+### J2 · Bank-Joker
+**Wirkprinzip:** Das Gegenteil. Nur auf klaren Favoriten, kleiner Aufschlag —
+dafür **kein Abzug bei Fehltipp**. Der Joker für den, der führt.
+`bisQuote` · `faktor` · `schuetztVorMalus`
+
+### J3 · Alles-oder-nichts
+**Wirkprinzip:** Doppelte Punkte bei exaktem Ergebnis, null bei allem anderen —
+auch bei richtiger Tendenz.
+`faktor` · `stufe` (was als Treffer gilt)
+
+---
+
+## Gegen Mitspieler
+
+### J4 · Trittbrettfahrer  🔴 Andis Wunsch
+**Wirkprinzip:** Man übernimmt den Tipp eines Mitspielers und bekommt einen
+Anteil seiner Punkte.
+
+⚠️ **Die Falle, die er lösen muss:** Tipps sind bis zum Anpfiff VERDECKT. Man
+kann nicht abschreiben, was man nicht sieht. Es gibt zwei saubere Wege:
+
+- **blind** — „ich nehme, was Lena tippt", festgelegt vor Abgabe, aufgelöst
+  beim Anpfiff. Elegant: man setzt auf die PERSON, nicht auf den Tipp.
+- **verzögert** — man kopiert den Tipp des letzten Spieltags auf den nächsten.
+
+⚠️ **Es muss wehtun.** Ein Trittbrettfahrer ohne Preis ist eine Kopiermaschine:
+der Beste wird zum Ziel aller, und die Runde tippt einmal. Mögliche Preise:
+Anteil kleiner als 100 %, der Kopierte bekommt etwas ab, oder es kostet einen
+eigenen Tipp.
+
+`anteil` · `wer` (frei / nur vorne / nur hinten) · `blindOderVerzoegert` ·
+`sichtbarFuerZiel` · `maxProSaison` · `kopierterBekommt`
+
+### J5 · Schaden-Joker
+**Wirkprinzip:** Man wettet, dass ein bestimmter Mitspieler an diesem Spieltag
+UNTER seinem Schnitt bleibt. Trifft es zu, gibt es Punkte; sonst kostet es.
+`einsatz` · `schwelle` · `maxProZiel`
+
+### J6 · Immun-Joker
+**Wirkprinzip:** Schützt einen Spieltag lang vor Klau und Schaden.
+⚠️ Das Feld `duell.immun` gibt es schon — als ZAHL, nicht als setzbarer Joker.
+`dauer` · `anzahlProSaison`
+
+### J7 · Geschenk
+**Wirkprinzip:** Einen eigenen Joker an einen Mitspieler abgeben.
+⚠️ **Absprachen sind damit möglich** — zwei Spieler können sich gegenseitig
+hochziehen. `nurAnHintere` entschärft das.
+`wasAbgebbar` · `nurAnHintere` · `maxProSaison`
+
+---
+
+## Über die Zeit
+
+### J8 · Streich-Joker
+**Wirkprinzip:** Ein schlechter Spieltag wird nachträglich gestrichen.
+⚠️ Verwandt mit `saisonform.streich`, aber als ENTSCHEIDUNG: man muss selbst
+wählen, wann man ihn zieht — und weiß nicht, ob noch ein schlechterer kommt.
+`anzahl` · `frist` (bis wann rückwirkend) · `nurEigene`
+
+### J9 · Doppel-Spieltag
+**Wirkprinzip:** Ein Spieltag zählt doppelt — Gewinn UND Verlust.
+`faktor` · `nurAnkuendigen` (vorher festlegen, nicht danach)
+
+### J10 · Aufhol-Joker
+**Wirkprinzip:** Nur verfügbar, wenn man einen Mindestabstand zurückliegt.
+⚠️ Nahe an `aufholen`, aber sichtbar und selbst gewählt statt automatisch —
+das fühlt sich völlig anders an als eine stille Korrektur.
+`abRueckstand` · `faktor` · `maxProSaison`
+
+---
+
+## Rund um die Tore
+
+### J11 · Torschützen-Joker
+**Wirkprinzip:** Verdoppelt nur den Torschützen-Teil, nicht das Ergebnis.
+`faktor` · `nurEinName`
+
+### J12 · Zu-Null-Joker
+**Wirkprinzip:** Zahlt, wenn die getippte Null hält.
+`seite` · `faktor`
+
+---
+
+## Nicht ohne neue Daten
+
+**Quoten-Einfrieren** („ich nehme die Quote von Montag statt die von Freitag")
+wäre reizvoll — verlangt aber mehrere Schnappschüsse je Spiel über die Zeit.
+Heute wird genau EINER eingefroren, 45 Minuten vor Anpfiff.
+
+---
+
+## Was für ALLE neuen Arten gilt
+
+Jede Art erbt die Grundform (`jokerBasis`, 18 Werte) — darunter **Abklingzeit**,
+Verfall, Widerruf, Stapeln, Sichtbarkeit und die Bedingung, auf welchen Quoten
+und Wettbewerben sie überhaupt greift. **Diese 18 müssen nicht je Art neu
+erfunden werden**; das ist der ganze Zweck der Grundform.
+
+❓ Offen bleibt die Frage aus Teil B: gilt die Grundform weiter für alle
+gemeinsam, oder bekommt jede Art ihre eigene?
