@@ -26,6 +26,7 @@ import { usePrefs } from "@/components/PrefsProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import NaheErgebnisse from "@/components/NaheErgebnisse";
+import ErgebnisMatrix from "@/components/ErgebnisMatrix";
 import { C, MONO, SCHRIFT } from "@/lib/theme";
 // ⚠️ Der SPIELER bekam hier gerundete Joker-Faktoren zu sehen: bei einem
 // eingestellten ×1,15 stand „×1.2" auf dem Knopf. Seit die Faktoren auf dem
@@ -1082,6 +1083,16 @@ export default function Tippabgabe({ matchId }) {
                     }}>{r.label}</span>
                   </div>
                 </div>
+
+                {/* 🔴 Die Ergebnis-Matrix (Andi, TI1–TI3 aus der Masterdatei).
+                    Sie steht UNTER der Zahleneingabe und ersetzt sie nicht:
+                    beides schreibt denselben Endstand, und wer schon weiß, was
+                    er tippen will, ist mit zwei Antippern am Stepper schneller
+                    als mit dem Suchen im Raster. Derselbe Gedanke wie Regler
+                    UND Zahlenfeld im Baukasten-Grundsatz — Wahl statt Ersatz. */}
+                <ErgebnisMatrix snap={SNAP} rules={RULES} tip={{ home: h, away: a }}
+                  gesperrt={gesperrt}
+                  onWahl={(hh, aa) => { setH(hh); setA(aa); }} />
               </Section>
             )}
 
