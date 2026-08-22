@@ -388,3 +388,76 @@ einer profitiert mit — die Rechnung wird schnell unübersichtlich.
 
 ❓ **Was sieht der Betroffene genau?** „Lena blockt dein Bayern-Spiel" ist die
 Grundlage des Gesprächs. „Jemand blockt eines deiner Spiele" wäre es nicht.
+
+---
+
+# TEIL E · Dagegen wetten — das umgekehrte Modell
+
+**Andi am 22.08.2026:** *„beim Dagegenwetten brauchen wir ja ein umgekehrtes
+Modell anhand der Quoten, um auszuwerten, wie sehr man belohnt wird."*
+
+## Die Formel
+
+Ein Tipp hat eine Wahrscheinlichkeit `p`, richtig zu sein — sie steckt bereits
+in der Quote. Wer dagegen wettet, gewinnt mit `1 − p`. Die faire Gegenquote ist
+also schlicht:
+
+```
+Gegenquote = 1 / (1 − p)
+```
+
+**Dieselbe Rechnung, nur die Gegenwahrscheinlichkeit.** Es braucht kein zweites
+Modell und keine neue Datenquelle — `winner` und `correctScore` liegen im
+Schnappschuss.
+
+## Gerechnet an einem echten Spiel
+
+Köln – Bayern, Quoten 5,20 · 4,74 · 1,50:
+
+| Tipp, gegen den gewettet wird | P(richtig) | P(falsch) | faire Gegenquote |
+|---|---|---|---|
+| Tendenz Auswärtssieg | 66,7 % | 33,3 % | **3,00** |
+| Tendenz Remis | 21,1 % | 78,9 % | 1,27 |
+| Tendenz Heimsieg | 19,2 % | 80,8 % | 1,24 |
+| Ergebnis 1:2 | 10,5 % | 89,5 % | 1,12 |
+| Ergebnis 0:1 | 8,7 % | 91,3 % | 1,10 |
+| Ergebnis 4:1 | 0,5 % | 99,5 % | **1,01** |
+
+🔴 **Das Modell reguliert sich selbst.** Gegen einen Favoritentipp zu wetten ist
+ein echtes Wagnis und zahlt dreifach. Gegen ein exaktes 4:1 zu wetten gewinnt
+man fast immer — und bekommt dafür ein Prozent. Niemand muss eine Regel gegen
+das Abgrasen sicherer Wetten schreiben; die Quote erledigt es.
+
+## ⚠️ Drei Fallen, die das kaputtmachen würden
+
+### 1. `minPayout` hebt die Kleinstbeträge an
+Das Regelwerk hat einen **Mindestertrag** (`minPayout`, Vorgabe 1). Läuft die
+Gegenwette durch dieselbe Wertung, würden aus 1,01 plötzlich volle Punkte —
+und das Abgrasen wäre wieder lohnend. **Die Gegenwette muss von `minPayout`
+ausgenommen sein.**
+
+### 2. Ohne EINSATZ ist auch 1,01 ein Geschenk
+Ein Gratis-Bonus von 1 % bei 99,5 % Trefferquote ist auf Dauer sicherer
+Gewinn. Die Lösung liegt in Andis eigenem Wort „wetten": **man setzt etwas
+ein.** Wer gegen ein 4:1 wettet, riskiert 100 Punkte, um 1 zu gewinnen. Damit
+ist die Sache von allein uninteressant — und braucht keine Sperre.
+
+### 3. Die Genauigkeitsstufe entscheidet alles
+Gegen „Tendenz" zu wetten ist etwas völlig anderes als gegen „exaktes
+Ergebnis" — 33 % gegen 99,5 %. **Die Stufe muss festgelegt sein**, sonst
+verhandelt sie jeder anders. Vorschlag: die Gegenwette gilt auf derselben
+Stufe, auf der die Runde wertet.
+
+## Was noch zu entscheiden ist
+
+❓ **Auf welche Punkte bezieht sie sich?** Ein Tipp kann Joker und Modifikatoren
+tragen. Bezieht sich die Gegenwette auf die ROHEN Punkte oder auf die
+verstärkten? Auf die verstärkten wäre reizvoll: dann wird ein gejokertes Spiel
+zum Ziel, und der Joker bekommt ein soziales Risiko.
+
+❓ **Nullsumme oder Nebenwette?** Nimmt der Gewinner dem anderen die Punkte weg
+(wie `klau.modus: nullsumme`), oder bekommt er sie aus dem Topf und der
+Getippte verliert nichts? Das erste ist schärfer, das zweite verträglicher.
+
+❓ **Sieht der Betroffene es vorher?** Für Andis Tischgespräch ja — dann kann er
+auch nachlegen. Verdeckt wäre es ein Hinterhalt.

@@ -154,6 +154,9 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | JK4 | **Eingriffe in fremde Tipps**: blocken · mitprofitieren · dagegen wetten | ⏳ | Teil D. Blocken und Klauen gibt es halb (`duell`), neu ist der Bezug auf einen EINZELNEN Tipp und das Dagegenwetten |
 | JK5 | **Cooldown je Ziel**, damit nicht immer dieselben getroffen werden | ⏳ | `maxProZiel` begrenzt nur die Gesamtzahl, nicht ob es immer derselbe Gegner ist. `sperrfristJeZiel` ist neu |
 | JK6 | 🔴 Eingriffe müssen **vor der Frist sichtbar und zurücknehmbar** sein | ⏳ | Andis Zweck ist der Austausch („nimm den Block bei mir raus"). Ein still verrechneter Eingriff leistet davon nichts. Felder da: `duell.sichtbarkeit`, `jokerBasis.widerruf` |
+| JK8 | **Umgekehrtes Modell fürs Dagegenwetten** anhand der Quoten | ✅ | Teil E: Gegenquote = 1/(1−p), dieselbe Rechnung mit der Gegenwahrscheinlichkeit. An echten Quoten durchgerechnet — gegen einen Favoritentipp zahlt es 3,00, gegen ein exaktes 4:1 nur 1,01. **Das Modell reguliert sich selbst** |
+| JK9 | ⚠️ `minPayout` muss für Gegenwetten AUS sein | ⏳ | Sonst würden aus 1,01 volle Punkte und das Abgrasen sicherer Wetten wäre wieder lohnend |
+| JK10 | ⚠️ Gegenwette braucht einen EINSATZ, keinen Gratis-Bonus | ⏳ | Wer gegen ein 4:1 wettet, riskiert 100 um 1 zu gewinnen — damit erledigt sich das Abgrasen ohne Sperre |
 | JK7 | Die ganze Familie **in einem Griff** aus-/einschaltbar | ⏳ | Andi: Büro-Runde nein, Freundesrunde ja. Ein `eingriffe.enabled` über allem statt sechs Häkchen |
 
 ## Betrieb
