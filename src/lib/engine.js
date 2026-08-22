@@ -4,6 +4,7 @@
 //  Abrechnung und Auszahlungs-Explorer.
 // ============================================================
 
+import { ergebnisQuote, reihenQuote } from "./randquoten";
 import { applyCatchup, BETRIFFT, betrifftWert } from "./catchup";
 import { applySaisonform, sanitizeSaisonform, DEFAULT_SAISONFORM } from "./saisonform";
 import { mitTippEinfluss, sanitizeTippEinfluss, DEFAULT_TIPPEINFLUSS } from "./tippEinfluss";
@@ -671,16 +672,27 @@ export function scoreResult(tip, actual, snap, rules = DEFAULT_RULES) {
   const tendBoden = winnerRight && rules.winnerFloor
     ? (sgn(actual.home, actual.away) === 1 ? snap.winner.home
       : sgn(actual.home, actual.away) === -1 ? snap.winner.away : snap.winner.draw) - 1 : 0;
-  // Alle Quoten-Zugriffe gegen Ergebnisse außerhalb des Rasters (z. B. 6+ Tore,
-  // seltene Endstände) absichern — fehlt eine Quote, zahlt der Teil 0.
+  // 🔴 Ergebnisse AUSSERHALB des Rasters bekommen eine fortgeschriebene Quote
+  // statt einer Null (`randquoten.js`, Andi 22.08.2026).
+  //
+  // Vorher zahlte der Nähe-Teil hier schlicht 0. Gemessen über den Katalog:
+  // 1,65 % aller Spiele enden außerhalb von 0–5 — bei Manchester City 14 % —
+  // und ein exakt getipptes 6:0 zahlte 47 Punkte, wo ein exakt getipptes 5:1
+  // 1440 zahlt. Der seltenere Treffer war der billigere. Und weil der Anker
+  // das REALE Ergebnis ist (Architektur-Regel 4), traf es nicht nur den
+  // Tipper, sondern die Nähe-Ebene aller Mitspieler dieses Spiels.
+  //
+  // ⚠️ Das ERZEUGTE Raster ist seit demselben Tag 9×9. Die Fortschreibung
+  // greift also nur noch bei Snapshots aus dem MARKT (die bleiben bauartbedingt
+  // kleiner, ein Buch quotiert keine 81 Endstände) und jenseits von 8 Toren.
   const marginArr = sgn(actual.home, actual.away) === 1 ? snap.margin.home : snap.margin.away;
-  const marginRaw = marginArr[Math.abs(actual.home - actual.away)];
+  const marginRaw = reihenQuote(marginArr, Math.abs(actual.home - actual.away)).quote;
   const abstand = marginRight && marginRaw != null ? marginRaw - 1 : 0;
-  const csRaw = snap.correctScore?.[actual.home]?.[actual.away];
+  const csRaw = ergebnisQuote(snap, actual.home, actual.away).quote;
   const ergNaehe = csRaw != null ? Math.exp(-rules.k * dist) * csRaw : 0;
   const teamTore =
-      Math.exp(-rules.m * Math.abs(tip.home - actual.home)) * (snap.teamGoals.home[actual.home] ?? 0)
-    + Math.exp(-rules.m * Math.abs(tip.away - actual.away)) * (snap.teamGoals.away[actual.away] ?? 0);
+      Math.exp(-rules.m * Math.abs(tip.home - actual.home)) * (reihenQuote(snap.teamGoals.home, actual.home).quote ?? 0)
+    + Math.exp(-rules.m * Math.abs(tip.away - actual.away)) * (reihenQuote(snap.teamGoals.away, actual.away).quote ?? 0);
 
   let nearParts = Math.max(ergNaehe, teamTore);
   if (nearParts < rules.minPayout) nearParts = 0;

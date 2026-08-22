@@ -57,11 +57,11 @@ describe("generateMatchOdds — Determinismus & Variation", () => {
 });
 
 describe("generateMatchOdds — Form der erzeugten Snapshots", () => {
-  it.each([favUnderdog, evenMatch])("Ergebnis-Raster ist 6×6, alle Quoten ≥ 1.01 ($home vs $away)", (input) => {
+  it.each([favUnderdog, evenMatch])("Ergebnis-Raster ist 9×9, alle Quoten ≥ 1.01 ($home vs $away)", (input) => {
     const snap = generateMatchOdds(input);
-    expect(snap.correctScore).toHaveLength(6);
+    expect(snap.correctScore).toHaveLength(9);
     for (const row of snap.correctScore) {
-      expect(row).toHaveLength(6);
+      expect(row).toHaveLength(9);
       for (const q of row) expect(q).toBeGreaterThanOrEqual(1.01);
     }
   });
@@ -72,10 +72,10 @@ describe("generateMatchOdds — Form der erzeugten Snapshots", () => {
     expect(snap.margin.away[0]).toBe(0);
   });
 
-  it("teamGoals hat 6 Einträge je Seite, alles gültige Quoten", () => {
+  it("teamGoals hat 9 Einträge je Seite, alles gültige Quoten", () => {
     const snap = generateMatchOdds(favUnderdog);
-    expect(snap.teamGoals.home).toHaveLength(6);
-    expect(snap.teamGoals.away).toHaveLength(6);
+    expect(snap.teamGoals.home).toHaveLength(9);
+    expect(snap.teamGoals.away).toHaveLength(9);
     [...snap.teamGoals.home, ...snap.teamGoals.away].forEach((q) => expect(q).toBeGreaterThanOrEqual(1.01));
   });
 

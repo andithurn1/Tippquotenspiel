@@ -366,7 +366,13 @@ function markteintraege(markt) {
     .filter(Boolean);
 }
 
-export function rasterAusMarkt(markt, { overround = 1.07, cap = 200, grid = 6, k = 1 } = {}) {
+// Der Ausschnitt, den ein Buchmacher wirklich DURCHquotiert: 0…4 Tore je
+// Seite. Darüber kommen einzelne Ausgänge („6:0", „7:1") und danach eine
+// Sammelwette — daran lässt sich keine Vollständigkeit messen. Die Prüfung
+// fragt deshalb diesen Kern ab, nicht das ganze Raster.
+const KERN = 5;
+
+export function rasterAusMarkt(markt, { overround = 1.07, cap = 200, grid = 9, k = 1 } = {}) {
   if (!markt || typeof markt !== "object") return null;
   const roh = markteintraege(markt);
   if (roh.length < 10) return null;   // ein halbes Buch ist keine Verteilung
@@ -375,17 +381,51 @@ export function rasterAusMarkt(markt, { overround = 1.07, cap = 200, grid = 6, k
   // also nichts, und ein fehlendes 1X2 verschlechtert nie etwas.
   const gew = roh.map((z) => (k === 1 ? z.p : Math.pow(z.p, k)));
   const summe = gew.reduce((s, x) => s + x, 0);
-  const raster = Array.from({ length: grid }, () => Array(grid).fill(cap));
-  let getroffen = 0;
+  // 🔴 SPARSE: nicht quotierte Zellen bleiben `null`, nicht `cap`.
+  //
+  // Vorher stand dort die Höchstquote — und weil eine Lücke damit die
+  // bestbezahlte Wette überhaupt gewesen wäre, verwarf die Funktion lieber das
+  // GANZE Raster. Beides ist seit 22.08.2026 unnötig: der Aufrufer legt das
+  // Markt-Raster über das MODELL-Raster (`mischeRaster`), eine Lücke wird also
+  // vom Modell gefüllt statt von einer Höchstquote.
+  const raster = Array.from({ length: grid }, () => Array(grid).fill(null));
+  let imKern = 0;
   roh.forEach((z, i) => {
-    if (z.h >= grid || z.a >= grid) return;   // 6+ Tore: außerhalb des Rasters
+    // ⚠️ Bis 22.08.2026 stand hier `z.h >= grid` mit `grid = 6` — Einträge wie
+    // „6:0" wurden weggeworfen, obwohl der Markt sie liefert UND
+    // `correct_score` einen Credit JE SPIEL kostet. Genau die Endstände, für
+    // die die Wertung keine Quote hatte, lagen also bezahlt daneben.
+    if (z.h >= grid || z.a >= grid) return;
     const p = gew[i] / summe;
     raster[z.h][z.a] = Math.min(cap, Math.max(1.01, +(1 / (p * overround)).toFixed(2)));
-    getroffen++;
+    if (z.h < KERN && z.a < KERN) imKern++;
   });
-  // Lücken im Buch würden als Höchstquote stehenbleiben und wären dann die
-  // bestbezahlte Wette überhaupt. Lieber gar kein echtes Raster.
-  return getroffen >= grid * grid * 0.8 ? raster : null;
+  // Ein Buch ohne durchquotierten Kern ist keine Verteilung — dann lieber ganz
+  // beim Modell bleiben, statt ein paar Marktpreise hineinzustreuen und damit
+  // zwei Normierungen zu mischen.
+  return imKern >= KERN * KERN * 0.8 ? raster : null;
+}
+
+// Markt über Modell legen: wo der Markt eine Quote hat, gewinnt sie; sonst
+// bleibt die des Modells stehen. Damit geht kein bezahlter Marktpreis
+// verloren UND es entsteht keine Lücke.
+export function mischeRaster(modell, markt) {
+  if (!Array.isArray(markt)) return modell;
+  if (!Array.isArray(modell)) return markt;
+  const zeilen = Math.max(modell.length, markt.length);
+  const out = [];
+  for (let h = 0; h < zeilen; h++) {
+    const mo = modell[h] ?? [];
+    const ma = markt[h] ?? [];
+    const spalten = Math.max(mo.length, ma.length);
+    out[h] = [];
+    for (let a = 0; a < spalten; a++) {
+      const q = Number(ma[a]);
+      const m = Number(mo[a]);
+      out[h][a] = Number.isFinite(q) && q > 0 ? q : (Number.isFinite(m) && m > 0 ? m : null);
+    }
+  }
+  return out;
 }
 
 // ── Echte Torschützen einsetzen ─────────────────────────────
@@ -525,10 +565,19 @@ export function snapshotFromOdds({
   // Schätzung. Fehlt es, bleibt das abgeleitete Raster stehen.
   // Geeicht am 1X2-Markt DIESES Spiels (siehe `longshotK`) — der zweite,
   // sauberere Markt, den wir für dieselbe Begegnung ohnehin schon haben.
+  // 🔴 ÜBERLEGEN, nicht ersetzen (22.08.2026). Vorher überschrieb das
+  // Markt-Raster das Modell-Raster vollständig — solange beide 6×6 waren, fiel
+  // das nicht auf. Mit dem 9×9-Modell hätte es genau die Randquoten gelöscht,
+  // um die es hier geht: der Markt quotiert 6:0, aber nicht 7:3.
   const echtesRaster = rasterAusMarkt(correctScore, {
     overround: Math.max(1.0, probs.overround), cap, k: rasterK,
+    grid: snap.correctScore?.length || 9,
   });
-  if (echtesRaster) snap.correctScore = echtesRaster;
+  if (echtesRaster) snap.correctScore = mischeRaster(snap.correctScore, echtesRaster);
+  // Woher das Raster kommt — dieselbe Ehrlichkeit wie `spielerQuelle` und
+  // `torschnittQuelle`: eine abgeleitete Zahl darf nie wie ein Marktpreis
+  // aussehen.
+  snap.rasterQuelle = echtesRaster ? "markt+modell" : "modell";
 
   // Und dasselbe für die Torschützen. Erst hier werden aus erfundenen Namen
   // echte — der letzte Markt, der noch simuliert war.

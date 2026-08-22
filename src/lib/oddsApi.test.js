@@ -70,8 +70,8 @@ describe("snapshotFromOdds", () => {
     for (const feld of ["winner", "margin", "correctScore", "teamGoals", "players", "frozenAt"]) {
       expect(snap[feld]).toBeDefined();
     }
-    expect(snap.correctScore).toHaveLength(6);
-    expect(snap.correctScore[0]).toHaveLength(6);
+    expect(snap.correctScore).toHaveLength(9);
+    expect(snap.correctScore[0]).toHaveLength(9);
   });
 
   it("übernimmt die ECHTEN 1X2-Quoten unverändert", () => {
@@ -400,10 +400,10 @@ describe("rasterAusMarkt", () => {
     return m;
   };
 
-  it("liefert ein 6×6-Raster", () => {
+  it("liefert ein 9×9-Raster und wirft keine Marktquote weg", () => {
     const r = rasterAusMarkt(buch());
-    expect(r).toHaveLength(6);
-    expect(r[0]).toHaveLength(6);
+    expect(r).toHaveLength(9);
+    expect(r[0]).toHaveLength(9);
   });
 
   // Der Kern: die Marge des Ergebnis-Marktes (gemessen 65 %) darf nicht
@@ -411,11 +411,31 @@ describe("rasterAusMarkt", () => {
   // abgeleitetes — zwei Spiele derselben Runde wären ungleich viel wert.
   it("rechnet die Marge des Buches heraus und legt UNSERE an", () => {
     const r = rasterAusMarkt(buch(), { overround: 1.07 });
-    const summe = r.flat().reduce((s, q) => s + 1 / q, 0);
-    // Die 36 Zellen tragen nicht die volle Masse (6+ Tore fehlen), aber die
-    // Marge muss bei ~7 % liegen und nicht bei den 65 % des Buches.
+    // ⚠️ Nur über QUOTIERTE Zellen summieren: das Raster ist seit 22.08.2026
+    // sparse (nicht quotiert = `null`, nicht mehr Höchstquote). Ein `1/null`
+    // wäre Infinity — der Test hat das beim ersten Lauf gemeldet.
+    const summe = r.flat().filter((q) => Number.isFinite(q)).reduce((s, q) => s + 1 / q, 0);
+    // Die quotierten Zellen tragen nicht die volle Masse (der Schwanz fehlt),
+    // aber die Marge muss bei ~7 % liegen und nicht bei den 65 % des Buches.
     expect(summe).toBeGreaterThan(0.9);
     expect(summe).toBeLessThan(1.08);
+  });
+
+  // 🔴 Der eigentliche Grund für den Umbau: „6:0" liefert der Markt, und
+  // `correct_score` kostet einen Credit JE SPIEL — die Quote lag bezahlt
+  // daneben und wurde weggeworfen.
+  it("übernimmt auch Endstände über fünf Toren", () => {
+    const r = rasterAusMarkt(buch());
+    expect(Number.isFinite(r[6][0])).toBe(true);
+    expect(Number.isFinite(r[6][1])).toBe(true);
+    expect(Number.isFinite(r[0][6])).toBe(true);
+  });
+
+  it("nicht quotierte Zellen bleiben LEER statt Höchstquote", () => {
+    // Eine Lücke als Höchstquote wäre die bestbezahlte Wette überhaupt.
+    // Jetzt bleibt sie leer und wird vom Modell gefüllt (`mischeRaster`).
+    const r = rasterAusMarkt(buch());
+    expect(r[8][8]).toBeNull();
   });
 
   it("die Reihenfolge des Marktes bleibt erhalten", () => {

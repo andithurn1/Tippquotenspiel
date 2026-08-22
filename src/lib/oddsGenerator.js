@@ -9,7 +9,20 @@
 //  die erzeugte Form ist ident zu createMockOddsSource() (engine.js).
 // ============================================================
 
-const GOAL_GRID = 6;           // Raster 0..5 Tore, wie im JOR-ESP-Vorbild
+// 🔴 Raster 0..8 Tore je Seite (seit 22.08.2026, vorher 0..5 „wie im
+// JOR-ESP-Vorbild").
+//
+// Gemessen über den Katalog: **1,65 % der Spiele** enden außerhalb von 0–5,
+// und dort fiel die ganze Ergebnis-Ebene aus — `scoreResult` findet keine
+// Quote und rechnet den Nähe-Teil als 0. Ein exakt getipptes 6:0 zahlte
+// dadurch **47** Punkte, ein exakt getipptes 5:1 **1440**: der seltenere
+// Treffer war der billigere, und es fiel niemandem auf, weil es aussah wie ein
+// schlechter Tipp (design/randquoten.md).
+//
+// ⚠️ Es kostet fast nichts: 81 statt 36 Zahlen je Snapshot, aus demselben
+// Poisson-Fit. Die Grenze bei 8 ist Andis Ansage („9x9") und deckt den
+// Katalog vollständig ab — höhere Endstände kommen dort nicht vor.
+const GOAL_GRID = 9;           // Raster 0..8 Tore je Seite
 const LEAGUE_AVG_GOALS = 1.35; // Bundesliga-typischer Torschnitt je Team/Spiel
 const HOME_ADVANTAGE = 1.12;   // Heimvorteil-Faktor auf die Heim-Tor-Erwartung
 

@@ -118,7 +118,37 @@ Die Reihe 28,5 → 57,8 → 102 ist monoton und plausibel.
 
 ---
 
-## 4 · Was zu entscheiden ist
+## 4 · Was der Deckel anrichtet — ein Befund aus dem Umbau
+
+Beim Vergrößern auf 9×9 ist etwas aufgefallen, das im 6×6 nicht sichtbar war.
+`oddsFrom` kappt jede Quote bei **200**. Gemessen an FC Bayern – VfB Stuttgart:
+
+| | |
+|---|---|
+| Zellen am Deckel | **48 von 81** |
+| Ihr Anteil an der normierten Masse | **19,3 %** |
+
+Das ist keine Wahrscheinlichkeit, sondern die Kappung. Ein 8:8 ist nicht
+„einmal in 200 Spielen", es ist praktisch unmöglich — es steht nur deshalb bei
+200, weil die Quote dort abgeschnitten wird.
+
+**Zwei Folgen, und nur eine ist erledigt:**
+
+1. ✅ **Anzeige.** Der automatische Zuschnitt der Matrix jagte dem Phantom
+   hinterher und zeigte fast das volle Raster (Ø 80,8 von 81 Feldern). Zellen
+   am Deckel zählen beim Zuschneiden jetzt nicht mit — danach Ø **22,9** Felder,
+   213 von 300 ungleich zugeschnitten (FC Bayern – VfB Stuttgart: 7×4).
+2. ⏳ **Wertung.** Ein 6:0, 7:0 und 8:0 zahlen am Deckel alle gleich viel. Vor
+   dem Umbau zahlten sie 0, jetzt zahlen sie 200er-Niveau — besser, aber die
+   Reihenfolge „seltener zahlt mehr" endet dort.
+
+🔴 **Der Deckel ist eine Balance-Frage und gehört damit in die Endphase.** Die
+saubere Lösung wäre, das RASTER feiner zu deckeln (etwa 2000) und die
+Auszahlung weiter über `perGameCap` und die Anzeige-Skalierung zu begrenzen —
+dann behält der Schwanz seine Reihenfolge, ohne dass Punkte explodieren.
+**Nicht ohne Andis Ansage**, weil es die Höhe seltener Auszahlungen verschiebt.
+
+## 5 · Was zu entscheiden ist
 
 ❓ **Wie groß soll das erzeugte Raster werden?** 9×9 deckt praktisch alles ab
 (über 8 Tore je Seite kommt im Katalog nicht vor), 11×11 wäre die Größe des

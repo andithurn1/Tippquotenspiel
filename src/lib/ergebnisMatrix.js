@@ -26,15 +26,20 @@
 //  ist dieselbe Trennung, nur andersherum).
 //
 //  ── ⚠️ Grenze der Daten, gemessen statt vermutet ──
-//  Das Quoten-Raster ist 6×6 (0…5 Tore je Seite, `rasterAusMarkt` mit
-//  `grid: 6`). Höhere Endstände HABEN keine Quote — die Matrix kann sie nicht
-//  anbieten, egal welche Stufe gewählt ist.
+//  Das ERZEUGTE Raster ist seit 22.08.2026 **9×9** (0…8 Tore je Seite). Aus
+//  dem MARKT kommen kleinere — kein Buchmacher quotiert 81 Endstände —, und
+//  dort füllt das Modell die Lücken (`mischeRaster` in `oddsApi.js`). Was auch
+//  dann fehlt, schreibt `randquoten.js` fort. Die Matrix liest die Größe ab
+//  (`rasterMasse`), statt sie zu kennen: wächst die Quelle, wächst sie mit.
 //
 //  Andis Folie nennt die Stufen „automatisch · automatisch+ · 3 · 4 · 5 · 6 ·
-//  8 · 10". Gebaut sind **automatisch · 3 · 4 · 5**, und beides fehlt aus
-//  demselben Grund:
+//  8 · 10". Gebaut sind **automatisch · 3 · 4 · 5 · 6 · 8**:
 //
-//   · **6 · 8 · 10** gibt es nicht, weil es für 6:2 keine Quote gibt.
+//   · **6 und 8** gibt es, seit das erzeugte Raster 9×9 ist (22.08.2026).
+//     Vorher endete es bei 5, und für ein 6:2 gab es schlicht keine Quote.
+//   · **10** fehlt weiter — dafür müsste das Raster 11×11 werden. Über acht
+//     Tore je Seite kommt im Katalog nicht vor; die Stufe wäre eine Fläche aus
+//     Feldern, die nie eintreten.
 //   · **automatisch +** ist gestrichen, weil es nichts anderes zeigen KÖNNTE.
 //     Nachgemessen über 300 Spiele des Katalogs: `automatisch` trimmt 299 mal
 //     (Ø 28,6 statt 36 Felder, 212 davon ungleich zugeschnitten) und landet
@@ -60,7 +65,9 @@ export const MATRIX_STUFEN = [
   { key: "auto", label: "automatisch", abdeckung: 0.97, desc: "Jede Seite reicht so weit, bis 97 % ihrer Tore drin sind." },
   { key: "3", label: "3", feste: 3, desc: "Festes Quadrat 0–3." },
   { key: "4", label: "4", feste: 4, desc: "Festes Quadrat 0–4." },
-  { key: "5", label: "5", feste: 5, desc: "Festes Quadrat 0–5 — das volle Raster." },
+  { key: "5", label: "5", feste: 5, desc: "Festes Quadrat 0–5." },
+  { key: "6", label: "6", feste: 6, desc: "Festes Quadrat 0–6." },
+  { key: "8", label: "8", feste: 8, desc: "Festes Quadrat 0–8 — das volle Raster." },
 ];
 
 export const DEFAULT_MATRIX_STUFE = "auto";
@@ -81,16 +88,23 @@ export function rasterMasse(snap) {
 // ⚠️ Normiert, weil das Raster eine Marge trägt: die rohen Kehrwerte summieren
 // sich auf über 1, und eine „Abdeckung von 99 %" wäre sonst eine andere Zahl,
 // je nachdem wie fett das Buch ist.
-export function wahrscheinlichkeiten(snap) {
+// `ohneDeckel: true` lässt Zellen auf der Höchstquote weg — siehe die
+// Begründung in `matrixMasse`. Zuschnitt UND Abdeckung müssen dieselbe
+// Grundlage benutzen, sonst widerspricht die Prozentzahl dem Raster daneben.
+export function wahrscheinlichkeiten(snap, { ohneDeckel = false } = {}) {
   const cs = snap?.correctScore;
   const { maxHeim, maxGast } = rasterMasse(snap);
+  const hoechste = ohneDeckel
+    ? Math.max(...(cs ?? []).flat().map(Number).filter((q) => Number.isFinite(q) && q > 0), 0)
+    : Infinity;
   const roh = [];
   let summe = 0;
   for (let h = 0; h <= maxHeim; h++) {
     roh[h] = [];
     for (let a = 0; a <= maxGast; a++) {
       const q = Number(cs?.[h]?.[a]);
-      const p = Number.isFinite(q) && q > 0 ? 1 / q : 0;
+      const zaehlt = Number.isFinite(q) && q > 0 && q < hoechste;
+      const p = zaehlt ? 1 / q : 0;
       roh[h][a] = p;
       summe += p;
     }
@@ -117,7 +131,22 @@ export function matrixMasse(snap, stufeKey = DEFAULT_MATRIX_STUFE) {
     };
   }
 
-  const p = wahrscheinlichkeiten(snap);
+  // 🔴 Zellen AM DECKEL zählen beim Zuschneiden nicht mit.
+  //
+  // Gemessen an FC Bayern – VfB Stuttgart im 9×9-Raster: **48 von 81 Zellen**
+  // stehen auf der Höchstquote (200), und die tragen zusammen **19,3 %** der
+  // normierten Masse. Das ist keine Wahrscheinlichkeit, sondern die Kappung —
+  // ein 8:8 ist nicht „einmal in 200 Spielen", es ist praktisch unmöglich und
+  // steht nur deshalb bei 200, weil die Quote dort abgeschnitten wird.
+  //
+  // Ohne diese Zeile jagt der automatische Zuschnitt diesem Phantom hinterher
+  // und zeigt fast das volle Raster (gemessen: Ø 80,8 von 81 Feldern). Mit ihr
+  // schneidet er wieder dort, wo die Quoten etwas aussagen.
+  //
+  // ⚠️ Das ist eine ANZEIGE-Entscheidung. Was ein Deckel-Ergebnis WERTEN soll,
+  // ist eine andere Frage und gehört in die Endphase (siehe
+  // design/randquoten.md, Abschnitt „Was der Deckel anrichtet").
+  const p = wahrscheinlichkeiten(snap, { ohneDeckel: true });
   const randHeim = p.map((zeile) => zeile.reduce((s, x) => s + x, 0));
   const randGast = [];
   for (let a = 0; a <= grenzen.maxGast; a++) {
@@ -159,7 +188,11 @@ export function matrixMasse(snap, stufeKey = DEFAULT_MATRIX_STUFE) {
 
 // Wie viel Wahrscheinlichkeit steckt in dem gewählten Ausschnitt?
 export function abdeckungVon(snap, maxHeim, maxGast) {
-  const p = wahrscheinlichkeiten(snap);
+  // ⚠️ Dieselbe Grundlage wie der Zuschnitt: OHNE die Zellen am Deckel. Sonst
+  // stünde neben einem Raster, das je Seite 97 % abdeckt, eine Zahl wie 78 % —
+  // und der Widerspruch wäre nicht auflösbar, weil beide Zahlen stimmen, nur
+  // über verschiedene Grundgesamtheiten.
+  const p = wahrscheinlichkeiten(snap, { ohneDeckel: true });
   let s = 0;
   for (let h = 0; h <= maxHeim; h++) {
     for (let a = 0; a <= maxGast; a++) s += p[h]?.[a] ?? 0;

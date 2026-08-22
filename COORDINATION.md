@@ -126,6 +126,48 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-22 (VIII) · ⚠️ **ENGINE-ÄNDERUNG** — Quoten-Raster 9×9, Randquoten fortgeschrieben
+
+**Push-Regel 3.** Fasst `engine.js`, `oddsApi.js` und `oddsGenerator.js` an.
+
+**Anlass:** Andi fragte, was mit Ergebnistipps passiert, für die es keine
+Originalquote gibt. Nachgemessen war das kein Randfall:
+
+| | |
+|---|---|
+| Spiele mit Endstand außerhalb 0–5 | 32 von 1943 = **1,65 %** |
+| … bei Manchester City | **14 %** (mit 5+ Toren einer Seite: 22 %) |
+| Exakt getipptes **6:0** | **47 Punkte** |
+| Exakt getipptes **5:1** | **1440 Punkte** |
+
+Der seltenere Treffer zahlte 30-mal weniger. Und weil der Anker das REALE
+Ergebnis ist, löschte ein wildes 6:2 die Nähe-Ebene für ALLE Mitspieler des
+Spiels — nicht nur für den, der es getippt hatte.
+
+**Was geändert wurde:**
+
+| Wo | Was |
+|---|---|
+| `oddsGenerator.js` | `GOAL_GRID` 6 → **9** (0…8 Tore je Seite), 81 statt 36 Zahlen aus demselben Poisson-Fit |
+| `oddsApi.js` | `rasterAusMarkt` wirft Marktquoten über 5 Tore nicht mehr weg (sie lagen bezahlt daneben — `correct_score` kostet 1 Credit JE SPIEL); Raster ist jetzt SPARSE (`null` statt Höchstquote), Vollständigkeit wird am KERN 0…4 gemessen; neu `mischeRaster`: Markt ÜBER Modell legen statt es zu ersetzen |
+| `randquoten.js` (neu) | schreibt den Rand fort, wo auch das nicht reicht — markiert (`geschaetzt`), monoton, gedeckelt |
+| `engine.js` | `scoreResult` fragt `ergebnisQuote`/`reihenQuote` statt roher Array-Zugriffe |
+
+**Nach dem Umbau:** exakt getipptes 6:0 = **2055** Punkte (vorher 47), 2:6 =
+2659, 5:1 unverändert 1440.
+
+🔴 **Ein Befund, der erst durch den Umbau sichtbar wurde und OFFEN ist:**
+`oddsFrom` kappt jede Quote bei 200. Im 9×9 stehen dadurch **48 von 81 Zellen
+am Deckel** und tragen **19,3 %** scheinbare Wahrscheinlichkeitsmasse. Für die
+ANZEIGE ist es erledigt (der automatische Zuschnitt der Matrix ignoriert
+Deckel-Zellen, sonst zeigte er Ø 80,8 statt 22,9 Felder). Für die WERTUNG nicht:
+6:0, 7:0 und 8:0 zahlen am Deckel gleich viel. Das ist eine Balance-Frage und
+gehört in die Endphase — steht in `design/randquoten.md` Abschnitt 4.
+
+**Gemessen:** 2213 Tests grün (43 skipped), lint und Build sauber,
+`gleich`/`anzeige`/`greift` ohne neue Befunde.
+
+
 ### 2026-08-22 (VII) · ⚠️ **ENGINE-ÄNDERUNG angekündigt** — Streicher gelten für EINZELSPIELE
 
 **Push-Regel 3.** Diese Änderung fasst `engine.js` und die Wertungskette an,
