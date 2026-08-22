@@ -142,13 +142,28 @@ export const OHNE_ANZEIGE = {
 // anderen Zeilen.
 const IMPORT_ZEILE = /^\s*import\s+.*?from\s+["'][^"']*\/([A-Za-z0-9_]+)["']/gm;
 
+// ⚠️ TRANSITIV, nicht eine Ebene tief. Der Kopf dieser Datei sagt seit jeher
+// „direkt oder über einen ihrer Bausteine" — bis zum 22.08.2026 folgte der Code
+// aber nur den Importen der Spielerstellung selbst. Solange dort alles direkt
+// eingebunden war, fiel der Unterschied nicht auf. Mit dem Joker-Sondermenü
+// (das seine sieben Bausteine selbst importiert) fiel `Ereignisse.jsx` aus der
+// Admin-Liste und wäre als Spieler-ANZEIGE durchgegangen — ein Einstell-Screen,
+// der als Beleg dafür zählt, dass der Spieler die Einstellung zu sehen bekommt.
+// Der Test „die Bausteine MÜSSEN drin sein" hat es gemeldet.
 export function adminScreens(quellen = {}, wurzel = "Spielerstellung.jsx") {
   const out = new Set([wurzel]);
-  const wurzelText = quellen[wurzel] ?? "";
   const vorhanden = new Set(Object.keys(quellen).map((d) => d.replace(/\.jsx?$/, "")));
-  for (const treffer of wurzelText.matchAll(IMPORT_ZEILE)) {
-    const name = treffer[1];
-    if (vorhanden.has(name)) out.add(`${name}.jsx`);
+  const offen = [wurzel];
+  while (offen.length) {
+    const datei = offen.pop();
+    for (const treffer of (quellen[datei] ?? "").matchAll(IMPORT_ZEILE)) {
+      const name = treffer[1];
+      if (!vorhanden.has(name)) continue;
+      const alsDatei = `${name}.jsx`;
+      if (out.has(alsDatei)) continue;
+      out.add(alsDatei);
+      offen.push(alsDatei);
+    }
   }
   return out;
 }

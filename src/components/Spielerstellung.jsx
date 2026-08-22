@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   DEFAULT_RULES, RULE_LIMITS,
   encodePreset, decodePreset, sanitizeRules, istCreatorCode,
-  REGLER_FEINHEITEN, reglerSchritt, einsatzKonflikte,
+  REGLER_FEINHEITEN, reglerSchritt,
 } from "@/lib/engine";
 import { istTeilCode, wendeTeilCodeAn } from "@/lib/teilbibliothek";
 import { PRESETS } from "@/lib/presets";
@@ -16,10 +16,6 @@ import { TIPPEINFLUSS_LIMITS, beschreibeTippEinfluss } from "@/lib/tippEinfluss"
 import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
 import { alleVereine, vereineVon, LIGEN } from "@/lib/ligen";
 import { wettbewerbLabel } from "@/lib/wettbewerbe";
-import { beschreibeVerteilung } from "@/lib/jokerPlan";
-import { TAKTE, perioden } from "@/lib/jokerBudget";
-import { PHASEN, DUELL_LIMITS } from "@/lib/duellJoker";
-import { beschreibeMuenzTakt, muenzTaktKonflikte } from "@/lib/muenzTakt";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -32,23 +28,15 @@ import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
 import SaisonWetten from "@/components/SaisonWetten";
-import Ereignisse from "@/components/Ereignisse";
-import DuellJoker from "@/components/DuellJoker";
-import Drehrad from "@/components/Drehrad";
 import WettbewerbGewichte from "@/components/WettbewerbGewichte";
 import RundenCharaktere from "@/components/RundenCharaktere";
 import EinfacheRegler from "@/components/EinfacheRegler";
 import { CHARAKTERE } from "@/lib/charaktere";
 import BalanceAmpel from "@/components/BalanceAmpel";
 import ProfiWarnungen from "@/components/ProfiWarnungen";
-import JokerVerteilung from "@/components/JokerVerteilung";
-import JokerOekonomie from "@/components/JokerOekonomie";
 import Mitbestimmung from "@/components/Mitbestimmung";
 import Bausteine from "@/components/Bausteine";
-import LimitKlassen from "@/components/LimitKlassen";
-import JokerGrundform from "@/components/JokerGrundform";
 import AufwandPanel from "@/components/AufwandPanel";
-import { band } from "@/lib/reglerWarnung";
 import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { AUSWAHL_LIMITS, sanitizeSpiele, beschreibeAuswahl, spieleProSpieltag } from "@/lib/spielauswahl";
 import { VORLAUF_STUFEN, ANKER, beschreibeTippfenster, erklaereTippfenster } from "@/lib/tippfenster";
@@ -59,31 +47,15 @@ import Alleinstellung from "@/components/Alleinstellung";
 import Zeitachse from "@/components/Zeitachse";
 import { C, MONO, SCHRIFT } from "@/lib/theme";
 import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
-import { Zahl } from "@/components/Eingaben";
-import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
+import { Zahl, Slider, Toggle, Field, Stepper, GrosseZeile } from "@/components/Eingaben";
+import JokerSondermenue, { jokerZeileStand } from "@/components/JokerSondermenue";
+import { TAPZIEL } from "@/lib/tapziel";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
 // Bundesliga und Premier League mischt.
 const ALL_TEAMS = alleVereine();
 
 // Zahlen-Anzeige: `src/lib/format.js` ist die eine Quelle (Begründung dort).
-
-// Ranking-Pool aus zwei verständlichen Reglern erzeugen: höchstes Gewicht und
-// Anzahl der Stufen. Dazwischen gleichmäßig bis 1 herunter — so ist der Pool
-// immer gültig (absteigend, ohne Dubletten), ohne dass der Admin einzelne
-// Faktoren von Hand pflegen muss.
-function buildWeightPool(max, anzahl) {
-  const arr = [];
-  for (let i = 0; i < anzahl; i++) {
-    // ⚠️ Zwei Nachkommastellen, nicht eine. Seit die Joker-Faktoren auf dem
-    // 0,05-Raster stehen, hätte `toFixed(1)` den erzeugten Pool wieder auf
-    // 0,1er-Stufen gezwungen — ein Höchstgewicht von 1,15 wäre nicht baubar
-    // gewesen, obwohl der Regler es hergibt. Das war kein Anzeige-, sondern
-    // ein Rechenfehler: der Pool selbst wurde grob.
-    arr.push(+(max - ((max - 1) * i) / (anzahl - 1)).toFixed(2));
-  }
-  return [...new Set(arr)].sort((a, b) => b - a);
-}
 
 // ── Design-Tokens (gleich wie die anderen Screens) ──────────
 
@@ -125,6 +97,11 @@ export default function Spielerstellung() {
   const [offeneLiga, setOffeneLiga] = useState(null);
   // Und darin: für welche Liga steht das Sonderregel-Fenster offen (Schritt 3)?
   const [sonderregelnLiga, setSonderregelnLiga] = useState(null);
+  // Die Joker-Zeile hat einen EIGENEN Zustand statt in `auswahlOffen`
+  // mitzulaufen: sie steht 300 Zeilen weiter unten und hat mit der
+  // Betippungsauswahl nichts zu tun — gemeinsam geführt würde ein Klick
+  // auf „Wettbewerbe“ das gerade geöffnete Joker-Menü zuklappen.
+  const [jokerOffen, setJokerOffen] = useState(false);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -174,20 +151,6 @@ export default function Spielerstellung() {
   const patchTeamMods = (p) => { touched(); setRules((r) => ({ ...r, teamMods: { ...r.teamMods, ...p } })); };
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
   const patchSaisonform = (p) => { touched(); setRules((r) => ({ ...r, saisonform: { ...(r.saisonform || DEFAULT_RULES.saisonform), ...p } })); };
-  const patchBudget = (p) => { touched(); setRules((r) => ({ ...r, budget: { ...(r.budget || DEFAULT_RULES.budget), ...p } })); };
-  // `JokerOekonomie` meldet meist nur einen Narren/Shop-Patch zurück (ein
-  // einzelnes `budget`-Feld) — der läuft über `patchBudget` oben. Ein Klick in
-  // der Bibliothek dort übernimmt dagegen das GANZE Regelfragment einer
-  // Kombination auf einmal (`budget` + `limitKlassen` + `duell`, alle drei
-  // GANZ ERSETZT, nicht gemischt) — dafür reicht ein einzelnes Budget-Feld
-  // nicht, deshalb der Zweig hier. `joker` (der klassische Joker aus den
-  // Wertungs-Presets) rührt die Ökonomie nicht an (design/gehaeuse-ui.md 4b).
-  const patchOekonomie = (p) => {
-    const keys = Object.keys(p);
-    if (keys.length === 1 && keys[0] === "budget") { patchBudget(p.budget); return; }
-    touched();
-    setRules((r) => ({ ...r, ...p }));
-  };
   const patchTippEinfluss = (p) => { touched(); setRules((r) => ({ ...r, tippEinfluss: { ...(r.tippEinfluss || DEFAULT_RULES.tippEinfluss), ...p } })); };
   const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
   const patchBigGame = (p) => { touched(); setRules((r) => ({ ...r, bigGame: { ...r.bigGame, ...p } })); };
@@ -361,33 +324,6 @@ export default function Spielerstellung() {
     return teile.length > 0 ? teile.join(" · ") : "alle";
   })();
 
-  // ── „Was kommt am Ende dabei heraus?" ─────────────────────
-  // Verteilung, Stärke und Ereignisse werden an drei Stellen eingestellt; der
-  // Admin sah nirgends das Ergebnis. Diese eine Zeile fasst die drei Antworten
-  // zusammen — wie viele, wie stark, und wie viele davon verdienbar.
-  const jokerZusammenfassung = useMemo(() => {
-    const j = rules.joker;
-    if (!j?.enabled) return null;
-    const teile = [];
-
-    // Wie viele und wann — jokerPlan formuliert das schon in Klartext, endet
-    // dort aber als eigener Satz. Der Punkt muss weg, sonst steht mitten in
-    // der Zeile „… Joker. · jeder ×1,5."
-    teile.push(beschreibeVerteilung(j.verteilung, 34).replace(/\.$/, ""));
-
-    // Wie stark.
-    teile.push(j.modus === "ranking"
-      ? `Gewichte bis ${fmtFaktor(Math.max(...(j.faktoren || [1])))}`
-      : `jeder ${fmtFaktor(j.faktor ?? 1.5)}`);
-
-    // Woher zusätzlich — nur wenn Ereignisse überhaupt etwas beisteuern.
-    const er = rules.ereignisse;
-    if (er?.enabled && (er.aktive?.length ?? 0) > 0 && er.maxErspielt > 0) {
-      teile.push(`dazu bis zu ${er.maxErspielt} verdienbar`);
-    }
-    return teile.filter(Boolean).join(" · ") + ".";
-  }, [rules.joker, rules.ereignisse]);
-
   // ── Vereine je Wettbewerb ─────────────────────────────────
   // Leere Wettbewerbs-Auswahl heißt „alle" (siehe spielauswahl.js) — dann
   // werden auch alle Gruppen gezeigt. Sonst nur die gewählten: wer Bundesliga
@@ -474,8 +410,6 @@ export default function Spielerstellung() {
   const L = RULE_LIMITS;
   const g = rules.markets.goals;
   const j = rules.joker;
-  const jh = j.heimat ?? DEFAULT_RULES.joker.heimat;   // Heimatbonus
-  const jm = j.mut ?? DEFAULT_RULES.joker.mut;         // Mut-Bonus
   const tm = rules.teamMods || { derbyFaktor: 1, teams: {} };
   const tmTeams = tm.teams || {};
   const tmAktiv = tm.derbyFaktor > 1 || Object.keys(tmTeams).length > 0;
@@ -484,42 +418,6 @@ export default function Spielerstellung() {
   const te = rules.tippEinfluss || DEFAULT_RULES.tippEinfluss;
   const ve = rules.versaeumnis || DEFAULT_RULES.versaeumnis;
   const bg = rules.bigGame || DEFAULT_RULES.bigGame;
-  // Wie viele Runden-Spieltage teilen sich EIN Münz-Budget? Über `perioden()`
-  // aus jokerBudget.js gerechnet, damit es dieselbe eine Quelle ist wie in
-  // muenzTakt.js — nicht per Hand nach Takt-Namen unterschieden.
-  const spieltageGesamt = aufwandKontext.spieleJeSpieltag.length || 34;
-  const muenzPeriode = j.modus === "einsatz"
-    ? perioden(j.einsatzTakt, { n: j.einsatzTaktN, fenster: j.einsatzFenster }, spieltageGesamt)[0] ?? null
-    : null;
-  const spieltageJePeriode = muenzPeriode ? muenzPeriode.bis - muenzPeriode.von + 1 : 1;
-  // Typische Spieltagsgröße für den Einsatz-Modus (L2, Konflikt 2.1 Fall 2):
-  // dieselbe Rechnung wie `aufwandKontext` oben fürs AufwandPanel — hier gibt
-  // es keinen konkreten Spieltag, nur eine plausible Größe aus der aktuellen
-  // Spielauswahl. `einsatzKonflikte` bekommt sie ausdrücklich als „typisch"
-  // markiert (Text unten), verbindlich prüft erst die Tippabgabe.
-  const einsatzSpieleTypisch = aufwandKontext.spieleJeSpieltag[0] ?? null;
-  // ⚠️ Die Konflikt-Prüfung misst gegen die Spiele, die sich EIN Budget
-  // teilen — seit dem Münz-Takt ist das nicht mehr der einzelne Spieltag,
-  // sondern die ganze Periode (z. B. "alle 4 Spieltage"). Wer hier weiter die
-  // Spieltagsgröße allein übergäbe, prüfte bei einem mehrspieltägigen Takt nur
-  // gegen ein Viertel der wirklichen Spielzahl und meldete einen echten
-  // Konflikt nicht.
-  const einsatzSpieleJePeriode = einsatzSpieleTypisch != null
-    ? einsatzSpieleTypisch * spieltageJePeriode : null;
-  const einsatzKonfliktListe = j.modus === "einsatz"
-    // Dritter Parameter: über wie viele Spieltage die Zahl geht — nur für den
-    // Wortlaut. Ohne ihn meldete der Text „Bei 36 Spielen im Spieltag", obwohl
-    // 36 die Spiele von vier Spieltagen sind.
-    ? [...einsatzKonflikte(rules, einsatzSpieleJePeriode, spieltageJePeriode), ...muenzTaktKonflikte(rules)]
-    : [];
-  // Beschriftungen im Einsatz-Block hängen am Takt: "je Spieltag" stimmt nur,
-  // solange sich eine Münz-Periode nicht über mehrere Spieltage erstreckt.
-  const muenzZeitraum = (j.einsatzTakt ?? "spieltag") === "spieltag" ? "Spieltag" : "Periode";
-  // `einsatzFenster` ist dieselbe Form wie `rules.duell`/`budget.fenster` —
-  // `patchJoker` patcht nur FLACH, deshalb hier explizit mit dem bisherigen
-  // Fenster mergen statt es zu ersetzen (dasselbe Muster wie `patchAufholen`
-  // & Co. für andere verschachtelte Regelblöcke).
-  const setzeFenster = (teil) => patchJoker({ einsatzFenster: { ...j.einsatzFenster, ...teil } });
   // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
   const auStufe = STAERKE_STUFEN.find((s) => s.staerke === au.staerke && s.schwelle === au.schwelle)?.key ?? "custom";
 
@@ -956,18 +854,6 @@ export default function Spielerstellung() {
             </>
           )}
 
-          {/* Joker-Ökonomie: Bibliothek + Narren + Shop bei „anpassen", dazu
-              das Achsenprofil des gesamten Regelwerks bei „profi" — dieselbe
-              Komponente, sie entscheidet selbst anhand von `stufe`, wie viel
-              sie zeigt. Bei „einfach" unsichtbar: dort entscheiden Charakter
-              und Preset. */}
-          {stufe === "profi" && (
-            <>
-              <SectionTitle>Joker-Ökonomie</SectionTitle>
-              <JokerOekonomie rules={rules} stufe={stufe} onChange={patchOekonomie} />
-            </>
-          )}
-
           {/* Mitbestimmung: Regel-Abstimmung + Verfassung
               (design/abstimmung-verfassung.md). Nur in der Profi-Stufe — bei
               „anpassen" beantwortet die Klartext-Frage „Wer darf die Regeln
@@ -1002,33 +888,6 @@ export default function Spielerstellung() {
               <SectionTitle>Alleingang-Bonus</SectionTitle>
               <Alleinstellung rules={rules}
                 onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
-            </>
-          )}
-
-          {/* Limitierungsklassen: eigenes Gefüge aus Unterkontingenten, die
-              sich überlagern können — nur in der Profi-Stufe, dieselbe
-              Begründung wie beim Achsenprofil in JokerOekonomie (2.4): erst
-              hier sind einzelne Klassen mit eigenem Kontingent, Zeitraum und
-              Aktivierung überhaupt eine Einstiegsfrage. */}
-          {stufe === "profi" && (
-            <>
-              <SectionTitle>Limitierungsklassen</SectionTitle>
-              <LimitKlassen rules={rules}
-                onChange={(limitKlassen) => { touched(); setRules((r) => ({ ...r, limitKlassen })); }} />
-            </>
-          )}
-
-          {/* Joker-Grundform: die EINE Karte, die jeder Joker teilt (wer,
-              sicht, verfall, widerruf, stapeln, symmetrie, bestand,
-              kasseSichtbar, abklingzeit, umfang, bedingung) — nur in der
-              Profi-Stufe, aus demselben Grund wie Limitierungsklassen und
-              das Achsenprofil: erst hier ist eine Abweichung je Joker-Art
-              überhaupt eine Einstiegsfrage. */}
-          {stufe === "profi" && (
-            <>
-              <SectionTitle>Joker-Grundform</SectionTitle>
-              <JokerGrundform rules={rules}
-                onChange={(jokerBasis) => { touched(); setRules((r) => ({ ...r, jokerBasis })); }} />
             </>
           )}
 
@@ -1274,386 +1133,33 @@ export default function Spielerstellung() {
             onGeladen={merkeCode}
             onChange={(neu) => { touched(); setRules(neu); }} />
 
-          <SectionTitle>Joker &amp; Gewichtung</SectionTitle>
-          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Lässt Tipper einzelne Spiele höher gewichten. Der Faktor greift auf die
-            fertige Wertung — Ergebnis <em>und</em> Torschützen zusammen — und wirkt in
-            beide Richtungen: ein gewichtetes Spiel, das danebengeht, tut auch mehr weh.
-          </p>
+          {/* 🔴 JOKER — eine Zeile, dahinter das Sondermenü mit fünf Karten
+              (design/joker-sondermenue.md · Andi 22.08.2026: „Verfeinerung für
+              jede Einstellung unter einem eigenen Sondereinstellungsmenü, wie
+              bei den Mannschaften").
 
-          {/* ⚠️ Die Zeile, die bisher gefehlt hat. Man stellt Verteilung,
-              Stärke und Ereignisse an drei Stellen ein und sah nirgends, was
-              dabei herauskommt. Sie steht GANZ OBEN, weil sie die Antwort auf
-              die eigentliche Frage ist — „wie viele Joker hat man am Ende?" */}
-          {jokerZusammenfassung && (
-            <div style={{
-              background: `${C.mint}12`, border: `1px solid ${C.mint}33`,
-              borderRadius: 12, padding: "10px 13px", marginBottom: 10,
-              fontSize: 12, color: C.mint, lineHeight: 1.5,
-            }}>
-              {jokerZusammenfassung}
-            </div>
-          )}
-          {!premium ? (
-            <div style={{
-              background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`,
-              borderRadius: 14, padding: "13px 15px", marginBottom: 8,
-            }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>
-                🔒 Premium-Funktion
-              </div>
-              <p style={{ fontSize: 12, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
-                Es genügt, wenn <strong>du als Admin</strong> Premium hast — die ganze
-                Runde kann dann gewichten. Alle anderen Regler bleiben frei nutzbar.
-              </p>
-            </div>
-          ) : (
-            <Toggle label="Gewichtung erlauben" on={j.enabled}
-              onChange={(on) => patchJoker({ enabled: on })} />
-          )}
+              Vorher lagen die 84 Joker-Einstellwerte an SIEBEN Stellen dieses
+              Screens — Ökonomie, Limitierungsklassen, Grundform, „Joker &
+              Gewichtung", „Joker verdienen", Duell, Drehrad — über 700 Zeilen
+              auseinander. Das eigentliche Problem war nicht die Länge, sondern
+              dass die Frage „wann kommt eigentlich ein Joker?" an DREI davon
+              beantwortet wurde. Die Karten im Sondermenü ordnen nach der Frage,
+              die ein Admin stellt, nicht nach dem Regel-Block.
 
-          {premium && j.enabled && (
-            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
-              <Field label="Modus">
-                <div style={{ display: "flex", gap: 6 }}>
-                  {[
-                    { key: "einzel", label: "Ein Joker", hint: "Ein Spiel pro Spieltag" },
-                    { key: "ranking", label: "Rangliste", hint: "Alle Spiele ranken" },
-                    { key: "einsatz", label: "Einsatz", hint: "Münzen auf Spiele verteilen" },
-                  ].map((m) => {
-                    const on = j.modus === m.key;
-                    return (
-                      <button key={m.key} onClick={() => patchJoker({ modus: m.key })} style={{
-                        cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
-                        borderRadius: 10, flex: 1, textAlign: "left",
-                        background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
-                        border: `1px solid ${on ? C.akzent + "66" : C.line}`,
-                      }}>
-                        <div style={{ fontWeight: 700 }}>{m.label}</div>
-                        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>{m.hint}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Field>
-
-              {/* Im Ranking-Modus ist der Pool die Wahrheit — sonst zeigte der
-                  Regler einen anderen Wert als die Stufen darunter.
-                  ⚠️ Im Einsatz-Modus gibt es ihn NICHT: dort bestimmt der
-                  gesetzte Münzbetrag den Faktor, `joker.faktor` wird gar nicht
-                  gelesen. Ein sichtbarer Regler ohne Wirkung ist genau das,
-                  was der Baukasten-Grundsatz ausschließt — beim Bauen der
-                  Einsatz-Bedienung stehen geblieben und hier entfernt. */}
-              {j.modus !== "einsatz" && (
-                <Slider label={j.modus === "ranking" ? "Höchstes Gewicht" : "Joker-Faktor"}
-                  value={j.modus === "ranking" ? j.faktoren[0] : j.faktor} {...L.joker.faktor} step={reglerSchritt(rules, L.joker.faktor)}
-                  onChange={(v) => patchJoker(j.modus === "ranking"
-                    ? { faktor: v, faktoren: buildWeightPool(v, j.faktoren.length) }
-                    : { faktor: v })}
-                  fmt={fmtFaktor}
-                  hint={j.modus === "ranking"
-                    ? "Das stärkste Gewicht der Rangliste. Die übrigen Stufen liegen gleichmäßig darunter."
-                    : "Womit das markierte Spiel multipliziert wird."} />
-              )}
-
-              {j.modus === "ranking" && (
-                <>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-                    <span style={{ fontSize: 13, color: C.muted }}>Stufen</span>
-                    <Stepper value={j.faktoren.length} min={L.joker.anzahlFaktoren.min} max={L.joker.anzahlFaktoren.max}
-                      onStep={(d) => {
-                        const n = Math.min(L.joker.anzahlFaktoren.max, Math.max(L.joker.anzahlFaktoren.min, j.faktoren.length + d));
-                        patchJoker({ faktoren: buildWeightPool(j.faktor, n) });
-                      }} />
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-                    {j.faktoren.map((f) => (
-                      <span key={f} style={{
-                        ...TAPZIEL, fontSize: 12, fontFamily: MONO, padding: "5px 10px", borderRadius: 999,
-                        background: f > 1 ? `${C.akzent}18` : C.surface,
-                        color: f > 1 ? C.akzent : C.muted,
-                        border: `1px solid ${f > 1 ? C.akzent + "44" : C.line}`,
-                      }}>{fmtFaktor(f)}</span>
-                    ))}
-                  </div>
-                  <p style={{ fontSize: 11, color: C.muted, marginBottom: 8, lineHeight: 1.4 }}>
-                    Jedes Gewicht darf pro Spieltag nur <strong>einmal</strong> vergeben werden —
-                    alle haben denselben Pool, die Verteilung ist die Kunst. Übrige Spiele zählen ×1,0.
-                  </p>
-                </>
-              )}
-
-              {/* Einsatz-Modus (L2): kein fester Pool, sondern ein Münz-Budget
-                  je Spieltag, das der Spieler frei auf die Spiele verteilt.
-                  Die beiden Anteils-Regler speichern weiterhin einen ANTEIL
-                  (design/einsatz-joker.md Abschnitt 2: reist mit dem
-                  Creator-Code, unabhängig vom Budget einer fremden Runde) —
-                  angezeigt werden aber Münzen, weil der Admin in Münzen denkt. */}
-              {j.modus === "einsatz" && (
-                <>
-                  {/* ⚠️ Beschriftung takt-abhängig (`muenzZeitraum`): das Feld
-                      heißt weiter `einsatzProSpieltag` (Bezeichner bleiben),
-                      aber sobald eine Münz-Periode mehrere Spieltage
-                      zusammenfasst, ist "je Spieltag" nicht mehr wahr — der
-                      Betrag muss dann für die ganze Periode reichen. */}
-                  <Slider label={`Münzen je ${muenzZeitraum}`} value={j.einsatzProSpieltag}
-                    {...L.joker.einsatzProSpieltag}
-                    onChange={(v) => patchJoker({ einsatzProSpieltag: v })}
-                    fmt={(x) => `${zahl(x)} Münzen`}
-                    hint={muenzZeitraum === "Spieltag"
-                      ? "Was jeder Spieler an diesem Spieltag zu verteilen hat."
-                      : "Was jeder Spieler in dieser Periode insgesamt zu verteilen hat — wie oft eine Periode beginnt, legt der Takt unten fest."} />
-                  <Zahl label={`Münzen je ${muenzZeitraum}`} wert={j.einsatzProSpieltag} limits={L.joker.einsatzProSpieltag}
-                    onChange={(v) => patchJoker({ einsatzProSpieltag: v })} />
-
-                  {/* WIE OFT es Münzen gibt — Münz-Takt (`muenzTakt.js`). Der
-                      Katalog `TAKTE` kommt aus jokerBudget.js (dieselbe Quelle
-                      wie beim Narren-Budget in JokerOekonomie.jsx), hier nur
-                      zweitgenutzt — unmittelbar neben "wie viel", weil der
-                      Takt die Frage "wie oft" zu genau diesem Betrag beantwortet. */}
-                  <Field label="Wie oft gibt es Münzen?">
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {TAKTE.map((t) => {
-                        const an = (j.einsatzTakt ?? "spieltag") === t.key;
-                        return (
-                          <button key={t.key} title={t.desc} onClick={() => patchJoker({ einsatzTakt: t.key })} style={{
-                            flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
-                            borderRadius: 11, textAlign: "left",
-                            background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
-                            border: `1px solid ${an ? C.akzent + "66" : C.line}`,
-                          }}>
-                            <div style={{ fontSize: 12, fontWeight: 700 }}>{t.label}</div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </Field>
-
-                  {j.einsatzTakt === "alleNSpieltage" && (
-                    <Zahl label="Alle wie viele Spieltage?" wert={j.einsatzTaktN} limits={L.joker.einsatzTaktN}
-                      breite={150} marginTop={8} onChange={(v) => patchJoker({ einsatzTaktN: v })} />
-                  )}
-
-                  {j.einsatzTakt === "phase" && (
-                    <div style={{ marginTop: 8 }}>
-                      <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Saison-Fenster</div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        {PHASEN.map((p) => {
-                          const an = (j.einsatzFenster?.phase ?? "letztesDrittel") === p.key;
-                          return (
-                            <button key={p.key} onClick={() => setzeFenster({ phase: p.key })} style={{
-                              textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
-                              background: an ? `${C.akzent}18` : C.surface,
-                              border: `1px solid ${an ? C.akzent + "66" : C.line}`,
-                              ...TAPZIEL, borderRadius: 12, padding: "9px 12px",
-                            }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{p.label}</div>
-                              <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {j.einsatzFenster?.phase === "schlussspurt" && (
-                        <div style={{ marginTop: 8, maxWidth: 200 }}>
-                          <Zahl label="Länge (Spieltage)" wert={j.einsatzFenster?.schlussLaenge} limits={DUELL_LIMITS.schlussLaenge}
-                            onChange={(v) => setzeFenster({ schlussLaenge: v })} />
-                        </div>
-                      )}
-                      {j.einsatzFenster?.phase === "manuell" && (
-                        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                          <Zahl label="Von Spieltag" wert={j.einsatzFenster?.abSpieltag ?? ""} limits={DUELL_LIMITS.abSpieltag} leerErlaubt leerText="Vorgabe"
-                            onChange={(v) => setzeFenster({ abSpieltag: v })} />
-                          <Zahl label="Bis Spieltag" wert={j.einsatzFenster?.bisSpieltag ?? ""} limits={DUELL_LIMITS.bisSpieltag} leerErlaubt leerText="Vorgabe"
-                            onChange={(v) => setzeFenster({ bisSpieltag: v })} />
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Live-Vorschau. ⚠️ Bewusst `einsatzSpieleTypisch` (Spiele je
-                      SPIELTAG) übergeben, NICHT `einsatzSpieleJePeriode` —
-                      `beschreibeMuenzTakt` rechnet die Periode selbst aus
-                      Spieltag-Anzahl hoch. Die bereits hochgerechnete Zahl
-                      hier einzusetzen würde sie ein zweites Mal mit der
-                      Periodenlänge multiplizieren. */}
-                  <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
-                    {beschreibeMuenzTakt(rules, { spieltage: spieltageGesamt, spieleJeSpieltag: einsatzSpieleTypisch })}
-                  </p>
-
-                  {/* ⚠️ Kein `reglerSchritt` hier: `maxAnteilProSpiel` ist laut
-                      RULE_LIMITS-Kommentar ausdrücklich NICHT Teil der
-                      Multiplikator-Familie (reglerRaster.test.js) — eine
-                      Validierungsgrenze, kein additiver Modifikator. Die
-                      Regler-Feinheit des Admins soll dieses Feld nicht anfassen. */}
-                  <Slider label="Höchsteinsatz je Spiel" value={j.maxAnteilProSpiel}
-                    {...L.joker.maxAnteilProSpiel}
-                    onChange={(v) => patchJoker({ maxAnteilProSpiel: v })}
-                    fmt={(x) => `${zahl(Math.round(x * j.einsatzProSpieltag))} von ${zahl(j.einsatzProSpieltag)} Münzen`}
-                    hint="Mehr darf niemand auf ein einzelnes Spiel setzen." />
-                  <Zahl label="Höchsteinsatz je Spiel (Münzen)"
-                    wert={Math.round(j.maxAnteilProSpiel * j.einsatzProSpieltag)}
-                    limits={{
-                      min: Math.round(L.joker.maxAnteilProSpiel.min * j.einsatzProSpieltag),
-                      max: Math.round(L.joker.maxAnteilProSpiel.max * j.einsatzProSpieltag),
-                      step: Math.max(1, Math.round(L.joker.maxAnteilProSpiel.step * j.einsatzProSpieltag)),
-                    }}
-                    onChange={(v) => patchJoker({ maxAnteilProSpiel: v / j.einsatzProSpieltag })} />
-
-                  {/* Gleiche Begründung wie beim Höchsteinsatz oben — kein `reglerSchritt`. */}
-                  <Slider label="Mindesteinsatz je Spiel" value={j.minAnteilProSpiel}
-                    {...L.joker.minAnteilProSpiel}
-                    onChange={(v) => patchJoker({ minAnteilProSpiel: v })}
-                    fmt={(x) => x === 0 ? "kein Mindesteinsatz" : `${zahl(Math.round(x * j.einsatzProSpieltag))} Münzen`}
-                    hint="0 = kein Mindesteinsatz. Sonst gilt: auf ein Spiel entweder gar nichts setzen oder mindestens so viel." />
-                  <Zahl label="Mindesteinsatz je Spiel (Münzen, 0 = keiner)"
-                    wert={Math.round(j.minAnteilProSpiel * j.einsatzProSpieltag)}
-                    limits={{
-                      min: 0,
-                      max: Math.round(L.joker.minAnteilProSpiel.max * j.einsatzProSpieltag),
-                      step: Math.max(1, Math.round(L.joker.minAnteilProSpiel.step * j.einsatzProSpieltag)),
-                    }}
-                    onChange={(v) => patchJoker({ minAnteilProSpiel: v / j.einsatzProSpieltag })} />
-
-                  <Toggle label="Spiele auslassen erlaubt" on={j.skippenErlaubt !== false}
-                    onChange={(on) => patchJoker({ skippenErlaubt: on })} />
-                  <p style={{ fontSize: 11, color: C.muted, marginTop: -4, marginBottom: 8, lineHeight: 1.4 }}>
-                    Erlaubt: ein Spiel mit Einsatz 0 tippen, ohne den Mindesteinsatz zu verletzen —
-                    die Poker-Blind-Lesart „entweder gar nicht, oder mindestens so viel".
-                  </p>
-
-                  {/* Konflikt-Hinweise (design/einsatz-joker.md 2.1). Fall 2
-                      hängt an der Zahl der Spiele, die sich EINE Münz-Periode
-                      teilt — bei mehrspieltägigem Takt mehr als die eines
-                      einzelnen Spieltags (Schritt 2 oben). Die Größe ist hier
-                      nicht sicher bekannt — deshalb ausdrücklich als typische
-                      Größe markiert; verbindlich prüft erst die Tippabgabe. */}
-                  {einsatzKonfliktListe.length > 0 && (
-                    <div style={{
-                      background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
-                      padding: "10px 12px", marginBottom: 10,
-                    }}>
-                      {einsatzKonfliktListe.map((k) => (
-                        <div key={k.key} style={{ fontSize: 12, color: C.muted, lineHeight: 1.45, marginBottom: 4 }}>
-                          {k.text}
-                        </div>
-                      ))}
-                      {einsatzSpieleTypisch != null && (
-                        <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
-                          {spieltageJePeriode > 1
-                            ? <>Angenommen bei etwa {einsatzSpieleTypisch} Spielen je Spieltag, macht das rund{" "}
-                                {einsatzSpieleJePeriode} Spiele über die {spieltageJePeriode} Spieltage einer
-                                Münz-Periode hinweg — eure tatsächliche Zahl hängt von der Spielauswahl oben ab
-                                und wird beim Tippen verbindlich geprüft.</>
-                            : <>Angenommen bei etwa {einsatzSpieleTypisch} Spielen je Spieltag — eure tatsächliche
-                                Zahl hängt von der Spielauswahl oben ab und wird beim Tippen verbindlich geprüft.</>}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Weitere Joker-TYPEN — keine neue Ebene, sondern Spielarten
-                  desselben Jokers: ihre Aufschlaege werden ADDIERT und vom
-                  gemeinsamen Deckel begrenzt. */}
-              <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 6, paddingTop: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Weitere Joker-Arten</div>
-                <p style={{ fontSize: 11, color: C.muted, marginTop: 0, marginBottom: 8, lineHeight: 1.4 }}>
-                  Greifen von allein, ohne dass jemand etwas markieren muss. Ihre
-                  Aufschläge werden <strong>addiert</strong> und vom Deckel oben begrenzt.
-                </p>
-
-                <Toggle label="Heimatbonus — Spiele des eigenen Vereins" on={jh.enabled === true}
-                  onChange={(on) => patchJoker({ heimat: { ...jh, enabled: on } })} />
-                {jh.enabled && (
-                  <Field label={`Faktor: ${fmtFaktor(jh.faktor ?? 1.2)}`}>
-                    <input type="range"
-                      min={L.joker.faktor.min} max={L.joker.faktor.max} step={reglerSchritt(rules, L.joker.faktor)}
-                      value={jh.faktor ?? 1.2}
-                      onChange={(e) => patchJoker({ heimat: { ...jh, faktor: Number(e.target.value) } })}
-                      style={{ width: "100%", accentColor: C.akzent }} />
-                    <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
-                      Jeder wählt seinen Verein selbst. Wirkt symmetrisch — auch auf
-                      Minuspunkte, denn Fans tippen ihr Team gern zu optimistisch.
-                    </div>
-                  </Field>
-                )}
-
-                <div style={{ marginTop: 8 }}>
-                  <Toggle label="Mut-Bonus — gegen den Favoriten, und du behältst recht" on={jm.enabled === true}
-                    onChange={(on) => patchJoker({ mut: { ...jm, enabled: on } })} />
-                </div>
-                {jm.enabled && (
-                  <Field label={`Faktor: ×${(jm.faktor ?? 1.1).toFixed(2)}`}>
-                    <input type="range"
-                      min={L.joker.mutFaktor.min} max={L.joker.mutFaktor.max} step={reglerSchritt(rules, L.joker.mutFaktor)}
-                      value={jm.faktor ?? 1.1}
-                      onChange={(e) => patchJoker({ mut: { ...jm, faktor: Number(e.target.value) } })}
-                      style={{ width: "100%", accentColor: C.akzent }} />
-                    <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
-                      Zahlt nur, wenn der mutige Tipp <strong>aufgeht</strong> — sonst würde
-                      blindes Dagegenhalten belohnt. Deshalb auch die engere Obergrenze
-                      (×{L.joker.mutFaktor.max}): darüber gewinnt in der Simulation der Zocker.
-                    </div>
-                  </Field>
-                )}
-              </div>
-
-              {/* Verteilung über die Saison — Frequenz statt 34 Klicks */}
-              <JokerVerteilung verteilung={j.verteilung}
-                onChange={(verteilung) => patchJoker({ verteilung })} />
-
-              {/* Gemeinsame Abstimmung — die ANDERE Antwort auf „an welchen
-                  Spieltagen?". Beide gleichzeitig wären zwei Instanzen für
-                  dieselbe Frage, deshalb nur bei freier Verteilung wählbar. */}
-              <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 10 }}>
-                {j.verteilung?.modus === "frei" ? (
-                  <>
-                    <Toggle label="Spieltage gemeinsam abstimmen" on={j.abstimmung === true}
-                      onChange={(on) => patchJoker({ abstimmung: on })} />
-                    <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
-                      {j.abstimmung
-                        ? "Die Runde stimmt ab: Joker gibt es nur an Spieltagen mit Mehrheit."
-                        : "Aus = Joker an jedem Spieltag. An = die Runde entscheidet per Mehrheit, welche Spieltage einen Joker bekommen."}
-                    </p>
-                  </>
-                ) : (
-                  <p style={{ fontSize: 11, color: C.muted, margin: 0, lineHeight: 1.4 }}>
-                    Die Abstimmung über Joker-Spieltage entfällt — du hast die Verteilung
-                    oben schon festgelegt. Für eine Abstimmung wieder auf <strong>Frei</strong> stellen.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Joker verdienen — steht direkt beim Joker-Block, nicht mehr 300
-              Zeilen weiter unten hinter den Saison-Wetten. Es ist dieselbe
-              Frage wie darüber (WOHER kommen Joker), nur die zweite Antwort:
-              zugeteilt vom Admin oder verdient durch Ereignisse. Getrennt
-              wirkte es, als gäbe es nur den Verdien-Weg. */}
-          <SectionTitle>Joker verdienen</SectionTitle>
-          <Ereignisse rules={rules}
-            onChange={(ereignisse) => { touched(); setRules((r) => ({ ...r, ereignisse })); }} />
-
-          {/* 🔴 Duell-Joker. Gemessen am 06.08.2026 mit `npm run stufen` Teil 2:
-              ACHT Regel-Felder hatten überhaupt keine Oberfläche, und alle acht
-              gehörten hierher. Der Baustein war fertig gebaut, vermessen und
-              über den Creator-Code teilbar — einstellen konnte ihn niemand.
-              Steht direkt hinter „Joker verdienen", weil es dieselbe Frage in
-              ihrer dritten Antwort ist: Joker gibt es vom Admin, durch
-              Leistung — oder auf Kosten eines anderen. */}
-          <SectionTitle>Duell-Joker</SectionTitle>
-          <DuellJoker rules={rules}
-            onChange={(duell) => { touched(); setRules((r) => ({ ...r, duell })); }} />
-
-          {/* Drehrad — der dritte Auslöser neben Zeitpunkt (Joker) und
-              Leistung (Ereignisse): reiner Zufall aus einer vom Admin selbst
-              geschriebenen Tabelle (design/drehrad.md). Nur in dieser Stufe,
-              weil hier bereits alles andere Feineinstellung ist. */}
-          <SectionTitle>Drehrad</SectionTitle>
-          <Drehrad rules={rules}
-            onChange={(drehrad) => { touched(); setRules((r) => ({ ...r, drehrad })); }} />
+              ⚠️ Reihenfolge des Umbaus (Andi, EB4): erst die Sondermenüs, DANN
+              der Anzeige-Umschalter. Die Zeile steht deshalb bewusst noch in
+              der Profi-Bedingung — sie ersetzt die alten Abschnitte, sie hebt
+              die Ansichten nicht auf. */}
+          <SectionTitle>Joker</SectionTitle>
+          <GrosseZeile
+            icon="🃏" titel="Joker" unter="Arten · Stärke · Herkunft · Fristen · Grenzen"
+            wert={jokerZeileStand(rules)}
+            offen={jokerOffen} onClick={() => setJokerOffen((o) => !o)}
+          >
+            <JokerSondermenue rules={rules} stufe={stufe} premium={premium}
+              spieleJeSpieltag={aufwandKontext.spieleJeSpieltag}
+              onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
+          </GrosseZeile>
 
           {/* Team- & Derby-Regeln */}
           <SectionTitle>Team- &amp; Derby-Regeln</SectionTitle>
@@ -2244,142 +1750,11 @@ export default function Spielerstellung() {
 }
 
 
-// ── Große Zeile ────────────────────────────────────────────
-// Andis Aufbau vom 07.08.2026, wörtlich: „⚽ Wettbewerbe · Ligen & Teams ·
-// 3 gewählt ›“. Eine Spalte, große Zeilen — kein Kachelraster.
-//
-// Drei Dinge stecken darin, die nicht wegoptimiert werden dürfen:
-// 1. **Mindestens 56 px hoch.** Das ist der eigentliche Grund für dieses
-//    Layout: Apple verlangt 44 pt, Google 48 dp, und auf diesem Screen lagen
-//    18 Tippziele darunter. Ein großes Ziel entsteht hier von selbst.
-// 2. **Der Stand steht rechts, im zugeklappten Zustand.** Eine Zeile, die
-//    ihren Stand erst nach dem Öffnen zeigt, verlagert das Problem nur.
-// 3. **Aufklappen statt Unterseite.** Der eingestellte Wert und seine Wirkung
-//    (Spielzahl, Aufwand) bleiben auf demselben Screen — dieselbe Begründung
-//    wie bei der klebenden Ampel weiter unten.
-function GrosseZeile({ icon, titel, unter, wert, offen, onClick, children }) {
-  return (
-    <div style={{ marginBottom: 8 }}>
-      <button onClick={onClick} style={{
-        width: "100%", minHeight: 56, boxSizing: "border-box",
-        display: "flex", alignItems: "center", gap: 12,
-        textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
-        background: offen ? C.ink2 : C.surface,
-        border: `1px solid ${offen ? C.mint + "55" : C.line}`,
-        borderRadius: 14, padding: "12px 14px",
-      }}>
-        {icon && <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1 }}>{icon}</span>}
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: "block", fontSize: 15, fontWeight: 700 }}>{titel}</span>
-          {unter && (
-            <span style={{ display: "block", fontSize: 12, color: C.muted, marginTop: 2 }}>{unter}</span>
-          )}
-        </span>
-        {wert && (
-          <span style={{ fontFamily: MONO, fontSize: 12, color: C.akzent, flexShrink: 0 }}>{wert}</span>
-        )}
-        <span style={{
-          fontSize: 20, color: C.muted, flexShrink: 0, lineHeight: 1,
-          transform: offen ? "rotate(90deg)" : "none", transition: "transform .15s",
-        }}>›</span>
-      </button>
-      {offen && <div style={{ padding: "2px 2px 10px" }}>{children}</div>}
-    </div>
-  );
-}
-
 function SectionTitle({ children }) {
   return (
     <div style={{
       fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1,
       marginTop: 22, marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${C.line}`,
     }}>{children}</div>
-  );
-}
-
-function Field({ label, children }) {
-  return (
-    <div style={{ marginTop: 16 }}>
-      <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>{label}</div>
-      {children}
-    </div>
-  );
-}
-
-// `pfad` schaltet das Empfehlungsband frei: der Bereich, den die vermessenen
-// Presets belegen, wird als Streifen unter dem Regler markiert und der Wert
-// färbt sich, sobald er ihn verlässt. Bewusst direkt am Regler — der
-// Zusammenhang zwischen Handgriff und Folge muss unmittelbar sein, der Kasten
-// weiter oben erklärt dann das Warum.
-function Slider({ label, hint, value, min, max, step, onChange, fmt, pfad }) {
-  const b = pfad ? band(pfad) : null;
-  const draussen = b && (value < b.von || value > b.bis);
-  const anteil = (v) => `${Math.max(0, Math.min(100, ((v - min) / (max - min || 1)) * 100))}%`;
-
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <span style={{ fontSize: 13 }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: 13, color: draussen ? C.coral : C.akzent }}>
-          {fmt ? fmt(value) : value.toFixed(2)}
-        </span>
-      </div>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(+e.target.value)}
-        style={{ width: "100%", accentColor: draussen ? C.coral : C.akzent, cursor: "pointer" }} />
-      {b && (
-        <div title="erprobter Bereich" style={{
-          position: "relative", height: 3, borderRadius: 999, background: C.line, marginTop: 1,
-        }}>
-          <div style={{
-            position: "absolute", top: 0, bottom: 0, borderRadius: 999, background: `${C.mint}99`,
-            left: anteil(b.von), right: `calc(100% - ${anteil(b.bis)})`,
-          }} />
-        </div>
-      )}
-      {hint && <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
-function Toggle({ label, on, onChange }) {
-  return (
-    <button onClick={() => onChange(!on)} style={{
-      display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
-      textAlign: "left", gap: 12, marginBottom: 8, cursor: "pointer", color: C.text,
-      background: C.surface, border: `1px solid ${on ? C.mint + "55" : C.line}`,
-      borderRadius: 12, padding: "10px 14px", fontSize: 13, fontFamily: "inherit",
-      // 44 pt (Apple) / 48 dp (Google) — gilt für jeden Schalter dieses Screens.
-      minHeight: 44, boxSizing: "border-box",
-    }}>
-      <span>{label}</span>
-      <span style={{
-        flexShrink: 0, width: 38, height: 22, borderRadius: 999,
-        background: on ? C.mint : C.surface2, position: "relative", transition: "background .2s",
-      }}>
-        <span style={{
-          position: "absolute", top: 2, left: on ? 18 : 2, width: 18, height: 18,
-          borderRadius: 999, background: "#fff", transition: "left .2s",
-        }} />
-      </span>
-    </button>
-  );
-}
-
-function Stepper({ value, min, max, onStep }) {
-  // ⚠️ Hier reicht `TAPZIEL` NICHT: `min-height` schlägt `height`, aus dem
-  // 30×30-Quadrat würde ein 30 breiter, 44 hoher Streifen. Quadratische
-  // Knöpfe brauchen beide Maße — dafür gibt es die zweite Konstante.
-  const b = (dis) => ({
-    ...TAPZIEL_QUADRAT, borderRadius: 10, cursor: dis ? "default" : "pointer",
-    background: C.surface2, color: dis ? C.muted : C.text, border: `1px solid ${C.line}`,
-    fontSize: 20, lineHeight: 1,
-  });
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <button onClick={() => onStep(-1)} disabled={value <= min} style={b(value <= min)}>−</button>
-      <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 20, color: C.akzent, width: 18, textAlign: "center" }}>{value}</span>
-      <button onClick={() => onStep(1)} disabled={value >= max} style={b(value >= max)}>+</button>
-    </div>
   );
 }
