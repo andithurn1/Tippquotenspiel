@@ -110,7 +110,7 @@ export default function AdminFreigaben() {
         {matches != null && artenMitFreigabe.length === 0 && (
           <Kasten>
             In dieser Runde hängt nichts an einer Freigabe. Sie wird gebraucht, sobald
-            der Admin in der Profi-Ansicht bei einer Joker-Art „nur nach Freigabe“
+            der Admin bei einer Joker-Art „nur nach Freigabe“
             einstellt — bis dahin ändert hier nichts etwas.
           </Kasten>
         )}

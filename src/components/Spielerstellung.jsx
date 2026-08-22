@@ -470,20 +470,11 @@ export default function Spielerstellung() {
             Ein Klick genügt — den Rest stellen wir stimmig ein. Wer mag, geht danach ins Detail.
           </p>
 
-          {/* 🔴 Der Umschalter steht seit 20.08.2026 NICHT mehr hier, sondern
-              oben rechts neben „Menü“ und klebt dort fest. Andi: „integriere
-              da bitte auch oben rechts genauso wie bei Menü zurück nen
-              Switchschalter der immer da ist."
-              Tragend ist seine Begründung, nicht der Platz: man will
-              MITTENDRIN wechseln, wenn ein Regler fehlt — nicht nur am Anfang.
-              Ein Umschalter, der nach oben wegscrollt, zwingt jedes Mal hoch
-              und wieder zurück. Hier bleibt nur der Hinweis darauf (ST8). */}
-          <p style={{ fontSize: 12, color: C.muted, marginTop: 12, marginBottom: 14, lineHeight: 1.45 }}>
-            Oben rechts schaltest du zwischen <b style={{ color: C.text }}>Einfach</b> und{" "}
-            <b style={{ color: C.text }}>Profi</b> um — jederzeit, auch mitten im Einstellen.
-            Die Ansicht ändert nur, WIE VIEL du siehst; deine Einstellungen bleiben
-            beim Wechsel erhalten.
-          </p>
+          {/* ⚠️ Hier stand bis zum 22.08.2026 der Hinweis „oben rechts schaltest
+              du zwischen Einfach und Profi um" (ST8). Mit dem Wegfall des
+              Umschalters (EB1) versprach er etwas, das es nicht mehr gibt —
+              die schlimmste Sorte Resttext, weil man ihn erst sucht und dann
+              an sich selbst zweifelt. */}
 
           {/* ── Voreinstellungen ──────────────────────────────────
               🔴 Seit 20.08.2026 in BEIDEN Ansichten (ST2/ST3). Vorher standen
@@ -875,9 +866,9 @@ export default function Spielerstellung() {
               die ein Admin stellt, nicht nach dem Regel-Block.
 
               ⚠️ Reihenfolge des Umbaus (Andi, EB4): erst die Sondermenüs, DANN
-              der Anzeige-Umschalter. Die Zeile steht deshalb bewusst noch in
-              der Profi-Bedingung — sie ersetzt die alten Abschnitte, sie hebt
-              die Ansichten nicht auf. */}
+              der Anzeige-Umschalter. Beides ist am 22.08.2026 geschehen — die
+              Zeile stand zwischenzeitlich in einer Profi-Bedingung, die es
+              inzwischen nicht mehr gibt. */}
           <SectionTitle>Joker</SectionTitle>
           <GrosseZeile
             icon="🃏" titel="Joker" unter="Arten · Stärke · Herkunft · Fristen · Grenzen"
