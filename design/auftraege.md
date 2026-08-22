@@ -65,8 +65,8 @@ Wettbewerbe ganz oben. Genau der Sprung, den ST2 verbietet.
 
 | Nr | Ansage | Stand | Beleg / was fehlt |
 |---|---|---|---|
-| EB1 | **Nur die Detail-Version** — kein Umschalten mehr zwischen Einfach und Profi | ✅ | `AnsichtSchalter.jsx` gelöscht, Zustand `stufe` raus, alle 7 Stufen-Bedingungen aufgelöst — auch die durchgereichte in `JokerSondermenue`/`JokerOekonomie`. Im Browser geprüft: kein Umschalter mehr, alle sechs Zeilen sichtbar, „Die vier wichtigsten Fragen" bleiben. Auf 375×812: 76 Knöpfe, keiner unter 44 px, kein Querlauf |
-| EB2 | Verfeinerungen je Einstellung in ein **eigenes Sondereinstellungs-Menü**, wie bei den Mannschaften | ✅ | **Fünf Menüs**: Wertung · Joker · Modifikatoren · Verlauf · Saison & Zeit (`*Sondermenue.jsx`). `Spielerstellung.jsx` 2386 → 1109 Zeilen |
+| EB1 | „arbeite in nem separatem word mal sehr umfangreich aus, welche Parameter bei den jeweiligen Ebenen geändert werden sollen“ | ✅ | `design/entwuerfe/Ebenen-Parameter.docx` — **erzeugt** aus dem Regelwerk (`scripts/ebenen-dokument.mjs`), 38 Blöcke, 180 Parameter, jeder mit Vorgabe und mit der Quelle, die ihn in Einfach setzt |
+| EB2 | „welche bei der einfachen Variante weggelassen werden“ | ✅ | ausgezählt: **128 von 180** werden von keiner Voreinstellung und keinem Regler angefasst. ⚠️ Momentaufnahme vom 21.08.2026 — seit EA1 gibt es keine einfache Variante mehr; die Frage lautet jetzt, wen ein Charakter oder ein einfacher Regler anfasst |
 | EB3 | „bei Profi soll jede denkbare Kombination und Art wie bzw. für wann dies bestimmt wird anpassbar sein“ | ❓ | Als **vier Achsen** ausgearbeitet (WER · WANN · WIE · WOFÜR) samt dem, was es dafür schon gibt. ⚠️ Frei kombiniert sind das über 700 Entscheidungen — **die Entscheidung, ob alle Achsen für jeden Parameter offenstehen, fehlt und trägt alles Weitere** |
 
 ## Teil-Codes (21.08.2026)
@@ -136,13 +136,19 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 
 ## Eine Ansicht statt zwei (22.08.2026)
 
+⚠️ **Kürzel EA statt EB (umbenannt am 22.08.2026).** Dieser Abschnitt hieß
+erst auch EB1–EB5 — und weil es EB1–EB3 damit ZWEIMAL gab, hat ein Update
+prompt die falschen Zeilen im Ebenen-Dokument überschrieben und deren Belege
+zerstört. Zwei Nummern für dieselbe Sache sind keine Kleinigkeit, sondern
+eine Falle: gesucht wird nach `| EB1 |`, und getroffen wird die erste.
+
 | Nr | Ansage | Stand | Beleg / was fehlt |
 |---|---|---|---|
-| EB1 | **Nur die Detail-Version** — kein Umschalten mehr zwischen Einfach und Profi | ⏳ | Grund von Andi: „wir können schnell Fehler machen, wenn zwischen den Ebenen geswitched wird“. Hebt ST1/ST2/ST7 auf |
-| EB2 | Verfeinerungen je Einstellung in ein **eigenes Sondereinstellungs-Menü**, wie bei den Mannschaften | 🔨 | **Joker ist gebaut** (`JokerSondermenue.jsx`, `4030f5c`): eine Zeile, dahinter fünf Karten nach der Frage statt nach dem Regel-Block; `Spielerstellung.jsx` 2386 → 1761 Zeilen. Im Browser auf 375×812 durchgeklickt, kein Tippziel unter 44 px. ⏳ Offen sind die übrigen Bereiche (Modifikatoren, Saison-Wetten, Wertung, Betippungsauswahl) |
-| EB3 | Trotzdem bedienbar **ohne alles durchzulesen und einzeln einzustellen** | ⏳ | Damit werden die Voreinstellungen wichtiger, nicht unwichtiger: sie tragen die eine Ansicht |
-| EB4 | **Reihenfolge des Umbaus**: erst die Sondermenüs, dann der Umschalter weg | ✅ | Genau so gelaufen: fünf Menüs zuerst (`4030f5c` … `a513efc`), der Umschalter erst danach |
-| EB5 | „Klassische Playlist“ als Voreinstellung, *„so wie ich mir eine Tipprunde erstellen würde“* | ⏳ | ⛔ Ausdrücklich **gemeinsam am Ende, mit dem Balancing** |
+| EA1 | **Nur die Detail-Version** — kein Umschalten mehr zwischen Einfach und Profi | ✅ | `AnsichtSchalter.jsx` gelöscht, Zustand `stufe` raus, alle sieben Stufen-Bedingungen aufgelöst — auch die durchgereichte in `JokerSondermenue`/`JokerOekonomie`. Im Browser geprüft: kein Umschalter mehr, sechs Zeilen sichtbar, die vier wichtigsten Fragen bleiben. Auf 375×812: 76 Knöpfe, keiner unter 44 px, kein Querlauf |
+| EA2 | Verfeinerungen je Einstellung in ein **eigenes Sondereinstellungs-Menü**, wie bei den Mannschaften | ✅ | **Fünf Menüs**: Wertung · Joker · Modifikatoren · Verlauf · Saison & Zeit (`*Sondermenue.jsx`). `Spielerstellung.jsx` 2386 → 1109 Zeilen |
+| EA3 | Trotzdem bedienbar **ohne alles durchzulesen und einzeln einzustellen** | ✅ | Drei Mittel, alle im Betrieb: die Charaktere setzen alles auf einmal, die vier wichtigsten Fragen stehen jetzt für ALLE über den Zeilen (vorher nur in der einfachen Ansicht), und jede Zeile zeigt zugeklappt ihren Stand |
+| EA4 | **Reihenfolge des Umbaus**: erst die Sondermenüs, dann der Umschalter weg | ✅ | Genau so gelaufen: fünf Menüs zuerst (`4030f5c` … `a513efc`), der Umschalter erst danach (`97fca75`) |
+| EA5 | „Klassische Playlist“ als Voreinstellung, *„so wie ich mir eine Tipprunde erstellen würde“* | ⏳ | ⛔ Ausdrücklich **gemeinsam am Ende, mit dem Balancing** |
 
 ## Joker-Sondermenü (22.08.2026)
 
