@@ -43,9 +43,9 @@ Andersherum liegt alles flach auf einer Seite — schlechter als heute.
 |---|---|
 | **Joker** (84 Einstellwerte, fünf Karten) | ✅ `JokerSondermenue.jsx`, Commit `4030f5c` |
 | **Modifikatoren** (Derby · Vereine · Big Game · Außenseiter, ein Deckel) | ✅ `ModifikatorenSondermenue.jsx`, Commit `b10d2da` |
-| **Wertung** (Nähe, Underdog/Favorit, Kombi, Sieger-Boden, Anzeige & Cutoffs, Märkte, Regler-Feinheit) | ⏳ der größte verbliebene Block |
-| **Verlauf** (Anschluss halten, Streicher & Saisonverlauf, Spieltag vergessen) | ⏳ |
-| **Saison & Zeit** (Saison-Wetten, Zeitachse, Tippfenster) | ⏳ |
+| **Wertung** (Nähe, Underdog/Favorit, Kombi, Sieger-Boden, Anzeige & Cutoffs, Märkte, Regler-Feinheit) | ✅ `WertungSondermenue.jsx`, Commit `dee81ed` |
+| **Verlauf** (Anschluss halten, Streicher & Saisonverlauf, Spieltag vergessen) | ✅ `VerlaufSondermenue.jsx` |
+| **Saison & Zeit** (Saison-Wetten, Zeitachse, Tippfenster, Zeitraum) | ⏳ liegt noch verstreut zwischen Versäumnis und „Runde erstellen"; gehört eher zur Betippungsauswahl als zum Verlauf |
 | **Mitbestimmung** | ⏳ klein, kann an die Wertung anschließen |
 | Danach: `AnsichtSchalter.jsx` + Zustand `stufe` entfernen | ⏳ |
 

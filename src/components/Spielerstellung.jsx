@@ -9,9 +9,6 @@ import { istTeilCode, wendeTeilCodeAn } from "@/lib/teilbibliothek";
 import { PRESETS } from "@/lib/presets";
 import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
-import { STAERKE_STUFEN, BETRIFFT, beschreibeBetrifft } from "@/lib/catchup";
-import { KURVEN, KURVE, SAISONFORM_LIMITS, beschreibeSaisonform } from "@/lib/saisonform";
-import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
 import { alleVereine, vereineVon, LIGEN } from "@/lib/ligen";
 import { wettbewerbLabel } from "@/lib/wettbewerbe";
 import { getStore } from "@/lib/store";
@@ -47,6 +44,7 @@ import { Zahl, Slider, Toggle, Field, Stepper, GrosseZeile } from "@/components/
 import JokerSondermenue, { jokerZeileStand } from "@/components/JokerSondermenue";
 import ModifikatorenSondermenue, { modifikatorenStand } from "@/components/ModifikatorenSondermenue";
 import WertungSondermenue, { wertungStand } from "@/components/WertungSondermenue";
+import VerlaufSondermenue, { verlaufStand } from "@/components/VerlaufSondermenue";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
@@ -101,6 +99,7 @@ export default function Spielerstellung() {
   const [jokerOffen, setJokerOffen] = useState(false);
   const [modsOffen, setModsOffen] = useState(false);
   const [wertungOffen, setWertungOffen] = useState(false);
+  const [verlaufOffen, setVerlaufOffen] = useState(false);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -144,9 +143,6 @@ export default function Spielerstellung() {
       patchJoker({ modus: letzterModus });
     }
   };
-  const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
-  const patchSaisonform = (p) => { touched(); setRules((r) => ({ ...r, saisonform: { ...(r.saisonform || DEFAULT_RULES.saisonform), ...p } })); };
-  const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
   const setSaison = (saison) => { touched(); setRules((r) => ({ ...r, saison })); };
   // Faktor eines Vereins durch feste Stufen weiterdrehen. 1 = kein
   // Modifikator und fliegt aus der Liste, damit das Regelwerk klein bleibt.
@@ -389,11 +385,7 @@ export default function Spielerstellung() {
 
   const L = RULE_LIMITS;
   const j = rules.joker;
-  const au = rules.aufholen || DEFAULT_RULES.aufholen;
-  const sf = rules.saisonform || DEFAULT_RULES.saisonform;
-  const ve = rules.versaeumnis || DEFAULT_RULES.versaeumnis;
   // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
-  const auStufe = STAERKE_STUFEN.find((s) => s.staerke === au.staerke && s.schwelle === au.schwelle)?.key ?? "custom";
 
   return (
     <div style={{
@@ -941,166 +933,28 @@ export default function Spielerstellung() {
               onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
           </GrosseZeile>
 
-          {/* Aufhol-Mechanismus */}
-          <SectionTitle>Anschluss halten</SectionTitle>
-          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Damit Zurückliegende dranbleiben: Wer abgehängt ist, bekommt je Spieltag
-            einen Teil des Rückstands gutgeschrieben. <strong>Aufholen heißt nicht
-            Überholen</strong> — der Führende bleibt vorn.
-          </p>
-          <Toggle label="Anschluss-Bonus geben" on={au.enabled}
-            onChange={(on) => patchAufholen({ enabled: on })} />
+          {/* 🔴 VERLAUF — eine Zeile für alles, was über die SAISON greift
+              (viertes Sondermenü, Andi EB2/EB4).
 
-          {au.enabled && (
-            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
-              <Field label="Stärke">
-                <div style={{ display: "flex", gap: 6 }}>
-                  {STAERKE_STUFEN.map((s) => {
-                    const on = auStufe === s.key;
-                    return (
-                      <button key={s.key} onClick={() => patchAufholen({ staerke: s.staerke, schwelle: s.schwelle })} style={{
-                        cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
-                        borderRadius: 10, flex: 1, textAlign: "left",
-                        background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
-                        border: `1px solid ${on ? C.akzent + "66" : C.line}`,
-                      }}>
-                        <div style={{ fontWeight: 700 }}>{s.label}</div>
-                        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>{s.hint}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Field>
+              Anschluss-Bonus, Streicher und Ersatz-Tipp greifen NICHT in die
+              Wertung eines Spiels ein, sondern in den Stand (Ebene 4). Sie
+              standen an drei Stellen — und ausgerechnet ihre Wechselwirkung
+              sah man dadurch nie: Streicher ohne „nur getippte" hebeln die
+              Versäumnis-Regel aus. Das Sondermenü meldet genau diesen Fall
+              jetzt, weil beide Schalter beieinander liegen.
 
-              <Field label="Wen betrifft es?">
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {Object.values(BETRIFFT).map((b) => {
-                    const on = au.betrifft === b.key;
-                    return (
-                      <button key={b.key} onClick={() => patchAufholen({ betrifft: b.key })}
-                        title={b.desc} style={{
-                          ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
-                          background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
-                          border: `1px solid ${on ? C.mint + "66" : C.line}`,
-                        }}>{b.label}</button>
-                    );
-                  })}
-                </div>
-              </Field>
-              {/* 🔴 `beschreibeBetrifft` statt `.desc`: bei den beiden
-                  parametrierten Stufen („die letzten n", „wer mehr als x %
-                  abfällt") sagt die statische Beschreibung nur, WAS für eine
-                  Art Auswahl es ist — nie die eingestellte ZAHL. Der Admin
-                  drehte an einem Regler und las daneben denselben Satz.
-                  Gefunden über `npm run tot`: die Funktion lag gebaut und
-                  getestet da und hatte keinen Aufrufer. */}
-              <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
-                {beschreibeBetrifft(au.betrifft, au.betrifftWert)}
-                {" "}Die Live-Vorschau unten zeigt, ob der Bonus zu stark wird.
-              </p>
-            </div>
-          )}
-
-          {/* Saisonform: Streichresultate + Gewichtung der Spieltage */}
-          <SectionTitle>Streicher &amp; Saisonverlauf</SectionTitle>
-          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Wie stark darf ein einzelner Spieltag die Saison bestimmen? Beides greift
-            auf die fertigen Spieltagspunkte — die Wertung eines Spiels bleibt unberührt.
-          </p>
-
-          <Field label="Streichresultate">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {[0, 1, 2, 3, 5].map((n) => {
-                const on = sf.streich === n;
-                return (
-                  <button key={n} onClick={() => patchSaisonform({ streich: n })} style={{
-                    ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
-                    background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
-                    border: `1px solid ${on ? C.mint + "66" : C.line}`,
-                  }}>{n === 0 ? "keine" : `${n} streichen`}</button>
-                );
-              })}
-            </div>
-          </Field>
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 2, marginBottom: 10, lineHeight: 1.4 }}>
-            Die schwächsten Spieltage zählen nicht — verzeiht einen Ausrutscher oder
-            einen Urlaub. <strong>Gemessen der einzige milde Ausgleich hier</strong>:
-            senkt den Vorsprung des Ersten leicht, ohne das Können zu entwerten.
-          </p>
-
-          {sf.streich > 0 && (
-            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 10 }}>
-              <Toggle label="Nur Spieltage streichen, an denen getippt wurde"
-                on={sf.nurGetippte}
-                onChange={(on) => patchSaisonform({ nurGetippte: on })} />
-              <p style={{ fontSize: 11, color: sf.nurGetippte ? C.muted : C.coral, marginTop: 2, lineHeight: 1.4 }}>
-                {sf.nurGetippte
-                  ? "Ein vergessener Spieltag bleibt stehen und wird nicht verschenkt."
-                  : "⚠️ Aus: ein vergessener Spieltag wird als Nullrunde gestrichen — Auslassen kostet dann nichts mehr und arbeitet gegen die Versäumnis-Regel."}
-              </p>
-            </div>
-          )}
-
-          <Field label="Gewichtung über die Saison">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {KURVEN.map((k) => {
-                const on = sf.kurve === k.key;
-                return (
-                  <button key={k.key} onClick={() => patchSaisonform({ kurve: k.key })}
-                    title={k.text} style={{
-                      ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
-                      background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
-                      border: `1px solid ${on ? C.akzent + "66" : C.line}`,
-                    }}>{k.label}</button>
-                );
-              })}
-            </div>
-          </Field>
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
-            {KURVE[sf.kurve]?.text}
-          </p>
-
-          {/* ⚠️ Diese Warnung ist der Grund, warum der Regler überhaupt so
-              beschrieben ist. Gemessen (400 Läufe): „Endspurt" senkt den
-              Vorsprung des Ersten NICHT, sondern vergrößert ihn — weil Gewicht
-              auf einen Teil der Saison die wirksame Stichprobe verkleinert.
-              Ohne diesen Hinweis stellt ein Admin das ein, um auszugleichen,
-              und bekommt das Gegenteil. */}
-          {sf.kurve !== "flach" && (
-            <div style={{
-              marginTop: 8, marginBottom: 8, padding: "9px 11px", borderRadius: 10,
-              background: `${C.coral}14`, border: `1px solid ${C.coral}44`,
-            }}>
-              <div style={{ fontSize: 12, color: C.coral, fontWeight: 700, marginBottom: 3 }}>
-                Kein Ausgleich — ein Spannungsregler
-              </div>
-              <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>
-                Nachgemessen: eine ungleiche Gewichtung <strong>vergrößert</strong> den
-                Vorsprung des Ersten und macht die Saison zufälliger, weil weniger
-                Spieltage wirklich zählen. Für ein spannendes Saisonende gut — zum
-                Ausgleichen nicht. Dafür sind die Streicher da.
-              </div>
-              <div style={{ marginTop: 8 }}>
-                <Slider label="Wie ausgeprägt?" value={sf.staerke}
-                  min={SAISONFORM_LIMITS.staerke.min} max={SAISONFORM_LIMITS.staerke.max}
-                  step={SAISONFORM_LIMITS.staerke.step}
-                  fmt={(v) => `×${v.toFixed(1)}`}
-                  onChange={(v) => patchSaisonform({ staerke: v })} />
-              </div>
-            </div>
-          )}
-
-          {/* Die Zusammenfassung nur zeigen, wenn sie mehr sagt als die
-              Kurvenzeile darüber. Im Standardzustand stünde sonst zweimal
-              „Jeder Spieltag zählt gleich viel." untereinander. */}
-          {(sf.kurve !== "flach" || sf.streich > 0) && (
-            <p style={{
-              fontSize: 12, color: C.text, marginTop: 4, marginBottom: 12, lineHeight: 1.45,
-              padding: "8px 10px", borderRadius: 8, background: C.surface, border: `1px solid ${C.line}`,
-            }}>
-              {beschreibeSaisonform(sf, 34)}
-            </p>
-          )}
+              ⚠️ Das Versäumnis stand bisher 180 Zeilen weiter unten zwischen
+              Tipp-Fenster und Zeitachse — dort ging es um die AUSWAHL, nicht
+              um den Verlauf. Der Rest jenes Blocks bleibt unangetastet. */}
+          <SectionTitle>Verlauf</SectionTitle>
+          <GrosseZeile
+            icon="📈" titel="Verlauf über die Saison" unter="Anschluss · Streicher · Vergessen"
+            wert={verlaufStand(rules)}
+            offen={verlaufOffen} onClick={() => setVerlaufOffen((o) => !o)}
+          >
+            <VerlaufSondermenue rules={rules}
+              onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
+          </GrosseZeile>
 
           {/* Saison-Wetten (Langzeit-Ebene) */}
           </>)}
@@ -1119,71 +973,7 @@ export default function Spielerstellung() {
             onChange={(wettbewerbe) => { touched(); setRules((r) => ({ ...r, wettbewerbe })); }} />
 
 
-          {/* Versäumnis: Spieltag vergessen */}
           {stufe === "profi" && (<>
-          <SectionTitle>Spieltag vergessen</SectionTitle>
-          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Wer mal keine Zeit hatte, steht sonst mit null Punkten da und steigt aus.
-            Mit Kulanz bekommt er einen Ersatz-Tipp — <strong>immer schlechter als
-            selbst tippen</strong>, aber besser als nichts.
-          </p>
-          <Toggle label="Ersatz-Tipp bei Versäumnis" on={ve.enabled}
-            onChange={(on) => patchVersaeumnis({ enabled: on })} />
-
-          {ve.enabled && (
-            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
-              <Field label="Woher kommt der Ersatz-Tipp?">
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {VERSAEUMNIS_STRATEGIEN.map((s) => {
-                    const on = ve.strategie === s;
-                    return (
-                      <button key={s} onClick={() => patchVersaeumnis({ strategie: s })} style={{
-                        cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
-                        borderRadius: 10, textAlign: "left",
-                        background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
-                        border: `1px solid ${on ? C.akzent + "66" : C.line}`,
-                      }}>
-                        <div style={{ fontWeight: 700 }}>{VERSAEUMNIS_LABEL[s]}</div>
-                        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>{VERSAEUMNIS_HINT[s]}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Field>
-
-              <Field label={`Abzug auf den Ersatz-Tipp: ${ve.malusProzent} %`}>
-                <input type="range"
-                  min={RULE_LIMITS.versaeumnis.malusProzent.min}
-                  max={RULE_LIMITS.versaeumnis.malusProzent.max}
-                  step={RULE_LIMITS.versaeumnis.malusProzent.step}
-                  value={ve.malusProzent}
-                  onChange={(e) => patchVersaeumnis({ malusProzent: Number(e.target.value) })}
-                  style={{ width: "100%", accentColor: C.akzent }} />
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
-                  {ve.malusProzent === 0 && "Volle Wertung — sehr gnädig, macht Vergessen folgenlos."}
-                  {ve.malusProzent > 0 && ve.malusProzent < 100 && `Der Ersatz-Tipp zählt nur zu ${100 - ve.malusProzent} %.`}
-                  {ve.malusProzent === 100 && "Wertlos — wie gar nicht getippt (nur fürs Gefühl dabei)."}
-                </div>
-              </Field>
-
-              <Field label={ve.maxProSaison === 0 ? "Unbegrenzt oft" : `Höchstens ${ve.maxProSaison}× pro Saison`}>
-                <input type="range"
-                  min={RULE_LIMITS.versaeumnis.maxProSaison.min}
-                  max={RULE_LIMITS.versaeumnis.maxProSaison.max}
-                  step={RULE_LIMITS.versaeumnis.maxProSaison.step}
-                  value={ve.maxProSaison}
-                  onChange={(e) => patchVersaeumnis({ maxProSaison: Number(e.target.value) })}
-                  style={{ width: "100%", accentColor: C.akzent }} />
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
-                  {ve.maxProSaison === 0
-                    ? "Die Kulanz greift immer — auch bei Dauer-Aussetzern."
-                    : "Danach zählt ein vergessener Spieltag wieder null. Verhindert dauerhaftes Aussetzen."}
-                </div>
-              </Field>
-            </div>
-          )}
-
-
           {/* Tipp-Fenster: wie früh vor Anpfiff getippt wird. Gehört hierher,
               weil es dieselbe Frage beantwortet wie die Spielauswahl — WAS
               steht wann zum Tippen an. */}
