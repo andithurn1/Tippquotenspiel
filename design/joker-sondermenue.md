@@ -351,6 +351,92 @@ Die Felder dafür gibt es: `duell.sichtbarkeit` (offen/verdeckt) und
 `jokerBasis.widerruf` (bis Anpfiff / N Stunden vorher / gar nicht).
 **Voreinstellung für diese Familie: offen und widerrufbar.**
 
+## 🔴 Fremdjoker treffen EINZELNE SPIELE — und was das mit den Gewichten macht
+
+**Andi am 22.08.2026:** *„also alle Fremdjoker nur für einzelne Spiele. Gut,
+problematisch ist halt dann, wenn das Standard-Preset manche Spiele wie CL als
+höher bewertet … dass der Preis im Joker-Shop dementsprechend höher wäre?
+Solche Fremdjoker nur, wenn alle Spiele gleich viel zählen? Oder kennst du eine
+andere Vereinbarkeit?"*
+
+**Er hat das Problem genau getroffen.** Sobald ein Fremdjoker auf EIN Spiel
+geht, ist sein Wert = Anteil × Punkte des Opfers auf diesem Spiel. Und diese
+Punkte hängen an drei sehr verschiedenen Dingen:
+
+| Woran | Bekannt wann? | Für alle gleich? |
+|---|---|---|
+| **Rundenweites Gewicht** (CL, Derby, Big Game, Liga-Aufschlag) | vorher | ja |
+| **Joker des Opfers** auf diesem Spiel | erst nach dessen Abgabe | nein |
+| **Wie gut das Opfer getippt hat** | erst nach Anpfiff | nein |
+
+Das dritte ist das Spiel selbst — die gesunde Unsicherheit, die bleiben soll.
+Das zweite ist längst entschieden (Teil E, 22.08.: „nicht durch Ereignisse oder
+selbst gewählte Joker"). **Übrig bleibt genau das erste, und das ist seine
+Frage.**
+
+⚠️ **Warum es wirklich stört, in einem Satz:** wenn das schwerste Spiel auch das
+lohnendste Ziel ist, gibt es keine Zielwahl mehr, sondern eine Rechenaufgabe
+mit bekannter Lösung. Alle gehen auf dasselbe Spiel — und ein Fremdjoker, den
+alle gleich einsetzen, ist kein Spielzug.
+
+### ✅ Empfehlung: die WIRKUNG normieren, nicht den Preis
+
+**Ein Fremdjoker rechnet auf dem Wert des Spiels OHNE die rundenweiten
+Gewichte** — also so, als zählten alle Spiele gleich viel. Technisch: der
+Angriff greift auf `wert / gewichtsFaktor(spiel)`.
+
+Vier Gründe, warum das die sauberste der vier Lösungen ist:
+
+1. **Es beseitigt die Ursache, statt sie zu bepreisen.** Ein CL-Spiel ist als
+   Ziel nicht mehr attraktiver als ein Ligaspiel — die Konzentration entsteht
+   gar nicht erst.
+2. **Das Gewicht bleibt beim Opfer, wo es hingehört.** Die CL zählt für den
+   Tipper weiterhin mehr. Nur der ANGREIFER profitiert nicht davon — und das
+   ist genau richtig: das Gewicht ist eine Aussage über die Wichtigkeit des
+   Spiels, keine Belohnung fürs Zuschlagen.
+3. **Kein neuer Regler, kein Verbot, kein Hinweis-Text nötig.** Die Kombination
+   „Fremdjoker + ungleiche Gewichte" bleibt erlaubt und ist trotzdem rund.
+4. **Der Zeitpunkt bleibt egal** (Andis Grundsatz vom 22.08.): niemand muss
+   früh tippen, um sich das fetteste Ziel zu sichern.
+
+### Die drei anderen Wege, und warum sie nicht die Grundmechanik werden
+
+**Preis nach Gewicht** (Andis erste Idee) — *als Option ja, als Grundregel
+nein.* Der Preis wird bezahlt, BEVOR feststeht, was der Angriff bringt: der
+größte Teil der Streuung kommt daher, wie gut das Opfer getippt hat, und die
+kennt beim Kauf niemand. Ein Preis nach Gewicht bepreist also den kleineren
+Teil und fühlt sich trotzdem wie eine Strafe an. Dazu macht er den Shop zur
+Buchhaltung („billig für Liga, teuer für CL"). **Als Schalter
+`kostenNachGewicht` für Admins, die genau das wollen: sinnvoll.**
+
+**Nur bei Gleichgewichtung erlauben** (Andis zweite Idee) — *nein, aber als
+WARNUNG.* Ein Verbot widerspricht dem Baukasten-Grundsatz („will ein Admin
+etwas Unbalanciertes, soll er es haben"). Richtig ist eine Meldung in
+`reglerWarnung.js`: „Fremdjoker + ungleiche Wettbewerbs-Gewichte, ohne
+Normierung: die schweren Spiele werden zum einzigen Ziel" — mit der Korrektur
+daneben. Das ist dieselbe Bauart wie die anderen Kombinationsregeln dort.
+
+**Deckel je Einsatz** — *sinnvolle Ergänzung, keine Alternative.* Ein
+`maxProEinsatz` (was ein einzelner Fremdjoker höchstens holen kann) begrenzt
+JEDE Streuung, auch die aus dem Tippglück. Es gibt bereits `maxProSaison` als
+Punkte-Deckel; das hier wäre die kleine Schwester. Nimmt aber die Konzentration
+nicht weg, sondern kappt sie nur oben — deshalb zusätzlich, nicht stattdessen.
+
+### ❓ Eine Folgefrage, die Andi entscheiden muss
+
+**Gilt die Normierung auch für die GEGENWETTE?** Seine Entscheidung vom
+22.08.2026 sagt: Standard-Modifikatoren (Außenseiter, Derby, Spitzenspiel,
+Liga-Gewicht, Tabellen-Bonus) zählen für die Gegenwette MIT. Die Gewichte
+waren dabei nicht die Frage — es ging um Joker und Ereignisse.
+
+Konsequent wäre, die ganze Familie gleich zu behandeln: dann fielen die
+Gewichte auch bei der Gegenwette heraus. **Dagegen spricht ein guter Grund:**
+die Gegenwette reguliert sich über die Gegenquote `1/(1−p)` bereits selbst —
+gegen einen fetten Tipp zu wetten ist teuer. Blocken und Klauen tun das nicht.
+
+Beides ist vertretbar. Solange nichts entschieden ist, wird gebaut, was
+dasteht: Gegenwette MIT Standard-Mods, Block/Klau/Trittbrettfahrer OHNE.
+
 ## 🔴 Geschützte Spiele — der Tipper wehrt sich (Andi, 22.08.2026)
 
 Wörtlich: *„dass die Option für jeden Tippabgeber besteht, ausgewählte Spiele
