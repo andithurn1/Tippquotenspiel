@@ -126,7 +126,113 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-22 (VI) · 🔴 **ÜBERGABE an das nächste Fenster** — Masterdatei vor Umsetzung
+
+> **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
+> außer `CLAUDE.md` brauchst du nichts zu lesen.
+> ⬆️ Eintrag (V) darunter ist Historie.
+
+#### Wo du landest
+
+```
+main    ddf3e2b · alles gepusht, Arbeitsbaum sauber
+Live    https://clinquant-sorbet-695e02.netlify.app
+Tests   2167 grün · 43 skipped · 89 Dateien   (gemessen 22.08.2026)
+Abnahmen  stufen · sicht · gleich · tot · greift · anzeige → alle 0
+```
+
+#### 🔴 SCHRITT 0: `design/auftraege.md` ist jetzt die Mitte
+
+**83 Zeilen, jede eine Ansage von Andi mit Stand.** Angelegt, weil er zu Recht
+sagte: *„habe bislang immer Text gegeben und es wurde die Hälfte ignoriert."*
+Nachgemessen hatte er recht.
+
+- **Sagt er in einer Nachricht fünf Dinge, kommen fünf Zeilen dorthin.**
+- **Ein ✅ ohne Beleg (Datei, Zeile oder Messung) ist ein ⏳.**
+- Zeilen werden nie gelöscht, nur umgestuft.
+
+Dazu wie bisher `design/ideen.md` und `design/vokabular.md` lesen — Andi
+bearbeitet sie über Desktop-Verknüpfungen, seine Zeilen liegen **uncommitted**
+im Arbeitsbaum. `git status` VOR allem anderen.
+
+#### ▶️ WORAN GEARBEITET WIRD
+
+🎯 **Nur „Spiel erstellen"**, bis Andi etwas anderes sagt. Steht in `CLAUDE.md`.
+
+**Seine Reihenfolge, ausdrücklich gesetzt:** erst die **Masterdatei** fertig,
+dann intensive Umsetzungs-Sitzungen. ⚠️ Bis dahin: **Mechanik ja, Platzierung
+nein.**
+
+Drei PowerPoint-Dateien, gelesen und geschrieben mit eigenen Werkzeugen:
+
+| Datei | Ebene |
+|---|---|
+| `Quotentippen.pptx` | Andis Original — **nie überschreiben** |
+| `Quotentippen-Vorschlag.pptx` | adminseitige Spielerstellung, 11 Folien |
+| `Quotentippen-Tippen.pptx` | Tippen + Runden-Übersicht, 11 Folien |
+
+```bash
+node scripts/lies-pptx.mjs <datei>          # liest MIT Anordnung und Farbe
+npx vite-node scripts/folien-vorschlag.mjs  # erzeugt die Vorschlags-Datei neu
+npx vite-node scripts/folien-tippen.mjs     # erzeugt die Tipp-Datei neu
+node scripts/lies-docx.mjs <datei>          # Word lesen
+```
+
+🟠 **Orange = Auftrag.** Andi markiert Funktionsweisen orange; der Leser
+erkennt sie am Farbton und listet sie je Folie gesammelt. Konventionen in
+`design/entwuerfe/masterdatei.md`.
+
+#### 🔴 DIE GROSSE OFFENE ARBEIT: eine Ansicht statt zwei
+
+Andi am 22.08.2026: **nur noch die Detail-Version**, kein Umschalten mehr
+zwischen Einfach und Profi — *„wir können schnell Fehler machen, wenn zwischen
+den Ebenen geswitched wird."*
+
+Die Tiefe kommt stattdessen aus **Verschachtelung**: jede Einstellung ist EINE
+Zeile, ihre Feinheiten liegen hinter einem eigenen Sondermenü (Vorlage:
+`LigaSonderregeln.jsx`, Muster: `GrosseZeile`).
+
+⚠️ **Reihenfolge nicht beliebig:** erst die Sondermenüs, DANN der Umschalter
+weg. Andersherum liegt alles flach auf einer Seite — schlechter als heute.
+
+⚠️ Damit werden `AnsichtSchalter.jsx` und der Zustand `stufe` hinfällig (am
+20.08. gebaut). Kein Verlust an Mechanik.
+
+**Der Aufbau des ersten Sondermenüs steht fertig ausgearbeitet in
+`design/joker-sondermenue.md`** — 84 Einzelwerte, geordnet in fünf Karten
+(Welche gibt es · Wie stark · Woher kommen sie · Wann gelten sie · Grenzen),
+plus zwölf neue Joker-Arten und die Familie „Eingriffe in fremde Tipps".
+
+#### ⛔ HARTE REGELN (alle in `CLAUDE.md`)
+
+- **Balancing ist Endphase** — auch NICHT als Gegenargument gegen einen Umbau.
+- **Umfang nie eigenmächtig kürzen.** Bedenken danebenstellen, nicht kürzen.
+- **Datum nie schätzen** — `git log --date=short`.
+- **Der Zeitpunkt der Tippabgabe muss egal sein** (neu, 22.08.). Prüffrage:
+  ändert sich mein bester Zug, je nachdem WANN ich ihn mache?
+
+#### Offene Punkte bei ANDI
+
+- **Brevo + Domain** — einziger echter Blocker vor Mitspielern.
+- Die Masterdateien korrigieren und orange Kästen setzen.
+- `AppData\Roaming\Wispr Flow` (48 MB eigene Daten) — löschen oder behalten.
+
+#### ⚠️ Werkzeug-Fallen, die diese Sitzung gekostet haben
+
+1. **EMU müssen GANZE Zahlen sein.** `2.2 * 360000` ergibt in JavaScript
+   `792000.0000000001`, und PowerPoint lehnt die Datei kommentarlos ab.
+2. **Word legt Textfelder doppelt ab** (`mc:Fallback`) und speichert sie in
+   EINFÜGE-Reihenfolge, nicht in Seitenlage.
+3. **`node -e` mit deutschen Anführungszeichen** bricht ständig. Ersatztexte in
+   eine Datei schreiben und einlesen, oder zeilenbasiert per Index arbeiten.
+4. **Gemischte Zeilenenden** (CRLF und LF in derselben Datei) — mit
+   `split(/\r?\n/)` arbeiten, nie mit festem `\r\n`.
+
+---
+
 ### 2026-08-20 (V) · 🔴 **ÜBERGABE an das nächste Fenster** — Andi schreibt jetzt selbst mit
+
+⬆️ **Überholt durch Eintrag (VI) ganz oben.** Bleibt als Historie.
 
 > **👉 Wenn du frisch startest: DAS hier ist dein Auftrag.** Selbsttragend —
 > außer `CLAUDE.md` brauchst du nichts zu lesen. Der Eintrag (IV) darunter ist
