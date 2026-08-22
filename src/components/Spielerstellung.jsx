@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   DEFAULT_RULES, RULE_LIMITS,
   encodePreset, decodePreset, sanitizeRules, istCreatorCode,
-  REGLER_FEINHEITEN, reglerSchritt,
 } from "@/lib/engine";
 import { istTeilCode, wendeTeilCodeAn } from "@/lib/teilbibliothek";
 import { PRESETS } from "@/lib/presets";
@@ -12,7 +11,6 @@ import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
 import { STAERKE_STUFEN, BETRIFFT, beschreibeBetrifft } from "@/lib/catchup";
 import { KURVEN, KURVE, SAISONFORM_LIMITS, beschreibeSaisonform } from "@/lib/saisonform";
-import { TIPPEINFLUSS_LIMITS, beschreibeTippEinfluss } from "@/lib/tippEinfluss";
 import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
 import { alleVereine, vereineVon, LIGEN } from "@/lib/ligen";
 import { wettbewerbLabel } from "@/lib/wettbewerbe";
@@ -48,6 +46,7 @@ import { zahl, fmtFaktor } from "@/lib/format";
 import { Zahl, Slider, Toggle, Field, Stepper, GrosseZeile } from "@/components/Eingaben";
 import JokerSondermenue, { jokerZeileStand } from "@/components/JokerSondermenue";
 import ModifikatorenSondermenue, { modifikatorenStand } from "@/components/ModifikatorenSondermenue";
+import WertungSondermenue, { wertungStand } from "@/components/WertungSondermenue";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
@@ -101,6 +100,7 @@ export default function Spielerstellung() {
   // auf „Wettbewerbe“ das gerade geöffnete Joker-Menü zuklappen.
   const [jokerOffen, setJokerOffen] = useState(false);
   const [modsOffen, setModsOffen] = useState(false);
+  const [wertungOffen, setWertungOffen] = useState(false);
   const [imp, setImp] = useState("");
   const [impErr, setImpErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -120,9 +120,6 @@ export default function Spielerstellung() {
     setRules({ ...sanitizeRules(preset.rules), name: preset.label });
   };
   const patch = (p) => { touched(); setRules((r) => ({ ...r, ...p })); };
-  const patchCombo = (p) => { touched(); setRules((r) => ({ ...r, combo: { ...r.combo, ...p } })); };
-  const patchMarkets = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, ...p } })); };
-  const patchGoals = (p) => { touched(); setRules((r) => ({ ...r, markets: { ...r.markets, goals: { ...r.markets.goals, ...p } } })); };
   const patchJoker = (p) => { touched(); setRules((r) => ({ ...r, joker: { ...r.joker, ...p } })); };
 
   // ── Variantenwahl (Andis erste Frage, 20.08.2026) ─────────
@@ -149,7 +146,6 @@ export default function Spielerstellung() {
   };
   const patchAufholen = (p) => { touched(); setRules((r) => ({ ...r, aufholen: { ...r.aufholen, ...p } })); };
   const patchSaisonform = (p) => { touched(); setRules((r) => ({ ...r, saisonform: { ...(r.saisonform || DEFAULT_RULES.saisonform), ...p } })); };
-  const patchTippEinfluss = (p) => { touched(); setRules((r) => ({ ...r, tippEinfluss: { ...(r.tippEinfluss || DEFAULT_RULES.tippEinfluss), ...p } })); };
   const patchVersaeumnis = (p) => { touched(); setRules((r) => ({ ...r, versaeumnis: { ...r.versaeumnis, ...p } })); };
   const setSaison = (saison) => { touched(); setRules((r) => ({ ...r, saison })); };
   // Faktor eines Vereins durch feste Stufen weiterdrehen. 1 = kein
@@ -392,11 +388,9 @@ export default function Spielerstellung() {
   };
 
   const L = RULE_LIMITS;
-  const g = rules.markets.goals;
   const j = rules.joker;
   const au = rules.aufholen || DEFAULT_RULES.aufholen;
   const sf = rules.saisonform || DEFAULT_RULES.saisonform;
-  const te = rules.tippEinfluss || DEFAULT_RULES.tippEinfluss;
   const ve = rules.versaeumnis || DEFAULT_RULES.versaeumnis;
   // Welche Voreinstellung passt zur aktuellen Stärke/Schwelle (für die Auswahl)?
   const auStufe = STAERKE_STUFEN.find((s) => s.staerke === au.staerke && s.schwelle === au.schwelle)?.key ?? "custom";
@@ -860,241 +854,35 @@ export default function Spielerstellung() {
             </>
           )}
 
+
           {stufe === "profi" && (<>
-          <SectionTitle>Regler-Feinheit</SectionTitle>
-          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Wie fein sich die Multiplikator-Regler weiter unten stellen lassen —
-            eine Feineinstellung für Profis, keine Einstiegsfrage.
-          </p>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-            {REGLER_FEINHEITEN.map((f) => {
-              const an = (rules.reglerFeinheit ?? DEFAULT_RULES.reglerFeinheit) === f.wert;
-              return (
-                <button key={f.key} onClick={() => patch({ reglerFeinheit: f.wert })} style={{
-                  cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
-                  borderRadius: 10, flex: "1 1 120px", textAlign: "left",
-                  background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
-                  border: `1px solid ${an ? C.akzent + "66" : C.line}`,
-                }}>
-                  <div style={{ fontWeight: 700 }}>{f.label}</div>
-                  <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>{f.desc}</div>
-                </button>
-              );
-            })}
-          </div>
+          {/* 🔴 WERTUNG — eine Zeile für das, was aus Quote und Tipp Punkte
+              macht (drittes Sondermenü, Andi EB2/EB4).
 
-          <SectionTitle>Schärfe der Nähe-Belohnung</SectionTitle>
-          <Slider label="Ergebnis-Nähe (k)" value={rules.k} {...L.k} step={reglerSchritt(rules, L.k)} pfad="k" onChange={(v) => patch({ k: v })}
-            hint="Höher = die Belohnung fällt mit jedem Tor Abstand steiler ab (Underdog-Regler)." />
-          <Slider label="Team-Tore-Nähe (m)" value={rules.m} {...L.m} step={reglerSchritt(rules, L.m)} pfad="m" onChange={(v) => patch({ m: v })}
-            hint="Steilheit der siegerunabhängigen Team-Tore-Nähe." />
+              Zusammengelegt sind hier sieben Abschnitte, die über 230 Zeilen
+              verteilt lagen: Regler-Feinheit, Nähe, Underdog/Favorit, Kombi,
+              Anzeige & Cutoffs, Sieger-Boden & Strafe, Märkte und der
+              Tipp-Einfluss. Die Karten folgen der REIHENFOLGE DER RECHNUNG —
+              erst wie streng gemessen wird, zuletzt welche Zahl der Spieler
+              sieht.
 
-          {/* Underdog-Boost & Favoriten-Malus (teilen sich die Quoten-Ramp) */}
-          <SectionTitle>Underdog-Boost & Favoriten-Malus</SectionTitle>
-          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Belohne das Vorhersagen von Überraschungen — und/oder bestrafe, wer stur auf den
-            Favoriten setzt, wenn der patzt. Beide wirken nur bei echten Außenseiter-Siegen
-            und werden über dieselbe Sieger-Quote skaliert.
-          </p>
-          <Slider label="Underdog-Boost (×)" value={rules.underdogBoost} {...L.underdogBoost} pfad="underdogBoost"
-            onChange={(v) => patch({ underdogBoost: v })} fmt={fmtFaktor}
-            hint="1,0 = aus. Höher = korrekt getippte Außenseiter-Siege zahlen zusätzlich mehr." />
-          <Slider label="Favoriten-Reinfall-Malus" value={rules.favFlopPenalty} {...L.favFlopPenalty} pfad="favFlopPenalty"
-            onChange={(v) => patch({ favFlopPenalty: v })} fmt={(x) => x === 0 ? "aus" : "−" + x}
-            hint="Abzug, wenn du den Favoriten getippt hast und der real verliert. Gedeckelt bei 0 (kein tiefes Minus)." />
-          {(rules.underdogBoost > 1 || rules.favFlopPenalty > 0) && (
-            <>
-              <Slider label="Wirkt ab Sieger-Quote" value={rules.underdogRampStart} {...L.underdogRampStart}
-                onChange={(v) => patch({ underdogRampStart: v })} fmt={(x) => x.toFixed(1)}
-                hint="Unterhalb dieser Quote gilt der Sieger nicht als Außenseiter — kein Boost, kein Malus." />
-              <Slider label="Volle Wirkung ab Sieger-Quote" value={rules.underdogRampEnd} {...L.underdogRampEnd}
-                onChange={(v) => patch({ underdogRampEnd: v })} fmt={(x) => x.toFixed(1)}
-                hint="Dazwischen fließender Übergang statt hartem Cutoff." />
-            </>
-          )}
-
-          {/* Kombi-Multiplikatoren */}
-          <SectionTitle>Kombi-Multiplikatoren (Tore × Ebene)</SectionTitle>
-          <Slider label="bei richtiger Tendenz" value={rules.combo.tendenz} {...L.combo.tendenz} step={reglerSchritt(rules, L.combo.tendenz)}
-            onChange={(v) => patchCombo({ tendenz: v })} fmt={(x) => "×" + x.toFixed(2)} />
-          <Slider label="bei richtigem Abstand" value={rules.combo.abstand} {...L.combo.abstand} step={reglerSchritt(rules, L.combo.abstand)} pfad="combo.abstand"
-            onChange={(v) => patchCombo({ abstand: v })} fmt={(x) => "×" + x.toFixed(2)} />
-          <Slider label="bei exaktem Ergebnis" value={rules.combo.exakt} {...L.combo.exakt} step={reglerSchritt(rules, L.combo.exakt)} pfad="combo.exakt"
-            onChange={(v) => patchCombo({ exakt: v })} fmt={fmtFaktor} />
-
-          {/* Skala & Cutoffs */}
-          </>)}
-
-          <SectionTitle>Anzeige & Cutoffs</SectionTitle>
-          <Slider label="Punkte-Skalierung" value={rules.displayScale} {...L.displayScale}
-            onChange={(v) => patch({ displayScale: v })} fmt={(x) => "×" + x}
-            hint="Nur Optik: macht schöne hohe Zahlen. Fairness & Ranking bleiben unberührt." />
-          {rules.displayScale !== empfohleneSkala && (
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-              background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
-              padding: "9px 12px", marginBottom: 10,
-            }}>
-              <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
-                Empfohlen: <strong style={{ color: C.akzent }}>×{empfohleneSkala}</strong> — hält
-                exakte Tipps bei angenehmen Werten{j.enabled ? " (Gewichtung eingerechnet)" : ""}.
-              </span>
-              <button onClick={() => patch({ displayScale: empfohleneSkala })} style={{
-                cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 700,
-                background: C.surface2, color: C.akzent, border: `1px solid ${C.akzent}44`,
-                ...TAPZIEL, borderRadius: 10, padding: "7px 12px", whiteSpace: "nowrap",
-              }}>übernehmen</button>
-            </div>
-          )}
-          <Slider label="Mindest-Auszahlung (Cutoff)" value={rules.minPayout} {...L.minPayout} pfad="minPayout"
-            onChange={(v) => patch({ minPayout: v })} fmt={(x) => x.toFixed(1)}
-            hint="Nähe-Boni unter diesem Wert zählen nicht." />
-
-          {/* Deckel */}
-          <Toggle label="Harter Punkte-Deckel pro Spiel"
-            on={rules.perGameCap != null}
-            onChange={(on) => patch({ perGameCap: on ? 1000 : null })} />
-          {rules.perGameCap != null && (
-            <Slider label="Deckel" value={rules.perGameCap} {...L.perGameCap}
-              onChange={(v) => patch({ perGameCap: v })} fmt={(x) => String(x)} />
-          )}
-
-          {/* Strafe */}
-          {stufe === "profi" && (<>
-          <SectionTitle>Sieger-Boden & Strafe</SectionTitle>
-          <Toggle label="Sieger-Boden (richtiger Sieger zahlt mind. Quote−1)"
-            on={rules.winnerFloor} onChange={(on) => patch({ winnerFloor: on })} />
-          <Slider label="Strafe bei komplett falsch" value={rules.wrongPenalty} {...L.wrongPenalty} pfad="wrongPenalty"
-            onChange={(v) => patch({ wrongPenalty: v })} fmt={(x) => x === 0 ? "aus" : x.toFixed(1)}
-            hint="0 = keine Strafe. Negativ = Minuspunkte, wenn weder Sieger noch Nähe stimmen." />
-
-          {/* Märkte */}
-          <SectionTitle>Märkte</SectionTitle>
-          <Toggle label="Ergebnis-Tipp" on={rules.markets.result}
-            onChange={(on) => patchMarkets({ result: on })} />
-          <Toggle label="Torschützen-Tipp" on={g.enabled}
-            onChange={(on) => patchGoals({ enabled: on })} />
-          {g.enabled && (
-            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
-              {/* Wie die Namen gewählt werden. Mehr als Geschmack: bei echten
-                  Marktquoten kommen die Torschützen OHNE Vereinszuordnung
-                  herein — im Spiel-Modus lässt sich trotzdem tippen. */}
-              <div style={{ fontSize: 12, color: C.muted, marginTop: 6, marginBottom: 5 }}>
-                Wie viele Schützen?
-              </div>
-              <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                {[
-                  { key: "proTeam", label: "Je Mannschaft", hint: "Getrennte Wahl für Heim und Auswärts." },
-                  { key: "proSpiel", label: "Je Spiel", hint: "Ein Topf für beide Mannschaften — freier, und unabhängig von der Vereinszuordnung." },
-                ].map((m) => {
-                  const an = (g.modus ?? "proTeam") === m.key;
-                  return (
-                    <button key={m.key} title={m.hint} onClick={() => patchGoals({ modus: m.key })} style={{
-                      ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
-                      borderRadius: 11, fontSize: 12, fontWeight: 700,
-                      background: an ? `${C.sky}22` : C.surface, color: an ? C.sky : C.muted,
-                      border: `1px solid ${an ? C.sky + "66" : C.line}`,
-                    }}>{m.label}</button>
-                  );
-                })}
-              </div>
-              {(g.modus ?? "proTeam") === "proSpiel" ? (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-                  <span style={{ fontSize: 13, color: C.muted }}>Schützen pro Spiel</span>
-                  <Stepper value={g.picksProSpiel} min={L.picksProSpiel.min} max={L.picksProSpiel.max}
-                    onStep={(d) => patchGoals({ picksProSpiel: Math.min(L.picksProSpiel.max, Math.max(L.picksProSpiel.min, g.picksProSpiel + d)) })} />
-                </div>
-              ) : (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-                  <span style={{ fontSize: 13, color: C.muted }}>Picks pro Team</span>
-                  <Stepper value={g.picksPerTeam} min={L.picksPerTeam.min} max={L.picksPerTeam.max}
-                    onStep={(d) => patchGoals({ picksPerTeam: Math.min(L.picksPerTeam.max, Math.max(L.picksPerTeam.min, g.picksPerTeam + d)) })} />
-                </div>
-              )}
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6, lineHeight: 1.45 }}>
-                {(g.modus ?? "proTeam") === "proSpiel"
-                  ? `${g.picksProSpiel} Namen aus beiden Mannschaften zusammen — wer sie verteilt, ist euch überlassen.`
-                  : `${g.picksPerTeam} Namen je Mannschaft, also ${g.picksPerTeam * 2} im Spiel.`}
-              </div>
-              <Toggle label="Doppelpack erlaubt" on={g.allowDouble}
-                onChange={(on) => patchGoals({ allowDouble: on })} />
-              <Toggle label="Backup-Schützen erlaubt" on={g.allowBackups}
-                onChange={(on) => patchGoals({ allowBackups: on })} />
-            </div>
-          )}
-
-          {/* Tipp-Einfluss auf die Quote (Totalisator-Anteil) */}
-          <SectionTitle>Bewegt eure Runde die Quoten?</SectionTitle>
-          <p style={{ fontSize: 12, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.4 }}>
-            Normalerweise gelten allein die Marktquoten. Ihr könnt aber einstellen, dass
-            eure eigenen Tipps mitzählen — wie bei einem Totalisator. <strong>Wer tippt,
-            was alle tippen, bekommt dann weniger</strong>; wer sich traut, mehr.
-          </p>
-
-          <Field label="Wie stark zählt die Runde mit?">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {[
-                { v: 0, label: "aus" },
-                { v: 0.25, label: "Hauch" },
-                { v: 0.5, label: "spürbar" },
-                { v: 1, label: "voll" },
-              ].map((s) => {
-                const on = te.staerke === s.v;
-                return (
-                  <button key={s.v} onClick={() => patchTippEinfluss({ staerke: s.v })} style={{
-                    ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
-                    background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
-                    border: `1px solid ${on ? C.akzent + "66" : C.line}`,
-                  }}>{s.label}</button>
-                );
-              })}
-            </div>
-          </Field>
-
-          {te.staerke > 0 && (
-            <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
-              {/* Der eigentliche Regler. „Gegen wie viele virtuelle Mitspieler
-                  tretet ihr an" ist die Frage, die ein Admin beantworten kann —
-                  ein abstrakter Mischungsfaktor wäre es nicht. */}
-              <Slider label="Gegen wie großen Markt?" value={te.marktTiefe}
-                min={TIPPEINFLUSS_LIMITS.marktTiefe.min} max={TIPPEINFLUSS_LIMITS.marktTiefe.max}
-                step={TIPPEINFLUSS_LIMITS.marktTiefe.step}
-                fmt={(v) => `${v} Mitspieler`}
-                onChange={(v) => patchTippEinfluss({ marktTiefe: v })} />
-              <p style={{ fontSize: 11, color: C.muted, marginTop: -8, marginBottom: 12, lineHeight: 1.4 }}>
-                Kleiner Markt = eure Tipps schlagen stärker durch. Großer Markt = ihr seid
-                ein Tropfen darin, so wie ein einzelner Wetter bei einem Buchmacher.
-              </p>
-
-              <Slider label="Erst ab wie vielen Tippern?" value={te.minTipper}
-                min={TIPPEINFLUSS_LIMITS.minTipper.min} max={TIPPEINFLUSS_LIMITS.minTipper.max}
-                step={TIPPEINFLUSS_LIMITS.minTipper.step}
-                fmt={(v) => `${v} Tipper`}
-                onChange={(v) => patchTippEinfluss({ minTipper: v })} />
-              <p style={{ fontSize: 11, color: C.muted, marginTop: -8, marginBottom: 10, lineHeight: 1.4 }}>
-                Darunter bleibt alles beim Markt — zu wenige Tipps wären Zufall, keine
-                Meinung.
-              </p>
-
-              {/* Die Live-Vorschau ist hier die eigentliche Betreuung: „50 %
-                  Mischung" sagt niemandem etwas, „ein Tipp verschiebt 0,45 %"
-                  schon. Dieselbe Rolle wie anteile() bei den Wettbewerben. */}
-              <p style={{
-                fontSize: 12, color: C.text, lineHeight: 1.45,
-                padding: "8px 10px", borderRadius: 8, background: C.surface, border: `1px solid ${C.line}`,
-              }}>
-                {beschreibeTippEinfluss(te, Math.max(te.minTipper, 12))}
-              </p>
-
-              <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
-                Fair bleibt es durch zwei Regeln: <strong>dein eigener Tipp drückt deine
-                eigene Quote nicht</strong>, und gerechnet wird erst nach Anpfiff, wenn
-                alle Tipps da sind — früh oder spät tippen ändert also nichts. Die
-                Sieger-Quoten (1X2) bleiben unangetastet, verschoben werden nur die
-                Ergebnis-Quoten.
-              </p>
-            </div>
-          )}
+              ⚠️ Die Sichtbarkeit bleibt unverändert: alle sieben Abschnitte
+              standen schon vorher AUSSCHLIESSLICH in der Profi-Ansicht — auch
+              „Anzeige & Cutoffs", was auf den ersten Blick anders aussah, weil
+              es außerhalb der INNEREN Profi-Bedingung stand (im Browser
+              gegengeprüft: in der einfachen Ansicht war es nie zu sehen).
+              Deshalb trägt das Sondermenü selbst KEINE Stufen-Abfrage — über
+              die Sichtbarkeit entscheidet allein, wo diese Zeile steht. Der
+              Umbau ordnet um, er nimmt nichts weg. */}
+          <SectionTitle>Wertung</SectionTitle>
+          <GrosseZeile
+            icon="🎯" titel="Wertung" unter="Nähe · Underdog · Tore · Anzeige"
+            wert={wertungStand(rules)}
+            offen={wertungOffen} onClick={() => setWertungOffen((o) => !o)}
+          >
+            <WertungSondermenue rules={rules} empfohleneSkala={empfohleneSkala}
+              onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
+          </GrosseZeile>
 
           {/* Joker / Gewichtung */}
           {/* Teil-Code für Joker, Ereignisse und Modifikatoren (Andi, 21.08.2026) */}
