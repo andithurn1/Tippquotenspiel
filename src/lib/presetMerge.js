@@ -44,26 +44,49 @@ export const ASPEKTE = [
     hint: "Ob Überraschungen extra zahlen und ob ein Favoriten-Reinfall wehtut.",
     keys: ["underdogBoost", "underdogRampStart", "underdogRampEnd", "favFlopPenalty"],
   },
+  // 🔴 JOKERCODE (Andis TC3, gebaut am 23.08.2026). Vorher lagen Joker,
+  // Ereignisse, Drehrad und alle Modifikatoren in EINEM Aspekt — ein
+  // „Jokercode" gab es deshalb nicht, man konnte nur den ganzen Block teilen.
+  //
+  // ⚠️ Der Kommentar, der die Bündelung begründete, argumentierte mit BALANCE
+  // („eine Kombination, die niemand vermessen hat"). Genau dieser Einwand ist
+  // seit Andis Ansage vom 21.08.2026 hinfällig: „will ein Admin etwas
+  // Unbalanciertes, soll er es haben." Damit war es eine reine Bauaufgabe.
+  //
+  // Der Zuschnitt folgt dem, was ein Admin teilen WILL, und deckt sich mit den
+  // Sondermenüs: hier steht alles, was einen Joker ausmacht — was er ist
+  // (`joker`), welche Form er hat (`jokerBasis`), was er kostet (`budget`),
+  // wie oft es ihn gibt (`limitKlassen`) und wen er treffen darf (`duell`).
+  {
+    key: "joker",
+    label: "Jokercode",
+    hint: "Alles rund um Joker: Art und Stärke, Grundform, Narren-Shop, Kontingente und Fremdjoker.",
+    keys: ["joker", "jokerBasis", "budget", "limitKlassen", "duell"],
+  },
+  // 🔴 EREIGNIS-CODE (Andis TC4) — „samt Auslosung am Rad", deshalb steht das
+  // Drehrad hier und nicht bei den Jokern: es ist der ZWEITE Auslöser derselben
+  // Frage („wodurch verdient man sich etwas?"), und wer die Ereignisse teilt,
+  // meint das Rad mit.
+  {
+    key: "ereignisse",
+    label: "Ereignis-Code",
+    hint: "Was man sich erspielen kann — Ereignisse und die Auslosung am Drehrad.",
+    keys: ["ereignisse", "drehrad"],
+  },
   {
     key: "modifikatoren",
-    label: "Joker & Team-Faktoren",
-    hint: "Joker/Gewichtung, Derby-, Team- und Big-Game-Modifikatoren samt Deckel.",
-    // bigGame gehört hierher, weil es denselben additiven Topf speist wie
-    // Derby und Team-Faktoren — wer die Modifikatoren übernimmt, will es mit.
-    // ereignisse gehört hierher, weil es denselben Joker-Topf speist —
-    // Modifikatoren übernimmt man als Ganzes oder gar nicht. Aus demselben
-    // Grund, nur stärker: duell/budget/limitKlassen/jokerBasis. `budget`
-    // bepreist ALLE Joker-Arten, `limitKlassen` deckelt sie, `jokerBasis` gibt
-    // ihnen ihre Form — wer die Ökonomie ohne die Joker übernähme (oder
-    // umgekehrt), bekäme eine Kombination, die niemand vermessen hat.
-    // `drehrad` ebenfalls: es zahlt Joker, Narren und Modifikatoren aus, also
-    // in genau dieselben Töpfe. Ein Rad ohne die Ökonomie, aus der es schöpft,
-    // wäre ein Auslöser ohne Wirkung.
-    keys: ["joker", "teamMods", "modCap", "modFloor", "bigGame", "ereignisse", "wettbewerbe",
-           "duell", "budget", "limitKlassen", "jokerBasis", "drehrad",
-           // Tabellen-Bonus (21.08.2026): speist denselben additiven Topf und
-           // wird von modCap gedeckelt — er gehoert zu den Modifikatoren.
-           "tabellenBonus"],
+    label: "Modifikatoren",
+    hint: "Derby-, Team-, Big-Game- und Wettbewerbs-Modifikatoren samt gemeinsamem Deckel.",
+    // Was hier bleibt, teilt sich EINEN additiven Topf und EINEN Deckel:
+    // Derby/Team, Big Game, Wettbewerbs-Gewichte und der Tabellen-Bonus. Wer
+    // sie übernimmt, will sie zusammen — ein Derby-Faktor ohne den Deckel, der
+    // ihn begrenzt, ist eine halbe Regel.
+    //
+    // ⚠️ `modCap`/`modFloor` bleiben hier, obwohl sie AUCH den Joker deckeln.
+    // Der Deckel gehört zum Topf, nicht zu einem seiner Zuflüsse — sonst
+    // brächte ein Jokercode einen fremden Deckel mit und veränderte
+    // stillschweigend, was Derby und Big Game wert sind.
+    keys: ["teamMods", "modCap", "modFloor", "bigGame", "wettbewerbe", "tabellenBonus"],
   },
   {
     key: "spiele",

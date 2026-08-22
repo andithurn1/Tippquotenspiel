@@ -162,14 +162,30 @@ describe("TEILBIBLIOTHEKEN — werte enthält nur Felder des eigenen Aspekts (Pf
     }
   });
 
-  it("der Aspekt „modifikatoren“ ist über KOMBINATIONEN befüllt", () => {
-    const modifikatoren = TEILBIBLIOTHEKEN.find((b) => b.aspekt === "modifikatoren");
-    expect(modifikatoren.eintraege.length).toBeGreaterThanOrEqual(3);
-    for (const eintrag of modifikatoren.eintraege) {
+  // Hieß bis zum 23.08.2026 „modifikatoren“ — die Einträge trugen aber schon
+  // immer nur Joker-Felder. Mit Andis Aufteilung (TC3) steht die Beschriftung
+  // endlich auf dem, was drin ist.
+  it("der Aspekt „joker“ ist über KOMBINATIONEN befüllt", () => {
+    const joker = TEILBIBLIOTHEKEN.find((b) => b.aspekt === "joker");
+    expect(joker.eintraege.length).toBeGreaterThanOrEqual(3);
+    for (const eintrag of joker.eintraege) {
       expect(eintrag.key).toBeTruthy();
       expect(eintrag.label).toBeTruthy();
       expect(Object.keys(eintrag.werte).sort()).toEqual(["budget", "duell", "limitKlassen"]);
     }
+  });
+
+  // 🔴 Der Ereignis-Code (TC4) gilt „samt Auslosung am Rad“ — ein Eintrag ohne
+  // Rad-Feld ließe beim Anwenden ein fremdes Rad stehen.
+  it("jeder Ereignis-Eintrag setzt AUCH das Drehrad", () => {
+    const ereignisse = TEILBIBLIOTHEKEN.find((b) => b.aspekt === "ereignisse");
+    expect(ereignisse.eintraege.length).toBeGreaterThanOrEqual(3);
+    for (const eintrag of ereignisse.eintraege) {
+      expect(Object.keys(eintrag.werte).sort()).toEqual(["drehrad", "ereignisse"]);
+    }
+    // Und mindestens einer schaltet das Rad wirklich ein — sonst wäre die
+    // halbe Ansage nur ein Feld, das immer aus ist.
+    expect(ereignisse.eintraege.some((e) => e.werte.drehrad?.enabled === true)).toBe(true);
   });
 });
 

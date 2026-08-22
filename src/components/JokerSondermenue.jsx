@@ -17,6 +17,7 @@ import LimitKlassen from "@/components/LimitKlassen";
 import Ereignisse from "@/components/Ereignisse";
 import DuellJoker from "@/components/DuellJoker";
 import Drehrad from "@/components/Drehrad";
+import TeilCodeFeld from "@/components/TeilCodeFeld";
 
 // ============================================================
 //  JOKER-SONDERMENÜ — die 84 Einstellwerte hinter EINER Zeile
@@ -72,7 +73,10 @@ export function jokerZeileStand(rules) {
   return `${modus} · ${staerke}`;
 }
 
-export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = [], onChange }) {
+// `onTeilCode`, `geladeneCodes` und `onGeladen` sind optional: ohne sie zeigt
+// das Menü kein Code-Feld. Der Screen entscheidet, ob eines hingehört — das
+// Menü kennt weder die Merkliste noch den Ladeweg.
+export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = [], onChange, onTeilCode = null, geladeneCodes = null, onGeladen = null }) {
   // Eine Karte zur Zeit — dieselbe Entscheidung wie bei den Liga-Zeilen in der
   // Betippungsauswahl: zwei offene Karten sind wieder eine lange Seite.
   const [karte, setKarte] = useState(null);
@@ -513,6 +517,17 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
           </GrosseZeile>
 
           {/* ── erspielt ── */}
+          {/* 🔴 EREIGNIS-CODE (Andis TC4, 23.08.2026) — „ein Code nur für
+              Ereignisse, samt Auslosung am Rad". Er steht hier und nicht oben
+              an der Joker-Zeile, weil genau darunter beides liegt, was er
+              trägt: die Ereignisse und das Drehrad. Ein Code-Feld gehört vor
+              SEINE Bibliothek (ATE1), nicht an den Anfang des Menüs. */}
+          {onTeilCode && (
+            <div style={{ marginBottom: 4 }}>
+              <TeilCodeFeld aspekt="ereignisse" rules={rules} geladen={geladeneCodes?.ereignisse}
+                onGeladen={onGeladen} onChange={onTeilCode} />
+            </div>
+          )}
           <GrosseZeile icon="🏅" titel="Erspielt — Ereignisse" unter="Joker, die man sich verdient"
             wert={ereignisseAn ? "an" : "aus"}
             offen={unter === "ereignisse"} onClick={() => aufUnter("ereignisse")}>

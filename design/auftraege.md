@@ -75,8 +75,8 @@ Wettbewerbe ganz oben. Genau der Sprung, den ST2 verbietet.
 |---|---|---|---|
 | TC1 | Teilbibliotheken: einzelne Bausteine als Code teilen | ✅ | `teilbibliothek.js`, Codes `TS2A-<aspekt>-…`, Oberfläche `Bausteine.jsx` (Profi) |
 | TC2 | „einzeln kombinierbar bzw. in Reihe geschaltet“ auf eine gewählte Voreinstellung | ✅ | `wendeTeilCodeAn` ersetzt nur die Felder SEINES Aspekts, alles andere bleibt — mehrere nacheinander gehen also |
-| TC3 | **Ein Code nur für Joker („Jokercode“)** | ⏳ | **Gibt es nicht.** Joker liegt im Aspekt „Joker & Team-Faktoren“ zusammen mit 11 weiteren Blöcken (u.a. ereignisse, wettbewerbe, budget, drehrad). 🔴 **Der Einwand dagegen war Balance — hinfällig seit 21.08.2026.** Damit reine Bauaufgabe |
-| TC4 | **Ein Code nur für Ereignisse**, samt Auslosung am Rad | ⏳ | dito — `ereignisse` und `drehrad` liegen im selben Aspekt. Das Drehrad selbst ist gebaut (`/rad`) |
+| TC3 | **Ein Code nur für Joker („Jokercode")** | ✅ | Eigener Aspekt `joker` (`presetMerge.js`): joker · jokerBasis · budget · limitKlassen · duell. Eigenes Code-Feld direkt über der Joker-Zeile, kuratierte Bibliothek (die KOMBINATIONEN hingen ohnehin schon dort). Rundlauf geprüft: `TS2A-joker-…` setzt den Joker-Faktor und lässt Derby, Ereignisse und Rad in Ruhe |
+| TC4 | **Ein Code nur für Ereignisse**, samt Auslosung am Rad | ✅ | Eigener Aspekt `ereignisse` = Ereignisse **+ Drehrad** (deine Ansage „samt Auslosung am Rad"). Code-Feld steht in der Karte „Woher kommen sie?", direkt über beiden. Neue Bibliothek aus `EREIGNIS_PRESETS` plus einem Eintrag „Mit Glücksrad". Rundlauf geprüft: der Code schaltet das Rad ein und lässt Joker und Derby unberührt |
 | TC5 | „Jokercode“ ins Vokabular | ✅ | `design/vokabular.md`, Abschnitt „Teil-Codes“ mit dem vollständigen Feld-Bündel |
 
 ## Modifikatoren (21.08.2026)

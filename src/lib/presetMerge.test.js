@@ -55,12 +55,42 @@ describe("mergePresets", () => {
       limitKlassen: [{ id: "k1", mitglieder: ["duell.klau"], max: 3 }],
       jokerBasis: { standard: { sicht: "sofort" } },
     };
-    const mix = mergePresets(STANDARD, b, { ...defaultAuswahl("a"), modifikatoren: "b" });
+    // Seit 23.08.2026 heißt der Aspekt `joker` (Andis TC3 — ein Code nur für
+    // Joker). Der Pflichttest bleibt derselbe: die vier reisen ZUSAMMEN.
+    // `budget` bepreist alle Joker-Arten, `limitKlassen` deckelt sie,
+    // `jokerBasis` gibt ihnen ihre Form, `duell` sagt, wen sie treffen dürfen.
+    const mix = mergePresets(STANDARD, b, { ...defaultAuswahl("a"), joker: "b" });
     const B = sanitizeRules(b);
     expect(mix.duell).toEqual(B.duell);
     expect(mix.budget).toEqual(B.budget);
     expect(mix.limitKlassen).toEqual(B.limitKlassen);
     expect(mix.jokerBasis).toEqual(B.jokerBasis);
+  });
+
+  // 🔴 Die Gegenprobe zur Aufteilung: ein Jokercode darf den DECKEL nicht
+  // mitbringen. `modCap` gehört zum additiven Topf, nicht zu einem seiner
+  // Zuflüsse — sonst veränderte ein geteilter Joker still, was Derby und Big
+  // Game in der Zielrunde wert sind.
+  it("der Jokercode lässt Deckel und Team-Faktoren in Ruhe (TC3)", () => {
+    const b = { ...HARDCORE, joker: { enabled: true, faktor: 2 }, modCap: 4, teamMods: { derbyFaktor: 2, teams: {} } };
+    const mix = mergePresets(STANDARD, b, { ...defaultAuswahl("a"), joker: "b" });
+    const A = sanitizeRules(STANDARD);
+    expect(mix.joker.faktor).toBe(sanitizeRules(b).joker.faktor);
+    expect(mix.modCap).toBe(A.modCap);
+    expect(mix.teamMods).toEqual(A.teamMods);
+  });
+
+  // Und der Ereignis-Code trägt das Rad mit — Andis TC4: „samt Auslosung am Rad“.
+  it("der Ereignis-Code nimmt das Drehrad mit (TC4)", () => {
+    const b = {
+      ...HARDCORE,
+      ereignisse: { enabled: true, maxErspielt: 3, aktive: [] },
+      drehrad: { enabled: true, frequenz: 2, felder: [{ id: "x", label: "Nichts", gewicht: 1, belohnung: { typ: "nichts" } }] },
+    };
+    const mix = mergePresets(STANDARD, b, { ...defaultAuswahl("a"), ereignisse: "b" });
+    const B = sanitizeRules(b);
+    expect(mix.ereignisse).toEqual(B.ereignisse);
+    expect(mix.drehrad).toEqual(B.drehrad);
   });
 
   it("hält zusammengehörige Werte zusammen (Underdog samt Rampe)", () => {

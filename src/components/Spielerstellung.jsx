@@ -846,9 +846,12 @@ export default function Spielerstellung() {
               onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
           </GrosseZeile>
 
-          {/* Joker / Gewichtung */}
-          {/* Teil-Code für Joker, Ereignisse und Modifikatoren (Andi, 21.08.2026) */}
-          <TeilCodeFeld aspekt="modifikatoren" rules={rules} geladen={geladeneCodes["modifikatoren"]}
+          {/* 🔴 JOKERCODE (Andis TC3, 23.08.2026). Bis dahin gab es EIN Feld für
+              Joker, Ereignisse und Modifikatoren zusammen — „ein Code nur für
+              Joker" war damit gar nicht teilbar. Seit dem Aufteilen der Aspekte
+              steht hier das Feld, das genau zu der Zeile darunter gehört
+              (ATE1: ein eigenes Code-Feld vor jeder Bibliothek). */}
+          <TeilCodeFeld aspekt="joker" rules={rules} geladen={geladeneCodes["joker"]}
             onGeladen={merkeCode}
             onChange={(neu) => { touched(); setRules(neu); }} />
 
@@ -877,6 +880,8 @@ export default function Spielerstellung() {
           >
             <JokerSondermenue rules={rules} premium={premium}
               spieleJeSpieltag={aufwandKontext.spieleJeSpieltag}
+              geladeneCodes={geladeneCodes} onGeladen={merkeCode}
+              onTeilCode={(neu) => { touched(); setRules(neu); }}
               onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
           </GrosseZeile>
 
@@ -894,6 +899,12 @@ export default function Spielerstellung() {
               ⚠️ Der Alleingang-Bonus bleibt bewusst DRAUSSEN: er ist ein
               Punkte-Kanal (Ebene 3) mit eigenem Deckel, kein Modifikator. */}
           <SectionTitle>Modifikatoren</SectionTitle>
+          {/* Eigenes Code-Feld je Bibliothek (ATE1). Seit der Aufteilung trägt
+              dieser Aspekt nur noch, was sich EINEN additiven Topf teilt —
+              Derby, Big Game, Wettbewerbs-Gewichte, Tabellen-Bonus. */}
+          <TeilCodeFeld aspekt="modifikatoren" rules={rules} geladen={geladeneCodes["modifikatoren"]}
+            onGeladen={merkeCode}
+            onChange={(neu) => { touched(); setRules(neu); }} />
           <GrosseZeile
             icon="⚖️" titel="Modifikatoren" unter="Derby · Vereine · Big Game · Außenseiter"
             wert={modifikatorenStand(rules)}

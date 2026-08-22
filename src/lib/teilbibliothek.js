@@ -35,6 +35,7 @@ import { DEFAULT_RULES, sanitizeRules, ruleDelta, toBase64, fromBase64 } from ".
 import { ASPEKTE, mergePresets, defaultAuswahl } from "./presetMerge";
 import { KOMBINATIONEN } from "./jokerBibliothek";
 import { SAISON_PRESETS } from "./saisonwetten";
+import { EREIGNIS_PRESETS } from "./ereignisse";
 
 const feldDelta = ruleDelta;
 
@@ -107,7 +108,26 @@ export function wendeTeilCodeAn(rules, code) {
   if (!zerlegt) {
     throw new Error(`Ungültiger Teil-Code: „${code}“ lässt sich nicht als Teilbibliotheks-Code lesen.`);
   }
+  // 🔴 Nicht nur der GENANNTE Aspekt, sondern jeder, dessen Felder wirklich im
+  // Code stehen (23.08.2026).
+  //
+  // Anlass: der Aspekt „modifikatoren" trug bis dahin auch Joker, Ereignisse
+  // und Drehrad. Beim Aufteilen in `joker` / `ereignisse` / `modifikatoren`
+  // (Andis TC3/TC4) hätte ein ALTER Code weiterhin geladen — aber nur noch
+  // seinen Rest angewandt, und die Joker-Felder in seinem Rumpf wären
+  // stillschweigend liegengeblieben. Ein Code, der weniger tut als beim
+  // Teilen, ohne dass es jemand merkt, ist schlimmer als einer, der abgewiesen
+  // wird.
+  //
+  // Der Code NENNT seine Felder — also entscheidet sein Inhalt, nicht seine
+  // Beschriftung. Für jeden NEUEN Code ändert das nichts: dort deckt sich
+  // beides ohnehin.
   const auswahl = { ...defaultAuswahl("a"), [zerlegt.aspekt]: "b" };
+  for (const a of ASPEKTE) {
+    if (a.keys.some((k) => Object.prototype.hasOwnProperty.call(zerlegt.werte, k))) {
+      auswahl[a.key] = "b";
+    }
+  }
   const eigenerName = sanitizeRules(rules).name;
   return mergePresets(rules, zerlegt.werte, auswahl, eigenerName);
 }
@@ -223,7 +243,11 @@ export const TEILBIBLIOTHEKEN = [
     ],
   },
   {
-    aspekt: "modifikatoren",
+    aspekt: "joker",
+    // 🔴 Hieß bis zum 23.08.2026 „modifikatoren" — die Einträge trugen aber
+    // schon immer NUR Joker-Felder (Narren-Shop, Kontingente, Fremdjoker).
+    // Mit Andis Aufteilung (TC3) steht die Beschriftung endlich auf dem, was
+    // drin ist: das hier IST der Jokercode.
     // Referenziert KOMBINATIONEN (jokerBibliothek.js) statt sie zu kopieren.
     eintraege: KOMBINATIONEN.map((k) => ({
       key: k.key,
@@ -470,6 +494,100 @@ export const TEILBIBLIOTHEKEN = [
             wirkungAb: "vorlauf", wirkungVorlauf: 2,
           },
           verfassung: { enabled: false },
+        },
+      },
+    ],
+  },
+  {
+    aspekt: "ereignisse",
+    // Referenziert EREIGNIS_PRESETS (ereignisse.js) statt sie zu kopieren —
+    // dieselbe Regel wie bei KOMBINATIONEN und SAISON_PRESETS: eine Quelle.
+    //
+    // ⚠️ Jeder Eintrag setzt AUCH das Drehrad, obwohl die Presets es nicht
+    // kennen. Ein Aspekt wandert als Ganzes: ohne diese Zeile brächte ein
+    // Ereignis-Code ein fremdes Rad mit — oder ließe eines stehen, das der
+    // Empfänger gar nicht wollte.
+    eintraege: [
+      ...EREIGNIS_PRESETS.map((e) => ({
+        key: e.key,
+        label: e.label,
+        desc: e.text,
+        werte: { ereignisse: e.ereignisse, drehrad: { ...DEFAULT_RULES.drehrad } },
+      })),
+      {
+        key: "gluecksrad",
+        label: "Mit Glücksrad",
+        desc: "Wer regelmäßig tippt, dreht — und zieht Joker, Narren oder nichts.",
+        werte: {
+          ereignisse: { ...DEFAULT_RULES.ereignisse },
+          drehrad: {
+            ...DEFAULT_RULES.drehrad,
+            enabled: true,
+            frequenz: 4,
+            sperrfrist: 2,
+            felder: [
+              { id: "nix", label: "Leider nichts", gewicht: 4, belohnung: { typ: "nichts" } },
+              // ⚠️ Die Belohnungs-Typen und Joker-ARTEN sind Kataloge
+              // (drehrad.js / jokerBudget.js). Eine erste Fassung schrieb hier
+              // `typ: "narren"` und `art: "standard"` — beides gibt es nicht,
+              // und `sanitizeDrehrad` warf die Felder still weg. Der Rundlauf-Test
+              // hat es gemeldet: aus drei Feldern war eines geworden.
+              { id: "narren", label: "5 Narren", gewicht: 3, belohnung: { typ: "budget", betrag: 5 } },
+              { id: "joker", label: "Ein Joker", gewicht: 2, belohnung: { typ: "joker", art: "joker.einzel", anzahl: 1 } },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    aspekt: "modifikatoren",
+    // Was für ALLE gilt und sich einen additiven Topf teilt. Die Einträge
+    // unterscheiden sich in dem, was sie hervorheben — nicht in der Stärke:
+    // welche Zahlen gut sind, entscheidet das Balancing am Ende.
+    eintraege: [
+      {
+        key: "schlicht", label: "Schlicht",
+        desc: "Jedes Spiel zählt gleich viel. Nur die Quote entscheidet.",
+        werte: {
+          teamMods: { derbyFaktor: 1, teams: {} },
+          modCap: 2.5, modFloor: 0.25,
+          bigGame: { ...DEFAULT_RULES.bigGame },
+          wettbewerbe: { ...DEFAULT_RULES.wettbewerbe },
+          tabellenBonus: { ...DEFAULT_RULES.tabellenBonus },
+        },
+      },
+      {
+        key: "derbys", label: "Derbys zählen",
+        desc: "Traditionsduelle wiegen schwerer — der Rest bleibt schlicht.",
+        werte: {
+          teamMods: { derbyFaktor: 1.5, teams: {} },
+          modCap: 2.5, modFloor: 0.25,
+          bigGame: { ...DEFAULT_RULES.bigGame },
+          wettbewerbe: { ...DEFAULT_RULES.wettbewerbe },
+          tabellenBonus: { ...DEFAULT_RULES.tabellenBonus },
+        },
+      },
+      {
+        key: "topspiel", label: "Das Spiel des Spieltags",
+        desc: "Die brisanteste Begegnung jedes Spieltags zählt extra — samt Derbys.",
+        werte: {
+          teamMods: { derbyFaktor: 1.25, teams: {} },
+          modCap: 2.5, modFloor: 0.25,
+          bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35 },
+          wettbewerbe: { ...DEFAULT_RULES.wettbewerbe },
+          tabellenBonus: { ...DEFAULT_RULES.tabellenBonus },
+        },
+      },
+      {
+        key: "aussenseiter", label: "Außenseiter nach Tabelle",
+        desc: "Wer den Tabellenletzten gegen den Ersten richtig tippt, bekommt mehr.",
+        werte: {
+          teamMods: { derbyFaktor: 1, teams: {} },
+          modCap: 2.5, modFloor: 0.25,
+          bigGame: { ...DEFAULT_RULES.bigGame },
+          wettbewerbe: { ...DEFAULT_RULES.wettbewerbe },
+          tabellenBonus: { ...DEFAULT_RULES.tabellenBonus, enabled: true },
         },
       },
     ],

@@ -15,14 +15,17 @@ import { bildeTeilCode, wendeTeilCodeAn, zerlegeTeilCode } from "./teilbibliothe
 
 const regelwerk = (teil) => sanitizeRules({ ...DEFAULT_RULES, ...teil });
 
+// ⚠️ Die Joker-Felder lagen bis zum 23.08.2026 im Aspekt "modifikatoren".
+// Seit Andis Aufteilung (TC3/TC4) heisst ihr Aspekt "joker" — die
+// Schichtungs-Regeln selbst sind davon unberuehrt, nur der Name im Code.
 describe("Schichtung: Gesamt-Code, dann Teilebenen", () => {
   it("ein Teil-Code ändert NUR seine Ebene", () => {
     const basis = regelwerk({ k: 1.4, joker: { ...DEFAULT_RULES.joker, enabled: true, faktor: 1.9 } });
     // Ein fremdes Regelwerk, das sich in BEIDEN Ebenen unterscheidet.
     const anderes = regelwerk({ k: 2.2, joker: { ...DEFAULT_RULES.joker, enabled: true, faktor: 1.2 } });
-    const nurModifikatoren = bildeTeilCode(anderes, "modifikatoren");
+    const nurJoker = bildeTeilCode(anderes, "joker");
 
-    const ergebnis = wendeTeilCodeAn(basis, nurModifikatoren);
+    const ergebnis = wendeTeilCodeAn(basis, nurJoker);
     expect(ergebnis.joker.faktor).toBe(1.2);   // Ebene übernommen
     expect(ergebnis.k).toBe(1.4);              // alles andere unberührt
   });
@@ -34,7 +37,7 @@ describe("Schichtung: Gesamt-Code, dann Teilebenen", () => {
     const a = regelwerk({ joker: { ...DEFAULT_RULES.joker, enabled: true, faktor: 1.8 } });
     const b = regelwerk({ saison: { ...DEFAULT_RULES.saison, enabled: true, gewicht: 3 } });
 
-    const erst = wendeTeilCodeAn(basis, bildeTeilCode(a, "modifikatoren"));
+    const erst = wendeTeilCodeAn(basis, bildeTeilCode(a, "joker"));
     const dann = wendeTeilCodeAn(erst, bildeTeilCode(b, "saison"));
 
     expect(dann.joker.faktor).toBe(1.8);
@@ -43,7 +46,7 @@ describe("Schichtung: Gesamt-Code, dann Teilebenen", () => {
     // Andere Reihenfolge, gleiches Ergebnis.
     const umgekehrt = wendeTeilCodeAn(
       wendeTeilCodeAn(basis, bildeTeilCode(b, "saison")),
-      bildeTeilCode(a, "modifikatoren"),
+      bildeTeilCode(a, "joker"),
     );
     expect(umgekehrt.joker.faktor).toBe(1.8);
     expect(umgekehrt.saison.gewicht).toBe(3);
@@ -56,8 +59,8 @@ describe("Schichtung: Gesamt-Code, dann Teilebenen", () => {
     const basis = regelwerk({});
     const a = regelwerk({ joker: { ...DEFAULT_RULES.joker, enabled: true, faktor: 1.8 } });
     const b = regelwerk({ joker: { ...DEFAULT_RULES.joker, enabled: true, faktor: 1.3 } });
-    const ergebnis = wendeTeilCodeAn(wendeTeilCodeAn(basis, bildeTeilCode(a, "modifikatoren")),
-      bildeTeilCode(b, "modifikatoren"));
+    const ergebnis = wendeTeilCodeAn(wendeTeilCodeAn(basis, bildeTeilCode(a, "joker")),
+      bildeTeilCode(b, "joker"));
     expect(ergebnis.joker.faktor).toBe(1.3);
   });
 
@@ -66,7 +69,7 @@ describe("Schichtung: Gesamt-Code, dann Teilebenen", () => {
   it("der Gesamt-Code überschreibt auch vorherige Teil-Anpassungen", () => {
     const basis = regelwerk({});
     const teil = regelwerk({ joker: { ...DEFAULT_RULES.joker, enabled: true, faktor: 1.9 } });
-    const mitTeil = wendeTeilCodeAn(basis, bildeTeilCode(teil, "modifikatoren"));
+    const mitTeil = wendeTeilCodeAn(basis, bildeTeilCode(teil, "joker"));
     expect(mitTeil.joker.faktor).toBe(1.9);
 
     // ⚠️ k liegt bei 1,2 und nicht höher: `sanitizeRules` deckelt es bei 1,6.
@@ -81,6 +84,6 @@ describe("Schichtung: Gesamt-Code, dann Teilebenen", () => {
   it("ein Teil-Code trägt seine Ebene im Code — Verwechslung ist erkennbar", () => {
     const code = bildeTeilCode(regelwerk({}), "saison");
     expect(zerlegeTeilCode(code).aspekt).toBe("saison");
-    expect(zerlegeTeilCode(code).aspekt).not.toBe("modifikatoren");
+    expect(zerlegeTeilCode(code).aspekt).not.toBe("joker");
   });
 });
