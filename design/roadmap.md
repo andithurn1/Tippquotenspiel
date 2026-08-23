@@ -117,10 +117,16 @@ führt.
 ⚠️ Der Verdacht liegt nahe, dass es weitere kurze Pillen mit `TAPZIEL` gibt.
 `npm run sicht` misst das nicht — es fragt nach Anzeige, nicht nach Größe.
 
-### 2. `tabellenBonus` hat keinen Messfall in `npm run greift`
+### 2. ✅ ERLEDIGT — `tabellenBonus` hatte keinen Messfall in `npm run greift`
 
-Teil 3 meldet ihn als einzigen Block ohne Messfall und ohne Begründung
-(vorher waren es zwei; `eingriffe` hat jetzt einen). Bestand schon vorher.
+Nachgetragen am 23.08.2026: **bewegt 2625 Punkte.** Er brauchte
+`fallback: "quote"` — der Tabellenplatz wird beim ÖFFNEN des Spieltags auf dem
+Snapshot eingefroren, und im Messfall gibt es keine Tabelle. Genau dafür ist
+der Fallback gebaut („ohne diese Wahl wäre er an den ersten Spieltagen still
+wirkungslos, und niemand merkt es").
+
+**Damit ist `greift` Teil 3 zum ersten Mal vollständig:** 31 von 41 Blöcken mit
+Messfall, 10 ausdrücklich begründet, keiner mehr stumm.
 
 ### 3. `wettbewerbe` ist weiter die eine Lücke in `npm run stufen`
 

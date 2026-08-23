@@ -151,6 +151,18 @@ const FAELLE = [
     hinweis: "braucht ein bereits ANGEPFIFFENES Spiel und ein MITGLIED, das es versäumt hat — "
       + "vor Saisonstart gibt es beides nicht" }],
   ["wettbewerbe (Aufschlag)", { wettbewerbe: { enabled: true, aufschlaege: { bl: 1 } } }],
+  // 🔴 Der letzte Block ohne Messfall (Befund vom 23.08.2026). Er braucht
+  // `fallback: "quote"`: der Tabellenplatz wird beim ÖFFNEN des Spieltags auf
+  // dem Snapshot eingefroren, und im Messfall gibt es keine Tabelle. Genau
+  // dafür ist der Fallback gebaut — „ohne diese Wahl wäre er an den ersten
+  // Spieltagen still wirkungslos, und niemand merkt es" (tabellenBonus.js).
+  // `abSpieltag: 1`, damit alle gemessenen Spieltage zählen.
+  ["tabellenBonus", {
+    tabellenBonus: {
+      enabled: true, aufschlag: 1.0, nurWennRichtig: false, abSpieltag: 1,
+      fallback: "quote", fallbackQuote: 1.5,
+    },
+  }],
   ["duell", {
     duell: { enabled: true, typen: ["klau"], maxProSaison: 0, klau: { anteil: 0.5, modus: "nullsumme" } },
   }, { duell: true }],
