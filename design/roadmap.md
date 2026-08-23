@@ -66,6 +66,19 @@ Mengenangabe), oder die Ein-Einsatz-Regel in `einsaetzeAusTipps` wird gelockert.
 Das Zweite hängt an Andis offener Frage aus Teil D — *„Darf man auf denselben
 Tipp mehrere Handlungen legen?"*
 
+### 1b. Vier Tippziele der Fremdjoker-Oberfläche waren 40 px breit
+
+Im Browser gemessen (375 px, Chromium): die Pillen „An" und „Aus" wurden
+44 hoch, aber nur **40 breit** — `TAPZIEL` setzt bewusst nur die HÖHE (die
+Begründung steht im Kopf von `tapziel.js`), und bei langen Beschriftungen
+genügt das auch. Bei zwei Buchstaben nicht. `Fremdjoker.jsx` und
+`DuellJoker.jsx` nehmen jetzt `TAPZIEL_QUADRAT`; nachgemessen: **5 → 1**, und
+der letzte ist der 32-px-Stepper, den `tapziel.js` ausdrücklich als Ausnahme
+führt.
+
+⚠️ Der Verdacht liegt nahe, dass es weitere kurze Pillen mit `TAPZIEL` gibt.
+`npm run sicht` misst das nicht — es fragt nach Anzeige, nicht nach Größe.
+
 ### 2. `tabellenBonus` hat keinen Messfall in `npm run greift`
 
 Teil 3 meldet ihn als einzigen Block ohne Messfall und ohne Begründung
@@ -134,6 +147,13 @@ beide waren beim Nachsehen keine.
    28.08.2026, vorher ist die Tabelle leer). Steht als `hinweis` am Messfall.
 
 ## ⛔ ENDPHASE — hier steht, was ERST GANZ AM SCHLUSS drankommt
+
+- ⚠️ **Die Balance-Ampel sagt „Nicht mitgerechnet: Duell-Joker (Klau und
+  Block)".** Seit dem 23.08.2026 sind es VIER Fremdjoker; Trittbrettfahrer und
+  Gegenwette fehlen in dem Satz genauso. Der Text ist damit nicht falsch,
+  sondern unvollständig. ⛔ **Nicht jetzt anfassen** — `balanceSim.js` und die
+  Ampel bleiben, wie sie sind (CLAUDE.md). Hier vermerkt, damit es beim
+  Balancing nicht neu entdeckt werden muss.
 
 **Nicht anfangen. Nicht messen. Nicht melden.** Ausdrückliche Anweisung von
 Andi, mehrfach wiederholt; die verbindliche Fassung steht ganz oben in

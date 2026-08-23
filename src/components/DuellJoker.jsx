@@ -6,7 +6,7 @@ import {
   sanitizeDuellJoker, beschreibeDuell,
 } from "@/lib/duellJoker";
 import { Zahl } from "@/components/Eingaben";
-import { TAPZIEL } from "@/lib/tapziel";
+import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
 
 // ── Der Duell-Joker: der einzige Baustein, bei dem man einem ANDEREN etwas
 //    wegnimmt ──────────────────────────────────────────────────
@@ -35,7 +35,12 @@ export default function DuellJoker({ rules, onChange }) {
     <button key={key} type="button" onClick={onClick} title={titel} style={{
       border: `1px solid ${aktiv ? C.coral : C.line}`, borderRadius: RUND.pille,
       background: aktiv ? `${C.coral}1a` : "transparent", color: aktiv ? C.coral : C.text,
-      ...TAPZIEL, cursor: "pointer", padding: "5px 11px", fontSize: 12, fontWeight: aktiv ? 700 : 500,
+      // 🔴 `TAPZIEL_QUADRAT` statt `TAPZIEL`, gemessen am 23.08.2026 im Browser
+      // auf 375 px: „An" und „Aus" sind so kurz, dass die Pille nur 40 px breit
+      // wird — 44 hoch, 40 breit. `TAPZIEL` setzt bewusst nur die HÖHE (die
+      // Begründung steht in `tapziel.js`), und bei langen Beschriftungen genügt
+      // das auch. Bei zwei Buchstaben nicht.
+      ...TAPZIEL_QUADRAT, cursor: "pointer", padding: "5px 11px", fontSize: 12, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
   );
 
@@ -51,9 +56,13 @@ export default function DuellJoker({ rules, onChange }) {
 
   return (
     <div>
+      {/* ⚠️ Hier stand bis zum 23.08.2026 „der EINZIGE Joker, der jemand
+          anderen trifft". Seit es die Fremdjoker-Familie gibt, sind es VIER —
+          ein Satz, der beim Bau einer Nachbar-Mechanik unwahr wird, ist
+          schlimmer als einer, der nichts sagt. */}
       <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
-        Der einzige Joker, der jemand <strong>anderen</strong> trifft. Standardmäßig
-        aus — eine Runde, die ihn einschaltet, spielt ein anderes Spiel.
+        Die zwei ältesten Fremdjoker: Punkte <strong>abnehmen</strong> (Klau) oder
+        eine Wertung <strong>dämpfen</strong> (Block). Standardmäßig aus.
       </p>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

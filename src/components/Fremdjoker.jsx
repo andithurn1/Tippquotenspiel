@@ -10,7 +10,7 @@ import {
   konflikte, zweiPhasenHinweis,
 } from "@/lib/fremdjoker";
 import { Zahl } from "@/components/Eingaben";
-import { TAPZIEL } from "@/lib/tapziel";
+import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
 import DuellJoker from "@/components/DuellJoker";
 
 // ── FREMDJOKER — das DACH über den vier Arten, die in einen FREMDEN Tipp
@@ -41,8 +41,9 @@ import DuellJoker from "@/components/DuellJoker";
 //
 // ⚠️ Was hier NICHT steht: die SPIELER-Ansicht der gesetzten Eingriffe („wer
 // hat bei mir geblockt, und kann ich es noch herausnehmen?"). Sie läuft über
-// `offeneEingriffe` aus `fremdjoker.js` und kommt mit der Store-Anbindung —
-// diese Datei ist reine Admin-Einstellung.
+// `offeneEingriffe` aus `fremdjoker.js` und steht in `MeineJoker.jsx`, gespeist
+// aus der Store-Methode `getFremdEingriffe`. Diese Datei ist reine
+// Admin-Einstellung — was der Admin hier festlegt, wird dort erlebt.
 //
 // `onChange` bekommt ein TEIL-Regelwerk, genau wie `JokerSondermenue` es an
 // seine Bausteine weitergibt: `{ eingriffe: … }`, `{ duell: … }` oder beides.
@@ -73,7 +74,12 @@ export default function Fremdjoker({ rules, onChange }) {
     <button key={key} type="button" onClick={onClick} title={titel} style={{
       border: `1px solid ${aktiv ? C.coral : C.line}`, borderRadius: RUND.pille,
       background: aktiv ? `${C.coral}1a` : "transparent", color: aktiv ? C.coral : C.text,
-      ...TAPZIEL, cursor: "pointer", padding: "5px 11px", fontSize: 12, fontWeight: aktiv ? 700 : 500,
+      // 🔴 `TAPZIEL_QUADRAT` statt `TAPZIEL`, gemessen am 23.08.2026 im Browser
+      // auf 375 px: „An" und „Aus" sind so kurz, dass die Pille nur 40 px breit
+      // wird — 44 hoch, 40 breit. `TAPZIEL` setzt bewusst nur die HÖHE (die
+      // Begründung steht in `tapziel.js`), und bei langen Beschriftungen genügt
+      // das auch. Bei zwei Buchstaben nicht.
+      ...TAPZIEL_QUADRAT, cursor: "pointer", padding: "5px 11px", fontSize: 12, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
   );
 
@@ -246,15 +252,22 @@ export default function Fremdjoker({ rules, onChange }) {
             Punkteverschiebung.
           </div>
 
+          {/* ⚠️ „Verborgen" heißt: der Betroffene sieht GAR NICHTS, bis
+              angepfiffen ist — kein Mittelding „jemand blockt eines deiner
+              Spiele". Ob dieses Mittelding die bessere Form wäre, ist in
+              `joker-sondermenue.md` Teil D eine ausdrücklich OFFENE Frage von
+              Andi. Der Text hier muss sagen, was die Mechanik TUT, nicht was
+              sie tun könnte: eine Beschriftung, die einen dritten Zustand
+              verspricht, den es nicht gibt, ist schlimmer als gar keine. */}
           <Block titel="Vor der Frist sichtbar?"
             hinweis={eg.sichtbarVorFrist
-              ? "Offen: jeder sieht, WER bei ihm eingegriffen hat, bevor der Spieltag beginnt. Nur so kann man den anderen ansprechen."
-              : "⚠️ Verdeckt: man sieht, DASS etwas liegt, aber nicht von wem. Ansprechen kann man dann niemanden."}>
+              ? "Offen: jeder sieht mit Namen, wer bei ihm eingegriffen hat, bevor der Spieltag beginnt. Nur so kann man den anderen ansprechen."
+              : "⚠️ Verborgen: der Betroffene erfährt bis zum Anpfiff gar nichts davon. Damit fällt der Austausch weg, um den es hier geht."}>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {knopf(eg.sichtbarVorFrist, "Offen", () => setze({ sichtbarVorFrist: true }), "sv-an",
-                "Der Eingriff ist mit Namen sichtbar, sobald er gesetzt ist.")}
-              {knopf(!eg.sichtbarVorFrist, "Verdeckt", () => setze({ sichtbarVorFrist: false }), "sv-aus",
-                "Der Eingriff ist sichtbar, aber ohne Absender.")}
+                "Der Eingriff steht mit Namen beim Betroffenen, sobald er gesetzt ist.")}
+              {knopf(!eg.sichtbarVorFrist, "Verborgen", () => setze({ sichtbarVorFrist: false }), "sv-aus",
+                "Der Betroffene sieht den Eingriff erst nach dem Anpfiff — bis dahin steht bei ihm nichts.")}
             </div>
           </Block>
 
