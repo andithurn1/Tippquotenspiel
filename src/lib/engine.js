@@ -10,6 +10,12 @@ import { applyCatchup, BETRIFFT, betrifftWert } from "./catchup";
 import { applySaisonform, sanitizeSaisonform, DEFAULT_SAISONFORM } from "./saisonform";
 import { mitTippEinfluss, sanitizeTippEinfluss, DEFAULT_TIPPEINFLUSS } from "./tippEinfluss";
 import { applyDuellJoker, sanitizeDuellJoker, DEFAULT_DUELL } from "./duellJoker";
+// 🔴 Das Dach über der FREMDJOKER-Familie (JK4–JK7). Bewusst `eingriffe.js`
+// und NICHT `fremdjoker.js`: letzteres liest `ergebnisMatrix.js`, das wiederum
+// diese Datei liest — ein Import hier wäre ein Zyklus. Die Frage „läuft ein
+// Fremdjoker?" wird deshalb unten aus den beiden Regel-Blöcken beantwortet,
+// nicht über `aktiveArten`.
+import { sanitizeEingriffe, DEFAULT_EINGRIFFE } from "./eingriffe";
 import { sanitizeBudget, DEFAULT_BUDGET } from "./jokerBudget";
 import { sanitizeMuenzTakt, DEFAULT_MUENZ_TAKT, MUENZ_TAKT_LIMITS } from "./muenzTakt";
 import { sanitizeLimitKlassen, DEFAULT_LIMIT_KLASSEN } from "./limitKlassen";
@@ -301,6 +307,19 @@ export const DEFAULT_RULES = {
   // zwischen Mitspielern auf den fertigen Spieltagspunkten, nicht in scoreTip.
   // Katalog + Auswertung in duellJoker.js. Standard aus.
   duell: { ...DEFAULT_DUELL },
+
+  // ── Fremdjoker: das Dach über allem, was in FREMDE Tipps greift ──
+  // Vier Arten — Block und Klau wohnen in `duell` (oben), Trittbrettfahrer und
+  // Gegenwette hier. `eingriffe.enabled` ist der EINE Griff, mit dem eine
+  // Büro-Runde die ganze Familie abschaltet (JK7); dazu die Sperrfrist je Ziel
+  // (JK5) und die zwei Zusagen, ohne die der ganze Zweck wegfällt: vor der
+  // Frist sichtbar und zurücknehmbar (JK6). Katalog + Formel in eingriffe.js,
+  // Familienlogik in fremdjoker.js, Wertung in duellJoker.js.
+  // ⚠️ `enabled` ist als EINZIGES Feld der Familie standardmäßig AN — es nimmt
+  // nur weg, und eine Vorgabe „aus" würde jeden bestehenden Creator-Code mit
+  // `duell.enabled: true` rückwirkend umschreiben. Begründung im Kopf von
+  // eingriffe.js.
+  eingriffe: { ...DEFAULT_EINGRIFFE },
 
   // ── Budget: die gemeinsame Währung über alle Joker-Arten ──
   // Ersetzt viele eigene Kontingente durch EINEN Kontostand, aus dem jede
@@ -618,6 +637,7 @@ export function sanitizeRules(partial = {}) {
     // prüfen sich selbst — dieselbe Delegation wie bei Saisonform und
     // Saison-Wetten, damit die jeweiligen Kataloge die eine Quelle bleiben.
     duell: sanitizeDuellJoker(src.duell),
+    eingriffe: sanitizeEingriffe(src.eingriffe),
     budget: sanitizeBudget(src.budget),
     limitKlassen: sanitizeLimitKlassen(src.limitKlassen),
     jokerBasis: sanitizeJokerBasisKarte(src.jokerBasis),
@@ -1599,9 +1619,26 @@ export function scoreLeaderboard(entries = [], rules = DEFAULT_RULES, regelnFuer
 // Gewichtung wurden im Leaderboard schlicht nicht angewandt, außer der
 // Aufhol-Bonus war zufällig auch an. Wer hier eine dritte verlaufsabhängige
 // Regel ergänzt, ändert nur diese Funktion.
+// 🔴 Läuft irgendein FREMDJOKER? Die Frage hat seit dem 23.08.2026 vier
+// Antworten statt zwei, und sie darf nur EINMAL beantwortet werden — sonst
+// rechnet der Endstand an einer Art vorbei, die der Verlauf sehr wohl kennt.
+//
+// ⚠️ Die maßgebliche Fassung ist `aktiveArten()` in `fremdjoker.js`. Sie kann
+// hier nicht importiert werden (Zyklus, siehe oben), deshalb steht hier die
+// gleichlautende Kurzform über beide Regel-Blöcke. Beide Fassungen sind durch
+// einen Test aneinandergebunden (`fremdjoker.test.js`), damit sie nicht
+// auseinanderlaufen — genau die Vorsichtsmaßnahme, die bei `brauchtVerlauf`
+// selbst zweimal gefehlt hat.
+function fremdjokerAktiv(rules) {
+  const eg = sanitizeEingriffe(rules?.eingriffe);
+  if (!eg.enabled) return false;
+  const d = sanitizeDuellJoker(rules?.duell);
+  return (d.enabled && d.typen.length > 0) || eg.trittbrett.enabled || eg.gegenwette.enabled;
+}
+
 export function brauchtVerlauf(rules = DEFAULT_RULES) {
   if (rules?.aufholen?.enabled === true) return true;
-  if (sanitizeDuellJoker(rules?.duell).enabled) return true;
+  if (fremdjokerAktiv(rules)) return true;
   // 🔴 Die WAS-Achse (07.08.2026). Eine JOKER-Wirkung braucht den Verlauf
   // nicht — sie landet im Kontingent, nicht in der Tabelle. Alles andere
   // (Punkte, Aufschlag, Abzug, Umverteilung) verändert Spieltagspunkte und
@@ -1695,7 +1732,7 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
   // welchem Grundwert rechnet ein Klau/Block). Bei Vorgabe kostet die Zeile
   // nichts.
   const brauchtSpiele = sanitizeSaisonform(rules?.saisonform).streich > 0
-    || (sanitizeDuellJoker(rules?.duell).enabled && (einsaetze?.length ?? 0) > 0);
+    || (fremdjokerAktiv(rules) && (einsaetze?.length ?? 0) > 0);
   const spielPunkte = brauchtSpiele ? punkteJeSpiel(entries, rules, regelnFuer) : null;
   return applyCatchup(
     applySaisonform(

@@ -155,7 +155,7 @@ describe("applyDuellJoker — Block mit nurGewinn: true auf negative Punkte", ()
         { userId: "b", name: "B", total: -20 },
       ] },
     ];
-    const rules = { duell: { ...DEFAULT_DUELL, enabled: true, block: { restanteil: 0.5, nurGewinn: true, beute: 0 } } };
+    const rules = { duell: { ...DEFAULT_DUELL, enabled: true, typen: ["block"], block: { restanteil: 0.5, nurGewinn: true, beute: 0 } } };
     const r = applyDuellJoker(verlauf, rules, [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "block" }]);
     expect(r[0].board.find((z) => z.userId === "b").total).toBe(-20);
   });
@@ -171,7 +171,7 @@ describe("applyDuellJoker — Block mit nurGewinn: false auf negative Punkte", (
         { userId: "b", name: "B", total: -20 },
       ] },
     ];
-    const rules = { duell: { ...DEFAULT_DUELL, enabled: true, block: { restanteil: 0.5, nurGewinn: false, beute: 0 } } };
+    const rules = { duell: { ...DEFAULT_DUELL, enabled: true, typen: ["block"], block: { restanteil: 0.5, nurGewinn: false, beute: 0 } } };
     const r = applyDuellJoker(verlauf, rules, [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "block" }]);
     // -20 * restanteil(0.5) = -10 — weniger negativ als vorher.
     expect(r[0].board.find((z) => z.userId === "b").total).toBeCloseTo(-10, 6);
@@ -558,7 +558,7 @@ describe("einsaetzeAusTipps", () => {
       { userId: "a", matchday: 3, kickoff: kickoffFrueh, tip: { duell: { auf: "b", typ: "klau" } } },
     ];
     expect(einsaetzeAusTipps(tipps)).toEqual([
-      { spieltag: 3, vonUserId: "a", aufUserId: "b", typ: "klau" },
+      { spieltag: 3, vonUserId: "a", aufUserId: "b", typ: "klau", matchId: null },
     ]);
   });
 
@@ -571,7 +571,7 @@ describe("einsaetzeAusTipps", () => {
       { userId: "a", matchday: 5, kickoff: kickoffFrueh, tip: { duell: { auf: "b", typ: "block" } } }, // gültig
     ];
     expect(einsaetzeAusTipps(tipps)).toEqual([
-      { spieltag: 5, vonUserId: "a", aufUserId: "b", typ: "block" },
+      { spieltag: 5, vonUserId: "a", aufUserId: "b", typ: "block", matchId: null },
     ]);
   });
 
@@ -587,7 +587,7 @@ describe("einsaetzeAusTipps", () => {
     const r1 = einsaetzeAusTipps([frueh, spaet]);
     const r2 = einsaetzeAusTipps([spaet, frueh]); // gedrehte Eingabereihenfolge
 
-    const erwartet = [{ spieltag: 5, vonUserId: "a", aufUserId: "b", typ: "klau" }];
+    const erwartet = [{ spieltag: 5, vonUserId: "a", aufUserId: "b", typ: "klau", matchId: 20 }];
     expect(r1).toEqual(erwartet);
     expect(r2).toEqual(erwartet); // Reihenfolge der Eingabe ändert nichts am Ergebnis
   });
@@ -722,5 +722,146 @@ describe("Fremdjoker: Einzelspiel statt Spieltag", () => {
       { spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "klau", matchId: "gibtsnicht" },
     ], null, spielPunkte);
     expect(r[0].board.find((z) => z.userId === "a").total).toBe(150);
+  });
+});
+
+// ════════════════════════════════════════════════════════════
+//  FREMDJOKER — die zwei neuen Arten und das Dach (JK4/JK7, 23.08.2026)
+//
+//  🔴 Sie rechnen in DIESER Funktion mit, und das ist eine Entscheidung: der
+//  Deckel (`maxProSaison`), die chronologische Reihenfolge, der Nullsummen-
+//  Modus und die Rundung am Ende gelten für alle vier Arten gemeinsam. Eine
+//  zweite Fassung dieses Transfers in `fremdjoker.js` wäre die doppelte
+//  Wahrheit, aus der die 17 Funde vom 05.08. kamen.
+// ════════════════════════════════════════════════════════════
+
+import { DEFAULT_EINGRIFFE } from "@/lib/eingriffe";
+
+const VERLAUF = () => [
+  { wettbewerb: "BL", matchday: 1, board: [
+    { userId: "a", name: "A", total: 0 },
+    { userId: "b", name: "B", total: 100 },
+  ] },
+];
+
+describe("applyDuellJoker — Trittbrettfahrer", () => {
+  const rules = (teil = {}) => ({
+    duell: { ...DEFAULT_DUELL, maxProSaison: 0 },
+    eingriffe: {
+      ...DEFAULT_EINGRIFFE,
+      trittbrett: { ...DEFAULT_EINGRIFFE.trittbrett, enabled: true, ...teil },
+    },
+  });
+  const einsatz = [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "trittbrett" }];
+
+  it("der Kopierer bekommt seinen Anteil, der Kopierte verliert nichts", () => {
+    const r = applyDuellJoker(VERLAUF(), rules({ anteil: 0.3 }), einsatz);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(30);
+    expect(r[0].board.find((z) => z.userId === "b").total).toBe(100);
+  });
+
+  // 🔴 „Es muss wehtun" (J4). Der Preis steckt im Anteil unter 100 % — und
+  // `kopierterBekommt` dreht die Richtung um: wer kopiert wird, bekommt etwas
+  // dafür.
+  it("`kopierterBekommt` gibt dem Kopierten einen Aufschlag", () => {
+    const r = applyDuellJoker(VERLAUF(), rules({ anteil: 0.3, kopierterBekommt: 0.5 }), einsatz);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(30);
+    expect(r[0].board.find((z) => z.userId === "b").total).toBe(115);
+  });
+
+  // ⚠️ Dieselbe Kante wie beim Klau: aus einem Minus lässt sich nichts
+  // mitnehmen. Ohne sie wäre der Trittbrettfahrer auf einen schlechten Tipp
+  // ein GEWINN für den Kopierer.
+  it("aus einem Minus nimmt niemand etwas mit", () => {
+    const verlauf = [{ wettbewerb: "BL", matchday: 1, board: [
+      { userId: "a", name: "A", total: 0 },
+      { userId: "b", name: "B", total: -40 },
+    ] }];
+    const r = applyDuellJoker(verlauf, rules({ anteil: 0.5 }), einsatz);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(0);
+    expect(r[0].board.find((z) => z.userId === "b").total).toBe(-40);
+  });
+
+  it("der Saison-Deckel gilt für ihn wie für alle anderen", () => {
+    const mitDeckel = {
+      ...rules({ anteil: 0.3 }),
+      duell: { ...DEFAULT_DUELL, maxProSaison: 10 },
+    };
+    const r = applyDuellJoker(VERLAUF(), mitDeckel, einsatz);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(10);
+  });
+});
+
+describe("applyDuellJoker — Gegenwette", () => {
+  const rules = (teil = {}) => ({
+    duell: { ...DEFAULT_DUELL, maxProSaison: 0 },
+    eingriffe: {
+      ...DEFAULT_EINGRIFFE,
+      gegenwette: { ...DEFAULT_EINGRIFFE.gegenwette, enabled: true, einsatz: 25, ...teil },
+    },
+  });
+  // p = 2/3 → Gegenquote 3,00 → Reingewinn 25 × 2 = 50.
+  const daneben = [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "gegenwette", p: 2 / 3, getroffen: false }];
+  const aufgegangen = [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "gegenwette", p: 2 / 3, getroffen: true }];
+
+  it("geht der fremde Tipp daneben, zahlt die Gegenquote", () => {
+    const r = applyDuellJoker(VERLAUF(), rules(), daneben);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(50);
+    // `topf` ist die Vorgabe: der Getippte verliert nichts.
+    expect(r[0].board.find((z) => z.userId === "b").total).toBe(100);
+  });
+
+  it("geht er auf, ist der Einsatz weg — auch das steht im Verlauf", () => {
+    const r = applyDuellJoker(VERLAUF(), rules(), aufgegangen);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(-25);
+  });
+
+  it("`nullsumme` nimmt dem Getippten, was der Wettende gewinnt", () => {
+    const r = applyDuellJoker(VERLAUF(), rules({ modus: "nullsumme" }), daneben);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(50);
+    expect(r[0].board.find((z) => z.userId === "b").total).toBe(50);
+  });
+
+  // ⚠️ Kein stiller Rückfall auf die Spieltagspunkte. Eine Gegenwette, die
+  // plötzlich wie ein Klau rechnete, wäre die schlimmere Sorte Fehler: sie
+  // fiele niemandem auf.
+  it("ohne angereichertes `p` verpufft der Einsatz, statt etwas anderes zu rechnen", () => {
+    const ohne = [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "gegenwette" }];
+    const r = applyDuellJoker(VERLAUF(), rules(), ohne);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(0);
+    expect(r[0].board.find((z) => z.userId === "b").total).toBe(100);
+  });
+
+  // 🔴 JK16: der Wert eines Fremdjokers hängt nicht am Gewicht des Spiels.
+  // Bei der Gegenwette ist das eingebaut — Einsatz und Gegenquote kennen die
+  // Spieltagspunkte des Ziels gar nicht.
+  it("das Ziel-Ergebnis ändert nichts am Ertrag — nur die Quote zählt", () => {
+    const fett = [{ wettbewerb: "BL", matchday: 1, board: [
+      { userId: "a", name: "A", total: 0 },
+      { userId: "b", name: "B", total: 5000 },
+    ] }];
+    const r = applyDuellJoker(fett, rules(), daneben);
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(50);
+  });
+});
+
+describe("applyDuellJoker — das Dach (JK7) und die Arten-Prüfung", () => {
+  const einsatz = [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "klau" }];
+  const an = { duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau"] } };
+
+  it("`eingriffe.enabled: false` schaltet die Wertung ab, ohne `duell` anzufassen", () => {
+    const zu = { ...an, eingriffe: { ...DEFAULT_EINGRIFFE, enabled: false } };
+    expect(applyDuellJoker(VERLAUF(), zu, einsatz)).toEqual(VERLAUF());
+    // Zur Gegenprobe: mit offenem Dach rechnet derselbe Einsatz.
+    expect(applyDuellJoker(VERLAUF(), an, einsatz)[0].board.find((z) => z.userId === "a").total)
+      .toBeGreaterThan(0);
+  });
+
+  // 🔴 BEFUND vom 23.08.2026: bis dahin fragte diese Funktion nur
+  // `duell.enabled` und ignorierte `typen`. Eine Runde mit `typen: ["block"]`
+  // hat den Klau-Joker nicht — ein Klau-Einsatz rechnete trotzdem mit.
+  it("eine Art, die die Runde gar nicht hat, rechnet nicht mit", () => {
+    const nurBlock = { duell: { ...DEFAULT_DUELL, enabled: true, typen: ["block"] } };
+    expect(applyDuellJoker(VERLAUF(), nurBlock, einsatz)).toEqual(VERLAUF());
   });
 });

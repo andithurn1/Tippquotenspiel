@@ -154,6 +154,19 @@ const FAELLE = [
   ["duell", {
     duell: { enabled: true, typen: ["klau"], maxProSaison: 0, klau: { anteil: 0.5, modus: "nullsumme" } },
   }, { duell: true }],
+  // 🔴 Die FREMDJOKER-Familie (JK4–JK7). Gemessen wird der TRITTBRETTFAHRER,
+  // weil er der einzige der drei neuen Fälle ist, der ohne Anreicherung
+  // rechnet: die Gegenwette braucht `p` und `getroffen` aus `fremdEinsaetze`,
+  // und der Rest der Familie ist über `duell` oben schon abgedeckt.
+  // ⚠️ `maxProSaison: 0` (kein Deckel), damit die Zahl die WIRKUNG zeigt und
+  // nicht den Deckel — sonst stünde hier bei jedem Anteil dieselbe Summe.
+  ["eingriffe", {
+    eingriffe: {
+      enabled: true,
+      trittbrett: { enabled: true, anteil: 0.5, kopierterBekommt: 0 },
+    },
+    duell: { enabled: false, maxProSaison: 0 },
+  }, { fremd: "trittbrett" }],
   ["drehrad", {
     drehrad: {
       enabled: true, frequenz: 2, phase: "ganze", maxPunkteProSaison: 0,
@@ -216,6 +229,9 @@ async function board(extra, opt = {}) {
       };
       if (opt.joker && u === "u-du" && i % 9 === 0) tip.joker = true;
       if (opt.duell && u === "u-du") tip.duell = { auf: "u-lena", typ: "klau" };
+      // Dieselbe Ablage, andere Art — ein Fremdjoker steht immer in
+      // `tip.duell` (der Feldname ist älter als die Familie).
+      if (opt.fremd && u === "u-du") tip.duell = { auf: "u-lena", typ: opt.fremd };
       // Ein eingefrorener Big-Game-Wert, wie ihn `spieltagOeffnen` ablegt.
       // Nur für den Messfall — im Betrieb kommt er aus dem Tabellenstand.
       const snapshot = opt.bigGameWert != null

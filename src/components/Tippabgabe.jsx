@@ -18,7 +18,16 @@ import { pruefeJokerEinsatz, basisFuer, darfWiderrufen, duellBasis as duellBasis
 import {
   kontoVerlauf, perioden, preisFuer, kannBezahlen, sanitizeBudget, istNarrenKauf, einsaetzeAllerArten,
 } from "@/lib/jokerBudget";
-import { duellPlan, zulaessigeZiele, einsaetzeAusTipps, DUELL_TYPEN } from "@/lib/duellJoker";
+import { duellPlan, einsaetzeAusTipps } from "@/lib/duellJoker";
+// 🔴 Die FREMDJOKER-Familie hat seit dem 23.08.2026 VIER Arten (JK4), und zwei
+// davon stehen gar nicht in `rules.duell`. `aktiveArten` ist die EINE Stelle,
+// die sagt, welche laufen — hier `DUELL_TYPEN` zu lesen hieße, zwei davon zu
+// übersehen. `zulaessigeZiele` kommt aus derselben Datei, weil nur diese
+// Fassung die Sperrfrist je Ziel (JK5) durchreicht.
+import {
+  aktiveArten, familieAn, zulaessigeZiele, gegenwetteVorschau,
+} from "@/lib/fremdjoker";
+import { FREMDJOKER_ARTEN } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
@@ -92,6 +101,21 @@ const goalsAusPicks = (picks, scorer) => {
   if (scorer.modus === "proSpiel") return { home: namen(picks[0]), away: [] };
   return { home: namen(picks[0]), away: namen(picks[1]) };
 };
+
+// 🔴 Der Schlüssel, unter dem eine Fremdjoker-Art ihre GRUNDFORM findet
+// (`jokerBasis.js` → `basisFuer`). Bis zum 23.08.2026 stand er zweimal als
+// Ternär im Code (`typ === "block" ? "duell.block" : "duell.klau"`) — mit zwei
+// weiteren Arten wäre daraus zweimal ein stiller Rückfall auf „duell.klau"
+// geworden, und Widerruf und Limitklassen hätten für Trittbrettfahrer und
+// Gegenwette die Einstellung einer ganz anderen Art gelesen.
+//
+// ⚠️ Die Schlüssel müssen zu `JOKER_ARTEN` (jokerBudget.js) passen — dort
+// stehen alle vier.
+function jokerArtVon(typ) {
+  const art = FREMDJOKER_ARTEN.find((a) => a.key === typ);
+  if (!art) return "duell.klau";
+  return art.wo === "duell" ? `duell.${typ}` : `eingriffe.${typ}`;
+}
 
 export default function Tippabgabe({ matchId }) {
   const { user } = useAuth();
@@ -653,29 +677,54 @@ export default function Tippabgabe({ matchId }) {
   // `basis` kommt aus `duellBasis(rules)` (jokerBasis.js) — `duellPlan` selbst
   // kennt keine Art, es gibt nur EINEN Plan je Spieler. Sind beide Arten
   // erlaubt, gilt die LÄNGERE Abklingzeit; die Begründung steht dort.
-  const duellTypenErlaubt = (RULES.duell?.typen ?? []).filter((t) => DUELL_TYPEN.some((d) => d.key === t));
+  // 🔴 Alle vier Fremdjoker, nicht nur die zwei aus `duell.typen`. Die Liste
+  // kommt aus `aktiveArten(RULES)` — der einzigen Stelle, die beide Regel-
+  // Blöcke zusammenliest (siehe Kopf von `fremdjoker.js`).
+  const duellTypenErlaubt = aktiveArten(RULES);
   // ⚠️ Nicht mehr „klau zuerst": sind beide Arten erlaubt, gilt die LÄNGERE
   // Abklingzeit (`duellBasis` in jokerBasis.js, dort steht die Begründung).
   // Die alte Reihenfolge war keine Regel, sondern eine Reihenfolge — und sie
   // ließ die strengere Einstellung ins Leere laufen.
   const duellBasis = duellBasisVon(RULES);
-  const duellPlanErgebnis = RULES.duell?.enabled && user
+  // ⚠️ EIN Plan für die ganze Familie, nicht einer je Art. `duellPlan` verteilt
+  // Spieltage aus `rules.duell` (Anzahl, Phase, Abklingzeit) — die zwei neuen
+  // Arten teilen sich dieses Kontingent, genau wie sie sich `maxProSaison`
+  // teilen. Ein zweiter Plan daneben wäre ein zweites Kontingent, das niemand
+  // bestellt hat.
+  const duellPlanErgebnis = familieAn(RULES) && user
     ? duellPlan({
         spieltage: spieltageDerRunde, duell: RULES.duell, basis: duellBasis,
         seed: roundId ?? "", userIds: board.map((b) => b.userId),
       })
     : null;
-  const istDuellSpieltag = !!(RULES.duell?.enabled && user
+  const istDuellSpieltag = !!(familieAn(RULES) && user
     && duellPlanErgebnis?.proSpieler?.[user.id]?.includes(meinSpieltagRunde));
   // `bisherigeEinsaetze` aus den rohen Tipps ALLER Spieler abgeleitet
   // (`alleTipps`, dieselbe Liste wie beim Narren-Kontostand oben) —
   // `zulaessigeZiele` filtert selbst auf den eigenen Nutzer.
   const bisherigeDuellEinsaetze = einsaetzeAusTipps(alleTippsRunde);
   const duellZulaessig = istDuellSpieltag
-    ? zulaessigeZiele(board, user?.id, RULES.duell, {
+    ? zulaessigeZiele(board, user?.id, RULES, {
         bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
       })
     : [];
+
+  // 🔴 Was eine Gegenwette einbringt, steht VOR dem Setzen da — sie ist die
+  // einzige der vier Arten, deren Ertrag nicht an den Punkten des Ziels hängt,
+  // sondern an einer Quote. Ohne die Zahl daneben ist „dagegen wetten" eine
+  // Wette ins Blaue.
+  //
+  // ⚠️ `gegenwetteVorschau` rechnet aus DERSELBEN Formel wie die Wertung
+  // (`gegenquote` in eingriffe.js). Eine Vorschau, die eine andere Zahl nennt
+  // als die Abrechnung, ist schlimmer als gar keine.
+  //
+  // ⚠️ Angezeigt wird die Wette gegen den EIGENEN Tipp als Näherung: der Tipp
+  // des Ziels ist bis zum gemeinsamen Tippschluss verdeckt. Das steht auch so
+  // im Text daneben — eine Zahl ohne diesen Satz wäre eine Zusage, die
+  // niemand halten kann.
+  const gegenVorschau = duellTypGewaehlt === "gegenwette" && SNAP
+    ? gegenwetteVorschau({ home: Number(h), away: Number(a) }, SNAP, RULES)
+    : null;
 
   // 🔴 KANN ich mir den Einsatz überhaupt leisten? Bei `duell.kosten:
   // "stattJoker"` verbraucht ein Duell einen Joker aus demselben Vorrat wie
@@ -942,7 +991,7 @@ export default function Tippabgabe({ matchId }) {
       // ein NEUES Ziel läuft.
       if (RULES.duell?.enabled && urspruenglich.duellZiel != null
         && (duellZiel !== urspruenglich.duellZiel || duellTypGewaehlt !== urspruenglich.duellTyp)) {
-        const duellArtVorher = urspruenglich.duellTyp === "block" ? "duell.block" : "duell.klau";
+        const duellArtVorher = jokerArtVon(urspruenglich.duellTyp);
         const basisWiderruf = basisFuer(duellArtVorher, RULES);
         if (!darfWiderrufen(basisWiderruf, Date.now(), new Date(SNAP.kickoff).getTime())) {
           setWiderrufGrund("dieser Duell-Joker ist nicht mehr widerrufbar — die erlaubte Frist ist vorbei");
@@ -952,7 +1001,7 @@ export default function Tippabgabe({ matchId }) {
       }
       let duellSicher = null;
       if (istDuellSpieltag && !gesperrt && duellZiel && duellTypGewaehlt) {
-        const zulaessigJetzt = zulaessigeZiele(board, user.id, RULES.duell, {
+        const zulaessigJetzt = zulaessigeZiele(board, user.id, RULES, {
           bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
         });
         // Die Kosten-Prüfung steht VOR den Kontingent-Klassen: sie ist die
@@ -967,7 +1016,7 @@ export default function Tippabgabe({ matchId }) {
           // Kontingent-Klassen prüfen (design/kontaktstellen.md Abschnitt 5
           // Punkt 5, limitKlassen.js) — dieselbe Bedingung: nur wenn hier
           // tatsächlich ein Duell gesetzt wird.
-          const duellJokerArt = duellTypGewaehlt === "block" ? "duell.block" : "duell.klau";
+          const duellJokerArt = jokerArtVon(duellTypGewaehlt);
           const klassenPruef = pruefeEinsatz(
             { spieltag: meinSpieltagRunde, jokerArt: duellJokerArt, vonUserId: user.id, aufUserId: duellZiel },
             RULES.limitKlassen, einsatzHistorie, klassenKontext,
@@ -1412,7 +1461,7 @@ export default function Tippabgabe({ matchId }) {
                 borderRadius: RUND.karte, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
               }}>
                 <div style={{ fontSize: 11, color: C.coral, textTransform: "uppercase", letterSpacing: 1 }}>
-                  Duell-Joker
+                  Fremdjoker
                 </div>
                 {/* Was der Einsatz kostet — nur wenn er überhaupt etwas kostet
                     (`duell.kosten: "stattJoker"`). Steht ÜBER den Zielen, weil
@@ -1459,7 +1508,7 @@ export default function Tippabgabe({ matchId }) {
                     {duellZiel && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                         {duellTypenErlaubt.map((typKey) => {
-                          const info = DUELL_TYPEN.find((d) => d.key === typKey);
+                          const info = FREMDJOKER_ARTEN.find((d) => d.key === typKey);
                           const on = duellTypGewaehlt === typKey;
                           return (
                             <button key={typKey} disabled={gesperrt}
@@ -1474,14 +1523,47 @@ export default function Tippabgabe({ matchId }) {
                         })}
                       </div>
                     )}
+                    {/* Die Beschreibung der gewählten Art — vier Arten sind
+                        drei zu viel, um sie sich zu merken. */}
+                    {duellTypGewaehlt && (
+                      <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                        {FREMDJOKER_ARTEN.find((d) => d.key === duellTypGewaehlt)?.desc}
+                      </p>
+                    )}
+
+                    {/* 🔴 Die Gegenwette ist die einzige Art mit einem PREIS —
+                        wer sie setzt, riskiert seinen Einsatz. Die Zahl gehört
+                        vor die Entscheidung, nicht in die Abrechnung. */}
+                    {gegenVorschau && (
+                      <div style={{
+                        marginTop: 9, padding: "9px 12px", borderRadius: RUND.karte,
+                        background: C.surface, border: `1px solid ${C.coral}44`,
+                      }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: C.coral }}>
+                          Gegenquote {gegenVorschau.quote.toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                          Einsatz {gegenVorschau.einsatz} · geht der fremde Tipp daneben,
+                          bekommst du +{gegenVorschau.gewinn}; geht er auf, sind die
+                          {" "}{gegenVorschau.verlust} weg.
+                        </div>
+                        <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                          Gerechnet gegen DEINEN Tipp — der des Ziels ist bis zum
+                          gemeinsamen Tippschluss verdeckt. Die Quote kann sich also
+                          noch ändern.
+                        </div>
+                      </div>
+                    )}
+
                     <p style={{ fontSize: 11, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
-                      Wähle ein Ziel und eine Art — keine Auswahl heißt kein Duell an diesem Spieltag.
+                      Wähle ein Ziel und eine Art — keine Auswahl heißt kein Fremdjoker an
+                      diesem Spieltag.
                     </p>
                   </>
                 )}
                 {gesperrt && (
                   <p style={{ fontSize: 11, color: C.coral, marginTop: 8, lineHeight: 1.4 }}>
-                    Angepfiffen — der Duell-Joker ist eingefroren.
+                    Angepfiffen — der Fremdjoker ist eingefroren.
                   </p>
                 )}
               </div>

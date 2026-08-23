@@ -23,6 +23,7 @@ import { SAISON_PRESETS } from "./saisonwetten";
 import { PRESETS } from "./presets";
 import { EREIGNIS_PRESETS } from "./ereignisse";
 import { DEFAULT_DUELL } from "./duellJoker";
+import { DEFAULT_EINGRIFFE } from "./eingriffe";
 import { DEFAULT_DREHRAD } from "./drehrad";
 
 const saisonVon = (key) =>
@@ -483,13 +484,21 @@ export const REGLER = [
     // wegnimmt. Das ist keine Feineinstellung, sondern die Frage, ob eine
     // Runde überhaupt konfrontativ sein soll; sie gehört gestellt.
     key: "angriff",
-    label: "Dürft ihr euch gegenseitig etwas wegnehmen?",
-    hint: "Der Duell-Joker: einem Mitspieler Punkte abnehmen (Klau) oder seinen Joker blocken.",
+    label: "Dürft ihr euch gegenseitig in die Tipps gehen?",
+    hint: "Die Fremdjoker: einen fremden Tipp blocken, davon mitprofitieren, ihm Punkte abnehmen "
+      + "oder dagegen wetten.",
     stufen: [
       {
         key: "nein", label: "Nein",
         beschreibung: "Jeder spielt für sich. Niemand kann dir etwas wegnehmen.",
-        werte: { duell: { ...DEFAULT_DUELL, enabled: false } },
+        // 🔴 JK7 — Andis Büro-Runde. Nicht nur `duell` aus, sondern das DACH
+        // zu: damit ist auch ein später eingeschalteter Trittbrettfahrer aus,
+        // ohne dass jemand daran denken muss. „Eine Büro-Runde darf davon
+        // nichts sehen."
+        werte: {
+          duell: { ...DEFAULT_DUELL, enabled: false },
+          eingriffe: { ...DEFAULT_EINGRIFFE, enabled: false },
+        },
       },
       {
         key: "block", label: "Nur blocken",
@@ -499,6 +508,7 @@ export const REGLER = [
         beschreibung: "Du kannst den Joker eines anderen entschärfen, aber ihm nichts abnehmen.",
         werte: {
           duell: { ...DEFAULT_DUELL, enabled: true, typen: ["block"], anzahl: 2, maxProSaison: 150 },
+          eingriffe: { ...DEFAULT_EINGRIFFE, enabled: true },
         },
       },
       {
@@ -515,6 +525,7 @@ export const REGLER = [
         // auf, weil das Duell standardmäßig aus ist.
         werte: {
           duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau"], anzahl: 2, zielWahl: "nurVorne", maxProSaison: 150 },
+          eingriffe: { ...DEFAULT_EINGRIFFE, enabled: true },
         },
       },
       {
@@ -522,6 +533,38 @@ export const REGLER = [
         beschreibung: "Beide Angriffsarten, dreimal pro Saison. Eine Runde, in der man aufpassen muss.",
         werte: {
           duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau", "block"], anzahl: 3, zielWahl: "nurVorne", maxProSaison: 150 },
+          eingriffe: { ...DEFAULT_EINGRIFFE, enabled: true },
+        },
+      },
+      {
+        // 🔴 Die beiden Fremdjoker, die es seit dem 23.08.2026 gibt (JK4).
+        // Sie stehen als EIGENE Stufe und nicht als vierte Art in „beides",
+        // weil sie eine andere Runde ergeben: Klau und Block verschieben
+        // Punkte, Trittbrettfahrer und Gegenwette sind Wetten auf den Tipp
+        // eines anderen. Wer das eine will, will nicht zwangsläufig das
+        // andere.
+        //
+        // ⚠️ Die Sperrfrist (JK5) steht hier auf 2, nicht auf 0: mit vier
+        // Arten liegen viel mehr Einsätze auf demselben Spieltag, und ohne
+        // sie darf derselbe denselben in jeder Woche treffen. Das ist genau
+        // der Fall, für den Andi den Cooldown bestellt hat.
+        key: "wetten", label: "Auch aufeinander wetten",
+        beschreibung: "Alle vier: blocken, klauen, mitprofitieren und gegen einen fremden Tipp wetten.",
+        werte: {
+          duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau", "block"], anzahl: 3, zielWahl: "nurVorne", maxProSaison: 150 },
+          eingriffe: {
+            ...DEFAULT_EINGRIFFE,
+            enabled: true,
+            sperrfristJeZiel: 2,
+            trittbrett: { ...DEFAULT_EINGRIFFE.trittbrett, enabled: true },
+            gegenwette: { ...DEFAULT_EINGRIFFE.gegenwette, enabled: true },
+          },
+          // 🔴 JK18: ohne gemeinsamen Tippschluss geht die Familie nicht auf —
+          // erst tippen alle, dann werden die Joker gesetzt. Die Stufe setzt
+          // ihn deshalb gleich mit (24 Std., Andis Beispiel) samt dem Anker,
+          // den er braucht. Andernfalls stünde hier eine Runde, die
+          // `fremdjoker.konflikte()` sofort anmeckert.
+          tippfenster: { vorlaufStunden: 168, anker: "spieltag", schlussStunden: 24 },
         },
       },
     ],

@@ -18,7 +18,14 @@ import { rundenSpiele as rundenSpieleVon, rundenAuswahl } from "./roundStatus";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
-import { einsaetzeAusTipps } from "./duellJoker";
+// 🔴 `fremdEinsaetze` statt der rohen Grundform (23.08.2026): dieselbe Liste,
+// aber zusätzlich mit dem, was eine GEGENWETTE braucht — die Wahrscheinlichkeit
+// des getroffenen Tipps und sein Ausgang. Beides entsteht aus Quoten-
+// Schnappschuss und Ergebnis, die `duellJoker.js` nicht lesen darf
+// (Importzyklus, siehe Kopf von `fremdjoker.js`). Wer hier auf die alte
+// Funktion zurückgeht, bekommt Einsätze ohne `p` — und die Gegenwette
+// verpufft still, ohne dass irgendetwas fehlschlägt.
+import { fremdEinsaetze, familieAn } from "./fremdjoker";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { darfSaisonTippen } from "./saisonFenster";
 import { tippStatus, spieltagStarts } from "./tippfenster";
@@ -438,13 +445,13 @@ export function createSupabaseStore() {
       // 20, ist er in `round.rules` aus — der Verlauf würde gar nicht gebaut
       // und der Bonus fiele still aus.
       if (brauchtVerlauf(rules) || brauchtVerlauf(amEnde)) {
-        // `einsaetzeAusTipps` braucht `matchId` für den Gleichstand-Fall
+        // `fremdEinsaetze` braucht `matchId` für den Gleichstand-Fall
         // (zwei Duell-Einsätze am selben Spieltag mit identischem Kickoff,
         // z. B. zwei zeitgleich angepfiffene Bundesliga-Spiele) — `entries`
         // (aus `eintragVon`) trägt das Feld nicht, `tips` (roh) schon
         // (`match_id`), deshalb hier separat angereichert statt `entries`
         // selbst zu verändern.
-        const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
+        const einsaetze = fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules);
         verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
         board = verlauf.length ? verlauf[verlauf.length - 1].board : [];
       } else {
@@ -550,7 +557,7 @@ export function createSupabaseStore() {
       // Wie im Zweig oben: `matchId` kommt aus den ROHEN Tipps, `entries` trägt
       // es nicht — ohne das Feld verliert der Duell-Einsatz seinen Gleichstand-
       // Schlüssel (zwei zeitgleich angepfiffene Spiele am selben Spieltag).
-      const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
+      const einsaetze = fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules);
       return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
     },
 
@@ -574,10 +581,32 @@ export function createSupabaseStore() {
       return scoreSaison({ matches, tipps, saison: rules.saison });
     },
 
+    // 🔴 JK6 (23.08.2026): welche Fremdjoker liegen JETZT auf dem Tisch — und
+    // von wem? Das ist etwas anderes als `getDuellVorgaenge`: dort steht, was
+    // eine Überweisung am Ende GEBRACHT hat, hier, was gerade GESETZT ist.
+    // Andis Zweck ist das Gespräch vor dem Anpfiff („nimm den Block bei mir
+    // raus"), und dafür kommt die Abrechnung zu spät.
+    //
+    // ⚠️ Der Screen darf das nicht selbst aus den Tipps ableiten
+    // (Runden-Schicht, CLAUDE.md): dieselbe Liste, aus der die WERTUNG rechnet,
+    // muss die sein, die der Spieler sieht. Sonst steht auf dem Bildschirm ein
+    // Block, den die Wertung nie gesehen hat — oder umgekehrt.
+    async getFremdEingriffe(roundId) {
+      const { rules, tips, nameOf, matchOf } = await this.standVorDemRad(roundId);
+      if (!familieAn(rules)) return [];
+      return fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules)
+        .map((e) => ({ ...e, vonName: nameOf(e.vonUserId), aufName: nameOf(e.aufUserId) }));
+    },
+
     async getDuellVorgaenge(roundId) {
       const { entries, rules, regelnFuer, tips, nameOf, matchOf } = await this.standVorDemRad(roundId);
-      if (!rules?.duell?.enabled) return [];
-      const einsaetze = einsaetzeAusTipps(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })));
+      // 🔴 `familieAn` statt `rules.duell.enabled`: seit dem 23.08.2026 gibt es
+      // VIER Fremdjoker, und zwei davon stehen gar nicht in `duell`. Die rohe
+      // Abfrage hätte Trittbrettfahrer und Gegenwette aus der Vorgangsliste
+      // geworfen — sichtbar erst daran, dass ein Spieler eine Summe sieht, zu
+      // der keine Zeile führt.
+      if (!familieAn(rules)) return [];
+      const einsaetze = fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules);
       const sammeln = [];
       scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln, roundId);
       return sammeln.map((v) => ({ ...v, vonName: nameOf(v.vonUserId), aufName: nameOf(v.aufUserId) }));

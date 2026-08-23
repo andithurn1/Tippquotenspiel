@@ -16,6 +16,8 @@ import { kontingent, erspielteLage, standText } from "@/lib/jokerKontingent";
 import { EREIGNIS, sanitizeEreignisse, beschreibeEreignisse } from "@/lib/ereignisse";
 import { offeneKlassen, beschreibeKlasse, sanitizeLimitKlassen } from "@/lib/limitKlassen";
 import { einsaetzeAllerArten } from "@/lib/jokerBudget";
+import { offeneEingriffe, eingriffFenster, familieAn } from "@/lib/fremdjoker";
+import { spieltagStarts } from "@/lib/tippfenster";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // ── „Meine Joker" — die fehlende Anzeige WÄHREND der Runde ───
@@ -50,6 +52,10 @@ export default function MeineJoker() {
   const [eintraege, setEintraege] = useState([]);
   const [radJoker, setRadJoker] = useState([]);
   const [tagesPunkte, setTagesPunkte] = useState([]);
+  // 🔴 JK6: was gerade GESETZT ist, nicht was am Ende dabei herauskam. Kommt
+  // aus dem Store, nicht aus den Tipps dieses Screens — dieselbe Liste, aus
+  // der die Wertung rechnet (Runden-Schicht, CLAUDE.md).
+  const [fremdEingriffe, setFremdEingriffe] = useState([]);
 
   useEffect(() => {
     let live = true;
@@ -69,7 +75,8 @@ export default function MeineJoker() {
       // Nicht selbst nachrechnen (Runden-Schicht, Frage 4) — der Store
       // rechnet sie aus DEMSELBEN Verlauf, den auch das Ranking zeigt.
       getStore().getSpieltagsPunkte?.(roundId) ?? Promise.resolve([]),
-    ]).then(([round, ms, tips, brd, entries, rad, tagesPunkte]) => {
+      getStore().getFremdEingriffe?.(roundId) ?? Promise.resolve([]),
+    ]).then(([round, ms, tips, brd, entries, rad, tagesPunkte, eingriffe]) => {
       if (!live) return;
       setRules(sanitizeRules(round?.rules ?? DEFAULT_RULES));
       setMatches(ms);
@@ -78,11 +85,17 @@ export default function MeineJoker() {
       setEintraege(entries ?? []);
       setRadJoker(rad?.joker ?? []);
       setTagesPunkte(tagesPunkte ?? []);
+      setFremdEingriffe(eingriffe ?? []);
     }).catch(() => {});
     return () => { live = false; };
   }, [roundId, user]);
 
   const jokerAn = rules.joker?.enabled === true;
+  // 🔴 Die Fremdjoker hängen NICHT an `rules.joker` — eine Runde kann sich
+  // gegenseitig in die Tipps gehen, ohne einen einzigen normalen Joker zu
+  // haben. Deshalb eine eigene Frage und ein eigener Abschnitt, oberhalb der
+  // Joker-Ansicht.
+  const fremdAn = familieAn(rules);
   const verteilung = sanitizeVerteilung(rules.joker?.verteilung);
 
   const achse = zeitachse(matches ?? [], rules.zeitachse);
@@ -103,6 +116,28 @@ export default function MeineJoker() {
   // Dieselben Umrechnungen wie in der Tippabgabe: Tipps und Gutschriften im
   // RUNDEN-Spieltag, sonst zählt `kontingent` gegen die falsche Skala.
   const matchVon = new Map((matches ?? []).map((m) => [m.id, m]));
+
+  // ── JK6: wer greift bei mir ein, und kann ich noch reagieren? ──
+  //
+  // 🔴 Andis Zweck, wörtlich: „hey du Arschloch, nimm den Block bei mir fürs
+  // Bayern-Spiel raus, ich habe da ein zu gutes Gefühl." Damit dieses Gespräch
+  // stattfinden kann, muss der Eingriff VOR dem Anpfiff hier stehen — mit
+  // Namen. Ein Block, den man erst in der Abrechnung sieht, ist keine
+  // Einladung zum Gespräch, sondern eine Punkteverschiebung.
+  //
+  // ⚠️ `offeneEingriffe` entscheidet, was sichtbar ist — nicht dieser Screen.
+  // Er reicht nur das Zeitfenster je Spiel herein, weil er die Spiele kennt
+  // und die Bibliothek nicht.
+  const starts = spieltagStarts(matches ?? []);
+  const fensterFuer = (e) => {
+    const m = e.matchId != null ? matchVon.get(e.matchId) : null;
+    return m ? eingriffFenster(m, rules, Date.now(), starts) : null;
+  };
+  const meineEingriffe = fremdAn
+    ? offeneEingriffe(fremdEingriffe, rules, { userId: user?.id, fensterFuer })
+    : [];
+  const gegenMich = meineEingriffe.filter((e) => !e.eigener);
+  const vonMir = meineEingriffe.filter((e) => e.eigener);
   const meineTipsRunde = meineTips.map((t) => {
     const m = matchVon.get(t.match_id);
     return {
@@ -195,6 +230,77 @@ export default function MeineJoker() {
         </h1>
 
         {matches == null && <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>lädt …</div>}
+
+        {/* ── Fremdjoker: eigener Abschnitt, unabhängig vom normalen Joker ── */}
+        {matches != null && fremdAn && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Fremdjoker</div>
+
+            {gegenMich.length === 0 && vonMir.length === 0 ? (
+              <Kasten>
+                Zurzeit greift niemand in deine Tipps ein — und du in keinen fremden.
+                Gesetzt wird nach dem gemeinsamen Tippschluss, wenn alle Tipps feststehen.
+              </Kasten>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {gegenMich.map((e, i) => {
+                  const f = fensterFuer(e);
+                  const spiel = e.matchId != null ? matchVon.get(e.matchId) : null;
+                  return (
+                    <div key={`gegen-${i}`} style={{
+                      background: C.surface, border: `1px solid ${C.coral}44`,
+                      borderRadius: RUND.karte, padding: "9px 12px",
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>
+                        {/* 🔴 „Man sieht, WER es war." Anonym gibt es niemanden,
+                            den man ansprechen kann — der Name ist die halbe
+                            Nachricht. */}
+                        {e.vonName ?? e.vonUserId} · {e.art?.label ?? e.typ}
+                      </div>
+                      <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                        {spiel ? `${spiel.home} – ${spiel.away}` : `Spieltag ${e.spieltag}`}
+                        {f?.phase === "eingriffe" ? " · noch bis zum Anpfiff" : ""}
+                      </div>
+                      <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                        {e.art?.desc}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {vonMir.map((e, i) => {
+                  const spiel = e.matchId != null ? matchVon.get(e.matchId) : null;
+                  return (
+                    <div key={`von-${i}`} style={{
+                      background: C.surface, border: `1px solid ${C.line}`,
+                      borderRadius: RUND.karte, padding: "9px 12px",
+                    }}>
+                      <div style={{ fontSize: 13 }}>
+                        Du · {e.art?.label ?? e.typ} bei {e.aufName ?? e.aufUserId}
+                      </div>
+                      <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                        {spiel ? `${spiel.home} – ${spiel.away}` : `Spieltag ${e.spieltag}`}
+                        {/* ⚠️ Ob man ihn noch herausnehmen kann, entscheidet
+                            `eingriffFenster` über `eingriffe.ruecknahme` — nicht
+                            dieser Screen. Herausnehmen selbst geschieht in der
+                            Tippabgabe, wo der Einsatz auch gesetzt wird. */}
+                        {e.ruecknehmbar
+                          ? " · in der Tippabgabe zurücknehmbar"
+                          : " · steht fest"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {gegenMich.length > 0 && (
+              <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                Rede mit ihnen. Genau dafür steht es hier und nicht erst in der Abrechnung.
+              </p>
+            )}
+          </div>
+        )}
 
         {matches != null && !jokerAn && (
           <Kasten>
