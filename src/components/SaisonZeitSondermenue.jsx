@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DEFAULT_RULES } from "@/lib/engine";
 import { AUSWAHL_LIMITS, beschreibeAuswahl } from "@/lib/spielauswahl";
-import { VORLAUF_STUFEN, ANKER, beschreibeTippfenster, erklaereTippfenster } from "@/lib/tippfenster";
+import { VORLAUF_STUFEN, SCHLUSS_STUFEN, ANKER, beschreibeTippfenster, erklaereTippfenster, fensterKonflikte } from "@/lib/tippfenster";
 import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import { GrosseZeile } from "@/components/Eingaben";
@@ -51,6 +51,17 @@ export function saisonZeitStand(rules) {
   return teile.join(" · ");
 }
 
+// Der Stand der Fenster-Zeile. Zeigt den Vorlauf und — nur wenn es einen
+// gibt — den gemeinsamen Schluss: eine Zeile, die immer beides nennt, wäre
+// für die große Mehrheit ohne Fremdjoker nur länger, nicht klarer.
+function fensterStand(rules) {
+  const vorlauf = VORLAUF_STUFEN.find((s) => s.stunden === (rules?.tippfenster?.vorlaufStunden ?? 168))?.label ?? "—";
+  const schluss = rules?.tippfenster?.schlussStunden ?? 0;
+  if (schluss <= 0) return vorlauf;
+  const label = SCHLUSS_STUFEN.find((s) => s.stunden === schluss)?.label ?? `${schluss} Std. vorher`;
+  return `${vorlauf} · Schluss ${label}`;
+}
+
 export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
   const [zeile, setZeile] = useState(null);
   const auf = (k) => setZeile((o) => (o === k ? null : k));
@@ -83,12 +94,13 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
       </GrosseZeile>
 
       {/* ── Tipp-Fenster ── */}
-      <GrosseZeile icon="⏳" titel="Ab wann tippbar?" unter="Vorlauf und Anker"
-        wert={VORLAUF_STUFEN.find((s) => s.stunden === (rules.tippfenster?.vorlaufStunden ?? 168))?.label ?? "—"}
+      <GrosseZeile icon="⏳" titel="Ab wann tippbar?" unter="Vorlauf, Anker und Tippschluss"
+        wert={fensterStand(rules)}
         offen={zeile === "fenster"} onClick={() => auf("fenster")}>
         <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 8px", lineHeight: 1.45 }}>
           Quoten erscheinen erst einige Tage vor Anpfiff. Wie früh eure Runde
-          tippt, entscheidest du — geschlossen wird immer beim Anpfiff.
+          tippt, entscheidest du — und seit dem gemeinsamen Tippschluss auch,
+          wie spät.
         </p>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {VORLAUF_STUFEN.map((st) => {
@@ -125,6 +137,47 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
             );
           })}
         </div>
+        {/* ── Der gemeinsame Tippschluss (Andi, 23.08.2026) ──
+            🔴 Die dritte Kante des Fensters. Sie steht UNTER dem Anker, weil
+            sie ihn voraussetzt: ohne den Spieltag als Block gibt es keinen
+            gemeinsamen Moment, an dem alle getippt haben. */}
+        <div style={{ fontSize: 12, color: C.text, fontWeight: 700, marginTop: 12 }}>
+          Wann ist Tippschluss?
+        </div>
+        <p style={{ fontSize: 11, color: C.muted, margin: "3px 0 6px", lineHeight: 1.45 }}>
+          Normalerweise schließt jedes Spiel bei seinem eigenen Anpfiff. Ein
+          gemeinsamer Schluss vorher macht die Tipps aller gleichzeitig
+          sichtbar — die Voraussetzung für Fremdjoker.
+        </p>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {SCHLUSS_STUFEN.map((st) => {
+            const an = (rules.tippfenster?.schlussStunden ?? 0) === st.stunden;
+            return (
+              <button key={st.stunden} title={st.hint}
+                onClick={() => setzeTippfenster({ schlussStunden: st.stunden })}
+                style={{
+                  ...TAPZIEL, flex: "1 1 90px", cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
+                  borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
+                  background: an ? `${C.akzent}22` : C.surface,
+                  color: an ? C.akzent : C.muted,
+                  border: `1px solid ${an ? C.akzent + "66" : C.line}`,
+                }}>{st.label}</button>
+            );
+          })}
+        </div>
+
+        {/* 🔴 Gemeldet, nicht still korrigiert. Andi: „Das muss halt vom Admin
+            klar so eingestellt werden, weil sonst gehts nicht auf." */}
+        {fensterKonflikte(rules).map((k) => (
+          <div key={k.key} style={{
+            marginTop: 8, background: `${C.coral}14`, border: `1px solid ${C.coral}55`,
+            borderRadius: RUND.karte, padding: "8px 10px",
+            fontSize: 11, color: C.text, lineHeight: 1.45,
+          }}>
+            ⚠️ {k.text}
+          </div>
+        ))}
+
         <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
           {beschreibeTippfenster(rules)}
         </p>

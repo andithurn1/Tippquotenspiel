@@ -126,6 +126,57 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-23 (IX) · ⚠️ **REGELWERK** — zwei neue Felder: `spiele.teamModus` und `tippfenster.schlussStunden`
+
+**Push-Regel 3.** Beides ändert das Regelwerk und wandert im Creator-Code mit.
+`engine.js` selbst bleibt unberührt — die Wertung rechnet unverändert.
+
+**Beides sind Ansagen von Andi vom selben Tag.**
+
+**1 · `spiele.teamModus`** (`einer` | `beide`, Vorgabe `einer`)
+
+> „so soll bspw. El Clásico auch betippt werden, und nicht alle Spiele von
+> Barça und Real in der Liga."
+
+Die Vereinsauswahl kannte nur eine Lesart: ein Spiel zählt, sobald EINE Seite
+gewählt ist. `beide` verlangt zwei. Steht auch in `ABWEICHUNGS_FELDER`, gilt
+also je Wettbewerb — genau sein Fall: in der Liga nur das Duell, in der
+Champions League jedes Spiel.
+
+⚠️ `spieleProSpieltag` nennt für `beide` eine untere Grenze von NULL. Zwei
+Vereine treffen sich je Hinrunde einmal; „1 bis 1 Spiel pro Spieltag" wäre
+formal richtig gerundet und in der Sache irreführend.
+
+**2 · `tippfenster.schlussStunden`** (0–168, Vorgabe **0** = alles wie bisher)
+
+Die DRITTE Kante des Tipp-Fensters. Bisher: öffnet `vorlaufStunden` vor
+Anpfiff, schließt BEIM Anpfiff. Neu: ein gemeinsamer Schluss vor dem ersten
+Anpfiff des Spieltags.
+
+> „erstmal tippt jeder, und dann einen Tag später, wo jeder getippt hat,
+> werden die Joker auf die anderen gewählt."
+
+Das ist die **Voraussetzung der ganzen Fremdjoker-Familie** (JK4–JK7): ohne
+einen Moment, an dem alle Tipps feststehen, kann niemand einen Joker auf einen
+fremden Tipp setzen. Neuer Zustand `frist` in `tippStatus` — Tippschluss
+vorbei, Anpfiff noch nicht. Wer `uebersicht()` auswertet: der Zähler hat
+einen fünften Schlüssel.
+
+⚠️ `fensterKonflikte(rules)` MELDET, statt still zu korrigieren: ein
+gemeinsamer Schluss ohne Anker `spieltag` ließe ein spätes Spiel nie aufgehen.
+Andi ausdrücklich: „Das muss halt vom Admin klar so eingestellt werden, weil
+sonst gehts nicht auf."
+
+**Rückwärts:** beide Vorgaben sind das bisherige Verhalten, jeder vorhandene
+Creator-Code bleibt bitgleich. Je ein Test hält das fest.
+
+**Stand:** 2312 Tests grün, lint sauber, `stufen` ohne Lücke. Liegt auf
+`main`. ⚠️ `teamModus` war schon gepusht, bevor dieser Eintrag geschrieben
+war — nachträglich angekündigt, nicht vorab. Beim nächsten Regelwerk-Feld
+zuerst hierher.
+
+---
+
 ### 2026-08-22 (VIII) · ⚠️ **ENGINE-ÄNDERUNG** — Quoten-Raster 9×9, Randquoten fortgeschrieben
 
 **Push-Regel 3.** Fasst `engine.js`, `oddsApi.js` und `oddsGenerator.js` an.

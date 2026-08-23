@@ -18,6 +18,25 @@
 //  zusammen sind das Fenster, in dem ein Tipp abgegeben werden kann — und in
 //  dem die Quote gilt, die zum Öffnen eingefroren wurde.
 //
+//  ── 🔴 Die DRITTE Kante: gemeinsamer Tippschluss (23.08.2026) ──
+//  Andi: „erstmal tippt jeder, und dann einen Tag später, wo jeder getippt
+//  hat, werden die Joker auf die anderen gewählt."
+//
+//  Dafür genügen zwei Kanten nicht. Solange bis zum Anpfiff getippt werden
+//  darf, gibt es keinen Moment, an dem die Tipps aller feststehen — und ohne
+//  den kann niemand einen Fremdjoker auf einen fremden Tipp setzen.
+//  `schlussStunden` zieht deshalb einen GEMEINSAMEN Schluss vor den ersten
+//  Anpfiff des Spieltags. Was danach bis zum Anpfiff liegt, ist die zweite
+//  Phase (`design/joker-sondermenue.md`, „Zwei-Phasen-Spieltag").
+//
+//  ⚠️ `schlussStunden: 0` ist die Vorgabe und heißt: alles wie bisher,
+//  geschlossen wird beim eigenen Anpfiff. Kein vorhandener Creator-Code
+//  ändert dadurch sein Verhalten.
+//
+//  ⚠️ Ein früher Schluss ist auch OHNE Fremdjoker sinnvoll („bei uns ist
+//  Freitagmittag Schluss, dann kann keiner mehr die Aufstellungen abwarten").
+//  Er läuft also nicht ins Leere, bis die Joker gebaut sind.
+//
 //  ── Im Zweifel zu ──
 //  Ein Spiel ohne verwertbaren Anpfiff gilt als NICHT tippbar. Ein
 //  versehentlich offenes Spiel lässt sich nicht zurücknehmen, ein
@@ -32,6 +51,9 @@ export const TIPPFENSTER_LIMITS = {
   // 1 Stunde bis 30 Tage. Der Standard von 7 Tagen deckt einen ganzen
   // Spieltag ab, ohne die halbe Saison auf einmal zu öffnen.
   vorlaufStunden: { min: 1, max: 720, step: 1 },
+  // 0 = kein gemeinsamer Schluss (Vorgabe). Nach oben eine Woche: mehr wäre
+  // ein Tippschluss VOR dem Öffnen des Fensters — also gar keine Runde.
+  schlussStunden: { min: 0, max: 168, step: 1 },
 };
 
 // ── WOVON wird der Vorlauf gerechnet? ───────────────────────
@@ -59,7 +81,17 @@ export const ANKER = [
   },
 ];
 
-export const DEFAULT_TIPPFENSTER = { vorlaufStunden: 168, anker: "spiel" };
+export const DEFAULT_TIPPFENSTER = { vorlaufStunden: 168, anker: "spiel", schlussStunden: 0 };
+
+// Gängige Tippschlüsse. Die 24 Stunden stehen als Vorauswahl vorn, weil das
+// Andis Beispiel ist („einen Tag später") — und weil ein Tag der kürzeste
+// Abstand ist, in dem eine Runde die zweite Phase realistisch schafft.
+export const SCHLUSS_STUFEN = [
+  { stunden: 0, label: "beim Anpfiff", hint: "Wie bisher: jedes Spiel schließt, wenn es angepfiffen wird." },
+  { stunden: 12, label: "12 Std. vorher", hint: "Knapp. Für Runden, die abends noch schnell zusammenkommen." },
+  { stunden: 24, label: "1 Tag vorher", hint: "Andis Vorschlag für die Fremdjoker: einen Tag Zeit, um zu reagieren." },
+  { stunden: 48, label: "2 Tage vorher", hint: "Entspannt — aber die Aufstellungen sind dann noch weit weg." },
+];
 
 // Gängige Vorläufe als Vorauswahl — Stunden sind ein unhandliches Maß, wenn
 // man eigentlich „ein Spieltag" oder „zwei Tage" meint.
@@ -81,7 +113,46 @@ export function sanitizeTippfenster(partial = {}) {
     // Ein unbekannter Anker fiele sonst still auf „Spieltag" zurück und würde
     // die halbe Saison öffnen. Im Zweifel das engere Verhalten.
     anker: ANKER.some((a) => a.key === p.anker) ? p.anker : DEFAULT_TIPPFENSTER.anker,
+    schlussStunden: schlussWert(p.schlussStunden),
   };
+}
+
+function schlussWert(v) {
+  const L = TIPPFENSTER_LIMITS.schlussStunden;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return DEFAULT_TIPPFENSTER.schlussStunden;
+  return Math.min(L.max, Math.max(L.min, Math.round(n)));
+}
+
+// ── Was der gemeinsame Schluss verlangt ─────────────────────
+// 🔴 Andi: „Das muss halt vom Admin klar so eingestellt werden, weil sonst
+// geht's nicht auf." Genau das prüft diese Funktion — und sie KORRIGIERT
+// nicht still, sondern meldet: eine stille Korrektur wäre eine dritte
+// Wahrheit über das Fenster, und der Admin wüsste nicht, dass seine Runde
+// anders läuft, als er sie eingestellt hat.
+//
+// Der Konflikt ist nicht theoretisch: mit Anker `spiel` und einem Vorlauf,
+// der kürzer ist als der Abstand zwischen erstem und letztem Anpfiff, geht
+// das Sonntagsspiel erst auf, NACHDEM der gemeinsame Schluss schon vorbei
+// ist. Es wäre nie tippbar — und niemand sähe warum.
+export function fensterKonflikte(rules) {
+  const f = sanitizeTippfenster(rules?.tippfenster);
+  const raus = [];
+  if (f.schlussStunden > 0 && f.anker !== "spieltag") {
+    raus.push({
+      key: "ankerFehlt",
+      text: "Ein gemeinsamer Tippschluss braucht den Anker „vor dem Beginn des Spieltags“. "
+        + "Sonst geht ein spätes Spiel erst auf, wenn der Schluss längst vorbei ist — es wäre nie tippbar.",
+    });
+  }
+  if (f.schlussStunden > 0 && f.schlussStunden >= f.vorlaufStunden) {
+    raus.push({
+      key: "schlussVorOeffnung",
+      text: `Der Tippschluss (${f.schlussStunden} Std. vorher) liegt vor der Öffnung `
+        + `(${f.vorlaufStunden} Std. vorher). So bleibt kein Moment übrig, in dem getippt werden kann.`,
+    });
+  }
+  return raus;
 }
 
 // Der erste Anpfiff JE SPIELTAG — die Bezugsgröße für den Anker `spieltag`.
@@ -119,29 +190,55 @@ export function oeffnetAm(match, rules, starts = null) {
   return bezug - vorlaufStunden * 3600_000;
 }
 
+// Wann schließt das Fenster dieses Spiels? Ohne gemeinsamen Schluss ist das
+// der eigene Anpfiff — die Regel, die es immer gab.
+//
+// ⚠️ `Math.min` mit dem eigenen Anpfiff ist keine Vorsicht, sondern die
+// unverrückbare Grenze: ein Freitagsspiel darf nicht bis zum gemeinsamen
+// Schluss offen bleiben, wenn dieser NACH seinem Anpfiff läge.
+export function schliesstAm(match, rules, starts = null) {
+  const start = anpfiff(match);
+  if (start === null) return null;
+  const { schlussStunden } = sanitizeTippfenster(rules?.tippfenster);
+  if (schlussStunden <= 0) return start;
+  const spieltagStart = starts ? (starts.get(spieltagKey(match)) ?? start) : start;
+  return Math.min(start, spieltagStart - schlussStunden * 3600_000);
+}
+
 // Der Zustand eines Spiels — die eine Funktion, aus der die Oberfläche alles
-// ableitet. `zustand` ist bewusst dreiwertig statt eines Booleans: „noch nicht"
-// und „vorbei" sind für den Spieler zwei völlig verschiedene Nachrichten.
+// ableitet. `zustand` ist bewusst mehrwertig statt eines Booleans: „noch
+// nicht", „Schluss" und „vorbei" sind für den Spieler drei völlig
+// verschiedene Nachrichten.
 export function tippStatus(match, rules, jetzt = Date.now(), starts = null) {
   const start = anpfiff(match);
   if (start === null) {
-    return { offen: false, zustand: "unbekannt", oeffnetAm: null, anpfiff: null, text: "Termin offen" };
+    return { offen: false, zustand: "unbekannt", oeffnetAm: null, schliesstAm: null, anpfiff: null, text: "Termin offen" };
   }
-  // ⚠️ Geschlossen wird IMMER beim eigenen Anpfiff, egal welcher Anker gilt —
-  // sonst ließe sich ein bereits laufendes Spiel noch tippen.
   const oeffnet = oeffnetAm(match, rules, starts);
+  const schliesst = schliesstAm(match, rules, starts);
   if (jetzt >= start) {
-    return { offen: false, zustand: "vorbei", oeffnetAm: oeffnet, anpfiff: start, text: "angepfiffen" };
+    return { offen: false, zustand: "vorbei", oeffnetAm: oeffnet, schliesstAm: schliesst, anpfiff: start, text: "angepfiffen" };
   }
   if (jetzt < oeffnet) {
     return {
-      offen: false, zustand: "zu", oeffnetAm: oeffnet, anpfiff: start,
+      offen: false, zustand: "zu", oeffnetAm: oeffnet, schliesstAm: schliesst, anpfiff: start,
       text: `tippbar ab ${formatZeitpunkt(oeffnet)}`,
     };
   }
+  // 🔴 Der neue Zustand: Tippschluss vorbei, Anpfiff noch nicht. Das ist die
+  // zweite Phase — in ihr stehen die Tipps fest, das Spiel läuft aber noch
+  // nicht. Ein eigener Zustand und kein „vorbei", weil der Spieler hier etwas
+  // ganz anderes erfährt: nicht „zu spät", sondern „jetzt sind die anderen
+  // dran".
+  if (jetzt >= schliesst) {
+    return {
+      offen: false, zustand: "frist", oeffnetAm: oeffnet, schliesstAm: schliesst, anpfiff: start,
+      text: `Tippschluss vorbei · Anpfiff in ${formatDauer(start - jetzt)}`,
+    };
+  }
   return {
-    offen: true, zustand: "offen", oeffnetAm: oeffnet, anpfiff: start,
-    text: `noch ${formatDauer(start - jetzt)}`,
+    offen: true, zustand: "offen", oeffnetAm: oeffnet, schliesstAm: schliesst, anpfiff: start,
+    text: `noch ${formatDauer(schliesst - jetzt)}`,
   };
 }
 
@@ -175,7 +272,10 @@ export function naechsteOeffnung(matches = [], rules, jetzt = Date.now()) {
 // 438 kommen noch"), statt den Rest wortlos wegzulassen.
 export function uebersicht(matches = [], rules, jetzt = Date.now()) {
   const starts = spieltagStarts(matches);
-  const zaehler = { offen: 0, zu: 0, vorbei: 0, unbekannt: 0 };
+  // ⚠️ `frist` MUSS hier stehen. Ohne den Schlüssel wäre `zaehler[...] += 1`
+  // ein NaN, und die Übersicht zeigte für eine Runde mit gemeinsamem
+  // Tippschluss lautlos Unsinn.
+  const zaehler = { offen: 0, zu: 0, frist: 0, vorbei: 0, unbekannt: 0 };
   for (const m of matches) zaehler[tippStatus(m, rules, jetzt, starts).zustand] += 1;
   return zaehler;
 }
@@ -212,11 +312,18 @@ export function dauerText(stunden) {
 }
 
 export function beschreibeTippfenster(rules) {
-  const { vorlaufStunden, anker } = sanitizeTippfenster(rules?.tippfenster);
+  const { vorlaufStunden, anker, schlussStunden } = sanitizeTippfenster(rules?.tippfenster);
   const dauer = dauerText(vorlaufStunden);
+  const auf = anker === "spieltag"
+    ? `Der ganze Spieltag wird ${dauer} vor dem ersten Anpfiff tippbar.`
+    : `Jedes Spiel wird ${dauer} vor seinem Anpfiff tippbar`;
+  if (schlussStunden > 0) {
+    return `${anker === "spieltag" ? auf : auf + "."} Getippt wird bis ${dauerText(schlussStunden)} `
+      + "vor dem ersten Anpfiff — für alle gleichzeitig. Danach stehen die Tipps fest.";
+  }
   return anker === "spieltag"
-    ? `Der ganze Spieltag wird ${dauer} vor dem ersten Anpfiff tippbar. Jedes Spiel schließt bei seinem eigenen Anpfiff.`
-    : `Jedes Spiel wird ${dauer} vor seinem Anpfiff tippbar und schließt beim Anpfiff.`;
+    ? `${auf} Jedes Spiel schließt bei seinem eigenen Anpfiff.`
+    : `${auf} und schließt beim Anpfiff.`;
 }
 
 // Die AUSFÜHRLICHE Erklärung — drei Zeilen, jede beantwortet genau eine Frage.
@@ -224,7 +331,7 @@ export function beschreibeTippfenster(rules) {
 // „schließt" ist genau der Punkt, an dem der Regler bisher missverstanden wurde.
 // Rückgabe: [{ frage, antwort }]
 export function erklaereTippfenster(rules) {
-  const { vorlaufStunden, anker } = sanitizeTippfenster(rules?.tippfenster);
+  const { vorlaufStunden, anker, schlussStunden } = sanitizeTippfenster(rules?.tippfenster);
   const dauer = dauerText(vorlaufStunden);
   const proSpiel = anker === "spiel";
 
@@ -237,8 +344,16 @@ export function erklaereTippfenster(rules) {
     },
     {
       frage: "Bis wann kann getippt werden?",
-      antwort: "Bis zum Anpfiff des jeweiligen Spiels. Danach ist es gesperrt, auch wenn andere Spiele des Spieltags noch laufen.",
+      antwort: schlussStunden > 0
+        ? `Bis ${dauerText(schlussStunden)} vor dem ersten Anpfiff des Spieltags — für alle Spiele gleichzeitig, auch für die vom Sonntag.`
+        : "Bis zum Anpfiff des jeweiligen Spiels. Danach ist es gesperrt, auch wenn andere Spiele des Spieltags noch laufen.",
     },
+    ...(schlussStunden > 0 ? [{
+      frage: "Was passiert zwischen Tippschluss und Anpfiff?",
+      antwort: "Die Tipps aller stehen fest und sind sichtbar. Diese Zeit ist die zweite Phase "
+        + "des Spieltags — dort greifen später die Fremdjoker. Wer nicht getippt hat, bekommt "
+        + "seinen Auto-Tipp.",
+    }] : []),
     {
       frage: proSpiel
         ? "Kann ich das Sonntagsspiel schon am Freitag tippen?"

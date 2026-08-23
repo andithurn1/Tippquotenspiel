@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  DEFAULT_TIPPFENSTER, TIPPFENSTER_LIMITS, VORLAUF_STUFEN, sanitizeTippfenster, tippStatus, istTippbar, tippbareSpiele, naechsteOeffnung, uebersicht, oeffnetAm, formatDauer, beschreibeTippfenster, ANKER, spieltagStarts, erklaereTippfenster, dauerText,
+  DEFAULT_TIPPFENSTER, TIPPFENSTER_LIMITS, VORLAUF_STUFEN, sanitizeTippfenster, tippStatus, istTippbar, tippbareSpiele, naechsteOeffnung, uebersicht, oeffnetAm, formatDauer, beschreibeTippfenster, ANKER, spieltagStarts, erklaereTippfenster, dauerText, fensterKonflikte, schliesstAm,
 } from "@/lib/tippfenster";
 import { DEFAULT_RULES, sanitizeRules, encodePreset, decodePreset } from "@/lib/engine";
 
@@ -260,5 +260,140 @@ describe("Anker `spieltag`: ohne `starts` läuft die Einstellung ins Leere", () 
     const spaeter = fr + stunde;
     expect(tippStatus(spiele[0], rules("spieltag"), spaeter, starts).zustand).toBe("vorbei");
     expect(tippStatus(spiele[2], rules("spieltag"), spaeter, starts).zustand).toBe("offen");
+  });
+});
+
+// ============================================================
+//  🔴 DIE DRITTE KANTE — gemeinsamer Tippschluss (Andi, 23.08.2026)
+//  „erstmal tippt jeder, und dann einen Tag später, wo jeder getippt hat,
+//  werden die Joker auf die anderen gewählt."
+// ============================================================
+describe("Gemeinsamer Tippschluss", () => {
+  // Ein Spieltag über drei Tage. Erster Anpfiff in 10 Stunden.
+  const spieltag = [
+    { id: "fr", matchId: "fr", wettbewerb: "bl", matchday: 1, kickoff: new Date(JETZT + 10 * STD).toISOString() },
+    { id: "sa", matchId: "sa", wettbewerb: "bl", matchday: 1, kickoff: new Date(JETZT + 34 * STD).toISOString() },
+    { id: "so", matchId: "so", wettbewerb: "bl", matchday: 1, kickoff: new Date(JETZT + 58 * STD).toISOString() },
+  ];
+  const starts = spieltagStarts(spieltag);
+  // Schluss 6 Stunden vor dem ersten Anpfiff, also in 4 Stunden.
+  const mitSchluss = sanitizeRules({
+    ...DEFAULT_RULES,
+    tippfenster: { vorlaufStunden: 168, anker: "spieltag", schlussStunden: 6 },
+  });
+
+  it("schließt ALLE Spiele gleichzeitig, auch das vom Sonntag", () => {
+    const nachSchluss = JETZT + 5 * STD;
+    for (const m of spieltag) {
+      expect(istTippbar(m, mitSchluss, nachSchluss, starts), m.id).toBe(false);
+    }
+    // Gegenprobe: eine Stunde vorher sind alle drei offen.
+    for (const m of spieltag) {
+      expect(istTippbar(m, mitSchluss, JETZT + 3 * STD, starts), m.id).toBe(true);
+    }
+  });
+
+  it("kennt die zweite Phase als eigenen Zustand", () => {
+    // 🔴 Nicht „vorbei": das Spiel läuft noch nicht, die Tipps stehen nur
+    // fest. Für den Spieler ist das die Nachricht „jetzt sind die anderen
+    // dran", nicht „du warst zu langsam".
+    const s = tippStatus(spieltag[2], mitSchluss, JETZT + 5 * STD, starts);
+    expect(s.zustand).toBe("frist");
+    expect(s.offen).toBe(false);
+    expect(s.text).toMatch(/Tippschluss vorbei/);
+    // Und wenn der Anpfiff da ist, wird daraus „vorbei".
+    expect(tippStatus(spieltag[0], mitSchluss, JETZT + 11 * STD, starts).zustand).toBe("vorbei");
+  });
+
+  it("lässt ein Spiel NIE über seinen eigenen Anpfiff hinaus offen", () => {
+    // Die unverrückbare Grenze: ein Schluss, der nach dem Anpfiff des
+    // Freitagsspiels läge, darf dieses nicht länger offen halten.
+    const spaeterSchluss = sanitizeRules({
+      ...DEFAULT_RULES,
+      tippfenster: { vorlaufStunden: 168, anker: "spieltag", schlussStunden: 0 },
+    });
+    expect(istTippbar(spieltag[0], spaeterSchluss, JETZT + 11 * STD, starts)).toBe(false);
+  });
+
+  it("ändert ohne Angabe gar nichts", () => {
+    // Der Rückwärts-Test: `schlussStunden: 0` ist die Vorgabe, und mit ihr
+    // verhält sich das Fenster wie vor dem 23.08.2026.
+    expect(sanitizeTippfenster({}).schlussStunden).toBe(0);
+    const ohne = sanitizeRules({ ...DEFAULT_RULES, tippfenster: { vorlaufStunden: 168, anker: "spieltag" } });
+    expect(istTippbar(spieltag[2], ohne, JETZT + 5 * STD, starts)).toBe(true);
+  });
+
+  it("zählt die zweite Phase in der Übersicht mit", () => {
+    // ⚠️ Ohne den Schlüssel `frist` wäre der Zähler NaN — und die Übersicht
+    // zeigte lautlos Unsinn.
+    const u = uebersicht(spieltag, mitSchluss, JETZT + 5 * STD);
+    expect(u.frist).toBe(3);
+    expect(Object.values(u).every(Number.isFinite)).toBe(true);
+  });
+
+  it("reist im Creator-Code mit", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES, tippfenster: { vorlaufStunden: 168, anker: "spieltag", schlussStunden: 24 },
+    });
+    expect(sanitizeRules(decodePreset(encodePreset(rules))).tippfenster.schlussStunden).toBe(24);
+  });
+});
+
+describe("Was der gemeinsame Schluss verlangt", () => {
+  const bau = (t) => sanitizeRules({ ...DEFAULT_RULES, tippfenster: t });
+
+  it("meldet den fehlenden Anker, statt ihn still zu setzen", () => {
+    // 🔴 Andi: „Das muss halt vom Admin klar so eingestellt werden, weil sonst
+    // gehts nicht auf." Eine stille Korrektur wäre eine zweite Wahrheit — der
+    // Admin wüsste nicht, dass seine Runde anders läuft als eingestellt.
+    const k = fensterKonflikte(bau({ vorlaufStunden: 168, anker: "spiel", schlussStunden: 24 }));
+    expect(k.map((x) => x.key)).toContain("ankerFehlt");
+    // Mit dem richtigen Anker ist Ruhe.
+    expect(fensterKonflikte(bau({ vorlaufStunden: 168, anker: "spieltag", schlussStunden: 24 }))).toEqual([]);
+  });
+
+  it("meldet einen Schluss, der vor der Öffnung liegt", () => {
+    const k = fensterKonflikte(bau({ vorlaufStunden: 24, anker: "spieltag", schlussStunden: 48 }));
+    expect(k.map((x) => x.key)).toContain("schlussVorOeffnung");
+  });
+
+  it("schweigt, solange es keinen gemeinsamen Schluss gibt", () => {
+    expect(fensterKonflikte(bau({ vorlaufStunden: 24, anker: "spiel" }))).toEqual([]);
+  });
+
+  it("sagt in der Beschreibung, dass alle gleichzeitig schließen", () => {
+    const text = beschreibeTippfenster(bau({ vorlaufStunden: 168, anker: "spieltag", schlussStunden: 24 }));
+    expect(text).toMatch(/für alle gleichzeitig/);
+    const fragen = erklaereTippfenster(bau({ vorlaufStunden: 168, anker: "spieltag", schlussStunden: 24 }));
+    expect(fragen.some((f) => f.frage.includes("zwischen Tippschluss und Anpfiff"))).toBe(true);
+    // Ohne gemeinsamen Schluss taucht die dritte Frage nicht auf.
+    expect(erklaereTippfenster(bau({ vorlaufStunden: 168, anker: "spieltag" }))
+      .some((f) => f.frage.includes("zwischen Tippschluss"))).toBe(false);
+  });
+});
+
+describe("schliesstAm — das Gegenstück zu oeffnetAm", () => {
+  const spieltag = [
+    { id: "fr", matchId: "fr", wettbewerb: "bl", matchday: 1, kickoff: new Date(JETZT + 10 * STD).toISOString() },
+    { id: "so", matchId: "so", wettbewerb: "bl", matchday: 1, kickoff: new Date(JETZT + 58 * STD).toISOString() },
+  ];
+  const starts = spieltagStarts(spieltag);
+
+  it("ohne gemeinsamen Schluss ist es der eigene Anpfiff", () => {
+    const rules = sanitizeRules({ ...DEFAULT_RULES, tippfenster: { vorlaufStunden: 168 } });
+    expect(schliesstAm(spieltag[1], rules, starts)).toBe(JETZT + 58 * STD);
+  });
+
+  it("mit gemeinsamem Schluss ist es für alle derselbe Moment", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES, tippfenster: { vorlaufStunden: 168, anker: "spieltag", schlussStunden: 6 },
+    });
+    const erwartet = JETZT + 4 * STD;   // 6 Std. vor dem ersten Anpfiff (+10)
+    expect(schliesstAm(spieltag[0], rules, starts)).toBe(erwartet);
+    expect(schliesstAm(spieltag[1], rules, starts)).toBe(erwartet);
+  });
+
+  it("ohne Anpfiff gibt es keinen Schluss", () => {
+    expect(schliesstAm({ id: "x" }, DEFAULT_RULES, starts)).toBe(null);
   });
 });
