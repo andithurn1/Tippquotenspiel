@@ -126,10 +126,90 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
-### 2026-08-23 (XI) · ⚠️ **REGELWERK** — der neue Block `rules.eingriffe` (Fremdjoker JK4–JK7)
+### 2026-08-23 (XII) · **Die Fremdjoker-Familie ist vollständig** — JK4–JK7, JK12, JK14
 
 > **👉 Frische Session: DAS ist dein Einstieg.** Alles darunter ist Historie.
 > Arbeitsordner: **`C:\Dev\Tippquotenspiel`**.
+
+Branch `claude/fremdjoker-jk4-jk7-ehc5fw` · **2415 Tests grün** · alle acht
+Abnahmen ohne neuen Befund.
+
+Der Eintrag (XI) darunter beschreibt den Regel-Block `rules.eingriffe` — er
+gilt weiter, ist aber gewachsen. Was seither dazukam:
+
+| | |
+|---|---|
+| **JK5** Sperrfrist | jetzt **drei Ebenen**: eine Zahl · je Fremdjoker · wie die Sperre wirkt |
+| **JK12** ausgelostes Ziel | fünfte Stufe der Zielwahl + `eingriffe.los` |
+| **JK13** je Fremdjoker einzeln | Grundform · Sperrfrist · Sichtbarkeit · Auslosung |
+| **JK14** geschützte Spiele | `eingriffe.schutz`, Kontingent in der Wertung |
+| „max. je Spieltag" | war wirkungslos, ist angeschlossen |
+
+#### 🔴 Die eine Bauform, die man einmal versteht
+
+Vier Einstellungen stehen „je Fremdjoker einzeln", und alle vier benutzen
+DIESELBE Karte — `karteVon()` in `eingriffe.js`:
+
+```
+{ standard: <volle Form>,  block: <Abweichung>,  gegenwette: <Abweichung> }
+```
+
+Wer eine fünfte ergänzt, nimmt diese Funktion. Zwei handgeschriebene Läufe
+über `FREMDJOKER_ARTEN` wären die Sorte Doppelung, die auseinanderläuft: dann
+trüge die eine Karte einen Schlüssel weiter, den die andere wegwirft.
+
+#### 🔴 Die Sperrfrist trägt beide Verhalten in EINER Formel
+
+```
+warte = spieltage + max(0, n−1) × aufschlag        (gedeckelt: hoechstens)
+```
+
+`aufschlag: 0` ist die feste Sperre. `spieltage: 0, aufschlag: 2` ist Andis
+Fall: **kein Verbot beim zweiten Mal, und genau dadurch wächst die Wartezeit.**
+Bewusst KEIN zusätzliches Feld „Verbot oder Aufschlag?" — die Zahl sagt es
+schon, und ein zweiter Weg zur selben Aussage musste hier am selben Tag schon
+einmal aufgeräumt werden (siehe unten).
+
+#### 🔴 Das Los ist eine PERMUTATION, keine unabhängige Ziehung
+
+Jeder zieht genau einen und wird genau einmal gezogen. Zöge jeder für sich,
+könnten drei denselben ziehen — und das Rudelbilden, das das Los verhindern
+soll, wäre wieder da, nur mit Zufall statt Absicht. `seeded.js` ist die
+Quelle, also ist das Los Spielstand: ändert sich die Funktion, verschieben
+sich rückwirkend alle Lose.
+
+#### ⚠️ Ein Fund an der eigenen Arbeit, damit er nicht wiederkommt
+
+`eingriffe.ruecknahme` war ein ZWEITES Feld für „bis wann darf ich einen
+Einsatz zurücknehmen?" — die Joker-Grundform (`jokerBasis.widerruf`)
+beantwortet das längst, je Art, und die Tippabgabe setzt SIE beim Speichern
+durch. Eine Runde hätte „zurücknehmbar" anzeigen können, während das Speichern
+es verweigert. Gelöscht, bevor es je in einer Runde stand.
+
+**Die Lehre, allgemein:** bevor ein neues Feld in `eingriffe` entsteht, erst
+prüfen, ob die Grundform die Frage schon stellt. Sie stellt sehr viele.
+
+#### ❓ Was Andi noch entscheiden muss
+
+1. **Die Sichtbarkeit steht jetzt auch je Art** — er hat am 23.08.2026 nur die
+   SPERRFRIST einzeln benannt, aber die Antwort „gemeinsam lassen" als Ganzes
+   verworfen. Zurückdrehen kostet zwei Zeilen.
+2. **JK14 steht auf 🔨, nicht ✅:** das Schild in der Tippabgabe ist gebaut und
+   durch Tests belegt, aber nicht im Browser gesehen — die Demo-Runde hat die
+   Fremdjoker aus. Wer das nachholt, setzt die Zeile auf ✅.
+
+#### Was NICHT drankommt
+
+- ⛔ **Balancing.** Die Zahlen in `DEFAULT_EINGRIFFE` (Anteil 0,30 · Einsatz 25
+  · Aufschlag 2) sind Platzhalter im Sinne des Baukastens, keine Empfehlung.
+- ⛔ **Platzierung von Reglern**, bis die Masterdatei steht.
+
+---
+
+### 2026-08-23 (XI) · ⚠️ **REGELWERK** — der neue Block `rules.eingriffe` (Fremdjoker JK4–JK7)
+
+> ⚠️ **Nicht mehr der Einstieg** — der steht im Eintrag (XII) darüber. Alles
+> hier gilt weiter, ist aber gewachsen; die Ergänzungen stehen oben.
 
 **Push-Regel 3.** Ein neuer Regel-Block, der im Creator-Code mitwandert — und
 eine Verhaltensänderung, die hier ausdrücklich benannt gehört. `engine.js`
