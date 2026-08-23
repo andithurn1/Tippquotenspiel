@@ -565,29 +565,92 @@ vierte Stufe des vorhandenen `duell.zielWahl` (frei · nach vorn · nach hinten 
 während der Trittbrettfahrer frei bleibt. Bauform ist die vorhandene aus
 `jokerBasis` — ein Standard oben, Abweichung je Art. Kein zweites Muster.
 
-### ❓ Was Andi noch entscheiden muss
+### Die fünf Fragen — beantwortet am 23.08.2026
 
-Fünf Fragen, die sich aus seinem Satz NICHT beantworten lassen. Ich rate sie
-bewusst nicht — bitte direkt hier darunter antworten:
+Andi: *„bei so vielen Einstellungen bzw. Einstellbarkeiten kannst du dir
+eigentlich auch selber denken, dass man Optionen dazu hat."* Das ist die
+Antwort auf die Form ALLER fünf Fragen: wo es mehrere sinnvolle Varianten
+gibt, wird die Variante zur EINSTELLUNG, nicht zur Vorabentscheidung.
 
-1. **Wie oft wird neu ausgelost?** Je Spieltag neu · einmal für die ganze
-   Saison · nach jedem Einsatz. *(„fest ausgelost" klingt nach selten, aber
-   eine Saison lang derselbe Gegner trifft dieselbe Person 34-mal.)*
-2. **Gegenseitig oder einseitig?** Wenn ich Lena ziehe — zieht Lena dann
-   automatisch mich (ein Paar, ein Duell), oder ist mein Los unabhängig von
-   ihrem?
-3. **Sieht man sein Los, und sieht das Ziel es auch?** JK6 verlangt, dass ein
-   Eingriff vor der Frist sichtbar ist. Gilt das schon fürs LOS („Lena hat dich
-   diesen Spieltag") oder erst für den gesetzten Joker?
-4. **Was, wenn das Los nicht tippt?** Die zugeloste Person gibt keinen Tipp ab
-   oder hat kein gemeinsames Spiel — verfällt der Fremdjoker, oder darf man
-   ersatzweise frei wählen?
-5. **Ein Los für alle Fremdjoker oder je Fremdjoker ein eigenes?** Bei
-   getrennten Losen könnte man denselben Spieltag drei verschiedene Personen
-   treffen.
+| # | Frage | Entschieden |
+|---|---|---|
+| 1 | Wie oft neu auslosen? | **Einstellung** `losTakt`: je Spieltag · je Saison · nach jedem Einsatz. Vorgabe: je Spieltag |
+| 2 | Gegenseitig oder einseitig? | **Einstellung** `losPaare`. Vorgabe: einseitig — sonst ist es ein Duell, und das gibt es schon (`duell`) |
+| 3 | Sieht man sein Los? | **Einstellung** `losSichtbar`. Vorgabe: eigenes Los ja, fremdes nein. Der GESETZTE Joker fällt weiter unter JK6 (vor der Frist sichtbar) |
+| 4 | Was, wenn das Los nicht tippt? | 🔴 **Der Fall wird verhindert, nicht behandelt** — siehe unten |
+| 5 | Ein Los für alle oder je Joker eins? | **Einstellung**, dieselbe Bauform wie JK13 (Standard oben, Abweichung je Art) |
 
-⚠️ Frage 4 ist die einzige, die BAUEN blockiert — die übrigen vier haben eine
-naheliegende Vorgabe, die sich später ändern lässt.
+---
+
+## 🔴 Fremdjoker verlangen einen ZWEI-PHASEN-SPIELTAG
+
+Andis Antwort auf Frage 4 behandelt den leeren Fall nicht, sondern schließt
+ihn aus — und legt dabei die Voraussetzung für die **ganze Familie** fest:
+
+> *„wenn dieser Joker aktiviert wird, muss jeder Tippen bzw. wird halt dann ein
+> automatischer Tipp vom System genommen … ausserdem muss hierfür so sein, dass
+> erstmal jeder Tippt, und dann einen Tag später, wo jeder getippt hat, die
+> Joker auf die anderen gewählt wird."*
+
+Damit zerfällt ein Spieltag in zwei Phasen statt einer:
+
+```
+  ┌── Phase 1: TIPPEN ───────────┐ ┌── Phase 2: FREMDJOKER ──┐
+  │ jeder gibt seinen Tipp ab    │ │ die Tipps der anderen   │
+  │ + wählt geschützte Spiele    │ │ sind sichtbar, jetzt    │
+  │   (JK14)                     │ │ werden Joker gesetzt    │
+  └──────────────────────────────┘ └─────────────────────────┘
+       Tippschluss ▲                        Anpfiff ▲
+                   └────── ca. 1 Tag ───────┘
+```
+
+### Was daran neu ist
+
+Das heutige Tipp-Fenster kennt **zwei Kanten**: es öffnet `vorlaufStunden` vor
+Anpfiff und schließt **beim Anpfiff** (`tippfenster.js`). Für Phase 2 braucht
+es eine **dritte**: einen Tippschluss VOR dem ersten Anpfiff, damit dazwischen
+überhaupt Zeit für die Joker bleibt.
+
+⚠️ **Abhängigkeit:** das geht nur mit `tippfenster.anker: "spieltag"` (der
+Spieltag als Block). Bei `anker: "spiel"` geht jedes Spiel einzeln auf und zu —
+dann gibt es keinen gemeinsamen Moment, an dem „jeder getippt hat".
+
+### Warum Frage 4 damit erledigt ist
+
+Wer nicht tippt, bekommt den **Auto-Tipp** (`autoTip.js`, gibt es schon: drei
+Strategien, der Admin wählt). Damit hat jede Person einen Tipp, und ein
+Fremdjoker findet immer ein Ziel. Der Fall „Los läuft ins Leere" tritt nicht
+mehr auf.
+
+⚠️ Ein Nebeneffekt, der zufällig richtig herum liegt: der Auto-Tipp ist der
+zahmste Tipp, den es gibt (das wahrscheinlichste Ergebnis). Wer einen
+Auto-Tipp blockt oder mitnimmt, holt sich also wenig — genau das dämpft von
+selbst den Anreiz, auf die Abwesenden zu zielen.
+
+### Was der Admin einstellen MUSS
+
+Andi: *„Das muss halt vom Admin klar so eingestellt werden, weil sonst geht's
+nicht auf."* Deshalb ist das keine stille Vorgabe, sondern eine Pflichtangabe,
+sobald Fremdjoker an sind:
+
+* **Tippschluss** — wie lange vor dem ersten Anpfiff die Phase 1 endet
+  (Vorgabe 24 h, wie in seinem Satz)
+* **Anker** muss auf `spieltag` stehen — sonst Warnung, nicht stille Korrektur
+
+🔴 **Ohne diese Einstellung darf sich die Fremdjoker-Familie nicht
+einschalten lassen.** Eine Runde, in der die Joker gesetzt werden könnten,
+während andere noch tippen, wäre keine Variante, sondern kaputt.
+
+### Und der ehrliche Hinweis an den Admin
+
+Andi: *„da muss eigentlich jeder genug Hingabe für aufbringen bzw. regelmäßig
+genug reinschauen bei dieser Option."*
+
+Das gehört in die Oberfläche, nicht nur ins Dokument. Zwei Phasen heißen
+**zweimal reinschauen pro Spieltag**. Für eine Büro-Runde ist das zu viel — für
+die ist ohnehin `eingriffe.enabled: false` gedacht (JK7). Der Hinweis steht
+beim Einschalten, in derselben Sprache: nicht „aktiviert erweiterte
+Zeitsteuerung", sondern „eure Runde muss zweimal pro Spieltag reinschauen".
 
 ## Für wen das gedacht ist
 
