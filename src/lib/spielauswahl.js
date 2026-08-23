@@ -41,6 +41,30 @@ export const AUSWAHL_MODI = [
   },
 ];
 
+// ── Zählt EINE Seite oder müssen es BEIDE sein? ─────────────
+// 🔴 Andis Ansage vom 23.08.2026: „so soll bspw. El Clásico auch betippt
+// werden, und nicht alle Spiele von Barça und Real in der Liga."
+//
+// Bis dahin kannte die Vereinsauswahl nur eine Lesart: ein Spiel zählt, sobald
+// EINE Seite gewählt ist. Für „unsere Lieblingsvereine" ist das richtig — für
+// „nur die Duelle unter den Großen" ist es das Gegenteil. Zwei Wünsche, eine
+// Einstellung.
+//
+// ⚠️ Der Unterschied ist gewaltig, nicht graduell: dieselben zwei Vereine
+// ergeben mit `einer` rund zwei Spiele je SPIELTAG und mit `beide` zwei Spiele
+// je SAISON. Deshalb nennt `spieleProSpieltag` für „beide" auch eine untere
+// Grenze von NULL, statt eine beruhigende Zahl zu erfinden.
+export const TEAM_MODI = [
+  {
+    key: "einer", label: "Sobald einer dabei ist",
+    desc: "Jedes Spiel der gewählten Vereine zählt — auch gegen alle anderen.",
+  },
+  {
+    key: "beide", label: "Nur untereinander",
+    desc: "Es zählt nur, wenn ZWEI gewählte Vereine aufeinandertreffen — El Clásico ja, Barça gegen Alavés nein.",
+  },
+];
+
 export const AUSWAHL_LIMITS = {
   maxTeams: 40,
   maxSpiele: 200,
@@ -54,13 +78,20 @@ export const AUSWAHL_LIMITS = {
 // bewusst NICHT dabei: welche Wettbewerbe überhaupt dazugehören, ist eine
 // runden-weite Frage. Dürfte eine Liga sich selbst hinein- oder
 // hinausdefinieren, gäbe es zwei Wahrheiten über dieselbe Frage.
+// 🔴 `teamModus` steht bewusst dabei: Andis Fall ist GENAU einer je Wettbewerb
+// — in der Liga nur das Clásico, in der Champions League jedes Spiel von Real.
+// Ohne die Abweichung müsste man sich für eine der beiden Lesarten entscheiden
+// und die andere aufgeben.
 export const ABWEICHUNGS_FELDER = [
-  "modus", "teams", "matchIds", "spieltagVon", "spieltagBis", "phasen", "zonen",
+  "modus", "teams", "teamModus", "matchIds", "spieltagVon", "spieltagBis", "phasen", "zonen",
 ];
 
 export const DEFAULT_SPIELE = {
   modus: "alle",
   teams: [],
+  // `einer` ist die Vorgabe, weil sie das bisherige Verhalten IST — jeder
+  // vorhandene Creator-Code bleibt damit bitgleich.
+  teamModus: "einer",
   matchIds: [],
   spieltagVon: null,
   spieltagBis: null,
@@ -160,6 +191,8 @@ export function sanitizeSpiele(partial = {}) {
 
   const teams = [...new Set((Array.isArray(p.teams) ? p.teams : [])
     .map((t) => text(t)).filter(Boolean))].slice(0, AUSWAHL_LIMITS.maxTeams);
+  const teamModus = TEAM_MODI.some((m) => m.key === p.teamModus)
+    ? p.teamModus : DEFAULT_SPIELE.teamModus;
   const matchIds = [...new Set((Array.isArray(p.matchIds) ? p.matchIds : [])
     .map((t) => text(t, 80)).filter(Boolean))].slice(0, AUSWAHL_LIMITS.maxSpiele);
 
@@ -188,7 +221,7 @@ export function sanitizeSpiele(partial = {}) {
     // wegfiltert — das ist nie gewollt, also fällt er auf „alle" zurück.
     modus: (modus === "teams" && teams.length < 2) || (modus === "liste" && !matchIds.length)
       ? "alle" : modus,
-    teams, matchIds, spieltagVon: von, spieltagBis: bis,
+    teams, teamModus, matchIds, spieltagVon: von, spieltagBis: bis,
     wettbewerbe: liste(p.wettbewerbe, 10),
     phasen: liste(p.phasen, 10),
     zonen: zonenWert(p.zonen),
@@ -258,7 +291,10 @@ export function passtSpiel(match, spiele = DEFAULT_SPIELE) {
   if (!inZone(match, s.zonen)) return false;
 
   if (s.modus === "teams") {
-    return s.teams.includes(match.home) || s.teams.includes(match.away);
+    const heim = s.teams.includes(match.home);
+    const gast = s.teams.includes(match.away);
+    // Andis Clásico-Fall: BEIDE Seiten müssen gewählt sein.
+    return s.teamModus === "beide" ? (heim && gast) : (heim || gast);
   }
   if (s.modus === "liste") {
     return s.matchIds.includes(String(match.matchId ?? match.id ?? ""));
@@ -294,17 +330,27 @@ export function zusammenfassung(matches = [], spiele = DEFAULT_SPIELE) {
 // untereinander, sind es nur k/2 Spiele; trifft jeder auf einen Nicht-Gewählten,
 // sind es k. Diese Spanne ist ehrlicher als eine erfundene genaue Zahl — und
 // sie genügt, um „nur die Top 2" als zu dünn zu erkennen.
-export function spieleProSpieltag(gewaehlt, gesamtTeams) {
+export function spieleProSpieltag(gewaehlt, gesamtTeams, teamModus = "einer") {
   const k = Math.max(0, Math.floor(gewaehlt || 0));
   const n = Math.max(2, Math.floor(gesamtTeams || 0));
   if (k <= 0) return { min: 0, max: 0 };
+  // 🔴 Bei „nur untereinander" ist die untere Grenze NULL, und das ist keine
+  // Spitzfindigkeit: zwei Vereine treffen sich in einer Hinrunde genau einmal
+  // — an allen anderen 16 Spieltagen bleibt kein einziges Spiel übrig. Die
+  // Formel für „einer" hätte hier „1 bis 1 Spiel pro Spieltag" behauptet und
+  // damit ausgerechnet den Fall verharmlost, der die Runde leer laufen lässt.
+  if (teamModus === "beide") return { min: 0, max: Math.floor(k / 2) };
   return { min: Math.ceil(k / 2), max: Math.min(k, Math.floor(n / 2)) };
 }
 
 export function beschreibeAuswahl(spiele = DEFAULT_SPIELE) {
   const s = sanitizeSpiele(spiele);
   const teile = [];
-  if (s.modus === "teams") teile.push(`nur Spiele von ${s.teams.length} Vereinen`);
+  if (s.modus === "teams") {
+    teile.push(s.teamModus === "beide"
+      ? `nur Spiele UNTER ${s.teams.length} Vereinen`
+      : `nur Spiele von ${s.teams.length} Vereinen`);
+  }
   else if (s.modus === "liste") teile.push(`${s.matchIds.length} ausgewählte Begegnungen`);
   else teile.push("alle Spiele");
 

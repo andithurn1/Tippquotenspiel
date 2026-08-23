@@ -92,6 +92,66 @@ describe("Filtern", () => {
   });
 });
 
+// 🔴 Andis Ansage vom 23.08.2026: „so soll bspw. El Clásico auch betippt
+// werden, und nicht alle Spiele von Barça und Real in der Liga."
+describe("Einer oder beide — der Clásico-Fall", () => {
+  it("mit „beide“ zählt nur das Duell der Gewählten", () => {
+    const einer = filterSpiele(SPIELE, { modus: "teams", teams: ["A", "B"] });
+    const beide = filterSpiele(SPIELE, { modus: "teams", teams: ["A", "B"], teamModus: "beide" });
+    // m1 ist A–B, das einzige Spiel der beiden gegeneinander.
+    expect(beide.map((m) => m.matchId)).toEqual(["m1"]);
+    expect(einer.length).toBeGreaterThan(beide.length);
+  });
+
+  it("bleibt ohne Angabe beim bisherigen Verhalten", () => {
+    // Der Rückwärts-Test: jeder vorhandene Creator-Code muss dieselbe Auswahl
+    // ergeben wie vorher, sonst änderte ein Update laufende Runden.
+    expect(sanitizeSpiele({}).teamModus).toBe("einer");
+    expect(filterSpiele(SPIELE, { modus: "teams", teams: ["A", "B"] }).map((m) => m.matchId))
+      .toEqual(["m1", "m4", "m6", "m7", "m8"]);
+  });
+
+  it("gilt je Wettbewerb einzeln — Andis eigentlicher Fall", () => {
+    // In der Liga nur das Duell, im Pokal jedes Spiel der beiden.
+    const spiele = {
+      modus: "teams", teams: ["A", "B"], teamModus: "beide",
+      jeWettbewerb: { cup: { teamModus: "einer" } },
+    };
+    const liga = { matchId: "L1", home: "A", away: "C", wettbewerb: "liga" };
+    const cup = { matchId: "C1", home: "A", away: "C", wettbewerb: "cup" };
+    expect(passtSpiel(liga, spiele)).toBe(false);
+    expect(passtSpiel(cup, spiele)).toBe(true);
+  });
+
+  it("ein unbekannter Wert fällt auf „einer“ zurück", () => {
+    expect(sanitizeSpiele({ teamModus: "irgendwas" }).teamModus).toBe("einer");
+  });
+
+  it("die Schätzung verharmlost „beide“ nicht", () => {
+    // 🔴 Der eigentliche Fallstrick: zwei Vereine treffen sich in einer
+    // Hinrunde EINMAL. Eine Schätzung „1 bis 1 Spiel pro Spieltag" wäre
+    // formal richtig gerundet und in der Sache irreführend.
+    expect(spieleProSpieltag(2, 18, "beide")).toEqual({ min: 0, max: 1 });
+    expect(spieleProSpieltag(2, 18, "einer")).toEqual({ min: 1, max: 2 });
+    expect(spieleProSpieltag(6, 18, "beide").max).toBe(3);
+  });
+
+  it("die Beschreibung sagt UNTER statt VON", () => {
+    expect(beschreibeAuswahl({ modus: "teams", teams: ["A", "B"], teamModus: "beide" }))
+      .toBe("nur Spiele UNTER 2 Vereinen");
+    expect(beschreibeAuswahl({ modus: "teams", teams: ["A", "B"] }))
+      .toBe("nur Spiele von 2 Vereinen");
+  });
+
+  it("reist im Creator-Code mit", () => {
+    const rules = sanitizeRules({
+      ...DEFAULT_RULES,
+      spiele: { modus: "teams", teams: ["Real", "Barca"], teamModus: "beide" },
+    });
+    expect(sanitizeRules(decodePreset(encodePreset(rules))).spiele.teamModus).toBe("beide");
+  });
+});
+
 describe("Zusammenfassung — Zahlen statt Behauptungen", () => {
   it("zählt Spiele und Spieltage", () => {
     const z = zusammenfassung(SPIELE, DEFAULT_SPIELE);

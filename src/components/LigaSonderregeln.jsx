@@ -30,7 +30,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { C, MONO, RUND } from "@/lib/theme";
 import { getStore } from "@/lib/store";
-import { AUSWAHL_LIMITS } from "@/lib/spielauswahl";
+import { AUSWAHL_LIMITS, TEAM_MODI } from "@/lib/spielauswahl";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // Unsere Voreinstellung für den Abstiegskampf. Keine Balance-Aussage — eine
@@ -119,6 +119,55 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
       <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
         Gelten nur für diese Liga. Alles Übrige bleibt bei der Einstellung der Runde.
       </p>
+
+      {/* ── Einer oder beide? je Liga (Andi, 23.08.2026) ────
+          🔴 Genau der Fall aus seiner Ansage: „so soll bspw. El Clásico auch
+          betippt werden, und nicht alle Spiele von Barça und Real in der
+          Liga." In der Liga also nur das Duell, in der Champions League
+          weiterhin jedes Spiel — das geht nur je Wettbewerb.
+
+          ⚠️ Zeigt sich nur bei aktiver Vereinsauswahl: ohne gewählte Vereine
+          hätte der Schalter nichts, worauf er wirken könnte, und wäre genau
+          die Einstellung, die ins Leere läuft (CLAUDE.md, Baukasten). */}
+      {(spiele?.modus === "teams" || (spiele?.teams?.length ?? 0) > 0) && (
+        <>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Gewählte Vereine</div>
+          <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+            Zählt jedes Spiel der gewählten Vereine, oder nur die Duelle untereinander?
+          </p>
+          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            {TEAM_MODI.map((m) => {
+              // Die Vorgabe der Runde gilt, solange diese Liga nichts eigenes sagt.
+              const geerbt = spiele?.teamModus ?? "einer";
+              const an = (ab?.teamModus ?? geerbt) === m.key;
+              const eigen = ab?.teamModus != null;
+              return (
+                <button key={m.key} title={m.desc}
+                  onClick={() => setzeAb({
+                    // Zurück auf den Wert der Runde heißt: die Abweichung
+                    // LÖSCHEN, nicht denselben Wert doppelt hinschreiben.
+                    teamModus: m.key === geerbt ? undefined : m.key,
+                  })}
+                  style={{
+                    ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 12, fontWeight: an ? 700 : 400, padding: "8px 10px",
+                    textAlign: "left", borderRadius: RUND.karte,
+                    background: an ? `${C.mint}22` : C.surface,
+                    color: an ? C.mint : C.muted,
+                    border: `1px solid ${an ? C.mint + "66" : C.line}`,
+                  }}>
+                  {m.label}
+                  {an && !eigen && (
+                    <span style={{ display: "block", fontSize: 10, color: C.muted, fontWeight: 400 }}>
+                      von der Runde
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* ── Tabellenzonen ───────────────────────────────────
           🔴 Seit 21.08.2026 MEHRERE. Vorher gab es genau einen Schalter

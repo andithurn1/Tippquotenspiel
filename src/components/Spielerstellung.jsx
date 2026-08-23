@@ -30,7 +30,7 @@ import ProfiWarnungen from "@/components/ProfiWarnungen";
 import Mitbestimmung from "@/components/Mitbestimmung";
 import Bausteine from "@/components/Bausteine";
 import AufwandPanel from "@/components/AufwandPanel";
-import { sanitizeSpiele, spieleProSpieltag } from "@/lib/spielauswahl";
+import { sanitizeSpiele, spieleProSpieltag, TEAM_MODI } from "@/lib/spielauswahl";
 import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
 import SpielauswahlListe from "@/components/SpielauswahlListe";
 import LigaSonderregeln from "@/components/LigaSonderregeln";
@@ -359,7 +359,7 @@ export default function Spielerstellung() {
     const gesamt = teamGruppen.reduce((s, g) => s + g.vereine.length, 0) || ALL_TEAMS.length;
     let proSpieltag;
     if (teamFilterOn) {
-      const { min, max } = spieleProSpieltag(selectedTeams.length, gesamt);
+      const { min, max } = spieleProSpieltag(selectedTeams.length, gesamt, sp.teamModus);
       proSpieltag = Math.round((min + max) / 2);
     } else {
       proSpieltag = Math.floor(gesamt / 2);
@@ -368,7 +368,11 @@ export default function Spielerstellung() {
     const bis = sp.spieltagBis ?? 34;
     const spieltage = Math.max(1, bis - von + 1);
     return { spieleJeSpieltag: Array(spieltage).fill(proSpieltag) };
-  }, [teamFilterOn, selectedTeams, teamGruppen, sp.spieltagVon, sp.spieltagBis]);
+    // ⚠️ `sp.teamModus` MUSS in der Liste stehen. Ohne ihn blieb der Aufwand
+    // beim Umschalten auf „nur untereinander" stehen — im Browser gemessen:
+    // 2 Spiele je Spieltag vorher wie nachher, obwohl die Auswahl von „jedes
+    // Spiel der beiden" auf „nur das Duell" wechselte.
+  }, [teamFilterOn, selectedTeams, teamGruppen, sp.teamModus, sp.spieltagVon, sp.spieltagBis]);
 
   const createRound = async () => {
     if (!user) { setCreateErr("Bitte zuerst einloggen (Startseite)."); return; }
@@ -693,6 +697,33 @@ export default function Spielerstellung() {
               </div>
               )}
 
+              {/* ── Einer oder beide? (Andi, 23.08.2026) ──
+                  🔴 Steht DIREKT unter der Vereinsliste und nicht in den
+                  Sonderregeln: es ist keine Feinheit, sondern die Frage, was
+                  die eben getroffene Auswahl überhaupt bedeutet. Wer „Real"
+                  und „Barça" antippt, meint je nach Absicht zwei völlig
+                  verschiedene Runden — zwei Spiele pro Spieltag oder zwei
+                  Spiele pro SAISON. */}
+              {teamFilterOn && !teamFilterInvalid && (
+                <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                  {TEAM_MODI.map((m) => {
+                    const an = (sp.teamModus ?? "einer") === m.key;
+                    return (
+                      <button key={m.key} title={m.desc}
+                        onClick={() => patchSpiele({ teamModus: m.key })}
+                        style={{
+                          ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit",
+                          fontSize: 12, fontWeight: an ? 700 : 400, padding: "8px 10px",
+                          borderRadius: RUND.karte, textAlign: "left",
+                          background: an ? `${C.akzent}22` : C.surface,
+                          color: an ? C.akzent : C.muted,
+                          border: `1px solid ${an ? C.akzent + "66" : C.line}`,
+                        }}>{m.label}</button>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* ⚠️ Gewählte Vereine, die in KEINEM gewählten Wettbewerb mehr
                   vorkommen. Ohne diesen Hinweis filtert die Runde still gegen
                   Vereine, die gar nicht mehr auftauchen. */}
@@ -708,8 +739,23 @@ export default function Spielerstellung() {
                   dass pro Spieltag ein einziges Spiel übrig bleibt. */}
               {teamFilterOn && !teamFilterInvalid && (() => {
                 const gesamt = teamGruppen.reduce((s, g) => s + g.vereine.length, 0) || ALL_TEAMS.length;
-                const { min, max } = spieleProSpieltag(selectedTeams.length, gesamt);
+                const { min, max } = spieleProSpieltag(selectedTeams.length, gesamt, sp.teamModus);
                 const duenn = max < 3;
+                // 🔴 „Nur untereinander" braucht einen ANDEREN Satz, nicht nur
+                // andere Zahlen: dort ist die Aussage nicht „wenige Spiele je
+                // Spieltag", sondern „an den meisten Spieltagen gar keins".
+                // Derselbe Satz mit „0 bis 1" darunter hätte das verharmlost.
+                if ((sp.teamModus ?? "einer") === "beide") {
+                  return (
+                    <div style={{ fontSize: 11, color: C.akzent, marginTop: 4, lineHeight: 1.45 }}>
+                      Höchstens {max} Spiel{max === 1 ? "" : "e"} pro Spieltag — und an den
+                      meisten Spieltagen <strong>keins</strong>. In einer Hin- und Rückrunde
+                      treffen sich zwei Vereine genau zweimal. Für eine Runde, die jede Woche
+                      läuft, ist das zu wenig; als Ergänzung über die feste Begegnungs-Liste
+                      passt es.
+                    </div>
+                  );
+                }
                 return (
                   <div style={{ fontSize: 11, color: duenn ? C.akzent : C.mint, marginTop: 4, lineHeight: 1.45 }}>
                     Bleiben {min === max ? min : `${min} bis ${max}`} Spiele pro Spieltag
