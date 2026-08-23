@@ -43,7 +43,7 @@
 
 import {
   sanitizeEingriffe, gegenquote, FREMDJOKER_ARTEN, DEFAULT_EINGRIFFE, jokerArtVon,
-  sperreFuer, sichtFuer, wartezeit,
+  sperreFuer, sichtFuer, losFuer, wartezeit,
 } from "./eingriffe";
 import {
   sanitizeDuellJoker, einsaetzeAusTipps, zulaessigeZiele as zulaessigeZieleDuell,
@@ -57,6 +57,10 @@ import { sanitizeTippfenster, tippStatus } from "./tippfenster";
 // zweites Feld daneben hätte anzeigen können, was das Speichern verweigert —
 // die Begründung steht bei `jokerArtVon` in `eingriffe.js`.
 import { basisFuer, darfWiderrufen } from "./jokerBasis";
+// ⚠️ DIESELBE Zufallsquelle wie Joker-Plan, Ersatz-Tipp und Ereignis-Auswahl.
+// Sie ist Spielstand, kein Hilfsmittel: ändert sich ihr Ergebnis, verschieben
+// sich rückwirkend die Lose jeder laufenden Runde (siehe Kopf von `seeded.js`).
+import { seeded } from "./seeded";
 
 // ── 1) Die EINE Auskunft über die Familie ───────────────────
 
@@ -139,8 +143,18 @@ export function beschreibeFremdjoker(rules) {
 // reicht sie aus dem Regelwerk durch, damit es keine zweite Aufrufform gibt.
 export function zulaessigeZiele(board, userId, rules, kontext = {}) {
   const art = kontext.art ?? null;
+  // 🔴 Das Los wird HIER gezogen, nicht in `duellJoker.js`: die Auslosung
+  // braucht Rundennummer, Spieltag und die Los-Einstellungen, und keins davon
+  // kennt die Wertungs-Datei. `undefined` heißt dort „nicht ausgelost".
+  const los = sanitizeDuellJoker(rules?.duell).zielWahl === "ausgelost"
+    ? meinLos(rules, {
+        userId, userIds: (board ?? []).map((b) => b.userId),
+        spieltag: kontext.aktuellerSpieltag, seed: kontext.seed ?? "", art,
+        einsaetzeJeSpieler: kontext.einsaetzeJeSpieler ?? null,
+      })?.ziel ?? null
+    : undefined;
   return zulaessigeZieleDuell(board, userId, rules?.duell, {
-    ...kontext, art, sperre: sperreFuer(art, rules?.eingriffe),
+    ...kontext, art, sperre: sperreFuer(art, rules?.eingriffe), losZiel: los,
   });
 }
 
@@ -257,6 +271,114 @@ export function gegenwetteVorschau(tip, snap, rules) {
     gewinn: Math.round(eg.gegenwette.einsatz * (q - 1)),
     verlust: eg.gegenwette.einsatz,
     stufe: eg.gegenwette.stufe,
+  };
+}
+
+// ── 3b) JK12: das ausgeloste Ziel ───────────────────────────
+//
+// 🔴 Andi, 22.08.2026: „dass man eine fest ausgeloste Person bekommt … man
+// kann sich also sein Opfer nicht genau aussuchen, aber muss eben bei seiner
+// Tippabgabe schauen, bei welchem Einzelspiel man den jeweiligen Joker
+// einsetzt."
+//
+// ── Warum ein RING und nicht „jeder zieht unabhängig" ──
+// Bei unabhängigen Ziehungen können drei Spieler denselben ziehen — und genau
+// das Rudelbilden, das das Los verhindern soll, wäre wieder da, nur mit
+// Zufall statt Absicht. Deshalb eine Permutation: jeder zieht GENAU EINEN und
+// wird GENAU EINMAL gezogen. Dieselbe Bauform wie beim Wichteln, und aus
+// demselben Grund.
+//
+// `paare: "gegenseitig"` bricht den Ring in Paare auf. Bei ungerader
+// Teilnehmerzahl bleibt einer übrig; der bildet mit dem letzten Paar einen
+// Dreier-Ring, statt ein zweites Mal gezogen zu werden. Auch das hält die
+// Regel „jeder wird genau einmal gezogen" ein — und die ist wichtiger als die
+// Gegenseitigkeit, denn sie ist der ganze Zweck der Auslosung.
+
+// Deterministisch mischen. Fisher-Yates mit `seeded`, damit dieselbe Runde bei
+// jedem Aufruf dieselbe Reihenfolge bekommt — auf jedem Gerät, zu jeder Zeit.
+function mischen(liste, salz) {
+  const out = [...liste];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(seeded(`${salz}|${i}`) * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+// Wer zieht wen? Rückgabe: Map(zieherId → zielId).
+//
+// `einsaetzeJeSpieler` wird nur bei `takt: "einsatz"` gebraucht — dann hängt
+// das Salz daran, wie oft jemand schon zugeschlagen hat, und das Los wechselt
+// genau dann.
+export function losZiele({ userIds = [], spieltag = null, seed = "", los, art = null, einsaetzeJeSpieler = null } = {}) {
+  const ids = [...new Set((Array.isArray(userIds) ? userIds : []).filter((x) => x != null))].sort();
+  const out = new Map();
+  if (ids.length < 2 || !los) return out;
+
+  // Das Salz bestimmt, WANN neu gelost wird — die einzige Stelle, an der
+  // `takt` etwas bewirkt.
+  const taktSalz = los.takt === "saison" ? "saison"
+    : los.takt === "einsatz" ? "einsatz"
+    : `st${spieltag ?? 0}`;
+  const artSalz = los.jeArt && art ? `|${art}` : "";
+  const basisSalz = `${seed}|los|${taktSalz}${artSalz}`;
+
+  if (los.takt === "einsatz") {
+    // Jeder zieht für sich neu, sobald er eingesetzt hat — ein gemeinsamer
+    // Ring ginge hier nicht, weil die Zähler auseinanderlaufen. Deshalb der
+    // eine Fall, in dem sich zwei Spieler dasselbe Ziel teilen können; das
+    // ist der Preis dafür, dass „nach jedem Einsatz" überhaupt geht, und er
+    // steht auch so in der Beschreibung der Einstellung.
+    for (const id of ids) {
+      const n = einsaetzeJeSpieler?.get?.(id) ?? 0;
+      const andere = ids.filter((x) => x !== id);
+      const i = Math.floor(seeded(`${basisSalz}|${id}|${n}`) * andere.length);
+      out.set(id, andere[Math.min(andere.length - 1, i)]);
+    }
+    return out;
+  }
+
+  const ring = mischen(ids, basisSalz);
+  if (los.paare === "gegenseitig") {
+    let i = 0;
+    // Paare, solange mindestens zwei übrig sind — und wenn am Ende drei
+    // übrig bleiben, ein Dreier-Ring statt einer doppelten Ziehung.
+    while (ring.length - i >= 2) {
+      if (ring.length - i === 3) {
+        out.set(ring[i], ring[i + 1]);
+        out.set(ring[i + 1], ring[i + 2]);
+        out.set(ring[i + 2], ring[i]);
+        i += 3;
+        break;
+      }
+      out.set(ring[i], ring[i + 1]);
+      out.set(ring[i + 1], ring[i]);
+      i += 2;
+    }
+    return out;
+  }
+
+  for (let i = 0; i < ring.length; i++) out.set(ring[i], ring[(i + 1) % ring.length]);
+  return out;
+}
+
+// Mein Los — die Form, die eine Oberfläche braucht. `null`, wenn diese Runde
+// gar nicht auslost.
+export function meinLos(rules, { userId, userIds, spieltag, seed = "", art = null, einsaetzeJeSpieler = null } = {}) {
+  if (sanitizeDuellJoker(rules?.duell).zielWahl !== "ausgelost") return null;
+  const los = losFuer(art, rules?.eingriffe);
+  const ziele = losZiele({ userIds, spieltag, seed, los, art, einsaetzeJeSpieler });
+  const ziel = ziele.get(userId) ?? null;
+  return {
+    ziel,
+    // Wer hat MICH gezogen? Nur wenn alle Lose offen liegen — sonst wäre es
+    // die Antwort auf eine Frage, die die Einstellung ausdrücklich verschließt.
+    gezogenVon: los.sichtbar === "alle"
+      ? [...ziele.entries()].find(([, z]) => z === userId)?.[0] ?? null
+      : null,
+    sichtbar: los.sichtbar !== "keines",
+    takt: los.takt,
+    alle: los.sichtbar === "alle" ? ziele : null,
   };
 }
 

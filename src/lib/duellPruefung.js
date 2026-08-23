@@ -66,6 +66,14 @@ function hatDuell(tip) {
 // Spieltag", dann „ist das ein erlaubtes Ziel", dann „kannst du es bezahlen",
 // zuletzt die Limit-Klassen. Von grob nach fein — sonst bekommt der Nutzer die
 // Feinbegründung für ein Duell, das schon aus einem gröberen Grund nicht geht.
+// Wie oft hat jeder schon eingesetzt? Nur für `losTakt: "einsatz"` gebraucht —
+// dort wechselt das Los genau dann, wenn jemand zugeschlagen hat.
+function zaehleJeSpieler(einsaetze = []) {
+  const out = new Map();
+  for (const e of einsaetze) out.set(e.vonUserId, (out.get(e.vonUserId) ?? 0) + 1);
+  return out;
+}
+
 export async function pruefeDuellEinsatz({ store, roundId, matchId, userId, tip } = {}) {
   if (!hatDuell(tip)) return { erlaubt: true, grund: null };
 
@@ -148,8 +156,12 @@ export async function pruefeDuellEinsatz({ store, roundId, matchId, userId, tip 
 
   // ⚠️ MIT der Art gefragt: die Sperrfrist steht je Fremdjoker (JK5, Ebene 2),
   // also ist „ist Kemal ein erlaubtes Ziel?" ohne sie gar nicht beantwortbar.
+  // ⚠️ `seed` MUSS derselbe sein wie in der Tippabgabe (`roundId`) — sonst
+  // zöge die Prüfung ein anderes Los als der Screen, und der Spieler bekäme
+  // sein eigenes Ziel abgelehnt. Dieselbe Kante wie beim `zufall`-Auslöser.
   const zulaessig = zulaessigeZiele(board, userId, rules, {
-    bisherigeEinsaetze, aktuellerSpieltag: spieltag, art: typ,
+    bisherigeEinsaetze, aktuellerSpieltag: spieltag, art: typ, seed,
+    einsaetzeJeSpieler: zaehleJeSpieler(bisherigeEinsaetze),
   });
   if (!zulaessig.includes(ziel)) {
     // 🔴 Wenn es die SPERRE war, sagen wir das auch — samt „wieder frei ab".

@@ -138,6 +138,16 @@ export const ZIELWAHL = [
     key: "nichtLetzter", label: "Nicht den Letzten",
     desc: "Jeder außer dem Tabellenletzten ist ein erlaubtes Ziel.",
   },
+  // 🔴 JK12 (Andi, 22.08.2026): die fünfte Stufe. Sie ist eine andere Sorte
+  // Antwort als die vier darüber — die schränken die WAHL ein, diese nimmt sie
+  // weg und ersetzt sie durch ein Los. Drei Dinge löst sie damit von allein,
+  // für die es sonst eigene Regler bräuchte: kein Rudelbilden gegen den
+  // Führenden, kein Dauer-Opfer, und der Zeitpunkt der Tippabgabe bleibt egal.
+  // WIE gelost wird, steht in `eingriffe.los` (eingriffe.js).
+  {
+    key: "ausgelost", label: "Ausgelost",
+    desc: "Du bekommst dein Ziel zugelost und entscheidest nur noch, bei WELCHEM Spiel du zuschlägst.",
+  },
 ];
 
 // ── Grenzen & Vorgabe ───────────────────────────────────────
@@ -354,7 +364,7 @@ export function duellPlan({ spieltage = 34, duell = DEFAULT_DUELL, basis, seed =
 // `[{ spieltag, vonUserId, aufUserId, typ, spielIds }]` — daraus ergeben sich
 // `maxProZiel` (wie oft ein Ziel schon getroffen wurde) und `immun`
 // (Schonfrist seit dem letzten Treffer, bezogen auf `aktuellerSpieltag`).
-export function zulaessigeZiele(board = [], userId, duell, { bisherigeEinsaetze = [], aktuellerSpieltag = null, sperre = null, art = null } = {}) {
+export function zulaessigeZiele(board = [], userId, duell, { bisherigeEinsaetze = [], aktuellerSpieltag = null, sperre = null, art = null, losZiel = undefined } = {}) {
   const cfg = sanitizeDuellJoker(duell);
   // JK5 (Andi, 22.08.2026): „Option zu Cooldowns, dass einzelne nicht von
   // allen und immer regelmäßig getroffen werden können."
@@ -409,6 +419,21 @@ export function zulaessigeZiele(board = [], userId, duell, { bisherigeEinsaetze 
   } else if (cfg.zielWahl === "nichtLetzter") {
     const letzterId = sortiert[sortiert.length - 1]?.userId;
     kandidaten = kandidaten.filter((b) => b.userId !== letzterId || darf(b));
+  } else if (cfg.zielWahl === "ausgelost") {
+    // 🔴 JK12 — das Los ersetzt die Wahl. Es kommt FERTIG herein
+    // (`meinLos()` in fremdjoker.js), weil die Auslosung Rundennummer,
+    // Spieltag und Los-Einstellungen braucht, die diese Funktion nicht kennt.
+    //
+    // ⚠️ `losZiel === undefined` heißt „nicht ausgelost" und ergibt eine LEERE
+    // Liste, nicht die volle. Fehlende Daten heißen NEIN — dieselbe Regel wie
+    // beim Tipp-Fenster und bei den Auslösern. Andernfalls fiele eine Runde
+    // mit Los stillschweigend auf freie Wahl zurück, sobald ein Aufrufer das
+    // Los vergisst, und niemand würde es merken.
+    //
+    // Der KONTER bleibt die Ausnahme, die er überall ist: wer an diesem
+    // Spieltag getroffen wurde, darf zurückschlagen, auch wenn das Los jemand
+    // anderen nennt.
+    kandidaten = kandidaten.filter((b) => b.userId === losZiel || darf(b));
   }
   // "frei": keine weitere Einschränkung.
 

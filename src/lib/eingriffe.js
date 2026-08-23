@@ -120,6 +120,59 @@ export const GEGEN_MODI = [
   },
 ];
 
+// ── JK12: das ausgeloste Ziel (Andi, 22.08.2026) ────────────
+// 🔴 „dass man eine fest ausgeloste Person bekommt und eben nur bei dieser
+// Person, man kann sich also sein Opfer nicht genau aussuchen, aber muss eben
+// bei seiner Tippabgabe schauen, bei welchem Einzelspiel man den jeweiligen
+// Joker einsetzt."
+//
+// **Die Entscheidung wird verschoben, nicht weggenommen.** Wer frei wählt,
+// entscheidet ÜBER WEN; wer ein Los bekommt, entscheidet WO. Es bleibt genau
+// eine Entscheidung, und sie fällt bei der Tippabgabe.
+//
+// Der SCHALTER dafür ist die fünfte Stufe von `duell.zielWahl` — hier stehen
+// nur die drei Fragen, die er am 23.08.2026 zu Einstellungen gemacht hat.
+
+export const LOS_TAKTE = [
+  {
+    key: "spieltag", label: "Jeden Spieltag neu",
+    desc: "Jeden Spieltag ein neues Ziel. Vorgabe — so trifft es über die Saison jeden einmal.",
+  },
+  {
+    key: "saison", label: "Einmal für die Saison",
+    desc: "Dein Ziel steht die ganze Saison fest. Daraus wird eine Fehde.",
+  },
+  {
+    key: "einsatz", label: "Nach jedem Einsatz",
+    desc: "Erst wenn du zugeschlagen hast, wird neu gelost. Wer nicht einsetzt, behält sein Ziel.",
+  },
+];
+
+export const LOS_PAARE = [
+  {
+    key: "einseitig", label: "Einseitig",
+    desc: "Jeder zieht genau einen und wird genau einmal gezogen — ein Ring. Vorgabe.",
+  },
+  {
+    key: "gegenseitig", label: "Gegenseitig",
+    desc: "Ihr werdet paarweise verlost und habt euch gegenseitig. ⚠️ Das ist ein Duell, und ein Duell gibt es schon.",
+  },
+];
+
+export const LOS_SICHT = [
+  {
+    key: "eigenes", label: "Nur das eigene",
+    desc: "Du siehst dein Ziel, aber nicht, wer dich gezogen hat. Vorgabe.",
+  },
+  { key: "alle", label: "Alle Lose offen", desc: "Jeder sieht jedes Los. Maximale Tischgespräche." },
+  { key: "keines", label: "Keines", desc: "Auch das eigene Los bleibt verdeckt — dann kann man es nicht gezielt einsetzen." },
+];
+
+// ⚠️ `jeArt` steht NEBEN dem Standard und nicht darin: „bekommt jede Art ihr
+// eigenes Los?" ist eine Frage über die ganze Auslosung. Sie je Art zu
+// überschreiben ergäbe keinen Satz, den man aussprechen kann.
+const DEFAULT_LOS = { takt: "spieltag", paare: "einseitig", sichtbar: "eigenes" };
+
 // ── Grenzen & Vorgabe ───────────────────────────────────────
 
 export const EINGRIFF_LIMITS = {
@@ -188,6 +241,10 @@ export const DEFAULT_EINGRIFFE = {
   // Zurücknehmen, steht in der GRUNDFORM (`jokerBasis.widerruf`) und nicht
   // hier — die Begründung steht bei `jokerArtVon` oben.
   sichtbar: { standard: DEFAULT_SICHT },
+  // JK12 — das ausgeloste Ziel. Der SCHALTER ist `duell.zielWahl:
+  // "ausgelost"`; hier steht nur, WIE gelost wird. Vorgabe bleibt wirkungslos,
+  // solange niemand den Schalter umlegt.
+  los: { jeArt: false, standard: { ...DEFAULT_LOS } },
   // JK4 — mitprofitieren.
   trittbrett: { enabled: false, anteil: 0.3, kopierterBekommt: 0 },
   // JK4 — dagegen wetten.
@@ -271,6 +328,35 @@ export function sanitizeSichtKarte(karte) {
 // 🔴 Die fertige Sperre für EINE Art — Standard und Abweichung übereinander.
 // Die einzige Stelle, an der `eingriffe.sperrfrist` aufgelöst wird; ein
 // zweiter Auflösungsweg wäre die zweite Wahrheit (Muster `basisFuer`).
+// Die Los-Einstellungen: Karte wie die anderen, plus die eine Frage, die über
+// der ganzen Auslosung steht (`jeArt`).
+export function sanitizeLosKarte(karte) {
+  const o = karte && typeof karte === "object" ? karte : {};
+  const voll = (v) => {
+    const x = v && typeof v === "object" ? v : {};
+    return {
+      takt: LOS_TAKTE.some((t) => t.key === x.takt) ? x.takt : DEFAULT_LOS.takt,
+      paare: LOS_PAARE.some((t) => t.key === x.paare) ? x.paare : DEFAULT_LOS.paare,
+      sichtbar: LOS_SICHT.some((t) => t.key === x.sichtbar) ? x.sichtbar : DEFAULT_LOS.sichtbar,
+    };
+  };
+  const abweichung = (v) => {
+    const x = v && typeof v === "object" ? v : {};
+    const out = {};
+    if (LOS_TAKTE.some((t) => t.key === x.takt)) out.takt = x.takt;
+    if (LOS_PAARE.some((t) => t.key === x.paare)) out.paare = x.paare;
+    if (LOS_SICHT.some((t) => t.key === x.sichtbar)) out.sichtbar = x.sichtbar;
+    return Object.keys(out).length ? out : undefined;
+  };
+  return { ...karteVon(o, voll, abweichung), jeArt: o.jeArt === true };
+}
+
+// Die fertigen Los-Einstellungen für EINE Art.
+export function losFuer(art, eingriffe) {
+  const karte = sanitizeLosKarte(sanitizeEingriffe(eingriffe).los);
+  return { ...karte.standard, ...(karte[art] ?? {}), jeArt: karte.jeArt };
+}
+
 // 🔴 Sieht der Betroffene diesen Fremdjoker, bevor der Spieltag beginnt?
 // Dieselbe Auflösung wie `sperreFuer` — Abweichung über Standard.
 export function sichtFuer(art, eingriffe) {
@@ -313,6 +399,7 @@ export function sanitizeEingriffe(partial = {}) {
     enabled: p.enabled !== false,
     sperrfrist: sanitizeSperrKarte(p.sperrfrist),
     sichtbar: sanitizeSichtKarte(p.sichtbar),
+    los: sanitizeLosKarte(p.los),
     trittbrett: {
       enabled: pt.enabled === true,
       anteil: +clamp(pt.anteil, EINGRIFF_LIMITS.anteil, DEFAULT_EINGRIFFE.trittbrett.anteil).toFixed(2),

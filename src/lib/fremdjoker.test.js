@@ -3,7 +3,7 @@ import {
   aktiveArten, familieAn, familieSchalten, beschreibeFremdjoker,
   zulaessigeZiele, trefferWahrscheinlichkeit, tippGetroffen, gegenwetteVorschau,
   fremdEinsaetze, eingriffFenster, offeneEingriffe, zieleJeArt, sperrGrund,
-  konflikte, zweiPhasenHinweis,
+  losZiele, meinLos, konflikte, zweiPhasenHinweis,
 } from "@/lib/fremdjoker";
 import { DEFAULT_EINGRIFFE } from "@/lib/eingriffe";
 import { DEFAULT_DUELL } from "@/lib/duellJoker";
@@ -602,5 +602,140 @@ describe("fremdEinsaetze — wie viele je Spieltag", () => {
       { ...tipp("m9", "2026-09-12T15:30:00Z", "block", "b"), matchday: 6 },
     ];
     expect(fremdEinsaetze(ueberZweiTage, mitArten(1))).toHaveLength(2);
+  });
+});
+
+// ── JK12: das ausgeloste Ziel ───────────────────────────────
+// 🔴 Andi, 22.08.2026: „dass man eine fest ausgeloste Person bekommt … man
+// kann sich also sein Opfer nicht genau aussuchen, aber muss eben bei seiner
+// Tippabgabe schauen, bei welchem Einzelspiel man den jeweiligen Joker
+// einsetzt." Alle fünf Fragen dazu sind am 23.08.2026 zu Einstellungen
+// geworden — diese Tests halten fest, was jede von ihnen bewirkt.
+describe("losZiele — die Auslosung", () => {
+  const ids = ["a", "b", "c", "d", "e"];
+  const los = (teil = {}) => ({ takt: "spieltag", paare: "einseitig", sichtbar: "eigenes", jeArt: false, ...teil });
+
+  // 🔴 Der Grund, warum es eine Permutation ist und keine unabhängige
+  // Ziehung: sonst könnten drei denselben ziehen — und das Rudelbilden, das
+  // das Los verhindern soll, wäre wieder da, nur mit Zufall statt Absicht.
+  it("jeder zieht genau einen und wird genau einmal gezogen", () => {
+    const z = losZiele({ userIds: ids, spieltag: 3, seed: "r1", los: los() });
+    expect(z.size).toBe(ids.length);
+    expect([...z.values()].sort()).toEqual([...ids].sort());
+    for (const [von, auf] of z) expect(von).not.toBe(auf);
+  });
+
+  it("dieselbe Runde bekommt immer dasselbe Los", () => {
+    const a = losZiele({ userIds: ids, spieltag: 3, seed: "r1", los: los() });
+    const b = losZiele({ userIds: [...ids].reverse(), spieltag: 3, seed: "r1", los: los() });
+    expect([...b.entries()].sort()).toEqual([...a.entries()].sort());
+  });
+
+  // Frage 1: wie oft neu auslosen?
+  it("`takt: spieltag` lost neu, `takt: saison` nicht", () => {
+    const t3 = losZiele({ userIds: ids, spieltag: 3, seed: "r1", los: los() });
+    const t4 = losZiele({ userIds: ids, spieltag: 4, seed: "r1", los: los() });
+    expect([...t4.entries()]).not.toEqual([...t3.entries()]);
+
+    const s3 = losZiele({ userIds: ids, spieltag: 3, seed: "r1", los: los({ takt: "saison" }) });
+    const s9 = losZiele({ userIds: ids, spieltag: 9, seed: "r1", los: los({ takt: "saison" }) });
+    expect([...s9.entries()]).toEqual([...s3.entries()]);
+  });
+
+  it("`takt: einsatz` wechselt erst, wenn jemand eingesetzt hat", () => {
+    const cfg = { userIds: ids, spieltag: 3, seed: "r1", los: los({ takt: "einsatz" }) };
+    const ohne = losZiele({ ...cfg, einsaetzeJeSpieler: new Map() });
+    const nachEinem = losZiele({ ...cfg, einsaetzeJeSpieler: new Map([["a", 1]]) });
+    expect(nachEinem.get("a")).not.toBe(ohne.get("a"));
+    // Wer nicht eingesetzt hat, behält sein Ziel.
+    expect(nachEinem.get("b")).toBe(ohne.get("b"));
+  });
+
+  // Frage 2: gegenseitig oder einseitig?
+  it("`paare: gegenseitig` verlost Paare — und bei ungerader Zahl einen Dreier", () => {
+    const gerade = losZiele({ userIds: ["a", "b", "c", "d"], spieltag: 3, seed: "r1", los: los({ paare: "gegenseitig" }) });
+    for (const [von, auf] of gerade) expect(gerade.get(auf)).toBe(von);
+
+    const ungerade = losZiele({ userIds: ids, spieltag: 3, seed: "r1", los: los({ paare: "gegenseitig" }) });
+    // Auch hier gilt die wichtigere Regel: jeder wird genau einmal gezogen.
+    expect(ungerade.size).toBe(ids.length);
+    expect([...ungerade.values()].sort()).toEqual([...ids].sort());
+  });
+
+  // Frage 5: ein Los für alle Arten oder je Art eins?
+  it("`jeArt` gibt jedem Fremdjoker ein eigenes Los", () => {
+    const gemeinsam = (art) => losZiele({ userIds: ids, spieltag: 3, seed: "r1", los: los(), art });
+    expect(gemeinsam("block").get("a")).toBe(gemeinsam("klau").get("a"));
+
+    const getrennt = (art) => losZiele({ userIds: ids, spieltag: 3, seed: "r1", los: los({ jeArt: true }), art });
+    expect([...getrennt("block").entries()]).not.toEqual([...getrennt("klau").entries()]);
+  });
+
+  it("unter zwei Teilnehmern gibt es nichts zu losen", () => {
+    expect(losZiele({ userIds: ["a"], spieltag: 3, seed: "r1", los: los() }).size).toBe(0);
+  });
+});
+
+describe("meinLos und die Zielwahl „ausgelost“", () => {
+  const board = ["a", "b", "c", "d"].map((id) => ({ userId: id, name: id.toUpperCase(), total: 10 }));
+  const ids = board.map((b) => b.userId);
+  const R2 = (duellTeil = {}, eingriffeTeil = {}) => ({
+    ...DEFAULT_RULES,
+    duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau"], maxProZiel: 9, immun: 0, ...duellTeil },
+    eingriffe: { ...DEFAULT_EINGRIFFE, ...eingriffeTeil },
+  });
+
+  it("ohne die Einstellung gibt es kein Los", () => {
+    expect(meinLos(R2({ zielWahl: "frei" }), { userId: "a", userIds: ids, spieltag: 3, seed: "r1" })).toBeNull();
+  });
+
+  // 🔴 Der Kern: die Entscheidung wird VERSCHOBEN, nicht weggenommen. Statt
+  // „über wen?" bleibt „bei welchem Spiel?".
+  it("mit Los bleibt genau EIN Ziel übrig — das gezogene", () => {
+    const rules = R2({ zielWahl: "ausgelost" });
+    const args = { userId: "a", userIds: ids, spieltag: 3, seed: "r1" };
+    const los = meinLos(rules, args);
+    expect(los.ziel).toBeTruthy();
+    expect(zulaessigeZiele(board, "a", rules, { aktuellerSpieltag: 3, seed: "r1", art: "klau" }))
+      .toEqual([los.ziel]);
+  });
+
+  // ⚠️ Fehlende Daten heißen NEIN. Fiele eine Runde mit Los still auf freie
+  // Wahl zurück, sobald ein Aufrufer den Seed vergisst, würde es niemand
+  // merken — dieselbe Regel wie beim Tipp-Fenster.
+  it("ohne verwertbares Los bleibt die Liste LEER, statt auf freie Wahl zu fallen", () => {
+    const rules = R2({ zielWahl: "ausgelost" });
+    expect(zulaessigeZiele(board, "a", rules, { aktuellerSpieltag: 3, seed: "r1", art: "klau" }).length).toBe(1);
+    // Nur ein Teilnehmer: es gibt gar kein Los — und damit auch kein Ziel.
+    expect(zulaessigeZiele([board[0]], "a", rules, { aktuellerSpieltag: 3, seed: "r1", art: "klau" })).toEqual([]);
+  });
+
+  // Frage 3: sieht man sein Los?
+  it("`sichtbar` entscheidet, was man erfährt", () => {
+    const args = { userId: "a", userIds: ids, spieltag: 3, seed: "r1" };
+    const eigenes = meinLos(R2({ zielWahl: "ausgelost" }), args);
+    expect(eigenes.sichtbar).toBe(true);
+    expect(eigenes.gezogenVon).toBeNull();   // wer MICH gezogen hat, bleibt verdeckt
+
+    const offen = meinLos(R2({ zielWahl: "ausgelost" },
+      { los: { jeArt: false, standard: { takt: "spieltag", paare: "einseitig", sichtbar: "alle" } } }), args);
+    expect(offen.gezogenVon).toBeTruthy();
+    expect(offen.alle.size).toBe(ids.length);
+
+    const keines = meinLos(R2({ zielWahl: "ausgelost" },
+      { los: { jeArt: false, standard: { takt: "spieltag", paare: "einseitig", sichtbar: "keines" } } }), args);
+    expect(keines.sichtbar).toBe(false);
+  });
+
+  // Der Konter bleibt die Ausnahme, die er überall ist.
+  it("ein Konter bricht auch das Los", () => {
+    const rules = R2({ zielWahl: "ausgelost", konter: true });
+    const los = meinLos(rules, { userId: "a", userIds: ids, spieltag: 3, seed: "r1" });
+    const angreifer = ids.find((id) => id !== "a" && id !== los.ziel);
+    const ziele = zulaessigeZiele(board, "a", rules, {
+      aktuellerSpieltag: 3, seed: "r1", art: "klau",
+      bisherigeEinsaetze: [{ spieltag: 3, vonUserId: angreifer, aufUserId: "a", typ: "klau" }],
+    });
+    expect(ziele.sort()).toEqual([los.ziel, angreifer].sort());
   });
 });

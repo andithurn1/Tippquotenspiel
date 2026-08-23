@@ -26,6 +26,7 @@ import { duellPlan, einsaetzeAusTipps } from "@/lib/duellJoker";
 // Fassung die Sperrfrist je Ziel (JK5) durchreicht.
 import {
   aktiveArten, familieAn, zulaessigeZiele, gegenwetteVorschau, zieleJeArt, sperrGrund,
+  meinLos,
 } from "@/lib/fremdjoker";
 import { FREMDJOKER_ARTEN, jokerArtVon } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
@@ -696,11 +697,29 @@ export default function Tippabgabe({ matchId }) {
   // Art hergibt, und die ART-Knöpfe darunter sperren sich einzeln. Ein Ziel
   // ganz zu verstecken, nur weil eine von vier Arten es nicht darf, wäre die
   // schlechtere Hälfte — der Spieler suchte den Namen und fände ihn nicht.
-  const zieleProArt = istDuellSpieltag
-    ? zieleJeArt(board, user?.id, RULES, {
-        bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
+  // 🔴 `seed: roundId` — dieselbe Quelle wie `duellPlan` und wie die Prüfung
+  // beim Speichern (`duellPruefung.js`). Zieht der Screen ein anderes Los als
+  // die Prüfung, bekommt der Spieler sein eigenes Ziel abgelehnt.
+  const einsaetzeJeSpieler = bisherigeDuellEinsaetze.reduce((m, e) => {
+    m.set(e.vonUserId, (m.get(e.vonUserId) ?? 0) + 1);
+    return m;
+  }, new Map());
+  const zielKontext = {
+    bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
+    seed: roundId ?? "", einsaetzeJeSpieler,
+  };
+  const zieleProArt = istDuellSpieltag ? zieleJeArt(board, user?.id, RULES, zielKontext) : {};
+
+  // JK12: „Dein Ziel diesen Spieltag: Lena." Die Anzeige gehört genau hierher —
+  // Andi: „muss eben bei seiner Tippabgabe schauen, bei welchem Einzelspiel man
+  // den jeweiligen Joker einsetzt."
+  const losLage = istDuellSpieltag
+    ? meinLos(RULES, {
+        userId: user?.id, userIds: board.map((b) => b.userId),
+        spieltag: meinSpieltagRunde, seed: roundId ?? "",
+        art: duellTypGewaehlt, einsaetzeJeSpieler,
       })
-    : {};
+    : null;
   const duellZulaessig = [...new Set(Object.values(zieleProArt).flat())];
 
   // 🔴 Was eine Gegenwette einbringt, steht VOR dem Setzen da — sie ist die
@@ -998,8 +1017,7 @@ export default function Tippabgabe({ matchId }) {
         // ⚠️ MIT der gewählten Art — sonst prüft das Speichern gegen eine
         // andere Sperre als die, die der Knopf gezeigt hat.
         const zulaessigJetzt = zulaessigeZiele(board, user.id, RULES, {
-          bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
-          art: duellTypGewaehlt,
+          ...zielKontext, art: duellTypGewaehlt,
         });
         // Die Kosten-Prüfung steht VOR den Kontingent-Klassen: sie ist die
         // gröbere Frage („kann ich zahlen"), und sie hat eine eigene
@@ -1474,6 +1492,28 @@ export default function Tippabgabe({ matchId }) {
                     {duellErlaubnis.grund}
                   </p>
                 )}
+                {/* 🔴 JK12: das Los steht ÜBER der Zielliste — es ist keine
+                    Einschränkung der Wahl, sondern ersetzt sie. Wer es unten
+                    als Fußnote läse, hielte die eine übrige Zeile für einen
+                    Fehler. */}
+                {losLage && (
+                  <div style={{
+                    marginTop: 9, padding: "9px 12px", borderRadius: RUND.karte,
+                    background: C.surface, border: `1px solid ${C.akzent}44`,
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>
+                      {losLage.sichtbar && losLage.ziel
+                        ? `Dein Ziel diesen Spieltag: ${board.find((b) => b.userId === losLage.ziel)?.name ?? losLage.ziel}`
+                        : "Dein Ziel ist verdeckt ausgelost."}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                      Du suchst dir das Ziel nicht aus — du entscheidest, bei welchem
+                      SPIEL du zuschlägst.
+                      {losLage.gezogenVon && ` Gezogen wirst du von ${board.find((b) => b.userId === losLage.gezogenVon)?.name ?? losLage.gezogenVon}.`}
+                    </div>
+                  </div>
+                )}
+
                 {duellZulaessig.length === 0 ? (
                   <p style={{ fontSize: 12, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
                     Aktuell kein zulässiges Ziel — z.&nbsp;B. weil niemand infrage kommt,

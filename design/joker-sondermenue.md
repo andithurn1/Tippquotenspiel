@@ -320,8 +320,8 @@ gemeinsam, oder bekommt jede Art ihre eigene?
 > | **Zwei-Phasen-Spieltag** (JK18) | ✔️ war schon da (`tippfenster.schlussStunden`) |
 > | **Der ehrliche Hinweis** (JK19) | ✔️ `zweiPhasenHinweis()` |
 > | **Geschützte Spiele** (JK14) | ⏳ ENTWURF — nicht gebaut |
-> | **Ausgelostes Ziel** (JK12) | ⏳ ENTWURF — nicht gebaut |
-> | **Je Fremdjoker einzeln** (JK13) | 🔨 die Grundform ja, die drei Familien-Werte nein |
+> | **Ausgelostes Ziel** (JK12) | ✔️ `duell.zielWahl: "ausgelost"` + `eingriffe.los` |
+> | **Je Fremdjoker einzeln** (JK13) | ✔️ Grundform · Sperrfrist · Sichtbarkeit · Auslosung — überall dieselbe Karte (`karteVon`) |
 >
 > ⚠️ **Drei Entscheidungen weichen bewusst vom Text darunter ab:**
 >

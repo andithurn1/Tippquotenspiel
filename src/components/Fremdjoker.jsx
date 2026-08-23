@@ -6,12 +6,15 @@ import { C, MONO, RUND } from "@/lib/theme";
 import {
   FREMDJOKER_ARTEN, GEGEN_STUFEN, GEGEN_MODI,
   EINGRIFF_LIMITS, sanitizeEingriffe, jokerArtVon,
-  sanitizeSperrKarte, sanitizeSichtKarte, sperreFuer, sichtFuer, wartezeit,
+  sanitizeSperrKarte, sanitizeSichtKarte, sanitizeLosKarte,
+  sperreFuer, sichtFuer, losFuer, wartezeit,
+  LOS_TAKTE, LOS_PAARE, LOS_SICHT,
 } from "@/lib/eingriffe";
 import {
   aktiveArten, familieAn, familieSchalten, beschreibeFremdjoker,
   konflikte, zweiPhasenHinweis,
 } from "@/lib/fremdjoker";
+import { sanitizeDuellJoker } from "@/lib/duellJoker";
 import { basisFuer, WIDERRUF } from "@/lib/jokerBasis";
 import { Zahl } from "@/components/Eingaben";
 import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
@@ -67,6 +70,17 @@ export default function Fremdjoker({ rules, onChange }) {
 
   const karte = sanitizeSperrKarte(eg.sperrfrist);
   const sicht = sanitizeSichtKarte(eg.sichtbar);
+  const losKarte = sanitizeLosKarte(eg.los);
+  // 🔴 Der SCHALTER für JK12 sitzt in der Zielwahl (`DuellJoker.jsx`, fünfte
+  // Stufe) — hier steht nur, WIE gelost wird. Solange er nicht umgelegt ist,
+  // hat dieser Block nichts zu sagen und bleibt weg.
+  const lostAus = sanitizeDuellJoker(rules?.duell).zielWahl === "ausgelost";
+  const setzeLos = (art, teil) => {
+    const naechste = { ...losKarte };
+    if (art == null) naechste.standard = { ...losKarte.standard, ...teil };
+    else naechste[art] = { ...(losKarte[art] ?? {}), ...teil };
+    setze({ los: sanitizeLosKarte(naechste) });
+  };
   // `undefined` löscht die Abweichung — die Art folgt dann wieder dem Standard.
   const setzeSicht = (art, wert) => {
     const naechste = { ...sicht };
@@ -358,6 +372,75 @@ export default function Fremdjoker({ rules, onChange }) {
               </div>
             )}
           </Block>
+
+          {/* ── 7b) JK12: das ausgeloste Ziel ──
+                 Nur wenn die Zielwahl darauf steht. Ein Block mit vier
+                 Reglern, die nichts tun, wäre schlimmer als keiner. */}
+          {lostAus && (
+            <Block titel="Wie wird ausgelost?"
+              hinweis="Du suchst dir dein Opfer nicht aus — du entscheidest, bei welchem SPIEL du zuschlägst. Jeder zieht genau einen und wird genau einmal gezogen.">
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 5 }}>Wie oft neu?</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {LOS_TAKTE.map((t) => knopf(losKarte.standard.takt === t.key, t.label,
+                  () => setzeLos(null, { takt: t.key }), t.key, t.desc))}
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                {LOS_TAKTE.find((t) => t.key === losKarte.standard.takt)?.desc}
+              </div>
+
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>Gegenseitig?</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {LOS_PAARE.map((t) => knopf(losKarte.standard.paare === t.key, t.label,
+                  () => setzeLos(null, { paare: t.key }), t.key, t.desc))}
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                {LOS_PAARE.find((t) => t.key === losKarte.standard.paare)?.desc}
+              </div>
+
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>Sieht man sein Los?</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {LOS_SICHT.map((t) => knopf(losKarte.standard.sichtbar === t.key, t.label,
+                  () => setzeLos(null, { sichtbar: t.key }), t.key, t.desc))}
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                {LOS_SICHT.find((t) => t.key === losKarte.standard.sichtbar)?.desc}
+              </div>
+
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
+                {knopf(!losKarte.jeArt, "Ein Los für alle Arten",
+                  () => setze({ los: sanitizeLosKarte({ ...losKarte, jeArt: false }) }), "ja-aus",
+                  "Dasselbe Ziel, egal welchen Fremdjoker du setzt.")}
+                {knopf(losKarte.jeArt, "Je Fremdjoker ein eigenes",
+                  () => setze({ los: sanitizeLosKarte({ ...losKarte, jeArt: true }) }), "ja-an",
+                  "Der Block trifft jemand anderen als die Gegenwette.")}
+              </div>
+
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                {knopf(tiefer === "los", "Je Fremdjoker einzeln…",
+                  () => setTiefer(tiefer === "los" ? null : "los"), "tf-los",
+                  "Der Block darf jeden Spieltag neu losen, während die Fehde bei der Gegenwette die Saison hält.")}
+              </div>
+
+              {tiefer === "los" && (
+                <div style={{
+                  marginTop: 8, paddingLeft: 10, borderLeft: `1px solid ${C.line}`,
+                  display: "flex", flexDirection: "column", gap: 8,
+                }}>
+                  {arten.map((k) => {
+                    const name = FREMDJOKER_ARTEN.find((a) => a.key === k).label;
+                    const eigen = losFuer(k, rules?.eingriffe);
+                    return (
+                      <div key={k} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 12, color: C.muted, minWidth: 108 }}>{name}</span>
+                        {LOS_TAKTE.map((t) => knopf(eigen.takt === t.key, t.label,
+                          () => setzeLos(k, { takt: t.key }), `${k}-${t.key}`, t.desc))}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Block>
+          )}
 
           {/* ── 8) JK6: sichtbar und zurücknehmbar ── */}
           <div style={{ fontSize: 11, color: C.coral, marginTop: 14, lineHeight: 1.5 }}>

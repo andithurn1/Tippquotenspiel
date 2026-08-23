@@ -558,6 +558,8 @@ console.log();
 //  Richtung.
 // ════════════════════════════════════════════════════════════
 import { zulaessigeZiele, DEFAULT_DUELL } from "../src/lib/duellJoker.js";
+import { zulaessigeZiele as zulaessigeZieleFamilie } from "../src/lib/fremdjoker.js";
+import { DEFAULT_EINGRIFFE } from "../src/lib/eingriffe.js";
 import { darfDuellSetzen } from "../src/lib/jokerKontingent.js";
 import { jokerPlan } from "../src/lib/jokerPlan.js";
 import { pruefeEinsatz, sanitizeLimitKlassen } from "../src/lib/limitKlassen.js";
@@ -591,6 +593,19 @@ const zieleGesamt = (duell, spieltag = 8) => GIDS.reduce((s, id) =>
   }).length, 0);
 
 const D = (teil) => ({ ...DEFAULT_DUELL, enabled: true, immun: 0, maxProZiel: 6, ...teil });
+
+// 🔴 Die Familien-Fassung (`fremdjoker.js`): sie löst Sperrfrist UND Los aus
+// dem Regelwerk auf. Die rohe aus `duellJoker.js` darüber kann das nicht — wer
+// nur sie misst, sieht bei JK5 und JK12 immer dieselbe Zahl und hält eine tote
+// Einstellung für eine, die greift.
+const zieleFamilie = (rules, spieltag = 8, art = "klau") => GIDS.reduce((s, id) =>
+  s + zulaessigeZieleFamilie(GBOARD, id, rules, {
+    bisherigeEinsaetze: GHISTORIE, aktuellerSpieltag: spieltag, seed: "greift", art,
+  }).length, 0);
+const F = (duellTeil, eingriffeTeil = {}) => ({
+  duell: D(duellTeil),
+  eingriffe: { ...DEFAULT_EINGRIFFE, ...eingriffeTeil },
+});
 
 // An wie vielen der ersten 20 Spieltage ist ein Duell-Einsatz bezahlbar?
 const GPLAN = jokerPlan({
@@ -685,6 +700,18 @@ const GATE_FAELLE = [
   // „nur nach vorne" NIE ein Ziel — außer dem, der ihn gerade getroffen hat.
   ["duell.konter", () => zieleGesamt(D({ zielWahl: "nurVorne", konter: false })),
     () => zieleGesamt(D({ zielWahl: "nurVorne", konter: true })), "erlaubte Ziele über 5 Spieler"],
+  // 🔴 JK5 (23.08.2026): die Sperrfrist je Ziel — und ihre Vertiefung, der
+  // wachsende Cooldown. Beides bewegt keine PUNKTE, sondern erlaubte Ziele.
+  ["eingriffe.sperrfrist", () => zieleFamilie(F({ zielWahl: "frei" })),
+    () => zieleFamilie(F({ zielWahl: "frei" }, { sperrfrist: { standard: { spieltage: 6 } } })),
+    "erlaubte Ziele über 5 Spieler"],
+  ["eingriffe.sperrfrist.aufschlag",
+    () => zieleFamilie(F({ zielWahl: "frei" }, { sperrfrist: { standard: { spieltage: 0, aufschlag: 0 } } })),
+    () => zieleFamilie(F({ zielWahl: "frei" }, { sperrfrist: { standard: { spieltage: 0, aufschlag: 6 } } })),
+    "erlaubte Ziele über 5 Spieler"],
+  // 🔴 JK12: das Los ERSETZT die Wahl — aus vier möglichen Zielen wird eines.
+  ["duell.zielWahl: ausgelost", () => zieleFamilie(F({ zielWahl: "frei" })),
+    () => zieleFamilie(F({ zielWahl: "ausgelost" })), "erlaubte Ziele über 5 Spieler"],
   ["duell.kosten", () => bezahlbareTage(D({ kosten: "frei" })),
     () => bezahlbareTage(D({ kosten: "stattJoker" })), "bezahlbare Spieltage von 20"],
   ["jokerBasis.wer", () => duerfenEinsetzen({ wer: "alle" }),
