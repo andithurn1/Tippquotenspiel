@@ -1601,6 +1601,12 @@ export default function Tippabgabe({ matchId }) {
                         return (
                           <button key={zielId} disabled={zu}
                             onClick={() => setDuellZiel(on ? null : zielId)} style={{
+                              // 🔴 Gemessen am 23.08.2026 im Browser (375 px):
+                              // diese Pillen waren 33 px hoch. Apple verlangt
+                              // 44 — und ein danebengetroffenes Ziel ist beim
+                              // Fremdjoker keine Kleinigkeit, sondern greift
+                              // die falsche Person an.
+                              ...TAPZIEL_QUADRAT,
                               cursor: zu ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
                               opacity: zu && !on ? 0.5 : 1,
                               padding: "8px 14px", borderRadius: RUND.pille,
@@ -1624,6 +1630,7 @@ export default function Tippabgabe({ matchId }) {
                           return (
                             <button key={typKey} disabled={zu}
                               onClick={() => setDuellTypGewaehlt(on ? null : typKey)} style={{
+                                ...TAPZIEL_QUADRAT,
                                 cursor: zu ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
                                 padding: "8px 14px", borderRadius: RUND.pille, opacity: zu ? 0.45 : 1,
                                 background: on ? `${C.coral}22` : C.surface,

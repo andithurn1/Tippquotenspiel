@@ -194,7 +194,11 @@ export function sperrGrund(rules, { art, aufUserId, vonUserId, bisherigeEinsaetz
     text: sperre.aufschlag > 0
       ? `${name}: schon ${meine.length}× bei dieser Person — die Wartezeit ist dadurch auf `
         + `${dauer} ${dauer === 1 ? "Spieltag" : "Spieltage"} gewachsen. Wieder frei ab Spieltag ${letzt + dauer}.`
-      : `${name}: Sperrfrist von ${dauer} ${dauer === 1 ? "Spieltag" : "Spieltage"} läuft noch. `
+      // ⚠️ DATIV: „von 3 SpieltagEN". Im Browser-Durchgang vom 23.08.2026
+      // stand „von 3 Spieltage läuft noch" — die Zahl war richtig, der Satz
+      // falsch. Der andere Zweig darüber ist Akkusativ („auf 2 Spieltage
+      // gewachsen") und bleibt, wie er ist.
+      : `${name}: Sperrfrist von ${dauer} ${dauer === 1 ? "Spieltag" : "Spieltagen"} läuft noch. `
         + `Wieder frei ab Spieltag ${letzt + dauer}.`,
   };
 }

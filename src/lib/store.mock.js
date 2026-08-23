@@ -10,6 +10,11 @@ import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboard
 import { regelnFuerSpieltag } from "./beschluss";
 import { zeitachse, rundenSpieltagVon, bespielteSpieltage } from "./zeitachse";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
+// 🔴 Die zweite Demo-Runde: eine, in der ALLES an ist (Andi, 23.08.2026 —
+// „mach die demo runde bzw tests so dass sie alle Einstellbarkeiten abdeckt").
+// Die erste fährt `DEFAULT_RULES` und zeigt damit fast nichts; ohne eine
+// zweite lässt sich im Browser nicht nachsehen, ob eine Mechanik ankommt.
+import { SCHAU_ROUND_ID, SCHAU_JOIN_CODE, SCHAU_NAME, schaufensterRegeln, schaufensterTipps } from "./schaufenster";
 import { generateJoinCode } from "./joinCode";
 import { alleMatches } from "./ligen";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
@@ -75,12 +80,27 @@ export function createMockStore() {
       wettbewerb: m.wettbewerb, phase: m.phase,
     }]),
   ]);
-  const rounds = new Map([[ROUND_ID, {
-    id: ROUND_ID, name: "Freundeskreis", admin_id: "u-du",
-    rules: DEFAULT_RULES, join_code: DEMO_JOIN_CODE,
-  }]]);
+  const rounds = new Map([
+    [ROUND_ID, {
+      id: ROUND_ID, name: "Freundeskreis", admin_id: "u-du",
+      rules: DEFAULT_RULES, join_code: DEMO_JOIN_CODE,
+    }],
+    // ⚠️ Nur Bundesliga (siehe `schaufenster.js`) — deshalb auch hier der
+    // eingefrorene Zuschnitt, sonst zählte die Runde 1943 Spiele statt 306.
+    // Genau der Fund vom 09.08.2026: `team_filter` allein hielt zu wenig fest.
+    [SCHAU_ROUND_ID, {
+      id: SCHAU_ROUND_ID, name: SCHAU_NAME, admin_id: "u-du",
+      rules: schaufensterRegeln(), join_code: SCHAU_JOIN_CODE,
+      spiele: schaufensterRegeln().spiele,
+    }],
+  ]);
   const presets = new Map();  // Kurzcode → geteiltes Regelwerk (Content-Creator-Codes)
-  const members = DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar }));
+  const members = [
+    ...DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar })),
+    // Dieselben fünf im Schaufenster: eine Runde mit einem Mitglied kann
+    // weder ein Ziel noch ein Los zeigen.
+    ...DEMO_TIPS.map((t) => ({ round_id: SCHAU_ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar })),
+  ];
   // Profile getrennt von der Mitgliedschaft halten — wie in der DB (profiles).
   // Der Demo-Nutzer „Du" hat Premium, damit die Premium-Funktionen beim
   // Entwickeln ohne Backend sichtbar sind; die übrigen bewusst nicht, damit
@@ -89,10 +109,16 @@ export function createMockStore() {
     id: t.userId, display_name: t.name, avatar: t.avatar,
     premium_until: t.userId === "u-du" ? "2099-12-31T00:00:00Z" : null,
   }]));
-  const tips = DEMO_TIPS.map((t) => ({
-    id: `tip-${t.userId}`, round_id: ROUND_ID, match_id: SNAP.matchId,
-    user_id: t.userId, tip: t.tip, snapshot: SNAP,
-  }));
+  const tips = [
+    ...DEMO_TIPS.map((t) => ({
+      id: `tip-${t.userId}`, round_id: ROUND_ID, match_id: SNAP.matchId,
+      user_id: t.userId, tip: t.tip, snapshot: SNAP,
+    })),
+    // 🔴 Ohne Tipps ist die Tabelle des Schaufensters leer — und eine leere
+    // Tabelle heißt „kein zulässiges Ziel", also fehlt der ganze
+    // Fremdjoker-Block. Gemessen am 23.08.2026 im Browser.
+    ...schaufensterTipps([...matches.values()].filter((m) => wettbewerbVon(m) === "bl")),
+  ];
   const votes = [];   // Joker-Abstimmung: { round_id, matchday, user_id, ja }
   // Regel-Abstimmung (design/abstimmung-verfassung.md) — eine ANDERE Frage
   // als `votes`: dort geht es um Joker-Spieltage, hier um Änderungen AM
