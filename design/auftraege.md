@@ -97,8 +97,8 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 
 | Nr | Ansage | Stand | Beleg / was fehlt |
 |---|---|---|---|
-| PP1 | **Bibliothek / Gamemode als eigenes Fenster** rechts vom Strich | ⏳ | Neu. Enthält laut Folie 1: Suche, Filter nach Relevanz und Beliebtheit, je Eintrag Kurzbeschreibung, **von wem**, Popularität und **Bewertung durch Admins mit Icons** |
-| PP2 | **Bewertungssystem für Einstellungen** („Anforderung Bewertungsystem der Einstellungen“) | ⏳ | Neu, im Repo gibt es nichts davon. Berührt `teilbibliotheken.md` (Teil-Codes) — die Bibliothek wäre der Ort, an dem sie gefunden werden |
+| PP1 | **Bibliothek / Gamemode als eigenes Fenster** rechts vom Strich | ✅ | `Bibliothek.jsx`, geöffnet über den 📚-Chip. Führt die drei bisher getrennten Orte zusammen — 5 Runden-Ideen, 6 Regelwerke, 58 Bausteine — mit Suche (ohne Umlaute tippbar), Filter nach Art und Sortierung nach Relevanz · Verbreitung · Name. Je Eintrag: Kurzbeschreibung, Urheber, Verbreitung und Icons. Ganze Herleitung in `design/bibliothek.md` |
+| PP2 | **Bewertungssystem für Einstellungen** | ✅ | Vier über die echte Engine gemessene Achsen: Schärfe · Boden · Überraschung · Torschützen-Anteil. 🔴 Der erste Anlauf mit nur der Underdog-Neigung gab **64 von 69 Einträgen dasselbe Icon** — `underdogLean` ist ein Verhältnis, `k`/`m` skalieren beide Seiten gleich. Verglichen wird mit den GESCHWISTERN (der strengste dieser vier), nicht mit der Vorgabe. Wo die Messung nichts sieht, steht kein Icon |
 | PP3 | Wettbewerbe: **je Liga derselbe Aufbau** („Bundesliga selber Aufbau wie bei 2. Bundesliga“) | 🔨 | `LigaSonderregeln` gilt schon je Wettbewerb. Offen: dass die Liste aller Ligen sichtbar denselben Aufbau zeigt |
 | PP4 | Innerhalb einer Liga: **„alle" und einzelne Vereine** (Beispiel „Fc Köln“) | ✅ | `SpielauswahlWettbewerbe` kann beides |
 | PP5 | Folien 3–11 sind leer | 👤 | Andi füllt sie — dort steht der Rest des Aufbaus |
@@ -118,7 +118,7 @@ Lage links/rechts vom Trennstrich die eigentliche Aussage trägt.
 | ATE6 | Ein fremder Teil-Code darf nicht still die falsche Ebene überschreiben | ✅ | `TeilCodeFeld` prüft die Ebene im Code und weist ab: „Dieser Code gehört zu X, nicht zu Y.“ Im Browser geprüft |
 | ATE2 | Schichtung: erst Gesamt-Code, dann Teilebenen einzeln überschreiben | ✅ | Mechanik gebaut: `wendeTeilCodeAn` ersetzt nur die Felder SEINES Aspekts. Mehrere nacheinander ergeben genau diese Schichtung |
 | ATE3 | Teil-Codes dürfen **von anderen Creatorn** stammen | ✅ | Ein Code trägt keine Herkunft — er wirkt unabhängig davon, wer ihn gebaut hat |
-| ATE4 | In der Bibliothek die **beliebtesten Creator-Codes** auswählen | ⏳ | Braucht Beliebtheit und Urheber je Eintrag — hängt mit PP1/PP2 zusammen |
+| ATE4 | In der Bibliothek die **beliebtesten Creator-Codes** auswählen | ⏳ | Die Bibliothek steht (PP1) und nimmt geladene Codes schon auf (`urheber: "geladen"`). Was fehlt, ist echte Nutzung: eine Beliebtheit ohne Server wäre erfunden. Bis dahin zeigt sie die Verbreitung — wie viele der kuratierten Runden-Ideen einen Baustein benutzen, nachgerechnet statt gezählt |
 | ATE5 | Anzeigen, welcher Code zuletzt geladen wurde | ✅ | `geladeneCodes` je Ebene, Anzeige unter dem Feld. **Ein Gesamt-Code leert die Merkliste** — Andis Regel vom 21.08.2026, an beiden Ladewegen umgesetzt |
 
 ## Tipp-Oberfläche (21.08.2026)

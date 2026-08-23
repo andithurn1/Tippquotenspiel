@@ -17,6 +17,7 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import VariantenWahl from "@/components/VariantenWahl";
 import TeilCodeFeld from "@/components/TeilCodeFeld";
+import Bibliothek from "@/components/Bibliothek";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
@@ -75,6 +76,9 @@ export default function Spielerstellung() {
   const [geladeneCodes, setGeladeneCodes] = useState({});
   const merkeCode = (aspekt, code) => setGeladeneCodes((g) => ({ ...g, [aspekt]: code }));
   const [charakterKey, setCharakterKey] = useState(null);
+  // Andis PP1: die Bibliothek ist ein FENSTER, kein Abschnitt — sie legt sich
+  // über den Screen und gibt ihn danach unverändert zurück.
+  const [bibliothekOffen, setBibliothekOffen] = useState(false);
   const [mischenOffen, setMischenOffen] = useState(false);
   // Die Spielauswahl ist KEIN lokaler Zustand mehr, sondern Teil des
   // Regelwerks — nur so reist sie im Creator-Code mit.
@@ -451,7 +455,7 @@ export default function Spielerstellung() {
           <KopfChip icon="📚" titel="Bibliothek — welche Vorlage gerade gilt"
             wert={PRESETS.find((p) => p.key === presetKey)?.label
               ?? CHARAKTERE.find((c) => c.key === charakterKey)?.label ?? "eigenes"}
-            onClick={() => { setAuswahlOffen("empfehlungen"); springZu("bibliothek"); }} />
+            onClick={() => setBibliothekOffen(true)} />
           <KopfChip icon="🎮" titel="Gamemode — Quotentippen oder Budget"
             wert={rules.joker?.modus === "einsatz" ? "Budget" : "Quoten"}
             onClick={() => springZu("gamemode")} />
@@ -1128,6 +1132,34 @@ export default function Spielerstellung() {
           {impErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{impErr}</div>}
         </div>
       </div>
+      {/* ── Die Bibliothek (Andis PP1) ──
+          Steht ganz unten im Baum und ist trotzdem oben zu sehen: als
+          `position: fixed` hängt sie am Fenster, nicht an dieser Stelle. Sie
+          hier zu haben heißt, dass jeder Chip und jede Zeile sie öffnen kann,
+          ohne dass der halbe Screen sie durchreichen muss. */}
+      <Bibliothek
+        offen={bibliothekOffen}
+        onSchliessen={() => setBibliothekOffen(false)}
+        aktivId={charakterKey ? `charakter:${charakterKey}` : presetKey ? `preset:${presetKey}` : null}
+        onUebernehmen={(e) => {
+          touched();
+          setShortCode(null);
+          if (e.art === "charakter") {
+            setCharakterKey(e.key); setPresetKey(null); setRules(e.rules);
+          } else if (e.art === "preset") {
+            setCharakterKey(null); setPresetKey(e.key);
+            setRules({ ...sanitizeRules(e.rules), name: e.label });
+          } else {
+            // Ein Baustein ERSETZT seinen Aspekt und lässt alles andere stehen —
+            // dieselbe Regel wie beim Teil-Code (`wendeTeilCodeAn`). Preset- und
+            // Charakter-Name fallen dabei weg: was jetzt gilt, ist keins von
+            // beiden mehr.
+            setCharakterKey(null); setPresetKey(null);
+            setRules((r) => sanitizeRules({ ...r, ...(e.werte ?? {}) }));
+          }
+        }}
+      />
+
     </div>
   );
 }
