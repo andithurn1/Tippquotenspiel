@@ -126,10 +126,134 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
-### 2026-08-23 (X) · **ÜBERGABE an ein frisches Fenster** — und: es gibt nur noch EIN Fenster
+### 2026-08-23 (XI) · ⚠️ **REGELWERK** — der neue Block `rules.eingriffe` (Fremdjoker JK4–JK7)
 
 > **👉 Frische Session: DAS ist dein Einstieg.** Alles darunter ist Historie.
 > Arbeitsordner: **`C:\Dev\Tippquotenspiel`**.
+
+**Push-Regel 3.** Ein neuer Regel-Block, der im Creator-Code mitwandert — und
+eine Verhaltensänderung, die hier ausdrücklich benannt gehört. `engine.js`
+rechnet unverändert; die Wertung selbst ist unberührt.
+
+Branch: `claude/fremdjoker-jk4-jk7-ehc5fw` · **2379 Tests grün** · lint sauber ·
+alle acht Abnahmen ohne neuen Befund.
+
+#### Was gebaut ist
+
+Die **Fremdjoker-Familie** hat jetzt vier Arten statt zwei:
+**Block · Klau · Trittbrettfahrer · Gegenwette**.
+
+| Zeile | Stand |
+|---|---|
+| **JK4** blocken · mitprofitieren · dagegen wetten | ✅ alle vier Arten, `greift`: bewegt 228 Punkte |
+| **JK5** Sperrfrist je Ziel | ✅ `eingriffe.sperrfristJeZiel` |
+| **JK6** vor der Frist sichtbar UND zurücknehmbar | ✅ inkl. Spieler-Ansicht in `MeineJoker` |
+| **JK7** die ganze Familie in EINEM Griff | ✅ `eingriffe.enabled` + `familieSchalten()` |
+
+Nebenbei fertig geworden: **JK9** (`minPayout` gilt für die Gegenwette nicht),
+**JK10** (sie kostet einen Einsatz), **JK15** (Fremdjoker treffen einzelne
+Spiele — dazu unten), **JK19** (der ehrliche Hinweis beim Einschalten).
+
+#### 🔴 Zwei neue Dateien, und WARUM es zwei sind
+
+```
+eingriffe.js    importiert NICHTS   Kataloge, Grenzen, rules.eingriffe, 1/(1−p)
+duellJoker.js → eingriffe.js        die Wertung, jetzt alle vier Arten
+fremdjoker.js → beide + ergebnisMatrix, jokerBasis, tippfenster
+```
+
+Die Aufteilung ist kein Geschmack: `duellJoker.js` MUSS die Familien-Vorgabe
+lesen (die Wertung kennt vier Arten), und `fremdjoker.js` MUSS `duellJoker.js`
+lesen. Lägen Dach und Logik zusammen, wäre das ein Importzyklus — genau der,
+vor dem der Kopf von `duellJoker.js` schon warnte.
+
+#### 🔴 Die EINE Auskunft: `aktiveArten(rules)`
+
+Klau und Block bleiben in `rules.duell`, Trittbrettfahrer und Gegenwette liegen
+in `rules.eingriffe`. Das ist asymmetrisch, und zwar mit Absicht: die beiden
+alten Arten ein zweites Mal unter `eingriffe` zu führen hieße, dass eine Runde
+ZWEI Antworten auf „ist der Block an?“ hätte.
+
+**Der Preis:** „welche Fremdjoker laufen?“ ist an keinem einzelnen Feld
+abzulesen. Deshalb `aktiveArten(rules)` in `fremdjoker.js` — **die einzige
+Stelle, an der diese Frage beantwortet wird.** Wer sie nachbaut, baut die
+zweite Wahrheit.
+
+⚠️ `engine.js` kann sie nicht importieren (Zyklus über `ergebnisMatrix`) und
+hält eine gleichlautende Kurzform. Beide sind durch einen Test aneinander
+gebunden — genau die Vorsichtsmaßnahme, die bei `brauchtVerlauf` zweimal
+gefehlt hat.
+
+#### ⚠️ `eingriffe.enabled` ist standardmäßig AN
+
+Das sieht verkehrt herum aus. Der Grund, damit ihn niemand „korrigiert":
+
+1. Jede Art hat ihren eigenen Schalter und ist von sich aus AUS. Das Dach
+   schaltet also nichts ein — es steht bereit, alles auf einmal auszuschalten.
+2. Vorgabe „aus" würde jeden bestehenden Creator-Code mit `duell.enabled: true`
+   rückwirkend umschreiben.
+
+Beide Richtungen bedient `familieSchalten(rules, an)`.
+
+#### 🔴 VERHALTENSÄNDERUNG: Fremdjoker rechnen jetzt auf dem EINZELSPIEL
+
+Bis gestern warf `einsaetzeAusTipps` die `matchId` weg. Der Einsatz kam ohne
+Spiel bei `applyDuellJoker` an — und rechnete deshalb auf den ganzen SPIELTAG,
+obwohl die Einzelspiel-Rechnung seit dem 22.08. fertig danebenlag. Der
+Übergangszustand war im Code sauber benannt, nur hatte niemand die eine Zeile
+nachgetragen, die ihn beendet.
+
+Das ist Andis Ansage vom 22.08.2026 („also alle Fremdjoker nur für einzelne
+Spiele"), also die beschlossene Zielform — **aber es ist eine
+Verhaltensänderung**: ein Klau holt jetzt einen Anteil aus EINEM Spiel statt
+aus dem ganzen Spieltag, also deutlich weniger. Wer das rückgängig machen will,
+findet die Stelle in `einsaetzeAusTipps` (`matchId: t.matchId ?? null`).
+
+#### 🔴 Drei Funde beim Bauen, alle gemessen, keiner aus den Tests
+
+1. **`maxProZiel` und `immun` zählten nur die EIGENEN Einsätze** — obwohl ihre
+   Karte „Schutz der Getroffenen" heißt und der Hinweis darunter verspricht,
+   dass sich nicht die ganze RUNDE auf eine Person einschießt. Fünf Spieler
+   durften denselben fünfmal treffen, jeder einmal, ohne dass eine Schranke
+   ansprach. Beide sind jetzt ziel-bezogen; `sperrfristJeZiel` ist die
+   paar-bezogene. Damit sagt jede der drei genau das, was auf ihr steht.
+2. **`applyDuellJoker` fragte nie `duell.typen`.** Eine Runde mit
+   `typen: ["block"]` rechnete einen Klau-Einsatz mit.
+3. **`duellJoker.konflikte()` war von KEINER Oberfläche aufgerufen** — nur von
+   seinem eigenen Test. Die Meldung „mitverdienen ohne Deckel ist ein neuer
+   Punkte-Kanal" stand gebaut, geprüft und begründet da, und kein Admin hat sie
+   je gesehen. `npm run tot` fand das nicht: `konflikte` heißt in einem halben
+   Dutzend Module gleich. Jetzt bündelt `fremdjoker.konflikte()` beide.
+
+Dazu drei Befunde AUSSERHALB dieser Aufgabe, ausführlich in `design/roadmap.md`
+unter „Drei Befunde beim Bau der Fremdjoker": **`duell.proSpieltag` ist
+wirkungslos** (gemessen: von 1 bis 3 ändert sich nichts), `tabellenBonus` hat
+keinen Messfall in `greift`, und `wettbewerbe` ist weiter die eine Lücke in
+`stufen`.
+
+#### ❓ Was Andi entscheiden muss
+
+1. **Die drei FAMILIEN-Werte gelten für alle vier Arten gemeinsam**
+   (`sperrfristJeZiel`, `sichtbarVorFrist`, `ruecknahme`). JK13 sagt „je
+   Fremdjoker einzeln" — die GRUNDFORM (Widerruf, Sichtbarkeit, Abklingzeit) ist
+   das jetzt, diese drei nicht. Sollen sie es werden?
+2. **`duell.proSpieltag`**: streichen oder die Ein-Einsatz-Regel lockern? Hängt
+   an seiner offenen Frage „darf man auf denselben Tipp mehrere Handlungen
+   legen?“
+
+#### Was NICHT drankommt
+
+- ⛔ **Balancing** — die Zahlen in `DEFAULT_EINGRIFFE` (Anteil 0,30 · Einsatz 25)
+  sind Platzhalter im Sinne des Baukastens, keine Empfehlung.
+- ⏳ **JK12** (ausgelostes Ziel) und **JK14** (geschützte Spiele) sind weiter
+  offen — sie waren nicht Teil dieser Bestellung.
+
+---
+
+### 2026-08-23 (X) · **ÜBERGABE an ein frisches Fenster** — und: es gibt nur noch EIN Fenster
+
+> ⚠️ **Nicht mehr der Einstieg** — der steht im Eintrag (XI) darüber. Der
+> Ausblick unten („was als Nächstes ansteht: die Fremdjoker") ist ERLEDIGT.
 
 `main` bei `24d530d` · **2312 Tests grün** · Arbeitskopie leer · lint sauber.
 

@@ -34,6 +34,51 @@ dieselbe austauschbare Stelle wie bei den Quoten.
 
 ---
 
+## 🔍 Drei Befunde beim Bau der Fremdjoker (23.08.2026) — alle GEMESSEN
+
+Keiner kam aus einem Test; alle drei aus den Durchgängen und aus dem Nachrechnen
+am Rand. Sie stehen hier und nicht im Chat, weil ein Chatverlauf nach dem
+Fenster weg ist.
+
+### 1. ⛔ `duell.proSpieltag` ist wirkungslos — von 1 bis 3 ändert sich nichts
+
+**Gemessen**, nicht vermutet: ein Plan im engstmöglichen Fenster
+(`phase: "manuell"`, Spieltag 30–32, `anzahl: 6`) ergibt bei `proSpieltag` 1, 2
+und 3 **dreimal dieselben drei Plan-Tage und dreimal drei Einsätze**.
+
+Zwei Gründe, unabhängig voneinander:
+
+- `duellPlan` baut die Tage aus einer MENGE von Spieltagen — ein Spieltag kann
+  darin gar nicht doppelt vorkommen, also findet
+  `abstandUndProSpieltagAnwenden` nie etwas zu begrenzen.
+- Selbst wenn: `einsaetzeAusTipps` lässt „je Spieler UND Spieltag höchstens EIN
+  Einsatz" durch. Ein zweiter Einsatz am selben Tag käme in der Wertung nie an.
+
+⚠️ **Warum es keiner der Durchgänge gefunden hat:** `npm run greift` Teil 4
+misst beim Duell `zielWahl`, `maxProZiel`, `immun`, `konter` und `kosten` — die
+Liste ist von Hand gepflegt, und `proSpieltag` steht nicht darin. Genau die
+Lücke, vor der der Kopf des Skripts warnt: *„eine Liste, die schweigt, sieht
+aus wie eine ohne Befund."*
+
+**Nicht behoben** — es gehört nicht zu JK4–JK7 und die Antwort ist keine
+Kleinigkeit: entweder `proSpieltag` fällt weg (dann ist `anzahl` die einzige
+Mengenangabe), oder die Ein-Einsatz-Regel in `einsaetzeAusTipps` wird gelockert.
+Das Zweite hängt an Andis offener Frage aus Teil D — *„Darf man auf denselben
+Tipp mehrere Handlungen legen?"*
+
+### 2. `tabellenBonus` hat keinen Messfall in `npm run greift`
+
+Teil 3 meldet ihn als einzigen Block ohne Messfall und ohne Begründung
+(vorher waren es zwei; `eingriffe` hat jetzt einen). Bestand schon vorher.
+
+### 3. `wettbewerbe` ist weiter die eine Lücke in `npm run stufen`
+
+Unverändert seit dem 06.08.2026, durch eine Sperrklinke im Test festgehalten.
+Der Übergabe-Eintrag im Kanal vom 23.08. sagt „stufen ohne Lücke" — das war
+schon damals eine zu freundliche Zusammenfassung.
+
+---
+
 ## 🧱 Sondermenüs — der Umbau zur EINEN Ansicht (Andi EB2/EB4, 22.08.2026)
 
 **Reihenfolge ist zwingend: erst alle Sondermenüs, DANN der Umschalter weg.**
