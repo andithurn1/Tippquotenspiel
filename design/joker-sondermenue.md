@@ -313,7 +313,7 @@ gemeinsam, oder bekommt jede Art ihre eigene?
 > | | Stand |
 > |---|---|
 > | **Die drei Handlungen** (JK4) | ✔️ alle vier Arten: Block · Klau · Trittbrettfahrer · Gegenwette |
-> | **Sichtbar und zurücknehmbar** (JK6) | ✔️ `sichtbarVorFrist` · `ruecknahme` · `eingriffFenster()` |
+> | **Sichtbar und zurücknehmbar** (JK6) | ✔️ `sichtbarVorFrist` + `jokerBasis.widerruf` · `eingriffFenster()` |
 > | **Sperrfrist je Ziel** (JK5) | ✔️ `sperrfristJeZiel` |
 > | **Ein Griff über allem** (JK7) | ✔️ `eingriffe.enabled` · `familieSchalten()` |
 > | **Einzelne Spiele statt Spieltage** (JK15) | ✔️ `matchId` reist mit |
@@ -323,7 +323,15 @@ gemeinsam, oder bekommt jede Art ihre eigene?
 > | **Ausgelostes Ziel** (JK12) | ⏳ ENTWURF — nicht gebaut |
 > | **Je Fremdjoker einzeln** (JK13) | 🔨 die Grundform ja, die drei Familien-Werte nein |
 >
-> ⚠️ **Zwei Entscheidungen weichen bewusst vom Text darunter ab:**
+> ⚠️ **Drei Entscheidungen weichen bewusst vom Text darunter ab:**
+>
+> 0. **Kein eigenes Rücknahme-Feld.** Der Text unten nennt für JK6 „die Felder
+>    dafür gibt es: `duell.sichtbarkeit` und `jokerBasis.widerruf`" — und genau
+>    so ist es gebaut. Eine erste Fassung legte trotzdem ein zweites Feld
+>    `eingriffe.ruecknahme` daneben; es ist am 23.08.2026 wieder gelöscht
+>    worden, bevor es je in einer Runde stand. Zwei Felder für „bis wann darf
+>    ich zurücknehmen?" heißt, dass die Anzeige etwas zusagen kann, was das
+>    Speichern verweigert.
 >
 > 1. **Kein „verdeckt“-Mittelding.** `sichtbarVorFrist: false` blendet den
 >    Eingriff beim Betroffenen ganz aus, statt „jemand blockt eines deiner

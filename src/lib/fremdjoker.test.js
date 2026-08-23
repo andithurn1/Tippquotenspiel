@@ -310,13 +310,43 @@ describe("eingriffFenster — JK6", () => {
     expect(f.setzbar).toBe(true);
   });
 
-  it("`ruecknahme` entscheidet, wie lange man einen Block wieder herausnehmen kann", () => {
+  // 🔴 Die Rücknahme kommt aus der GRUNDFORM (`jokerBasis.widerruf`), nicht aus
+  // einem eigenen Familien-Feld — und zwar aus DERSELBEN Funktion, die auch
+  // die Tippabgabe beim Speichern fragt. Ein zweites Feld daneben hätte
+  // anzeigen können, was das Speichern verweigert.
+  it("die Rücknahme folgt der Joker-Grundform, je Art", () => {
     const starts = new Map([["bl#3", ANPFIFF]]);
-    const inPhase2 = (teil) => eingriffFenster(match, zweiPhasen(teil), ANPFIFF - 12 * std, starts);
-    expect(inPhase2({ ruecknahme: "bisAnpfiff" }).ruecknehmbar).toBe(true);
-    // `bisFrist` endet mit dem Tippschluss — in Phase 2 ist es zu spät.
-    expect(inPhase2({ ruecknahme: "bisFrist" }).ruecknehmbar).toBe(false);
-    expect(inPhase2({ ruecknahme: "nein" }).ruecknehmbar).toBe(false);
+    const mitBasis = (basis) => ({
+      ...zweiPhasen(),
+      duell: { ...DEFAULT_DUELL, enabled: true, typen: ["block"] },
+      jokerBasis: { standard: basis },
+    });
+    const jetzt = ANPFIFF - 12 * std;
+    // Vorgabe „bis Anpfiff": in Phase 2 noch offen.
+    expect(eingriffFenster(match, mitBasis({}), jetzt, starts).ruecknehmbar).toBe(true);
+    // „sofort verbindlich": gesetzt ist gesetzt.
+    expect(eingriffFenster(match, mitBasis({ widerruf: "sofortVerbindlich" }), jetzt, starts).ruecknehmbar)
+      .toBe(false);
+    // „bis 24 Std. vorher": zwölf Stunden davor ist die Frist durch.
+    expect(eingriffFenster(match, mitBasis({ widerruf: "bisStunden", widerrufStunden: 24 }), jetzt, starts)
+      .ruecknehmbar).toBe(false);
+  });
+
+  it("ohne benannte Art gilt die STRENGSTE der laufenden — unter-versprechen ist harmlos", () => {
+    const starts = new Map([["bl#3", ANPFIFF]]);
+    const rules = {
+      ...zweiPhasen(),
+      duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau", "block"] },
+      jokerBasis: {
+        standard: {},
+        "duell.block": { widerruf: "sofortVerbindlich" },
+      },
+    };
+    const jetzt = ANPFIFF - 12 * std;
+    // Der Klau wäre widerrufbar, der Block nicht → ohne Art: nein.
+    expect(eingriffFenster(match, rules, jetzt, starts).ruecknehmbar).toBe(false);
+    expect(eingriffFenster(match, rules, jetzt, starts, "klau").ruecknehmbar).toBe(true);
+    expect(eingriffFenster(match, rules, jetzt, starts, "block").ruecknehmbar).toBe(false);
   });
 
   it("`sichtbarVorFrist: false` versteckt den Eingriff bis nach dem Anpfiff", () => {
@@ -345,9 +375,15 @@ describe("offeneEingriffe — man sieht, WER es war", () => {
     expect(offeneEingriffe(einsaetze, rules, { userId: "z" })).toEqual([]);
   });
 
-  it("nur der Setzende darf zurücknehmen", () => {
-    expect(offeneEingriffe(einsaetze, rules, { userId: "a" })[0].ruecknehmbar).toBe(true);
-    expect(offeneEingriffe(einsaetze, rules, { userId: "b" })[0].ruecknehmbar).toBe(false);
+  // ⚠️ Ohne Fenster keine Zusage: „bis wann zurücknehmbar" hängt am Anpfiff
+  // und an der Grundform, und beide kennt nur der Aufrufer. Lieber ein
+  // „geht nicht" zu viel als eine Zusage, die das Speichern kassiert.
+  it("nur der Setzende darf zurücknehmen — und nur, wenn das Fenster es hergibt", () => {
+    const offen = () => ({ ruecknehmbar: true, sichtbar: true, phase: "eingriffe" });
+    expect(offeneEingriffe(einsaetze, rules, { userId: "a", fensterFuer: offen })[0].ruecknehmbar).toBe(true);
+    expect(offeneEingriffe(einsaetze, rules, { userId: "b", fensterFuer: offen })[0].ruecknehmbar).toBe(false);
+    // Ohne `fensterFuer` wird nichts versprochen.
+    expect(offeneEingriffe(einsaetze, rules, { userId: "a" })[0].ruecknehmbar).toBe(false);
   });
 
   it("eine abgeschaltete Art taucht gar nicht mehr auf", () => {
@@ -423,13 +459,16 @@ describe("konflikte und der ehrliche Hinweis", () => {
     expect(konflikte(rules)).toEqual([]);
   });
 
-  it("meldet die abgeschaltete Rücknahme — sie hebt den Zweck der Familie auf", () => {
+  it("meldet „sofort verbindlich“ auf einem Fremdjoker — das hebt den Zweck der Familie auf", () => {
     const rules = R({
-      duell: { ...DEFAULT_DUELL, enabled: true },
-      eingriffe: { ...DEFAULT_EINGRIFFE, ruecknahme: "nein" },
+      duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau"] },
+      jokerBasis: { standard: { widerruf: "sofortVerbindlich" } },
       tippfenster: { vorlaufStunden: 168, anker: "spieltag", schlussStunden: 24 },
     });
-    expect(konflikte(rules).map((k) => k.key)).toEqual(["fremdjoker-ohne-ruecknahme"]);
+    const fund = konflikte(rules).find((k) => k.key === "fremdjoker-ohne-ruecknahme");
+    expect(fund).toBeTruthy();
+    // Und die Meldung sagt, WELCHE Art es betrifft — sonst sucht der Admin.
+    expect(fund.text).toContain("Klau");
   });
 
   // JK19 — in Andis Sprache, nicht als Systemmeldung.

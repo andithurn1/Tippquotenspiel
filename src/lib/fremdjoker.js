@@ -42,7 +42,7 @@
 // ============================================================
 
 import {
-  sanitizeEingriffe, gegenquote, FREMDJOKER_ARTEN, DEFAULT_EINGRIFFE,
+  sanitizeEingriffe, gegenquote, FREMDJOKER_ARTEN, DEFAULT_EINGRIFFE, jokerArtVon,
 } from "./eingriffe";
 import {
   sanitizeDuellJoker, einsaetzeAusTipps, zulaessigeZiele as zulaessigeZieleDuell,
@@ -50,6 +50,12 @@ import {
 } from "./duellJoker";
 import { wahrscheinlichkeiten } from "./ergebnisMatrix";
 import { sanitizeTippfenster, tippStatus } from "./tippfenster";
+// 🔴 Die Rücknahme (JK6) kommt aus der GRUNDFORM, nicht aus einem eigenen
+// Feld: `jokerBasis.widerruf` beantwortet „bis wann darf ich zurücknehmen?"
+// je Art, und die Tippabgabe setzt genau das beim Speichern durch. Ein
+// zweites Feld daneben hätte anzeigen können, was das Speichern verweigert —
+// die Begründung steht bei `jokerArtVon` in `eingriffe.js`.
+import { basisFuer, darfWiderrufen } from "./jokerBasis";
 
 // ── 1) Die EINE Auskunft über die Familie ───────────────────
 
@@ -263,7 +269,7 @@ export function fremdEinsaetze(tipps = [], rules = {}, { spieltagVon = null } = 
 // drei sind hier beantwortet, nicht in der Oberfläche:
 //
 //   1. Der Eingriff ist sichtbar, BEVOR die Frist läuft  → `sichtbarVorFrist`
-//   2. Er ist zurücknehmbar                              → `ruecknahme`
+//   2. Er ist zurücknehmbar                              → `jokerBasis.widerruf`
 //   3. Man sieht, WER es war                             → `offeneEingriffe`
 //
 // ⚠️ Das ist keine Feinheit, sondern der ganze Zweck der Familie. Ein
@@ -284,7 +290,12 @@ export function fremdEinsaetze(tipps = [], rules = {}, { spieltagVon = null } = 
 // es ist ehrlicher als ein Fenster, das nie aufgeht: eine Runde ohne
 // Tippschluss könnte sonst überhaupt keinen Fremdjoker mehr setzen, ohne dass
 // irgendwo stünde warum. `konflikte()` meldet die fehlende Einstellung.
-export function eingriffFenster(match, rules, jetzt = Date.now(), starts = null) {
+// `art` (optional) ist der Fremdjoker, um den es geht — er entscheidet über die
+// Rücknahme, denn die Grundform steht JE ART. Ohne `art` gilt die STRENGSTE
+// unter den laufenden Arten: unter-versprechen ist die harmlose Richtung,
+// über-versprechen wäre eine Zusage, die das Speichern gleich wieder kassiert
+// (dieselbe Wahl wie `duellBasis` bei der Abklingzeit).
+export function eingriffFenster(match, rules, jetzt = Date.now(), starts = null, art = null) {
   const eg = sanitizeEingriffe(rules?.eingriffe);
   const st = tippStatus(match, rules, jetzt, starts);
   const zweiPhasen = sanitizeTippfenster(rules?.tippfenster).schlussStunden > 0;
@@ -297,21 +308,22 @@ export function eingriffFenster(match, rules, jetzt = Date.now(), starts = null)
   const setzbar = familieAn(rules)
     && (zweiPhasen ? phase === "eingriffe" : phase === "tippen");
 
-  // Zurücknehmen: `bisAnpfiff` hält den ganzen zweiten Abschnitt offen,
-  // `bisFrist` endet mit dem Tippschluss, `nein` gibt es nicht.
-  const ruecknehmbar = familieAn(rules) && (
-    eg.ruecknahme === "bisAnpfiff" ? (phase === "tippen" || phase === "eingriffe")
-      : eg.ruecknahme === "bisFrist" ? phase === "tippen"
-      : false
-  );
+  // 🔴 DIESELBE Funktion, die auch die Tippabgabe beim Speichern fragt
+  // (`darfWiderrufen`). Hier eine eigene Frist zu rechnen hieße, dass die
+  // Anzeige „noch zurücknehmbar" sagt und das Speichern es verweigert.
+  const arten = art ? [art] : aktiveArten(rules);
+  const ruecknehmbar = familieAn(rules) && arten.length > 0 && arten.every((k) => {
+    const schluessel = jokerArtVon(k);
+    return schluessel
+      ? darfWiderrufen(basisFuer(schluessel, rules), jetzt, st.anpfiff)
+      : false;
+  });
 
   return {
     phase,
     zweiPhasen,
     setzbar,
     ruecknehmbar,
-    ruecknahmeBis: eg.ruecknahme === "bisAnpfiff" ? st.anpfiff
-      : eg.ruecknahme === "bisFrist" ? st.schliesstAm : null,
     // JK6.1: „sichtbar, BEVOR die Frist läuft". Ohne zweite Phase gibt es
     // dieses Vorher nicht — dann ist der Eingriff ab Anpfiff sichtbar, wie
     // jeder Joker auch.
@@ -355,7 +367,9 @@ export function offeneEingriffe(einsaetze = [], rules = {}, { userId = null, fen
         ...e,
         sichtbar,
         eigener,
-        ruecknehmbar: eigener && (f ? f.ruecknehmbar : eg.ruecknahme !== "nein"),
+        // Ohne Fenster keine Zusage: `ruecknehmbar` hängt an Anpfiff und
+        // Grundform, und beide kennt nur der Aufrufer über `fensterFuer`.
+        ruecknehmbar: eigener && f != null && f.ruecknehmbar,
         art: FREMDJOKER_ARTEN.find((a) => a.key === e.typ) ?? null,
       };
     })
@@ -404,13 +418,22 @@ export function konflikte(rules) {
     });
   }
 
-  if (sanitizeEingriffe(rules?.eingriffe).ruecknahme === "nein") {
+  // 🔴 JK6, zweite Hälfte — geprüft auf der GRUNDFORM, wo die Rücknahme
+  // wohnt. `sofortVerbindlich` ist für einen normalen Joker eine legitime
+  // Härte; für einen FREMDJOKER hebt sie den Zweck der Familie auf.
+  const starr = aktiveArten(rules).filter((k) => {
+    const schluessel = jokerArtVon(k);
+    return schluessel && basisFuer(schluessel, rules).widerruf === "sofortVerbindlich";
+  });
+  if (starr.length) {
+    const namen = starr.map((k) => FREMDJOKER_ARTEN.find((a) => a.key === k).label).join(", ");
     out.push({
       key: "fremdjoker-ohne-ruecknahme",
       korrigieren: true,
-      text: "Ohne Rücknahme kann niemand einen Block wieder herausnehmen — und genau darum geht "
-        + "es bei den Fremdjokern: „nimm den Block bei mir fürs Bayern-Spiel raus.“ Gesetzt ist "
-        + "sonst gesetzt, und aus dem Austausch wird eine stille Punkteverschiebung.",
+      text: `„Sofort verbindlich“ bei ${namen}: niemand kann einen gesetzten Eingriff wieder `
+        + "herausnehmen — und genau darum geht es bei den Fremdjokern („nimm den Block bei mir "
+        + "fürs Bayern-Spiel raus“). Gesetzt ist sonst gesetzt, und aus dem Austausch wird eine "
+        + "stille Punkteverschiebung. Der Widerruf steht in der Joker-Grundform.",
     });
   }
 

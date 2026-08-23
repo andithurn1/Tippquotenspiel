@@ -27,7 +27,7 @@ import { duellPlan, einsaetzeAusTipps } from "@/lib/duellJoker";
 import {
   aktiveArten, familieAn, zulaessigeZiele, gegenwetteVorschau,
 } from "@/lib/fremdjoker";
-import { FREMDJOKER_ARTEN } from "@/lib/eingriffe";
+import { FREMDJOKER_ARTEN, jokerArtVon } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
@@ -101,21 +101,6 @@ const goalsAusPicks = (picks, scorer) => {
   if (scorer.modus === "proSpiel") return { home: namen(picks[0]), away: [] };
   return { home: namen(picks[0]), away: namen(picks[1]) };
 };
-
-// 🔴 Der Schlüssel, unter dem eine Fremdjoker-Art ihre GRUNDFORM findet
-// (`jokerBasis.js` → `basisFuer`). Bis zum 23.08.2026 stand er zweimal als
-// Ternär im Code (`typ === "block" ? "duell.block" : "duell.klau"`) — mit zwei
-// weiteren Arten wäre daraus zweimal ein stiller Rückfall auf „duell.klau"
-// geworden, und Widerruf und Limitklassen hätten für Trittbrettfahrer und
-// Gegenwette die Einstellung einer ganz anderen Art gelesen.
-//
-// ⚠️ Die Schlüssel müssen zu `JOKER_ARTEN` (jokerBudget.js) passen — dort
-// stehen alle vier.
-function jokerArtVon(typ) {
-  const art = FREMDJOKER_ARTEN.find((a) => a.key === typ);
-  if (!art) return "duell.klau";
-  return art.wo === "duell" ? `duell.${typ}` : `eingriffe.${typ}`;
-}
 
 export default function Tippabgabe({ matchId }) {
   const { user } = useAuth();
@@ -991,7 +976,7 @@ export default function Tippabgabe({ matchId }) {
       // ein NEUES Ziel läuft.
       if (RULES.duell?.enabled && urspruenglich.duellZiel != null
         && (duellZiel !== urspruenglich.duellZiel || duellTypGewaehlt !== urspruenglich.duellTyp)) {
-        const duellArtVorher = jokerArtVon(urspruenglich.duellTyp);
+        const duellArtVorher = jokerArtVon(urspruenglich.duellTyp) ?? "duell.klau";
         const basisWiderruf = basisFuer(duellArtVorher, RULES);
         if (!darfWiderrufen(basisWiderruf, Date.now(), new Date(SNAP.kickoff).getTime())) {
           setWiderrufGrund("dieser Duell-Joker ist nicht mehr widerrufbar — die erlaubte Frist ist vorbei");
@@ -1016,7 +1001,7 @@ export default function Tippabgabe({ matchId }) {
           // Kontingent-Klassen prüfen (design/kontaktstellen.md Abschnitt 5
           // Punkt 5, limitKlassen.js) — dieselbe Bedingung: nur wenn hier
           // tatsächlich ein Duell gesetzt wird.
-          const duellJokerArt = jokerArtVon(duellTypGewaehlt);
+          const duellJokerArt = jokerArtVon(duellTypGewaehlt) ?? "duell.klau";
           const klassenPruef = pruefeEinsatz(
             { spieltag: meinSpieltagRunde, jokerArt: duellJokerArt, vonUserId: user.id, aufUserId: duellZiel },
             RULES.limitKlassen, einsatzHistorie, klassenKontext,

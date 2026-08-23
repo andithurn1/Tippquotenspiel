@@ -65,28 +65,28 @@ export const FREMDJOKER_ARTEN = [
   },
 ];
 
-// JK6: bis wann ein gesetzter Eingriff zurückgenommen werden kann.
+// 🔴 Der Schlüssel, unter dem eine Art ihre GRUNDFORM findet (`basisFuer` in
+// `jokerBasis.js`). Er sagt zugleich, warum es hier KEINEN eigenen
+// Rücknahme-Katalog gibt:
 //
-// 🔴 Andis Zweck ist das Gespräch: „hey du Arschloch, nimm den Block bei mir
-// fürs Bayern-Spiel raus, ich habe da ein zu gutes Gefühl." Damit diese Bitte
-// überhaupt Sinn ergibt, muss der andere sie erfüllen KÖNNEN. `nein` ist
-// deshalb die Einstellung, die den Zweck der Familie aufhebt — sie steht zur
-// Wahl, weil Andi Varianten zu Einstellungen macht (23.08.2026), nicht weil
-// sie empfohlen wäre.
-export const RUECKNAHME = [
-  {
-    key: "bisAnpfiff", label: "Bis zum Anpfiff",
-    desc: "Der ganze zweite Abschnitt bleibt offen. Vorgabe — nur so ist die Bitte erfüllbar.",
-  },
-  {
-    key: "bisFrist", label: "Bis zum Tippschluss",
-    desc: "Nur solange die erste Phase läuft. Ein danach gesetzter Eingriff steht dann fest.",
-  },
-  {
-    key: "nein", label: "Gar nicht",
-    desc: "Gesetzt ist gesetzt. ⚠️ Damit fällt der Austausch weg, um den es Andi geht.",
-  },
-];
+// **Befund vom 23.08.2026, an der eigenen Arbeit.** Eine erste Fassung dieser
+// Datei trug ein Feld `ruecknahme` (bisAnpfiff · bisFrist · nein) für JK6 —
+// familienweit. Die Frage „bis wann darf ich einen Einsatz zurücknehmen?"
+// beantwortet die Grundform aber längst, mit `widerruf` (bisAnpfiff ·
+// bisStunden · sofortVerbindlich), JE ART, und die Tippabgabe setzt genau die
+// beim Speichern durch (`darfWiderrufen`). Zwei Felder, dieselbe Frage: eine
+// Runde hätte „zurücknehmbar" anzeigen können, während das Speichern es
+// verweigert. Genau die Fehlerklasse, aus der die 17 Funde vom 05.08. kamen —
+// diesmal selbst gebaut und vor dem ersten Einsatz gefunden.
+//
+// ⚠️ Wer JK6 sucht: die Rücknahme steht in der Grundform, nicht hier.
+// `fremdjoker.konflikte()` meldet `sofortVerbindlich` auf einem Fremdjoker als
+// Widerspruch zum Zweck der Familie.
+export function jokerArtVon(typ) {
+  const art = FREMDJOKER_ARTEN.find((a) => a.key === typ);
+  if (!art) return null;
+  return art.wo === "duell" ? `duell.${typ}` : `eingriffe.${typ}`;
+}
 
 // Auf welcher Genauigkeit die Gegenwette gilt (Teil E, Falle 3: „die Stufe
 // muss festgelegt sein, sonst verhandelt sie jeder anders").
@@ -139,9 +139,10 @@ export const DEFAULT_EINGRIFFE = {
   // nicht ob es immer derselbe Gegner ist. Genau das meint Andi mit „nicht von
   // allen und immer regelmäßig".
   sperrfristJeZiel: 0,
-  // JK6 — beides Vorgabe „offen und widerrufbar" (joker-sondermenue.md Teil D).
+  // JK6 — Vorgabe „offen“ (joker-sondermenue.md Teil D). Die zweite Hälfte
+  // von JK6, das Zurücknehmen, steht in der GRUNDFORM (`jokerBasis.widerruf`)
+  // und nicht hier — die Begründung steht bei `jokerArtVon` oben.
   sichtbarVorFrist: true,
-  ruecknahme: "bisAnpfiff",
   // JK4 — mitprofitieren.
   trittbrett: { enabled: false, anteil: 0.3, kopierterBekommt: 0 },
   // JK4 — dagegen wetten.
@@ -170,8 +171,6 @@ export function sanitizeEingriffe(partial = {}) {
     sperrfristJeZiel: Math.round(clamp(
       p.sperrfristJeZiel, EINGRIFF_LIMITS.sperrfristJeZiel, DEFAULT_EINGRIFFE.sperrfristJeZiel)),
     sichtbarVorFrist: p.sichtbarVorFrist !== false,
-    ruecknahme: RUECKNAHME.some((r) => r.key === p.ruecknahme)
-      ? p.ruecknahme : DEFAULT_EINGRIFFE.ruecknahme,
     trittbrett: {
       enabled: pt.enabled === true,
       anteil: +clamp(pt.anteil, EINGRIFF_LIMITS.anteil, DEFAULT_EINGRIFFE.trittbrett.anteil).toFixed(2),

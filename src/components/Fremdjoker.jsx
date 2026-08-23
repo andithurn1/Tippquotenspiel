@@ -2,13 +2,14 @@
 
 import { C, MONO, RUND } from "@/lib/theme";
 import {
-  FREMDJOKER_ARTEN, RUECKNAHME, GEGEN_STUFEN, GEGEN_MODI,
-  EINGRIFF_LIMITS, sanitizeEingriffe,
+  FREMDJOKER_ARTEN, GEGEN_STUFEN, GEGEN_MODI,
+  EINGRIFF_LIMITS, sanitizeEingriffe, jokerArtVon,
 } from "@/lib/eingriffe";
 import {
   aktiveArten, familieAn, familieSchalten, beschreibeFremdjoker,
   konflikte, zweiPhasenHinweis,
 } from "@/lib/fremdjoker";
+import { basisFuer, WIDERRUF } from "@/lib/jokerBasis";
 import { Zahl } from "@/components/Eingaben";
 import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
 import DuellJoker from "@/components/DuellJoker";
@@ -93,9 +94,21 @@ export default function Fremdjoker({ rules, onChange }) {
     </div>
   );
 
+  // Was die Grundform je laufender Art zum Widerruf sagt — gelesen, nicht
+  // nachgebaut (`basisFuer` ist die einzige Stelle, die `rules.jokerBasis`
+  // auflösen darf).
+  const ruecknahmeText = arten.length === 0
+    ? "—"
+    : arten.map((k) => {
+        const b = basisFuer(jokerArtVon(k), rules);
+        const label = WIDERRUF.find((w) => w.key === b.widerruf)?.label ?? b.widerruf;
+        const stunden = b.widerruf === "bisStunden" ? ` (${b.widerrufStunden} Std.)` : "";
+        const name = FREMDJOKER_ARTEN.find((a) => a.key === k).label;
+        return `${name}: ${label}${stunden}`;
+      }).join(" · ");
+
   const stufe = GEGEN_STUFEN.find((s) => s.key === eg.gegenwette.stufe);
   const modus = GEGEN_MODI.find((m) => m.key === eg.gegenwette.modus);
-  const zurueck = RUECKNAHME.find((r) => r.key === eg.ruecknahme);
 
   return (
     <div>
@@ -271,10 +284,16 @@ export default function Fremdjoker({ rules, onChange }) {
             </div>
           </Block>
 
-          <Block titel="Bis wann zurücknehmbar?" hinweis={zurueck?.desc}>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {RUECKNAHME.map((r) => knopf(eg.ruecknahme === r.key, r.label,
-                () => setze({ ruecknahme: r.key }), r.key, r.desc))}
+          {/* 🔴 Kein eigener Rücknahme-Regler. „Bis wann darf ich einen
+              Einsatz zurücknehmen?" beantwortet die Joker-GRUNDFORM längst —
+              je Art, mit Stunden-Variante, und die Tippabgabe setzt genau die
+              beim Speichern durch. Ein zweiter Regler hier hätte anzeigen
+              können, was das Speichern verweigert. Die Begründung steht bei
+              `jokerArtVon` in `eingriffe.js`. */}
+          <Block titel="Bis wann zurücknehmbar?"
+            hinweis="Steht in der Joker-Grundform („Widerruf“), einstellbar je Fremdjoker einzeln: bis zum Anpfiff, bis X Stunden vorher, oder gar nicht. Vorgabe ist bis zum Anpfiff — nur so kann jemand den Block bei dir noch herausnehmen.">
+            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>
+              {ruecknahmeText}
             </div>
           </Block>
 

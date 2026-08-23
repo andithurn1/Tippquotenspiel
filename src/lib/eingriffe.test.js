@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  FREMDJOKER_ARTEN, RUECKNAHME, GEGEN_STUFEN, GEGEN_MODI,
+  FREMDJOKER_ARTEN, GEGEN_STUFEN, GEGEN_MODI, jokerArtVon,
   EINGRIFF_LIMITS, DEFAULT_EINGRIFFE, sanitizeEingriffe,
   gegenquote, gegenwetteErtrag,
 } from "@/lib/eingriffe";
@@ -22,7 +22,7 @@ describe("Kataloge", () => {
   });
 
   it("jeder Katalog-Eintrag hat Schlüssel, Beschriftung und Beschreibung", () => {
-    for (const katalog of [RUECKNAHME, GEGEN_STUFEN, GEGEN_MODI]) {
+    for (const katalog of [GEGEN_STUFEN, GEGEN_MODI]) {
       expect(katalog.length).toBeGreaterThan(1);
       for (const e of katalog) {
         expect(e.key && e.label).toBeTruthy();
@@ -76,8 +76,7 @@ describe("sanitizeEingriffe", () => {
   });
 
   it("unbekannte Schlüsselwerte fallen auf die Vorgabe", () => {
-    const r = sanitizeEingriffe({ ruecknahme: "irgendwann", gegenwette: { stufe: "gefühl", modus: "hä" } });
-    expect(r.ruecknahme).toBe(DEFAULT_EINGRIFFE.ruecknahme);
+    const r = sanitizeEingriffe({ gegenwette: { stufe: "gefühl", modus: "hä" } });
     expect(r.gegenwette.stufe).toBe(DEFAULT_EINGRIFFE.gegenwette.stufe);
     expect(r.gegenwette.modus).toBe(DEFAULT_EINGRIFFE.gegenwette.modus);
   });
@@ -90,6 +89,25 @@ describe("sanitizeEingriffe", () => {
 });
 
 // ── Teil E: das umgekehrte Modell ───────────────────────────
+// 🔴 Der Fund vom 23.08.2026 an der eigenen Arbeit: eine erste Fassung trug
+// hier ein Feld `ruecknahme`, obwohl `jokerBasis.widerruf` dieselbe Frage
+// längst beantwortet — je Art, und von der Tippabgabe beim Speichern
+// durchgesetzt. Dieser Test hält fest, dass es kein zweites Feld gibt.
+describe("kein zweiter Rücknahme-Regler", () => {
+  it("die Familie trägt kein eigenes Rücknahme-Feld", () => {
+    expect(Object.keys(DEFAULT_EINGRIFFE)).not.toContain("ruecknahme");
+    expect(sanitizeEingriffe({ ruecknahme: "nein" }).ruecknahme).toBeUndefined();
+  });
+
+  it("`jokerArtVon` findet die Grundform jeder der vier Arten", () => {
+    expect(jokerArtVon("klau")).toBe("duell.klau");
+    expect(jokerArtVon("block")).toBe("duell.block");
+    expect(jokerArtVon("trittbrett")).toBe("eingriffe.trittbrett");
+    expect(jokerArtVon("gegenwette")).toBe("eingriffe.gegenwette");
+    expect(jokerArtVon("quatsch")).toBeNull();
+  });
+});
+
 describe("gegenquote", () => {
   // 🔴 Die Zahlen stammen aus der Tabelle in `design/joker-sondermenue.md`
   // Teil E (Köln – Bayern, Quoten 5,20 · 4,74 · 1,50). Sie sind der Beleg
