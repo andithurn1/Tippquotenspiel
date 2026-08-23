@@ -6,7 +6,7 @@ import { C, MONO, RUND } from "@/lib/theme";
 import {
   FREMDJOKER_ARTEN, GEGEN_STUFEN, GEGEN_MODI,
   EINGRIFF_LIMITS, sanitizeEingriffe, jokerArtVon,
-  sanitizeSperrKarte, sperreFuer, wartezeit,
+  sanitizeSperrKarte, sanitizeSichtKarte, sperreFuer, sichtFuer, wartezeit,
 } from "@/lib/eingriffe";
 import {
   aktiveArten, familieAn, familieSchalten, beschreibeFremdjoker,
@@ -66,6 +66,15 @@ export default function Fremdjoker({ rules, onChange }) {
   const [tiefer, setTiefer] = useState(null);
 
   const karte = sanitizeSperrKarte(eg.sperrfrist);
+  const sicht = sanitizeSichtKarte(eg.sichtbar);
+  // `undefined` löscht die Abweichung — die Art folgt dann wieder dem Standard.
+  const setzeSicht = (art, wert) => {
+    const naechste = { ...sicht };
+    if (art == null) naechste.standard = wert;
+    else if (wert === undefined) delete naechste[art];
+    else naechste[art] = wert;
+    setze({ sichtbar: sanitizeSichtKarte(naechste) });
+  };
   // Ein Feld setzen — `null` als Art meint den Standard. `undefined` als Wert
   // LÖSCHT die Abweichung, die Art folgt dann wieder dem Standard.
   const setzeSperre = (art, teil) => {
@@ -366,15 +375,48 @@ export default function Fremdjoker({ rules, onChange }) {
               sie tun könnte: eine Beschriftung, die einen dritten Zustand
               verspricht, den es nicht gibt, ist schlimmer als gar keine. */}
           <Block titel="Vor der Frist sichtbar?"
-            hinweis={eg.sichtbarVorFrist
+            hinweis={sicht.standard
               ? "Offen: jeder sieht mit Namen, wer bei ihm eingegriffen hat, bevor der Spieltag beginnt. Nur so kann man den anderen ansprechen."
               : "⚠️ Verborgen: der Betroffene erfährt bis zum Anpfiff gar nichts davon. Damit fällt der Austausch weg, um den es hier geht."}>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {knopf(eg.sichtbarVorFrist, "Offen", () => setze({ sichtbarVorFrist: true }), "sv-an",
+              {knopf(sicht.standard, "Offen", () => setzeSicht(null, true), "sv-an",
                 "Der Eingriff steht mit Namen beim Betroffenen, sobald er gesetzt ist.")}
-              {knopf(!eg.sichtbarVorFrist, "Verborgen", () => setze({ sichtbarVorFrist: false }), "sv-aus",
+              {knopf(!sicht.standard, "Verborgen", () => setzeSicht(null, false), "sv-aus",
                 "Der Betroffene sieht den Eingriff erst nach dem Anpfiff — bis dahin steht bei ihm nichts.")}
             </div>
+
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+              {knopf(tiefer === "sicht", "Je Fremdjoker einzeln…",
+                () => setTiefer(tiefer === "sicht" ? null : "sicht"), "tf-sicht",
+                "Der Block darf offen liegen, während die Gegenwette verborgen bleibt.")}
+            </div>
+
+            {tiefer === "sicht" && (
+              <div style={{
+                marginTop: 8, paddingLeft: 10, borderLeft: `1px solid ${C.line}`,
+                display: "flex", flexDirection: "column", gap: 8,
+              }}>
+                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>
+                  Ein Block, über den man reden kann — und eine Gegenwette, die überrascht.
+                  Ohne eigene Wahl folgt jede Art dem Schalter oben.
+                </div>
+                {arten.map((k) => {
+                  const name = FREMDJOKER_ARTEN.find((a) => a.key === k).label;
+                  const wert = sichtFuer(k, rules?.eingriffe);
+                  const eigen = sicht[k] !== undefined;
+                  return (
+                    <div key={k} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 12, color: C.muted, minWidth: 108 }}>{name}</span>
+                      {knopf(wert, "Offen", () => setzeSicht(k, true), `${k}-s-an`)}
+                      {knopf(!wert, "Verborgen", () => setzeSicht(k, false), `${k}-s-aus`)}
+                      {eigen && knopf(false, "zurück auf Standard",
+                        () => setzeSicht(k, undefined), `${k}-s-reset`,
+                        "Diese Art folgt wieder dem Schalter oben.")}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </Block>
 
           {/* 🔴 Kein eigener Rücknahme-Regler. „Bis wann darf ich einen

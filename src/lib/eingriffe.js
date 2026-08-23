@@ -158,7 +158,11 @@ export const EINGRIFF_LIMITS = {
 // schon: 0 heißt fest, alles darüber heißt wachsend. Ein Moduswahl-Feld
 // daneben wäre ein zweiter Weg zur selben Aussage — und damit die Sorte
 // Doppelung, die hier gestern schon einmal aufgeräumt werden musste.
-export const DEFAULT_SPERRE = {
+// Vorgabe der Sichtbarkeit: OFFEN. Ein Eingriff, den der Betroffene erst bei
+// der Abrechnung sieht, erfüllt Andis Zweck nicht (JK6).
+const DEFAULT_SICHT = true;
+
+const DEFAULT_SPERRE = {
   // Wartezeit nach dem ERSTEN Treffer, in Spieltagen. 0 = keine.
   spieltage: 0,
   // Wieviel jeder WEITERE Treffer auf dieselbe Person obendrauf legt.
@@ -179,10 +183,11 @@ export const DEFAULT_EINGRIFFE = {
   // (Andi, `vokabular.md`: „ein Hauptschalter oben, darunter je Fremdjoker die
   // eigene Form"). Gespeichert wird nur, was wirklich abweicht.
   sperrfrist: { standard: { ...DEFAULT_SPERRE } },
-  // JK6 — Vorgabe „offen“ (joker-sondermenue.md Teil D). Die zweite Hälfte
-  // von JK6, das Zurücknehmen, steht in der GRUNDFORM (`jokerBasis.widerruf`)
-  // und nicht hier — die Begründung steht bei `jokerArtVon` oben.
-  sichtbarVorFrist: true,
+  // JK6 — Vorgabe „offen“ (joker-sondermenue.md Teil D), je Fremdjoker
+  // einzeln stellbar wie die Sperrfrist. Die zweite Hälfte von JK6, das
+  // Zurücknehmen, steht in der GRUNDFORM (`jokerBasis.widerruf`) und nicht
+  // hier — die Begründung steht bei `jokerArtVon` oben.
+  sichtbar: { standard: DEFAULT_SICHT },
   // JK4 — mitprofitieren.
   trittbrett: { enabled: false, anteil: 0.3, kopierterBekommt: 0 },
   // JK4 — dagegen wetten.
@@ -195,7 +200,7 @@ const clamp = (v, { min, max }, fallback) => {
 };
 
 // Eine VOLLE Sperr-Form — jedes Feld gesetzt. Für den `standard`-Eintrag.
-export function sanitizeSperre(partial = {}) {
+function sanitizeSperre(partial = {}) {
   const o = partial && typeof partial === "object" ? partial : {};
   return {
     spieltage: Math.round(clamp(o.spieltage, EINGRIFF_LIMITS.spieltage, DEFAULT_SPERRE.spieltage)),
@@ -219,22 +224,60 @@ function sanitizeSperrAbweichung(partial) {
   return out;
 }
 
-// Die ganze Karte: `standard` immer voll, jede Art nur als Abweichung.
-// Unbekannte Schlüssel fliegen raus.
-export function sanitizeSperrKarte(karte) {
-  const o = karte && typeof karte === "object" ? karte : {};
-  const out = { standard: sanitizeSperre(o.standard) };
+// 🔴 Die Karten-Bauform an EINER Stelle: `standard` immer voll, jede Art nur
+// als Abweichung, unbekannte Schlüssel fliegen raus.
+//
+// Sie wird zweimal gebraucht (Sperrfrist und Sichtbarkeit) und wird es beim
+// nächsten „je Fremdjoker einzeln" ein drittes Mal. Zwei handgeschriebene
+// Läufe über `FREMDJOKER_ARTEN` wären die Sorte Doppelung, die irgendwann
+// auseinanderläuft — dann trüge die eine Karte einen unbekannten Schlüssel
+// weiter, den die andere wegwirft, und niemand könnte sagen, welche recht hat.
+function karteVon(roh, vollstaendig, abweichungVon) {
+  const o = roh && typeof roh === "object" ? roh : {};
+  const out = { standard: vollstaendig(o.standard) };
   for (const art of FREMDJOKER_ARTEN) {
     if (!Object.prototype.hasOwnProperty.call(o, art.key)) continue;
-    const abweichung = sanitizeSperrAbweichung(o[art.key]);
-    if (Object.keys(abweichung).length) out[art.key] = abweichung;
+    const abweichung = abweichungVon(o[art.key]);
+    if (abweichung !== undefined) out[art.key] = abweichung;
   }
   return out;
+}
+
+export function sanitizeSperrKarte(karte) {
+  return karteVon(karte, sanitizeSperre, (v) => {
+    const a = sanitizeSperrAbweichung(v);
+    return Object.keys(a).length ? a : undefined;
+  });
+}
+
+// 🔴 JK6/JK13 — dieselbe Karte für die SICHTBARKEIT. Andi am 23.08.2026 auf
+// die Frage „Sperrfrist und Sichtbarkeit gemeinsam oder je Joker?": „ne, für
+// jeden Joker … einzeln einstellbar."
+//
+// ⚠️ Er hat dabei ausdrücklich nur die SPERRFRIST benannt. Die Sichtbarkeit
+// bekommt hier dieselbe Bauform, weil er die Antwort „gemeinsam lassen" als
+// Ganzes verworfen hat — und weil es sonst zwei Bedienmuster für dieselbe
+// Frage gäbe. Zurückdrehen kostet zwei Zeilen, falls er es anders meinte.
+//
+// Ein `true`/`false` je Art, kein Objekt: hier gibt es nichts zu vertiefen.
+export function sanitizeSichtKarte(karte) {
+  return karteVon(
+    karte,
+    (v) => (v === undefined ? DEFAULT_SICHT : v !== false),
+    (v) => (typeof v === "boolean" ? v : undefined),
+  );
 }
 
 // 🔴 Die fertige Sperre für EINE Art — Standard und Abweichung übereinander.
 // Die einzige Stelle, an der `eingriffe.sperrfrist` aufgelöst wird; ein
 // zweiter Auflösungsweg wäre die zweite Wahrheit (Muster `basisFuer`).
+// 🔴 Sieht der Betroffene diesen Fremdjoker, bevor der Spieltag beginnt?
+// Dieselbe Auflösung wie `sperreFuer` — Abweichung über Standard.
+export function sichtFuer(art, eingriffe) {
+  const karte = sanitizeSichtKarte(sanitizeEingriffe(eingriffe).sichtbar);
+  return karte[art] ?? karte.standard;
+}
+
 export function sperreFuer(art, eingriffe) {
   const karte = sanitizeSperrKarte(sanitizeEingriffe(eingriffe).sperrfrist);
   return { ...karte.standard, ...(karte[art] ?? {}) };
@@ -269,7 +312,7 @@ export function sanitizeEingriffe(partial = {}) {
   return {
     enabled: p.enabled !== false,
     sperrfrist: sanitizeSperrKarte(p.sperrfrist),
-    sichtbarVorFrist: p.sichtbarVorFrist !== false,
+    sichtbar: sanitizeSichtKarte(p.sichtbar),
     trittbrett: {
       enabled: pt.enabled === true,
       anteil: +clamp(pt.anteil, EINGRIFF_LIMITS.anteil, DEFAULT_EINGRIFFE.trittbrett.anteil).toFixed(2),

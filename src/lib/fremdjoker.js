@@ -43,7 +43,7 @@
 
 import {
   sanitizeEingriffe, gegenquote, FREMDJOKER_ARTEN, DEFAULT_EINGRIFFE, jokerArtVon,
-  sperreFuer, wartezeit,
+  sperreFuer, sichtFuer, wartezeit,
 } from "./eingriffe";
 import {
   sanitizeDuellJoker, einsaetzeAusTipps, zulaessigeZiele as zulaessigeZieleDuell,
@@ -318,7 +318,7 @@ export function fremdEinsaetze(tipps = [], rules = {}, { spieltagVon = null } = 
 // Damit dieses Gespräch stattfinden kann, müssen DREI Dinge gelten — und alle
 // drei sind hier beantwortet, nicht in der Oberfläche:
 //
-//   1. Der Eingriff ist sichtbar, BEVOR die Frist läuft  → `sichtbarVorFrist`
+//   1. Der Eingriff ist sichtbar, BEVOR die Frist läuft  → `eingriffe.sichtbar`
 //   2. Er ist zurücknehmbar                              → `jokerBasis.widerruf`
 //   3. Man sieht, WER es war                             → `offeneEingriffe`
 //
@@ -377,7 +377,12 @@ export function eingriffFenster(match, rules, jetzt = Date.now(), starts = null,
     // JK6.1: „sichtbar, BEVOR die Frist läuft". Ohne zweite Phase gibt es
     // dieses Vorher nicht — dann ist der Eingriff ab Anpfiff sichtbar, wie
     // jeder Joker auch.
-    sichtbar: eg.sichtbarVorFrist ? phase !== "zu" : phase === "vorbei",
+    // ⚠️ Die Sichtbarkeit steht JE ART. Ohne benannte Art gilt die
+    // VERSCHWIEGENSTE der laufenden — unter-versprechen ist die harmlose
+    // Richtung, dieselbe Wahl wie bei der Rücknahme darüber.
+    sichtbar: (art ? sichtFuer(art, rules?.eingriffe)
+      : aktiveArten(rules).every((k) => sichtFuer(k, rules?.eingriffe)))
+      ? phase !== "zu" : phase === "vorbei",
   };
 }
 
@@ -385,15 +390,15 @@ export function eingriffFenster(match, rules, jetzt = Date.now(), starts = null,
 //
 // 🔴 „Man sieht, WER es war." Anonym gibt es niemanden, den man ansprechen
 // kann; ein verdeckter Eingriff erfüllt Andis Zweck nicht. Deshalb trägt jede
-// Zeile `vonUserId` — und der ausdrückliche Gegenfall (`sichtbarVorFrist:
-// false`) blendet den Eintrag bis zum Anpfiff ganz aus.
+// Zeile `vonUserId` — und der ausdrückliche Gegenfall (Sichtbarkeit `false`
+// für diese Art) blendet den Eintrag bis zum Anpfiff ganz aus.
 //
 // ⚠️ Bewusst KEIN Mittelding („jemand blockt eines deiner Spiele"). Ob das die
 // bessere Form wäre, ist in `joker-sondermenue.md` Teil D eine ausdrücklich
 // OFFENE Frage von Andi — sie hier auf Verdacht zu bauen hieße, einen dritten
 // Zustand zu erfinden, den niemand bestellt hat.
 //
-// ⚠️ Ohne `fensterFuer` gilt allein `sichtbarVorFrist`: diese Funktion kennt
+// ⚠️ Ohne `fensterFuer` gilt allein die Sichtbarkeit der Art: diese Funktion kennt
 // die Spiele nicht und kann die Phase nicht selbst bestimmen. Wer die
 // zeitliche Kante braucht, reicht die Rückfrage herein.
 //
@@ -412,7 +417,7 @@ export function offeneEingriffe(einsaetze = [], rules = {}, { userId = null, fen
       const f = fensterFuer ? fensterFuer(e) : null;
       // Der eigene Einsatz ist einem selbst immer offen — man hat ihn gesetzt.
       const eigener = e.vonUserId === userId;
-      const sichtbar = eigener || (f ? f.sichtbar : eg.sichtbarVorFrist);
+      const sichtbar = eigener || (f ? f.sichtbar : sichtFuer(e.typ, rules?.eingriffe));
       return {
         ...e,
         sichtbar,

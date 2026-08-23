@@ -406,11 +406,22 @@ describe("eingriffFenster — JK6", () => {
     expect(eingriffFenster(match, rules, jetzt, starts, "block").ruecknehmbar).toBe(false);
   });
 
-  it("`sichtbarVorFrist: false` versteckt den Eingriff bis nach dem Anpfiff", () => {
+  it("„verborgen“ versteckt den Eingriff bis nach dem Anpfiff — je Art", () => {
     const starts = new Map([["bl#3", ANPFIFF]]);
-    expect(eingriffFenster(match, zweiPhasen(), ANPFIFF - 12 * std, starts).sichtbar).toBe(true);
-    expect(eingriffFenster(match, zweiPhasen({ sichtbarVorFrist: false }), ANPFIFF - 12 * std, starts).sichtbar)
+    const jetzt = ANPFIFF - 12 * std;
+    expect(eingriffFenster(match, zweiPhasen(), jetzt, starts).sichtbar).toBe(true);
+    expect(eingriffFenster(match, zweiPhasen({ sichtbar: { standard: false } }), jetzt, starts).sichtbar)
       .toBe(false);
+
+    // Je Art getrennt: der Block liegt offen, die Gegenwette nicht.
+    const gemischt = zweiPhasen({
+      sichtbar: { standard: true, gegenwette: false },
+      gegenwette: { ...DEFAULT_EINGRIFFE.gegenwette, enabled: true },
+    });
+    expect(eingriffFenster(match, gemischt, jetzt, starts, "block").sichtbar).toBe(true);
+    expect(eingriffFenster(match, gemischt, jetzt, starts, "gegenwette").sichtbar).toBe(false);
+    // Ohne benannte Art gilt die verschwiegenste — unter-versprechen ist harmlos.
+    expect(eingriffFenster(match, gemischt, jetzt, starts).sichtbar).toBe(false);
   });
 });
 
@@ -453,7 +464,7 @@ describe("offeneEingriffe — man sieht, WER es war", () => {
   // Form wäre, ist in Teil D eine offene Frage von Andi; ein dritter Zustand
   // auf Verdacht wäre ein erfundener Regler.
   it("ohne Sichtbarkeit vor der Frist sieht der Betroffene nichts — der Setzende schon", () => {
-    const verdeckt = { ...rules, eingriffe: { ...DEFAULT_EINGRIFFE, sichtbarVorFrist: false } };
+    const verdeckt = { ...rules, eingriffe: { ...DEFAULT_EINGRIFFE, sichtbar: { standard: false } } };
     expect(offeneEingriffe(einsaetze, verdeckt, { userId: "b" })).toEqual([]);
     // Der eigene Einsatz bleibt einem selbst immer offen — man hat ihn gesetzt.
     const [meiner] = offeneEingriffe(einsaetze, verdeckt, { userId: "a" });

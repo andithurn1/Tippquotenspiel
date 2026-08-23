@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   FREMDJOKER_ARTEN, GEGEN_STUFEN, GEGEN_MODI, jokerArtVon,
-  EINGRIFF_LIMITS, DEFAULT_EINGRIFFE, DEFAULT_SPERRE, sanitizeEingriffe,
-  sanitizeSperrKarte, sperreFuer, wartezeit,
+  EINGRIFF_LIMITS, DEFAULT_EINGRIFFE, sanitizeEingriffe,
+  sanitizeSperrKarte, sanitizeSichtKarte, sperreFuer, sichtFuer, wartezeit,
   gegenquote, gegenwetteErtrag,
 } from "@/lib/eingriffe";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
@@ -51,9 +51,23 @@ describe("sanitizeEingriffe", () => {
     expect(sanitizeEingriffe({ enabled: 0 }).enabled).toBe(true);
   });
 
-  it("dieselbe Regel gilt für `sichtbarVorFrist` — Vorgabe ist offen", () => {
-    expect(sanitizeEingriffe({}).sichtbarVorFrist).toBe(true);
-    expect(sanitizeEingriffe({ sichtbarVorFrist: false }).sichtbarVorFrist).toBe(false);
+  // 🔴 Auch die SICHTBARKEIT steht je Fremdjoker (Andi, 23.08.2026: „ne, für
+  // jeden Joker … einzeln einstellbar"). Vorgabe bleibt offen — ein Eingriff,
+  // den man erst bei der Abrechnung sieht, erfüllt den Zweck der Familie nicht.
+  it("die Sichtbarkeit ist eine Karte mit Standard und Abweichung je Art", () => {
+    expect(sanitizeEingriffe({}).sichtbar).toEqual({ standard: true });
+    expect(sichtFuer("block", {})).toBe(true);
+
+    const eg = { sichtbar: { standard: true, gegenwette: false } };
+    expect(sichtFuer("block", eg)).toBe(true);
+    expect(sichtFuer("gegenwette", eg)).toBe(false);
+
+    // Nur echte Booleans zählen als Abweichung, alles andere folgt dem Standard.
+    const karte = sanitizeSichtKarte({ standard: false, block: true, klau: "vielleicht", quatsch: true });
+    expect(karte.standard).toBe(false);
+    expect(karte.block).toBe(true);
+    expect(karte.klau).toBeUndefined();
+    expect(karte.quatsch).toBeUndefined();
   });
 
   it("die beiden neuen Arten sind umgekehrt: nur ein ausdrückliches true schaltet ein", () => {
@@ -98,7 +112,7 @@ describe("sanitizeEingriffe", () => {
 describe("Sperrfrist: Standard, Abweichung je Art, Verhalten", () => {
   it("die Karte speichert nur, was wirklich abweicht", () => {
     const k = sanitizeSperrKarte({ standard: { spieltage: 2 }, block: { spieltage: 5 }, klau: {} });
-    expect(k.standard).toEqual({ ...DEFAULT_SPERRE, spieltage: 2 });
+    expect(k.standard).toEqual({ spieltage: 2, aufschlag: 0, hoechstens: 0 });
     expect(k.block).toEqual({ spieltage: 5 });
     // `klau` weicht nicht ab → steht gar nicht erst in der Karte.
     expect(k.klau).toBeUndefined();
@@ -143,9 +157,11 @@ describe("Sperrfrist: Standard, Abweichung je Art, Verhalten", () => {
     expect(wartezeit({ spieltage: 9, aufschlag: 9 }, 0)).toBe(0);
   });
 
+  // 🔴 Die Vorgabe ist hier ausgeschrieben und nicht aus dem Modul geholt:
+  // ein Test, der die Vorgabe gegen sich selbst prüft, kann nicht scheitern.
   it("die Vorgabe ändert an bestehenden Runden nichts", () => {
-    expect(DEFAULT_EINGRIFFE.sperrfrist.standard).toEqual(DEFAULT_SPERRE);
-    expect(wartezeit(DEFAULT_SPERRE, 5)).toBe(0);
+    expect(DEFAULT_EINGRIFFE.sperrfrist.standard).toEqual({ spieltage: 0, aufschlag: 0, hoechstens: 0 });
+    expect(wartezeit(DEFAULT_EINGRIFFE.sperrfrist.standard, 5)).toBe(0);
   });
 });
 
