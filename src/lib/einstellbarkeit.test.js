@@ -56,7 +56,7 @@ describe("Einstellbarkeit — die Abdeckung", () => {
   // Sinkt sie, hat jemand ein Preset, einen Charakter, eine Regler-Stufe oder
   // das Schaufenster ausgedünnt — und eine Einstellung wird seither nirgends
   // mehr vorgeführt.
-  const ABDECKUNG_BEI_EINFUEHRUNG = 62;
+  const ABDECKUNG_BEI_EINFUEHRUNG = 78;
 
   it("die Zahl der im Projekt vorgeführten Felder sinkt NICHT", () => {
     expect(abdeckung().ausProjekt).toBeGreaterThanOrEqual(ABDECKUNG_BEI_EINFUEHRUNG);

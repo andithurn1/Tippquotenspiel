@@ -51,6 +51,29 @@ describe("Schaufenster — die Runde, in der alles an ist", () => {
   it("ist ausdrücklich etwas anderes als die Vorgabe", () => {
     expect(schaufensterRegeln()).not.toEqual(sanitizeRules(DEFAULT_RULES));
   });
+
+  // 🔴 Der eigentliche Auftrag: das Schaufenster soll VORFÜHREN, nicht nur
+  // einschalten. Ein Regler, der auf der Vorgabe steht, zeigt zwar die
+  // Mechanik, aber nicht, dass er verstellbar ist.
+  //
+  // ⚠️ Die sieben, die auf der Vorgabe BLEIBEN, bleiben es mit Grund: ihr
+  // anderer Wert machte das Schaufenster schlechter (verdeckte Schilde,
+  // „mitverdienen" ohne Deckel, ein Duell, das einen Joker kostet, den diese
+  // Runde gar nicht verteilt). Deshalb eine Untergrenze und keine Vollzahl.
+  it("führt die Fremdjoker-Familie weitgehend vor, nicht nur eingeschaltet", () => {
+    const r = schaufensterRegeln();
+    const basis = sanitizeRules(DEFAULT_RULES);
+    const zaehle = (a, b) => {
+      let n = 0;
+      for (const [k, v] of Object.entries(a ?? {})) {
+        if (v && typeof v === "object" && !Array.isArray(v)) n += zaehle(v, b?.[k]);
+        else if (JSON.stringify(v) !== JSON.stringify(b?.[k])) n += 1;
+      }
+      return n;
+    };
+    expect(zaehle(r.eingriffe, basis.eingriffe)).toBeGreaterThanOrEqual(11);
+    expect(zaehle(r.duell, basis.duell)).toBeGreaterThanOrEqual(12);
+  });
 });
 
 describe("Schaufenster — die Runde im Store", () => {

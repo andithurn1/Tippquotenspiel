@@ -34,6 +34,32 @@ dieselbe austauschbare Stelle wie bei den Quoten.
 
 ---
 
+## 📏 Abdeckung: 78 von 199 Einstellbarkeiten werden im Projekt vorgeführt
+
+`npm run einstellbar` (23.08.2026) beantwortet zwei Fragen, die vorher niemand
+stellte — und die zweite ist eine Zahl, die man kennen sollte:
+
+**121 von 199 Blattfeldern werden NIRGENDS im Projekt anders gesetzt** als in
+der Vorgabe. Nicht in einem Preset, nicht in einem Charakter, nicht in einer
+Regler-Stufe, nicht im Schaufenster. Sie sind gebaut, geprüft, teilbar — und
+kein Mensch hat sie je vorgeführt.
+
+⚠️ **Das ist kein Fehler und keine Aufgabe für heute.** Es ist die ehrliche
+Antwort darauf, wie viel von diesem Baukasten wirklich benutzt wird. Wer eine
+dieser Einstellungen im Browser sehen will, muss sie von Hand setzen.
+
+Die Sperrklinke im Test lässt die Zahl steigen, nicht fallen: dünnt jemand ein
+Preset aus, fällt es dort auf.
+
+⛔ **Die Zahl NICHT als Ziel behandeln.** Ein Schaufenster, das jeden Regler
+auf einen anderen Wert stellt, nur damit eine Zahl 199 erreicht, ist eine
+Runde, die niemand lesen kann — und es behauptet Empfehlungen, wo keine sind.
+Die sieben Fremdjoker-Felder, die auf der Vorgabe bleiben, bleiben es mit
+Grund (verdeckte Schilde, „mitverdienen" ohne Deckel, ein Duell, das einen
+Joker kostet, den die Runde gar nicht verteilt).
+
+---
+
 ## 🔍 Drei Befunde beim Bau der Fremdjoker (23.08.2026) — alle GEMESSEN
 
 Keiner kam aus einem Test; alle drei aus den Durchgängen und aus dem Nachrechnen

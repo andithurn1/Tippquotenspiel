@@ -74,27 +74,50 @@ export function schaufensterRegeln() {
       // Liste auf genau einen Namen kürzen und damit alles andere verdecken.
       zielWahl: "frei",
       maxProZiel: 3,
-      immun: 0,
+      immun: 1,
       maxProSaison: 150,
+      // Die Stärke-Regler stehen bewusst nicht auf der Vorgabe — sonst zeigt
+      // das Schaufenster nicht, dass sie verstellbar sind.
+      klau: { anteil: 0.5, modus: "nullsumme" },
+      block: { restanteil: 0.4, nurGewinn: true, beute: 0.1 },
+      sichtbarkeit: "verdeckt",
+      konter: true,
+      // ⚠️ `kosten: "frei"` bleibt: „stattJoker" verbraucht einen Joker aus
+      // demselben Vorrat, und dann setzt im Schaufenster niemand mehr etwas —
+      // die Runde hat keine Joker-Verteilung, die das trägt.
+      schlussLaenge: 5,
     },
 
     eingriffe: {
       ...DEFAULT_RULES.eingriffe,
       enabled: true,
       // Alle vier Arten laufen — das ist der ganze Zweck dieser Runde.
-      trittbrett: { ...DEFAULT_RULES.eingriffe.trittbrett, enabled: true },
-      gegenwette: { ...DEFAULT_RULES.eingriffe.gegenwette, enabled: true },
+      // ⚠️ Anteil und Einsatz weichen bewusst von der Vorgabe ab: sonst zeigt
+      // das Schaufenster zwar die Mechanik, aber nicht, DASS sie einstellbar
+      // ist. Es sind Demo-Werte, keine Empfehlung.
+      trittbrett: { enabled: true, anteil: 0.4, kopierterBekommt: 0.25 },
+      gegenwette: { enabled: true, einsatz: 30, stufe: "abstand", modus: "nullsumme" },
       // JK5 in allen drei Ebenen sichtbar: ein Standard, eine Abweichung je
       // Art, und der wachsende Cooldown aus Andis Beispiel.
       sperrfrist: {
-        standard: { spieltage: 0, aufschlag: 2, hoechstens: 6 },
+        standard: { spieltage: 1, aufschlag: 2, hoechstens: 6 },
         block: { spieltage: 3, aufschlag: 0 },
       },
       // JK6: der Block liegt offen (darüber soll geredet werden), die
       // Gegenwette nicht (sie soll überraschen).
       sichtbar: { standard: true, gegenwette: false },
-      // JK14: ein Schild je Spieltag — die Vorgabe, hier nur ausdrücklich.
-      schutz: { proSpieltag: 1, sichtbar: true, verfall: "zurueck" },
+      // JK14: zwei Schilde je Spieltag, und der Einsatz VERFÄLLT — die
+      // schärfere der beiden Varianten, damit sie überhaupt einmal vorkommt.
+      // ⚠️ Zusammen mit `sichtbar: true` ist das die unauffällige Kombination;
+      // verdeckt PLUS Rückgabe wäre die, die `konflikte()` meldet.
+      schutz: { proSpieltag: 2, sichtbar: true, verfall: "verfaellt" },
+      // JK12: die Auslosung ist in DIESER Runde nicht scharf (`zielWahl:
+      // "frei"`, siehe oben) — ihre Einstellungen stehen trotzdem auf einem
+      // anderen Wert als der Vorgabe, damit sichtbar ist, dass es sie gibt.
+      los: {
+        jeArt: true,
+        standard: { takt: "saison", paare: "einseitig", sichtbar: "alle" },
+      },
     },
   });
 }
