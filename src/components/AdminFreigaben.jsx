@@ -9,7 +9,7 @@ import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { zeitachse, rundenSpieltagVon, achsenLabel } from "@/lib/zeitachse";
 import { naechstesOffenesSpiel } from "@/lib/muenzstand";
 import { basisFuer, WER } from "@/lib/jokerBasis";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // ── Admin-Freigaben (design/kontaktstellen.md, letzte Teil-Wirkung) ──
 //
@@ -165,7 +165,7 @@ export default function AdminFreigaben() {
                                 onClick={() => umschalten(id, t)}
                                 title={an ? "Freigegeben — zum Zurücknehmen klicken" : "Nicht freigegeben"}
                                 style={{
-                                  width: 30, height: 30, borderRadius: 9, cursor: istAdmin ? "pointer" : "default",
+                                  width: 30, height: 30, borderRadius: RUND.karte, cursor: istAdmin ? "pointer" : "default",
                                   fontFamily: "inherit", fontSize: 13,
                                   background: an ? `${C.mint}22` : C.surface,
                                   color: an ? C.mint : "rgba(138,144,180,0.5)",
@@ -195,7 +195,7 @@ export default function AdminFreigaben() {
 function Kasten({ children }) {
   return (
     <div style={{
-      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 14,
+      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
       padding: "14px 16px", fontSize: 13, color: C.muted, lineHeight: 1.5, marginBottom: 12,
     }}>{children}</div>
   );

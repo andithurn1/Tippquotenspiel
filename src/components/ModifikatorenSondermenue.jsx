@@ -4,7 +4,7 @@ import { useState } from "react";
 import { RULE_LIMITS, DEFAULT_RULES, reglerSchritt } from "@/lib/engine";
 import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { alleVereine } from "@/lib/ligen";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
 import { Slider, Toggle, GrosseZeile } from "@/components/Eingaben";
 import TabellenBonus from "@/components/TabellenBonus";
@@ -90,7 +90,7 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
     return (
       <div style={{
         background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`,
-        borderRadius: 14, padding: "13px 15px",
+        borderRadius: RUND.karte, padding: "13px 15px",
       }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
         <p style={{ fontSize: 12, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
@@ -143,7 +143,7 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
                     title={f > 1 ? "zählt mehr" : f < 1 ? "zählt weniger" : "kein Modifikator"}
                     style={{
                       cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px",
-                      borderRadius: 999, minHeight: 44, boxSizing: "border-box",
+                      borderRadius: RUND.pille, minHeight: 44, boxSizing: "border-box",
                       background: an ? `${ton}22` : C.surface, color: an ? ton : C.muted,
                       border: `1px solid ${an ? ton + "66" : C.line}`,
                     }}>

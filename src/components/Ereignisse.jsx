@@ -1,6 +1,6 @@
 "use client";
 
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import {
   AUSWERTBARE_TYPEN, EREIGNIS_TYPEN, EREIGNIS_LIMITS, EREIGNIS,
   EREIGNIS_PRESETS, AUSWAHL_MODI, AUSWAHL_LIMITS, METRIKEN,
@@ -53,7 +53,7 @@ function Ausloeserfeld({ wert, onChange }) {
   const wieOft = haeufigkeit(a, BEISPIEL_SAISON);
   const knopf = (aktiv, text, onClick, key, titel) => (
     <button key={key} type="button" onClick={onClick} title={titel} style={{
-      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: 999,
+      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: RUND.pille,
       background: aktiv ? `${C.akzent}1a` : "transparent", color: aktiv ? C.akzent : C.text,
       cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
@@ -113,7 +113,7 @@ function Geltungsfeld({ wert, wirkung, onChange }) {
   const warnungen = geltungsKonflikte(g, wirkung);
   const knopf = (aktiv, text, onClick, key, titel) => (
     <button key={key} type="button" onClick={onClick} title={titel} style={{
-      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: 999,
+      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: RUND.pille,
       background: aktiv ? `${C.akzent}1a` : "transparent", color: aktiv ? C.akzent : C.text,
       cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
@@ -171,7 +171,7 @@ function Wirkungsfeld({ wert, onChange }) {
   const warnungen = wirkungsKonflikte(w);
   const knopf = (aktiv, text, onClick, key, titel) => (
     <button key={key} type="button" onClick={onClick} title={titel} style={{
-      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: 999,
+      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: RUND.pille,
       background: aktiv ? `${C.akzent}1a` : "transparent", color: aktiv ? C.akzent : C.text,
       cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
@@ -221,7 +221,7 @@ function Auswahlfeld({ wert, onChange }) {
   const a = sanitizeAuswahl(wert);
   const knopf = (aktiv, text, onClick, key) => (
     <button key={key} type="button" onClick={onClick} style={{
-      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: 999,
+      border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: RUND.pille,
       background: aktiv ? `${C.akzent}1a` : "transparent", color: aktiv ? C.akzent : C.text,
       cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
@@ -345,7 +345,7 @@ export default function Ereignisse({ rules, onChange }) {
               <button key={p.key} type="button" onClick={() => setze(p.ereignisse)}
                 title={p.text}
                 style={{
-                  border: `1px solid ${aktiv ? C.mint : C.line}`, borderRadius: 999,
+                  border: `1px solid ${aktiv ? C.mint : C.line}`, borderRadius: RUND.pille,
                   background: aktiv ? `${C.mint}1a` : "transparent",
                   color: aktiv ? C.mint : C.text, cursor: "pointer",
                   ...TAPZIEL, padding: "5px 11px", fontSize: 12, fontWeight: aktiv ? 700 : 500,
@@ -369,7 +369,7 @@ export default function Ereignisse({ rules, onChange }) {
 
       {cfg.enabled && (
         <div style={{
-          background: `${C.mint}0e`, border: `1px solid ${C.mint}44`, borderRadius: 12,
+          background: `${C.mint}0e`, border: `1px solid ${C.mint}44`, borderRadius: RUND.karte,
           padding: "10px 12px", marginBottom: 12,
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -392,7 +392,7 @@ export default function Ereignisse({ rules, onChange }) {
 
       {warnungen.map((w) => (
         <div key={w.key} style={{
-          background: `${C.akzent}12`, border: `1px solid ${C.akzent}55`, borderRadius: 12,
+          background: `${C.akzent}12`, border: `1px solid ${C.akzent}55`, borderRadius: RUND.karte,
           padding: "10px 12px", marginBottom: 10, fontSize: 12, color: C.text, lineHeight: 1.5,
         }}>
           <strong style={{ color: C.akzent }}>Doppelt belohnt: </strong>{w.text}
@@ -412,7 +412,7 @@ export default function Ereignisse({ rules, onChange }) {
               <div key={t.key} style={{
                 background: an ? `${C.akzent}12` : C.surface,
                 border: `1px solid ${an ? C.akzent + "55" : C.line}`,
-                borderRadius: 12, padding: "10px 12px", marginBottom: 6,
+                borderRadius: RUND.karte, padding: "10px 12px", marginBottom: 6,
               }}>
                 <button onClick={() => umschalten(t.key)} style={{
                   width: "100%", textAlign: "left", background: "transparent", border: "none",
@@ -489,7 +489,7 @@ export default function Ereignisse({ rules, onChange }) {
                               <button key={m.key} type="button" title={m.text}
                                 onClick={() => setzeFeld(t.key, "metrik", m.key)}
                                 style={{
-                                  border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: 999,
+                                  border: `1px solid ${aktiv ? C.akzent : C.line}`, borderRadius: RUND.pille,
                                   background: aktiv ? `${C.akzent}1a` : "transparent",
                                   color: aktiv ? C.akzent : C.text, cursor: "pointer",
                                   padding: "4px 10px", fontSize: 11, fontWeight: aktiv ? 700 : 500,
@@ -534,7 +534,7 @@ export default function Ereignisse({ rules, onChange }) {
       {/* Vorbereitet, aber ehrlich als „geht noch nicht" ausgewiesen — statt
           etwas anbieten zu können, das nie auslöst. */}
       <div style={{
-        border: `1px dashed ${C.line}`, borderRadius: 12, padding: "10px 12px", marginBottom: 8,
+        border: `1px dashed ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px", marginBottom: 8,
       }}>
         <div style={{
           fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,

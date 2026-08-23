@@ -21,7 +21,7 @@
 // ============================================================
 
 import { useState } from "react";
-import { SCHRIFT } from "@/lib/theme";
+import { SCHRIFT, RUND } from "@/lib/theme";
 import Aktion from "@/components/Aktion";
 import BackLink from "@/components/BackLink";
 
@@ -47,9 +47,13 @@ const FARBEN = [
 ];
 
 const RUNDUNGEN = [
-  ["R1", "--tqs-rund-klein", "8"],
+  // ⚠️ R2 ist Andis bevorzugter Radius (09.08.2026) und BLEIBT 12 px. R1 und
+  // R3 haben sich am 23.08.2026 geändert, als aus zwei Leitern eine wurde:
+  // R1 ist jetzt der Radius für Winzigkeiten (Balken, Punkte), R3 der äußere
+  // Bildschirmrahmen. Was dazwischen liegt, ist R2 — und zwar alles.
+  ["R1", "--tqs-rund-klein", "4"],
   ["R2", "--tqs-rund", "12"],
-  ["R3", "--tqs-rund-karte", "16"],
+  ["R3", "--tqs-rund-schirm", "26"],
   ["R4", "--tqs-rund-pille", "Pille"],
 ];
 
@@ -145,7 +149,7 @@ export default function Stilmuster() {
         <Muster k="B2" was="Karte — trägt Inhalt, ist selbst nicht anklickbar">
           <div style={{
             background: "var(--tqs-ink2)", border: "1px solid var(--tqs-line)",
-            borderRadius: "var(--tqs-rund-karte)", padding: "var(--tqs-raum-4)",
+            borderRadius: "var(--tqs-rund)", padding: "var(--tqs-raum-4)",
           }}>
             <div style={{ fontSize: "var(--tqs-schrift-mikro)", color: "var(--tqs-muted)", textTransform: "uppercase", letterSpacing: 1 }}>Spieltag 4</div>
             <div style={{ fontSize: "var(--tqs-schrift-titel)", fontWeight: 700, marginTop: 4 }}>Bayern – Dortmund</div>
@@ -195,13 +199,13 @@ export default function Stilmuster() {
           }}>
             <span style={{ flex: 1 }}>Auf bestimmte Teams beschränken</span>
             <span style={{
-              width: 40, height: 24, borderRadius: 999, position: "relative", flexShrink: 0,
+              width: 40, height: 24, borderRadius: RUND.pille, position: "relative", flexShrink: 0,
               background: an ? "var(--tqs-mint)" : "var(--tqs-surface2)",
               transition: "background var(--tqs-dauer) var(--tqs-kurve)",
             }}>
               <span style={{
                 position: "absolute", top: 3, left: an ? 19 : 3, width: 18, height: 18,
-                borderRadius: 999, background: "#fff",
+                borderRadius: RUND.pille, background: "#fff",
                 transition: "left var(--tqs-dauer) var(--tqs-kurve-feder)",
               }} />
             </span>
@@ -260,7 +264,7 @@ function Kuerzel({ children }) {
     <span style={{
       fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 700,
       color: "var(--tqs-akzent)", border: "1px solid color-mix(in srgb, var(--tqs-akzent) 40%, transparent)",
-      borderRadius: 999, padding: "1px 6px", whiteSpace: "nowrap",
+      borderRadius: RUND.pille, padding: "1px 6px", whiteSpace: "nowrap",
     }}>{children}</span>
   );
 }

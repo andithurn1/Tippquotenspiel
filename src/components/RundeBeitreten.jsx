@@ -6,7 +6,7 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 
 export default function RundeBeitreten() {
@@ -50,7 +50,7 @@ export default function RundeBeitreten() {
       <BackLink href="/menu" label="Menü" />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
-        borderRadius: 26, overflow: "hidden",
+        borderRadius: RUND.schirm, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
@@ -70,14 +70,14 @@ export default function RundeBeitreten() {
               <input value={code} onChange={(e) => setCode(e.target.value)}
                 placeholder="z. B. AB3XQ9" maxLength={12} autoCapitalize="characters" style={{
                   width: "100%", boxSizing: "border-box", background: C.surface, color: C.text,
-                  border: `1px solid ${C.line}`, borderRadius: 12, padding: "14px 16px",
+                  border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "14px 16px",
                   fontSize: 20, fontFamily: MONO, letterSpacing: 3, textAlign: "center",
                   textTransform: "uppercase", outline: "none",
                 }} />
               <button type="submit" disabled={state === "joining" || !code.trim()} style={{
                 marginTop: 14, width: "100%", cursor: state === "joining" || !code.trim() ? "default" : "pointer",
                 background: C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
-                border: "none", borderRadius: 14, padding: "14px 0",
+                border: "none", borderRadius: RUND.karte, padding: "14px 0",
                 opacity: state === "joining" || !code.trim() ? 0.6 : 1,
               }}>
                 {state === "joining" ? "wird geprüft …" : "Beitreten"}
@@ -96,7 +96,7 @@ export default function RundeBeitreten() {
               </div>
             </form>
           ) : (
-            <div style={{ background: `${C.mint}12`, border: `1px solid ${C.mint}44`, borderRadius: 14, padding: "16px 18px" }}>
+            <div style={{ background: `${C.mint}12`, border: `1px solid ${C.mint}44`, borderRadius: RUND.karte, padding: "16px 18px" }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: C.mint }}>✓ Beigetreten: „{joinedName}"</div>
               <p style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Das ist jetzt deine aktive Runde für Tippen und Abrechnung.
@@ -104,7 +104,7 @@ export default function RundeBeitreten() {
               <Link href="/tippen" style={{
                 marginTop: 14, display: "block", textAlign: "center", textDecoration: "none",
                 color: C.ink, background: C.akzent, fontWeight: 700, fontSize: 15,
-                borderRadius: 14, padding: "12px 0",
+                borderRadius: RUND.karte, padding: "12px 0",
               }}>
                 Jetzt tippen →
               </Link>

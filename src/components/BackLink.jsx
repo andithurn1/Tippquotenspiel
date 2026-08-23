@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 
 // „Zurück"-Link über der Karte jedes Screens. Zeigt standardmäßig auf die
 // Übersicht (/); einzelne Screens geben ein näherliegendes Ziel an.
@@ -24,7 +24,7 @@ export default function BackLink({ href = "/", label = "Übersicht" }) {
     <div style={{ width: "100%", maxWidth: 400, marginBottom: 6 }}>
       <Link href={href} style={{
         display: "inline-flex", alignItems: "center", gap: 8,
-        minHeight: 48, padding: "0 14px", marginLeft: -14, borderRadius: 12,
+        minHeight: 48, padding: "0 14px", marginLeft: -14, borderRadius: RUND.karte,
         fontFamily: MONO, fontSize: 15, color: C.text, textDecoration: "none",
         WebkitTapHighlightColor: "transparent",
       }}>

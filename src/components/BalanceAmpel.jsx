@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { simulateBalance } from "@/lib/balanceSim";
-import { C, MONO, AMPEL } from "@/lib/theme";
+import { C, MONO, AMPEL, RUND } from "@/lib/theme";
 
 
 const FARBE = { gruen: C.mint, gelb: C.akzent, rot: C.coral };
@@ -24,7 +24,7 @@ export default function BalanceAmpel({ rules }) {
   return (
     <div style={{
       marginTop: 14, background: `${farbe}10`, border: `1px solid ${farbe}44`,
-      borderRadius: 14, padding: "13px 15px",
+      borderRadius: RUND.karte, padding: "13px 15px",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ color: farbe, fontSize: 15 }}>{SYMBOL[sim.ampel.stufe]}</span>

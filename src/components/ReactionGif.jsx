@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { reactionSrc } from "@/lib/reactions";
-import { MONO } from "@/lib/theme";
+import { MONO, RUND } from "@/lib/theme";
 
 // Zeigt den Reaktions-Clip einer Reaktion (aus reactions.js). Format ist ein
 // kurzes, stummes, loopendes MP4 unter public/reactions/<key>.mp4 (kleiner und
@@ -17,7 +17,7 @@ export default function ReactionGif({ reaction, size = 120 }) {
 
   return (
     <div style={{
-      width: size, height: size, borderRadius: 18, overflow: "hidden",
+      width: size, height: size, borderRadius: RUND.karte, overflow: "hidden",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       background: `${reaction.tone}14`, border: `1px solid ${reaction.tone}44`,
       position: "relative",

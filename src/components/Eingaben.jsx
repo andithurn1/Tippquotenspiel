@@ -1,6 +1,6 @@
 "use client";
 
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { band } from "@/lib/reglerWarnung";
 import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
 
@@ -38,10 +38,10 @@ export function Slider({ label, hint, value, min, max, step, onChange, fmt, pfad
         style={{ width: "100%", accentColor: draussen ? C.coral : C.akzent, cursor: "pointer" }} />
       {b && (
         <div title="erprobter Bereich" style={{
-          position: "relative", height: 3, borderRadius: 999, background: C.line, marginTop: 1,
+          position: "relative", height: 3, borderRadius: RUND.pille, background: C.line, marginTop: 1,
         }}>
           <div style={{
-            position: "absolute", top: 0, bottom: 0, borderRadius: 999, background: `${C.mint}99`,
+            position: "absolute", top: 0, bottom: 0, borderRadius: RUND.pille, background: `${C.mint}99`,
             left: anteil(b.von), right: `calc(100% - ${anteil(b.bis)})`,
           }} />
         </div>
@@ -57,18 +57,18 @@ export function Toggle({ label, on, onChange }) {
       display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
       textAlign: "left", gap: 12, marginBottom: 8, cursor: "pointer", color: C.text,
       background: C.surface, border: `1px solid ${on ? C.mint + "55" : C.line}`,
-      borderRadius: 12, padding: "10px 14px", fontSize: 13, fontFamily: "inherit",
+      borderRadius: RUND.karte, padding: "10px 14px", fontSize: 13, fontFamily: "inherit",
       // 44 pt (Apple) / 48 dp (Google) — gilt für jeden Schalter.
       minHeight: 44, boxSizing: "border-box",
     }}>
       <span>{label}</span>
       <span style={{
-        flexShrink: 0, width: 38, height: 22, borderRadius: 999,
+        flexShrink: 0, width: 38, height: 22, borderRadius: RUND.pille,
         background: on ? C.mint : C.surface2, position: "relative", transition: "background .2s",
       }}>
         <span style={{
           position: "absolute", top: 2, left: on ? 18 : 2, width: 18, height: 18,
-          borderRadius: 999, background: "#fff", transition: "left .2s",
+          borderRadius: RUND.pille, background: "#fff", transition: "left .2s",
         }} />
       </span>
     </button>
@@ -89,7 +89,7 @@ export function Stepper({ value, min, max, onStep }) {
   // 30×30-Quadrat würde ein 30 breiter, 44 hoher Streifen. Quadratische
   // Knöpfe brauchen beide Maße — dafür gibt es die zweite Konstante.
   const b = (dis) => ({
-    ...TAPZIEL_QUADRAT, borderRadius: 10, cursor: dis ? "default" : "pointer",
+    ...TAPZIEL_QUADRAT, borderRadius: RUND.karte, cursor: dis ? "default" : "pointer",
     background: C.surface2, color: dis ? C.muted : C.text, border: `1px solid ${C.line}`,
     fontSize: 20, lineHeight: 1,
   });
@@ -121,7 +121,7 @@ export function GrosseZeile({ icon, titel, unter, wert, offen, onClick, children
         textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
         background: offen ? C.ink2 : C.surface,
         border: `1px solid ${offen ? C.mint + "55" : C.line}`,
-        borderRadius: 14, padding: "12px 14px",
+        borderRadius: RUND.karte, padding: "12px 14px",
       }}>
         {icon && <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1 }}>{icon}</span>}
         <span style={{ flex: 1, minWidth: 0 }}>
@@ -185,7 +185,7 @@ export function Zahl({
         style={{
           display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
           background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-          borderRadius: 10, padding: "7px 9px", fontSize: 13, fontFamily: MONO, outline: "none",
+          borderRadius: RUND.karte, padding: "7px 9px", fontSize: 13, fontFamily: MONO, outline: "none",
         }} />
     </label>
   );

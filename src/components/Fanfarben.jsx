@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTheme } from "@/components/ThemeProvider";
-import { C, MONO, deriveRoles, readableInk, CLUB_PRESETS, SCHRIFT } from "@/lib/theme";
+import { C, MONO, deriveRoles, readableInk, CLUB_PRESETS, SCHRIFT, RUND } from "@/lib/theme";
 import BackLink from "@/components/BackLink";
 import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
 
@@ -44,7 +44,7 @@ export default function Fanfarben() {
     }}>
       <BackLink href="/menu" label="Menü" />
       <div style={{
-        width: "100%", maxWidth: 400, borderRadius: 26,
+        width: "100%", maxWidth: 400, borderRadius: RUND.schirm,
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
         padding: "26px 22px 24px",
@@ -68,7 +68,7 @@ export default function Fanfarben() {
           {CLUB_PRESETS.map((p) => (
             <button key={p.id} onClick={() => applyPreset(p.colors)} title={p.label} style={{
               ...TAPZIEL, cursor: "pointer", display: "flex", alignItems: "center", gap: 7,
-              background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999,
+              background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.pille,
               padding: "5px 10px 5px 6px", color: C.text, fontFamily: "inherit", fontSize: 12,
             }}>
               <Swatches colors={p.colors} />
@@ -83,13 +83,13 @@ export default function Fanfarben() {
           {draft.map((color, i) => (
             <div key={i} style={{
               display: "flex", alignItems: "center", gap: 12,
-              background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "10px 12px",
+              background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
             }}>
               <label style={{ position: "relative", width: 34, height: 34, flex: "0 0 auto" }}>
                 <input type="color" value={color} onChange={(e) => setColor(i, e.target.value)}
                   style={{ opacity: 0, position: "absolute", inset: 0, width: "100%", height: "100%", cursor: "pointer" }} />
                 <span style={{
-                  display: "block", width: 34, height: 34, borderRadius: 9,
+                  display: "block", width: 34, height: 34, borderRadius: RUND.karte,
                   background: color, border: `1px solid ${C.line}`,
                 }} />
               </label>
@@ -99,7 +99,7 @@ export default function Fanfarben() {
                   {wasLightened(i) && (
                     <span title="Für Lesbarkeit leicht aufgehellt" style={{
                       fontFamily: MONO, fontSize: 11, color: C.mint, textTransform: "uppercase",
-                      border: `1px solid ${C.mint}55`, borderRadius: 999, padding: "1px 6px", letterSpacing: 0.5,
+                      border: `1px solid ${C.mint}55`, borderRadius: RUND.pille, padding: "1px 6px", letterSpacing: 0.5,
                     }}>aufgehellt</span>
                   )}
                 </div>
@@ -115,7 +115,7 @@ export default function Fanfarben() {
           {draft.length < 3 && (
             <button onClick={addColor} style={{
               cursor: "pointer", background: "transparent", color: C.muted,
-              ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: 14, padding: "10px 12px",
+              ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
               fontFamily: "inherit", fontSize: 13, textAlign: "left",
             }}>+ Farbe hinzufügen {draft.length === 0 ? "" : `(${draft.length}/3)`}</button>
           )}
@@ -127,11 +127,11 @@ export default function Fanfarben() {
             ...TAPZIEL, flex: 1, cursor: dirty ? "pointer" : "default",
             background: dirty ? C.akzent : C.surface, color: dirty ? readableInk(preview.fan1) : C.muted,
             fontWeight: 700, fontSize: 15, border: `1px solid ${dirty ? C.akzent : C.line}`,
-            borderRadius: 12, padding: "11px 0", fontFamily: "inherit",
+            borderRadius: RUND.karte, padding: "11px 0", fontFamily: "inherit",
           }}>{dirty ? "Übernehmen" : "Gespeichert"}</button>
           <button onClick={clearAll} style={{
             cursor: "pointer", background: C.surface, color: C.muted,
-            ...TAPZIEL, border: `1px solid ${C.line}`, borderRadius: 12, padding: "11px 16px",
+            ...TAPZIEL, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "11px 16px",
             fontFamily: "inherit", fontSize: 15, fontWeight: 700,
           }}>Zurücksetzen</button>
         </div>
@@ -149,7 +149,7 @@ function Preview({ p }) {
   return (
     <div style={{
       marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`,
-      borderRadius: 16, padding: "16px 16px 18px",
+      borderRadius: RUND.karte, padding: "16px 16px 18px",
     }}>
       <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted, textTransform: "uppercase", marginBottom: 12 }}>
         Vorschau
@@ -157,16 +157,16 @@ function Preview({ p }) {
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{
           background: p.fan1, color: onGold, fontWeight: 700, fontSize: 13,
-          borderRadius: 10, padding: "8px 14px",
+          borderRadius: RUND.karte, padding: "8px 14px",
         }}>Tipp abgeben</span>
         <span style={{
           fontFamily: MONO, fontSize: 12, color: p.violet,
-          border: `1px solid ${p.violet}66`, borderRadius: 999, padding: "4px 10px",
+          border: `1px solid ${p.violet}66`, borderRadius: RUND.pille, padding: "4px 10px",
         }}>Zocker des Spieltags</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 14 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: C.muted }}>
-          <span style={{ width: 9, height: 9, borderRadius: 999, background: p.indigo, boxShadow: `0 0 10px ${p.indigo}` }} />
+          <span style={{ width: 9, height: 9, borderRadius: RUND.pille, background: p.indigo, boxShadow: `0 0 10px ${p.indigo}` }} />
           Admin
         </span>
         <span style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: p.fan1, textShadow: `0 0 22px ${p.fan1}55` }}>
@@ -182,7 +182,7 @@ function Swatches({ colors }) {
     <span style={{ display: "inline-flex" }}>
       {colors.slice(0, 3).map((c, i) => (
         <span key={i} style={{
-          width: 16, height: 16, borderRadius: 999, background: c,
+          width: 16, height: 16, borderRadius: RUND.pille, background: c,
           border: "1px solid rgba(255,255,255,0.2)", marginLeft: i === 0 ? 0 : -5,
         }} />
       ))}

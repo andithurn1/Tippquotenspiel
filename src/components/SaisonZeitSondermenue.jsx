@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DEFAULT_RULES } from "@/lib/engine";
 import { AUSWAHL_LIMITS, beschreibeAuswahl } from "@/lib/spielauswahl";
 import { VORLAUF_STUFEN, ANKER, beschreibeTippfenster, erklaereTippfenster } from "@/lib/tippfenster";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import { GrosseZeile } from "@/components/Eingaben";
 import SaisonWetten from "@/components/SaisonWetten";
@@ -98,7 +98,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
                 onClick={() => setzeTippfenster({ vorlaufStunden: st.stunden })}
                 style={{
                   ...TAPZIEL, flex: "1 1 70px", cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
-                  borderRadius: 11, fontSize: 12, fontWeight: 700,
+                  borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
                   background: an ? `${C.akzent}22` : C.surface,
                   color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -117,7 +117,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
                 onClick={() => setzeTippfenster({ anker: a.key })}
                 style={{
                   flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
-                  borderRadius: 11, fontSize: 12, fontWeight: 700,
+                  borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
                   background: an ? `${C.akzent}22` : C.surface,
                   color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -171,7 +171,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
                 style={{
                   display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
                   background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-                  borderRadius: 10, padding: "8px 10px", fontSize: 13, fontFamily: MONO, outline: "none",
+                  borderRadius: RUND.karte, padding: "8px 10px", fontSize: 13, fontFamily: MONO, outline: "none",
                 }} />
             </label>
           ))}
@@ -179,7 +179,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
 
         <div style={{
           marginTop: 10, background: C.ink2, border: `1px solid ${C.line}`,
-          borderRadius: 12, padding: "10px 12px",
+          borderRadius: RUND.karte, padding: "10px 12px",
         }}>
           <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted, textTransform: "uppercase" }}>
             Wandert mit dem Code

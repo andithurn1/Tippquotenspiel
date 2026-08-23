@@ -1,6 +1,6 @@
 "use client";
 
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { zahl } from "@/lib/format";
 
 // ── Münzen + Narren — EINE Stelle für beide Währungen ─────
@@ -82,9 +82,9 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
               <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>
                 {zahl(stand.verteilt)} von {zahl(stand.budget)} Münzen verteilt
               </div>
-              <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>
+              <div style={{ position: "relative", height: 6, borderRadius: RUND.pille, background: C.line, marginTop: 5 }}>
                 <div style={{
-                  position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: 999, background: C.akzent,
+                  position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: RUND.pille, background: C.akzent,
                   width: `${anteil}%`,
                 }} />
               </div>

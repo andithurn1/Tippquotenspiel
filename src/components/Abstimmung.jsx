@@ -7,7 +7,7 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { DEFAULT_RULES } from "@/lib/engine";
 import { tallyVotes, eigeneStimme } from "@/lib/voting";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 
 const tag = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "Europe/Berlin" });
@@ -78,7 +78,7 @@ export default function Abstimmung() {
         {matches == null && <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>lädt …</div>}
 
         {matches != null && !aktiv && (
-          <div style={{ background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 14, padding: "14px 16px", fontSize: 13, color: C.muted, lineHeight: 1.5 }}>
+          <div style={{ background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "14px 16px", fontSize: 13, color: C.muted, lineHeight: 1.5 }}>
             Diese Runde stimmt nicht über Joker-Spieltage ab. Der Admin kann das in der
             Spielerstellung unter „Joker &amp; Gewichtung" einschalten.
           </div>
@@ -97,7 +97,7 @@ export default function Abstimmung() {
               return (
                 <div key={md} style={{
                   background: C.ink2, border: `1px solid ${t.beschlossen ? C.akzent + "55" : C.line}`,
-                  borderRadius: 16, padding: "13px 15px", opacity: zu ? 0.6 : 1,
+                  borderRadius: RUND.karte, padding: "13px 15px", opacity: zu ? 0.6 : 1,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                     <span style={{ fontSize: 15, fontWeight: 700 }}>Spieltag {md}</span>
@@ -108,7 +108,7 @@ export default function Abstimmung() {
 
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                     <span style={{
-                      fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999,
+                      fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: RUND.pille,
                       color: t.beschlossen ? C.akzent : C.muted,
                       background: t.beschlossen ? `${C.akzent}18` : C.surface,
                       border: `1px solid ${t.beschlossen ? C.akzent + "55" : C.line}`,
@@ -128,7 +128,7 @@ export default function Abstimmung() {
                           <button key={opt.label} disabled={busy === md}
                             onClick={() => abstimmen(md, opt.ja)} style={{
                               flex: 1, cursor: busy === md ? "default" : "pointer", fontFamily: "inherit",
-                              fontSize: 13, fontWeight: 700, padding: "10px 0", borderRadius: 12,
+                              fontSize: 13, fontWeight: 700, padding: "10px 0", borderRadius: RUND.karte,
                               background: on ? `${opt.tone}22` : C.surface,
                               color: on ? opt.tone : C.muted,
                               border: `1px solid ${on ? opt.tone + "77" : C.line}`,

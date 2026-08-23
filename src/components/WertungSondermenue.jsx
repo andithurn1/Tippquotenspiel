@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DEFAULT_RULES, RULE_LIMITS, REGLER_FEINHEITEN, reglerSchritt } from "@/lib/engine";
 import { TIPPEINFLUSS_LIMITS, beschreibeTippEinfluss } from "@/lib/tippEinfluss";
 import { KOMBI_STUFEN, KOMBI_LIMITS, DEFAULT_KOMBI, beschreibeKombi } from "@/lib/kombiBonus";
-import { C } from "@/lib/theme";
+import { C, RUND } from "@/lib/theme";
 import { fmtFaktor } from "@/lib/format";
 import { TAPZIEL } from "@/lib/tapziel";
 import { Slider, Toggle, Field, Stepper, GrosseZeile } from "@/components/Eingaben";
@@ -131,7 +131,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                 return (
                   <button key={m.key} title={m.hint} onClick={() => setzeGoals({ modus: m.key })} style={{
                     ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
-                    borderRadius: 11, fontSize: 12, fontWeight: 700,
+                    borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
                     background: an ? `${C.sky}22` : C.surface, color: an ? C.sky : C.muted,
                     border: `1px solid ${an ? C.sky + "66" : C.line}`,
                   }}>{m.label}</button>
@@ -198,7 +198,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                       return (
                         <button key={s.key} title={s.desc} onClick={() => setzeKombi({ stufe: s.key })} style={{
                           ...TAPZIEL, flex: "1 1 110px", cursor: "pointer", fontFamily: "inherit",
-                          padding: "8px 10px", borderRadius: 11, fontSize: 12, fontWeight: 700,
+                          padding: "8px 10px", borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
                           background: an ? `${C.akzent}22` : C.surface,
                           color: an ? C.akzent : C.muted,
                           border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -227,7 +227,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                     Rolle wie `anteilHinweis()` bei den Wettbewerben. */}
                 <p style={{
                   fontSize: 12, color: C.text, lineHeight: 1.45, marginTop: 8,
-                  padding: "8px 10px", borderRadius: 8, background: C.surface, border: `1px solid ${C.line}`,
+                  padding: "8px 10px", borderRadius: RUND.karte, background: C.surface, border: `1px solid ${C.line}`,
                 }}>
                   {beschreibeKombi(rules)}
                 </p>
@@ -250,7 +250,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
         {rules.displayScale !== empfohleneSkala && (
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-            background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
+            background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: RUND.karte,
             padding: "9px 12px", marginBottom: 10,
           }}>
             <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
@@ -260,7 +260,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
             <button onClick={() => setze({ displayScale: empfohleneSkala })} style={{
               cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 700,
               background: C.surface2, color: C.akzent, border: `1px solid ${C.akzent}44`,
-              ...TAPZIEL, borderRadius: 10, padding: "7px 12px", whiteSpace: "nowrap",
+              ...TAPZIEL, borderRadius: RUND.karte, padding: "7px 12px", whiteSpace: "nowrap",
             }}>übernehmen</button>
           </div>
         )}
@@ -300,7 +300,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
             return (
               <button key={f.key} onClick={() => setze({ reglerFeinheit: f.wert })} style={{
                 cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
-                borderRadius: 10, flex: "1 1 120px", textAlign: "left",
+                borderRadius: RUND.karte, flex: "1 1 120px", textAlign: "left",
                 background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
               }}>
@@ -331,7 +331,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                 const on = te.staerke === s.v;
                 return (
                   <button key={s.v} onClick={() => setzeTippEinfluss({ staerke: s.v })} style={{
-                    ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                    ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: RUND.pille,
                     background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
                     border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                   }}>{s.label}</button>
@@ -370,7 +370,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                   schon. Dieselbe Rolle wie anteile() bei den Wettbewerben. */}
               <p style={{
                 fontSize: 12, color: C.text, lineHeight: 1.45,
-                padding: "8px 10px", borderRadius: 8, background: C.surface, border: `1px solid ${C.line}`,
+                padding: "8px 10px", borderRadius: RUND.karte, background: C.surface, border: `1px solid ${C.line}`,
               }}>
                 {beschreibeTippEinfluss(te, Math.max(te.minTipper, 12))}
               </p>

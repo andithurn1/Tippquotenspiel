@@ -5,7 +5,7 @@ import { createMockOddsSource, scoreResult, scoreGoals, applyCombo, sanitizeRule
 import { getStore } from "@/lib/store";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
 
 
@@ -26,7 +26,7 @@ const SNAP = odds.getSnapshot("JOR-ESP");
 const SIDES = ["home", "away"];
 const short = (side) => (side === "home" ? SNAP.home : SNAP.away).slice(0, 3).toUpperCase();
 
-const braceBtn = (on) => ({ ...TAPZIEL, fontFamily: MONO, fontSize: 11, cursor: "pointer", padding: "4px 12px", borderRadius: 999,
+const braceBtn = (on) => ({ ...TAPZIEL, fontFamily: MONO, fontSize: 11, cursor: "pointer", padding: "4px 12px", borderRadius: RUND.pille,
   background: on ? `${C.akzent}22` : C.surface2, color: on ? C.akzent : C.muted, border: `1px solid ${on ? C.akzent + "66" : C.line}` });
 
 // Ein hypothetischer Endstand {h,a}: Engine wertet, Kombi-Regel obendrauf.
@@ -91,13 +91,13 @@ export default function AuszahlungsExplorer() {
     <div style={{ minHeight: "100vh", background: C.ink, color: C.text,
       fontFamily: SCHRIFT, padding: "26px 14px", display: "flex", flexDirection: "column", alignItems: "center" }}>
       <BackLink href="/menu" label="Menü" />
-      <div style={{ width: "100%", maxWidth: 400, borderRadius: 24, position: "relative", overflow: "hidden",
+      <div style={{ width: "100%", maxWidth: 400, borderRadius: RUND.schirm, position: "relative", overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)", padding: "22px 18px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>Ergebnis-Auszahlung</span>
           <button onClick={() => setDec((v) => !v)} style={{ ...TAPZIEL, fontFamily: MONO, fontSize: 11, cursor: "pointer",
-            color: dec ? C.akzent : C.muted, background: C.surface, border: `1px solid ${dec ? C.akzent + "66" : C.line}`, borderRadius: 999, padding: "4px 10px" }}>
+            color: dec ? C.akzent : C.muted, background: C.surface, border: `1px solid ${dec ? C.akzent + "66" : C.line}`, borderRadius: RUND.pille, padding: "4px 10px" }}>
             Quoten {dec ? "1.xx" : "1.x"}
           </button>
         </div>
@@ -120,7 +120,7 @@ export default function AuszahlungsExplorer() {
         </div>
 
         {/* Tore (gleicher Spieler 2× = Doppelpack) */}
-        <div style={{ marginTop: 14, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px" }}>
+        <div style={{ marginTop: 14, background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "12px 14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Tore (je {RULES.markets.goals.picksPerTeam} pro Team)</span>
             <span style={{ fontFamily: MONO, fontSize: 12, color: C.coral }}>Wert +{fmt(sc.net)}</span>
@@ -138,7 +138,7 @@ export default function AuszahlungsExplorer() {
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                 {sc.braces.map((b, i) => (
                   <span key={i} style={{ fontFamily: MONO, fontSize: 11, color: C.akzent,
-                    background: `${C.akzent}18`, border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "3px 9px" }}>
+                    background: `${C.akzent}18`, border: `1px solid ${C.akzent}55`, borderRadius: RUND.pille, padding: "3px 9px" }}>
                     ⚽ {b.player} · 1 Tor {fmt(b.single)} / 2 Tore {fmt(b.double)}
                   </span>
                 ))}
@@ -174,7 +174,7 @@ export default function AuszahlungsExplorer() {
                 const hz = heat(cell.s.total, visible);
                 return (
                   <button key={a} onClick={() => setSel({ h, a })} style={{
-                    flex: 1, aspectRatio: "1", minWidth: 0, cursor: "pointer", borderRadius: 8,
+                    flex: 1, aspectRatio: "1", minWidth: 0, cursor: "pointer", borderRadius: RUND.karte,
                     background: hz.bg, color: hz.fg, boxShadow: hz.glow,
                     border: isSel ? `2px solid ${C.mint}` : isTip ? `2px solid ${C.text}` : `1px solid ${C.line}`,
                     fontFamily: MONO, fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums",
@@ -191,7 +191,7 @@ export default function AuszahlungsExplorer() {
           </div>
         </div>
 
-        <div style={{ marginTop: 16, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16 }}>
+        <div style={{ marginTop: 16, background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <div style={{ fontSize: 13, color: C.muted }}>
               Wenn es <b style={{ color: C.text, fontFamily: MONO }}>{sel.h}:{sel.a}</b> würde
@@ -221,7 +221,7 @@ export default function AuszahlungsExplorer() {
 }
 
 function Mini({ value, onStep }) {
-  const b = { ...TAPZIEL_QUADRAT, borderRadius: 10, cursor: "pointer", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, fontSize: 16, lineHeight: 1 };
+  const b = { ...TAPZIEL_QUADRAT, borderRadius: RUND.karte, cursor: "pointer", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, fontSize: 16, lineHeight: 1 };
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <button onClick={() => onStep(-1)} style={b}>−</button>
@@ -234,7 +234,7 @@ function Mini({ value, onStep }) {
 function Sel({ side, value, onChange, fmt }) {
   const players = SNAP.players[side];
   return (
-    <div style={{ flex: 1, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 8px", minWidth: 0 }}>
+    <div style={{ flex: 1, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "6px 8px", minWidth: 0 }}>
       <select value={value} onChange={(e) => onChange(e.target.value)} style={{
         width: "100%", background: "transparent", color: value ? C.text : C.muted, border: "none", fontSize: 13, outline: "none", fontFamily: "inherit" }}>
         <option value="" style={{ color: "#000" }}>– keiner –</option>
@@ -246,7 +246,7 @@ function Sel({ side, value, onChange, fmt }) {
 
 function Toggle({ on, onClick, label, tone }) {
   return (
-    <button onClick={onClick} style={{ ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 12, fontFamily: MONO, padding: "9px 0", borderRadius: 999,
+    <button onClick={onClick} style={{ ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 12, fontFamily: MONO, padding: "9px 0", borderRadius: RUND.pille,
       background: on ? `${tone}22` : C.surface, color: on ? tone : C.muted, border: `1px solid ${on ? tone + "66" : C.line}` }}>{label}</button>
   );
 }

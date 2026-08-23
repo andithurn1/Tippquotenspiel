@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { aufwand, AUFWAND_STUFEN } from "@/lib/aufwand";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 
 // Farbe je Aufwands-Stufe — reine Kennzeichnung, keine Bewertung. Auch
 // „zuviel" ist erlaubt, es ist eine Auskunft (design/gehaeuse-ui.md, Kopf-
@@ -27,7 +27,7 @@ export default function AufwandPanel({ rules, kontext }) {
   return (
     <div style={{
       marginTop: 12, background: C.ink2, border: `1px solid ${C.line}`,
-      borderRadius: 14, padding: "14px 16px",
+      borderRadius: RUND.karte, padding: "14px 16px",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
@@ -60,7 +60,7 @@ export default function AufwandPanel({ rules, kontext }) {
         <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
           {a.hinweise.map((h, i) => (
             <div key={i} style={{
-              background: `${farbe}12`, border: `1px solid ${farbe}33`, borderRadius: 10,
+              background: `${farbe}12`, border: `1px solid ${farbe}33`, borderRadius: RUND.karte,
               padding: "8px 10px", fontSize: 11, color: C.muted, lineHeight: 1.5,
             }}>{h}</div>
           ))}
@@ -72,7 +72,7 @@ export default function AufwandPanel({ rules, kontext }) {
 
 function Stat({ label, value, tone }) {
   return (
-    <div style={{ flex: 1, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10, padding: "8px 10px" }}>
+    <div style={{ flex: 1, background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "8px 10px" }}>
       <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, lineHeight: 1.3 }}>
         {label}
       </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { getGlossary } from "@/lib/glossary";
-import { C } from "@/lib/theme";
+import { C, RUND } from "@/lib/theme";
 
 // Inline-Fachbegriff: das Wort ist angetippt (gepunktete Linie + ⓘ) und klappt
 // beim Tippen eine kurze Erklärung aus dem Glossar auf. Tippt man erneut oder
@@ -32,7 +32,7 @@ export default function Begriff({ term, children }) {
           style={{
             position: "absolute", left: 0, top: "100%", marginTop: 6, zIndex: 20,
             width: "min(260px, 78vw)", background: C.surface2, color: C.text,
-            border: `1px solid ${C.lineStrong}`, borderRadius: 12, padding: "10px 12px",
+            border: `1px solid ${C.lineStrong}`, borderRadius: RUND.karte, padding: "10px 12px",
             boxShadow: "0 18px 40px -18px rgba(0,0,0,0.85)", fontSize: 13, lineHeight: 1.5,
             fontWeight: 400, textAlign: "left", cursor: "auto",
           }}

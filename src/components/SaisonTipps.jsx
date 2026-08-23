@@ -7,7 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { WETT_TYP, wettenId, wettenLabel, istAuswertbar } from "@/lib/saisonwetten";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // Saison-Wetten abgeben: die Langzeit-Tipps (Meister, Torschützenkönig …), die
 // der Admin ins Regelwerk gelegt hat. Je Wette ein Auswahlfeld — Team- oder
@@ -147,7 +147,7 @@ export default function SaisonTipps() {
         {saison?.enabled && gestartet && (
           <div style={{
             fontSize: 12, color: C.muted, background: C.surface, border: `1px solid ${C.line}`,
-            borderRadius: 10, padding: "8px 12px", margin: "14px 0", lineHeight: 1.5,
+            borderRadius: RUND.karte, padding: "8px 12px", margin: "14px 0", lineHeight: 1.5,
           }}>
             🔒 Die Saison läuft — Wetten ohne eigenes Zeitfenster sind eingefroren.
             Wetten mit Fenster öffnen sich später von selbst.
@@ -159,7 +159,7 @@ export default function SaisonTipps() {
         {stand && stand.zeilen.length > 0 && (
           <div style={{
             display: "flex", justifyContent: "space-between", alignItems: "baseline",
-            background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`, borderRadius: 12,
+            background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte,
             padding: "9px 12px", marginTop: 14,
           }}>
             <span style={{ fontSize: 13 }}>
@@ -181,7 +181,7 @@ export default function SaisonTipps() {
             const zeile = stand?.zeilen?.find((z) => z.id === id) ?? null;
             return (
               <div key={id} style={{
-                background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "14px 16px",
+                background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "14px 16px",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
                   <span style={{ fontSize: 15, fontWeight: 700 }}>{wettenLabel(wette)}</span>
@@ -233,7 +233,7 @@ export default function SaisonTipps() {
                     onChange={(e) => setzeTipp(id, e.target.value)}
                     style={{
                       flex: 1, background: C.ink2, color: tipps[id] ? C.text : C.muted,
-                      border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 10px",
+                      border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "9px 10px",
                       fontSize: 13, fontFamily: "inherit", outline: "none",
                     }}
                   >

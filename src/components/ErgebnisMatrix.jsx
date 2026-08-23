@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import {
   MATRIX_STUFEN, DEFAULT_MATRIX_STUFE, matrixMasse, matrixFelder, beschreibeMatrix,
 } from "@/lib/ergebnisMatrix";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Die Ergebnis-Matrix: jedes Feld sagt, was es bringt ──────
@@ -55,7 +55,7 @@ export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = fa
           return (
             <button key={s.key} title={s.desc} onClick={() => setStufe(s.key)} style={{
               ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-              padding: "6px 11px", borderRadius: 999,
+              padding: "6px 11px", borderRadius: RUND.pille,
               background: an ? `${C.akzent}22` : C.surface,
               color: an ? C.akzent : C.muted,
               border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -120,7 +120,7 @@ function FeldZeile({ h, spalten, feldVon, maxPunkte, tip, onWahl, gesperrt }) {
             title={f.quote ? `Quote ${f.quote.toFixed(1)} · ${Math.round(f.wahrscheinlichkeit * 100)} %` : undefined}
             style={{
               minHeight: 44, boxSizing: "border-box", cursor: gesperrt ? "default" : "pointer",
-              fontFamily: "inherit", padding: "5px 3px", borderRadius: 10,
+              fontFamily: "inherit", padding: "5px 3px", borderRadius: RUND.karte,
               background: gewaehlt ? `${C.akzent}33` : `${C.akzent}${Math.round(staerke * 26).toString(16).padStart(2, "0")}`,
               border: `1px solid ${gewaehlt ? C.akzent : C.line}`,
               color: C.text, opacity: gesperrt ? 0.55 : 1,

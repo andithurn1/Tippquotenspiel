@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -104,7 +104,7 @@ export default function Zwischenabrechnung() {
         padding: 16, fontFamily: SCHRIFT,
       }}>
       <div style={{
-        background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 18,
+        background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
         width: "100%", maxWidth: 460, maxHeight: "86vh", display: "flex", flexDirection: "column",
         boxShadow: "0 24px 60px rgba(17,20,28,0.18)",
       }}>
@@ -184,7 +184,7 @@ export default function Zwischenabrechnung() {
           {/* 🔴 Das große Feld: ein Weg raus, nicht drei. Wer die Einblendung
               wegklickt, hat sie gesehen — mehr will sie nicht. */}
           <button type="button" onClick={weiter} style={{
-            width: "100%", padding: "13px 16px", borderRadius: 12, border: "none",
+            width: "100%", padding: "13px 16px", borderRadius: RUND.karte, border: "none",
             background: C.mint, color: C.ink, fontSize: 15, fontWeight: 800,
             cursor: "pointer", fontFamily: "inherit",
           }}>Weiter</button>

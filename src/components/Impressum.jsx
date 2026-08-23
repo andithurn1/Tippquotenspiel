@@ -3,7 +3,7 @@
 import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import { LEGAL } from "@/lib/legal";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // Impressum (§ 5 DDG). Angaben kommen aus legal.js — vor Launch dort ausfüllen.
@@ -16,7 +16,7 @@ export default function Impressum() {
     }}>
       <BackLink href="/menu" label="Menü" />
       <div style={{
-        width: "100%", maxWidth: 460, borderRadius: 20,
+        width: "100%", maxWidth: 460, borderRadius: RUND.schirm,
         background: C.ink2, border: `1px solid ${C.line}`, padding: "26px 22px", lineHeight: 1.6,
       }}>
         <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>

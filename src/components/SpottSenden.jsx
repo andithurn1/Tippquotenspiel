@@ -6,7 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import ReactionGif from "@/components/ReactionGif";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { RANK_REACTIONS } from "@/lib/reactions";
 import { relationBetween, tauntsFor, buildTaunt, tauntTargets, darfSenden } from "@/lib/taunts";
 import { TAPZIEL } from "@/lib/tapziel";
@@ -92,7 +92,7 @@ export default function SpottSenden() {
     }}>
       <BackLink href="/hub" label="Tippspiel" />
       <div style={{
-        width: "100%", maxWidth: 400, borderRadius: 26,
+        width: "100%", maxWidth: 400, borderRadius: RUND.schirm,
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
         padding: "26px 22px 24px",
@@ -120,7 +120,7 @@ export default function SpottSenden() {
                   display: "flex", alignItems: "center", gap: 10, cursor: "pointer", textAlign: "left",
                   background: aktiv ? `${C.akzent}14` : C.surface,
                   border: `1px solid ${aktiv ? C.akzent + "55" : C.line}`,
-                  ...TAPZIEL, borderRadius: 14, padding: "10px 12px", color: C.text, fontFamily: "inherit",
+                  ...TAPZIEL, borderRadius: RUND.karte, padding: "10px 12px", color: C.text, fontFamily: "inherit",
                 }}>
                   <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 18 }}>{z.rank}</span>
                   <span style={{ flex: 1, fontSize: 15, fontWeight: aktiv ? 700 : 400 }}>{z.name}</span>
@@ -148,7 +148,7 @@ export default function SpottSenden() {
                     cursor: "pointer", fontFamily: "inherit", fontSize: 12,
                     background: aktiv ? `${C.akzent}18` : C.surface, color: aktiv ? C.akzent : C.muted,
                     border: `1px solid ${aktiv ? C.akzent + "66" : C.line}`,
-                    borderRadius: 999, padding: "6px 11px",
+                    borderRadius: RUND.pille, padding: "6px 11px",
                   }}>{s.emoji} {s.label}</button>
                 );
               })}
@@ -157,7 +157,7 @@ export default function SpottSenden() {
             {spott && (
               <div style={{
                 marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`,
-                borderRadius: 16, padding: "14px", display: "flex", gap: 12, alignItems: "center",
+                borderRadius: RUND.karte, padding: "14px", display: "flex", gap: 12, alignItems: "center",
               }}>
                 <ReactionGif reaction={RANK_REACTIONS[spott.reaction] ?? RANK_REACTIONS.mittelfeld} size={84} />
                 <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, flex: 1, minWidth: 0 }}>{spott.text}</p>
@@ -168,7 +168,7 @@ export default function SpottSenden() {
               width: "100%", marginTop: 16, cursor: blockiert ? "default" : "pointer",
               background: blockiert ? C.surface : C.akzent, color: blockiert ? C.muted : C.ink,
               fontWeight: 700, fontSize: 15, border: `1px solid ${blockiert ? C.line : C.akzent}`,
-              borderRadius: 14, padding: "13px 0", fontFamily: "inherit",
+              borderRadius: RUND.karte, padding: "13px 0", fontFamily: "inherit",
             }}>
               {blockiert ? `${ziel.name} hat diesen Spieltag genug` : "Spott verschicken"}
             </button>

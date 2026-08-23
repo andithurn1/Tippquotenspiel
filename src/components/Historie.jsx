@@ -10,7 +10,7 @@ import { ersatzEintraege } from "@/lib/versaeumnisBoard";
 import { einsaetzeAusTipps } from "@/lib/duellJoker";
 import { computeRecords, matchdayDeltas } from "@/lib/records";
 import { PRESETS } from "@/lib/presets";
-import { C, MONO, SERIES, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SERIES, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 
@@ -222,7 +222,7 @@ export default function Historie() {
               {records.map((r) => (
                 <div key={r.key} style={{
                   background: C.ink2, border: `1px solid ${r.holder.userId === meId ? C.akzent + "55" : C.line}`,
-                  borderRadius: 14, padding: "11px 13px",
+                  borderRadius: RUND.karte, padding: "11px 13px",
                 }}>
                   <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
                     {r.emoji} {r.label}
@@ -247,7 +247,7 @@ export default function Historie() {
                 return (
                   <button key={o.key} onClick={() => setPresetKey(o.key)} style={{
                     cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 600,
-                    ...TAPZIEL, padding: "7px 12px", borderRadius: 999,
+                    ...TAPZIEL, padding: "7px 12px", borderRadius: RUND.pille,
                     background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
                     border: `1px solid ${on ? C.akzent + "77" : C.line}`,
                   }}>{o.label}</button>
@@ -267,7 +267,7 @@ export default function Historie() {
                 return (
                   <button key={k.key} onClick={() => setKriterium(k.key)} style={{
                     flex: 1, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
-                    ...TAPZIEL, padding: "8px 0", borderRadius: 10,
+                    ...TAPZIEL, padding: "8px 0", borderRadius: RUND.karte,
                     background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                     border: `1px solid ${on ? C.mint + "66" : C.line}`,
                   }}>{k.label}</button>
@@ -277,13 +277,13 @@ export default function Historie() {
             <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{kritInfo.help}</div>
 
             {/* Plot */}
-            <div style={{ background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 16, padding: "12px 12px 8px" }}>
+            <div style={{ background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "12px 12px 8px" }}>
               <Plot series={series} invert={kritInfo.invert} meId={meId} />
               {/* Legende */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 8 }}>
                 {series.players.map((p) => (
                   <span key={p.userId} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: p.userId === meId ? C.text : C.muted }}>
-                    <span style={{ width: 10, height: 3, borderRadius: 2, background: p.color, display: "inline-block" }} />
+                    <span style={{ width: 10, height: 3, borderRadius: RUND.klein, background: p.color, display: "inline-block" }} />
                     {p.name}{p.userId === meId ? " (du)" : ""}
                   </span>
                 ))}

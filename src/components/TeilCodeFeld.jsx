@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import { ASPEKTE } from "@/lib/presetMerge";
 import { istTeilCode, zerlegeTeilCode, wendeTeilCodeAn, bildeTeilCode } from "@/lib/teilbibliothek";
@@ -72,7 +72,7 @@ export default function TeilCodeFeld({ aspekt, rules, onChange, geladen, onGelad
   return (
     <div style={{
       background: C.surface, border: `1px solid ${C.line}`,
-      borderRadius: 12, padding: "10px 11px", marginBottom: 12,
+      borderRadius: RUND.karte, padding: "10px 11px", marginBottom: 12,
     }}>
       <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>
         Teil-Code für <b style={{ color: C.text }}>{label}</b> — ändert nur diesen
@@ -86,20 +86,20 @@ export default function TeilCodeFeld({ aspekt, rules, onChange, geladen, onGelad
           onKeyDown={(e) => { if (e.key === "Enter") laden(); }}
           placeholder="TS2A-…"
           style={{
-            flex: 1, minWidth: 140, ...TAPZIEL, padding: "0 12px", borderRadius: 12,
+            flex: 1, minWidth: 140, ...TAPZIEL, padding: "0 12px", borderRadius: RUND.karte,
             border: `1px solid ${C.line}`, background: C.ink, color: C.text,
             fontSize: 13, fontFamily: MONO, outline: "none",
           }}
         />
         <button type="button" onClick={laden} disabled={!wert.trim()} style={{
-          ...TAPZIEL, padding: "0 16px", borderRadius: 12, border: "none",
+          ...TAPZIEL, padding: "0 16px", borderRadius: RUND.karte, border: "none",
           background: wert.trim() ? C.akzent : C.surface2,
           color: wert.trim() ? C.ink : C.muted,
           fontWeight: 700, fontSize: 13, fontFamily: "inherit",
           cursor: wert.trim() ? "pointer" : "default",
         }}>laden</button>
         <button type="button" onClick={teilen} style={{
-          ...TAPZIEL, padding: "0 14px", borderRadius: 12,
+          ...TAPZIEL, padding: "0 14px", borderRadius: RUND.karte,
           border: `1px solid ${C.line}`, background: C.surface, color: C.muted,
           fontSize: 12, fontFamily: "inherit", cursor: "pointer",
         }}>{kopiert ? "kopiert" : "teilen"}</button>

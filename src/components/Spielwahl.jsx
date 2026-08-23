@@ -16,7 +16,7 @@ import { istGeoeffnet } from "@/lib/spieltagOeffnen";
 import { zeitachse, rundenSpieltagVon, achsenLabel, rundenSchluessel } from "@/lib/zeitachse";
 import { herkunftLabel } from "@/lib/spielplan";
 import { echteSpielplaene } from "@/lib/ligen";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 
@@ -219,7 +219,7 @@ export default function Spielwahl() {
         {/* Ehrliche Übersicht statt stiller Kürzung */}
         {matches != null && (
           <div style={{
-            background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12,
+            background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
             padding: "10px 12px", marginBottom: 12,
           }}>
             <div style={{ fontSize: 13, color: C.text, lineHeight: 1.5 }}>
@@ -241,7 +241,7 @@ export default function Spielwahl() {
               <button onClick={() => setAlleZeigen((v) => !v)} style={{
                 marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
                 background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
-                ...TAPZIEL, borderRadius: 999, padding: "5px 12px",
+                ...TAPZIEL, borderRadius: RUND.pille, padding: "5px 12px",
               }}>
                 {alleZeigen ? "Nur anstehende zeigen" : `Auch die ${stand.zu} späteren zeigen`}
               </button>
@@ -272,7 +272,7 @@ export default function Spielwahl() {
 
         {ladeFehler && (
           <div style={{
-            background: `${C.akzent}0E`, border: `1px solid ${C.akzent}33`, borderRadius: 10,
+            background: `${C.akzent}0E`, border: `1px solid ${C.akzent}33`, borderRadius: RUND.karte,
             padding: "10px 12px", fontSize: 12, color: C.text, lineHeight: 1.45,
           }}>
             Die Spiele konnten nicht geladen werden.
@@ -318,7 +318,7 @@ export default function Spielwahl() {
                 && g.spiele.every((m) => new Date(m.kickoff).getTime() > now) && (
                 <div style={{
                   background: `${C.coral}0E`, border: `1px solid ${C.coral}33`,
-                  borderRadius: 10, padding: "8px 10px", marginBottom: 8,
+                  borderRadius: RUND.karte, padding: "8px 10px", marginBottom: 8,
                 }}>
                   <div style={{ fontSize: 12, color: C.text, lineHeight: 1.45 }}>
                     Spieltag noch nicht geöffnet — das Topspiel steht damit noch nicht fest.
@@ -331,7 +331,7 @@ export default function Spielwahl() {
                     marginTop: 7, cursor: oeffnet === g.key ? "default" : "pointer",
                     fontFamily: "inherit", fontSize: 12, fontWeight: 700,
                     background: "transparent", color: C.coral, border: `1px solid ${C.coral}66`,
-                    ...TAPZIEL, borderRadius: 999, padding: "5px 12px",
+                    ...TAPZIEL, borderRadius: RUND.pille, padding: "5px 12px",
                   }}>
                     {oeffnet === g.key ? "öffnet …" : "Spieltag öffnen"}
                   </button>
@@ -346,12 +346,12 @@ export default function Spielwahl() {
                 <div style={{
                   display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6,
                   background: `${C.akzent}0E`, border: `1px solid ${C.akzent}2E`,
-                  borderRadius: 10, padding: "7px 10px", marginBottom: 8,
+                  borderRadius: RUND.karte, padding: "7px 10px", marginBottom: 8,
                 }}>
                   <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Gewichte:</span>
                   {belegung.belegt.filter((b) => b.gewicht !== 1).map((b) => (
                     <span key={b.gewicht} style={{
-                      fontFamily: MONO, fontSize: 11, padding: "2px 7px", borderRadius: 999,
+                      fontFamily: MONO, fontSize: 11, padding: "2px 7px", borderRadius: RUND.pille,
                       background: b.matchId ? "transparent" : `${C.akzent}22`,
                       color: b.matchId ? "rgba(138,144,180,0.5)" : C.akzent,
                       border: `1px solid ${b.matchId ? C.line : C.akzent + "66"}`,
@@ -394,7 +394,7 @@ function MatchRow({ match, status, tipped, gewicht, rules }) {
       background: open ? C.surface : C.ink2,
       // Das Topspiel bekommt einen eigenen Rahmen, nicht nur ein Schildchen —
       // es soll beim Überfliegen der Liste auffallen, darum geht es ja.
-      border: `1px solid ${bigGame > 0 ? C.coral + "88" : C.line}`, borderRadius: 14,
+      border: `1px solid ${bigGame > 0 ? C.coral + "88" : C.line}`, borderRadius: RUND.karte,
       padding: "12px 14px", opacity: open ? 1 : 0.55,
     }}>
       <div>
@@ -435,7 +435,7 @@ function Tag({ children, tone }) {
   return (
     <span style={{
       fontFamily: MONO, fontSize: 11, color: tone, border: `1px solid ${tone}55`,
-      borderRadius: 999, padding: "3px 9px", whiteSpace: "nowrap",
+      borderRadius: RUND.pille, padding: "3px 9px", whiteSpace: "nowrap",
     }}>{children}</span>
   );
 }

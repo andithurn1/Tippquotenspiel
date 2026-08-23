@@ -12,7 +12,7 @@ import BackLink from "@/components/BackLink";
 import ReactionGif from "@/components/ReactionGif";
 import Ertragsquellen from "@/components/Ertragsquellen";
 import { tipScenario, rankReaction } from "@/lib/reactions";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
@@ -186,7 +186,7 @@ export default function Abrechnung() {
       </div>
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
-        borderRadius: 26, overflow: "hidden",
+        borderRadius: RUND.schirm, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`,
         boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
@@ -229,7 +229,7 @@ export default function Abrechnung() {
                 <span style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>Distanz zum Ergebnis</span>
                 <span style={{
                   fontFamily: MONO, fontSize: 12, color: C.coral,
-                  border: `1px solid ${C.coral}55`, borderRadius: 999, padding: "2px 8px",
+                  border: `1px solid ${C.coral}55`, borderRadius: RUND.pille, padding: "2px 8px",
                 }}>{DATA.dist} {DATA.dist === 1 ? "Tor — hauchdünn" : "Tore"}</span>
               </div>
               <DistanceLadder active={stage >= 3} wertung={me} />
@@ -292,7 +292,7 @@ export default function Abrechnung() {
 
           {/* Rang + Rollen-GIF */}
           <div style={{ ...show(5), marginTop: 20, display: "flex", gap: 10, alignItems: "stretch" }}>
-            <div style={{ flex: 1, background: C.surface, borderRadius: 14, padding: "12px 14px", border: `1px solid ${C.line}` }}>
+            <div style={{ flex: 1, background: C.surface, borderRadius: RUND.karte, padding: "12px 14px", border: `1px solid ${C.line}` }}>
               <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Rang in der Runde</div>
               <div style={{ fontFamily: MONO, fontSize: 22, marginTop: 2, color: C.mint }}>
                 {myRank ? `#${myRank}` : "…"}
@@ -317,7 +317,7 @@ export default function Abrechnung() {
               <button onClick={() => setFair((f) => !f)} style={{
                 ...TAPZIEL, fontFamily: MONO, fontSize: 11, color: C.text, cursor: "pointer",
                 background: C.surface, border: `1px solid ${C.line}`,
-                borderRadius: 999, padding: "4px 10px",
+                borderRadius: RUND.pille, padding: "4px 10px",
               }}>
                 {fair ? "fair verschoben" : "echte Werte"}
               </button>
@@ -348,7 +348,7 @@ export default function Abrechnung() {
           <button onClick={() => { setStage(0); setKey((k) => k + 1); }} style={{
             ...TAPZIEL, ...show(5), marginTop: 18, width: "100%", cursor: "pointer",
             background: C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
-            border: "none", borderRadius: 14, padding: "13px 0",
+            border: "none", borderRadius: RUND.karte, padding: "13px 0",
           }}>
             Nochmal ansehen
           </button>
@@ -361,7 +361,7 @@ export default function Abrechnung() {
 function ScoreBox({ label, a, b, tone, big, stamped }) {
   return (
     <div style={{
-      flex: 1, background: C.surface, borderRadius: 14, padding: "10px 12px 12px",
+      flex: 1, background: C.surface, borderRadius: RUND.karte, padding: "10px 12px 12px",
       border: `1px solid ${C.line}`, textAlign: "center",
       transform: stamped ? "scale(1)" : big ? "scale(0.9)" : "scale(1)",
       transition: "transform .5s cubic-bezier(.2,1.5,.4,1)",
@@ -391,7 +391,7 @@ function DistanceLadder({ active, wertung }) {
       {steps.map((s, i) => (
         <div key={s.label} style={{ flex: 1 }}>
           <div style={{
-            height: 8, borderRadius: 999,
+            height: 8, borderRadius: RUND.pille,
             background: s.reached ? (s.hot ? C.coral : C.akzent) : C.surface,
             border: s.reached ? "none" : `1px solid ${C.line}`,
             transform: active ? "scaleX(1)" : "scaleX(0)",

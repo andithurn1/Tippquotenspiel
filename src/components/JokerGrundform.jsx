@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { C } from "@/lib/theme";
+import { C, RUND } from "@/lib/theme";
 import {
   WER, SICHT, VERFALL, WIDERRUF, SYMMETRIE, UMFANG,
   BASIS_LIMITS, DEFAULT_BASIS,
@@ -182,7 +182,7 @@ function ArtZeile({ art, rules, abweichung, onBeginnen, onZuruecksetzen, onPatch
     return (
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-        background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12,
+        background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
         padding: "9px 12px", marginBottom: 8,
       }}>
         <div>
@@ -192,7 +192,7 @@ function ArtZeile({ art, rules, abweichung, onBeginnen, onZuruecksetzen, onPatch
         <button onClick={onBeginnen} style={{
           cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, flexShrink: 0,
           background: C.surface2, color: C.akzent, border: `1px solid ${C.akzent}44`,
-          ...TAPZIEL, borderRadius: 10, padding: "7px 12px", whiteSpace: "nowrap",
+          ...TAPZIEL, borderRadius: RUND.karte, padding: "7px 12px", whiteSpace: "nowrap",
         }}>abweichen</button>
       </div>
     );
@@ -200,7 +200,7 @@ function ArtZeile({ art, rules, abweichung, onBeginnen, onZuruecksetzen, onPatch
 
   return (
     <div style={{
-      background: C.surface, border: `1px solid ${C.akzent}44`, borderRadius: 12,
+      background: C.surface, border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte,
       padding: "10px 12px", marginBottom: 10,
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
@@ -208,7 +208,7 @@ function ArtZeile({ art, rules, abweichung, onBeginnen, onZuruecksetzen, onPatch
         <button onClick={onZuruecksetzen} style={{
           cursor: "pointer", fontFamily: "inherit", fontSize: 12, flexShrink: 0,
           background: "transparent", color: C.muted, border: `1px solid ${C.line}`,
-          borderRadius: 10, padding: "6px 10px", whiteSpace: "nowrap",
+          borderRadius: RUND.karte, padding: "6px 10px", whiteSpace: "nowrap",
         }}>auf Standard zurücksetzen</button>
       </div>
       <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.5 }}>
@@ -379,7 +379,7 @@ function Katalog({ katalog, aktiv, onWahl }) {
 function ChipButton({ aktiv, titel, onClick, children }) {
   return (
     <button title={titel} onClick={onClick} style={{
-      ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: 999,
+      ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: RUND.pille,
       background: aktiv ? `${C.indigo}22` : C.surface2, color: aktiv ? C.indigo : C.muted,
       border: `1px solid ${aktiv ? C.indigo + "66" : C.line}`,
     }}>{children}</button>
@@ -392,15 +392,15 @@ function ToggleKnopf({ an, onChange, textAn, textAus }) {
       display: "flex", alignItems: "center", gap: 10, width: "100%",
       textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
       background: C.surface2, border: `1px solid ${an ? C.mint + "55" : C.line}`,
-      ...TAPZIEL, borderRadius: 10, padding: "8px 10px",
+      ...TAPZIEL, borderRadius: RUND.karte, padding: "8px 10px",
     }}>
       <span style={{
-        flexShrink: 0, width: 34, height: 20, borderRadius: 999, position: "relative",
+        flexShrink: 0, width: 34, height: 20, borderRadius: RUND.pille, position: "relative",
         background: an ? C.mint : C.surface, border: `1px solid ${an ? "transparent" : C.line}`,
       }}>
         <span style={{
           position: "absolute", top: 2, left: an ? 16 : 2, width: 14, height: 14,
-          borderRadius: 999, background: C.ink2, transition: "left .15s",
+          borderRadius: RUND.pille, background: C.ink2, transition: "left .15s",
         }} />
       </span>
       <span style={{ fontSize: 12 }}>{an ? textAn : textAus}</span>
@@ -412,7 +412,7 @@ function Banner({ ton, children }) {
   const farbe = ton === "coral" ? C.coral : ton === "indigo" ? C.indigo : C.bernstein;
   return (
     <div style={{
-      background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: 12,
+      background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: RUND.karte,
       padding: "9px 11px", marginBottom: 10, fontSize: 12, color: C.text, lineHeight: 1.5,
     }}>
       {children}

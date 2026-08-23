@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import BackLink from "@/components/BackLink";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import {
   DEFAULT_NOTIFY, sanitizeNotify, summarize, KANAELE, KANAL_META,
   VORLAUF_OPTIONEN, NOTIFY_LIMITS,
@@ -95,7 +95,7 @@ export default function Benachrichtigungen() {
     }}>
       <BackLink href="/menu" label="Menü" />
       <div style={{
-        width: "100%", maxWidth: 400, borderRadius: 26,
+        width: "100%", maxWidth: 400, borderRadius: RUND.schirm,
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
         padding: "26px 22px 24px",
@@ -115,7 +115,7 @@ export default function Benachrichtigungen() {
           display: "flex", alignItems: "center", gap: 12,
           background: prefs.enabled ? `${C.akzent}14` : C.surface,
           border: `1px solid ${prefs.enabled ? C.akzent + "55" : C.line}`,
-          borderRadius: 14, padding: "13px 15px", color: C.text, fontFamily: "inherit",
+          borderRadius: RUND.karte, padding: "13px 15px", color: C.text, fontFamily: "inherit",
         }}>
           <Schalter an={prefs.enabled} />
           <span style={{ flex: 1 }}>
@@ -136,7 +136,7 @@ export default function Benachrichtigungen() {
             aufzulösen — die Sperre sitzt dann im System, nicht hier. */}
         <div style={{
           marginTop: 10, background: C.surface, border: `1px solid ${C.line}`,
-          borderRadius: 12, padding: "10px 12px",
+          borderRadius: RUND.karte, padding: "10px 12px",
         }}>
           <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
             {kanalZustand ? STATUS_TEXT[kanalZustand] : "Gerät wird geprüft …"}
@@ -148,7 +148,7 @@ export default function Benachrichtigungen() {
             <button onClick={testen} style={{
               marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
               background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
-              ...TAPZIEL, borderRadius: 999, padding: "5px 12px",
+              ...TAPZIEL, borderRadius: RUND.pille, padding: "5px 12px",
             }}>
               Testbenachrichtigung senden
             </button>
@@ -170,7 +170,7 @@ export default function Benachrichtigungen() {
               <button key={k} onClick={() => update({ [k]: !prefs[k] })} style={{
                 textAlign: "left", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 11,
                 background: C.surface, border: `1px solid ${prefs[k] ? C.akzent + "44" : C.line}`,
-                borderRadius: 14, padding: "12px 14px", color: C.text, fontFamily: "inherit",
+                borderRadius: RUND.karte, padding: "12px 14px", color: C.text, fontFamily: "inherit",
               }}>
                 <Haken an={prefs[k]} />
                 <span style={{ flex: 1, minWidth: 0 }}>
@@ -196,7 +196,7 @@ export default function Benachrichtigungen() {
                   <button key={h} onClick={() => toggleVorlauf(h)} style={{
                     cursor: "pointer", fontFamily: MONO, fontSize: 13,
                     background: an ? C.akzent : C.surface, color: an ? C.ink : C.muted,
-                    border: `1px solid ${an ? C.akzent : C.line}`, borderRadius: 999,
+                    border: `1px solid ${an ? C.akzent : C.line}`, borderRadius: RUND.pille,
                     ...TAPZIEL, padding: "6px 13px", fontWeight: 700,
                   }}>{h} h</button>
                 );
@@ -229,7 +229,7 @@ export default function Benachrichtigungen() {
         {/* Klartext-Vorschau */}
         <div style={{
           marginTop: 22, background: C.ink2, border: `1px solid ${C.line}`,
-          borderRadius: 14, padding: "12px 14px",
+          borderRadius: RUND.karte, padding: "12px 14px",
         }}>
           <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>
             Das kommt bei dir an
@@ -249,12 +249,12 @@ export default function Benachrichtigungen() {
 function Schalter({ an }) {
   return (
     <span style={{
-      width: 42, height: 24, borderRadius: 999, flex: "0 0 auto",
+      width: 42, height: 24, borderRadius: RUND.pille, flex: "0 0 auto",
       background: an ? C.akzent : C.surface2, border: `1px solid ${an ? C.akzent : C.line}`,
       display: "flex", alignItems: "center", padding: 2,
       justifyContent: an ? "flex-end" : "flex-start",
     }}>
-      <span style={{ width: 18, height: 18, borderRadius: 999, background: an ? C.ink : C.muted }} />
+      <span style={{ width: 18, height: 18, borderRadius: RUND.pille, background: an ? C.ink : C.muted }} />
     </span>
   );
 }
@@ -262,7 +262,7 @@ function Schalter({ an }) {
 function Haken({ an }) {
   return (
     <span style={{
-      width: 20, height: 20, borderRadius: 6, flex: "0 0 auto", marginTop: 1,
+      width: 20, height: 20, borderRadius: RUND.klein, flex: "0 0 auto", marginTop: 1,
       background: an ? C.akzent : "transparent", border: `1px solid ${an ? C.akzent : C.line}`,
       display: "flex", alignItems: "center", justifyContent: "center",
       color: C.ink, fontSize: 13, fontWeight: 900,
@@ -276,7 +276,7 @@ function Stunde({ label, value, onChange }) {
       <span style={{ fontSize: 12, color: C.muted }}>{label}</span>
       <select value={value} onChange={(e) => onChange(Number(e.target.value))} style={{
         background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-        borderRadius: 10, padding: "7px 9px", fontFamily: MONO, fontSize: 13,
+        borderRadius: RUND.karte, padding: "7px 9px", fontFamily: MONO, fontSize: 13,
       }}>
         {Array.from({ length: 24 }, (_, h) => (
           <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>

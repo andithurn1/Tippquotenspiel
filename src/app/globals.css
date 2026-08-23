@@ -69,10 +69,14 @@
   --tqs-raum-5: 24px;
   --tqs-raum-6: 32px;
 
-  /* Eckenradien — vier statt sechzehn */
-  --tqs-rund-klein: 8px;
+  /* Eckenradien — vier statt sechzehn.
+     ⚠️ Dieselben vier Stufen und dieselben vier Zahlen wie `RUND` in
+     theme.js. Bis zum 23.08.2026 waren es ZWEI Leitern: hier hieß 16 px
+     „karte", im Code hieß 12 px so — dasselbe Wort, zwei Werte. Wer eine
+     Zahl ändert, ändert beide. `npm run rund` prüft es. */
+  --tqs-rund-klein: 4px;
   --tqs-rund: 12px;
-  --tqs-rund-karte: 16px;
+  --tqs-rund-schirm: 26px;
   --tqs-rund-pille: 999px;
 
   /* ── Schrift ───────────────────────────────────────────────

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { PRESETS } from "@/lib/presets";
 import { ASPEKTE, defaultAuswahl, mergePresets, unterschiede } from "@/lib/presetMerge";
 import { TAPZIEL } from "@/lib/tapziel";
@@ -37,7 +37,7 @@ export default function PresetMischen({ onUebernehmen = null }) {
 
   return (
     <div style={{
-      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 18, padding: "18px 16px",
+      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "18px 16px",
     }}>
       <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, color: C.muted, textTransform: "uppercase" }}>
         Presets mischen
@@ -75,7 +75,7 @@ export default function PresetMischen({ onUebernehmen = null }) {
               return (
                 <div key={asp.key} style={{
                   background: C.surface, border: `1px solid ${C.line}`,
-                  borderRadius: 14, padding: "11px 13px",
+                  borderRadius: RUND.karte, padding: "11px 13px",
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{asp.label}</div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{asp.hint}</div>
@@ -95,7 +95,7 @@ export default function PresetMischen({ onUebernehmen = null }) {
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40}
               placeholder={mix.name} style={{
                 width: "100%", background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: 12, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none",
+                borderRadius: RUND.karte, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none",
               }} />
             <div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>
               Name des Mixes — leer lassen für „{mix.name}".
@@ -105,7 +105,7 @@ export default function PresetMischen({ onUebernehmen = null }) {
           {onUebernehmen && (
             <button onClick={() => onUebernehmen(mix)} style={{
               width: "100%", marginTop: 12, cursor: "pointer", background: C.akzent, color: C.ink,
-              fontWeight: 700, fontSize: 15, border: "none", borderRadius: 12, padding: "12px 0",
+              fontWeight: 700, fontSize: 15, border: "none", borderRadius: RUND.karte, padding: "12px 0",
               fontFamily: "inherit",
             }}>Mix als Regelwerk übernehmen</button>
           )}
@@ -121,7 +121,7 @@ function PresetWahl({ label, value, onChange, tone }) {
       <span style={{ display: "block", fontFamily: MONO, fontSize: 11, color: tone, marginBottom: 4 }}>{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} style={{
         width: "100%", background: C.surface, color: C.text, border: `1px solid ${tone}44`,
-        borderRadius: 11, padding: "9px 10px", fontSize: 13, fontFamily: "inherit",
+        borderRadius: RUND.karte, padding: "9px 10px", fontSize: 13, fontFamily: "inherit",
       }}>
         {PRESETS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
       </select>
@@ -133,7 +133,7 @@ function Seite({ an, tone, label, onClick }) {
   return (
     <button onClick={onClick} style={{
       flex: 1, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
-      ...TAPZIEL, padding: "8px 6px", borderRadius: 10,
+      ...TAPZIEL, padding: "8px 6px", borderRadius: RUND.karte,
       background: an ? `${tone}22` : "transparent", color: an ? tone : C.muted,
       border: `1px solid ${an ? tone + "66" : C.line}`,
       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -145,7 +145,7 @@ function MiniBtn({ children, onClick }) {
   return (
     <button onClick={onClick} style={{
       cursor: "pointer", fontFamily: MONO, fontSize: 11, color: C.muted,
-      background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 9px",
+      background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "4px 9px",
     }}>{children}</button>
   );
 }

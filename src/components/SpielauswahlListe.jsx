@@ -28,7 +28,7 @@ import { useState, useEffect, useMemo } from "react";
 import { getStore } from "@/lib/store";
 import { AUSWAHL_LIMITS } from "@/lib/spielauswahl";
 import { wettbewerbeIn, wettbewerbLabel, phasenLabel, wettbewerbVon, phaseVon } from "@/lib/wettbewerbe";
-import { C } from "@/lib/theme";
+import { C, RUND } from "@/lib/theme";
 
 const MAX_ZEILEN = 30;   // so viel wird auf einmal gezeigt
 
@@ -119,7 +119,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
                   {ausgewaehlt.map((m) => (
                     <button key={m.id} onClick={() => toggle(m.id)} title="Entfernen" style={{
                       cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "6px 10px",
-                      borderRadius: 999, background: `${C.mint}22`, color: C.mint,
+                      borderRadius: RUND.pille, background: `${C.mint}22`, color: C.mint,
                       border: `1px solid ${C.mint}66`,
                     }}>{m.home} – {m.away} ×</button>
                   ))}
@@ -130,7 +130,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
                 placeholder="Verein suchen …"
                 style={{
                   width: "100%", boxSizing: "border-box", fontFamily: "inherit", fontSize: 13,
-                  padding: "9px 11px", borderRadius: 10, background: C.surface,
+                  padding: "9px 11px", borderRadius: RUND.karte, background: C.surface,
                   color: C.text, border: `1px solid ${C.line}`, marginBottom: 8,
                 }} />
 
@@ -143,7 +143,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
                     return (
                       <button key={key ?? "alle"} onClick={() => setWettbewerb(key)} style={{
                         cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px",
-                        borderRadius: 999, background: aktiv ? `${C.akzent}22` : C.surface,
+                        borderRadius: RUND.pille, background: aktiv ? `${C.akzent}22` : C.surface,
                         color: aktiv ? C.akzent : C.muted,
                         border: `1px solid ${aktiv ? C.akzent + "66" : C.line}`,
                       }}>{key === null ? "Alle" : wettbewerbLabel(key)}</button>
@@ -152,7 +152,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
                 </div>
               )}
 
-              <div style={{ border: `1px solid ${C.line}`, borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ border: `1px solid ${C.line}`, borderRadius: RUND.karte, overflow: "hidden" }}>
                 {treffer.slice(0, MAX_ZEILEN).map((m) => (
                   <button key={m.id} onClick={() => toggle(m.id)} disabled={voll} style={{
                     display: "flex", width: "100%", justifyContent: "space-between", alignItems: "center",
@@ -199,17 +199,17 @@ function Toggle({ on, onChange }) {
       fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px 11px",
       // 44 pt (Apple) / 48 dp (Google) — der Schalter maß 37 px.
       minHeight: 44, boxSizing: "border-box",
-      width: "100%", textAlign: "left", borderRadius: 11,
+      width: "100%", textAlign: "left", borderRadius: RUND.karte,
       background: on ? `${C.mint}18` : C.surface, color: on ? C.mint : C.muted,
       border: `1px solid ${on ? C.mint + "55" : C.line}`,
     }}>
       <span style={{
-        width: 30, height: 18, borderRadius: 999, flexShrink: 0, position: "relative",
+        width: 30, height: 18, borderRadius: RUND.pille, flexShrink: 0, position: "relative",
         background: on ? C.mint : C.line, transition: "background .15s",
       }}>
         <span style={{
           position: "absolute", top: 2, left: on ? 14 : 2, width: 14, height: 14,
-          borderRadius: 999, background: C.ink, transition: "left .15s",
+          borderRadius: RUND.pille, background: C.ink, transition: "left .15s",
         }} />
       </span>
       Nur ausgewählte Begegnungen

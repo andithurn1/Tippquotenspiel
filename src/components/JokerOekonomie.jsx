@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { KOMBINATIONEN, ACHSEN, achsenProfil, achsenKonflikte } from "@/lib/jokerBibliothek";
 import {
   BUDGET_QUELLEN, TAKTE, VERFALL_TYPEN, PREISMODI, JOKER_ARTEN,
@@ -93,7 +93,7 @@ export default function JokerOekonomie({ rules, onChange }) {
             <button key={k.key} onClick={() => waehleKombi(k)} style={{
               textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
               background: C.surface, border: `1px solid ${C.line}`,
-              borderRadius: 12, padding: "10px 12px",
+              borderRadius: RUND.karte, padding: "10px 12px",
             }}>
               <div style={{ fontSize: 13, fontWeight: 700 }}>{k.label}</div>
               <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{k.desc}</div>
@@ -121,7 +121,7 @@ export default function JokerOekonomie({ rules, onChange }) {
               <div key={q.key} style={{
                 background: an ? `${C.akzent}12` : C.surface,
                 border: `1px solid ${an ? C.akzent + "55" : C.line}`,
-                borderRadius: 12, padding: "10px 12px",
+                borderRadius: RUND.karte, padding: "10px 12px",
               }}>
                 <button onClick={() => umschaltenQuelle(q.key)} style={{
                   width: "100%", textAlign: "left", background: "transparent", border: "none",
@@ -160,7 +160,7 @@ export default function JokerOekonomie({ rules, onChange }) {
                             const kan = wert(q.key, "kurve") === kv;
                             return (
                               <button key={kv} onClick={() => setzeQuelleFeld(q.key, "kurve", kv)} style={{
-                                ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: 999,
+                                ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: RUND.pille,
                                 background: kan ? `${C.akzent}22` : C.surface2, color: kan ? C.akzent : C.muted,
                                 border: `1px solid ${kan ? C.akzent + "66" : C.line}`,
                               }}>{kv}</button>
@@ -184,7 +184,7 @@ export default function JokerOekonomie({ rules, onChange }) {
               return (
                 <button key={t.key} title={t.desc} onClick={() => patchBudgetFeld({ takt: t.key })} style={{
                   ...TAPZIEL, flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
-                  borderRadius: 11, textAlign: "left",
+                  borderRadius: RUND.karte, textAlign: "left",
                   background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
@@ -206,7 +206,7 @@ export default function JokerOekonomie({ rules, onChange }) {
               return (
                 <button key={v.key} title={v.desc} onClick={() => patchBudgetFeld({ verfall: v.key })} style={{
                   ...TAPZIEL, flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
-                  borderRadius: 11, textAlign: "left",
+                  borderRadius: RUND.karte, textAlign: "left",
                   background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
@@ -242,7 +242,7 @@ export default function JokerOekonomie({ rules, onChange }) {
               return (
                 <button key={m.key} title={m.desc} onClick={() => patchBudgetFeld({ preisModus: m.key })} style={{
                   ...TAPZIEL, flex: "1 1 90px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
-                  borderRadius: 11, textAlign: "left",
+                  borderRadius: RUND.karte, textAlign: "left",
                   background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
@@ -260,7 +260,7 @@ export default function JokerOekonomie({ rules, onChange }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
           {JOKER_ARTEN.map((art) => (
             <div key={art.key} style={{
-              background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 12px",
+              background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
                 <span style={{ fontSize: 13, fontWeight: 700 }}>{art.label}</span>
@@ -269,7 +269,7 @@ export default function JokerOekonomie({ rules, onChange }) {
                   onChange={(e) => setzePreis(art.key, Number(e.target.value))}
                   style={{
                     width: 70, boxSizing: "border-box", background: C.ink2, color: C.text,
-                    border: `1px solid ${C.line}`, borderRadius: 10, padding: "5px 8px",
+                    border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "5px 8px",
                     fontSize: 13, fontFamily: MONO, textAlign: "right", outline: "none",
                   }} />
               </div>
@@ -300,7 +300,7 @@ export default function JokerOekonomie({ rules, onChange }) {
           Abfrage wäre ab hier immer wahr gewesen und damit toter Code. */}
       <div style={{
         marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`,
-        borderRadius: 14, padding: "14px 16px",
+        borderRadius: RUND.karte, padding: "14px 16px",
       }}>
         <div style={{ fontSize: 13, fontWeight: 700 }}>Achsenprofil des gesamten Regelwerks</div>
         {/* ⚠️ Muss sichtbar stehen, nicht im Kleingedruckten: die Zuordnung
@@ -317,7 +317,7 @@ export default function JokerOekonomie({ rules, onChange }) {
         </div>
         {konflikte.map((k) => (
           <div key={k.achse} style={{
-            background: `${C.indigo}12`, border: `1px solid ${C.indigo}44`, borderRadius: 12,
+            background: `${C.indigo}12`, border: `1px solid ${C.indigo}44`, borderRadius: RUND.karte,
             padding: "9px 11px", marginTop: 10, fontSize: 11, color: C.muted, lineHeight: 1.5,
           }}>
             {k.text}
@@ -337,7 +337,7 @@ function MiniAchsen({ profil }) {
         return (
           <div key={a.key} title={`${a.label}: ${w}/3`} style={{ flex: 1, height: "100%", display: "flex", alignItems: "flex-end" }}>
             <div style={{
-              width: "100%", borderRadius: 2, background: w > 0 ? C.indigo : C.line,
+              width: "100%", borderRadius: RUND.klein, background: w > 0 ? C.indigo : C.line,
               height: `${Math.max(15, (w / 3) * 100)}%`,
             }} />
           </div>
@@ -353,7 +353,7 @@ function AchsenZeile({ achse, eintrag }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
       <span style={{ fontSize: 12, width: 108, flexShrink: 0 }}>{achse.label}</span>
-      <div style={{ flex: 1, height: 7, borderRadius: 999, background: C.surface, overflow: "hidden" }}>
+      <div style={{ flex: 1, height: 7, borderRadius: RUND.pille, background: C.surface, overflow: "hidden" }}>
         <div style={{ width: `${(w / 3) * 100}%`, height: "100%", background: C.indigo }} />
       </div>
       <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted, width: 26, textAlign: "right" }}>{w}/3</span>

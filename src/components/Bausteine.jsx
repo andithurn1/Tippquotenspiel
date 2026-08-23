@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { ASPEKTE } from "@/lib/presetMerge";
 import { bildeTeilCode, zerlegeTeilCode } from "@/lib/teilbibliothek";
 import { TAPZIEL } from "@/lib/tapziel";
@@ -59,7 +59,7 @@ export default function Bausteine({ rules }) {
 
           return (
             <div key={aspekt.key} style={{
-              background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12,
+              background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
               padding: "10px 12px", opacity: unveraendert ? 0.6 : 1,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
@@ -78,11 +78,11 @@ export default function Bausteine({ rules }) {
                 marginTop: 8, width: "100%", cursor: "pointer",
                 background: istKopiert ? C.mint : C.surface2, color: istKopiert ? C.ink : C.text,
                 fontWeight: 700, fontSize: 12, fontFamily: "inherit",
-                ...TAPZIEL, border: `1px solid ${C.line}`, borderRadius: 10, padding: "8px 0",
+                ...TAPZIEL, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "8px 0",
               }}>{istKopiert ? "✓ kopiert" : "Code kopieren"}</button>
               {fallbackCode && (
                 <div style={{
-                  marginTop: 8, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 10,
+                  marginTop: 8, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
                   padding: "8px 10px",
                 }}>
                   <div style={{ fontSize: 11, color: C.muted, marginBottom: 4, lineHeight: 1.4 }}>

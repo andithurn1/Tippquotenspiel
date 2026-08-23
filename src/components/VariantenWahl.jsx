@@ -1,6 +1,6 @@
 "use client";
 
-import { C } from "@/lib/theme";
+import { C, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // ============================================================
@@ -71,7 +71,7 @@ export default function VariantenWahl({ rules, onWaehlen }) {
                 flex: 1, minWidth: 0, cursor: "pointer", fontFamily: "inherit",
                 textAlign: "left", padding: "12px 14px",
                 // R2 — Andis bevorzugter Radius.
-                borderRadius: 12,
+                borderRadius: RUND.karte,
                 background: an ? `${C.akzent}1A` : C.surface,
                 color: an ? C.text : C.muted,
                 border: `1px solid ${an ? C.akzent : C.line}`,

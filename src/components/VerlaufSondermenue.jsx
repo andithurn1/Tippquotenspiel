@@ -5,7 +5,7 @@ import { DEFAULT_RULES, RULE_LIMITS } from "@/lib/engine";
 import { STAERKE_STUFEN, BETRIFFT, beschreibeBetrifft } from "@/lib/catchup";
 import { KURVEN, KURVE, SAISONFORM_LIMITS, beschreibeSaisonform } from "@/lib/saisonform";
 import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
-import { C } from "@/lib/theme";
+import { C, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import { Slider, Toggle, Field, GrosseZeile } from "@/components/Eingaben";
 
@@ -78,7 +78,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
                   return (
                     <button key={s.key} onClick={() => setzeAufholen({ staerke: s.staerke, schwelle: s.schwelle })} style={{
                       cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
-                      borderRadius: 10, flex: 1, textAlign: "left",
+                      borderRadius: RUND.karte, flex: 1, textAlign: "left",
                       background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
                       border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                     }}>
@@ -97,7 +97,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
                   return (
                     <button key={b.key} onClick={() => setzeAufholen({ betrifft: b.key })}
                       title={b.desc} style={{
-                        ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                        ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: RUND.pille,
                         background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                         border: `1px solid ${on ? C.mint + "66" : C.line}`,
                       }}>{b.label}</button>
@@ -135,7 +135,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
               const on = sf.streich === n;
               return (
                 <button key={n} onClick={() => setzeSaisonform({ streich: n })} style={{
-                  ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                  ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: RUND.pille,
                   background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                   border: `1px solid ${on ? C.mint + "66" : C.line}`,
                 }}>{n === 0 ? "keine" : `${n} Spiel${n === 1 ? "" : "e"}`}</button>
@@ -171,7 +171,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
               return (
                 <button key={k.key} onClick={() => setzeSaisonform({ kurve: k.key })}
                   title={k.text} style={{
-                    ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: 999,
+                    ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: RUND.pille,
                     background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
                     border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                   }}>{k.label}</button>
@@ -191,7 +191,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
             und bekommt das Gegenteil. */}
         {sf.kurve !== "flach" && (
           <div style={{
-            marginTop: 8, marginBottom: 8, padding: "9px 11px", borderRadius: 10,
+            marginTop: 8, marginBottom: 8, padding: "9px 11px", borderRadius: RUND.karte,
             background: `${C.coral}14`, border: `1px solid ${C.coral}44`,
           }}>
             <div style={{ fontSize: 12, color: C.coral, fontWeight: 700, marginBottom: 3 }}>
@@ -219,7 +219,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
         {(sf.kurve !== "flach" || sf.streich > 0) && (
           <p style={{
             fontSize: 12, color: C.text, marginTop: 4, marginBottom: 12, lineHeight: 1.45,
-            padding: "8px 10px", borderRadius: 8, background: C.surface, border: `1px solid ${C.line}`,
+            padding: "8px 10px", borderRadius: RUND.karte, background: C.surface, border: `1px solid ${C.line}`,
           }}>
             {beschreibeSaisonform(sf, 34)}
           </p>
@@ -247,7 +247,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
                   return (
                     <button key={s} onClick={() => setzeVersaeumnis({ strategie: s })} style={{
                       cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
-                      borderRadius: 10, textAlign: "left",
+                      borderRadius: RUND.karte, textAlign: "left",
                       background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
                       border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                     }}>
@@ -296,7 +296,7 @@ export default function VerlaufSondermenue({ rules, onChange }) {
           stehen — und der eigentliche Grund für dieses Sondermenü. */}
       {sf.streich > 0 && !sf.nurGetippte && ve.enabled && (
         <div style={{
-          marginTop: 8, padding: "10px 12px", borderRadius: 12,
+          marginTop: 8, padding: "10px 12px", borderRadius: RUND.karte,
           background: `${C.coral}14`, border: `1px solid ${C.coral}44`,
           fontSize: 12, color: C.muted, lineHeight: 1.5,
         }}>

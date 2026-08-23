@@ -27,7 +27,7 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import NaheErgebnisse from "@/components/NaheErgebnisse";
 import ErgebnisMatrix from "@/components/ErgebnisMatrix";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 // ⚠️ Der SPIELER bekam hier gerundete Joker-Faktoren zu sehen: bei einem
 // eingestellten ×1,15 stand „×1.2" auf dem Knopf. Seit die Faktoren auf dem
 // 0,05-Raster stehen, muss die Anzeige mitziehen — Begründung in format.js.
@@ -1005,7 +1005,7 @@ export default function Tippabgabe({ matchId }) {
       <BackLink href="/tippen" label="Spielwahl" />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
-        borderRadius: 26, overflow: "hidden",
+        borderRadius: RUND.schirm, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
@@ -1036,7 +1036,7 @@ export default function Tippabgabe({ matchId }) {
             {bigGameBonus > 0 && (
               <div style={{
                 marginTop: 10, background: `${C.coral}14`, border: `1px solid ${C.coral}44`,
-                borderRadius: 12, padding: "9px 12px",
+                borderRadius: RUND.karte, padding: "9px 12px",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                   <span style={{ color: C.coral, fontSize: 13 }}>★</span>
@@ -1067,7 +1067,7 @@ export default function Tippabgabe({ matchId }) {
                 </div>
                 <div style={{
                   marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center",
-                  background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 14px",
+                  background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 14px",
                 }}>
                   <div style={{ fontSize: 13 }}>
                     <span style={{ color: C.muted }}>Sieger: </span>
@@ -1079,7 +1079,7 @@ export default function Tippabgabe({ matchId }) {
                     </span>
                     <span style={{
                       fontSize: 11, color: r.col, border: `1px solid ${r.col}55`,
-                      borderRadius: 999, padding: "2px 8px",
+                      borderRadius: RUND.pille, padding: "2px 8px",
                     }}>{r.label}</span>
                   </div>
                 </div>
@@ -1104,7 +1104,7 @@ export default function Tippabgabe({ matchId }) {
             {scorer.enabled && SNAP.spielerPreiseOffen && (
               <div style={{
                 fontSize: 12, lineHeight: 1.45, color: C.muted, marginBottom: 10,
-                padding: "9px 11px", borderRadius: 10,
+                padding: "9px 11px", borderRadius: RUND.karte,
                 background: C.surface, border: `1px solid ${C.line}`,
               }}>
                 <strong style={{ color: C.text }}>Die Namen sind echt, die Quoten noch vorläufig.</strong>{" "}
@@ -1187,7 +1187,7 @@ export default function Tippabgabe({ matchId }) {
             {prefs.vorschau !== "aus" && (
               <div style={{
                 marginTop: 20, background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`,
-                borderRadius: 14, padding: "12px 14px",
+                borderRadius: RUND.karte, padding: "12px 14px",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
@@ -1211,7 +1211,7 @@ export default function Tippabgabe({ matchId }) {
                   </div>
                 )}
                 <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 11, color: r.col, border: `1px solid ${r.col}55`, borderRadius: 999, padding: "2px 8px" }}>{r.label}</span>
+                  <span style={{ fontSize: 11, color: r.col, border: `1px solid ${r.col}55`, borderRadius: RUND.pille, padding: "2px 8px" }}>{r.label}</span>
                   <span style={{ fontSize: 12, color: C.muted }}>
                     {csQuote ? `Exakt-Quote ${csQuote.toFixed(1)}` : "seltenes Ergebnis"}
                   </span>
@@ -1252,7 +1252,7 @@ export default function Tippabgabe({ matchId }) {
             {jokerAktiv && (
               <div style={{
                 marginTop: 18, background: `${C.akzent}0E`, border: `1px solid ${C.akzent}33`,
-                borderRadius: 14, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
+                borderRadius: RUND.karte, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
               }}>
                 <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1 }}>
                   {einsatzRegelwerk ? "Einsatz dieses Spiels" : rankingModus ? "Gewicht dieses Spiels" : "Joker"}
@@ -1312,9 +1312,9 @@ export default function Tippabgabe({ matchId }) {
                       <div style={{ fontSize: 12, color: C.muted }}>
                         {zahl(planung.verteilt + einsatzAktuell)} von {zahl(planung.budget)} Münzen für {muenzZeitraum} verteilt
                       </div>
-                      <div style={{ position: "relative", height: 6, borderRadius: 999, background: C.line, marginTop: 5 }}>
+                      <div style={{ position: "relative", height: 6, borderRadius: RUND.pille, background: C.line, marginTop: 5 }}>
                         <div style={{
-                          position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: 999, background: C.akzent,
+                          position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: RUND.pille, background: C.akzent,
                           width: `${Math.max(0, Math.min(100, ((planung.verteilt + einsatzAktuell) / (planung.budget || 1)) * 100))}%`,
                         }} />
                       </div>
@@ -1352,7 +1352,7 @@ export default function Tippabgabe({ matchId }) {
                             title={blockiert ? "Dieses Gewicht liegt schon auf einem anderen Spiel dieses Spieltags" : undefined}
                             onClick={() => setGewicht(on ? 1 : f)} style={{
                               cursor: gesperrt || blockiert ? "default" : "pointer", fontFamily: MONO, fontSize: 13, fontWeight: 700,
-                              padding: "8px 14px", borderRadius: 999,
+                              padding: "8px 14px", borderRadius: RUND.pille,
                               background: on ? `${C.akzent}22` : C.surface,
                               color: on ? C.akzent : blockiert ? "rgba(138,144,180,0.4)" : C.muted,
                               border: `1px solid ${on ? C.akzent + "77" : C.line}`,
@@ -1375,7 +1375,7 @@ export default function Tippabgabe({ matchId }) {
                         background: joker ? `${C.akzent}22` : C.surface,
                         color: joker ? C.akzent : (!jokerErlaubnis.erlaubt ? "rgba(138,144,180,0.45)" : C.muted),
                         border: `1px solid ${joker ? C.akzent + "77" : C.line}`,
-                        borderRadius: 12, padding: "11px 0",
+                        borderRadius: RUND.karte, padding: "11px 0",
                       }}>
                       {joker ? `✓ Joker gesetzt · ${fmtFaktor(RULES.joker.faktor)}` : `Joker setzen · ${fmtFaktor(RULES.joker.faktor)}`}
                     </button>
@@ -1409,7 +1409,7 @@ export default function Tippabgabe({ matchId }) {
             {istDuellSpieltag && (
               <div style={{
                 marginTop: 18, background: `${C.coral}0E`, border: `1px solid ${C.coral}33`,
-                borderRadius: 14, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
+                borderRadius: RUND.karte, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
               }}>
                 <div style={{ fontSize: 11, color: C.coral, textTransform: "uppercase", letterSpacing: 1 }}>
                   Duell-Joker
@@ -1448,7 +1448,7 @@ export default function Tippabgabe({ matchId }) {
                             onClick={() => setDuellZiel(on ? null : zielId)} style={{
                               cursor: zu ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
                               opacity: zu && !on ? 0.5 : 1,
-                              padding: "8px 14px", borderRadius: 999,
+                              padding: "8px 14px", borderRadius: RUND.pille,
                               background: on ? `${C.coral}22` : C.surface,
                               color: on ? C.coral : C.muted,
                               border: `1px solid ${on ? C.coral + "77" : C.line}`,
@@ -1465,7 +1465,7 @@ export default function Tippabgabe({ matchId }) {
                             <button key={typKey} disabled={gesperrt}
                               onClick={() => setDuellTypGewaehlt(on ? null : typKey)} style={{
                                 cursor: gesperrt ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
-                                padding: "8px 14px", borderRadius: 999,
+                                padding: "8px 14px", borderRadius: RUND.pille,
                                 background: on ? `${C.coral}22` : C.surface,
                                 color: on ? C.coral : C.muted,
                                 border: `1px solid ${on ? C.coral + "77" : C.line}`,
@@ -1498,7 +1498,7 @@ export default function Tippabgabe({ matchId }) {
             <button onClick={submit} style={{
               marginTop: 14, width: "100%", cursor: "pointer",
               background: C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
-              border: "none", borderRadius: 14, padding: "14px 0",
+              border: "none", borderRadius: RUND.karte, padding: "14px 0",
             }}>
               Tipp abgeben & Quote einfrieren
             </button>
@@ -1534,7 +1534,7 @@ function Stepper({ value, onStep }) {
   // 34×34-Knopf würde sonst ein schmaler hoher Streifen. Und das hier ist der
   // meistgedrückte Knopf der ganzen App — jeder Tipp geht durch ihn.
   const btn = {
-    ...TAPZIEL_QUADRAT, borderRadius: 10, cursor: "pointer",
+    ...TAPZIEL_QUADRAT, borderRadius: RUND.karte, cursor: "pointer",
     background: C.surface2, color: C.text, border: `1px solid ${C.line}`,
     fontSize: 20, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center",
   };
@@ -1555,7 +1555,7 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
     <div style={{ flex }}>
       <div style={{
         background: dim ? C.ink2 : C.surface, border: `1px solid ${C.line}`,
-        borderRadius: 12, padding: "8px 10px",
+        borderRadius: RUND.karte, padding: "8px 10px",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
           <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
@@ -1611,7 +1611,7 @@ function Confirmation({
   return (
     <div style={{ position: "relative", padding: "30px 22px 24px" }}>
       <div style={{
-        width: 52, height: 52, borderRadius: 999, margin: "0 auto",
+        width: 52, height: 52, borderRadius: RUND.pille, margin: "0 auto",
         background: `${C.mint}22`, border: `1px solid ${C.mint}66`,
         display: "flex", alignItems: "center", justifyContent: "center",
         color: C.mint, fontSize: 28,
@@ -1626,7 +1626,7 @@ function Confirmation({
         </div>
       )}
 
-      <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginTop: 20 }}>
+      <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: 16, marginTop: 20 }}>
         <Row label="Endstand" value={`${h}:${a}`} accent={C.akzent} mono />
         <Row label="Sieger" value={winner} />
         <Row label="Exakt-Quote" value={csQuote ? csQuote.toFixed(1) : "seltenes Ergebnis"} mono />
@@ -1651,14 +1651,14 @@ function Confirmation({
       <button onClick={onEdit} style={{
         marginTop: 16, width: "100%", cursor: "pointer",
         background: "transparent", color: C.text, fontWeight: 600, fontSize: 15,
-        border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 0",
+        border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "12px 0",
       }}>
         Vor Anpfiff noch bearbeiten
       </button>
       <Link href="/ranking" style={{
         marginTop: 10, display: "block", textAlign: "center", textDecoration: "none",
         color: C.ink, background: C.mint, fontWeight: 700, fontSize: 15,
-        borderRadius: 14, padding: "12px 0",
+        borderRadius: RUND.karte, padding: "12px 0",
       }}>
         Zum Leaderboard →
       </Link>

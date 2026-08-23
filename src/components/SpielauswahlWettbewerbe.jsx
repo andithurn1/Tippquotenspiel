@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { getStore } from "@/lib/store";
 import { PHASEN, wettbewerbeIn, wettbewerbVon, phaseVon } from "@/lib/wettbewerbe";
 import { filterSpiele, VERKNUEPFUNG_HINWEIS } from "@/lib/spielauswahl";
@@ -91,7 +91,7 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
       {/* Die Zahl ist der eigentliche Punkt */}
       <div style={{
         marginTop: 9, background: C.ink2, border: `1px solid ${C.line}`,
-        borderRadius: 11, padding: "9px 11px",
+        borderRadius: RUND.karte, padding: "9px 11px",
       }}>
         <div style={{ fontSize: 13, color: uebrig.length === 0 ? C.coral : C.text }}>
           <strong style={{ fontFamily: MONO }}>{uebrig.length}</strong> von {alle.length} Spielen
@@ -128,7 +128,7 @@ function Chip({ an, label, zusatz, onClick }) {
     <button onClick={onClick} style={{
       cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "6px 13px",
       minHeight: 44, boxSizing: "border-box",
-      borderRadius: 999, display: "flex", alignItems: "center", gap: 5,
+      borderRadius: RUND.pille, display: "flex", alignItems: "center", gap: 5,
       background: an ? `${C.mint}22` : C.surface,
       color: an ? C.mint : C.muted,
       border: `1px solid ${an ? C.mint + "66" : C.line}`,

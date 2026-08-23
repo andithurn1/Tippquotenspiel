@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { previewArchetypes } from "@/lib/rulePreview";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 
 
 // Live-Vorschau: für typische Spielarten, was verschiedene nahe Tipps mit dem
@@ -16,7 +16,7 @@ export default function RegelVorschau({ rules }) {
   return (
     <div style={{
       marginTop: 18, background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`,
-      borderRadius: 14, padding: "14px 16px",
+      borderRadius: RUND.karte, padding: "14px 16px",
     }}>
       <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
         Live-Vorschau · typische Spielarten
@@ -44,7 +44,7 @@ export default function RegelVorschau({ rules }) {
                 const best = t.points === r.best && r.best > 0;
                 return (
                   <div key={i} style={{
-                    display: "flex", alignItems: "baseline", gap: 6, padding: "5px 9px", borderRadius: 10,
+                    display: "flex", alignItems: "baseline", gap: 6, padding: "5px 9px", borderRadius: RUND.karte,
                     background: best ? `${C.akzent}18` : C.surface,
                     border: `1px solid ${best ? C.akzent + "55" : C.line}`,
                   }}>

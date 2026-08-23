@@ -15,7 +15,7 @@ import {
   verstoesstGegenVerfassung, beschreibeMitbestimmung,
 } from "@/lib/regelAbstimmung";
 import { regelwerkAmSpieltag, beschreibeBeschluesse } from "@/lib/beschluss";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // ── Schritt 4: Anträge stellen und darüber abstimmen ────────
 // design/abstimmung-verfassung.md Abschnitt 7.
@@ -165,7 +165,7 @@ export default function Regelaenderungen() {
 
         {meldung && (
           <div style={{
-            background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
+            background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: RUND.karte,
             padding: "10px 12px", marginBottom: 12, fontSize: 12, color: C.muted, lineHeight: 1.45,
           }}>{meldung}</div>
         )}
@@ -208,7 +208,7 @@ export default function Regelaenderungen() {
               return (
                 <div key={antrag.id} style={{
                   background: C.surface, border: `1px solid ${laeuft ? C.akzent + "44" : C.line}`,
-                  borderRadius: 14, padding: "13px 15px", marginBottom: 10,
+                  borderRadius: RUND.karte, padding: "13px 15px", marginBottom: 10,
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{aspektDef?.label ?? antrag.aspekt}</div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
@@ -251,7 +251,7 @@ export default function Regelaenderungen() {
                             onClick={() => stimmen(antrag.id, b.ja)} style={{
                               flex: 1, cursor: busy === antrag.id ? "default" : "pointer",
                               fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px 6px",
-                              borderRadius: 11,
+                              borderRadius: RUND.karte,
                               background: an ? `${C.akzent}22` : C.surface2, color: an ? C.akzent : C.muted,
                               border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                             }}>{b.label}</button>
@@ -286,7 +286,7 @@ export default function Regelaenderungen() {
                       style={{
                         flex: "1 1 120px", cursor: pruef.erlaubt ? "pointer" : "default",
                         fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px",
-                        borderRadius: 11, textAlign: "left",
+                        borderRadius: RUND.karte, textAlign: "left",
                         background: an ? `${C.akzent}22` : C.surface,
                         color: an ? C.akzent : pruef.erlaubt ? C.muted : "rgba(138,144,180,0.4)",
                         border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -303,7 +303,7 @@ export default function Regelaenderungen() {
                       onClick={() => stellen(gewaehlterAspekt, e)} style={{
                         textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
                         background: C.surface, border: `1px solid ${C.line}`,
-                        borderRadius: 12, padding: "9px 12px",
+                        borderRadius: RUND.karte, padding: "9px 12px",
                       }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{e.label}</div>
                       <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{e.desc}</div>
@@ -343,7 +343,7 @@ export default function Regelaenderungen() {
 function Kasten({ children }) {
   return (
     <div style={{
-      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 14,
+      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
       padding: "14px 16px", fontSize: 13, color: C.muted, lineHeight: 1.5, marginBottom: 12,
     }}>{children}</div>
   );

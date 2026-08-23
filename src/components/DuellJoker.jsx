@@ -1,6 +1,6 @@
 "use client";
 
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import {
   DUELL_TYPEN, ZIELWAHL, PHASEN, DUELL_LIMITS, EMPFEHLUNG,
   sanitizeDuellJoker, beschreibeDuell,
@@ -33,7 +33,7 @@ export default function DuellJoker({ rules, onChange }) {
 
   const knopf = (aktiv, text, onClick, key, titel) => (
     <button key={key} type="button" onClick={onClick} title={titel} style={{
-      border: `1px solid ${aktiv ? C.coral : C.line}`, borderRadius: 999,
+      border: `1px solid ${aktiv ? C.coral : C.line}`, borderRadius: RUND.pille,
       background: aktiv ? `${C.coral}1a` : "transparent", color: aktiv ? C.coral : C.text,
       ...TAPZIEL, cursor: "pointer", padding: "5px 11px", fontSize: 12, fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import {
   VERTEIL_MODI, SICHTBARKEIT, VERTEILUNG_LIMITS,
@@ -40,7 +40,7 @@ export default function JokerVerteilung({ verteilung, onChange }) {
               textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
               background: an ? `${C.akzent}18` : C.surface,
               border: `1px solid ${an ? C.akzent + "66" : C.line}`,
-              borderRadius: 12, padding: "9px 12px",
+              borderRadius: RUND.karte, padding: "9px 12px",
             }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
               <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
@@ -89,7 +89,7 @@ export default function JokerVerteilung({ verteilung, onChange }) {
                 return (
                   <button key={s.key} onClick={() => patch({ sichtbarkeit: s.key })} style={{
                     ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
-                    borderRadius: 11, fontSize: 12, fontWeight: 700,
+                    borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
                     background: an ? `${C.akzent}22` : C.surface,
                     color: an ? C.akzent : C.muted,
                     border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -122,7 +122,7 @@ function Leiste({ titel, tage = [], gedimmt = false }) {
           const an = set.has(md);
           return (
             <div key={md} title={`Spieltag ${md}`} style={{
-              flex: 1, height: 18, borderRadius: 3,
+              flex: 1, height: 18, borderRadius: RUND.klein,
               background: an ? (gedimmt ? `${C.akzent}77` : C.akzent) : C.surface2,
               border: `1px solid ${an ? "transparent" : C.line}`,
             }} />

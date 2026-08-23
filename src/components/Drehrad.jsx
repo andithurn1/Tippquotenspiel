@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { C, MONO, SERIES, readableInk } from "@/lib/theme";
+import { C, MONO, SERIES, readableInk, RUND } from "@/lib/theme";
 import {
   BELOHNUNGS_TYPEN, DREHRAD_LIMITS,
   sanitizeDrehrad, pruefeFelder, wahrscheinlichkeiten, drehradPlan, beschreibeDrehrad,
@@ -142,17 +142,17 @@ export default function Drehrad({ rules, onChange }) {
           textAlign: "left", cursor: "pointer", fontFamily: "inherit",
           background: cfg.enabled ? `${C.akzent}18` : C.surface,
           border: `1px solid ${cfg.enabled ? C.akzent + "66" : C.line}`,
-          borderRadius: 12, padding: "10px 12px", marginBottom: 12, color: C.text,
+          borderRadius: RUND.karte, padding: "10px 12px", marginBottom: 12, color: C.text,
         }}
       >
         <span style={{
-          width: 34, height: 20, borderRadius: 999, flexShrink: 0, position: "relative",
+          width: 34, height: 20, borderRadius: RUND.pille, flexShrink: 0, position: "relative",
           background: cfg.enabled ? C.akzent : C.surface2,
           border: `1px solid ${cfg.enabled ? "transparent" : C.line}`,
         }}>
           <span style={{
             position: "absolute", top: 2, left: cfg.enabled ? 16 : 2,
-            width: 14, height: 14, borderRadius: 999, background: C.ink2, transition: "left .15s",
+            width: 14, height: 14, borderRadius: RUND.pille, background: C.ink2, transition: "left .15s",
           }} />
         </span>
         <span>
@@ -225,7 +225,7 @@ export default function Drehrad({ rules, onChange }) {
       </div>
       <button onClick={hinzufuegen} style={{
         cursor: "pointer", background: "transparent", color: C.muted,
-        ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: 14, padding: "10px 12px",
+        ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
         fontFamily: "inherit", fontSize: 13, textAlign: "left", width: "100%", boxSizing: "border-box",
       }}>+ Feld hinzufügen</button>
 
@@ -266,7 +266,7 @@ export default function Drehrad({ rules, onChange }) {
                 textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
                 background: an ? `${C.akzent}18` : C.surface,
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
-                borderRadius: 12, padding: "9px 12px",
+                borderRadius: RUND.karte, padding: "9px 12px",
               }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
@@ -292,7 +292,7 @@ export default function Drehrad({ rules, onChange }) {
                   textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
                   background: an ? `${C.indigo}18` : C.surface,
                   border: `1px solid ${an ? C.indigo + "66" : C.line}`,
-                  borderRadius: 12, padding: "9px 12px",
+                  borderRadius: RUND.karte, padding: "9px 12px",
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.indigo : C.text }}>{p.label}</div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
@@ -328,7 +328,7 @@ export default function Drehrad({ rules, onChange }) {
                 textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
                 background: an ? `${C.akzent}18` : C.surface,
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
-                borderRadius: 12, padding: "9px 12px",
+                borderRadius: RUND.karte, padding: "9px 12px",
               }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{w.label}</div>
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{w.desc}</div>
@@ -348,7 +348,7 @@ export default function Drehrad({ rules, onChange }) {
       {/* ── Punkte-Deckel — nur eine Frage, wenn es ein Punkte-Feld gibt ── */}
       {hatPunkteFeld && (
         <div style={{
-          marginTop: 14, background: `${C.akzent}0e`, border: `1px solid ${C.akzent}44`, borderRadius: 12,
+          marginTop: 14, background: `${C.akzent}0e`, border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte,
           padding: "10px 12px",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -383,7 +383,7 @@ function Balken({ felder, anteile }) {
   const gesamt = felder.reduce((s, f) => s + (Number(f.gewicht) || 0), 0);
   return (
     <div style={{
-      display: "flex", width: "100%", height: 36, borderRadius: 10,
+      display: "flex", width: "100%", height: 36, borderRadius: RUND.karte,
       overflow: "hidden", border: `1px solid ${C.line}`, background: C.ink2, marginBottom: 12,
     }}>
       {gesamt <= 0 ? (
@@ -435,7 +435,7 @@ function Leiste({ titel, tage = [], von, bis, gedimmt = false }) {
           const imFenster = von == null || bis == null || (md >= von && md <= bis);
           return (
             <div key={md} title={`Spieltag ${md}`} style={{
-              flex: 1, height: 18, borderRadius: 3,
+              flex: 1, height: 18, borderRadius: RUND.klein,
               background: an ? (gedimmt ? `${C.akzent}77` : C.akzent) : C.surface2,
               border: `1px solid ${an ? "transparent" : C.line}`,
               opacity: imFenster ? 1 : 0.35,
@@ -464,17 +464,17 @@ function FeldZeile({
   return (
     <div style={{
       background: C.surface, border: `1px solid ${verworfenGrund ? C.coral + "66" : C.line}`,
-      borderRadius: 12, padding: "10px 12px", marginBottom: 8,
+      borderRadius: RUND.karte, padding: "10px 12px", marginBottom: 8,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span title={`${(anteil * 100).toFixed(1)} %`} style={{
-          width: 12, height: 12, borderRadius: 4, background: farbe, flexShrink: 0,
+          width: 12, height: 12, borderRadius: RUND.klein, background: farbe, flexShrink: 0,
         }} />
         <input value={feld.label} placeholder="Beschriftung"
           onChange={(e) => onPatch({ label: e.target.value })}
           style={{
             flex: 1, minWidth: 0, boxSizing: "border-box", background: C.ink2, color: C.text,
-            border: `1px solid ${C.line}`, borderRadius: 9, padding: "7px 9px",
+            border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "7px 9px",
             fontSize: 13, fontFamily: "inherit", outline: "none",
           }} />
         <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent, width: 50, textAlign: "right", flexShrink: 0 }}>
@@ -516,7 +516,7 @@ function FeldZeile({
           const an = belohnung.typ === t.key;
           return (
             <button key={t.key} title={t.desc} onClick={() => onBelohnungsTyp(t.key)} style={{
-              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: 999,
+              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: RUND.pille,
               background: an ? `${C.indigo}22` : C.surface2, color: an ? C.indigo : C.muted,
               border: `1px solid ${an ? C.indigo + "66" : C.line}`,
             }}>{t.label}</button>
@@ -534,7 +534,7 @@ function FeldZeile({
               style={{
                 display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
                 background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: 10, padding: "7px 9px", fontSize: 13, fontFamily: "inherit",
+                borderRadius: RUND.karte, padding: "7px 9px", fontSize: 13, fontFamily: "inherit",
               }}>
               {JOKER_ARTEN.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
             </select>
@@ -573,7 +573,7 @@ function Banner({ ton, children }) {
   const farbe = ton === "coral" ? C.coral : C.bernstein;
   return (
     <div style={{
-      background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: 12,
+      background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: RUND.karte,
       padding: "9px 11px", marginBottom: 10, fontSize: 12, color: C.text, lineHeight: 1.5,
     }}>
       {children}

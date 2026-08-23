@@ -11,7 +11,7 @@ import { computeMatchStatus, countTippedByUser, rundenSpiele } from "@/lib/round
 import { muenzStand } from "@/lib/muenzstand";
 import { narrenStand } from "@/lib/narrenstand";
 import Waehrungen from "@/components/Waehrungen";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 const SCREENS = [
@@ -108,14 +108,14 @@ export default function Hauptmenu() {
                   textAlign: "left", cursor: "pointer", fontFamily: "inherit",
                   background: active ? `${C.akzent}14` : C.surface,
                   border: `1px solid ${active ? C.akzent + "55" : C.line}`,
-                  borderRadius: 16, padding: "14px 16px", color: C.text,
+                  borderRadius: RUND.karte, padding: "14px 16px", color: C.text,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: 15, fontWeight: 700 }}>{r.name}</span>
                     {active && (
                       <span style={{
                         fontFamily: MONO, fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}55`,
-                        borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
+                        borderRadius: RUND.pille, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
                       }}>aktiv</span>
                     )}
                   </div>
@@ -139,15 +139,15 @@ export default function Hauptmenu() {
               <Link key={s.href} href={s.href} style={{
                 textDecoration: "none", color: C.text,
                 background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-                border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 18px",
+                border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 999, background: s.tone, boxShadow: `0 0 12px ${s.tone}` }} />
+                  <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: s.tone, boxShadow: `0 0 12px ${s.tone}` }} />
                   <span style={{ fontSize: 16, fontWeight: 700 }}>{s.title}</span>
                   {s.tag && (
                     <span style={{
                       marginLeft: "auto", fontFamily: MONO, fontSize: 11, color: s.tone,
-                      border: `1px solid ${s.tone}55`, borderRadius: 999, padding: "2px 8px",
+                      border: `1px solid ${s.tone}55`, borderRadius: RUND.pille, padding: "2px 8px",
                       textTransform: "uppercase", letterSpacing: 1,
                     }}>{s.tag}</span>
                   )}
@@ -159,10 +159,10 @@ export default function Hauptmenu() {
             <Link href="/tutorial" style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>Tutorial</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>Quoten, Punkte & das Admin-System — mit Beispielen erklärt.</div>

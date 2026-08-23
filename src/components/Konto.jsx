@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import BackLink from "@/components/BackLink";
 import { LEGAL, DATA_POINTS } from "@/lib/legal";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 export default function Konto() {
@@ -19,7 +19,7 @@ export default function Konto() {
     }}>
       <BackLink href="/menu" label="Menü" />
       <div style={{
-        width: "100%", maxWidth: 400, borderRadius: 26, overflow: "hidden",
+        width: "100%", maxWidth: 400, borderRadius: RUND.schirm, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
         padding: "26px 22px 24px",
@@ -82,11 +82,11 @@ function NameCard({ user, updateName }) {
         <input value={name} maxLength={40} onChange={(e) => { setName(e.target.value); setState("idle"); }}
           placeholder="Dein Name" style={{
             flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: 12, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
+            borderRadius: RUND.karte, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={state === "saving"} style={{
           cursor: state === "saving" ? "default" : "pointer", background: C.akzent, color: C.ink,
-          fontWeight: 700, fontSize: 15, border: "none", borderRadius: 12, padding: "0 16px",
+          fontWeight: 700, fontSize: 15, border: "none", borderRadius: RUND.karte, padding: "0 16px",
         }}>{state === "saving" ? "…" : "Speichern"}</button>
       </div>
       {state === "saved" && <div style={{ fontSize: 12, color: C.mint, marginTop: 6 }}>✓ Gespeichert.</div>}
@@ -124,7 +124,7 @@ function ExportCard({ exportMyData }) {
       <button onClick={run} disabled={state === "working"} style={{
         marginTop: 10, cursor: state === "working" ? "default" : "pointer",
         background: C.surface2, color: C.text, fontWeight: 700, fontSize: 13,
-        border: `1px solid ${C.line}`, borderRadius: 12, padding: "9px 16px", fontFamily: "inherit",
+        border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "9px 16px", fontFamily: "inherit",
       }}>{state === "working" ? "…" : "Als JSON herunterladen"}</button>
       {state === "error" && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{err}</div>}
     </div>
@@ -156,13 +156,13 @@ function DeleteCard({ email, deleteAccount }) {
         <input value={confirm} onChange={(e) => setConfirm(e.target.value)}
           placeholder="LÖSCHEN" style={{
             flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: 12, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
+            borderRadius: RUND.karte, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
           }} />
         <button onClick={run} disabled={!armed || state === "working"} style={{
           cursor: armed && state !== "working" ? "pointer" : "default",
           background: armed ? C.coral : C.surface, color: armed ? "#fff" : C.muted,
           fontWeight: 700, fontSize: 15, border: `1px solid ${armed ? C.coral : C.line}`,
-          borderRadius: 12, padding: "0 16px", fontFamily: "inherit",
+          borderRadius: RUND.karte, padding: "0 16px", fontFamily: "inherit",
         }}>{state === "working" ? "…" : "Löschen"}</button>
       </div>
       {state === "error" && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{err}</div>}

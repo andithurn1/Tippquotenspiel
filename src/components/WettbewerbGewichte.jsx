@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { getStore } from "@/lib/store";
 import { WETTBEWERBE, wettbewerbeIn } from "@/lib/wettbewerbe";
 import {
@@ -79,10 +79,10 @@ export default function WettbewerbGewichte({ rules, onChange }) {
             {/* Das Entscheidende: was am Ende herauskommt. */}
             {a && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                <div style={{ flex: 1, height: 6, borderRadius: 999, background: C.surface2, overflow: "hidden" }}>
+                <div style={{ flex: 1, height: 6, borderRadius: RUND.pille, background: C.surface2, overflow: "hidden" }}>
                   <div style={{
                     width: `${Math.round(a.anteil * 100)}%`, height: "100%",
-                    background: auf > 0 ? C.akzent : auf < 0 ? C.indigo : C.sky, borderRadius: 999,
+                    background: auf > 0 ? C.akzent : auf < 0 ? C.indigo : C.sky, borderRadius: RUND.pille,
                   }} />
                 </div>
                 <span style={{ fontFamily: MONO, fontSize: 11, color: C.text, minWidth: 92, textAlign: "right" }}>
@@ -121,7 +121,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
 
       {hinweis && (
         <div style={{
-          background: `${C.akzent}12`, border: `1px solid ${C.akzent}55`, borderRadius: 12,
+          background: `${C.akzent}12`, border: `1px solid ${C.akzent}55`, borderRadius: RUND.karte,
           padding: "10px 12px", marginTop: 12, fontSize: 12, color: C.text, lineHeight: 1.5,
         }}>
           {hinweis}

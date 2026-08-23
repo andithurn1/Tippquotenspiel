@@ -1,6 +1,6 @@
 "use client";
 
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { breakdown } from "@/lib/breakdown";
 
 // ── „Woher kamen meine Punkte?" ─────────────────────────────
@@ -23,7 +23,7 @@ export default function Ertragsquellen({ tip, actual, snap, rules, stufe = "voll
   return (
     <div style={{
       marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`,
-      borderRadius: 14, padding: "14px 15px",
+      borderRadius: RUND.karte, padding: "14px 15px",
     }}>
       <div style={{
         fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, color: C.muted,

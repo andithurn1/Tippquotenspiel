@@ -7,7 +7,7 @@ import { createMockOddsSource, scoreTip, sanitizeRules, DEFAULT_RULES } from "@/
 import { previewArchetypes } from "@/lib/rulePreview";
 import { getStore } from "@/lib/store";
 import { useCurrentRound } from "@/components/RoundProvider";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // Ein echtes Rechenbeispiel (Engine, nicht ausgedacht): JOR-ESP real 5:1,
 // Tipp 4:1 → „hauchdünn" (richtiger Sieger, ein Tor daneben).
@@ -175,7 +175,7 @@ function Section({ n, title, children }) {
     <div style={{ marginTop: 22, paddingTop: 18, borderTop: `1px solid ${C.line}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
         <span style={{
-          width: 24, height: 24, borderRadius: 999, background: `${C.akzent}22`, color: C.akzent,
+          width: 24, height: 24, borderRadius: RUND.pille, background: `${C.akzent}22`, color: C.akzent,
           border: `1px solid ${C.akzent}55`, display: "flex", alignItems: "center", justifyContent: "center",
           fontFamily: MONO, fontSize: 12, fontWeight: 700, flexShrink: 0,
         }}>{n}</span>
@@ -189,13 +189,13 @@ function Section({ n, title, children }) {
 function Ebene({ tone, label, desc }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span style={{ width: 10, height: 10, borderRadius: 999, background: tone, flexShrink: 0 }} />
+      <span style={{ width: 10, height: 10, borderRadius: RUND.pille, background: tone, flexShrink: 0 }} />
       <span style={{ fontSize: 13 }}><b>{label}</b> <span style={{ color: C.muted }}>— {desc}</span></span>
     </div>
   );
 }
 
-const exampleBox = { marginTop: 14, background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`, borderRadius: 14, padding: "12px 14px" };
+const exampleBox = { marginTop: 14, background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`, borderRadius: RUND.karte, padding: "12px 14px" };
 const exampleHead = { fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.akzent, textTransform: "uppercase", marginBottom: 8 };
 
 function ExRow({ tip, note, pts, tone }) {
@@ -209,7 +209,7 @@ function ExRow({ tip, note, pts, tone }) {
 
 function chip(best) {
   return {
-    fontFamily: MONO, fontSize: 12, padding: "4px 8px", borderRadius: 9,
+    fontFamily: MONO, fontSize: 12, padding: "4px 8px", borderRadius: RUND.karte,
     background: best ? `${C.akzent}18` : C.surface, color: best ? C.akzent : C.muted,
     border: `1px solid ${best ? C.akzent + "55" : C.line}`,
   };
@@ -217,7 +217,7 @@ function chip(best) {
 
 function Details({ summary, children }) {
   return (
-    <details style={{ marginTop: 12, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: "0 14px" }}>
+    <details style={{ marginTop: 12, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "0 14px" }}>
       <summary style={{
         cursor: "pointer", padding: "12px 0", fontSize: 13, fontWeight: 600, color: C.mint,
         listStyle: "none", display: "flex", alignItems: "center", gap: 8,
@@ -231,7 +231,7 @@ function Details({ summary, children }) {
 
 function cta(bg, color) {
   return {
-    flex: 1, textAlign: "center", textDecoration: "none", padding: "12px 0", borderRadius: 14,
+    flex: 1, textAlign: "center", textDecoration: "none", padding: "12px 0", borderRadius: RUND.karte,
     background: bg, color: color ?? C.ink, fontWeight: 700, fontSize: 15,
     border: color ? `1px solid ${C.line}` : "none",
   };

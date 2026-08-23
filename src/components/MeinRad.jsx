@@ -10,7 +10,7 @@ import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { zeitachse, rundenSpieltagVon } from "@/lib/zeitachse";
 import { naechstesOffenesSpiel } from "@/lib/muenzstand";
 import { wahrscheinlichkeiten, auswerten, beschreibeDrehrad, drehradPlan, BELOHNUNGS_TYPEN } from "@/lib/drehrad";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { zahl } from "@/lib/format";
 
 // ── Das Rad aus Sicht des Spielers (design/drehrad.md 3c) ───
@@ -144,7 +144,7 @@ export default function MeinRad() {
 
             {letzte && (
               <div style={{
-                background: C.surface, border: `1px solid ${C.akzent}44`, borderRadius: 14,
+                background: C.surface, border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte,
                 padding: "12px 15px", marginTop: 12,
               }}>
                 <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1 }}>
@@ -177,7 +177,7 @@ export default function MeinRad() {
                   {[...gefallen].reverse().map((z) => (
                     <div key={z.spieltag} style={{
                       display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10,
-                      background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: "8px 12px",
+                      background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "8px 12px",
                     }}>
                       <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>ST {z.spieltag}</span>
                       <span style={{ fontSize: 13, flex: 1 }}>{feldVon.get(z.feldId)?.label || "—"}</span>
@@ -233,7 +233,7 @@ function belohnungsText(belohnung, kurz = false) {
 function Kasten({ children }) {
   return (
     <div style={{
-      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 14,
+      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
       padding: "14px 16px", fontSize: 13, color: C.muted, lineHeight: 1.5, marginTop: 12,
     }}>{children}</div>
   );

@@ -28,7 +28,7 @@
 // ============================================================
 
 import { useEffect, useMemo, useState } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { getStore } from "@/lib/store";
 import { AUSWAHL_LIMITS } from "@/lib/spielauswahl";
 import { TAPZIEL } from "@/lib/tapziel";
@@ -113,7 +113,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
   return (
     <div style={{
       marginTop: 8, background: C.ink2, border: `1px solid ${C.line}`,
-      borderRadius: 12, padding: "12px 12px 10px",
+      borderRadius: RUND.karte, padding: "12px 12px 10px",
     }}>
       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Sonderregeln — {label}</div>
       <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
@@ -144,7 +144,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
                 : [...zonen, { von: v.von, bis: v.bis }])}
               style={{
                 ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                padding: "0 12px", borderRadius: 12,
+                padding: "0 12px", borderRadius: RUND.karte,
                 background: drin ? `${C.akzent}1A` : C.surface,
                 color: drin ? C.akzent : C.muted,
                 border: `1px solid ${drin ? C.akzent : C.line}`,
@@ -172,7 +172,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
                 onClick={() => setzeZonen(zonen.filter((_, k) => k !== i))}
                 style={{
                   ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                  padding: "0 12px", borderRadius: 12, background: C.surface,
+                  padding: "0 12px", borderRadius: RUND.karte, background: C.surface,
                   color: C.muted, border: `1px solid ${C.line}`,
                 }}
               >
@@ -186,7 +186,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
             onClick={() => setzeZonen([...zonen, { von: 1, bis: 4 }])}
             style={{
               ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-              padding: "0 12px", borderRadius: 12, background: C.surface,
+              padding: "0 12px", borderRadius: RUND.karte, background: C.surface,
               color: C.text, border: `1px dashed ${C.line}`, marginBottom: 6,
             }}
           >
@@ -239,7 +239,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
                   <button key={d.id} onClick={() => derbyEinzeln(d.id)} style={{
                     display: "flex", alignItems: "center", gap: 10, width: "100%",
                     minHeight: 44, boxSizing: "border-box", textAlign: "left",
-                    cursor: "pointer", fontFamily: "inherit", padding: "8px 10px", borderRadius: 10,
+                    cursor: "pointer", fontFamily: "inherit", padding: "8px 10px", borderRadius: RUND.karte,
                     background: on ? `${C.mint}18` : C.surface, color: on ? C.text : C.muted,
                     border: `1px solid ${on ? C.mint + "55" : C.line}`,
                   }}>
@@ -269,7 +269,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
           marginTop: 10, width: "100%", minHeight: 44, boxSizing: "border-box",
           cursor: "pointer", fontFamily: "inherit", fontSize: 12,
           background: "transparent", color: C.muted,
-          border: `1px dashed ${C.line}`, borderRadius: 10,
+          border: `1px dashed ${C.line}`, borderRadius: RUND.karte,
         }}>Sonderregeln dieser Liga entfernen</button>
       )}
     </div>
@@ -281,7 +281,7 @@ function Schalter({ an, titel, unter, onChange }) {
     <button onClick={() => onChange(!an)} style={{
       display: "flex", alignItems: "center", gap: 10, width: "100%",
       minHeight: 48, boxSizing: "border-box", textAlign: "left",
-      cursor: "pointer", fontFamily: "inherit", padding: "8px 11px", borderRadius: 11,
+      cursor: "pointer", fontFamily: "inherit", padding: "8px 11px", borderRadius: RUND.karte,
       background: an ? `${C.mint}14` : C.surface, color: C.text,
       border: `1px solid ${an ? C.mint + "55" : C.line}`,
     }}>
@@ -290,12 +290,12 @@ function Schalter({ an, titel, unter, onChange }) {
         <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 1 }}>{unter}</span>
       </span>
       <span style={{
-        flexShrink: 0, width: 34, height: 20, borderRadius: 999,
+        flexShrink: 0, width: 34, height: 20, borderRadius: RUND.pille,
         background: an ? C.mint : C.surface2, position: "relative",
       }}>
         <span style={{
           position: "absolute", top: 2, left: an ? 16 : 2, width: 16, height: 16,
-          borderRadius: 999, background: "#fff", transition: "left .15s",
+          borderRadius: RUND.pille, background: "#fff", transition: "left .15s",
         }} />
       </span>
     </button>
@@ -317,7 +317,7 @@ function Zahl({ label, value, min, max, onChange }) {
         style={{
           width: 72, minHeight: 44, boxSizing: "border-box",
           background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-          borderRadius: 10, padding: "8px 10px", fontSize: 15, fontFamily: MONO, outline: "none",
+          borderRadius: RUND.karte, padding: "8px 10px", fontSize: 15, fontFamily: MONO, outline: "none",
         }} />
     </label>
   );

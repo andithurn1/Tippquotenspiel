@@ -1,6 +1,6 @@
 "use client";
 
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { nearPayouts, likelyScorelines } from "@/lib/nearResults";
 
 // ── „Was zahlt es, wenn es knapp anders ausgeht?" ────────────
@@ -31,7 +31,7 @@ export default function NaheErgebnisse({ tip, snap, rules, kompakt = false }) {
   return (
     <div style={{
       marginTop: 12, background: C.ink2, border: `1px solid ${C.line}`,
-      borderRadius: 14, padding: "12px 14px",
+      borderRadius: RUND.karte, padding: "12px 14px",
     }}>
       <div style={{
         fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted,
@@ -58,7 +58,7 @@ export default function NaheErgebnisse({ tip, snap, rules, kompakt = false }) {
 function Zeile({ r, best }) {
   const anteil = Math.max(0.04, r.points / best);
   return (
-    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: "5px 8px", borderRadius: 9, overflow: "hidden", background: r.isTip ? `${C.akzent}14` : "transparent", border: `1px solid ${r.isTip ? C.akzent + "44" : "transparent"}` }}>
+    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: "5px 8px", borderRadius: RUND.karte, overflow: "hidden", background: r.isTip ? `${C.akzent}14` : "transparent", border: `1px solid ${r.isTip ? C.akzent + "44" : "transparent"}` }}>
       {/* Balken als Hintergrund: relative Auszahlung auf einen Blick */}
       <span aria-hidden style={{
         position: "absolute", left: 0, top: 0, bottom: 0, width: `${anteil * 100}%`,
@@ -101,7 +101,7 @@ export function ErgebnisUebersicht({ snap, rules, limit = 3 }) {
       {rows.map((r) => (
         <span key={`${r.home}:${r.away}`} style={{
           fontFamily: MONO, fontSize: 11, color: C.muted,
-          border: `1px solid ${C.line}`, borderRadius: 999, padding: "3px 9px",
+          border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "3px 9px",
         }}>
           {r.home}:{r.away} <span style={{ color: C.mint, fontWeight: 700 }}>+{r.points}</span>
         </span>

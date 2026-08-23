@@ -9,7 +9,7 @@ import BackLink from "@/components/BackLink";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { zeitachse } from "@/lib/zeitachse";
 import { fahrplan, aktuellerRundenSpieltag, beschreibeFahrplan } from "@/lib/saisonfahrplan";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Der Saison-Fahrplan aus Sicht des Spielers ──────────────
@@ -106,7 +106,7 @@ export default function SaisonVerlauf() {
               <button onClick={() => setAlle(true)} style={{
                 marginTop: 12, width: "100%", cursor: "pointer",
                 background: C.surface2, color: C.text, border: `1px solid ${C.line}`,
-                ...TAPZIEL, borderRadius: 12, padding: "10px 0", fontSize: 13, fontFamily: "inherit",
+                ...TAPZIEL, borderRadius: RUND.karte, padding: "10px 0", fontSize: 13, fontFamily: "inherit",
               }}>
                 Alle {zeilen.length} Spieltage zeigen
               </button>
@@ -136,7 +136,7 @@ function Zeile({ z, jetzt }) {
   return (
     <div style={{
       background: jetzt ? C.surface : C.ink2, border: `1px solid ${rand}`,
-      borderRadius: 14, padding: "10px 13px", opacity: vorbei ? 0.65 : 1,
+      borderRadius: RUND.karte, padding: "10px 13px", opacity: vorbei ? 0.65 : 1,
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
         <span style={{

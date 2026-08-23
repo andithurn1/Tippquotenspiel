@@ -31,7 +31,7 @@ Erlaubte Stände, und jeder verlangt einen Beleg:
 | Nr | Ansage (seine Worte) | Stand | Beleg / was fehlt |
 |---|---|---|---|
 | G1 | „F7 (Akzent, bisher Gold) soll LILA sein“ | ✅ | `theme.js`: `akzent: "#9A6BE8"`. Ton auf dasselbe Helligkeitsprofil gemessen wie das alte Gold (dunkler Text darauf 5,14 statt 5,26) — deshalb ohne Lesbarkeits-Umbau in 58 Dateien. Im Browser geprüft: `rgb(154,107,232)` |
-| G2 | „R2 (12 px) ist der bevorzugte Eckenradius“ | 🔨 | Token `--tqs-rund: 12px` liegt in `globals.css`. In den Screens **acht verschiedene Radien**, gezählt: 999 (127×), 12 (91×), 14 (58×), 10 (47×), 11 (23×), 18, 26 … |
+| G2 | „R2 (12 px) ist der bevorzugte Eckenradius“ | ✅ | Vier Stufen in `RUND` (`theme.js`), 415 Stellen in 70 Dateien umgestellt: `pille` 999 · `karte` **12** · `schirm` 26 · `klein` 4. Nicht alles wurde 12 — der äußere Bildschirmrahmen und wenige Pixel große Balken haben einen Grund, alles dazwischen ist R2. ⚠️ Dabei kam eine ZWEITE Leiter zum Vorschein: `--tqs-rund-karte` war 16 px, `RUND.karte` 12 px — dasselbe Wort, zwei Werte; jetzt eine Leiter. `npm run rund` wacht darüber (nackte Zahl → rot, mit Datei und Zeile). Im Browser gemessen: auf `/erstellen` nur noch 12 px (127×), 999 px (49×), 26 px (1×) |
 | G3 | „durchwegs die apple schrift. typ und formatierung“ | ✅ | **Schrift:** `--tqs-schrift-familie` (`-apple-system` zuerst) auf `body`, Apples Glättung, Laufweite −0,16 px; 30 Kopien in Komponenten → 0. **Größen:** Andi wählte Weg A (echtes Apple-Maß) — 520 Stellen auf Apples Leiter gehoben, danach nur noch 11·12·13·15·16·17·20·22·28. Gemessen auf 375×812: kein Querlauf, kein Tippziel unter 40 px auf /erstellen, /tippen, /ranking |
 
 Gilt **nur bis zu den Wettbewerben**. Ab dort kommt die Komplettüberarbeitung

@@ -5,7 +5,7 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // Ranking-Verlauf: kumulativer Zwischenstand je Spieltag (getLeaderboardHistory
 // in der Engine/Store). Keine gespeicherte Historie — wird aus den vorhandenen
@@ -49,7 +49,7 @@ export default function RankingVerlauf() {
           return (
             <div key={matchday} style={{
               marginBottom: 14, background: C.surface, border: `1px solid ${C.line}`,
-              borderRadius: 16, padding: "14px 16px",
+              borderRadius: RUND.karte, padding: "14px 16px",
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={{ fontSize: 13, fontWeight: 700 }}>Spieltag {matchday}</span>

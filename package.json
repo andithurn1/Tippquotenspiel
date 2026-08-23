@@ -17,6 +17,7 @@
     "tot": "vite-node scripts/tot-durchgang.mjs",
     "sicht": "vite-node scripts/sicht-durchgang.mjs",
     "gleich": "vite-node scripts/gleich-durchgang.mjs",
+    "rund": "vitest run src/lib/rund.test.js",
     "import:spielplan": "vite-node scripts/import-spielplan.mjs",
     "odds:pruefen": "vite-node scripts/fetch-odds.mjs -- --pruefen",
     "odds:holen": "vite-node scripts/fetch-odds.mjs",

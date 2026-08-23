@@ -1,6 +1,6 @@
 "use client";
 
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { REGLER, anwenden, erkenneStufe, beispiele, naeheSatz } from "@/lib/einfachRegler";
 import { TAPZIEL } from "@/lib/tapziel";
 
@@ -42,7 +42,7 @@ export default function EinfacheRegler({ rules, onChange }) {
                     onClick={() => onChange(anwenden(rules, regler.key, stufe.key))}
                     style={{
                       ...TAPZIEL, flex: "1 1 92px", cursor: "pointer", fontFamily: "inherit", padding: "9px 6px",
-                      borderRadius: 11, fontSize: 13, fontWeight: 700,
+                      borderRadius: RUND.karte, fontSize: 13, fontWeight: 700,
                       background: an ? `${C.akzent}22` : C.surface,
                       color: an ? C.akzent : C.muted,
                       border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -62,7 +62,7 @@ export default function EinfacheRegler({ rules, onChange }) {
 
       {/* Beispielrechnung: das Herzstück dieser Stufe */}
       <div style={{
-        background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 14,
+        background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
         padding: "13px 15px", marginTop: 4,
       }}>
         <div style={{

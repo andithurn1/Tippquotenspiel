@@ -7,7 +7,7 @@ import {
   ZEITACHSE_LIMITS, DEFAULT_ZEITACHSE, PAUSEN_MODI,
 } from "@/lib/zeitachse";
 import { wettbewerbeIn, wettbewerbLabel } from "@/lib/wettbewerbe";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Zeitachse einstellen ────────────────────────────────────
@@ -64,7 +64,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
           return (
             <button key={m.key} title={m.hint} onClick={() => patch({ modus: m.key })} style={{
               ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
-              borderRadius: 11, fontSize: 12, fontWeight: 700,
+              borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
               background: an ? `${C.sky}22` : C.surface, color: an ? C.sky : C.muted,
               border: `1px solid ${an ? C.sky + "66" : C.line}`,
             }}>{m.label}</button>
@@ -83,7 +83,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
               return (
                 <button key={opt.key ?? "auto"} onClick={() => patch({ anker: opt.key })} style={{
                   ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px",
-                  borderRadius: 999, background: an ? `${C.mint}22` : C.surface,
+                  borderRadius: RUND.pille, background: an ? `${C.mint}22` : C.surface,
                   color: an ? C.mint : C.muted, border: `1px solid ${an ? C.mint + "66" : C.line}`,
                 }}>{opt.label}</button>
               );
@@ -110,7 +110,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
               return (
                 <button key={m.key} title={m.hint} onClick={() => patch({ pause: m.key })} style={{
                   ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "7px 6px",
-                  borderRadius: 11, fontSize: 12, fontWeight: 700,
+                  borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
                   background: an ? `${C.mint}22` : C.surface, color: an ? C.mint : C.muted,
                   border: `1px solid ${an ? C.mint + "66" : C.line}`,
                 }}>{m.label}</button>
@@ -129,7 +129,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
       {/* Die Vorschau ist der eigentliche Wert dieses Blocks. */}
       <div style={{
         marginTop: 10, background: C.surface, border: `1px solid ${C.line}`,
-        borderRadius: 12, padding: "10px 12px",
+        borderRadius: RUND.karte, padding: "10px 12px",
       }}>
         <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>
           {matches == null ? "Vorschau lädt …" : `${achse.length} Spieltage — so beginnt eure Saison:`}
@@ -149,7 +149,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
       {hinweise.map((h) => (
         <div key={h.art} style={{
           marginTop: 8, background: `${C.akzent}0E`, border: `1px solid ${C.akzent}33`,
-          borderRadius: 10, padding: "8px 10px", fontSize: 11, color: C.text, lineHeight: 1.45,
+          borderRadius: RUND.karte, padding: "8px 10px", fontSize: 11, color: C.text, lineHeight: 1.45,
         }}>
           {h.text}
           <div style={{ color: C.muted, marginTop: 3 }}>{h.hilfe}</div>

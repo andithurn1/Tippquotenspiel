@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import {
   WETT_TYPEN, WETT_TYP, istAuswertbar, SAISON_LIMITS, SAISON_PRESETS,
   sanitizeSaison, wettenLabel, wettenId,
@@ -53,7 +53,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
               <button key={p.key} onClick={() => onChange(sanitizeSaison(p.saison))} style={{
                 textAlign: "left", cursor: "pointer", fontFamily: "inherit",
                 background: C.surface, border: `1px solid ${C.line}`,
-                borderRadius: 12, padding: "9px 11px", color: C.text,
+                borderRadius: RUND.karte, padding: "9px 11px", color: C.text,
               }}>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>{p.label}</div>
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
@@ -85,7 +85,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
               const id = wettenId(w);
               return (
                 <div key={id} style={{
-                  background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 12px",
+                  background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>{wettenLabel(w)}</span>
@@ -119,7 +119,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                           style={{
                             display: "block", width: "100%", boxSizing: "border-box", marginTop: 2,
                             background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-                            borderRadius: 9, padding: "6px 8px", fontSize: 12, fontFamily: MONO, outline: "none",
+                            borderRadius: RUND.karte, padding: "6px 8px", fontSize: 12, fontFamily: MONO, outline: "none",
                             opacity: feld === "bisSpieltag" && w.abSpieltag == null ? 0.45 : 1,
                           }} />
                       </label>
@@ -146,7 +146,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                   const kannAusser = typ.parameter.includes("ausser") && teams.length > 0;
                   return (
                     <div key={typ.key} style={{
-                      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12,
+                      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
                       padding: "9px 11px", opacity: auswertbar ? 1 : 0.5,
                     }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -155,7 +155,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                           {!auswertbar && (
                             <span title="Diese Statistik liefern unsere Ergebnisse noch nicht" style={{
                               fontFamily: MONO, fontSize: 11, color: C.muted, marginLeft: 6,
-                              border: `1px solid ${C.line}`, borderRadius: 999, padding: "1px 6px",
+                              border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "1px 6px",
                             }}>noch keine Daten</span>
                           )}
                           <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
@@ -167,7 +167,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                             cursor: schonDrin ? "default" : "pointer", fontFamily: MONO, fontSize: 11,
                             background: schonDrin ? "transparent" : C.surface2,
                             color: schonDrin ? C.muted : C.text,
-                            border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 10px",
+                            border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "4px 10px",
                           }}>{schonDrin ? "drin" : "+"}</button>
                         )}
                       </div>
@@ -178,7 +178,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                           <button onClick={() => setOffen(offen === typ.key ? null : typ.key)} style={{
                             cursor: "pointer", fontFamily: MONO, fontSize: 11, color: C.sky,
                             background: "transparent", border: `1px dashed ${C.sky}55`,
-                            borderRadius: 999, padding: "3px 9px",
+                            borderRadius: RUND.pille, padding: "3px 9px",
                           }}>
                             {offen === typ.key ? "▾" : "▸"} … außer einem Verein
                           </button>
@@ -188,7 +188,7 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
                                 <button key={t} onClick={() => hinzufuegen(typ, [t])} style={{
                                   cursor: "pointer", fontSize: 11, fontFamily: "inherit",
                                   background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-                                  borderRadius: 999, padding: "4px 9px",
+                                  borderRadius: RUND.pille, padding: "4px 9px",
                                 }}>ohne {t}</button>
                               ))}
                             </div>
@@ -220,15 +220,15 @@ function Toggle({ an, onChange }) {
     <button onClick={() => onChange(!an)} style={{
       display: "flex", alignItems: "center", gap: 10, cursor: "pointer", width: "100%",
       textAlign: "left", background: an ? `${C.akzent}14` : C.surface,
-      border: `1px solid ${an ? C.akzent + "55" : C.line}`, borderRadius: 12,
+      border: `1px solid ${an ? C.akzent + "55" : C.line}`, borderRadius: RUND.karte,
       padding: "10px 12px", color: C.text, fontFamily: "inherit",
     }}>
       <span style={{
-        width: 38, height: 22, borderRadius: 999, flex: "0 0 auto",
+        width: 38, height: 22, borderRadius: RUND.pille, flex: "0 0 auto",
         background: an ? C.akzent : C.surface2, border: `1px solid ${an ? C.akzent : C.line}`,
         display: "flex", alignItems: "center", padding: 2, justifyContent: an ? "flex-end" : "flex-start",
       }}>
-        <span style={{ width: 16, height: 16, borderRadius: 999, background: an ? C.ink : C.muted }} />
+        <span style={{ width: 16, height: 16, borderRadius: RUND.pille, background: an ? C.ink : C.muted }} />
       </span>
       <span style={{ fontSize: 13, fontWeight: 700 }}>Saison-Wetten anbieten</span>
     </button>

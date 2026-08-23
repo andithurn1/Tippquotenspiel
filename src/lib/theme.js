@@ -117,6 +117,35 @@ export const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 export const SCHRIFT = "-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 export const SANS = "system-ui, -apple-system, 'Segoe UI', sans-serif";
 
+// ── Eckenradien (Andis G2, umgesetzt am 23.08.2026) ─────────
+//
+// Seine Ansage vom 09.08.2026: „R2 (12 px) ist der bevorzugte Eckenradius."
+// Gezählt waren danach ACHT verschiedene im Umlauf — 999 (129×), 12 (103×),
+// 14 (58×), 10 (48×), 11 (23×), 18 (15×), 26 (10×), 16 (9×), dazu 9, 8 und 3.
+// Das war keine Gestaltung, sondern Drift: dieselbe Art Kasten bekam je nach
+// Datei eine andere Rundung.
+//
+// 🔴 Nicht alles wird 12. Vier STUFEN, jede mit einem Grund — eine Zahl ohne
+// Grund ist genau das, was hier durcheinandergeraten ist:
+//
+//   `pille`  — Chips und runde Knöpfe. Die Form IST die Aussage („antippbar,
+//              einzeln wählbar"), keine Rundungsfrage.
+//   `karte`  — Andis 12 px. Jeder Kasten, jedes Feld, jeder eckige Knopf.
+//   `schirm` — der äußere Bildschirm-Rahmen (`maxWidth: 400`). Eine Ebene
+//              über allem anderen; auf 12 sähe die Seite aus wie ein Kasten
+//              im Kasten.
+//   `klein`  — Dinge, die nur wenige Pixel messen: Fortschrittsbalken,
+//              Farbpunkte, Plättchen. Dort ist 12 px keine Kante mehr,
+//              sondern verschluckt die Form.
+//
+// ⚠️ `schirm` erkennt man am `maxWidth: 400`/`460` daneben, nicht an der
+// Zahl — das war der Prüfstein beim Sortieren: Impressum, Datenschutz und der
+// Auszahlungs-Explorer trugen 20 bzw. 24 und sind trotzdem Bildschirme.
+//
+// ⚠️ `karte` ist dieselbe Zahl wie `--tqs-rund: 12px` in `globals.css` —
+// zwei Schichten, ein Wert (Kopf von `cssVariablen.js`).
+export const RUND = { pille: 999, karte: 12, schirm: 26, klein: 4 };
+
 // ── Datenreihen-Farben (Plots) ──────────────────────────────
 // Bewusst gut unterscheidbare Farbtöne, hell auf dunklem Grund. Reihenfolge
 // ist die Vergabereihenfolge — die ersten sind am besten unterscheidbar.

@@ -6,7 +6,7 @@ import { beschreibeVerteilung } from "@/lib/jokerPlan";
 import { TAKTE, perioden } from "@/lib/jokerBudget";
 import { PHASEN, DUELL_LIMITS, sanitizeDuellJoker } from "@/lib/duellJoker";
 import { beschreibeMuenzTakt, muenzTaktKonflikte } from "@/lib/muenzTakt";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { zahl, fmtFaktor } from "@/lib/format";
 import { TAPZIEL } from "@/lib/tapziel";
 import { Zahl, Slider, Toggle, Field, Stepper, GrosseZeile } from "@/components/Eingaben";
@@ -187,7 +187,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
       {zusammenfassung && (
         <div style={{
           background: `${C.mint}12`, border: `1px solid ${C.mint}33`,
-          borderRadius: 12, padding: "10px 13px", marginBottom: 10,
+          borderRadius: RUND.karte, padding: "10px 13px", marginBottom: 10,
           fontSize: 12, color: C.mint, lineHeight: 1.5,
         }}>
           {zusammenfassung}
@@ -201,7 +201,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
         {!premium ? (
           <div style={{
             background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`,
-            borderRadius: 14, padding: "13px 15px", marginBottom: 8,
+            borderRadius: RUND.karte, padding: "13px 15px", marginBottom: 8,
           }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
             <p style={{ fontSize: 12, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
@@ -227,7 +227,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                   return (
                     <button key={m.key} onClick={() => setzeJoker({ modus: m.key })} style={{
                       cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
-                      borderRadius: 10, flex: 1, textAlign: "left",
+                      borderRadius: RUND.karte, flex: 1, textAlign: "left",
                       background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
                       border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                     }}>
@@ -320,7 +320,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
                   {j.faktoren.map((f) => (
                     <span key={f} style={{
-                      ...TAPZIEL, fontSize: 12, fontFamily: MONO, padding: "5px 10px", borderRadius: 999,
+                      ...TAPZIEL, fontSize: 12, fontFamily: MONO, padding: "5px 10px", borderRadius: RUND.pille,
                       background: f > 1 ? `${C.akzent}18` : C.surface,
                       color: f > 1 ? C.akzent : C.muted,
                       border: `1px solid ${f > 1 ? C.akzent + "44" : C.line}`,
@@ -397,7 +397,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                     Größe markiert; verbindlich prüft erst die Tippabgabe. */}
                 {einsatzKonfliktListe.length > 0 && (
                   <div style={{
-                    background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
+                    background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: RUND.karte,
                     padding: "10px 12px", marginBottom: 10,
                   }}>
                     {einsatzKonfliktListe.map((k) => (
@@ -558,7 +558,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                   return (
                     <button key={t.key} title={t.desc} onClick={() => setzeJoker({ einsatzTakt: t.key })} style={{
                       flex: "1 1 100px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
-                      borderRadius: 11, textAlign: "left",
+                      borderRadius: RUND.karte, textAlign: "left",
                       background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
                       border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                     }}>
@@ -585,7 +585,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                         textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
                         background: an ? `${C.akzent}18` : C.surface,
                         border: `1px solid ${an ? C.akzent + "66" : C.line}`,
-                        ...TAPZIEL, borderRadius: 12, padding: "9px 12px",
+                        ...TAPZIEL, borderRadius: RUND.karte, padding: "9px 12px",
                       }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{p.label}</div>
                         <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>

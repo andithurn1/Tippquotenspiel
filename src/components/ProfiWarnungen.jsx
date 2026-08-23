@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { pruefe, korrigieren, zusammenfassung } from "@/lib/reglerWarnung";
 import { TAPZIEL } from "@/lib/tapziel";
 
@@ -23,7 +23,7 @@ export default function ProfiWarnungen({ rules, onChange }) {
 
   return (
     <div style={{
-      background: `${farbe}0e`, border: `1px solid ${farbe}44`, borderRadius: 16,
+      background: `${farbe}0e`, border: `1px solid ${farbe}44`, borderRadius: RUND.karte,
       padding: "13px 15px", marginTop: 14, marginBottom: 4,
     }}>
       <button onClick={() => setOffen((o) => !o)} disabled={!warnungen.length} style={{
@@ -49,7 +49,7 @@ export default function ProfiWarnungen({ rules, onChange }) {
 
       <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.45, opacity: 0.85 }}>
         <span style={{
-          display: "inline-block", width: 16, height: 3, borderRadius: 999,
+          display: "inline-block", width: 16, height: 3, borderRadius: RUND.pille,
           background: `${C.mint}99`, marginRight: 6, verticalAlign: "middle",
         }} />
         Der Streifen unter jedem Regler markiert den erprobten Bereich.
@@ -64,7 +64,7 @@ export default function ProfiWarnungen({ rules, onChange }) {
               fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: "uppercase",
               color: w.stufe === "warnung" ? C.coral : C.akzent,
               border: `1px solid ${(w.stufe === "warnung" ? C.coral : C.akzent)}55`,
-              borderRadius: 999, padding: "1px 7px", flexShrink: 0,
+              borderRadius: RUND.pille, padding: "1px 7px", flexShrink: 0,
             }}>{w.stufe === "warnung" ? "kippt" : "unrund"}</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{w.titel}</span>
           </div>
@@ -82,7 +82,7 @@ export default function ProfiWarnungen({ rules, onChange }) {
           <button onClick={() => onChange(korrigieren(rules, w.id))} style={{
             marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
             background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
-            borderRadius: 999, padding: "5px 12px",
+            borderRadius: RUND.pille, padding: "5px 12px",
           }}>{w.fix}</button>
         </div>
       ))}

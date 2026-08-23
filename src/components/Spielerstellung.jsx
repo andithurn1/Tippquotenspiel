@@ -34,7 +34,7 @@ import SpielauswahlWettbewerbe from "@/components/SpielauswahlWettbewerbe";
 import SpielauswahlListe from "@/components/SpielauswahlListe";
 import LigaSonderregeln from "@/components/LigaSonderregeln";
 import Alleinstellung from "@/components/Alleinstellung";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { zahl, fmtFaktor } from "@/lib/format";
 import { Zahl, Slider, Toggle, Field, Stepper, GrosseZeile } from "@/components/Eingaben";
 import JokerSondermenue, { jokerZeileStand } from "@/components/JokerSondermenue";
@@ -467,7 +467,7 @@ export default function Spielerstellung() {
         // klebt `position: sticky` daran fest, statt am Fenster. Die Ampel
         // weiter unten scrollte deshalb stumm mit, ohne dass etwas kaputt
         // aussah. `clip` erzeugt keinen Scroll-Container und behebt es.
-        borderRadius: 26, overflow: "clip",
+        borderRadius: RUND.schirm, overflow: "clip",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
@@ -491,7 +491,7 @@ export default function Spielerstellung() {
             <button onClick={() => { setRules(DEFAULT_RULES); setPresetKey("standard"); }} style={{
               fontFamily: MONO, fontSize: 11, color: C.muted, cursor: "pointer",
               minHeight: 44, boxSizing: "border-box",
-              background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 14px",
+              background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "4px 14px",
             }}>zurücksetzen</button>
           </div>
           {/* 🔴 EINE Überschrift für beide Ansichten (20.08.2026). Vorher
@@ -623,7 +623,7 @@ export default function Spielerstellung() {
                         cursor: "pointer", fontFamily: "inherit", color: C.text,
                         background: auf ? C.ink2 : C.surface,
                         border: `1px solid ${auf ? C.mint + "55" : C.line}`,
-                        borderRadius: 12, padding: "10px 12px",
+                        borderRadius: RUND.karte, padding: "10px 12px",
                       }}>
                         <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700 }}>{g.label}</span>
                         <span style={{ fontFamily: MONO, fontSize: 12, color: drin > 0 ? C.mint : C.muted }}>
@@ -638,7 +638,7 @@ export default function Spielerstellung() {
                       <button onClick={() => toggleLiga(g.vereine)} style={{
                         cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "3px 14px",
                         minHeight: 48, boxSizing: "border-box", flexShrink: 0,
-                        borderRadius: 12, background: "transparent", color: C.mint,
+                        borderRadius: RUND.karte, background: "transparent", color: C.mint,
                         border: `1px solid ${C.line}`,
                       }}>{alleDrin ? "keine" : "alle"}</button>
                     </div>
@@ -649,7 +649,7 @@ export default function Spielerstellung() {
                             const on = selectedTeams.includes(team);
                             return (
                               <button key={team} onClick={() => toggleTeam(team)} style={{
-                                cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "6px 12px", borderRadius: 999,
+                                cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "6px 12px", borderRadius: RUND.pille,
                                 minHeight: 44, boxSizing: "border-box",
                                 background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                                 border: `1px solid ${on ? C.mint + "66" : C.line}`,
@@ -668,7 +668,7 @@ export default function Spielerstellung() {
                           cursor: "pointer", fontFamily: "inherit", fontSize: 13, textAlign: "left",
                           background: "transparent", color: sonderregelnLiga === g.key ? C.mint : C.muted,
                           border: `1px dashed ${sonderregelnLiga === g.key ? C.mint + "55" : C.line}`,
-                          borderRadius: 10, padding: "8px 12px",
+                          borderRadius: RUND.karte, padding: "8px 12px",
                         }}>
                           {sonderregelnLiga === g.key ? "▾" : "▸"} Sonderregeln für {g.label}
                           {sp.jeWettbewerb?.[g.key] && " · aktiv"}
@@ -755,7 +755,7 @@ export default function Spielerstellung() {
                   textAlign: "left", cursor: "pointer", fontFamily: "inherit",
                   background: active ? `${C.akzent}14` : C.surface,
                   border: `1px solid ${active ? C.akzent + "66" : C.line}`,
-                  borderRadius: 14, padding: "12px 14px", color: C.text,
+                  borderRadius: RUND.karte, padding: "12px 14px", color: C.text,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: 15, fontWeight: 700 }}>
@@ -769,7 +769,7 @@ export default function Spielerstellung() {
                     {active && (
                       <span style={{
                         fontFamily: MONO, fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}55`,
-                        borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
+                        borderRadius: RUND.pille, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
                       }}>gewählt</span>
                     )}
                   </div>
@@ -787,7 +787,7 @@ export default function Spielerstellung() {
             <button onClick={() => setMischenOffen((o) => !o)} style={{
               width: "100%", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
               background: "transparent", color: C.muted, border: `1px dashed ${C.line}`,
-              borderRadius: 12, padding: "10px 12px", fontSize: 13,
+              borderRadius: RUND.karte, padding: "10px 12px", fontSize: 13,
             }}>
               {mischenOffen ? "▾" : "▸"} Zwei Presets mischen — „Schärfe von A, Kombi von B"
             </button>
@@ -808,7 +808,7 @@ export default function Spielerstellung() {
             <input value={rules.name} maxLength={40} onChange={(e) => patch({ name: e.target.value })}
               placeholder="z. B. Hardcore-Runde" style={{
                 width: "100%", boxSizing: "border-box", background: C.surface, color: C.text,
-                border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 12px",
+                border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
                 fontSize: 15, fontFamily: "inherit", outline: "none",
               }} />
           </Field>
@@ -1043,7 +1043,7 @@ export default function Spielerstellung() {
               <button onClick={createRound} disabled={creating || !user || teamFilterInvalid || leereAuswahl} style={{
                 width: "100%", cursor: creating || !user || teamFilterInvalid || leereAuswahl ? "default" : "pointer",
                 background: C.mint, color: C.ink, fontWeight: 700, fontSize: 15,
-                ...TAPZIEL, border: "none", borderRadius: 14, padding: "13px 0",
+                ...TAPZIEL, border: "none", borderRadius: RUND.karte, padding: "13px 0",
                 opacity: creating || !user || teamFilterInvalid || leereAuswahl ? 0.6 : 1,
               }}>
                 {creating ? "wird angelegt …" : "Runde jetzt erstellen"}
@@ -1051,14 +1051,14 @@ export default function Spielerstellung() {
               {createErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{createErr}</div>}
             </>
           ) : (
-            <div style={{ background: `${C.mint}12`, border: `1px solid ${C.mint}44`, borderRadius: 14, padding: "14px 16px" }}>
+            <div style={{ background: `${C.mint}12`, border: `1px solid ${C.mint}44`, borderRadius: RUND.karte, padding: "14px 16px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: C.mint }}>✓ „{created.name}“ ist angelegt — deine aktive Runde</div>
               <div style={{ marginTop: 10, fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Beitritts-Code</div>
               <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: C.akzent, marginTop: 4, letterSpacing: 3 }}>{created.join_code}</div>
               <button onClick={copyJoinCode} style={{
                 marginTop: 10, width: "100%", cursor: "pointer",
                 background: codeCopied ? C.mint : C.surface2, color: codeCopied ? C.ink : C.text, fontWeight: 700, fontSize: 13,
-                border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 0",
+                border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 0",
               }}>{codeCopied ? "✓ kopiert" : "Code kopieren"}</button>
               <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
                 Freunde geben diesen Code unter „Runde beitreten" ein.
@@ -1070,18 +1070,18 @@ export default function Spielerstellung() {
           <div id="gamecode" style={{ scrollMarginTop: 64 }} />
           <SectionTitle>Creator-Code</SectionTitle>
           <div style={{
-            background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12,
+            background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
             padding: "10px 12px", fontFamily: MONO, fontSize: 12, color: C.akzent,
             wordBreak: "break-all", lineHeight: 1.5,
           }}>{code}</div>
           <button onClick={copy} style={{
             marginTop: 10, width: "100%", cursor: "pointer",
             background: copied ? C.mint : C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
-            ...TAPZIEL, border: "none", borderRadius: 14, padding: "13px 0", transition: "background .2s",
+            ...TAPZIEL, border: "none", borderRadius: RUND.karte, padding: "13px 0", transition: "background .2s",
           }}>{copied ? "✓ kopiert" : "Langen Code kopieren & teilen"}</button>
 
           {/* Kurzcode (Content-Creator) */}
-          <div style={{ marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: "12px 14px" }}>
+          <div style={{ marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "12px 14px" }}>
             <div style={{ fontSize: 13, fontWeight: 700 }}>Kurzcode statt langem Code</div>
             <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 10px", lineHeight: 1.4 }}>
               Speichert dein Regelwerk unter einem kurzen, merkbaren Code — perfekt zum
@@ -1091,7 +1091,7 @@ export default function Spielerstellung() {
               <button onClick={publish} disabled={publishing || !user} style={{
                 width: "100%", cursor: publishing || !user ? "default" : "pointer",
                 background: C.surface2, color: user ? C.text : C.muted, fontWeight: 700, fontSize: 13,
-                border: `1px solid ${C.line}`, borderRadius: 12, padding: "11px 0", minHeight: 44,
+                border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "11px 0", minHeight: 44,
                 opacity: publishing || !user ? 0.6 : 1,
               }}>{publishing ? "wird erstellt …" : user ? "Kurzcode erstellen & teilen" : "Zum Erstellen einloggen"}</button>
             ) : (
@@ -1100,7 +1100,7 @@ export default function Spielerstellung() {
                 <button onClick={copyShort} style={{
                   marginTop: 8, width: "100%", cursor: "pointer",
                   background: shortCopied ? C.mint : C.surface2, color: shortCopied ? C.ink : C.text, fontWeight: 700, fontSize: 13,
-                  border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 0",
+                  border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 0",
                 }}>{shortCopied ? "✓ kopiert" : "Kurzcode kopieren"}</button>
               </div>
             )}
@@ -1117,12 +1117,12 @@ export default function Spielerstellung() {
             <input value={imp} onChange={(e) => { setImp(e.target.value); setImpErr(""); }}
               placeholder="Code laden (Creator-Code, Kurzcode oder Teil-Code)" style={{
                 flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: 12, padding: "10px 12px", fontSize: 13, fontFamily: MONO, outline: "none",
+                borderRadius: RUND.karte, padding: "10px 12px", fontSize: 13, fontFamily: MONO, outline: "none",
               }} />
             <button onClick={load} disabled={!imp.trim()} style={{
               cursor: imp.trim() ? "pointer" : "default", background: C.surface2,
               color: imp.trim() ? C.text : C.muted, border: `1px solid ${C.line}`,
-              borderRadius: 12, padding: "0 16px", fontSize: 13, fontWeight: 600, minHeight: 44,
+              borderRadius: RUND.karte, padding: "0 16px", fontSize: 13, fontWeight: 600, minHeight: 44,
             }}>Laden</button>
           </div>
           {impErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{impErr}</div>}
@@ -1144,7 +1144,7 @@ function KopfChip({ icon, wert, titel, onClick }) {
       minHeight: 44, boxSizing: "border-box", cursor: "pointer",
       fontFamily: "inherit", fontSize: 12, padding: "4px 10px",
       background: C.surface, color: C.text,
-      border: `1px solid ${C.line}`, borderRadius: 999,
+      border: `1px solid ${C.line}`, borderRadius: RUND.pille,
     }}>
       <span style={{ fontSize: 13, lineHeight: 1 }}>{icon}</span>
       <span style={{

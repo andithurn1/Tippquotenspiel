@@ -9,7 +9,7 @@ import {
   getAvatar, avatarColor, sanitizeDisplayName,
 } from "@/lib/avatars";
 import { isPremium, PREMIUM_FEATURES } from "@/lib/premium";
-import { C, SCHRIFT } from "@/lib/theme";
+import { C, SCHRIFT, RUND } from "@/lib/theme";
 
 
 // Avatar-Kreis — eine Stelle, damit Profil, Leaderboard & Co. gleich aussehen.
@@ -86,7 +86,7 @@ export default function Profil() {
             {/* Vorschau, so wie andere dich sehen */}
             <div style={{
               display: "flex", alignItems: "center", gap: 14,
-              background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 16, padding: "14px 16px",
+              background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "14px 16px",
             }}>
               <AvatarKreis id={avatar} size={52} />
               <div style={{ minWidth: 0 }}>
@@ -100,7 +100,7 @@ export default function Profil() {
               {premium && (
                 <span style={{
                   marginLeft: "auto", fontSize: 11, letterSpacing: 1, textTransform: "uppercase",
-                  color: C.akzent, border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "3px 9px",
+                  color: C.akzent, border: `1px solid ${C.akzent}55`, borderRadius: RUND.pille, padding: "3px 9px",
                 }}>Premium</span>
               )}
             </div>
@@ -109,7 +109,7 @@ export default function Profil() {
             <div style={{
               marginTop: 12, background: premium ? `${C.mint}10` : C.ink2,
               border: `1px solid ${premium ? C.mint + "33" : C.line}`,
-              borderRadius: 14, padding: "12px 15px",
+              borderRadius: RUND.karte, padding: "12px 15px",
             }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: premium ? C.mint : C.text }}>
                 {premium ? "✓ Premium aktiv" : "Premium nicht aktiv"}
@@ -139,7 +139,7 @@ export default function Profil() {
                   width: "100%", marginTop: 7, boxSizing: "border-box",
                   background: C.surface, color: C.text, fontFamily: "inherit", fontSize: 15,
                   border: `1px solid ${nameOk || name === "" ? C.line : C.coral}`,
-                  borderRadius: 12, padding: "11px 13px", outline: "none",
+                  borderRadius: RUND.karte, padding: "11px 13px", outline: "none",
                 }} />
               <div style={{ fontSize: 11, color: nameOk || name === "" ? C.muted : C.coral, marginTop: 6 }}>
                 {nameOk || name === ""
@@ -178,7 +178,7 @@ export default function Profil() {
               cursor: !nameOk || status === "speichern" ? "default" : "pointer",
               background: status === "ok" ? C.mint : C.akzent, color: C.ink,
               fontWeight: 700, fontSize: 15, fontFamily: "inherit",
-              border: "none", borderRadius: 14, padding: "13px 0",
+              border: "none", borderRadius: RUND.karte, padding: "13px 0",
               opacity: !nameOk || status === "speichern" ? 0.6 : 1,
             }}>
               {status === "speichern" ? "wird gespeichert …" : status === "ok" ? "✓ gespeichert" : "Profil speichern"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { C } from "@/lib/theme";
+import { C, RUND } from "@/lib/theme";
 import { Zahl } from "@/components/Eingaben";
 import { ASPEKTE, ASPEKT_KEYS } from "@/lib/presetMerge";
 import { TAPZIEL } from "@/lib/tapziel";
@@ -157,7 +157,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                         m.key === "sperre" ? { aenderbar: [] } : { aenderbar: waehlbar.map((x) => x.key), gesperrt: [] })
                       } style={{
                         ...TAPZIEL, flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px",
-                        borderRadius: 11, textAlign: "left", fontSize: 12, fontWeight: 700,
+                        borderRadius: RUND.karte, textAlign: "left", fontSize: 12, fontWeight: 700,
                         background: m.an ? `${C.akzent}22` : C.surface, color: m.an ? C.akzent : C.muted,
                         border: `1px solid ${m.an ? C.akzent + "66" : C.line}`,
                       }}>{m.label}</button>
@@ -175,7 +175,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                     return (
                       <button key={asp.key} onClick={() => umschalten(asp.key)} style={{
                         textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: C.text,
-                        background: C.surface, borderRadius: 12, padding: "9px 12px",
+                        background: C.surface, borderRadius: RUND.karte, padding: "9px 12px",
                         border: `1px solid ${frei ? C.line : C.akzent + "66"}`,
                         display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
                       }}>
@@ -186,7 +186,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                           </span>
                         </span>
                         <span style={{
-                          flexShrink: 0, fontSize: 11, padding: "3px 9px", borderRadius: 999,
+                          flexShrink: 0, fontSize: 11, padding: "3px 9px", borderRadius: RUND.pille,
                           color: frei ? C.muted : C.akzent,
                           border: `1px solid ${frei ? C.line : C.akzent + "66"}`,
                         }}>{frei ? "abstimmbar" : "festgeschrieben"}</span>
@@ -210,7 +210,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
 
           {funde.length > 0 && (
             <div style={{
-              background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: 12,
+              background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: RUND.karte,
               padding: "10px 12px", marginTop: 10,
             }}>
               {funde.map((k) => (
@@ -235,7 +235,7 @@ function Karten({ label, katalog, wert, onWaehlen }) {
           return (
             <button key={e.key} title={e.desc} onClick={() => onWaehlen(e.key)} style={{
               ...TAPZIEL, flex: "1 1 110px", cursor: "pointer", fontFamily: "inherit", padding: "8px",
-              borderRadius: 11, textAlign: "left",
+              borderRadius: RUND.karte, textAlign: "left",
               background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
               border: `1px solid ${an ? C.akzent + "66" : C.line}`,
             }}>
@@ -263,16 +263,16 @@ function Toggle({ label, on, onChange }) {
       display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
       textAlign: "left", gap: 12, marginBottom: 8, cursor: "pointer", color: C.text,
       background: C.surface, border: `1px solid ${on ? C.mint + "55" : C.line}`,
-      ...TAPZIEL, borderRadius: 12, padding: "10px 14px", fontSize: 13, fontFamily: "inherit",
+      ...TAPZIEL, borderRadius: RUND.karte, padding: "10px 14px", fontSize: 13, fontFamily: "inherit",
     }}>
       <span>{label}</span>
       <span style={{
-        flexShrink: 0, width: 38, height: 22, borderRadius: 999,
+        flexShrink: 0, width: 38, height: 22, borderRadius: RUND.pille,
         background: on ? C.mint : C.surface2, position: "relative", transition: "background .2s",
       }}>
         <span style={{
           position: "absolute", top: 2, left: on ? 18 : 2, width: 18, height: 18,
-          borderRadius: 999, background: "#fff", transition: "left .2s",
+          borderRadius: RUND.pille, background: "#fff", transition: "left .2s",
         }} />
       </span>
     </button>

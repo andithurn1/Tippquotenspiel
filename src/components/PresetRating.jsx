@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { ratePreset } from "@/lib/presetRating";
 import { archetypeDistribution, OUTCOME_SPLIT, AVG_GOALS } from "@/lib/bundesligaStats";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 
 const DIST = archetypeDistribution();
 const MAX_FREQ = Math.max(...DIST.map((d) => d.freq));
@@ -23,7 +23,7 @@ export default function PresetRating({ rules }) {
   return (
     <div style={{
       marginTop: 12, background: C.ink2, border: `1px solid ${C.line}`,
-      borderRadius: 14, padding: "14px 16px",
+      borderRadius: RUND.karte, padding: "14px 16px",
     }}>
       <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
         So wirkt dein Regelwerk über eine Saison
@@ -34,7 +34,7 @@ export default function PresetRating({ rules }) {
         <span style={{ fontSize: 13, fontWeight: 700 }}>Underdog-Neigung</span>
         <span style={{ fontFamily: MONO, fontSize: 13, color: lc }}>{rating.underdogLean}/100 · {rating.label}</span>
       </div>
-      <div style={{ height: 8, borderRadius: 999, background: C.surface, marginTop: 6, overflow: "hidden" }}>
+      <div style={{ height: 8, borderRadius: RUND.pille, background: C.surface, marginTop: 6, overflow: "hidden" }}>
         <div style={{ width: `${rating.underdogLean}%`, height: "100%", background: lc, transition: "width .25s" }} />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
@@ -51,7 +51,7 @@ export default function PresetRating({ rules }) {
         {DIST.map((d) => (
           <div key={d.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 12, width: 128, flexShrink: 0 }}>{d.label}</span>
-            <div style={{ flex: 1, height: 7, borderRadius: 999, background: C.surface, overflow: "hidden" }}>
+            <div style={{ flex: 1, height: 7, borderRadius: RUND.pille, background: C.surface, overflow: "hidden" }}>
               <div style={{ width: `${(d.freq / MAX_FREQ) * 100}%`, height: "100%", background: d.key === "aussenseiter" ? C.coral : C.bar }} />
             </div>
             <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 34, textAlign: "right" }}>
@@ -73,7 +73,7 @@ export default function PresetRating({ rules }) {
 
 function Stat({ label, value, hint, tone }) {
   return (
-    <div style={{ flex: 1, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10, padding: "8px 10px" }}>
+    <div style={{ flex: 1, background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "8px 10px" }}>
       <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
       <div style={{ fontFamily: MONO, fontSize: 16, fontWeight: 700, color: tone, marginTop: 2 }}>{value}</div>
       <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.3 }}>{hint}</div>

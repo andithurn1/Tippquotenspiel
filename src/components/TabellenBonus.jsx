@@ -1,6 +1,6 @@
 "use client";
 
-import { C } from "@/lib/theme";
+import { C, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import { Zahl } from "@/components/Eingaben";
 import { sanitizeTabellenBonus, beschreibeTabellenBonus } from "@/lib/tabellenBonus";
@@ -39,7 +39,7 @@ function Wahl({ label, wert, optionen, onChange }) {
               style={{
                 ...TAPZIEL, flex: 1, minWidth: 120, cursor: "pointer",
                 fontFamily: "inherit", fontSize: 12, textAlign: "left",
-                padding: "0 12px", borderRadius: 12,
+                padding: "0 12px", borderRadius: RUND.karte,
                 background: an ? `${C.akzent}1A` : C.surface,
                 color: an ? C.akzent : C.muted,
                 border: `1px solid ${an ? C.akzent : C.line}`,
@@ -62,7 +62,7 @@ export default function TabellenBonus({ rules, onChange }) {
   return (
     <div style={{
       background: C.ink2, border: `1px solid ${C.line}`,
-      borderRadius: 12, padding: "12px 12px 10px", marginBottom: 12,
+      borderRadius: RUND.karte, padding: "12px 12px 10px", marginBottom: 12,
     }}>
       <button
         type="button"
@@ -71,7 +71,7 @@ export default function TabellenBonus({ rules, onChange }) {
         style={{
           display: "flex", alignItems: "center", gap: 10, width: "100%",
           ...TAPZIEL, textAlign: "left", cursor: "pointer", fontFamily: "inherit",
-          padding: "8px 11px", borderRadius: 12, marginBottom: cfg.enabled ? 10 : 0,
+          padding: "8px 11px", borderRadius: RUND.karte, marginBottom: cfg.enabled ? 10 : 0,
           background: cfg.enabled ? `${C.akzent}14` : C.surface, color: C.text,
           border: `1px solid ${cfg.enabled ? C.akzent : C.line}`,
         }}

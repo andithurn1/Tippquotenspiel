@@ -6,7 +6,7 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // Schlankes, echtes Ranking für die aktive Runde — im Unterschied zu
@@ -51,7 +51,7 @@ export default function Ranking() {
       <BackLink href="/hub" label="Tippspiel" />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
-        borderRadius: 26, overflow: "hidden",
+        borderRadius: RUND.schirm, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
@@ -96,7 +96,7 @@ export default function Ranking() {
                 {b.bonus > 0 && (
                   <span title="Anschluss-Bonus für Zurückliegende" style={{
                     fontFamily: MONO, fontSize: 11, color: C.sky,
-                    border: `1px solid ${C.sky}55`, borderRadius: 999, padding: "2px 7px",
+                    border: `1px solid ${C.sky}55`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>+{b.bonus} Anschluss</span>
                 )}
                 {/* Saison-Wetten — eigene Zeile, weil sie NICHT aus Spieltagen
@@ -105,7 +105,7 @@ export default function Ranking() {
                 {b.saison > 0 && (
                   <span title="Punkte aus den Saison-Wetten (Meister, Torschützenkönig …)" style={{
                     fontFamily: MONO, fontSize: 11, color: C.mint,
-                    border: `1px solid ${C.mint}55`, borderRadius: 999, padding: "2px 7px",
+                    border: `1px solid ${C.mint}55`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>+{b.saison} Saison</span>
                 )}
                 {/* Streichresultate — ohne diesen Hinweis sieht der Spieler eine
@@ -117,7 +117,7 @@ export default function Ranking() {
                     + (b.gestrichenPunkte ? ` — das sind ${b.gestrichenPunkte} Punkte.` : ".")
                     + (b.vorlaeufig ? " Welche das sind, kann sich noch ändern." : "")} style={{
                     fontFamily: MONO, fontSize: 11, color: C.muted,
-                    border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 7px",
+                    border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>−{b.gestrichen} gestrichen</span>
                 )}
                 {/* Duell-Joker: geklaut oder geblockt. Ein Spieler, dem Punkte
@@ -128,7 +128,7 @@ export default function Ranking() {
                     : "Durch ein Duell verloren — jemand hat auf dich gesetzt"} style={{
                     fontFamily: MONO, fontSize: 11, color: b.duell > 0 ? C.mint : C.coral,
                     border: `1px solid ${b.duell > 0 ? C.mint + "55" : C.coral + "55"}`,
-                    borderRadius: 999, padding: "2px 7px",
+                    borderRadius: RUND.pille, padding: "2px 7px",
                   }}>{b.duell > 0 ? "+" : ""}{b.duell} Duell</span>
                 )}
                 {/* Ersatz-Tipps (Versäumnis). Kulanz der Runde, keine eigene
@@ -138,7 +138,7 @@ export default function Ranking() {
                   <span title={`${b.ersatz} versäumte Spiele wurden mit einem Ersatz-Tipp gewertet`
                     + (b.ersatzPunkte ? ` — das sind ${b.ersatzPunkte} Punkte.` : ".")} style={{
                     fontFamily: MONO, fontSize: 11, color: C.muted,
-                    border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 7px",
+                    border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>+{b.ersatzPunkte} Ersatz</span>
                 )}
                 {/* 🔴 Alleinstellung (Andis Stadt-Land-Fluss-Bonus, 09.08.2026).
@@ -150,7 +150,7 @@ export default function Ranking() {
                 {b.alleinPunkte > 0 && (
                   <span title="Bonus dafür, dass du als (fast) Einziger richtig lagst" style={{
                     fontFamily: MONO, fontSize: 11, color: C.akzent,
-                    border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "2px 7px",
+                    border: `1px solid ${C.akzent}55`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>+{b.alleinPunkte} Alleingang</span>
                 )}
                 {/* 🔴 Was die Saison-KURVE verschoben hat. Die Streicher
@@ -161,7 +161,7 @@ export default function Ranking() {
                   <span title="Späte Spieltage zählen anders als frühe (Saison-Kurve)" style={{
                     fontFamily: MONO, fontSize: 11, color: b.form > 0 ? C.mint : C.muted,
                     border: `1px solid ${b.form > 0 ? C.mint + "55" : C.line}`,
-                    borderRadius: 999, padding: "2px 7px",
+                    borderRadius: RUND.pille, padding: "2px 7px",
                   }}>{b.form > 0 ? "+" : ""}{b.form} Kurve</span>
                 )}
                 {/* 🔴 Rad-Punkte. Sie fließen wie Anschluss-Bonus und
@@ -172,7 +172,7 @@ export default function Ranking() {
                 {b.drehrad > 0 && (
                   <span title="Punkte vom Glücksrad" style={{
                     fontFamily: MONO, fontSize: 11, color: C.akzent,
-                    border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "2px 7px",
+                    border: `1px solid ${C.akzent}55`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>+{b.drehrad} Rad</span>
                 )}
                 <span style={{
@@ -213,7 +213,7 @@ export default function Ranking() {
                 <div key={`${v.spieltag}-${v.vonUserId}-${v.aufUserId}-${i}`} style={{
                   display: "flex", alignItems: "baseline", gap: 8,
                   background: C.surface, border: `1px solid ${C.line}`,
-                  borderRadius: 12, padding: "8px 11px",
+                  borderRadius: RUND.karte, padding: "8px 11px",
                 }}>
                   <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted, minWidth: 34 }}>
                     ST {v.spieltag}

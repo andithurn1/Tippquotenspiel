@@ -13,7 +13,7 @@
 //  stellt ein und zeigt an; was daraus folgt, beantwortet die Engine.
 // ============================================================
 
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import {
   DEFAULT_ALLEINSTELLUNG, ALLEIN_LIMITS, ALLEIN_MODI, ALLEIN_ARTEN, EBENEN,
@@ -36,7 +36,7 @@ export default function Alleinstellung({ rules, onChange }) {
           {/* Die Betreuung zuerst: was bedeutet das Eingestellte konkret? */}
           <div style={{
             background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`,
-            borderRadius: 12, padding: "10px 12px", fontSize: 12,
+            borderRadius: RUND.karte, padding: "10px 12px", fontSize: 12,
             color: C.text, lineHeight: 1.5, marginBottom: 12,
           }}>
             {beschreibeAlleinstellung({ alleinstellung: a })}
@@ -116,7 +116,7 @@ function Reihe({ optionen, wert, onWaehlen }) {
         return (
           <button key={o.key} onClick={() => onWaehlen(o.key)} title={o.desc} style={{
             ...TAPZIEL, flex: "1 1 120px", cursor: "pointer", fontFamily: "inherit",
-            textAlign: "left", padding: "8px 10px", borderRadius: 11,
+            textAlign: "left", padding: "8px 10px", borderRadius: RUND.karte,
             background: an ? `${C.mint}18` : C.surface, color: C.text,
             border: `1px solid ${an ? C.mint + "66" : C.line}`,
           }}>
@@ -151,7 +151,7 @@ function Regler({ label, wert, limits, fmt, onChange, hint }) {
           style={{
             width: 78, minHeight: 44, boxSizing: "border-box", flexShrink: 0,
             background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: 10, padding: "8px 10px", fontSize: 13, fontFamily: MONO, outline: "none",
+            borderRadius: RUND.karte, padding: "8px 10px", fontSize: 13, fontFamily: MONO, outline: "none",
           }} />
       </div>
       {hint && <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{hint}</div>}
@@ -164,7 +164,7 @@ function Schalter({ an, titel, unter, onChange }) {
     <button onClick={() => onChange(!an)} style={{
       ...TAPZIEL, display: "flex", alignItems: "center", gap: 10, width: "100%",
       textAlign: "left", cursor: "pointer", fontFamily: "inherit", padding: "9px 12px",
-      borderRadius: 12, marginTop: 10,
+      borderRadius: RUND.karte, marginTop: 10,
       background: an ? `${C.mint}14` : C.surface, color: C.text,
       border: `1px solid ${an ? C.mint + "55" : C.line}`,
     }}>
@@ -173,12 +173,12 @@ function Schalter({ an, titel, unter, onChange }) {
         <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 1, lineHeight: 1.4 }}>{unter}</span>
       </span>
       <span style={{
-        flexShrink: 0, width: 34, height: 20, borderRadius: 999,
+        flexShrink: 0, width: 34, height: 20, borderRadius: RUND.pille,
         background: an ? C.mint : C.surface2, position: "relative",
       }}>
         <span style={{
           position: "absolute", top: 2, left: an ? 16 : 2, width: 16, height: 16,
-          borderRadius: 999, background: "#fff", transition: "left .15s",
+          borderRadius: RUND.pille, background: "#fff", transition: "left .15s",
         }} />
       </span>
     </button>

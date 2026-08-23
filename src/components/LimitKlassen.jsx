@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { C } from "@/lib/theme";
+import { C, RUND } from "@/lib/theme";
 import {
   AKTIVIERUNG_TYPEN, PRO_ZEITRAUM, LIMIT_KLASSEN_LIMITS,
   pruefeKlassen, beschreibeKlasse,
@@ -137,7 +137,7 @@ export default function LimitKlassen({ rules, onChange }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {abdeckung.map(({ art, treffer }) => (
               <div key={art.key} style={{
-                background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10,
+                background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
                 padding: "8px 10px", fontSize: 12, lineHeight: 1.5,
               }}>
                 <span style={{ fontWeight: 700 }}>{art.label}</span>
@@ -182,7 +182,7 @@ export default function LimitKlassen({ rules, onChange }) {
       </div>
       <button onClick={hinzufuegen} style={{
         cursor: "pointer", background: "transparent", color: C.muted,
-        ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: 14, padding: "10px 12px",
+        ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
         fontFamily: "inherit", fontSize: 13, textAlign: "left", width: "100%", boxSizing: "border-box",
       }}>+ Klasse anlegen</button>
     </div>
@@ -201,14 +201,14 @@ function KlasseZeile({
   return (
     <div style={{
       background: C.surface, border: `1px solid ${verworfenGrund ? C.coral + "66" : C.line}`,
-      borderRadius: 12, padding: "10px 12px", marginBottom: 10,
+      borderRadius: RUND.karte, padding: "10px 12px", marginBottom: 10,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <input value={klasse.label ?? ""} placeholder="Name der Klasse"
           onChange={(e) => onPatch({ label: e.target.value })}
           style={{
             flex: 1, minWidth: 0, boxSizing: "border-box", background: C.ink2, color: C.text,
-            border: `1px solid ${C.line}`, borderRadius: 9, padding: "7px 9px",
+            border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "7px 9px",
             fontSize: 13, fontFamily: "inherit", outline: "none",
           }} />
         <button onClick={onEntfernen} aria-label="Klasse entfernen" style={{
@@ -231,7 +231,7 @@ function KlasseZeile({
             const an = mitglieder.includes(art.key);
             return (
               <button key={art.key} title={art.desc} onClick={() => onToggleMitglied(art.key)} style={{
-                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: 999,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: RUND.pille,
                 background: an ? `${C.indigo}22` : C.surface2, color: an ? C.indigo : C.muted,
                 border: `1px solid ${an ? C.indigo + "66" : C.line}`,
               }}>{art.label}</button>
@@ -259,7 +259,7 @@ function KlasseZeile({
             const an = (klasse.proZeitraum ?? "saison") === p.key;
             return (
               <button key={p.key} title={p.desc} onClick={() => onPatch({ proZeitraum: p.key })} style={{
-                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: 999,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: RUND.pille,
                 background: an ? `${C.akzent}22` : C.surface2, color: an ? C.akzent : C.muted,
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
               }}>{p.label}</button>
@@ -282,7 +282,7 @@ function KlasseZeile({
             const an = aktivierung.typ === t.key;
             return (
               <button key={t.key} title={t.desc} onClick={() => onAktivierungsTyp(t.key)} style={{
-                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: 999,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: RUND.pille,
                 background: an ? `${C.mint}22` : C.surface2, color: an ? C.mint : C.muted,
                 border: `1px solid ${an ? C.mint + "66" : C.line}`,
               }}>{t.label}</button>
@@ -327,7 +327,7 @@ function KlasseZeile({
               style={{
                 display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
                 background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: 10, padding: "7px 9px", fontSize: 13, fontFamily: "inherit",
+                borderRadius: RUND.karte, padding: "7px 9px", fontSize: 13, fontFamily: "inherit",
               }}>
               <option value="">— auswählen —</option>
               {EREIGNIS_TYPEN.map((e) => <option key={e.key} value={e.key}>{e.label}</option>)}
@@ -361,7 +361,7 @@ function Banner({ ton, children }) {
   const farbe = ton === "coral" ? C.coral : C.bernstein;
   return (
     <div style={{
-      background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: 12,
+      background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: RUND.karte,
       padding: "9px 11px", marginBottom: 10, fontSize: 12, color: C.text, lineHeight: 1.5,
     }}>
       {children}

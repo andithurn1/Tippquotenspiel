@@ -16,7 +16,7 @@ import { kontingent, erspielteLage, standText } from "@/lib/jokerKontingent";
 import { EREIGNIS, sanitizeEreignisse, beschreibeEreignisse } from "@/lib/ereignisse";
 import { offeneKlassen, beschreibeKlasse, sanitizeLimitKlassen } from "@/lib/limitKlassen";
 import { einsaetzeAllerArten } from "@/lib/jokerBudget";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // ── „Meine Joker" — die fehlende Anzeige WÄHREND der Runde ───
 //
@@ -211,7 +211,7 @@ export default function MeineJoker() {
 
             {/* Der Stand — die Zahl, die man sucht, wenn man hier landet. */}
             <div style={{
-              background: C.surface, border: `1px solid ${C.akzent}44`, borderRadius: 14,
+              background: C.surface, border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte,
               padding: "13px 15px", marginBottom: 14,
             }}>
               <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1 }}>
@@ -247,7 +247,7 @@ export default function MeineJoker() {
                   const kommt = t > bis;
                   return (
                     <span key={t} title={achsenLabel(achse[t - 1]) || undefined} style={{
-                      fontFamily: MONO, fontSize: 12, borderRadius: 999, padding: "5px 11px",
+                      fontFamily: MONO, fontSize: 12, borderRadius: RUND.pille, padding: "5px 11px",
                       background: benutzt ? `${C.mint}22` : kommt ? C.surface : C.surface2,
                       color: benutzt ? C.mint : kommt ? C.akzent : C.muted,
                       border: `1px solid ${benutzt ? C.mint + "66" : kommt ? C.akzent + "55" : C.line}`,
@@ -277,7 +277,7 @@ export default function MeineJoker() {
                     const voll = genutzt >= k.max;
                     return (
                       <div key={k.id} style={{
-                        background: C.surface, borderRadius: 12, padding: "9px 12px",
+                        background: C.surface, borderRadius: RUND.karte, padding: "9px 12px",
                         border: `1px solid ${voll ? C.coral + "55" : C.line}`,
                       }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
@@ -313,7 +313,7 @@ export default function MeineJoker() {
                     const meins = erspieltJeKey.get(a.key);
                     return (
                       <div key={a.key} style={{
-                        background: C.surface, borderRadius: 12, padding: "9px 12px",
+                        background: C.surface, borderRadius: RUND.karte, padding: "9px 12px",
                         border: `1px solid ${meins ? C.mint + "55" : C.line}`,
                       }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
@@ -360,7 +360,7 @@ export default function MeineJoker() {
                 {(lage.gebremst > 0 || lage.verworfen > 0) && (
                   <div style={{
                     background: `${C.akzent}12`, border: `1px solid ${C.line}`,
-                    borderRadius: 12, padding: "9px 12px", marginTop: 8,
+                    borderRadius: RUND.karte, padding: "9px 12px", marginTop: 8,
                   }}>
                     <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3 }}>
                       Nicht alles wurde gutgeschrieben
@@ -405,7 +405,7 @@ export default function MeineJoker() {
                     <div key={o.userId} style={{
                       display: "flex", justifyContent: "space-between", alignItems: "baseline",
                       background: C.surface, border: `1px solid ${C.line}`,
-                      borderRadius: 12, padding: "7px 12px",
+                      borderRadius: RUND.karte, padding: "7px 12px",
                     }}>
                       <span style={{ fontSize: 13 }}>{nameVon(o.userId)}</span>
                       <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>{o.text}</span>
@@ -429,7 +429,7 @@ export default function MeineJoker() {
 function Kasten({ children }) {
   return (
     <div style={{
-      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 14,
+      background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
       padding: "14px 16px", fontSize: 13, color: C.muted, lineHeight: 1.5, marginBottom: 12,
     }}>{children}</div>
   );

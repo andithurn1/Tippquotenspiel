@@ -11,7 +11,7 @@ import {
 } from "@/lib/prefs";
 import { useAuth } from "@/components/AuthProvider";
 import BackLink from "@/components/BackLink";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 
@@ -70,7 +70,7 @@ export default function Einstellungen() {
       <BackLink href="/menu" label="Menü" />
       <div style={{
         width: "100%", maxWidth: 400, position: "relative",
-        borderRadius: 26, overflow: "hidden",
+        borderRadius: RUND.schirm, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
@@ -130,7 +130,7 @@ export default function Einstellungen() {
                       onClick={() => setPref("vergleich", (v) => toggleVergleich(v, roundId, m.user_id))}
                       title={voll ? `Höchstens ${MAX_VERGLEICH} — erst einen abwählen.` : undefined}
                       style={{
-                        border: `1px solid ${gewaehlt ? C.akzent : C.line}`, borderRadius: 999,
+                        border: `1px solid ${gewaehlt ? C.akzent : C.line}`, borderRadius: RUND.pille,
                         background: gewaehlt ? `${C.akzent}1a` : "transparent",
                         color: gewaehlt ? C.akzent : (voll ? C.ghost : C.text),
                         cursor: voll ? "not-allowed" : "pointer",
@@ -158,7 +158,7 @@ export default function Einstellungen() {
             <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
               {START_SCREENS.map((s) => (
                 <button key={s} onClick={() => setPref("startScreen", s)} style={{
-                  ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: 10,
+                  ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: RUND.karte,
                   background: prefs.startScreen === s ? C.akzent : C.surface, color: prefs.startScreen === s ? C.ink : C.muted,
                   border: `1px solid ${prefs.startScreen === s ? C.akzent : C.line}`, fontFamily: "inherit",
                 }}>{START_SCREEN_LABEL[s]}</button>
@@ -184,7 +184,7 @@ function PrefSection({ meta, value, onChange }) {
       <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
         {LEVELS.map((lv) => (
           <button key={lv} onClick={() => onChange(lv)} style={{
-            ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: 10,
+            ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "9px 0", borderRadius: RUND.karte,
             background: value === lv ? C.akzent : C.surface, color: value === lv ? C.ink : C.muted,
             border: `1px solid ${value === lv ? C.akzent : C.line}`, fontFamily: "inherit",
           }}>{LEVEL_LABEL[lv]}</button>
@@ -197,7 +197,7 @@ function PrefSection({ meta, value, onChange }) {
 
 function PreviewFrame({ label, children }) {
   return (
-    <div style={{ marginTop: 12, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px" }}>
+    <div style={{ marginTop: 12, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "12px 14px" }}>
       <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted, textTransform: "uppercase", marginBottom: 10 }}>
         Vorschau · {label}
       </div>
@@ -257,7 +257,7 @@ function VorschauPreview({ lvl, proj }) {
         <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: C.akzent }}>+{proj.points}</span>
       </div>
       <div style={{ marginTop: 6 }}>
-        <span style={{ fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}55`, borderRadius: 999, padding: "2px 8px" }}>
+        <span style={{ fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}55`, borderRadius: RUND.pille, padding: "2px 8px" }}>
           Mutig · Quote {proj.exaktQuote?.toFixed(1)}
         </span>
       </div>
@@ -282,7 +282,7 @@ function MiniChip({ children, tone }) {
   return (
     <span style={{
       fontFamily: MONO, fontSize: 11, color: tone || C.muted,
-      border: `1px solid ${tone ? tone + "55" : C.line}`, borderRadius: 999, padding: "3px 8px",
+      border: `1px solid ${tone ? tone + "55" : C.line}`, borderRadius: RUND.pille, padding: "3px 8px",
     }}>{children}</span>
   );
 }

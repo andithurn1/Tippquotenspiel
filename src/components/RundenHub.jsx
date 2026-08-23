@@ -10,7 +10,7 @@ import { muenzStand } from "@/lib/muenzstand";
 import { basisFuer } from "@/lib/jokerBasis";
 import { narrenStand } from "@/lib/narrenstand";
 import Waehrungen from "@/components/Waehrungen";
-import { C, MONO, SCHRIFT } from "@/lib/theme";
+import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 
@@ -111,7 +111,7 @@ export default function RundenHub() {
 
         {(stand || narren != null) && (
           <div style={{
-            background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16,
+            background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
             padding: "14px 16px", marginBottom: 16,
           }}>
             <Waehrungen stand={stand} narren={narren?.kontostand ?? null} />
@@ -123,10 +123,10 @@ export default function RundenHub() {
             <Link href="/abstimmung" style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.akzent}44`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>🃏 Joker-Abstimmung</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
@@ -138,10 +138,10 @@ export default function RundenHub() {
             <Link href="/regeln" style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.akzent}44`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>⚖️ Regeländerungen</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
@@ -153,10 +153,10 @@ export default function RundenHub() {
             <Link href="/freigaben" style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.indigo, boxShadow: `0 0 12px ${C.indigo}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.indigo, boxShadow: `0 0 12px ${C.indigo}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>🔑 Freigaben</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
@@ -168,10 +168,10 @@ export default function RundenHub() {
             <Link href="/joker" style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.akzent}44`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>🃏 Deine Joker</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
@@ -183,10 +183,10 @@ export default function RundenHub() {
             <Link href="/rad" style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.sky, boxShadow: `0 0 12px ${C.sky}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.sky, boxShadow: `0 0 12px ${C.sky}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>🎡 Dein Glücksrad</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
@@ -198,10 +198,10 @@ export default function RundenHub() {
             <Link href="/saison" style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: C.violet, boxShadow: `0 0 12px ${C.violet}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.violet, boxShadow: `0 0 12px ${C.violet}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>🏆 Saison-Wetten</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
@@ -213,10 +213,10 @@ export default function RundenHub() {
             <Link key={s.href} href={s.href} style={{
               textDecoration: "none", color: C.text,
               background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.line}`, borderRadius: 18, padding: "16px 18px",
+              border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: s.tone, boxShadow: `0 0 12px ${s.tone}` }} />
+                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: s.tone, boxShadow: `0 0 12px ${s.tone}` }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>{s.title}</span>
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>{s.desc}</div>
@@ -226,13 +226,13 @@ export default function RundenHub() {
           {SOON.map((s) => (
             <div key={s.title} style={{
               color: C.muted, background: C.ink2, border: `1px solid ${C.line}`,
-              borderRadius: 18, padding: "16px 18px", opacity: 0.6,
+              borderRadius: RUND.karte, padding: "16px 18px", opacity: 0.6,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 16, fontWeight: 700 }}>{s.title}</span>
                 <span style={{
                   marginLeft: "auto", fontFamily: MONO, fontSize: 11, color: C.muted,
-                  border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 8px",
+                  border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "2px 8px",
                   textTransform: "uppercase", letterSpacing: 1,
                 }}>bald verfügbar</span>
               </div>
@@ -244,7 +244,7 @@ export default function RundenHub() {
         <Link href="/menu" style={{
           marginTop: 16, display: "block", textDecoration: "none", textAlign: "center",
           color: C.text, background: C.surface2, border: `1px solid ${C.line}`,
-          borderRadius: 14, padding: "13px 0", fontSize: 15, fontWeight: 600,
+          borderRadius: RUND.karte, padding: "13px 0", fontSize: 15, fontWeight: 600,
         }}>
           Alle Tippspiele, erstellen, Einstellungen →
         </Link>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "./AuthProvider";
-import { C, MONO } from "@/lib/theme";
+import { C, MONO, RUND } from "@/lib/theme";
 import { leseAnmeldung } from "@/lib/anmeldung";
 import { TAPZIEL } from "@/lib/tapziel";
 
@@ -47,7 +47,7 @@ export default function AuthBar() {
         display: "flex", alignItems: "center", gap: 8, marginBottom: 18,
         fontFamily: MONO, fontSize: 11, color: C.muted,
       }}>
-        <span style={{ width: 7, height: 7, borderRadius: 999, background: C.akzent }} />
+        <span style={{ width: 7, height: 7, borderRadius: RUND.pille, background: C.akzent }} />
         Demo-Modus — ohne Login, Daten nur lokal. Login erscheint, sobald Supabase verbunden ist.
       </div>
     );
@@ -68,7 +68,7 @@ export default function AuthBar() {
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
         marginBottom: 18, background: C.surface, border: `1px solid ${C.line}`,
-        borderRadius: 12, padding: "8px 12px",
+        borderRadius: RUND.karte, padding: "8px 12px",
       }}>
         <span style={{ fontSize: 13, color: C.text }}>
           <span style={{ color: C.muted }}>Angemeldet: </span>{user.name}
@@ -76,11 +76,11 @@ export default function AuthBar() {
         <span style={{ display: "flex", gap: 6 }}>
           <Link href="/konto" style={{
             fontFamily: MONO, fontSize: 11, color: C.muted, textDecoration: "none",
-            background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 10px",
+            background: C.surface2, border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "4px 10px",
           }}>Konto</Link>
           <button onClick={signOut} style={{
             fontFamily: MONO, fontSize: 11, color: C.muted, cursor: "pointer",
-            background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 10px",
+            background: C.surface2, border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "4px 10px",
           }}>abmelden</button>
         </span>
       </div>
@@ -91,7 +91,7 @@ export default function AuthBar() {
     return (
       <div style={{
         marginBottom: 18, background: `${C.mint}12`, border: `1px solid ${C.mint}44`,
-        borderRadius: 12, padding: "12px 14px", fontSize: 13, color: C.text, lineHeight: 1.5,
+        borderRadius: RUND.karte, padding: "12px 14px", fontSize: 13, color: C.text, lineHeight: 1.5,
       }}>
         <b style={{ color: C.mint }}>✓ Mail unterwegs</b> an {email}.
 
@@ -140,7 +140,7 @@ export default function AuthBar() {
               autoComplete="one-time-code"
               placeholder="Link einfügen"
               style={{
-                flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 10,
+                flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: RUND.karte,
                 border: `1px solid ${C.line}`, background: C.ink, color: C.text,
                 fontSize: 15, fontFamily: MONO, outline: "none",
               }} />
@@ -148,7 +148,7 @@ export default function AuthBar() {
               disabled={!bereit || pruefe}
               style={{
                 ...TAPZIEL,
-                padding: "12px 18px", borderRadius: 10, border: "none",
+                padding: "12px 18px", borderRadius: RUND.karte, border: "none",
                 background: bereit ? C.mint : C.surface,
                 color: bereit ? C.ink : C.muted,
                 fontWeight: 700, fontSize: 15,
@@ -184,12 +184,12 @@ export default function AuthBar() {
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
           placeholder="du@example.com" style={{
             flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: 12, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
+            borderRadius: RUND.karte, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={!canSend} style={{
           cursor: canSend ? "pointer" : "default", background: canSend ? C.akzent : C.surface,
           color: canSend ? C.ink : C.muted, fontWeight: 700, fontSize: 15,
-          border: `1px solid ${canSend ? C.akzent : C.line}`, borderRadius: 12, padding: "0 16px",
+          border: `1px solid ${canSend ? C.akzent : C.line}`, borderRadius: RUND.karte, padding: "0 16px",
         }}>{state === "sending" ? "…" : "Link senden"}</button>
       </div>
       <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, cursor: "pointer" }}>
@@ -222,7 +222,7 @@ function NameOnboarding() {
   return (
     <form onSubmit={save} style={{
       marginBottom: 18, background: `${C.akzent}10`, border: `1px solid ${C.akzent}44`,
-      borderRadius: 12, padding: "12px 14px",
+      borderRadius: RUND.karte, padding: "12px 14px",
     }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Willkommen! 👋 Wie sollen wir dich nennen?</div>
       <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
@@ -232,11 +232,11 @@ function NameOnboarding() {
         <input autoFocus value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
           placeholder="Dein Name" style={{
             flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: 12, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
+            borderRadius: RUND.karte, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={!name.trim() || state === "saving"} style={{
           cursor: name.trim() && state !== "saving" ? "pointer" : "default", background: C.akzent, color: "#FFFFFF",
-          fontWeight: 700, fontSize: 15, border: "none", borderRadius: 12, padding: "0 16px",
+          fontWeight: 700, fontSize: 15, border: "none", borderRadius: RUND.karte, padding: "0 16px",
         }}>{state === "saving" ? "…" : "Los"}</button>
       </div>
       {state === "error" && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{err}</div>}
