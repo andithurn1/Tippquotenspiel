@@ -46,6 +46,7 @@ import {
 } from "./eingriffe";
 import {
   sanitizeDuellJoker, einsaetzeAusTipps, zulaessigeZiele as zulaessigeZieleDuell,
+  konflikte as duellKonflikte,
 } from "./duellJoker";
 import { wahrscheinlichkeiten } from "./ergebnisMatrix";
 import { sanitizeTippfenster, tippStatus } from "./tippfenster";
@@ -372,7 +373,17 @@ export function offeneEingriffe(einsaetze = [], rules = {}, { userId = null, fen
 // Runde umschreiben, die der Admin so gewollt haben könnte; eine Meldung
 // lässt ihm die Entscheidung und nimmt ihm die Überraschung.
 export function konflikte(rules) {
-  const out = [];
+  // 🔴 BEFUND vom 23.08.2026: `duellJoker.konflikte()` war seit seiner
+  // Einführung von KEINER Oberfläche aufgerufen — nur von seinem eigenen
+  // Test. Die Meldung „mitverdienen ohne Deckel ist ein neuer Punkte-Kanal"
+  // stand gebaut, geprüft und begründet da, und kein Admin hat sie je gesehen.
+  // Genau die Fehlerklasse, für die es `npm run tot` gibt; dort fiel sie nicht
+  // auf, weil `konflikte` ein Name ist, den ein halbes Dutzend Module trägt.
+  //
+  // Seither kommen ALLE Konflikte der Familie aus DIESEM einen Aufruf. Ein
+  // zweiter Aufrufer für dieselbe Frage wäre der nächste Kandidat fürs
+  // Vergessenwerden.
+  const out = [...duellKonflikte(rules)];
   if (!familieAn(rules)) return out;
   const f = sanitizeTippfenster(rules?.tippfenster);
 

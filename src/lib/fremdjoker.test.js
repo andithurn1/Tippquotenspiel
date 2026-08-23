@@ -392,6 +392,29 @@ describe("konflikte und der ehrliche Hinweis", () => {
     expect(konflikte(rules).map((k) => k.key)).toContain("fremdjoker-ohne-anker");
   });
 
+  // 🔴 Die Konflikte der Familie kommen aus EINEM Aufruf. `duellJoker.konflikte`
+  // war bis zum 23.08.2026 von keiner Oberfläche aufgerufen — die Meldung
+  // „mitverdienen ohne Deckel" stand gebaut und ungesehen da.
+  it("bündelt auch die Konflikte aus `duell` — sonst sieht sie niemand", () => {
+    const rules = R({
+      duell: { ...DEFAULT_DUELL, enabled: true, klau: { anteil: 0.35, modus: "mitverdienen" }, maxProSaison: 0 },
+      tippfenster: { vorlaufStunden: 168, anker: "spieltag", schlussStunden: 24 },
+    });
+    expect(konflikte(rules).map((k) => k.key)).toContain("duell-mitverdienen-ohne-deckel");
+  });
+
+  it("meldet den Trittbrettfahrer ohne Deckel als das, was er ist: ein zweiter Punkte-Kanal", () => {
+    const rules = R({
+      duell: { ...DEFAULT_DUELL, maxProSaison: 0 },
+      eingriffe: {
+        ...DEFAULT_EINGRIFFE,
+        trittbrett: { ...DEFAULT_EINGRIFFE.trittbrett, enabled: true },
+      },
+      tippfenster: { vorlaufStunden: 168, anker: "spieltag", schlussStunden: 24 },
+    });
+    expect(konflikte(rules).map((k) => k.key)).toContain("trittbrett-ohne-deckel");
+  });
+
   it("eine vollständig eingestellte Runde meldet nichts mehr", () => {
     const rules = R({
       duell: { ...DEFAULT_DUELL, enabled: true },
