@@ -34,6 +34,46 @@ dieselbe austauschbare Stelle wie bei den Quoten.
 
 ---
 
+## 🔴🔴 Fremdjoker wirkten auf dem FALSCHEN SPIELTAG — behoben (23.08.2026)
+
+**Der teuerste Fehlertyp dieses Projekts, wieder einmal** (CLAUDE.md,
+Runden-Schicht, Frage 2: „Welcher Spieltag ist das?"). Gefunden beim
+prüfenden Lesen der eigenen Arbeit, nicht von einem Test.
+
+Die Fremdjoker-Einsätze trugen den **Liga-Spieltag** (`t.matchday`). Der
+Verlauf ist aber nach der **chronologischen Position über alle Wettbewerbe**
+geordnet. In einer Runde mit einem Wettbewerb ist das dieselbe Zahl — deshalb
+ist es nie aufgefallen.
+
+**Gemessen an vier echten Spielen** (bl#1 · bl#2 · cl#1 · cl#2): ein Klau,
+gesetzt am **CL-Spieltag 2**, wirkte auf den **Bundesliga-Spieltag 2**. Er nahm
+Punkte von einem ganz anderen Tag ab. Fehlgeschlagen ist dabei nichts, kein
+Test wurde rot, keine Zahl sah verdächtig aus.
+
+⚠️ **Die naheliegende Reparatur war ebenfalls falsch.** `rundenSpieltagVon`
+(zeitachse.js) zählt die Spieltage der ZEITACHSE, und die bündelt anders —
+gemessen ergeben 34 Bundesliga-Spieltage **42 Achsen-Positionen**. Mit ihr
+landete der Einsatz auf Position 5 von 4, also nirgends.
+
+**Maßgeblich ist `verlaufPositionen(entries)`** (neu in `spieltag.js`): die
+Zahl wird aus DERSELBEN Liste abgeleitet, aus der auch der Verlauf entsteht.
+Zwei Ableitungen könnten auseinanderlaufen, eine kann es nicht.
+
+### ⚠️ Zwei Skalen, die nie verglichen werden dürfen
+
+| Wo | Welche Zahl | Wer benutzt sie |
+|---|---|---|
+| **Wertung** | Position im Verlauf (`verlaufPositionen`) | Stores, `Historie.jsx`, `applyDuellJoker` |
+| **Prüfung/Anzeige** | Runden-Spieltag der Zeitachse | `Tippabgabe.jsx`, `duellPruefung.js` |
+
+Die Schutzregeln (`maxProZiel`, `immun`, `sperrfristJeZiel`) leben **ganz** in
+der zweiten Skala; die Wertung fragt sie nie. Solange das so bleibt, ist beides
+in sich stimmig. **Wer eine Schutzregel in die Wertung zieht, muss zuerst diese
+Tabelle auflösen** — sonst vergleicht er zwei Zahlen, die dasselbe heißen und
+nicht dasselbe sind.
+
+---
+
 ## 📏 Abdeckung: 78 von 199 Einstellbarkeiten werden im Projekt vorgeführt
 
 `npm run einstellbar` (23.08.2026) beantwortet zwei Fragen, die vorher niemand

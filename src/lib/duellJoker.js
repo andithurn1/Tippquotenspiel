@@ -566,15 +566,42 @@ export function waehleSpiele(spieleDesZiels = [], basis, gewaehlteIds = []) {
 // `spieltagVon` ist reserviert: ist er gesetzt, zählen nur Einsätze mit
 // `spieltag >= spieltagVon` — frühere Tipps werden ignoriert. `null` (Vorgabe)
 // schränkt nichts ein.
-export function einsaetzeAusTipps(tipps = [], { spieltagVon = null, proSpieltag = 1 } = {}) {
+export function einsaetzeAusTipps(tipps = [], { spieltagVon = null, proSpieltag = 1, rundenSpieltag = null } = {}) {
   const liste = Array.isArray(tipps) ? tipps : [];
+
+  // 🔴 **Der Fund vom 23.08.2026, und er ist der teuerste Fehlertyp dieses
+  // Projekts** (CLAUDE.md, Runden-Schicht, Frage 2): bis hierher stand als
+  // Spieltag der LIGA-Spieltag (`t.matchday`). Der Verlauf ist aber nach dem
+  // RUNDEN-Spieltag geordnet — der chronologischen Position über ALLE
+  // Wettbewerbe. In einer Runde mit mehreren Wettbewerben liefen die zwei
+  // auseinander.
+  //
+  // Gemessen an vier echten Spielen (bl#1 · bl#2 · cl#1 · cl#2): ein Klau,
+  // gesetzt am CL-Spieltag 2, wirkte auf den BUNDESLIGA-Spieltag 2 — er nahm
+  // Punkte von einem ganz anderen Tag. Fehlgeschlagen ist dabei nichts.
+  //
+  // ⚠️ Dieselbe Zahl entscheidet über `maxProZiel`, `immun` und die
+  // Sperrfrist (JK5): die Tippabgabe vergleicht sie gegen den RUNDEN-Spieltag,
+  // die Wertung rechnete mit dem Liga-Spieltag. Zwei Skalen, ein Vergleich.
+  //
+  // `rundenSpieltag(eintrag)` ist die Umrechnung (`rundenSpieltagVon(achse, …)`
+  // in `zeitachse.js`). Fehlt sie, bleibt es beim Liga-Spieltag — für eine
+  // Runde mit EINEM Wettbewerb ist das dasselbe, und ein stiller Wurf mitten
+  // in der Wertung wäre schlimmer als der benannte Rückfall.
+  const spieltagVonEintrag = (t) => {
+    if (typeof rundenSpieltag === "function") {
+      const n = rundenSpieltag(t);
+      if (Number.isFinite(n)) return n;
+    }
+    return t.matchday;
+  };
 
   const gueltig = liste.filter((t) => {
     const d = t?.tip?.duell;
     if (!d || d.auf == null) return false;
     if (!EINSATZ_TYPEN.has(d.typ)) return false;
     if (d.auf === t.userId) return false;
-    if (spieltagVon != null && Number(t.matchday) < spieltagVon) return false;
+    if (spieltagVon != null && Number(spieltagVonEintrag(t)) < spieltagVon) return false;
     return true;
   });
 
@@ -602,7 +629,7 @@ export function einsaetzeAusTipps(tipps = [], { spieltagVon = null, proSpieltag 
   const grenze = Math.max(1, Math.round(Number(proSpieltag) || 1));
   const jeSpielerUndTag = new Map(); // `${userId}|${matchday}` -> Kandidaten
   for (const t of gueltig) {
-    const key = `${t.userId}|${t.matchday}`;
+    const key = `${t.userId}|${spieltagVonEintrag(t)}`;
     if (!jeSpielerUndTag.has(key)) jeSpielerUndTag.set(key, []);
     jeSpielerUndTag.get(key).push(t);
   }
@@ -622,7 +649,7 @@ export function einsaetzeAusTipps(tipps = [], { spieltagVon = null, proSpieltag 
   }
 
   const einsaetze = gewaehlt.map((t) => ({
-    spieltag: t.matchday,
+    spieltag: spieltagVonEintrag(t),
     vonUserId: t.userId,
     aufUserId: t.tip.duell.auf,
     typ: t.tip.duell.typ,

@@ -51,7 +51,7 @@ import { sanitizeZeitachse, DEFAULT_ZEITACHSE } from "./zeitachse";
 // es einen Kreis über `ereignisse.js`, das dieselben Helfer braucht. Die Engine
 // reicht sie weiter, damit bestehende Importe aus "./engine" gültig bleiben.
 import { spieltagKey, spieltageChronologisch } from "./spieltag";
-export { spieltagKey, gleicherSpieltag, spieltageChronologisch } from "./spieltag";
+export { spieltagKey, gleicherSpieltag, spieltageChronologisch, verlaufPositionen } from "./spieltag";
 
 export function createMockOddsSource() {
   const snap = {

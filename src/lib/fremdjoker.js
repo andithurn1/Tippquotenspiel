@@ -400,15 +400,26 @@ export function meinLos(rules, { userId, userIds, spieltag, seed = "", art = nul
 // aufzulösen ist.
 //
 // Rückgabe: Set aus `${userId}#${matchId}`.
-export function geschuetzteSpiele(tipps = [], rules = {}) {
+// ⚠️ `rundenSpieltag` aus demselben Grund wie bei `fremdEinsaetze`: „ein
+// Schild je Spieltag" muss denselben Spieltag meinen wie alles andere. Ohne
+// die Umrechnung bekäme ein Spieler in einer Runde über fünf Wettbewerbe
+// fünf Schilde für denselben Kalendertag.
+export function geschuetzteSpiele(tipps = [], rules = {}, { rundenSpieltag = null } = {}) {
   const schutz = sanitizeSchutz(rules?.eingriffe?.schutz);
   const out = new Set();
   if (schutz.proSpieltag <= 0) return out;
 
+  const tagVon = (t) => {
+    if (typeof rundenSpieltag === "function") {
+      const n = rundenSpieltag(t);
+      if (Number.isFinite(n)) return n;
+    }
+    return t.matchday;
+  };
   const jeSpielerUndTag = new Map();
   for (const t of Array.isArray(tipps) ? tipps : []) {
     if (t?.tip?.schutz !== true || t.userId == null || t.matchId == null) continue;
-    const key = `${t.userId}|${t.matchday}`;
+    const key = `${t.userId}|${tagVon(t)}`;
     if (!jeSpielerUndTag.has(key)) jeSpielerUndTag.set(key, []);
     jeSpielerUndTag.get(key).push(t);
   }
@@ -431,10 +442,17 @@ export function geschuetzteSpiele(tipps = [], rules = {}) {
 // Wie viele Spiele darf ich an DIESEM Spieltag noch schützen? Für die
 // Tippabgabe — sie muss sagen können „du hast dein eines schon vergeben",
 // statt eine Markierung stumm zu schlucken.
-export function schutzStand(tipps = [], rules = {}, { userId, spieltag } = {}) {
+export function schutzStand(tipps = [], rules = {}, { userId, spieltag, rundenSpieltag = null } = {}) {
   const schutz = sanitizeSchutz(rules?.eingriffe?.schutz);
+  const tagVon = (t) => {
+    if (typeof rundenSpieltag === "function") {
+      const n = rundenSpieltag(t);
+      if (Number.isFinite(n)) return n;
+    }
+    return t.matchday;
+  };
   const meine = (Array.isArray(tipps) ? tipps : []).filter(
-    (t) => t?.userId === userId && t?.matchday === spieltag && t?.tip?.schutz === true);
+    (t) => t?.userId === userId && tagVon(t) === spieltag && t?.tip?.schutz === true);
   return {
     erlaubt: schutz.proSpieltag,
     vergeben: meine.length,
@@ -462,14 +480,18 @@ export function schutzStand(tipps = [], rules = {}, { userId, spieltag } = {}) {
 // des Angreifers. Ein Angreifer, der auf ein Spiel setzt, das sein Ziel gar
 // nicht getippt hat, bekommt kein `p` — der Einsatz verpufft, statt still auf
 // irgendetwas anderes zu rechnen.
-export function fremdEinsaetze(tipps = [], rules = {}, { spieltagVon = null } = {}) {
+// `rundenSpieltag(eintrag)` rechnet den LIGA-Spieltag in den RUNDEN-Spieltag
+// um (`rundenSpieltagVon(achse, …)`). 🔴 Wer sie weglässt, bekommt in einer
+// Runde über mehrere Wettbewerbe Einsätze auf dem FALSCHEN Spieltag — der
+// Befund vom 23.08.2026, ausführlich im Kopf von `einsaetzeAusTipps`.
+export function fremdEinsaetze(tipps = [], rules = {}, { spieltagVon = null, rundenSpieltag = null } = {}) {
   // 🔴 `proSpieltag` gehört HIERHER und nicht in die Aufrufer: es ist die
   // Antwort auf „wie viele Fremdjoker darf einer an EINEM Spieltag setzen"
   // (Andi, 23.08.2026: mehrere ja, aber auf verschiedene Spiele). Wer
   // `einsaetzeAusTipps` direkt ruft und den Wert vergisst, bekommt stumm
   // wieder nur einen — genau so war der Regler ein Jahr lang wirkungslos.
   const rohAlle = einsaetzeAusTipps(tipps, {
-    spieltagVon, proSpieltag: sanitizeDuellJoker(rules?.duell).proSpieltag,
+    spieltagVon, proSpieltag: sanitizeDuellJoker(rules?.duell).proSpieltag, rundenSpieltag,
   });
   const eg = sanitizeEingriffe(rules?.eingriffe);
 
@@ -481,7 +503,7 @@ export function fremdEinsaetze(tipps = [], rules = {}, { spieltagVon = null } = 
   // Die zwei Varianten aus Andis offener Frage, jetzt als Einstellung:
   //   `zurueck`    der Einsatz zählt gar nicht → er fällt aus der Liste
   //   `verfaellt`  er zählt, wirkt aber nicht  → er bleibt, mit Marke
-  const geschuetzt = geschuetzteSpiele(tipps, rules);
+  const geschuetzt = geschuetzteSpiele(tipps, rules, { rundenSpieltag });
   const roh = rohAlle
     .map((e) => (e.matchId != null && geschuetzt.has(`${e.aufUserId}#${e.matchId}`)
       ? { ...e, geschuetzt: true } : e))

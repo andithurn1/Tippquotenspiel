@@ -8,6 +8,7 @@ import {
 import { DEFAULT_EINGRIFFE } from "@/lib/eingriffe";
 import { DEFAULT_DUELL, applyDuellJoker } from "@/lib/duellJoker";
 import { DEFAULT_RULES, brauchtVerlauf } from "@/lib/engine";
+import { verlaufPositionen } from "@/lib/spieltag";
 
 // Ein ausgeglichenes Spiel, dasselbe Raster wie in `ergebnisMatrix.test.js` —
 // dieselbe Quelle für Wahrscheinlichkeiten, also auch dieselbe Vorlage.
@@ -824,5 +825,86 @@ describe("geschuetzteSpiele und der Schutz in der Wertung", () => {
     expect(konflikte(rules).map((k) => k.key)).toContain("schutz-verdeckt-verraet-sich");
     const sauber = { ...rules, eingriffe: { ...rules.eingriffe, schutz: { ...rules.eingriffe.schutz, sichtbar: true } } };
     expect(konflikte(sauber).map((k) => k.key)).not.toContain("schutz-verdeckt-verraet-sich");
+  });
+});
+
+// ── 🔴 Der Spieltag, auf dem ein Einsatz landet ─────────────
+//
+// **Der Befund vom 23.08.2026, und er ist der teuerste Fehlertyp dieses
+// Projekts** (CLAUDE.md, Runden-Schicht, Frage 2). Die Einsätze trugen den
+// LIGA-Spieltag; der Verlauf ist aber nach der CHRONOLOGISCHEN Position über
+// alle Wettbewerbe geordnet. Gemessen an vier echten Spielen: ein Klau,
+// gesetzt am CL-Spieltag 2, wirkte auf den BUNDESLIGA-Spieltag 2 — er nahm
+// Punkte von einem ganz anderen Tag ab. Fehlgeschlagen ist dabei nichts.
+//
+// ⚠️ Die naheliegende Reparatur war ebenfalls falsch: `rundenSpieltagVon`
+// zählt die Spieltage der ZEITACHSE, und die bündelt anders (34
+// Bundesliga-Spieltage ergeben 42 Achsen-Positionen). Maßgeblich ist allein
+// `verlaufPositionen` — dieselbe Liste, aus der auch der Verlauf entsteht.
+describe("fremdEinsaetze — auf welchem Spieltag ein Einsatz landet", () => {
+  // Vier Spieltage über zwei Wettbewerbe, bewusst NICHT in der Reihenfolge
+  // ihrer Nummern: bl#1 · bl#2 · cl#1 · cl#2 chronologisch.
+  const tage = [
+    { wettbewerb: "bl", matchday: 1, kickoff: "2026-08-28T18:30:00Z" },
+    { wettbewerb: "bl", matchday: 2, kickoff: "2026-09-04T18:30:00Z" },
+    { wettbewerb: "cl", matchday: 1, kickoff: "2026-09-15T18:30:00Z" },
+    { wettbewerb: "cl", matchday: 2, kickoff: "2026-09-29T18:30:00Z" },
+  ];
+  const entries = tage.flatMap((t, i) => ["a", "b"].map((u) => ({
+    userId: u, name: u, matchId: `${t.wettbewerb}-${t.matchday}`,
+    matchday: t.matchday, wettbewerb: t.wettbewerb, kickoff: t.kickoff,
+    tip: { home: u === "a" ? 1 : 2, away: i % 2 },
+  })));
+  const tipp = (w, md) => [{
+    userId: "a", matchday: md, wettbewerb: w, matchId: `${w}-${md}`,
+    kickoff: tage.find((t) => t.wettbewerb === w && t.matchday === md).kickoff,
+    tip: { duell: { auf: "b", typ: "klau" } },
+  }];
+  const rules = mitDuell({ typen: ["klau"] });
+
+  it("ohne Umrechnung trägt der Einsatz den LIGA-Spieltag — das war der Fehler", () => {
+    expect(fremdEinsaetze(tipp("cl", 2), rules)[0].spieltag).toBe(2);
+  });
+
+  it("mit `verlaufPositionen` trägt er die POSITION im Verlauf", () => {
+    const raus = fremdEinsaetze(tipp("cl", 2), rules,
+      { rundenSpieltag: verlaufPositionen(entries) });
+    // cl#2 ist der VIERTE Spieltag der Runde, nicht der zweite.
+    expect(raus[0].spieltag).toBe(4);
+  });
+
+  it("und der erste Spieltag bleibt der erste", () => {
+    const raus = fremdEinsaetze(tipp("bl", 1), rules,
+      { rundenSpieltag: verlaufPositionen(entries) });
+    expect(raus[0].spieltag).toBe(1);
+  });
+
+  // Die Gegenprobe: bei EINEM Wettbewerb sind beide Zahlen dieselbe. Genau
+  // deshalb ist der Fehler so lange unbemerkt geblieben.
+  it("bei nur einem Wettbewerb ändert die Umrechnung nichts", () => {
+    const nurBl = entries.filter((e) => e.wettbewerb === "bl");
+    const ohne = fremdEinsaetze(tipp("bl", 2), rules)[0].spieltag;
+    const mit = fremdEinsaetze(tipp("bl", 2), rules,
+      { rundenSpieltag: verlaufPositionen(nurBl) })[0].spieltag;
+    expect(mit).toBe(ohne);
+  });
+
+  // 🔴 Und der Beleg, dass die Wertung die Zahl wirklich so benutzt: derselbe
+  // Einsatz wirkt an unterschiedlichen Stellen des Verlaufs.
+  it("die Wertung setzt die Wirkung genau dort an", () => {
+    const verlauf = tage.map((t, i) => ({
+      wettbewerb: t.wettbewerb, matchday: t.matchday,
+      board: [
+        { userId: "a", name: "a", total: 0 },
+        { userId: "b", name: "b", total: 100 * (i + 1) },
+      ],
+    }));
+    const wirktAn = (spieltag) => {
+      const raus = applyDuellJoker(verlauf, { ...rules, duell: { ...rules.duell, maxProSaison: 0 } },
+        [{ spieltag, vonUserId: "a", aufUserId: "b", typ: "klau" }]);
+      return raus.findIndex((v) => v.board.some((z) => z.duell));
+    };
+    expect(wirktAn(2)).toBe(1);
+    expect(wirktAn(4)).toBe(3);
   });
 });

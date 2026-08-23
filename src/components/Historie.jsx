@@ -11,6 +11,7 @@ import { ersatzEintraege } from "@/lib/versaeumnisBoard";
 // und `getroffen`, sonst rechnete die Historie eine andere Kurve als das
 // Ranking — dieselbe Zahl an zwei Orten, mit zwei Ergebnissen.
 import { fremdEinsaetze } from "@/lib/fremdjoker";
+import { verlaufPositionen } from "@/lib/spieltag";
 import { computeRecords, matchdayDeltas } from "@/lib/records";
 import { PRESETS } from "@/lib/presets";
 import { C, MONO, SERIES, SCHRIFT, RUND } from "@/lib/theme";
@@ -184,7 +185,16 @@ export default function Historie() {
     // nötig wie bei den anderen vier Aufrufern von `scoreLeaderboardHistory`.
     // ⚠️ Die Duell-Einsätze kommen weiter aus den ECHTEN Tipps: ein Ersatz-Tipp
     // trägt keinen Einsatz, den niemand gesetzt hat.
-    const history = scoreLeaderboardHistory(alle, rules, fremdEinsaetze(entries, rules), lage, null, roundId);
+    // ⚠️ MIT der Position im Verlauf, und zwar aus `alle` — derselben Liste,
+    // aus der `scoreLeaderboardHistory` seinen Verlauf baut. Ohne sie landete
+    // ein Einsatz in einer Runde über mehrere Wettbewerbe auf dem falschen
+    // Spieltag, und die Kurve hier zeigte etwas anderes als das Ranking
+    // (Befund vom 23.08.2026, siehe `verlaufPositionen` in spieltag.js).
+    const history = scoreLeaderboardHistory(
+      alle, rules,
+      fremdEinsaetze(entries, rules, { rundenSpieltag: verlaufPositionen(alle) }),
+      lage, null, roundId,
+    );
     const scored = entries.filter((e) => e.result).map((e) => {
       // Auch die Rekorde unter den Regeln des jeweiligen Spieltags — sonst
       // steht in der Bestenliste ein Wert, den es nie gab.

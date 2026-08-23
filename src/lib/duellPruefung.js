@@ -152,7 +152,13 @@ export async function pruefeDuellEinsatz({ store, roundId, matchId, userId, tip 
   // sich der Nutzer selbst den letzten Joker weg. Genau diese Ausnahme macht
   // der Screen auch (`meineTipsOhneAktuellen`).
   const andere = alleTipps.filter((t) => (t.match_id ?? t.matchId) !== matchId);
-  const bisherigeEinsaetze = fremdEinsaetze(andere.map(alsEintrag), rules);
+  // ⚠️ MIT der Umrechnung auf den RUNDEN-Spieltag: `spieltag` (oben) ist
+  // bereits einer, und die Prüfung vergleicht beide gegeneinander. Ohne sie
+  // stünde hier in einer Runde über mehrere Wettbewerbe Liga-Spieltag gegen
+  // Runden-Spieltag — zwei Skalen, ein Vergleich (Befund vom 23.08.2026).
+  const bisherigeEinsaetze = fremdEinsaetze(andere.map(alsEintrag), rules, {
+    rundenSpieltag: (m) => rundenSpieltagVon(achse, m),
+  });
 
   // ⚠️ MIT der Art gefragt: die Sperrfrist steht je Fremdjoker (JK5, Ebene 2),
   // also ist „ist Kemal ein erlaubtes Ziel?" ohne sie gar nicht beantwortbar.

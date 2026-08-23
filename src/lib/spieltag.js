@@ -84,3 +84,31 @@ export function spieltageChronologisch(entries = [], schluessel = null) {
     return String(a.wettbewerb ?? "").localeCompare(String(b.wettbewerb ?? ""));
   });
 }
+
+// ── 🔴 Die Position IM VERLAUF, als Funktion ────────────────
+//
+// `scoreLeaderboardHistory` baut seinen Verlauf aus `spieltageChronologisch`
+// — Index 0 ist der erste Spieltag, Index 1 der zweite. Wer eine Wirkung an
+// einem bestimmten Spieltag ansetzen will (die Fremdjoker tun das), muss
+// GENAU DIESE Zahl benutzen und keine andere.
+//
+// 🔴 **Der Befund vom 23.08.2026, an dem das hängt.** Die Fremdjoker-Einsätze
+// trugen den LIGA-Spieltag. Gemessen an vier echten Spielen (bl#1 · bl#2 ·
+// cl#1 · cl#2): ein Klau, gesetzt am CL-Spieltag 2, wirkte auf den
+// BUNDESLIGA-Spieltag 2 — er nahm Punkte von einem ganz anderen Tag ab.
+// Fehlgeschlagen ist dabei nichts.
+//
+// ⚠️ Und die naheliegende Reparatur war ebenfalls falsch: `rundenSpieltagVon`
+// (zeitachse.js) zählt die Spieltage der ZEITACHSE, und die bündelt anders
+// (gemessen: 34 Bundesliga-Spieltage ergeben 42 Achsen-Positionen). Für den
+// Verlauf zählt allein `spieltageChronologisch` — deshalb wird die Zahl hier
+// aus DERSELBEN Liste abgeleitet, aus der auch der Verlauf entsteht. Zwei
+// Ableitungen könnten auseinanderlaufen; eine kann es nicht.
+//
+// Rückgabe: `(eintrag) => nummer | null`, 1-basiert.
+export function verlaufPositionen(entries = [], schluessel = null) {
+  const keyVon = typeof schluessel === "function" ? schluessel : spieltagKey;
+  const karte = new Map(
+    spieltageChronologisch(entries, schluessel).map((s, i) => [s.key, i + 1]));
+  return (x) => karte.get(keyVon(x)) ?? null;
+}

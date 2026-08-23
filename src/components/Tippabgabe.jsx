@@ -18,7 +18,7 @@ import { pruefeJokerEinsatz, basisFuer, darfWiderrufen, duellBasis as duellBasis
 import {
   kontoVerlauf, perioden, preisFuer, kannBezahlen, sanitizeBudget, istNarrenKauf, einsaetzeAllerArten,
 } from "@/lib/jokerBudget";
-import { duellPlan, einsaetzeAusTipps } from "@/lib/duellJoker";
+import { duellPlan } from "@/lib/duellJoker";
 // 🔴 Die FREMDJOKER-Familie hat seit dem 23.08.2026 VIER Arten (JK4), und zwei
 // davon stehen gar nicht in `rules.duell`. `aktiveArten` ist die EINE Stelle,
 // die sagt, welche laufen — hier `DUELL_TYPEN` zu lesen hieße, zwei davon zu
@@ -26,7 +26,7 @@ import { duellPlan, einsaetzeAusTipps } from "@/lib/duellJoker";
 // Fassung die Sperrfrist je Ziel (JK5) durchreicht.
 import {
   aktiveArten, familieAn, zulaessigeZiele, gegenwetteVorschau, zieleJeArt, sperrGrund,
-  meinLos, schutzStand,
+  meinLos, schutzStand, fremdEinsaetze,
 } from "@/lib/fremdjoker";
 import { FREMDJOKER_ARTEN, jokerArtVon, sanitizeSchutz } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
@@ -695,7 +695,16 @@ export default function Tippabgabe({ matchId }) {
   // `bisherigeEinsaetze` aus den rohen Tipps ALLER Spieler abgeleitet
   // (`alleTipps`, dieselbe Liste wie beim Narren-Kontostand oben) —
   // `zulaessigeZiele` filtert selbst auf den eigenen Nutzer.
-  const bisherigeDuellEinsaetze = einsaetzeAusTipps(alleTippsRunde);
+  // 🔴 `fremdEinsaetze`, nicht die rohe Grundform: nur sie kennt „mehrere je
+  // Spieltag" (`proSpieltag`) und den Schutz. Zählte dieser Screen Einsätze
+  // mit, welche die WERTUNG längst verwirft, wäre er strenger als sie — und
+  // ein Ziel verschwände hier, das dort erlaubt ist.
+  //
+  // ⚠️ `alleTippsRunde` trägt bereits den RUNDEN-Spieltag (siehe oben), also
+  // braucht es hier keine zweite Umrechnung. Genau diese Umrechnung fehlte bis
+  // zum 23.08.2026 auf der STORE-Seite — dort stand der Liga-Spieltag, und
+  // beide Seiten verglichen zwei verschiedene Skalen miteinander.
+  const bisherigeDuellEinsaetze = fremdEinsaetze(alleTippsRunde, RULES);
   // 🔴 Seit die Sperrfrist JE FREMDJOKER steht (JK5, Ebene 2), ist „ist Kemal
   // ein erlaubtes Ziel?" ohne die Art nicht mehr beantwortbar: der Block kann
   // gesperrt sein, während der Trittbrettfahrer frei ist.

@@ -8,6 +8,8 @@ import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboard
 // design/abstimmung-verfassung.md). `regelnFuerSpieltag` liefert dafür die
 // Funktion, die die Engine als `regelnFuer` erwartet.
 import { regelnFuerSpieltag } from "./beschluss";
+// 🔴 Die Position im Verlauf — siehe die Begründung dort.
+import { verlaufPositionen } from "./spieltag";
 import { zeitachse, rundenSpieltagVon, bespielteSpieltage } from "./zeitachse";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 // 🔴 Die zweite Demo-Runde: eine, in der ALLES an ist (Andi, 23.08.2026 —
@@ -231,7 +233,9 @@ export function createMockStore() {
       // (aus `eintragVon`) trägt das Feld nicht, `roundTips` schon
       // (`match_id`), deshalb hier separat angereichert statt `entries`
       // selbst zu verändern.
-      const einsaetze = fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules);
+      const einsaetze = fremdEinsaetze(
+        roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules,
+        { rundenSpieltag: verlaufPositionen(entries) });
       verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
       board = verlauf.length ? verlauf[verlauf.length - 1].board : [];
     } else {
@@ -303,6 +307,11 @@ export function createMockStore() {
     return {
       board, rules, kontext, entries, regelnFuer, verlauf, roundTips,
       spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse),
+      // 🔴 Die Position IM VERLAUF, nicht der Liga-Spieltag und auch nicht die
+      // Zeitachse — die Begründung steht bei `verlaufPositionen` (spieltag.js).
+      // Sie wird aus DENSELBEN `entries` abgeleitet, aus denen der Verlauf
+      // entsteht; zwei Ableitungen könnten auseinanderlaufen.
+      rundenSpieltag: verlaufPositionen(entries),
     };
   }
 
@@ -310,9 +319,9 @@ export function createMockStore() {
   // ihn aus den rohen Tipps, `standVorDemRad` aus `entries` (mit Ersatz-Tipps):
   // zwei Kurven für dieselbe Runde, sobald das Versäumnis eingeschaltet war.
   async function verlaufVon(roundId) {
-    const { verlauf, entries, rules, regelnFuer, roundTips } = await standVorDemRad(roundId);
+    const { verlauf, entries, rules, regelnFuer, roundTips, rundenSpieltag } = await standVorDemRad(roundId);
     if (verlauf) return verlauf;
-    const einsaetze = fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules);
+    const einsaetze = fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules, { rundenSpieltag });
     return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
   }
 
@@ -769,21 +778,21 @@ export function createMockStore() {
     // muss die sein, die der Spieler sieht. Sonst steht auf dem Bildschirm ein
     // Block, den die Wertung nie gesehen hat — oder umgekehrt.
     async getFremdEingriffe(roundId) {
-      const { rules, roundTips } = await standVorDemRad(roundId);
+      const { rules, roundTips, rundenSpieltag } = await standVorDemRad(roundId);
       if (!familieAn(rules)) return [];
-      return fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules)
+      return fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules, { rundenSpieltag })
         .map((e) => ({ ...e, vonName: nameOf(e.vonUserId), aufName: nameOf(e.aufUserId) }));
     },
 
     async getDuellVorgaenge(roundId) {
-      const { entries, rules, regelnFuer, roundTips } = await standVorDemRad(roundId);
+      const { entries, rules, regelnFuer, roundTips, rundenSpieltag } = await standVorDemRad(roundId);
       // 🔴 `familieAn` statt `rules.duell.enabled`: seit dem 23.08.2026 gibt es
       // VIER Fremdjoker, und zwei davon stehen gar nicht in `duell`. Die rohe
       // Abfrage hätte Trittbrettfahrer und Gegenwette aus der Vorgangsliste
       // geworfen — sichtbar erst daran, dass ein Spieler eine Summe sieht, zu
       // der keine Zeile führt.
       if (!familieAn(rules)) return [];
-      const einsaetze = fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules);
+      const einsaetze = fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules, { rundenSpieltag });
       const sammeln = [];
       scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln, roundId);
       return sammeln.map((v) => ({ ...v, vonName: nameOf(v.vonUserId), aufName: nameOf(v.aufUserId) }));

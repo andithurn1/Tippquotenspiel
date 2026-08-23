@@ -8,6 +8,8 @@ import { DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules
 // design/abstimmung-verfassung.md) — dieselbe Anbindung wie im Mock-Store.
 import { regelnFuerSpieltag } from "./beschluss";
 import { zeitachse, rundenSpieltagVon, bespielteSpieltage } from "./zeitachse";
+// 🔴 Die Position im Verlauf — siehe die Begründung dort.
+import { verlaufPositionen } from "./spieltag";
 import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
@@ -451,7 +453,9 @@ export function createSupabaseStore() {
         // (aus `eintragVon`) trägt das Feld nicht, `tips` (roh) schon
         // (`match_id`), deshalb hier separat angereichert statt `entries`
         // selbst zu verändern.
-        const einsaetze = fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules);
+        const einsaetze = fremdEinsaetze(
+          tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules,
+          { rundenSpieltag: verlaufPositionen(entries) });
         verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
         board = verlauf.length ? verlauf[verlauf.length - 1].board : [];
       } else {
@@ -509,6 +513,11 @@ export function createSupabaseStore() {
       return {
         board, rules, kontext, nameOf, matchOf, entries, regelnFuer, verlauf, tips,
         spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse),
+        // 🔴 Die Position IM VERLAUF, nicht der Liga-Spieltag und auch nicht die
+        // Zeitachse — die Begründung steht bei `verlaufPositionen` (spieltag.js).
+        // Sie wird aus DENSELBEN `entries` abgeleitet, aus denen der Verlauf
+        // entsteht; zwei Ableitungen könnten auseinanderlaufen.
+        rundenSpieltag: verlaufPositionen(entries),
       };
     },
 
@@ -552,12 +561,12 @@ export function createSupabaseStore() {
     // diese Methode ihre Eintraege selbst, ohne Ersatz-Tipps: zwei Kurven fuer
     // dieselbe Runde, sobald das Versaeumnis eingeschaltet war.
     async getLeaderboardHistory(roundId) {
-      const { verlauf, entries, rules, regelnFuer, tips, nameOf, matchOf } = await this.standVorDemRad(roundId);
+      const { verlauf, entries, rules, regelnFuer, tips, nameOf, matchOf, rundenSpieltag } = await this.standVorDemRad(roundId);
       if (verlauf) return verlauf;
       // Wie im Zweig oben: `matchId` kommt aus den ROHEN Tipps, `entries` trägt
       // es nicht — ohne das Feld verliert der Duell-Einsatz seinen Gleichstand-
       // Schlüssel (zwei zeitgleich angepfiffene Spiele am selben Spieltag).
-      const einsaetze = fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules);
+      const einsaetze = fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules, { rundenSpieltag });
       return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
     },
 
@@ -592,21 +601,21 @@ export function createSupabaseStore() {
     // muss die sein, die der Spieler sieht. Sonst steht auf dem Bildschirm ein
     // Block, den die Wertung nie gesehen hat — oder umgekehrt.
     async getFremdEingriffe(roundId) {
-      const { rules, tips, nameOf, matchOf } = await this.standVorDemRad(roundId);
+      const { rules, tips, nameOf, matchOf, rundenSpieltag } = await this.standVorDemRad(roundId);
       if (!familieAn(rules)) return [];
-      return fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules)
+      return fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules, { rundenSpieltag })
         .map((e) => ({ ...e, vonName: nameOf(e.vonUserId), aufName: nameOf(e.aufUserId) }));
     },
 
     async getDuellVorgaenge(roundId) {
-      const { entries, rules, regelnFuer, tips, nameOf, matchOf } = await this.standVorDemRad(roundId);
+      const { entries, rules, regelnFuer, tips, nameOf, matchOf, rundenSpieltag } = await this.standVorDemRad(roundId);
       // 🔴 `familieAn` statt `rules.duell.enabled`: seit dem 23.08.2026 gibt es
       // VIER Fremdjoker, und zwei davon stehen gar nicht in `duell`. Die rohe
       // Abfrage hätte Trittbrettfahrer und Gegenwette aus der Vorgangsliste
       // geworfen — sichtbar erst daran, dass ein Spieler eine Summe sieht, zu
       // der keine Zeile führt.
       if (!familieAn(rules)) return [];
-      const einsaetze = fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules);
+      const einsaetze = fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules, { rundenSpieltag });
       const sammeln = [];
       scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln, roundId);
       return sammeln.map((v) => ({ ...v, vonName: nameOf(v.vonUserId), aufName: nameOf(v.aufUserId) }));
