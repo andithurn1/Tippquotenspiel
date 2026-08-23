@@ -126,6 +126,68 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-23 (X) · **ÜBERGABE an ein frisches Fenster** — und: es gibt nur noch EIN Fenster
+
+> **👉 Frische Session: DAS ist dein Einstieg.** Alles darunter ist Historie.
+> Arbeitsordner: **`C:\Dev\Tippquotenspiel`**.
+
+`main` bei `24d530d` · **2312 Tests grün** · Arbeitskopie leer · lint sauber.
+
+#### 🔴 Der zweite Account ist weg
+
+Andis Organisationszugriff für Account 2 (Andre) wurde deaktiviert. **Es
+arbeitet ab jetzt nur noch EINE Session an diesem Repo.**
+
+Was das ändert:
+- **Das Claim-Board ist gegenstandslos.** Kein Bereich muss mehr reserviert
+  werden, niemand pusht dazwischen.
+- **Push-Regel 3 (große Änderungen vorher ankündigen) bleibt trotzdem** — nur
+  ist der Adressat jetzt das nächste FENSTER, nicht die andere Person. Der
+  Grund ist derselbe: ein Regelwerk-Feld, das niemand angekündigt hat, wird
+  beim nächsten Umbau übersehen.
+- **Diese Datei bleibt der Übergabekanal.** Sie heißt nur noch aus Gewohnheit
+  „Koordination".
+
+#### ⏭️ Was als Nächstes ansteht: die Fremdjoker-Familie (JK4–JK7)
+
+**Sie ist seit `24d530d` erst möglich.** `tippfenster.schlussStunden` hat den
+gemeinsamen Tippschluss gebracht — den Moment, an dem alle Tipps feststehen.
+Ohne ihn kann niemand einen Joker auf einen fremden Tipp setzen. Andi wörtlich:
+
+> „erstmal tippt jeder, und dann einen Tag später, wo jeder getippt hat, werden
+> die Joker auf die anderen gewählt."
+
+Die vier offenen Zeilen aus `design/auftraege.md`:
+
+| Zeile | Inhalt | Was neu ist |
+|---|---|---|
+| **JK4** | Eingriffe in fremde Tipps: blocken · mitprofitieren · dagegen wetten | Blocken/Klauen gibt es halb (`duell`) — neu ist der Bezug auf einen EINZELNEN Tipp und das Dagegenwetten |
+| **JK5** | Cooldown je Ziel | `maxProZiel` begrenzt nur die Gesamtzahl, nicht ob es immer derselbe Gegner ist. `sperrfristJeZiel` ist neu |
+| **JK6** | 🔴 Eingriffe müssen vor der Frist **sichtbar und zurücknehmbar** sein | Andis Zweck ist der Austausch („nimm den Block bei mir raus"). Ein still verrechneter Eingriff leistet davon nichts |
+| **JK7** | Die ganze Familie in EINEM Griff schaltbar | Büro-Runde nein, Freundesrunde ja. Ein `eingriffe.enabled` über allem statt sechs Häkchen |
+
+Der Entwurf dazu liegt in `design/joker-sondermenue.md` (Teil D) und
+`design/auftraege.md` Zeilen 162–168.
+
+⚠️ **JK6 ist der Punkt, an dem es kippen kann.** Ein Eingriff, der erst bei der
+Abrechnung sichtbar wird, erfüllt Andis Zweck nicht — er will das Gespräch
+darüber. Sichtbarkeit und Rücknahme gehören also in denselben Schritt, nicht in
+einen späteren.
+
+#### Was NICHT drankommt
+
+- ⛔ **Balancing** — steht ganz oben in `CLAUDE.md`, auch nicht als Gegenargument.
+- ⛔ **Platzierung von Reglern** — bis die Masterdatei `Quotentippen.pptx` steht,
+  gilt: Mechanik ja, WO sie sitzt nein.
+
+#### Abnahmen vor jedem Abschluss
+
+`npm test` · `npm run lint` · `npm run greift` · `npm run stufen` · `npm run tot`
+· `npm run sicht` · `npm run anzeige` · `npm run gleich`
+⛔ `npm run balance` NICHT — stillgelegt, siehe `CLAUDE.md`.
+
+---
+
 ### 2026-08-23 (IX) · ⚠️ **REGELWERK** — zwei neue Felder: `spiele.teamModus` und `tippfenster.schlussStunden`
 
 **Push-Regel 3.** Beides ändert das Regelwerk und wandert im Creator-Code mit.
