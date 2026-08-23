@@ -176,16 +176,46 @@ export function pruefeEinstellbarkeit() {
       if (v !== undefined && JSON.stringify(v) !== JSON.stringify(vorgabe)
         && (v === null || typeof v !== "object")) ausQuellen.push(v);
     }
-    const kandidaten = [...new Set([...ausQuellen, ...generisch(vorgabe, woerter)])];
+    // 🔴 **Kandidaten, die GLEICH der Vorgabe sind, fliegen raus.** Sie
+    // beweisen nichts — und sie entstehen leicht: für eine Zahl mit Vorgabe 0
+    // liefert `generisch` über `wert * 2` und `wert / 2` zweimal die 0 selbst.
+    // Gemessen am 23.08.2026: `wettbewerbe.phasenStufe` (Vorgabe 0) stand
+    // seither als „geprüft“ in der Liste, ohne je einen anderen Wert
+    // angenommen zu haben. Ein Durchgang, der so etwas durchwinkt, ist
+    // schlimmer als keiner — ihm glaubt beim nächsten Mal jemand.
+    const kandidaten = [...new Set([...ausQuellen, ...generisch(vorgabe, woerter)])]
+      .filter((k) => JSON.stringify(k) !== JSON.stringify(vorgabe));
 
+    // ⚠️ Zwei Arten, wie ein Feld einen anderen Wert annimmt — und nur die
+    // erste ist „exakt“:
+    //
+    //   GENAU SO       der angebotene Wert kommt unverändert zurück.
+    //   GEKLEMMT       er lief über die eigene Grenze und kam auf ihr an
+    //                  (`phasenStufe` deckelt bei 0.3). Das ist KEIN stilles
+    //                  Zurückfallen auf die Vorgabe, sondern eine bewusste
+    //                  Grenze — das Feld hat sich bewegt, also zählt es.
+    //
+    // Die zweite ist nur die Nachrücker-Lösung: erst wird die ganze Liste nach
+    // einem exakten Treffer durchsucht, und nur wenn keiner dabei war, gilt der
+    // geklemmte. Sonst zählte eine Grenze als Beleg, wo ein sauberer Wert da war.
     let treffer = null;
+    let geklemmt = null;
     for (const k of kandidaten) {
       const gesetzt = sanitizeRules(setze(basis, pfad, k));
-      if (JSON.stringify(lies(gesetzt, pfad)) === JSON.stringify(k)) {
+      const angekommen = lies(gesetzt, pfad);
+      if (JSON.stringify(angekommen) === JSON.stringify(k)) {
         treffer = { wert: k, rules: gesetzt, quelle: ausQuellen.includes(k) ? "projekt" : "generisch" };
         break;
       }
+      // ⚠️ Ein PROJEKT-Wert, der geklemmt ankommt, wird hier bewusst NICHT
+      // zum Beleg: dort hat jemand diesen Wert wirklich gemeint, und die
+      // Bereinigung hat ihn verändert. Das bleibt ein Fund.
+      if (!geklemmt && !ausQuellen.includes(k)
+        && JSON.stringify(angekommen) !== JSON.stringify(vorgabe)) {
+        geklemmt = { wert: angekommen, rules: gesetzt, quelle: "generisch", angeboten: k };
+      }
     }
+    if (!treffer && geklemmt) treffer = geklemmt;
 
     if (!treffer) {
       // 🔴 Hier entscheidet sich, ob das ein FUND ist oder nur eine Lücke im
@@ -225,7 +255,10 @@ export function pruefeEinstellbarkeit() {
     const teilbar = zurueck != null
       && JSON.stringify(lies(sanitizeRules(zurueck), pfad)) === JSON.stringify(treffer.wert);
 
-    out.push({ pfad, vorgabe, kandidat: treffer.wert, setzbar: true, teilbar, quelle: treffer.quelle });
+    out.push({
+      pfad, vorgabe, kandidat: treffer.wert, setzbar: true, teilbar, quelle: treffer.quelle,
+      ...(treffer.angeboten !== undefined ? { angeboten: treffer.angeboten } : {}),
+    });
   }
   return out;
 }

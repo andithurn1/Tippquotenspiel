@@ -73,6 +73,30 @@ describe("Einstellbarkeit — die Abdeckung", () => {
     expect(kaputt.k).not.toBe(99999);
   });
 
+  // 🔴 Der Fund vom 23.08.2026, als Test festgenagelt: für eine Zahl mit
+  // Vorgabe 0 liefert der generische Kandidaten-Vorrat über `wert * 2` und
+  // `wert / 2` zweimal die 0 SELBST. Wird sie angenommen, meldet der Durchgang
+  // „geprüft“ für ein Feld, das sich nie bewegt hat. `wettbewerbe.phasenStufe`
+  // stand genau so in der Liste.
+  it("kein Feld gilt als geprüft, weil es seine eigene Vorgabe annimmt", () => {
+    for (const e of pruefeEinstellbarkeit()) {
+      if (e.setzbar !== true) continue;
+      expect(JSON.stringify(e.kandidat), `${e.pfad} nimmt nur seine eigene Vorgabe an`)
+        .not.toBe(JSON.stringify(e.vorgabe));
+    }
+  });
+
+  // Die Gegenprobe zum Nachrücker: ein Feld mit einer GRENZE (`phasenStufe`
+  // deckelt bei 0.3) nimmt keinen der runden generischen Werte exakt an — es
+  // kommt geklemmt an. Das ist ein Beleg, kein Fund, und es muss einer bleiben:
+  // sonst stünde die halbe Regler-Landschaft als „nicht setzbar“ da.
+  it("ein Wert, der auf seiner Grenze ankommt, zählt als Beleg — nicht als Fund", () => {
+    const e = pruefeEinstellbarkeit().find((x) => x.pfad === "wettbewerbe.phasenStufe");
+    expect(e.setzbar).toBe(true);
+    expect(e.angeboten).toBe(1);
+    expect(e.kandidat).toBe(0.3);
+  });
+
   it("ein gesetzter Wert überlebt den Creator-Code — an einem echten Beispiel", () => {
     const r = sanitizeRules({
       ...DEFAULT_RULES,
