@@ -182,6 +182,13 @@ eine Falle: gesucht wird nach `| EB1 |`, und getroffen wird die erste.
 |---|---|---|---|
 | VL1 | **Streicher gelten nur für EINZELNE SPIELE, nie für einen ganzen Spieltag** — „ich meine die Streicher gelten natürlich nur für einzelne Spiele und nie den gesamten Spieltag aussetzen" | ✅ | `saisonform.js` (`streichSpiele`) + `engine.js` (`punkteJeSpiel`); 13 Tests umgeschrieben, 2170 grün. Kanal-Eintrag (VII) mit den drei Entscheidungen. ⚠️ Alte Creator-Codes werden dadurch milder: `streich: 2` heißt jetzt zwei Spiele |
 
+## Prüfbarkeit (23.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| PR1 | **„mach die demo runde bzw tests so dass sie alle Einstellbarkeiten abdeckt.. um sie zu prüfen."** | ✅ | Zwei Hälften. **Tests:** `npm run einstellbar` (neunter Durchgang) geht JEDES Blatt des Regelwerks durch — nimmt es einen anderen Wert an, und überlebt er den Creator-Code? Kandidaten werden aus Presets, Charakteren, Regler-Stufen und dem Schaufenster GEERNTET, nicht von Hand gepflegt. **Demo-Runde:** das Schaufenster (`ALLES`) führt **188 von 199** Blattfeldern vor, vorher 78. Die 11 übrigen tragen je einen Satz: 7 in `SCHAU_AUSGENOMMEN` (Einstellungen, die einander ausschließen — `spiele.modus` hat genau einen Wert), 4 in `GEKOPPELT` (`werWert` ohne `wer: abPlatz` ist keine Angabe). Die Prüf-Zahl ist deshalb `unerklaert` = **0**, gehalten von drei Tests. Browser: 54 Spiele, Fremdjoker-Block auf allen geprüften Rundenspielen, keine Seitenfehler |
+| PR2 | ⚠️ *Vorbehalt zu PR1, von mir, nicht von Andi* | ⏳ | Ein Schaufenster, in dem jeder einzelne Regler verstellt ist, liest sich schwerer als eines mit wenigen sprechenden Abweichungen — und `reglerWarnung.pruefe()` meldet darauf acht Punkte (das ist richtig so, siehe Kopf von `schaufenster.js`). Falls Andi lieber eine **ruhige** Vorführ-Runde will, wäre der Weg eine zweite Runde neben `ALLES`, nicht ein Zurückdrehen dieser. **Seine Entscheidung, nicht meine** |
+
 ## Betrieb
 
 | Nr | Ansage | Stand | Beleg / was fehlt |

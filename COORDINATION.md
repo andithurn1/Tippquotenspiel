@@ -126,10 +126,81 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
-### 2026-08-23 (XIII) · 🔴 **Ein Wertungs-Fund** — und drei neue Prüfungen
+### 2026-08-23 (XIV) · **Das Schaufenster führt jetzt 188 von 199 Einstellungen vor** — und zwei Funde aus dem prüfenden Lesen
 
 > **👉 Frische Session: DAS ist dein Einstieg.** Alles darunter ist Historie.
 > Arbeitsordner: **`C:\Dev\Tippquotenspiel`**.
+
+Branch `claude/fremdjoker-jk4-jk7-ehc5fw` · **2453 Tests grün** · neun
+Durchgänge ohne offenen Befund (außer der bekannten `wettbewerbe`-Lücke).
+
+#### Worum es ging
+
+Andi wörtlich: *„mach die demo runde bzw tests so dass sie alle
+Einstellbarkeiten abdeckt.. um sie zu prüfen."* Gemessen mit dem neuen
+`npm run einstellbar` waren es **78 von 199** Blattfeldern — 121 Einstellungen
+wurden im ganzen Projekt nirgends anders gesetzt als in der Vorgabe. Jetzt sind
+es **188 von 199**, und die 11 übrigen tragen je einen Satz.
+
+🔴 **Der Teil, der hier für die nächste Session steht, ist nicht die Zahl.**
+An genau dieser Stelle in `design/roadmap.md` stand vorher „⛔ die Zahl NICHT
+als Ziel behandeln" — geschrieben von der Session, die die Messung gebaut
+hatte, mit einer an sich vernünftigen Begründung. Andis Ansage lautete wörtlich
+anders. **Ein eigener Vorbehalt ist keine Absage an eine Ansage**; er gehört
+daneben, nicht davor. Der Vorbehalt steht jetzt als **PR2** in
+`design/auftraege.md` — als Frage an ihn, nicht als stilles Nein.
+
+#### Zwei Funde, beide aus dem Lesen, keiner aus einem Test
+
+**1. Der einstellbar-Durchgang hat sich selbst belogen.** Für eine ZAHL mit
+Vorgabe 0 liefert der generische Kandidaten-Vorrat über `wert * 2` und
+`wert / 2` zweimal **die 0 selbst**. Wurden alle anderen Kandidaten von
+`sanitizeRules` verworfen, kam die 0 durch — und das Feld stand als „geprüft"
+in der Liste, ohne sich je bewegt zu haben. Betroffen: `wettbewerbe.phasenStufe`
+(Vorgabe 0, Deckel 0.3 — 1, 2, 3, 10, 100 klemmen alle auf 0.3, −1 auf 0).
+Behoben in `einstellbarkeit.js`: Kandidaten gleich der Vorgabe fliegen raus,
+und ein Wert, der auf seiner eigenen GRENZE ankommt, zählt als Beleg (nur als
+Nachrücker, und nie für einen Projekt-Wert — dort bleibt Klemmen ein Fund).
+
+**2. Der anzeige-Durchgang kannte die neuen Fremdjoker nicht.** Trittbrettfahrer
+und Gegenwette schreiben in dieselbe Marke `duell` wie Klau und Block; eine
+Verschiebung aus ihnen wäre als „unerklärter Rest" in der Tabelle gestanden.
+Zwei Fälle ergänzt, beide mit Vorzeichen (Trittbrett bewegt BEIDE Seiten, die
+Gegenwette kann den Angreifer ins Minus setzen).
+
+#### Was sich am Regelwerk NICHT geändert hat
+
+⚠️ **Nichts.** Kein neues Feld, keine geänderte Bedeutung, keine Migration.
+Was sich geändert hat, sind DEMO-Werte in `schaufenster.js` und die Prüf-Skripte.
+
+#### Was die nächste Session wissen muss
+
+- 🔴 **`SCHAU_AUSGENOMMEN` in `schaufenster.js`** ist eine Entscheidungs-Liste,
+  kein Ablagefach: 7 Einstellungen, die sich mit dem ausschließen, was die
+  Runde zeigt (`spiele.modus` hat genau einen Wert). Jede Zeile trägt ihren
+  Satz, und `ueberholteAusnahmen()` meldet eine, die nicht mehr stimmt.
+- 🔴 **Die Prüf-Zahl heißt `unerklaert`, nicht „Abdeckung".** 188/199 liest
+  sich wie ein Rest von 11 — der Rest ist begründet. `unerklaert` steht auf 0
+  und wird von drei Tests dort gehalten.
+- ⚠️ **`reglerWarnung.pruefe()` meldet auf der Schaufenster-Runde acht Punkte,
+  und das ist richtig.** Ein Regelwerk, in dem jede Einstellung von der Vorgabe
+  abweicht, verlässt zwangsläufig die Empfehlungsbänder. ⛔ **Nicht
+  glattziehen** — das wäre Balance-Arbeit (Endphase) an einer Prüfhilfe.
+- Die Runde umfasst jetzt **54 Spiele** (Bundesliga, Spieltag 1–6) statt 306:
+  `spiele.spieltagVon/Bis` gehören zu den vorgeführten Einstellungen. Wer im
+  Browser nachsieht: Beitritts-Code `ALLES`, und dem Screen ein bis zwei
+  Sekunden geben — der erste Render zeigt noch die Vorgabe-Runde.
+
+#### Offen für Andi (unverändert aus XIII, plus eine neue)
+
+1. **Sichtbarkeit je Fremdjoker** — er hat nur die SPERRFRIST einzeln benannt;
+   die Sichtbarkeit hat dieselbe Bauform bekommen. Zurückdrehen: zwei Zeilen.
+2. **PR2** — ob er neben `ALLES` eine RUHIGE Vorführ-Runde will. Diese hier ist
+   dicht, weil sie alles zeigt.
+
+---
+
+### 2026-08-23 (XIII) · 🔴 **Ein Wertungs-Fund** — und drei neue Prüfungen
 
 Branch `claude/fremdjoker-jk4-jk7-ehc5fw` · **2448 Tests grün** · neun
 Durchgänge ohne offenen Befund (außer der bekannten `wettbewerbe`-Lücke).

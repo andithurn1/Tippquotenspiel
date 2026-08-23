@@ -74,29 +74,44 @@ nicht dasselbe sind.
 
 ---
 
-## 📏 Abdeckung: 78 von 199 Einstellbarkeiten werden im Projekt vorgeführt
+## 📏 Abdeckung: 188 von 199 Einstellbarkeiten werden vorgeführt — der Rest hat Gründe
 
 `npm run einstellbar` (23.08.2026) beantwortet zwei Fragen, die vorher niemand
-stellte — und die zweite ist eine Zahl, die man kennen sollte:
+stellte: nimmt ein Feld überhaupt einen anderen Wert an, und überlebt er das
+Teilen? Die zweite Zahl daneben ist die, um die es Andi ging.
 
-**121 von 199 Blattfeldern werden NIRGENDS im Projekt anders gesetzt** als in
-der Vorgabe. Nicht in einem Preset, nicht in einem Charakter, nicht in einer
-Regler-Stufe, nicht im Schaufenster. Sie sind gebaut, geprüft, teilbar — und
-kein Mensch hat sie je vorgeführt.
+**Beim ersten Lauf: 78 von 199.** 121 Blattfelder wurden NIRGENDS im Projekt
+anders gesetzt als in der Vorgabe — nicht in einem Preset, nicht in einem
+Charakter, nicht in einer Regler-Stufe, nicht im Schaufenster. Gebaut, geprüft,
+teilbar, und von keinem Menschen je vorgeführt.
 
-⚠️ **Das ist kein Fehler und keine Aufgabe für heute.** Es ist die ehrliche
-Antwort darauf, wie viel von diesem Baukasten wirklich benutzt wird. Wer eine
-dieser Einstellungen im Browser sehen will, muss sie von Hand setzen.
+**Seit dem 23.08.2026: 188 von 199.** Das Schaufenster (`ALLES`) setzt jetzt
+jede Einstellung, die sich mit dem verträgt, was die Runde zeigt.
 
-Die Sperrklinke im Test lässt die Zahl steigen, nicht fallen: dünnt jemand ein
-Preset aus, fällt es dort auf.
+🔴 **Und hier steht der eigentliche Merksatz dieses Abschnitts**, weil an
+dieser Stelle vorher das Gegenteil stand: an derselben Stelle hieß es „⛔ die
+Zahl NICHT als Ziel behandeln“ — geschrieben von der Session, die die Messung
+gebaut hatte, mit einer an sich vernünftigen Begründung (eine Runde, die jeden
+Regler verstellt, liest sich niemand durch). Andis Auftrag lautete wörtlich
+anders: *„mach die demo runde bzw tests so dass sie alle Einstellbarkeiten
+abdeckt.“* **Ein eigener Vorbehalt ist keine Absage an eine Ansage** — er
+gehört daneben, nicht davor (CLAUDE.md, „UMFANG NIE EIGENMÄCHTIG KÜRZEN“).
 
-⛔ **Die Zahl NICHT als Ziel behandeln.** Ein Schaufenster, das jeden Regler
-auf einen anderen Wert stellt, nur damit eine Zahl 199 erreicht, ist eine
-Runde, die niemand lesen kann — und es behauptet Empfehlungen, wo keine sind.
-Die sieben Fremdjoker-Felder, die auf der Vorgabe bleiben, bleiben es mit
-Grund (verdeckte Schilde, „mitverdienen" ohne Deckel, ein Duell, das einen
-Joker kostet, den die Runde gar nicht verteilt).
+### Die 11 übrigen sind kein Rest, sondern eine Liste mit Gründen
+
+| Wo | Wie viele | Was das heißt |
+|---|---|---|
+| `SCHAU_AUSGENOMMEN` (schaufenster.js) | 7 | Einstellungen, die einander AUSSCHLIESSEN. `spiele.modus` hat genau einen Wert, und „teams“ zeigt eine andere Runde als „alle“. |
+| `GEKOPPELT` (einstellbarkeit.js) | 4 | Felder, die sich ohne ihren Partner gar nicht setzen lassen — `werWert` ohne `wer: abPlatz` ist keine Angabe, sondern ein Missverständnis. |
+
+⚠️ **Die Prüf-Zahl ist deshalb nicht die Abdeckung, sondern `unerklaert`:** ein
+Feld, das nirgends vorgeführt wird UND für das niemand einen Satz geschrieben
+hat. Sie steht auf 0 und wird von drei Tests dort gehalten.
+
+⛔ **Was weiter gilt:** die Werte im Schaufenster sind DEMO-Werte. Sie behaupten
+keine Empfehlung, und nichts davon gehört in `presets.js` oder `charaktere.js`.
+Dass `reglerWarnung.pruefe()` auf dieser Runde acht Meldungen wirft, ist der
+Beleg, dass die Warnungen greifen — nicht eine Aufgabe, sie stillzustellen.
 
 ---
 

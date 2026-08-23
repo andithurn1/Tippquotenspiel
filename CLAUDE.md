@@ -215,9 +215,17 @@ Dateien sind lang:
 🔴 **Zum Nachsehen im Browser gibt es zwei Demo-Runden**, nicht eine:
 `DEMO` („Freundeskreis") fährt die Vorgabe und hat fast alles AUS — richtig für
 den ersten Eindruck, unbrauchbar zum Prüfen. `ALLES` („Schaufenster") schaltet
-an, was man sehen soll, und hat Tipps, die es auslösen (`src/lib/schaufenster.js`).
+an, was man sehen soll, und hat Tipps, die es auslösen (`src/lib/schaufenster.js`)
+— seit dem 23.08.2026 mit **188 von 199** Einstellungen auf einem anderen Wert
+als der Vorgabe, gemessen von `npm run einstellbar`. Die 11 übrigen tragen je
+einen Satz (`SCHAU_AUSGENOMMEN` bzw. `GEKOPPELT`); die Zahl, die 0 sein muss,
+heißt `unerklaert`.
 ⛔ Die Zahlen darin sind DEMO-Werte, keine Empfehlung — nichts davon gehört in
 `presets.js` oder `charaktere.js`.
+⚠️ **Dass `reglerWarnung.pruefe()` auf dieser Runde anschlägt, ist RICHTIG** und
+darf nicht glattgezogen werden: ein Regelwerk, in dem jede Einstellung von der
+Vorgabe abweicht, verlässt zwangsläufig die Empfehlungsbänder. Eine stumme
+Ampel wäre hier der Fund.
 
 Erlaubnisse liegen in `.claude/settings.json` (committed) — Lesen/Schreiben,
 `git`, `npm`, `node`; nur Force-Pushes fragen nach. Da ist nichts einzurichten.
