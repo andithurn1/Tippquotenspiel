@@ -94,6 +94,23 @@ export default function Spielerstellung() {
   // auf „Wettbewerbe“ das gerade geöffnete Joker-Menü zuklappen.
   const [jokerOffen, setJokerOffen] = useState(false);
   const [modsOffen, setModsOffen] = useState(false);
+  // Zu einem Abschnitt der Kopfzeile springen (ST5). Über die Id statt über
+  // einen Ref, weil die Ziele in drei verschiedenen Ebenen liegen — ein Ref
+  // müsste durch zwei Komponenten durchgereicht werden, nur damit die
+  // Kopfzeile scrollen kann.
+  //
+  // ⚠️ `scroll-margin-top` an den Zielen: ohne das schöbe sich die klebende
+  // Kopfzeile über die Überschrift, zu der man gerade gesprungen ist.
+  //
+  // ⚠️ OHNE `behavior: "smooth"`, und das ist gemessen: damit passierte im
+  // Browser GAR NICHTS. Der Klick kam an (das Menü klappte auf), der Scroll
+  // blieb aus. Ein Sprung, der je nach Umgebung stumm ausfällt, ist schlechter
+  // als einer, der immer stattfindet — und die Vorgabe `auto` respektiert
+  // außerdem die Systemeinstellung „Bewegung reduzieren".
+  const springZu = (id) => {
+    const el = typeof document !== "undefined" && document.getElementById(id);
+    if (el) el.scrollIntoView({ block: "start" });
+  };
   const [wertungOffen, setWertungOffen] = useState(false);
   const [verlaufOffen, setVerlaufOffen] = useState(false);
   const [saisonOffen, setSaisonOffen] = useState(false);
@@ -411,8 +428,36 @@ export default function Spielerstellung() {
         // Bildschirmkanten, ohne den Aufbau zu verschieben.
         background: C.ink, margin: "0 -16px", padding: "0 16px",
       }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flexShrink: 0 }}>
           <BackLink href="/menu" label="Menü" />
+        </div>
+        {/* 🔴 ST5 (Andis Folie 1, gebaut am 23.08.2026): Bibliothek · Gamemode ·
+            GameCode in der Kopfzeile.
+
+            Sie zeigen den STAND und springen zu ihrem Abschnitt — deshalb
+            gehören sie hierher und nicht in den Fließtext: alle drei sind
+            Fragen, die man MITTENDRIN stellt („welche Vorlage war das noch?",
+            „spiele ich gerade Budget?", „habe ich schon einen Code?"), und die
+            Antwort stand bisher nur ganz oben oder ganz unten.
+
+            ⚠️ Die Werte sind ABGELESEN, nicht gemerkt: ein eigener Zustand
+            neben `presetKey`/`rules`/`shortCode` wäre die zweite Wahrheit, vor
+            der die Runden-Schicht in CLAUDE.md warnt. */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6, minWidth: 0,
+          // Bei drei Chips auf 375 px darf die ZEILE scrollen, nie die Seite.
+          overflowX: "auto", justifyContent: "flex-end", flex: 1,
+        }}>
+          <KopfChip icon="📚" titel="Bibliothek — welche Vorlage gerade gilt"
+            wert={PRESETS.find((p) => p.key === presetKey)?.label
+              ?? CHARAKTERE.find((c) => c.key === charakterKey)?.label ?? "eigenes"}
+            onClick={() => { setAuswahlOffen("empfehlungen"); springZu("bibliothek"); }} />
+          <KopfChip icon="🎮" titel="Gamemode — Quotentippen oder Budget"
+            wert={rules.joker?.modus === "einsatz" ? "Budget" : "Quoten"}
+            onClick={() => springZu("gamemode")} />
+          <KopfChip icon="🔑" titel="GameCode — der kurze Code zum Teilen"
+            wert={shortCode ?? "—"}
+            onClick={() => springZu("gamecode")} />
         </div>
       </div>
       <div style={{
@@ -488,7 +533,9 @@ export default function Spielerstellung() {
           {/* ── Variantenwahl: Andis ERSTE Frage ──────────────────
               Steht vor den Voreinstellungen, weil sie als einzige alles
               Nachfolgende verändert. In BEIDEN Ansichten (ST2). */}
-          <VariantenWahl rules={rules} onWaehlen={waehleVariante} />
+          <div id="gamemode" style={{ scrollMarginTop: 64 }}>
+            <VariantenWahl rules={rules} onWaehlen={waehleVariante} />
+          </div>
 
           <RundenCharaktere
             gewaehlt={charakterKey}
@@ -693,6 +740,7 @@ export default function Spielerstellung() {
               Voreinstellungen sind jederzeit abrufbar — nur nicht mehr als
               fünf offene Karten zwischen Auswahl und Reglern. Welche gerade
               gilt, steht rechts in der Zeile. */}
+          <div id="bibliothek" style={{ scrollMarginTop: 64 }} />
           <GrosseZeile
             icon="📚" titel="Empfehlungen verwalten"
             wert={PRESETS.find((p) => p.key === presetKey)?.label ?? "eigenes"}
@@ -1019,6 +1067,7 @@ export default function Spielerstellung() {
           )}
 
           {/* Creator-Code */}
+          <div id="gamecode" style={{ scrollMarginTop: 64 }} />
           <SectionTitle>Creator-Code</SectionTitle>
           <div style={{
             background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12,
@@ -1083,6 +1132,28 @@ export default function Spielerstellung() {
   );
 }
 
+
+// ── Ein Chip der Kopfzeile (ST5) ────────────────────────────
+// Zeigt einen Stand und springt zu seinem Abschnitt. Bewusst schmal: auf
+// 375 px stehen drei davon neben „Menü“, und der Wert ist die Information —
+// die Beschriftung steckt im Symbol und im `title`.
+function KopfChip({ icon, wert, titel, onClick }) {
+  return (
+    <button onClick={onClick} title={titel} style={{
+      display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
+      minHeight: 44, boxSizing: "border-box", cursor: "pointer",
+      fontFamily: "inherit", fontSize: 12, padding: "4px 10px",
+      background: C.surface, color: C.text,
+      border: `1px solid ${C.line}`, borderRadius: 999,
+    }}>
+      <span style={{ fontSize: 13, lineHeight: 1 }}>{icon}</span>
+      <span style={{
+        fontFamily: MONO, fontSize: 11, color: C.muted,
+        maxWidth: 88, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>{wert}</span>
+    </button>
+  );
+}
 
 function SectionTitle({ children }) {
   return (
