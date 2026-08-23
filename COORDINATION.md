@@ -126,10 +126,76 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
-### 2026-08-23 (XII) · **Die Fremdjoker-Familie ist vollständig** — JK4–JK7, JK12, JK14
+### 2026-08-23 (XIII) · 🔴 **Ein Wertungs-Fund** — und drei neue Prüfungen
 
 > **👉 Frische Session: DAS ist dein Einstieg.** Alles darunter ist Historie.
 > Arbeitsordner: **`C:\Dev\Tippquotenspiel`**.
+
+Branch `claude/fremdjoker-jk4-jk7-ehc5fw` · **2448 Tests grün** · neun
+Durchgänge ohne offenen Befund (außer der bekannten `wettbewerbe`-Lücke).
+
+#### 🔴🔴 Der Fund: Fremdjoker wirkten auf dem FALSCHEN Spieltag
+
+Gefunden beim prüfenden Lesen der eigenen Arbeit, nicht von einem Test.
+
+Die Einsätze trugen den LIGA-Spieltag. Der Verlauf ist aber nach der
+CHRONOLOGISCHEN Position über alle Wettbewerbe geordnet. Gemessen an vier
+echten Spielen (bl#1 · bl#2 · cl#1 · cl#2):
+
+> ein Klau, gesetzt am **CL-Spieltag 2**, wirkte auf den **Bundesliga-Spieltag 2**
+
+Er nahm Punkte von einem ganz anderen Tag ab. Nichts wurde rot. Bei EINEM
+Wettbewerb sind beide Zahlen dieselbe — genau deshalb ist es nie aufgefallen.
+
+⚠️ **Die naheliegende Reparatur war ebenfalls falsch.** `rundenSpieltagVon`
+zählt die Spieltage der ZEITACHSE, und die bündelt anders (34
+Bundesliga-Spieltage → 42 Achsen-Positionen). Maßgeblich ist
+`verlaufPositionen(entries)` (neu in `spieltag.js`): abgeleitet aus DERSELBEN
+Liste, aus der auch der Verlauf entsteht.
+
+**🔴 ZWEI SKALEN, die nie verglichen werden dürfen** — die Tabelle steht in
+`design/roadmap.md`. Kurzform: die Wertung rechnet in Verlaufs-Positionen, die
+Prüfung und die Oberfläche in Runden-Spieltagen der Zeitachse. Die
+Schutzregeln (`maxProZiel`, `immun`, `sperrfristJeZiel`) leben GANZ in der
+zweiten. **Wer eine davon in die Wertung zieht, muss zuerst die Tabelle
+auflösen.**
+
+#### Drei neue Prüfungen
+
+| | |
+|---|---|
+| **`npm run einstellbar`** (neu, der neunte) | Nimmt JEDES Blatt des Regelwerks einen anderen Wert an — und überlebt er den Creator-Code? Kandidaten werden GEERNTET, nicht gepflegt. Ergebnis: 0 Funde · 2 begründet gekoppelt · **Abdeckung 78/199** |
+| **`greift` Teil 3 vollständig** | `tabellenBonus` hatte als letzter Block keinen Messfall (bewegt 2625 Punkte). Zum ersten Mal ist keiner mehr stumm |
+| **Drei Fremdjoker-Warnungen** | `reglerWarnung.js` kannte die Familie gar nicht — es fragte `duell.enabled` und übersah zwei der vier Arten |
+
+#### 🔴 Die zweite Demo-Runde: Code `ALLES`
+
+`DEMO` fährt die Vorgabe und hat fast alles AUS — richtig für den ersten
+Eindruck, **unbrauchbar zum Prüfen**. `ALLES` („Schaufenster") schaltet an, was
+man sehen soll, und hat Tipps, die es auslösen.
+
+⛔ Die Zahlen darin sind DEMO-Werte. Nichts davon gehört in `presets.js` oder
+`charaktere.js`.
+
+⚠️ **Der Fund beim Bauen:** eine Runde ohne Tipps hat eine LEERE Tabelle — und
+die Tabelle ist die Zielliste. Also kein Ziel, also fehlte der ganze
+Fremdjoker-Block. Im Betrieb löst sich das über den Zwei-Phasen-Spieltag von
+selbst.
+
+#### ❓ Offen für Andi
+
+1. Die **Sichtbarkeit** steht jetzt auch je Art — er hat nur die Sperrfrist
+   einzeln benannt. Zurückdrehen kostet zwei Zeilen.
+2. **121 von 199 Blattfeldern** werden nirgends im Projekt vorgeführt. Kein
+   Fehler, aber eine Zahl, die er kennen sollte — ⛔ **nicht als Ziel
+   behandeln**, Begründung in der Roadmap.
+
+---
+
+### 2026-08-23 (XII) · **Die Fremdjoker-Familie ist vollständig** — JK4–JK7, JK12, JK14
+
+> ⚠️ **Nicht mehr der Einstieg** — der steht im Eintrag (XIII) darüber. Alles
+> hier gilt weiter.
 
 Branch `claude/fremdjoker-jk4-jk7-ehc5fw` · **2415 Tests grün** · alle acht
 Abnahmen ohne neuen Befund.
