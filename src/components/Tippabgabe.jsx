@@ -25,7 +25,7 @@ import { duellPlan, einsaetzeAusTipps } from "@/lib/duellJoker";
 // übersehen. `zulaessigeZiele` kommt aus derselben Datei, weil nur diese
 // Fassung die Sperrfrist je Ziel (JK5) durchreicht.
 import {
-  aktiveArten, familieAn, zulaessigeZiele, gegenwetteVorschau,
+  aktiveArten, familieAn, zulaessigeZiele, gegenwetteVorschau, zieleJeArt, sperrGrund,
 } from "@/lib/fremdjoker";
 import { FREMDJOKER_ARTEN, jokerArtVon } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
@@ -688,11 +688,20 @@ export default function Tippabgabe({ matchId }) {
   // (`alleTipps`, dieselbe Liste wie beim Narren-Kontostand oben) —
   // `zulaessigeZiele` filtert selbst auf den eigenen Nutzer.
   const bisherigeDuellEinsaetze = einsaetzeAusTipps(alleTippsRunde);
-  const duellZulaessig = istDuellSpieltag
-    ? zulaessigeZiele(board, user?.id, RULES, {
+  // 🔴 Seit die Sperrfrist JE FREMDJOKER steht (JK5, Ebene 2), ist „ist Kemal
+  // ein erlaubtes Ziel?" ohne die Art nicht mehr beantwortbar: der Block kann
+  // gesperrt sein, während der Trittbrettfahrer frei ist.
+  //
+  // Deshalb zwei Listen statt einer: die ZIELLISTE zeigt jeden, den irgendeine
+  // Art hergibt, und die ART-Knöpfe darunter sperren sich einzeln. Ein Ziel
+  // ganz zu verstecken, nur weil eine von vier Arten es nicht darf, wäre die
+  // schlechtere Hälfte — der Spieler suchte den Namen und fände ihn nicht.
+  const zieleProArt = istDuellSpieltag
+    ? zieleJeArt(board, user?.id, RULES, {
         bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
       })
-    : [];
+    : {};
+  const duellZulaessig = [...new Set(Object.values(zieleProArt).flat())];
 
   // 🔴 Was eine Gegenwette einbringt, steht VOR dem Setzen da — sie ist die
   // einzige der vier Arten, deren Ertrag nicht an den Punkten des Ziels hängt,
@@ -986,8 +995,11 @@ export default function Tippabgabe({ matchId }) {
       }
       let duellSicher = null;
       if (istDuellSpieltag && !gesperrt && duellZiel && duellTypGewaehlt) {
+        // ⚠️ MIT der gewählten Art — sonst prüft das Speichern gegen eine
+        // andere Sperre als die, die der Knopf gezeigt hat.
         const zulaessigJetzt = zulaessigeZiele(board, user.id, RULES, {
           bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
+          art: duellTypGewaehlt,
         });
         // Die Kosten-Prüfung steht VOR den Kontingent-Klassen: sie ist die
         // gröbere Frage („kann ich zahlen"), und sie hat eine eigene
@@ -1495,11 +1507,16 @@ export default function Tippabgabe({ matchId }) {
                         {duellTypenErlaubt.map((typKey) => {
                           const info = FREMDJOKER_ARTEN.find((d) => d.key === typKey);
                           const on = duellTypGewaehlt === typKey;
+                          // Diese Art bei DIESEM Ziel gerade nicht möglich?
+                          // Dann wird der Knopf stumpf — und der Grund steht
+                          // darunter, statt dass der Spieler ihn sucht.
+                          const geht = (zieleProArt[typKey] ?? []).includes(duellZiel);
+                          const zu = gesperrt || (!geht && !on);
                           return (
-                            <button key={typKey} disabled={gesperrt}
+                            <button key={typKey} disabled={zu}
                               onClick={() => setDuellTypGewaehlt(on ? null : typKey)} style={{
-                                cursor: gesperrt ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
-                                padding: "8px 14px", borderRadius: RUND.pille,
+                                cursor: zu ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                                padding: "8px 14px", borderRadius: RUND.pille, opacity: zu ? 0.45 : 1,
                                 background: on ? `${C.coral}22` : C.surface,
                                 color: on ? C.coral : C.muted,
                                 border: `1px solid ${on ? C.coral + "77" : C.line}`,
@@ -1508,6 +1525,24 @@ export default function Tippabgabe({ matchId }) {
                         })}
                       </div>
                     )}
+                    {/* 🔴 Warum eine Art gerade stumpf ist. Der Text kommt aus
+                        `sperrGrund` — dieselbe Rechnung, mit der das Speichern
+                        entscheidet. Ein „geht nicht" ohne Grund liest sich wie
+                        ein Fehler, und der Spieler sucht ihn dann bei sich. */}
+                    {duellZiel && duellTypenErlaubt
+                      .filter((k) => !(zieleProArt[k] ?? []).includes(duellZiel))
+                      .map((k) => sperrGrund(RULES, {
+                        art: k, vonUserId: user?.id, aufUserId: duellZiel,
+                        bisherigeEinsaetze: bisherigeDuellEinsaetze,
+                        aktuellerSpieltag: meinSpieltagRunde,
+                      }))
+                      .filter(Boolean)
+                      .map((g) => (
+                        <p key={g.art} style={{ fontSize: 11, color: C.coral, marginTop: 6, lineHeight: 1.45 }}>
+                          {g.text}
+                        </p>
+                      ))}
+
                     {/* Die Beschreibung der gewählten Art — vier Arten sind
                         drei zu viel, um sie sich zu merken. */}
                     {duellTypGewaehlt && (

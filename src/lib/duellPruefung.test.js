@@ -97,7 +97,7 @@ describe("Die Schutzregeln greifen jetzt auch am Store", () => {
       tip: { home: 1, away: 0, duell: { auf: "u-lena", typ: "klau" } },
     });
     expect(r.erlaubt).toBe(false);
-    expect(r.grund).toContain("keine Duell-Joker");
+    expect(r.grund).toContain("keine Fremdjoker");
   });
 
   it("ein Ziel, das nicht in der Runde ist, fällt nicht still durch", async () => {

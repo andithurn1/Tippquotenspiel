@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   aktiveArten, familieAn, familieSchalten, beschreibeFremdjoker,
   zulaessigeZiele, trefferWahrscheinlichkeit, tippGetroffen, gegenwetteVorschau,
-  fremdEinsaetze, eingriffFenster, offeneEingriffe,
+  fremdEinsaetze, eingriffFenster, offeneEingriffe, zieleJeArt, sperrGrund,
   konflikte, zweiPhasenHinweis,
 } from "@/lib/fremdjoker";
 import { DEFAULT_EINGRIFFE } from "@/lib/eingriffe";
@@ -128,54 +128,111 @@ describe("familieSchalten — der eine Griff", () => {
 });
 
 // ── 3) JK5: die Sperrfrist je Ziel ──────────────────────────
-describe("zulaessigeZiele — JK5 Sperrfrist je Ziel", () => {
+describe("zulaessigeZiele — JK5, drei Ebenen tief", () => {
   const board = [
     { userId: "a", name: "A", total: 10 },
     { userId: "b", name: "B", total: 10 },
     { userId: "c", name: "C", total: 10 },
   ];
-  const basis = (teil = {}) => R({
-    duell: { ...DEFAULT_DUELL, enabled: true, zielWahl: "frei", maxProZiel: 6, immun: 0 },
-    eingriffe: { ...DEFAULT_EINGRIFFE, ...teil },
+  const basis = (sperrfrist, typen = ["klau", "block"]) => R({
+    duell: { ...DEFAULT_DUELL, enabled: true, typen, zielWahl: "frei", maxProZiel: 6, immun: 0 },
+    eingriffe: { ...DEFAULT_EINGRIFFE, ...(sperrfrist ? { sperrfrist } : {}) },
   });
+  const treffer = (spieltag, typ = "klau", von = "a") =>
+    ({ spieltag, vonUserId: von, aufUserId: "b", typ });
 
   it("ohne Sperrfrist (Vorgabe 0) ändert sich nichts", () => {
-    const bisherigeEinsaetze = [{ spieltag: 8, vonUserId: "a", aufUserId: "b", typ: "klau" }];
-    expect(zulaessigeZiele(board, "a", basis(), { bisherigeEinsaetze, aktuellerSpieltag: 9 }))
-      .toContain("b");
+    expect(zulaessigeZiele(board, "a", basis(null), {
+      bisherigeEinsaetze: [treffer(8)], aktuellerSpieltag: 9, art: "klau",
+    })).toContain("b");
   });
 
   // 🔴 Der Kern von JK5: DERSELBE darf nicht wieder, ein ANDERER schon.
   it("sperrt nur das Paar — ein anderer Angreifer darf dasselbe Ziel weiter treffen", () => {
-    const bisherigeEinsaetze = [{ spieltag: 8, vonUserId: "a", aufUserId: "b", typ: "klau" }];
-    const rules = basis({ sperrfristJeZiel: 3 });
-    expect(zulaessigeZiele(board, "a", rules, { bisherigeEinsaetze, aktuellerSpieltag: 9 }))
-      .not.toContain("b");
-    expect(zulaessigeZiele(board, "c", rules, { bisherigeEinsaetze, aktuellerSpieltag: 9 }))
-      .toContain("b");
+    const rules = basis({ standard: { spieltage: 3 } });
+    const args = { bisherigeEinsaetze: [treffer(8)], aktuellerSpieltag: 9, art: "klau" };
+    expect(zulaessigeZiele(board, "a", rules, args)).not.toContain("b");
+    expect(zulaessigeZiele(board, "c", rules, args)).toContain("b");
   });
 
   it("nach Ablauf der Frist ist dasselbe Ziel wieder erlaubt", () => {
-    const bisherigeEinsaetze = [{ spieltag: 8, vonUserId: "a", aufUserId: "b", typ: "klau" }];
-    const rules = basis({ sperrfristJeZiel: 3 });
-    expect(zulaessigeZiele(board, "a", rules, { bisherigeEinsaetze, aktuellerSpieltag: 11 }))
-      .toContain("b");
+    const rules = basis({ standard: { spieltage: 3 } });
+    expect(zulaessigeZiele(board, "a", rules, {
+      bisherigeEinsaetze: [treffer(8)], aktuellerSpieltag: 11, art: "klau",
+    })).toContain("b");
+  });
+
+  // ── Ebene 2: je Fremdjoker eine eigene Zahl (Andi, 23.08.2026) ──
+  it("der Block kann gesperrt sein, während der Trittbrettfahrer frei ist", () => {
+    const rules = R({
+      duell: { ...DEFAULT_DUELL, enabled: true, typen: ["block"], zielWahl: "frei", maxProZiel: 6, immun: 0 },
+      eingriffe: {
+        ...DEFAULT_EINGRIFFE,
+        trittbrett: { ...DEFAULT_EINGRIFFE.trittbrett, enabled: true },
+        sperrfrist: { standard: { spieltage: 0 }, block: { spieltage: 4 } },
+      },
+    });
+    const args = { bisherigeEinsaetze: [treffer(8, "block")], aktuellerSpieltag: 9 };
+    expect(zulaessigeZiele(board, "a", rules, { ...args, art: "block" })).not.toContain("b");
+    expect(zulaessigeZiele(board, "a", rules, { ...args, art: "trittbrett" })).toContain("b");
+    // Und dieselbe Auskunft in EINEM Aufruf, für die Oberfläche:
+    const jeArt = zieleJeArt(board, "a", rules, args);
+    expect(jeArt.block).not.toContain("b");
+    expect(jeArt.trittbrett).toContain("b");
+  });
+
+  it("ein Block-Treffer sperrt den Klau nicht — jede Art zählt ihre eigenen", () => {
+    const rules = basis({ standard: { spieltage: 4 } });
+    const args = { bisherigeEinsaetze: [treffer(8, "block")], aktuellerSpieltag: 9 };
+    expect(zulaessigeZiele(board, "a", rules, { ...args, art: "block" })).not.toContain("b");
+    expect(zulaessigeZiele(board, "a", rules, { ...args, art: "klau" })).toContain("b");
+  });
+
+  // ── Ebene 3: der wachsende Cooldown, Andis eigenes Beispiel ──
+  it("kein Verbot beim zweiten Mal — aber danach wächst die Wartezeit", () => {
+    const rules = basis({ standard: { spieltage: 0, aufschlag: 2 } });
+    const art = "klau";
+    // Einmal getroffen (Spieltag 8) → direkt am nächsten Spieltag wieder frei.
+    expect(zulaessigeZiele(board, "a", rules, {
+      bisherigeEinsaetze: [treffer(8)], aktuellerSpieltag: 9, art,
+    })).toContain("b");
+    // Zweimal getroffen (8 und 9) → jetzt greift die gewachsene Sperre.
+    const zweimal = [treffer(8), treffer(9)];
+    expect(zulaessigeZiele(board, "a", rules, {
+      bisherigeEinsaetze: zweimal, aktuellerSpieltag: 10, art,
+    })).not.toContain("b");
+    // Zwei Spieltage später ist er wieder frei.
+    expect(zulaessigeZiele(board, "a", rules, {
+      bisherigeEinsaetze: zweimal, aktuellerSpieltag: 11, art,
+    })).toContain("b");
+  });
+
+  // 🔴 Ein „geht nicht" ohne Grund liest sich wie ein Fehler.
+  it("`sperrGrund` sagt, WARUM gesperrt ist und BIS WANN", () => {
+    const rules = basis({ standard: { spieltage: 0, aufschlag: 2 } });
+    const grund = sperrGrund(rules, {
+      art: "klau", vonUserId: "a", aufUserId: "b",
+      bisherigeEinsaetze: [treffer(8), treffer(9)], aktuellerSpieltag: 10,
+    });
+    expect(grund.dauer).toBe(2);
+    expect(grund.frei).toBe(11);
+    expect(grund.text).toContain("gewachsen");
+    // Wo nichts gesperrt ist, gibt es auch keinen Grund.
+    expect(sperrGrund(rules, {
+      art: "klau", vonUserId: "a", aufUserId: "c",
+      bisherigeEinsaetze: [treffer(8)], aktuellerSpieltag: 10,
+    })).toBeNull();
   });
 
   // 🔴 BEFUND vom 23.08.2026, hier festgehalten: `maxProZiel` und `immun`
   // zählten bis dahin nur die EIGENEN Einsätze — obwohl ihre Karte „Schutz
   // der Getroffenen" heißt und der Hinweis darunter verspricht, dass sich
-  // nicht die ganze RUNDE auf eine Person einschießt. Pro Angreifer gerechnet
-  // verhinderte das genau nichts.
+  // nicht die ganze RUNDE auf eine Person einschießt.
   it("`maxProZiel` schützt das Ziel vor der RUNDE, nicht nur vor einem Angreifer", () => {
     const rules = R({
       duell: { ...DEFAULT_DUELL, enabled: true, zielWahl: "frei", maxProZiel: 2, immun: 0 },
     });
-    const bisherigeEinsaetze = [
-      { spieltag: 5, vonUserId: "c", aufUserId: "b", typ: "klau" },
-      { spieltag: 6, vonUserId: "d", aufUserId: "b", typ: "klau" },
-    ];
-    // „a" hat „b" noch nie getroffen — trotzdem ist „b" ausgeschöpft.
+    const bisherigeEinsaetze = [treffer(5, "klau", "c"), treffer(6, "klau", "d")];
     expect(zulaessigeZiele(board, "a", rules, { bisherigeEinsaetze, aktuellerSpieltag: 9 }))
       .not.toContain("b");
   });
@@ -184,7 +241,7 @@ describe("zulaessigeZiele — JK5 Sperrfrist je Ziel", () => {
     const rules = R({
       duell: { ...DEFAULT_DUELL, enabled: true, zielWahl: "frei", maxProZiel: 6, immun: 3 },
     });
-    const bisherigeEinsaetze = [{ spieltag: 8, vonUserId: "c", aufUserId: "b", typ: "klau" }];
+    const bisherigeEinsaetze = [treffer(8, "klau", "c")];
     expect(zulaessigeZiele(board, "a", rules, { bisherigeEinsaetze, aktuellerSpieltag: 9 }))
       .not.toContain("b");
     expect(zulaessigeZiele(board, "a", rules, { bisherigeEinsaetze, aktuellerSpieltag: 12 }))
@@ -481,5 +538,58 @@ describe("konflikte und der ehrliche Hinweis", () => {
     expect(text).toMatch(/zweimal pro Spieltag/);
     expect(text).toMatch(/1 Tag später/);
     expect(text).toMatch(/Büro-Runde/);
+  });
+});
+
+// ── JK15/Q2: mehrere Fremdjoker an EINEM Spieltag ───────────
+// 🔴 Andis Entscheidung vom 23.08.2026: mehrere ja, aber auf VERSCHIEDENE
+// Spiele. Vorher war `duell.proSpieltag` (1–3) wirkungslos — gemessen ergaben
+// 1, 2 und 3 dreimal dasselbe, weil hier hart „ein Einsatz je Spieler und
+// Spieltag" stand.
+describe("fremdEinsaetze — wie viele je Spieltag", () => {
+  const tipp = (matchId, kickoff, typ, auf) => ({
+    userId: "a", matchday: 5, matchId, kickoff,
+    tip: { home: 1, away: 1, duell: { auf, typ } },
+  });
+  const zwei = [
+    tipp("m2", "2026-09-05T18:30:00Z", "gegenwette", "c"),
+    tipp("m1", "2026-09-05T15:30:00Z", "block", "b"),
+  ];
+  const mitArten = (proSpieltag) => ({
+    ...DEFAULT_RULES,
+    duell: { ...DEFAULT_DUELL, enabled: true, typen: ["klau", "block"], proSpieltag },
+    eingriffe: {
+      ...DEFAULT_EINGRIFFE,
+      gegenwette: { ...DEFAULT_EINGRIFFE.gegenwette, enabled: true },
+    },
+  });
+
+  it("bei `proSpieltag: 1` kommt genau einer durch — der mit dem frühesten Anpfiff", () => {
+    const raus = fremdEinsaetze(zwei, mitArten(1));
+    expect(raus).toHaveLength(1);
+    expect(raus[0].matchId).toBe("m1");
+  });
+
+  // 🔴 Der Fall, der vorher still verschwand: blocken UND gegenwetten am
+  // selben Spieltag, auf zwei verschiedenen Spielen.
+  it("bei `proSpieltag: 2` kommen beide durch — auf verschiedenen Spielen", () => {
+    const raus = fremdEinsaetze(zwei, mitArten(2));
+    expect(raus).toHaveLength(2);
+    expect(raus.map((e) => e.matchId).sort()).toEqual(["m1", "m2"]);
+    expect(raus.map((e) => e.typ).sort()).toEqual(["block", "gegenwette"]);
+  });
+
+  it("die Reihenfolge der Eingabe ändert nichts am Ergebnis", () => {
+    const vorwaerts = fremdEinsaetze(zwei, mitArten(1));
+    const rueckwaerts = fremdEinsaetze([...zwei].reverse(), mitArten(1));
+    expect(rueckwaerts).toEqual(vorwaerts);
+  });
+
+  it("verschiedene Spieltage sind ohnehin unabhängig", () => {
+    const ueberZweiTage = [
+      tipp("m1", "2026-09-05T15:30:00Z", "block", "b"),
+      { ...tipp("m9", "2026-09-12T15:30:00Z", "block", "b"), matchday: 6 },
+    ];
+    expect(fremdEinsaetze(ueberZweiTage, mitArten(1))).toHaveLength(2);
   });
 });

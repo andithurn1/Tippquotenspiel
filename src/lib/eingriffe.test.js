@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   FREMDJOKER_ARTEN, GEGEN_STUFEN, GEGEN_MODI, jokerArtVon,
-  EINGRIFF_LIMITS, DEFAULT_EINGRIFFE, sanitizeEingriffe,
+  EINGRIFF_LIMITS, DEFAULT_EINGRIFFE, DEFAULT_SPERRE, sanitizeEingriffe,
+  sanitizeSperrKarte, sperreFuer, wartezeit,
   gegenquote, gegenwetteErtrag,
 } from "@/lib/eingriffe";
 import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
@@ -64,11 +65,11 @@ describe("sanitizeEingriffe", () => {
 
   it("Zahlen werden auf EINGRIFF_LIMITS beschnitten", () => {
     const r = sanitizeEingriffe({
-      sperrfristJeZiel: 99,
+      sperrfrist: { standard: { spieltage: 99 } },
       trittbrett: { anteil: 5, kopierterBekommt: -3 },
       gegenwette: { einsatz: 0 },
     });
-    expect(r.sperrfristJeZiel).toBe(EINGRIFF_LIMITS.sperrfristJeZiel.max);
+    expect(r.sperrfrist.standard.spieltage).toBe(EINGRIFF_LIMITS.spieltage.max);
     expect(r.trittbrett.anteil).toBe(EINGRIFF_LIMITS.anteil.max);
     expect(r.trittbrett.kopierterBekommt).toBe(EINGRIFF_LIMITS.kopierterBekommt.min);
     // JK10: eine Gegenwette ohne Einsatz gibt es nicht — 0 fällt auf das Minimum.
@@ -83,8 +84,68 @@ describe("sanitizeEingriffe", () => {
 
   it("ist im Regelwerk verankert und läuft durch sanitizeRules", () => {
     expect(DEFAULT_RULES.eingriffe).toEqual(DEFAULT_EINGRIFFE);
-    expect(sanitizeRules({ ...DEFAULT_RULES, eingriffe: { sperrfristJeZiel: 999 } }).eingriffe.sperrfristJeZiel)
-      .toBe(EINGRIFF_LIMITS.sperrfristJeZiel.max);
+    expect(sanitizeRules({ ...DEFAULT_RULES, eingriffe: { sperrfrist: { standard: { spieltage: 999 } } } })
+      .eingriffe.sperrfrist.standard.spieltage).toBe(EINGRIFF_LIMITS.spieltage.max);
+  });
+});
+
+// ── JK5, drei Ebenen tief ───────────────────────────────────
+// 🔴 Andis Ansage vom 23.08.2026: „für jeden Joker Sperrfrist einzeln
+// einstellbar, und mach bei sowas auch weitere Option zur Feineinstellung
+// durch weiteren Klick … sodass sich bspw. einstellen lässt, es gibt nicht das
+// Verbot, das doppelt hintereinander einzusetzen, aber der Cooldown verändert
+// sich dadurch eben."
+describe("Sperrfrist: Standard, Abweichung je Art, Verhalten", () => {
+  it("die Karte speichert nur, was wirklich abweicht", () => {
+    const k = sanitizeSperrKarte({ standard: { spieltage: 2 }, block: { spieltage: 5 }, klau: {} });
+    expect(k.standard).toEqual({ ...DEFAULT_SPERRE, spieltage: 2 });
+    expect(k.block).toEqual({ spieltage: 5 });
+    // `klau` weicht nicht ab → steht gar nicht erst in der Karte.
+    expect(k.klau).toBeUndefined();
+    // Unbekannte Schlüssel fliegen raus.
+    expect(sanitizeSperrKarte({ quatsch: { spieltage: 3 } }).quatsch).toBeUndefined();
+  });
+
+  it("`sperreFuer` legt die Abweichung über den Standard — je Art", () => {
+    const eg = { sperrfrist: { standard: { spieltage: 2 }, block: { spieltage: 5 } } };
+    expect(sperreFuer("block", eg).spieltage).toBe(5);
+    expect(sperreFuer("klau", eg).spieltage).toBe(2);
+    // Auch ohne Art: der Standard.
+    expect(sperreFuer(null, eg).spieltage).toBe(2);
+  });
+
+  // 🔴 DIE Formel, an einem durchgerechneten Fall. Beide Verhalten aus EINER
+  // Zeile — das ist der Grund, warum es kein zusätzliches Modus-Feld gibt.
+  it("`aufschlag: 0` ist die feste Sperre, die es immer gab", () => {
+    const fest = { spieltage: 2, aufschlag: 0, hoechstens: 0 };
+    expect(wartezeit(fest, 1)).toBe(2);
+    expect(wartezeit(fest, 2)).toBe(2);
+    expect(wartezeit(fest, 5)).toBe(2);
+  });
+
+  it("Andis Fall: kein Verbot beim zweiten Mal, aber der Cooldown wächst dadurch", () => {
+    const wachsend = { spieltage: 0, aufschlag: 2, hoechstens: 0 };
+    // Einmal getroffen → gar keine Wartezeit, direkt wieder erlaubt.
+    expect(wartezeit(wachsend, 1)).toBe(0);
+    // Und GENAU DADURCH wächst sie: vor dem dritten sind es 2 Spieltage.
+    expect(wartezeit(wachsend, 2)).toBe(2);
+    expect(wartezeit(wachsend, 3)).toBe(4);
+    expect(wartezeit(wachsend, 4)).toBe(6);
+  });
+
+  it("`hoechstens` deckelt die gewachsene Wartezeit", () => {
+    const gedeckelt = { spieltage: 0, aufschlag: 2, hoechstens: 4 };
+    expect(wartezeit(gedeckelt, 3)).toBe(4);
+    expect(wartezeit(gedeckelt, 9)).toBe(4);
+  });
+
+  it("ohne Treffer gibt es nie eine Wartezeit", () => {
+    expect(wartezeit({ spieltage: 9, aufschlag: 9 }, 0)).toBe(0);
+  });
+
+  it("die Vorgabe ändert an bestehenden Runden nichts", () => {
+    expect(DEFAULT_EINGRIFFE.sperrfrist.standard).toEqual(DEFAULT_SPERRE);
+    expect(wartezeit(DEFAULT_SPERRE, 5)).toBe(0);
   });
 });
 

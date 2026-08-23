@@ -73,7 +73,7 @@ import { jokerPlan, SICHTBARKEIT } from "./jokerPlan";
 // selbst NICHTS — deshalb ist dieser Import zyklusfrei, anders als ein Import
 // von `fremdjoker.js` (das umgekehrt diese Datei liest). Siehe den
 // Kopfkommentar dort; die Aufteilung existiert genau aus diesem Grund.
-import { sanitizeEingriffe, gegenwetteErtrag } from "./eingriffe";
+import { sanitizeEingriffe, gegenwetteErtrag, wartezeit } from "./eingriffe";
 
 // ── Kataloge ────────────────────────────────────────────────
 
@@ -354,16 +354,21 @@ export function duellPlan({ spieltage = 34, duell = DEFAULT_DUELL, basis, seed =
 // `[{ spieltag, vonUserId, aufUserId, typ, spielIds }]` — daraus ergeben sich
 // `maxProZiel` (wie oft ein Ziel schon getroffen wurde) und `immun`
 // (Schonfrist seit dem letzten Treffer, bezogen auf `aktuellerSpieltag`).
-export function zulaessigeZiele(board = [], userId, duell, { bisherigeEinsaetze = [], aktuellerSpieltag = null, eingriffe = null } = {}) {
+export function zulaessigeZiele(board = [], userId, duell, { bisherigeEinsaetze = [], aktuellerSpieltag = null, sperre = null, art = null } = {}) {
   const cfg = sanitizeDuellJoker(duell);
   // JK5 (Andi, 22.08.2026): „Option zu Cooldowns, dass einzelne nicht von
-  // allen und immer regelmäßig getroffen werden können." Der Wert wohnt in
-  // `rules.eingriffe` (Familien-Dach), nicht in `duell` — hier kommt er als
-  // Kontext herein, weil `zulaessigeZiele` das ganze Regelwerk nicht kennt.
-  // ⚠️ Wer diese Funktion aufruft, ohne `eingriffe` mitzugeben, verliert JK5
+  // allen und immer regelmäßig getroffen werden können."
+  //
+  // 🔴 Die Sperre kommt FERTIG AUFGELÖST herein (`sperreFuer(art, eingriffe)`
+  // in `eingriffe.js`), nicht als Regelwerk: sie steht seit dem 23.08.2026 je
+  // Fremdjoker einzeln, und WELCHE gilt, hängt an der Art, die der Aufrufer
+  // gerade setzen will. `art` sagt zusätzlich, welche früheren Treffer
+  // mitzählen — der Block hat seine eigene Sperre, also zählt er auch nur
+  // seine eigenen Treffer.
+  //
+  // ⚠️ Wer diese Funktion aufruft, ohne `sperre` mitzugeben, verliert JK5
   // still. Deshalb ist `fremdjoker.zulaessigeZiele` der Weg, den die
-  // Oberflächen nehmen — er reicht es aus `rules` heraus durch.
-  const sperrfrist = sanitizeEingriffe(eingriffe).sperrfristJeZiel;
+  // Oberflächen nehmen — er löst beides aus `rules` heraus auf.
   const liste = Array.isArray(board) ? board : [];
   const sortiert = [...liste].sort((a, b) => b.total - a.total);
   const mich = sortiert.find((b) => b.userId === userId);
@@ -428,13 +433,18 @@ export function zulaessigeZiele(board = [], userId, duell, { bisherigeEinsaetze 
   // paar-bezogen und JK5 wäre ein drittes Mal dasselbe geworden.
   const treffer = new Map();        // zielId -> Treffer von ALLEN
   const letzterTreffer = new Map(); // zielId -> letzter Treffer von ALLEN
-  const letzterEigener = new Map(); // zielId -> mein letzter Treffer
+  const eigeneTreffer = new Map();  // zielId -> meine Treffer MIT DIESER ART
+  const letzterEigener = new Map(); // zielId -> mein letzter Treffer, diese Art
   for (const e of Array.isArray(bisherigeEinsaetze) ? bisherigeEinsaetze : []) {
     if (e.aufUserId == null) continue;
     treffer.set(e.aufUserId, (treffer.get(e.aufUserId) ?? 0) + 1);
     const bis = letzterTreffer.get(e.aufUserId);
     if (bis == null || e.spieltag > bis) letzterTreffer.set(e.aufUserId, e.spieltag);
     if (e.vonUserId !== userId) continue;
+    // Ohne benannte Art zählen alle eigenen Treffer — das ist der
+    // Übergangsfall für Aufrufer, die noch keine Art kennen.
+    if (art != null && e.typ !== art) continue;
+    eigeneTreffer.set(e.aufUserId, (eigeneTreffer.get(e.aufUserId) ?? 0) + 1);
     const meins = letzterEigener.get(e.aufUserId);
     if (meins == null || e.spieltag > meins) letzterEigener.set(e.aufUserId, e.spieltag);
   }
@@ -445,10 +455,20 @@ export function zulaessigeZiele(board = [], userId, duell, { bisherigeEinsaetze 
     return letzt != null && aktuellerSpieltag - letzt < dauer;
   };
 
+  // 🔴 Die Wartezeit hängt daran, wie OFT ich diese Person schon getroffen
+  // habe — nicht nur daran, dass ich es getan habe. Gerechnet wird sie in
+  // `wartezeit()` (eingriffe.js), damit Prüfung und Anzeige dieselbe Zahl
+  // nennen.
+  const gesperrt = (zielId) => {
+    if (!sperre || aktuellerSpieltag == null) return false;
+    const dauer = wartezeit(sperre, eigeneTreffer.get(zielId) ?? 0);
+    return frisch(letzterEigener, dauer, zielId);
+  };
+
   return kandidaten
     .filter((b) => (treffer.get(b.userId) ?? 0) < cfg.maxProZiel)
     .filter((b) => !frisch(letzterTreffer, cfg.immun, b.userId))
-    .filter((b) => !frisch(letzterEigener, sperrfrist, b.userId))
+    .filter((b) => !gesperrt(b.userId))
     .map((b) => b.userId);
 }
 
@@ -521,7 +541,7 @@ export function waehleSpiele(spieleDesZiels = [], basis, gewaehlteIds = []) {
 // `spieltagVon` ist reserviert: ist er gesetzt, zählen nur Einsätze mit
 // `spieltag >= spieltagVon` — frühere Tipps werden ignoriert. `null` (Vorgabe)
 // schränkt nichts ein.
-export function einsaetzeAusTipps(tipps = [], { spieltagVon = null } = {}) {
+export function einsaetzeAusTipps(tipps = [], { spieltagVon = null, proSpieltag = 1 } = {}) {
   const liste = Array.isArray(tipps) ? tipps : [];
 
   const gueltig = liste.filter((t) => {
@@ -533,32 +553,50 @@ export function einsaetzeAusTipps(tipps = [], { spieltagVon = null } = {}) {
     return true;
   });
 
-  // Je Spieler (`userId`) UND Spieltag (`matchday`) höchstens EIN Einsatz.
-  // Bei mehreren Kandidaten gewinnt der mit dem frühesten `kickoff`; bei
-  // Gleichstand die kleinere `matchId`. Bewusst NICHT „der erste Eintrag in
-  // der Liste gewinnt" — sonst hinge das Ergebnis an der Reihenfolge, in der
-  // die Tipps aus der Datenbank kommen, statt an ihren eigenen Daten.
-  // Dieselbe Regel wie beim Gleichstand in `streichIndizes` (saisonform.js)
-  // und `waehleSpiele` (oben in dieser Datei).
-  const jeSpielerUndTag = new Map(); // `${userId}|${matchday}` -> bester Kandidat
+  // 🔴 Je Spieler und Spieltag höchstens `proSpieltag` Einsätze — und zwar auf
+  // VERSCHIEDENE Spiele (Andis Entscheidung vom 23.08.2026).
+  //
+  // ⚠️ **Der Befund, der dazu geführt hat:** bis dahin stand hier hart „höchstens
+  // EIN Einsatz je Spieler und Spieltag". Der Regler `duell.proSpieltag` (1–3)
+  // stand im Regelwerk, wurde gesäubert, reiste im Creator-Code mit — und war
+  // wirkungslos: gemessen im engstmöglichen Fenster ergaben 1, 2 und 3 dreimal
+  // dasselbe Ergebnis. Ein zweiter Einsatz wurde hier stillschweigend
+  // verworfen, ohne dass irgendwo etwas fehlschlug.
+  //
+  // „Verschiedene Spiele" braucht keine eigene Prüfung: ein Fremdjoker wird
+  // BEIM TIPPEN eines Spiels gesetzt, und je Spieler und Spiel gibt es genau
+  // einen Tipp. Die Gruppierung nach Spieltag genügt.
+  //
+  // Die Reihenfolge INNERHALB eines Spieltags ist bedeutungstragend, nicht
+  // kosmetisch: bei `proSpieltag: 1` entscheidet sie, WELCHER der beiden
+  // Einsätze zählt. Es gewinnt der mit dem frühesten Anpfiff, bei Gleichstand
+  // die kleinere Spiel-Id. Bewusst NICHT „der erste Eintrag in der Liste" —
+  // sonst hinge das Ergebnis daran, in welcher Reihenfolge die Tipps aus der
+  // Datenbank kommen. Dieselbe Regel wie beim Gleichstand in `streichIndizes`
+  // (saisonform.js) und `waehleSpiele` (oben in dieser Datei).
+  const grenze = Math.max(1, Math.round(Number(proSpieltag) || 1));
+  const jeSpielerUndTag = new Map(); // `${userId}|${matchday}` -> Kandidaten
   for (const t of gueltig) {
     const key = `${t.userId}|${t.matchday}`;
-    const bisher = jeSpielerUndTag.get(key);
-    if (!bisher) {
-      jeSpielerUndTag.set(key, t);
-      continue;
-    }
-    const kickoffNeu = new Date(t.kickoff ?? NaN).getTime();
-    const kickoffAlt = new Date(bisher.kickoff ?? NaN).getTime();
-    if (kickoffNeu < kickoffAlt) {
-      jeSpielerUndTag.set(key, t);
-    } else if (kickoffNeu === kickoffAlt
-      && t.matchId != null && bisher.matchId != null && t.matchId < bisher.matchId) {
-      jeSpielerUndTag.set(key, t);
-    }
+    if (!jeSpielerUndTag.has(key)) jeSpielerUndTag.set(key, []);
+    jeSpielerUndTag.get(key).push(t);
+  }
+  const zeit = (t) => {
+    const ms = new Date(t.kickoff ?? NaN).getTime();
+    return Number.isFinite(ms) ? ms : Infinity;
+  };
+  const gewaehlt = [];
+  for (const kandidaten of jeSpielerUndTag.values()) {
+    kandidaten.sort((a, b) => {
+      const d = zeit(a) - zeit(b);
+      if (d !== 0) return d;
+      if (a.matchId == null || b.matchId == null) return 0;
+      return a.matchId < b.matchId ? -1 : a.matchId > b.matchId ? 1 : 0;
+    });
+    gewaehlt.push(...kandidaten.slice(0, grenze));
   }
 
-  const einsaetze = [...jeSpielerUndTag.values()].map((t) => ({
+  const einsaetze = gewaehlt.map((t) => ({
     spieltag: t.matchday,
     vonUserId: t.userId,
     aufUserId: t.tip.duell.auf,

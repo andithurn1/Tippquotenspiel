@@ -123,13 +123,48 @@ export const GEGEN_MODI = [
 // ── Grenzen & Vorgabe ───────────────────────────────────────
 
 export const EINGRIFF_LIMITS = {
-  // JK5. 0 = aus, damit bestehende Runden unberührt bleiben.
-  sperrfristJeZiel: { min: 0, max: 20, step: 1 },
+  // JK5, Ebene 3. 0 ist überall die Vorgabe — eine Runde, die nichts
+  // einstellt, verhält sich exakt wie vorher.
+  spieltage: { min: 0, max: 20, step: 1 },
+  aufschlag: { min: 0, max: 10, step: 1 },
+  hoechstens: { min: 0, max: 38, step: 1 },
   anteil: { min: 0.05, max: 1, step: 0.05 },
   kopierterBekommt: { min: 0, max: 1, step: 0.05 },
   // JK10: „ohne EINSATZ ist auch 1,01 ein Geschenk". Deshalb hat das Feld
   // kein 0 — eine Gegenwette ohne Einsatz gibt es nicht.
   einsatz: { min: 1, max: 500, step: 1 },
+};
+
+// 🔴 JK5, DREI Ebenen tief (Andi, 23.08.2026): „mach bei sowas auch weitere
+// Option zur Feineinstellung durch weiteren Klick … sodass sich bspw.
+// einstellen lässt, es gibt nicht das Verbot, das doppelt hintereinander
+// einzusetzen, aber der Cooldown verändert sich dadurch eben."
+//
+//   Ebene 1  eine Zahl für alle vier Fremdjoker          → `sperrfrist.standard`
+//   Ebene 2  eine eigene Zahl je Fremdjoker              → `sperrfrist.block` …
+//   Ebene 3  wie die Sperre sich VERHÄLT                 → `aufschlag`/`hoechstens`
+//
+// ── Die eine Formel, die beide Verhalten trägt ──
+// Wartezeit nach dem n-ten Treffer auf dieselbe Person:
+//
+//     warte = spieltage + max(0, n − 1) × aufschlag        (gedeckelt: hoechstens)
+//
+// `aufschlag: 0` (Vorgabe) ergibt die feste Sperre, die es immer gab.
+// `spieltage: 0, aufschlag: 2` ergibt genau Andis Fall: der zweite Einsatz
+// direkt hintereinander ist ERLAUBT (warte = 0), und erst dadurch wächst die
+// Wartezeit — 2 Spieltage vor dem dritten, 4 vor dem vierten.
+//
+// ⚠️ Bewusst KEIN eigenes Feld „Verbot oder Aufschlag?". Die Zahl sagt es
+// schon: 0 heißt fest, alles darüber heißt wachsend. Ein Moduswahl-Feld
+// daneben wäre ein zweiter Weg zur selben Aussage — und damit die Sorte
+// Doppelung, die hier gestern schon einmal aufgeräumt werden musste.
+export const DEFAULT_SPERRE = {
+  // Wartezeit nach dem ERSTEN Treffer, in Spieltagen. 0 = keine.
+  spieltage: 0,
+  // Wieviel jeder WEITERE Treffer auf dieselbe Person obendrauf legt.
+  aufschlag: 0,
+  // Obergrenze der so gewachsenen Wartezeit. 0 = keine Grenze.
+  hoechstens: 0,
 };
 
 export const DEFAULT_EINGRIFFE = {
@@ -138,7 +173,12 @@ export const DEFAULT_EINGRIFFE = {
   // JK5 — `maxProZiel` begrenzt nur, wie oft jemand INSGESAMT getroffen wird,
   // nicht ob es immer derselbe Gegner ist. Genau das meint Andi mit „nicht von
   // allen und immer regelmäßig".
-  sperrfristJeZiel: 0,
+  //
+  // Die Karte trägt einen `standard` und je Fremdjoker eine ABWEICHUNG —
+  // dieselbe Bauform wie `jokerBasis`, ausdrücklich kein zweites Muster
+  // (Andi, `vokabular.md`: „ein Hauptschalter oben, darunter je Fremdjoker die
+  // eigene Form"). Gespeichert wird nur, was wirklich abweicht.
+  sperrfrist: { standard: { ...DEFAULT_SPERRE } },
   // JK6 — Vorgabe „offen“ (joker-sondermenue.md Teil D). Die zweite Hälfte
   // von JK6, das Zurücknehmen, steht in der GRUNDFORM (`jokerBasis.widerruf`)
   // und nicht hier — die Begründung steht bei `jokerArtVon` oben.
@@ -154,6 +194,66 @@ const clamp = (v, { min, max }, fallback) => {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
 };
 
+// Eine VOLLE Sperr-Form — jedes Feld gesetzt. Für den `standard`-Eintrag.
+export function sanitizeSperre(partial = {}) {
+  const o = partial && typeof partial === "object" ? partial : {};
+  return {
+    spieltage: Math.round(clamp(o.spieltage, EINGRIFF_LIMITS.spieltage, DEFAULT_SPERRE.spieltage)),
+    aufschlag: Math.round(clamp(o.aufschlag, EINGRIFF_LIMITS.aufschlag, DEFAULT_SPERRE.aufschlag)),
+    hoechstens: Math.round(clamp(o.hoechstens, EINGRIFF_LIMITS.hoechstens, DEFAULT_SPERRE.hoechstens)),
+  };
+}
+
+// Eine ABWEICHUNG je Art — sparse, nur was dasteht. Ein leeres Ergebnis
+// bedeutet „diese Art folgt dem Standard" und wird gar nicht erst gespeichert
+// (dieselbe Regel wie `sanitizeBasisAbweichung` in `jokerBasis.js`; sonst
+// trüge jeder Creator-Code vier identische Kopien des Standards mit sich).
+function sanitizeSperrAbweichung(partial) {
+  const o = partial && typeof partial === "object" ? partial : {};
+  const out = {};
+  for (const feld of ["spieltage", "aufschlag", "hoechstens"]) {
+    if (o[feld] === undefined) continue;
+    const n = Number(o[feld]);
+    if (Number.isFinite(n)) out[feld] = Math.round(clamp(n, EINGRIFF_LIMITS[feld], DEFAULT_SPERRE[feld]));
+  }
+  return out;
+}
+
+// Die ganze Karte: `standard` immer voll, jede Art nur als Abweichung.
+// Unbekannte Schlüssel fliegen raus.
+export function sanitizeSperrKarte(karte) {
+  const o = karte && typeof karte === "object" ? karte : {};
+  const out = { standard: sanitizeSperre(o.standard) };
+  for (const art of FREMDJOKER_ARTEN) {
+    if (!Object.prototype.hasOwnProperty.call(o, art.key)) continue;
+    const abweichung = sanitizeSperrAbweichung(o[art.key]);
+    if (Object.keys(abweichung).length) out[art.key] = abweichung;
+  }
+  return out;
+}
+
+// 🔴 Die fertige Sperre für EINE Art — Standard und Abweichung übereinander.
+// Die einzige Stelle, an der `eingriffe.sperrfrist` aufgelöst wird; ein
+// zweiter Auflösungsweg wäre die zweite Wahrheit (Muster `basisFuer`).
+export function sperreFuer(art, eingriffe) {
+  const karte = sanitizeSperrKarte(sanitizeEingriffe(eingriffe).sperrfrist);
+  return { ...karte.standard, ...(karte[art] ?? {}) };
+}
+
+// 🔴 Wie lange muss ich warten, bevor ich DIESELBE Person mit DIESER Art
+// wieder treffen darf? `treffer` = wie oft ich sie mit dieser Art bereits
+// getroffen habe. Siehe die Formel im Kopf von `DEFAULT_SPERRE`.
+//
+// ⚠️ EINE Funktion für Wertung, Prüfung und Anzeige. Der Screen darf sie nicht
+// nachrechnen — genau das ist die Runden-Schicht-Regel aus CLAUDE.md.
+export function wartezeit(sperre, treffer) {
+  const s = sanitizeSperre(sperre);
+  const n = Math.max(0, Math.floor(Number(treffer) || 0));
+  if (n <= 0) return 0;
+  const roh = s.spieltage + (n - 1) * s.aufschlag;
+  return s.hoechstens > 0 ? Math.min(s.hoechstens, roh) : roh;
+}
+
 // Bereinigt `rules.eingriffe`. Muster `sanitizeDuellJoker`: jedes Feld fällt
 // für sich auf die Vorgabe zurück, Zahlen werden auf `EINGRIFF_LIMITS`
 // beschnitten.
@@ -168,8 +268,7 @@ export function sanitizeEingriffe(partial = {}) {
 
   return {
     enabled: p.enabled !== false,
-    sperrfristJeZiel: Math.round(clamp(
-      p.sperrfristJeZiel, EINGRIFF_LIMITS.sperrfristJeZiel, DEFAULT_EINGRIFFE.sperrfristJeZiel)),
+    sperrfrist: sanitizeSperrKarte(p.sperrfrist),
     sichtbarVorFrist: p.sichtbarVorFrist !== false,
     trittbrett: {
       enabled: pt.enabled === true,

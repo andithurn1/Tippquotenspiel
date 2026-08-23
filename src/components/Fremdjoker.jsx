@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 import { C, MONO, RUND } from "@/lib/theme";
 import {
   FREMDJOKER_ARTEN, GEGEN_STUFEN, GEGEN_MODI,
   EINGRIFF_LIMITS, sanitizeEingriffe, jokerArtVon,
+  sanitizeSperrKarte, sperreFuer, wartezeit,
 } from "@/lib/eingriffe";
 import {
   aktiveArten, familieAn, familieSchalten, beschreibeFremdjoker,
@@ -56,6 +59,29 @@ export default function Fremdjoker({ rules, onChange }) {
   const setze = (teil) => onChange({ eingriffe: sanitizeEingriffe({ ...eg, ...teil }) });
   const setzeTritt = (teil) => setze({ trittbrett: { ...eg.trittbrett, ...teil } });
   const setzeGegen = (teil) => setze({ gegenwette: { ...eg.gegenwette, ...teil } });
+
+  // Welche Vertiefung ist gerade offen? Immer nur EINE — dieselbe Entscheidung
+  // wie bei den Karten im Joker-Sondermenü: zwei offene Ebenen sind wieder
+  // eine lange Seite.
+  const [tiefer, setTiefer] = useState(null);
+
+  const karte = sanitizeSperrKarte(eg.sperrfrist);
+  // Ein Feld setzen — `null` als Art meint den Standard. `undefined` als Wert
+  // LÖSCHT die Abweichung, die Art folgt dann wieder dem Standard.
+  const setzeSperre = (art, teil) => {
+    const naechste = { ...karte };
+    if (art == null) {
+      naechste.standard = { ...karte.standard, ...teil };
+    } else {
+      const vorher = { ...(karte[art] ?? {}) };
+      for (const [k, v] of Object.entries(teil)) {
+        if (v === undefined) delete vorher[k];
+        else vorher[k] = v;
+      }
+      naechste[art] = vorher;
+    }
+    setze({ sperrfrist: sanitizeSperrKarte(naechste) });
+  };
 
   const arten = aktiveArten(rules);
   const an = familieAn(rules);
@@ -241,20 +267,87 @@ export default function Fremdjoker({ rules, onChange }) {
             )}
           </Block>
 
-          {/* ── 7) JK5: Schutz vor Dauer-Opfern ── */}
+          {/* ── 7) JK5: Schutz vor Dauer-Opfern, DREI Ebenen tief ──
+                 Andi, 23.08.2026: „für jeden Joker Sperrfrist einzeln
+                 einstellbar, und mach bei sowas auch weitere Option zur
+                 Feineinstellung durch weiteren Klick."
+                 Ebene 1 steht offen da, Ebene 2 und 3 liegen hinter je einem
+                 Klick — wer nur eine Zahl will, sieht auch nur eine. */}
           <Block titel="Schutz vor Dauer-Opfern"
-            hinweis={eg.sperrfristJeZiel > 0
-              ? `Wer jemanden getroffen hat, lässt ihn ${eg.sperrfristJeZiel} `
-                + `${eg.sperrfristJeZiel === 1 ? "Spieltag" : "Spieltage"} in Ruhe — andere dürfen weiter. `
-                + "Der Unterschied zu „max. je Ziel“ bei Klau und Block: das begrenzt, wie oft jemand "
-                + "INSGESAMT getroffen wird; die Sperrfrist verhindert, dass DERSELBE ihn wieder und wieder trifft."
-              : "0 = Sperrfrist aus. „max. je Ziel“ bei Klau und Block begrenzt dann nur, wie oft jemand "
-                + "INSGESAMT getroffen wird — nicht, ob es immer derselbe Gegner ist."}>
+            hinweis={sperrText(sperreFuer(null, rules?.eingriffe))
+              + " Der Unterschied zu „max. je Ziel“ bei Klau und Block: das begrenzt, wie oft jemand "
+              + "INSGESAMT getroffen wird; die Sperrfrist verhindert, dass DERSELBE ihn wieder und wieder trifft."}>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Zahl label="Sperrfrist je Ziel" wert={eg.sperrfristJeZiel}
-                limits={EINGRIFF_LIMITS.sperrfristJeZiel}
-                breite={140} onChange={(v) => setze({ sperrfristJeZiel: v })} />
+              <Zahl label="Sperrfrist (Spieltage)" wert={karte.standard.spieltage}
+                limits={EINGRIFF_LIMITS.spieltage}
+                breite={150} onChange={(v) => setzeSperre(null, { spieltage: v })} />
             </div>
+
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+              {knopf(tiefer === "arten", "Je Fremdjoker einzeln…",
+                () => setTiefer(tiefer === "arten" ? null : "arten"), "tf-arten",
+                "Eine eigene Sperrfrist je Art — der Block darf strenger sein als der Trittbrettfahrer.")}
+              {knopf(tiefer === "verhalten", "Wie die Sperre wirkt…",
+                () => setTiefer(tiefer === "verhalten" ? null : "verhalten"), "tf-verh",
+                "Festes Verbot, oder kein Verbot und dafür ein wachsender Cooldown.")}
+            </div>
+
+            {/* ── Ebene 2: je Fremdjoker eine eigene Zahl ── */}
+            {tiefer === "arten" && (
+              <div style={{
+                marginTop: 8, paddingLeft: 10, borderLeft: `1px solid ${C.line}`,
+                display: "flex", flexDirection: "column", gap: 8,
+              }}>
+                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>
+                  Leer heißt: diese Art folgt der Zahl oben. Gespeichert wird nur, was abweicht.
+                </div>
+                {arten.map((k) => {
+                  const eigen = karte[k]?.spieltage;
+                  const name = FREMDJOKER_ARTEN.find((a) => a.key === k).label;
+                  return (
+                    <div key={k} style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+                      <Zahl label={name} wert={eigen ?? karte.standard.spieltage}
+                        limits={EINGRIFF_LIMITS.spieltage} breite={150}
+                        onChange={(v) => setzeSperre(k, { spieltage: v })} />
+                      {eigen !== undefined && knopf(false, "zurück auf Standard",
+                        () => setzeSperre(k, { spieltage: undefined }), `${k}-reset`,
+                        "Diese Art folgt wieder der Zahl oben.")}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ── Ebene 3: wie die Sperre sich VERHÄLT ──
+                🔴 Genau Andis Beispiel: „es gibt nicht das Verbot, das doppelt
+                hintereinander einzusetzen, aber der Cooldown verändert sich
+                dadurch eben." Kein eigenes Modus-Feld — der Aufschlag SAGT es
+                schon: 0 heißt fest, alles darüber heißt wachsend. */}
+            {tiefer === "verhalten" && (
+              <div style={{
+                marginTop: 8, paddingLeft: 10, borderLeft: `1px solid ${C.line}`,
+              }}>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {knopf(karte.standard.aufschlag === 0, "Festes Verbot",
+                    () => setzeSperre(null, { aufschlag: 0 }), "vh-fest",
+                    "Nach einem Treffer gilt immer dieselbe Wartezeit.")}
+                  {knopf(karte.standard.aufschlag > 0, "Wachsender Cooldown",
+                    () => setzeSperre(null, { aufschlag: karte.standard.aufschlag || 2 }), "vh-wachs",
+                    "Kein Verbot beim nächsten Mal — aber jeder Wiederholungstreffer verlängert die Wartezeit.")}
+                </div>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
+                  <Zahl label="Aufschlag je Wiederholung" wert={karte.standard.aufschlag}
+                    limits={EINGRIFF_LIMITS.aufschlag} breite={180}
+                    onChange={(v) => setzeSperre(null, { aufschlag: v })} />
+                  <Zahl label="höchstens (Spieltage)" wert={karte.standard.hoechstens}
+                    limits={EINGRIFF_LIMITS.hoechstens} breite={170}
+                    onChange={(v) => setzeSperre(null, { hoechstens: v })} />
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+                  {verlaufText(sperreFuer(null, rules?.eingriffe))}
+                </div>
+              </div>
+            )}
           </Block>
 
           {/* ── 8) JK6: sichtbar und zurücknehmbar ── */}
@@ -309,4 +402,32 @@ export default function Fremdjoker({ rules, onChange }) {
       )}
     </div>
   );
+}
+
+// ── Zwei Sätze, die aus der Einstellung folgen ──────────────
+// 🔴 Sie rechnen NICHT selbst: `wartezeit()` ist dieselbe Funktion, mit der
+// die Prüfung entscheidet. Ein Screen, der eine eigene Formel dafür hätte,
+// wäre die zweite Wahrheit (Runden-Schicht, CLAUDE.md).
+
+function sperrText(sperre) {
+  if (sperre.spieltage === 0 && sperre.aufschlag === 0) {
+    return "0 = keine Sperre. Jeder darf jeden so oft treffen, wie das Kontingent hergibt.";
+  }
+  if (sperre.aufschlag === 0) {
+    const n = sperre.spieltage;
+    return `Wer jemanden getroffen hat, lässt ihn ${n} ${n === 1 ? "Spieltag" : "Spieltage"} in Ruhe — andere dürfen weiter.`;
+  }
+  return sperre.spieltage === 0
+    ? "Kein Verbot: du darfst dieselbe Person direkt noch einmal treffen — und genau dadurch wächst die Wartezeit danach."
+    : `Nach dem ersten Treffer ${sperre.spieltage} Spieltage Ruhe, und mit jedem weiteren wächst die Wartezeit.`;
+}
+
+// Die ersten vier Treffer durchgerechnet — die Zahl macht die Einstellung
+// begreifbar, ohne dass jemand die Formel im Kopf haben muss.
+function verlaufText(sperre) {
+  const stufen = [1, 2, 3, 4].map((n) => {
+    const w = wartezeit(sperre, n);
+    return `${n}. Treffer → ${w === 0 ? "sofort wieder frei" : `${w} ${w === 1 ? "Spieltag" : "Spieltage"} warten`}`;
+  });
+  return `Bei dieser Person: ${stufen.join(" · ")}.`;
 }

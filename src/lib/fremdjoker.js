@@ -43,6 +43,7 @@
 
 import {
   sanitizeEingriffe, gegenquote, FREMDJOKER_ARTEN, DEFAULT_EINGRIFFE, jokerArtVon,
+  sperreFuer, wartezeit,
 } from "./eingriffe";
 import {
   sanitizeDuellJoker, einsaetzeAusTipps, zulaessigeZiele as zulaessigeZieleDuell,
@@ -137,9 +138,51 @@ export function beschreibeFremdjoker(rules) {
 // exakt aus wie eine, die greift (`npm run greift`, Teil 4). Diese Funktion
 // reicht sie aus dem Regelwerk durch, damit es keine zweite Aufrufform gibt.
 export function zulaessigeZiele(board, userId, rules, kontext = {}) {
+  const art = kontext.art ?? null;
   return zulaessigeZieleDuell(board, userId, rules?.duell, {
-    ...kontext, eingriffe: rules?.eingriffe,
+    ...kontext, art, sperre: sperreFuer(art, rules?.eingriffe),
   });
+}
+
+// Welche Ziele sind für WELCHE Art erlaubt? Seit die Sperre je Fremdjoker
+// steht, ist „darf ich Kemal treffen?" ohne die Art nicht mehr beantwortbar:
+// der Block kann gesperrt sein, während der Trittbrettfahrer frei ist.
+//
+// Rückgabe: `{ block: ["u-lena"], klau: [...], … }` — nur für die laufenden
+// Arten. Die Oberfläche zeigt die Vereinigung als Zielliste und sperrt dann
+// die Art-Knöpfe, die dieses Ziel nicht hergeben.
+export function zieleJeArt(board, userId, rules, kontext = {}) {
+  const out = {};
+  for (const art of aktiveArten(rules)) {
+    out[art] = zulaessigeZiele(board, userId, rules, { ...kontext, art });
+  }
+  return out;
+}
+
+// 🔴 Warum ist dieses Ziel gerade gesperrt — und bis wann? Ein „geht nicht"
+// ohne Grund liest sich wie ein Fehler; genau deshalb steht diese Funktion
+// hier und nicht als Nachrechnung im Screen.
+//
+// `null`, wenn die Sperre dieses Ziel gar nicht betrifft.
+export function sperrGrund(rules, { art, aufUserId, vonUserId, bisherigeEinsaetze = [], aktuellerSpieltag = null }) {
+  const sperre = sperreFuer(art, rules?.eingriffe);
+  if (aktuellerSpieltag == null) return null;
+  const meine = (Array.isArray(bisherigeEinsaetze) ? bisherigeEinsaetze : [])
+    .filter((e) => e.vonUserId === vonUserId && e.aufUserId === aufUserId
+      && (art == null || e.typ === art));
+  if (!meine.length) return null;
+  const letzt = Math.max(...meine.map((e) => Number(e.spieltag) || 0));
+  const dauer = wartezeit(sperre, meine.length);
+  if (dauer <= 0 || aktuellerSpieltag - letzt >= dauer) return null;
+  const name = FREMDJOKER_ARTEN.find((a) => a.key === art)?.label ?? "Fremdjoker";
+  return {
+    art, dauer, frei: letzt + dauer, treffer: meine.length,
+    text: sperre.aufschlag > 0
+      ? `${name}: schon ${meine.length}× bei dieser Person — die Wartezeit ist dadurch auf `
+        + `${dauer} ${dauer === 1 ? "Spieltag" : "Spieltage"} gewachsen. Wieder frei ab Spieltag ${letzt + dauer}.`
+      : `${name}: Sperrfrist von ${dauer} ${dauer === 1 ? "Spieltag" : "Spieltage"} läuft noch. `
+        + `Wieder frei ab Spieltag ${letzt + dauer}.`,
+  };
 }
 
 // ── 3) JK4 — das umgekehrte Modell braucht eine Wahrscheinlichkeit ──
@@ -237,7 +280,14 @@ export function gegenwetteVorschau(tip, snap, rules) {
 // nicht getippt hat, bekommt kein `p` — der Einsatz verpufft, statt still auf
 // irgendetwas anderes zu rechnen.
 export function fremdEinsaetze(tipps = [], rules = {}, { spieltagVon = null } = {}) {
-  const roh = einsaetzeAusTipps(tipps, { spieltagVon });
+  // 🔴 `proSpieltag` gehört HIERHER und nicht in die Aufrufer: es ist die
+  // Antwort auf „wie viele Fremdjoker darf einer an EINEM Spieltag setzen"
+  // (Andi, 23.08.2026: mehrere ja, aber auf verschiedene Spiele). Wer
+  // `einsaetzeAusTipps` direkt ruft und den Wert vergisst, bekommt stumm
+  // wieder nur einen — genau so war der Regler ein Jahr lang wirkungslos.
+  const roh = einsaetzeAusTipps(tipps, {
+    spieltagVon, proSpieltag: sanitizeDuellJoker(rules?.duell).proSpieltag,
+  });
   const eg = sanitizeEingriffe(rules?.eingriffe);
   if (!roh.some((e) => e.typ === "gegenwette")) return roh;
 

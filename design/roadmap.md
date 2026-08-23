@@ -40,7 +40,19 @@ Keiner kam aus einem Test; alle drei aus den Durchgängen und aus dem Nachrechne
 am Rand. Sie stehen hier und nicht im Chat, weil ein Chatverlauf nach dem
 Fenster weg ist.
 
-### 1. ⛔ `duell.proSpieltag` ist wirkungslos — von 1 bis 3 ändert sich nichts
+### 1. ✅ ERLEDIGT — `duell.proSpieltag` war wirkungslos, ist angeschlossen
+
+**Andis Entscheidung vom 23.08.2026: mehrere ja, aber auf VERSCHIEDENE Spiele.**
+`einsaetzeAusTipps` nimmt jetzt `proSpieltag` entgegen, `fremdEinsaetze` reicht
+es aus dem Regelwerk durch. Nachgemessen: drei gesetzte Tipps an einem Spieltag
+ergeben bei `proSpieltag` 1 · 2 · 3 jetzt **1 · 2 · 3 Einsätze** in der Wertung
+— vorher dreimal einen. „Verschiedene Spiele" braucht keine eigene Prüfung: ein
+Fremdjoker wird beim Tippen EINES Spiels gesetzt, und je Spieler und Spiel gibt
+es genau einen Tipp.
+
+Der Befund, wie er dastand:
+
+
 
 **Gemessen**, nicht vermutet: ein Plan im engstmöglichen Fenster
 (`phase: "manuell"`, Spieltag 30–32, `anzahl: 6`) ergibt bei `proSpieltag` 1, 2
