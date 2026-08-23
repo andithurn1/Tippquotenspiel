@@ -482,6 +482,29 @@ const varianten = [
   ["Duell-Joker (Klau)", {
     duell: { enabled: true, typen: ["klau"], maxProSaison: 0, klau: { anteil: 0.35, modus: "nullsumme" } },
   }, { duell: true }],
+  // 🔴 Die zwei NEUEN Fremdjoker (JK4, 23.08.2026). Sie schreiben in dieselbe
+  // Marke `duell` wie Klau und Block — und genau das gehört geprüft: eine
+  // Verschiebung ohne Marke stünde unerklärt in der Tabelle, und der Spieler
+  // sähe eine Summe, zu der seine Tipps nicht führen.
+  //
+  // ⚠️ Der Trittbrettfahrer bewegt BEIDE Seiten (`kopierterBekommt`), die
+  // Gegenwette kann den Angreifer ins MINUS setzen. Beides sind Vorzeichen,
+  // die die Marke tragen muss — eine Marke, die nur nach oben zeigt, hätte
+  // hier eine Lücke.
+  ["Fremdjoker (Trittbrettfahrer)", {
+    duell: { enabled: false, maxProSaison: 0 },
+    eingriffe: {
+      enabled: true,
+      trittbrett: { enabled: true, anteil: 0.4, kopierterBekommt: 0.25 },
+    },
+  }, { fremd: "trittbrett" }],
+  ["Fremdjoker (Gegenwette)", {
+    duell: { enabled: false, maxProSaison: 0 },
+    eingriffe: {
+      enabled: true,
+      gegenwette: { enabled: true, einsatz: 40, stufe: "tendenz", modus: "nullsumme" },
+    },
+  }, { fremd: "gegenwette" }],
   ["Versäumnis (Ersatz-Tipps)", {
     versaeumnis: { enabled: true, strategie: "wahrscheinlich", malusProzent: 30, maxProSaison: 10 },
   }, { ohneFilter: true }],
@@ -542,6 +565,9 @@ for (const [name, extra, opt = {}] of varianten) {
       // Für den Duell-Fall: „Du" setzt auf „Lena". Ohne Einsatz greift die
       // Regel nie, und die Zeile stünde grün da, ohne etwas geprüft zu haben.
       if (opt.duell && u === "u-du") tip.duell = { auf: "u-lena", typ: "klau" };
+      // Dieselbe Ablage, andere Art — ein Fremdjoker steht immer in
+      // `tip.duell` (der Feldname ist älter als die Familie).
+      if (opt.fremd && u === "u-du") tip.duell = { auf: "u-lena", typ: opt.fremd };
       await st.seedTip({ roundId: rnd.id, matchId: m.id, userId: u, tip, snapshot: m.snapshot });
     }
   }
