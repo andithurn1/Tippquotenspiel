@@ -26,9 +26,9 @@ import { duellPlan, einsaetzeAusTipps } from "@/lib/duellJoker";
 // Fassung die Sperrfrist je Ziel (JK5) durchreicht.
 import {
   aktiveArten, familieAn, zulaessigeZiele, gegenwetteVorschau, zieleJeArt, sperrGrund,
-  meinLos,
+  meinLos, schutzStand,
 } from "@/lib/fremdjoker";
-import { FREMDJOKER_ARTEN, jokerArtVon } from "@/lib/eingriffe";
+import { FREMDJOKER_ARTEN, jokerArtVon, sanitizeSchutz } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
@@ -165,6 +165,9 @@ export default function Tippabgabe({ matchId }) {
   // `null` = keine Auswahl = kein Duell — kein Zwang, siehe dortiger Plan.
   const [duellZiel, setDuellZiel] = useState(null);
   const [duellTypGewaehlt, setDuellTypGewaehlt] = useState(null);
+  // 🔴 JK14: das eine Spiel, an dem der Abend hängt. Gehört dem SPIELER —
+  // der Admin stellt nur die Anzahl (`eingriffe.schutz.proSpieltag`).
+  const [geschuetzt, setGeschuetzt] = useState(false);
   // Schnappschuss dessen, was beim Laden BEREITS gespeichert war — Grundlage
   // für `darfWiderrufen` (design/kontaktstellen.md Abschnitt 5 Punkt 5,
   // jokerBasis.js): nur ein VORHER gesetzter Joker/Duell, der jetzt entfernt
@@ -276,6 +279,9 @@ export default function Tippabgabe({ matchId }) {
           // er gegen denselben Vorrat — ohne dieses Feld sähe `kontingent()`
           // ihn nicht und die Einstellung liefe ins Leere.
           duell: t.tip?.duell ?? null,
+          // JK14: für `schutzStand` — wie viele Schilde habe ich an diesem
+          // Spieltag schon vergeben?
+          tip: t.tip,
         }));
       setMeineTips(eigene);
       // Käufe ALLER Spieler, angereichert um `matchday`/`matchId` — Grundlage
@@ -312,6 +318,7 @@ export default function Tippabgabe({ matchId }) {
         setDuellZiel(dieser.tip.duell.auf);
         setDuellTypGewaehlt(dieser.tip.duell.typ ?? null);
       }
+      setGeschuetzt(dieser?.tip?.schutz === true);
       // Schnappschuss des GELADENEN Zustands für `darfWiderrufen` (siehe
       // Kommentar bei `urspruenglich` oben) — unabhängig davon, was der
       // Spieler danach an den Reglern ändert.
@@ -710,6 +717,22 @@ export default function Tippabgabe({ matchId }) {
   };
   const zieleProArt = istDuellSpieltag ? zieleJeArt(board, user?.id, RULES, zielKontext) : {};
 
+  // JK14: wie viele Spiele darf ich an diesem Spieltag noch schützen?
+  // ⚠️ Der EIGENE Tipp fliegt raus — sonst zählt sich das Schild, das man
+  // gerade setzt, selbst gegen das Kontingent (dieselbe Ausnahme wie bei
+  // `meineTipsOhneAktuellen`).
+  const schutzRegel = sanitizeSchutz(RULES.eingriffe?.schutz);
+  const schutzLage = schutzStand(
+    meineTipsRunde
+      .filter((t) => (t.match_id ?? t.matchId) !== matchId)
+      .map((t) => ({ ...t, userId: user?.id, matchId: t.match_id ?? t.matchId })),
+    RULES, { userId: user?.id, spieltag: meinSpieltagRunde },
+  );
+  // Schützen darf ich, wenn die Runde es kennt, Fremdjoker überhaupt laufen
+  // und noch etwas frei ist (oder dieses Spiel schon geschützt IST).
+  const schutzMoeglich = schutzRegel.proSpieltag > 0 && familieAn(RULES)
+    && (schutzLage.frei > 0 || geschuetzt);
+
   // JK12: „Dein Ziel diesen Spieltag: Lena." Die Anzeige gehört genau hierher —
   // Andi: „muss eben bei seiner Tippabgabe schauen, bei welchem Einzelspiel man
   // den jeweiligen Joker einsetzt."
@@ -1051,6 +1074,10 @@ export default function Tippabgabe({ matchId }) {
           home: h, away: a, goals,
           ...(jokerAktiv && !gesperrt ? gewichtungSicher : {}),
           ...(duellSicher ? { duell: duellSicher } : {}),
+          // JK14 — nur mitschicken, wenn die Runde den Schutz überhaupt kennt
+          // und noch ein Kontingent frei ist. Eine Markierung, die die Wertung
+          // ohnehin verwirft, gehört nicht in die Datenbank.
+          ...(geschuetzt && schutzMoeglich ? { schutz: true } : {}),
         },
         snapshot: SNAP,
       });
@@ -1463,6 +1490,48 @@ export default function Tippabgabe({ matchId }) {
                     Angepfiffen — die Gewichtung ist eingefroren.
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* ── JK14: das Schild ──
+                🔴 Andi: „weil man die halt evtl selber live verfolgen will,
+                und's deswegen blöd wäre." Es steht ÜBER dem Fremdjoker-Block
+                und nicht darin: es ist keine Angriffs-Einstellung, sondern die
+                Gegenwehr — und sie gehört dem Spieler, nicht dem Admin.
+
+                ⚠️ Nach Anpfiff eingefroren, wie der Tipp selbst. Sonst
+                schützte man nach, sobald man einen Angriff kommen sieht. */}
+            {schutzRegel.proSpieltag > 0 && familieAn(RULES) && (
+              <div style={{
+                marginTop: 16, padding: "11px 13px", borderRadius: RUND.karte,
+                background: C.surface, border: `1px solid ${geschuetzt ? C.mint + "77" : C.line}`,
+              }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <button type="button" disabled={gesperrt || (!schutzMoeglich && !geschuetzt)}
+                    onClick={() => setGeschuetzt((v) => !v)}
+                    title="Dieses Spiel ist für alle Fremdjoker unantastbar."
+                    style={{
+                      ...TAPZIEL_QUADRAT, cursor: gesperrt || !schutzMoeglich ? "default" : "pointer",
+                      fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                      padding: "8px 14px", borderRadius: RUND.pille,
+                      opacity: gesperrt || (!schutzMoeglich && !geschuetzt) ? 0.5 : 1,
+                      background: geschuetzt ? `${C.mint}22` : "transparent",
+                      color: geschuetzt ? C.mint : C.muted,
+                      border: `1px solid ${geschuetzt ? C.mint + "77" : C.line}`,
+                    }}>
+                    {geschuetzt ? "🛡 Geschützt" : "🛡 Dieses Spiel schützen"}
+                  </button>
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>
+                    {schutzLage.frei + (geschuetzt ? 0 : 0)} von {schutzLage.erlaubt} frei
+                  </span>
+                </div>
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+                  {geschuetzt
+                    ? "Kein Fremdjoker kann dir dieses Spiel wegnehmen. Nach Anpfiff steht es fest."
+                    : schutzMoeglich
+                      ? "Für das eine Spiel, das du selbst live verfolgst — kein Block, kein Klau, keine Gegenwette."
+                      : "Deine Schilde für diesen Spieltag sind vergeben."}
+                </p>
               </div>
             )}
 

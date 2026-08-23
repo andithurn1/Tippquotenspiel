@@ -319,7 +319,7 @@ gemeinsam, oder bekommt jede Art ihre eigene?
 > | **Einzelne Spiele statt Spieltage** (JK15) | ✔️ `matchId` reist mit |
 > | **Zwei-Phasen-Spieltag** (JK18) | ✔️ war schon da (`tippfenster.schlussStunden`) |
 > | **Der ehrliche Hinweis** (JK19) | ✔️ `zweiPhasenHinweis()` |
-> | **Geschützte Spiele** (JK14) | ⏳ ENTWURF — nicht gebaut |
+> | **Geschützte Spiele** (JK14) | 🔨 `eingriffe.schutz` gebaut; Spieler-Schild noch nicht im Browser gesehen |
 > | **Ausgelostes Ziel** (JK12) | ✔️ `duell.zielWahl: "ausgelost"` + `eingriffe.los` |
 > | **Je Fremdjoker einzeln** (JK13) | ✔️ Grundform · Sperrfrist · Sichtbarkeit · Auslosung — überall dieselbe Karte (`karteVon`) |
 >

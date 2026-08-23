@@ -558,7 +558,7 @@ console.log();
 //  Richtung.
 // ════════════════════════════════════════════════════════════
 import { zulaessigeZiele, DEFAULT_DUELL } from "../src/lib/duellJoker.js";
-import { zulaessigeZiele as zulaessigeZieleFamilie } from "../src/lib/fremdjoker.js";
+import { zulaessigeZiele as zulaessigeZieleFamilie, fremdEinsaetze } from "../src/lib/fremdjoker.js";
 import { DEFAULT_EINGRIFFE } from "../src/lib/eingriffe.js";
 import { darfDuellSetzen } from "../src/lib/jokerKontingent.js";
 import { jokerPlan } from "../src/lib/jokerPlan.js";
@@ -602,6 +602,21 @@ const zieleFamilie = (rules, spieltag = 8, art = "klau") => GIDS.reduce((s, id) 
   s + zulaessigeZieleFamilie(GBOARD, id, rules, {
     bisherigeEinsaetze: GHISTORIE, aktuellerSpieltag: spieltag, seed: "greift", art,
   }).length, 0);
+// Drei Angriffe von „a" auf drei Spiele von „b" — davon schützt „b" die
+// ersten `schutzProSpieltag`. Übrig bleibt, was die Wertung noch sieht.
+const wirksameEinsaetze = (schutzProSpieltag) => {
+  const tipps = ["s1", "s2", "s3"].flatMap((m, i) => [
+    { userId: "a", matchday: 5, matchId: m, kickoff: `2026-09-05T1${i}:00:00Z`,
+      tip: { home: 1, away: 1, duell: { auf: "b", typ: "klau" } } },
+    { userId: "b", matchday: 5, matchId: m, kickoff: `2026-09-05T1${i}:00:00Z`,
+      tip: { home: 1, away: 1, schutz: true } },
+  ]);
+  return fremdEinsaetze(tipps, {
+    duell: D({ proSpieltag: 3, maxProZiel: 9 }),
+    eingriffe: { ...DEFAULT_EINGRIFFE, schutz: { proSpieltag: schutzProSpieltag, sichtbar: true, verfall: "zurueck" } },
+  }).length;
+};
+
 const F = (duellTeil, eingriffeTeil = {}) => ({
   duell: D(duellTeil),
   eingriffe: { ...DEFAULT_EINGRIFFE, ...eingriffeTeil },
@@ -709,6 +724,10 @@ const GATE_FAELLE = [
     () => zieleFamilie(F({ zielWahl: "frei" }, { sperrfrist: { standard: { spieltage: 0, aufschlag: 0 } } })),
     () => zieleFamilie(F({ zielWahl: "frei" }, { sperrfrist: { standard: { spieltage: 0, aufschlag: 6 } } })),
     "erlaubte Ziele über 5 Spieler"],
+  // 🔴 JK14: ein geschütztes Spiel ist für Fremdjoker unantastbar. Gemessen
+  // werden die Einsätze, die die Wertung überhaupt erreichen.
+  ["eingriffe.schutz", () => wirksameEinsaetze(0), () => wirksameEinsaetze(1),
+    "wirksame Einsätze von 3"],
   // 🔴 JK12: das Los ERSETZT die Wahl — aus vier möglichen Zielen wird eines.
   ["duell.zielWahl: ausgelost", () => zieleFamilie(F({ zielWahl: "frei" })),
     () => zieleFamilie(F({ zielWahl: "ausgelost" })), "erlaubte Ziele über 5 Spieler"],

@@ -43,7 +43,7 @@
 
 import {
   sanitizeEingriffe, gegenquote, FREMDJOKER_ARTEN, DEFAULT_EINGRIFFE, jokerArtVon,
-  sperreFuer, sichtFuer, losFuer, wartezeit,
+  sperreFuer, sichtFuer, losFuer, sanitizeSchutz, wartezeit,
 } from "./eingriffe";
 import {
   sanitizeDuellJoker, einsaetzeAusTipps, zulaessigeZiele as zulaessigeZieleDuell,
@@ -382,6 +382,63 @@ export function meinLos(rules, { userId, userIds, spieltag, seed = "", art = nul
   };
 }
 
+// ── 3c) JK14: geschützte Spiele ─────────────────────────────
+//
+// 🔴 Die einzige Schutzregel, die dem SPIELER gehört. Er markiert beim Tippen
+// die Spiele, an denen sein Abend hängt (`tip.schutz === true`); der Admin
+// stellt nur die ANZAHL ein.
+//
+// ⚠️ Das Kontingent wird HIER durchgesetzt und nicht erst beim Speichern: die
+// Wertung muss dieselbe Antwort geben wie der Screen, auch wenn ein Tipp auf
+// einem anderen Weg in die Datenbank gekommen ist. Bei mehr Markierungen als
+// erlaubt gewinnen die mit dem frühesten Anpfiff, bei Gleichstand die kleinere
+// Spiel-Id — dieselbe Regel wie überall sonst, wo hier ein Gleichstand
+// aufzulösen ist.
+//
+// Rückgabe: Set aus `${userId}#${matchId}`.
+export function geschuetzteSpiele(tipps = [], rules = {}) {
+  const schutz = sanitizeSchutz(rules?.eingriffe?.schutz);
+  const out = new Set();
+  if (schutz.proSpieltag <= 0) return out;
+
+  const jeSpielerUndTag = new Map();
+  for (const t of Array.isArray(tipps) ? tipps : []) {
+    if (t?.tip?.schutz !== true || t.userId == null || t.matchId == null) continue;
+    const key = `${t.userId}|${t.matchday}`;
+    if (!jeSpielerUndTag.has(key)) jeSpielerUndTag.set(key, []);
+    jeSpielerUndTag.get(key).push(t);
+  }
+  const zeit = (t) => {
+    const ms = new Date(t.kickoff ?? NaN).getTime();
+    return Number.isFinite(ms) ? ms : Infinity;
+  };
+  for (const kandidaten of jeSpielerUndTag.values()) {
+    kandidaten.sort((a, b) => {
+      const d = zeit(a) - zeit(b);
+      if (d !== 0) return d;
+      if (a.matchId == null || b.matchId == null) return 0;
+      return a.matchId < b.matchId ? -1 : a.matchId > b.matchId ? 1 : 0;
+    });
+    for (const t of kandidaten.slice(0, schutz.proSpieltag)) out.add(`${t.userId}#${t.matchId}`);
+  }
+  return out;
+}
+
+// Wie viele Spiele darf ich an DIESEM Spieltag noch schützen? Für die
+// Tippabgabe — sie muss sagen können „du hast dein eines schon vergeben",
+// statt eine Markierung stumm zu schlucken.
+export function schutzStand(tipps = [], rules = {}, { userId, spieltag } = {}) {
+  const schutz = sanitizeSchutz(rules?.eingriffe?.schutz);
+  const meine = (Array.isArray(tipps) ? tipps : []).filter(
+    (t) => t?.userId === userId && t?.matchday === spieltag && t?.tip?.schutz === true);
+  return {
+    erlaubt: schutz.proSpieltag,
+    vergeben: meine.length,
+    frei: Math.max(0, schutz.proSpieltag - meine.length),
+    spiele: meine.map((t) => t.matchId),
+  };
+}
+
 // ── 4) Einsätze: bauen und anreichern ───────────────────────
 
 // 🔴 DIE Stelle, an der aus rohen Tipps Fremdjoker-Einsätze werden.
@@ -407,10 +464,24 @@ export function fremdEinsaetze(tipps = [], rules = {}, { spieltagVon = null } = 
   // (Andi, 23.08.2026: mehrere ja, aber auf verschiedene Spiele). Wer
   // `einsaetzeAusTipps` direkt ruft und den Wert vergisst, bekommt stumm
   // wieder nur einen — genau so war der Regler ein Jahr lang wirkungslos.
-  const roh = einsaetzeAusTipps(tipps, {
+  const rohAlle = einsaetzeAusTipps(tipps, {
     spieltagVon, proSpieltag: sanitizeDuellJoker(rules?.duell).proSpieltag,
   });
   const eg = sanitizeEingriffe(rules?.eingriffe);
+
+  // 🔴 JK14 — ein geschütztes Spiel ist für Fremdjoker unantastbar. Der
+  // Einsatz wird hier ENTWERTET, nicht in der Wertung übersprungen: sonst
+  // müsste jede Stelle, die Einsätze zählt (Deckel, `maxProZiel`, Kontingent),
+  // den Schutz noch einmal kennen — und eine davon würde ihn vergessen.
+  //
+  // Die zwei Varianten aus Andis offener Frage, jetzt als Einstellung:
+  //   `zurueck`    der Einsatz zählt gar nicht → er fällt aus der Liste
+  //   `verfaellt`  er zählt, wirkt aber nicht  → er bleibt, mit Marke
+  const geschuetzt = geschuetzteSpiele(tipps, rules);
+  const roh = rohAlle
+    .map((e) => (e.matchId != null && geschuetzt.has(`${e.aufUserId}#${e.matchId}`)
+      ? { ...e, geschuetzt: true } : e))
+    .filter((e) => !(e.geschuetzt && eg.schutz.verfall === "zurueck"));
   if (!roh.some((e) => e.typ === "gegenwette")) return roh;
 
   // Tipp + Schnappschuss + Ergebnis je (Spieler, Spiel) — einmal aufbauen.
@@ -611,6 +682,24 @@ export function konflikte(rules) {
         + "herausnehmen — und genau darum geht es bei den Fremdjokern („nimm den Block bei mir "
         + "fürs Bayern-Spiel raus“). Gesetzt ist sonst gesetzt, und aus dem Austausch wird eine "
         + "stille Punkteverschiebung. Der Widerruf steht in der Joker-Grundform.",
+    });
+  }
+
+  // 🔴 JK14, Andis zweite offene Frage — jetzt als Kombinationsregel statt als
+  // Vorabentscheidung: ein VERDECKTER Schutz, der den Einsatz zurückgibt,
+  // verrät sich selbst. Wer seinen Joker unverbraucht wiederfindet, weiß
+  // genau, dass das Spiel geschützt war — und damit auch, welches Spiel dem
+  // anderen wichtig ist. Gemeldet, nicht still korrigiert: ein Admin darf das
+  // wollen (es ist milder als „verfällt"), er soll es nur wissen.
+  const schutz = sanitizeSchutz(rules?.eingriffe?.schutz);
+  if (schutz.proSpieltag > 0 && !schutz.sichtbar && schutz.verfall === "zurueck") {
+    out.push({
+      key: "schutz-verdeckt-verraet-sich",
+      korrigieren: true,
+      text: "Verdeckter Schutz und Rückgabe des Einsatzes passen nicht zusammen: wer seinen "
+        + "Fremdjoker unverbraucht wiederfindet, weiß, dass das Spiel geschützt war — und damit, "
+        + "welches Spiel dem anderen wichtig ist. Entweder den Schutz offen zeigen oder den "
+        + "Einsatz verfallen lassen.",
     });
   }
 

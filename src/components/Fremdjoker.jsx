@@ -8,7 +8,7 @@ import {
   EINGRIFF_LIMITS, sanitizeEingriffe, jokerArtVon,
   sanitizeSperrKarte, sanitizeSichtKarte, sanitizeLosKarte,
   sperreFuer, sichtFuer, losFuer, wartezeit,
-  LOS_TAKTE, LOS_PAARE, LOS_SICHT,
+  LOS_TAKTE, LOS_PAARE, LOS_SICHT, SCHUTZ_VERFALL, sanitizeSchutz,
 } from "@/lib/eingriffe";
 import {
   aktiveArten, familieAn, familieSchalten, beschreibeFremdjoker,
@@ -71,6 +71,8 @@ export default function Fremdjoker({ rules, onChange }) {
   const karte = sanitizeSperrKarte(eg.sperrfrist);
   const sicht = sanitizeSichtKarte(eg.sichtbar);
   const losKarte = sanitizeLosKarte(eg.los);
+  const schutz = sanitizeSchutz(eg.schutz);
+  const setzeSchutz = (teil) => setze({ schutz: sanitizeSchutz({ ...schutz, ...teil }) });
   // 🔴 Der SCHALTER für JK12 sitzt in der Zielwahl (`DuellJoker.jsx`, fünfte
   // Stufe) — hier steht nur, WIE gelost wird. Solange er nicht umgelegt ist,
   // hat dieser Block nichts zu sagen und bleibt weg.
@@ -441,6 +443,50 @@ export default function Fremdjoker({ rules, onChange }) {
               )}
             </Block>
           )}
+
+          {/* ── 7c) JK14: geschützte Spiele ──
+                 🔴 Die einzige Schutzregel, die dem SPIELER gehört. Hier steht
+                 nur die ANZAHL — die Wahl selbst trifft er bei der Tippabgabe. */}
+          <Block titel="Geschützte Spiele"
+            hinweis={schutz.proSpieltag === 0
+              ? "0 = kein Schutz, jedes Spiel ist angreifbar. ⚠️ Wer Samstag im Stadion sitzt, kann dann nichts dagegen tun, dass genau dieses Spiel weggeblockt wird — und dann schaltet die Runde die Fremdjoker ab."
+              : `Jeder darf ${schutz.proSpieltag} ${schutz.proSpieltag === 1 ? "Spiel" : "Spiele"} je Spieltag vor JEDEM Fremdjoker schützen. Er wählt sie bei der Tippabgabe — aus einem Grund, den keine Regel kennen kann: an welchem Spiel sein Abend hängt.`}>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <Zahl label="je Spieltag und Spieler" wert={schutz.proSpieltag}
+                limits={EINGRIFF_LIMITS.proSpieltag} breite={170}
+                onChange={(v) => setzeSchutz({ proSpieltag: v })} />
+            </div>
+
+            {schutz.proSpieltag > 0 && (
+              <>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>
+                  Sieht der Angreifer den Schutz?
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {knopf(schutz.sichtbar, "Offen", () => setzeSchutz({ sichtbar: true }), "sch-an",
+                    "Ein Schild am Spiel. Niemand verbrennt einen Einsatz für nichts.")}
+                  {knopf(!schutz.sichtbar, "Verdeckt", () => setzeSchutz({ sichtbar: false }), "sch-aus",
+                    "Der Angreifer erfährt es erst, wenn sein Einsatz verpufft ist.")}
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                  {schutz.sichtbar
+                    ? "Offen: ein Fremdjoker verpufft nicht ungewarnt. Der Angreifer weiß dafür, welches Spiel dir wichtig ist."
+                    : "Verdeckt: dein wichtigstes Spiel bleibt dein Geheimnis — dafür verbrennt jemand einen Einsatz für nichts."}
+                </div>
+
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>
+                  Was wird aus dem verpufften Einsatz?
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {SCHUTZ_VERFALL.map((v) => knopf(schutz.verfall === v.key, v.label,
+                    () => setzeSchutz({ verfall: v.key }), v.key, v.desc))}
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                  {SCHUTZ_VERFALL.find((v) => v.key === schutz.verfall)?.desc}
+                </div>
+              </>
+            )}
+          </Block>
 
           {/* ── 8) JK6: sichtbar und zurücknehmbar ── */}
           <div style={{ fontSize: 11, color: C.coral, marginTop: 14, lineHeight: 1.5 }}>

@@ -173,6 +173,48 @@ export const LOS_SICHT = [
 // überschreiben ergäbe keinen Satz, den man aussprechen kann.
 const DEFAULT_LOS = { takt: "spieltag", paare: "einseitig", sichtbar: "eigenes" };
 
+// ── JK14: geschützte Spiele (Andi, 22.08.2026) ──────────────
+// 🔴 „dass die Option für jeden Tippabgeber besteht, ausgewählte Spiele für
+// jeden Spieltag vor jedem Fremdjoker zu schützen (weil man die halt evtl
+// selber live verfolgen will, und's deswegen blöd wäre)."
+//
+// 🔴 **Die erste Schutzregel, die dem SPIELER gehört und nicht dem Admin.**
+// Alles andere in dieser Datei stellt der Admin für alle ein. Hier entscheidet
+// jeder für sich, und zwar aus einem Grund, den keine Regel kennen kann: an
+// welchem Spiel sein Abend hängt.
+//
+// **Der Zweck ist nicht Fairness, sondern der Abend.** Wer Samstag im Stadion
+// sitzt, will nicht erleben, dass genau dieses Spiel ihm weggeblockt wurde.
+// Ein Fremdjoker, der das trifft, nimmt keine Punkte weg, sondern den Spaß —
+// und dann schaltet die Runde die ganze Familie ab. Der Schutz ist damit die
+// Bedingung dafür, dass Fremdjoker überhaupt eingeschaltet bleiben.
+//
+// ⚠️ Die ZAHL gehört dem Admin: bei „alle Spiele schützbar" gibt es keine
+// Fremdjoker mehr. Deshalb ein Kontingent je Spieltag, kein Häkchen je Spiel.
+
+export const SCHUTZ_VERFALL = [
+  {
+    key: "zurueck", label: "Kommt zurück",
+    desc: "Der Einsatz zählt nicht — du hast ihn noch. Vorgabe, passt zum offenen Schutz.",
+  },
+  {
+    key: "verfaellt", label: "Verfällt",
+    desc: "Der Einsatz ist weg, ohne gewirkt zu haben. Hart — aber bei verdecktem Schutz die ehrlichere Variante.",
+  },
+];
+
+const DEFAULT_SCHUTZ = {
+  // 0 = kein Schutz, dann ist jedes Spiel angreifbar. 1 ist die naheliegende
+  // Vorgabe: ein Spiel je Spieltag, an dem der Abend hängt.
+  proSpieltag: 1,
+  // ❓ war eine offene Frage in Teil D — nach Andis Regel („wo es mehrere
+  // sinnvolle Varianten gibt, wird die Variante zur Einstellung") ist sie
+  // jetzt eine. Vorgabe OFFEN, weil ein Fremdjoker, der an einem geschützten
+  // Spiel wirkungslos verpufft, sonst nach Willkür aussieht.
+  sichtbar: true,
+  verfall: "zurueck",
+};
+
 // ── Grenzen & Vorgabe ───────────────────────────────────────
 
 export const EINGRIFF_LIMITS = {
@@ -186,6 +228,7 @@ export const EINGRIFF_LIMITS = {
   // JK10: „ohne EINSATZ ist auch 1,01 ein Geschenk". Deshalb hat das Feld
   // kein 0 — eine Gegenwette ohne Einsatz gibt es nicht.
   einsatz: { min: 1, max: 500, step: 1 },
+  proSpieltag: { min: 0, max: 10, step: 1 },
 };
 
 // 🔴 JK5, DREI Ebenen tief (Andi, 23.08.2026): „mach bei sowas auch weitere
@@ -241,6 +284,9 @@ export const DEFAULT_EINGRIFFE = {
   // Zurücknehmen, steht in der GRUNDFORM (`jokerBasis.widerruf`) und nicht
   // hier — die Begründung steht bei `jokerArtVon` oben.
   sichtbar: { standard: DEFAULT_SICHT },
+  // JK14 — geschützte Spiele. Die Anzahl stellt der Admin, die AUSWAHL trifft
+  // der Spieler bei der Tippabgabe.
+  schutz: { ...DEFAULT_SCHUTZ },
   // JK12 — das ausgeloste Ziel. Der SCHALTER ist `duell.zielWahl:
   // "ausgelost"`; hier steht nur, WIE gelost wird. Vorgabe bleibt wirkungslos,
   // solange niemand den Schalter umlegt.
@@ -328,6 +374,15 @@ export function sanitizeSichtKarte(karte) {
 // 🔴 Die fertige Sperre für EINE Art — Standard und Abweichung übereinander.
 // Die einzige Stelle, an der `eingriffe.sperrfrist` aufgelöst wird; ein
 // zweiter Auflösungsweg wäre die zweite Wahrheit (Muster `basisFuer`).
+export function sanitizeSchutz(partial = {}) {
+  const o = partial && typeof partial === "object" ? partial : {};
+  return {
+    proSpieltag: Math.round(clamp(o.proSpieltag, EINGRIFF_LIMITS.proSpieltag, DEFAULT_SCHUTZ.proSpieltag)),
+    sichtbar: o.sichtbar !== false,
+    verfall: SCHUTZ_VERFALL.some((v) => v.key === o.verfall) ? o.verfall : DEFAULT_SCHUTZ.verfall,
+  };
+}
+
 // Die Los-Einstellungen: Karte wie die anderen, plus die eine Frage, die über
 // der ganzen Auslosung steht (`jeArt`).
 export function sanitizeLosKarte(karte) {
@@ -400,6 +455,7 @@ export function sanitizeEingriffe(partial = {}) {
     sperrfrist: sanitizeSperrKarte(p.sperrfrist),
     sichtbar: sanitizeSichtKarte(p.sichtbar),
     los: sanitizeLosKarte(p.los),
+    schutz: sanitizeSchutz(p.schutz),
     trittbrett: {
       enabled: pt.enabled === true,
       anteil: +clamp(pt.anteil, EINGRIFF_LIMITS.anteil, DEFAULT_EINGRIFFE.trittbrett.anteil).toFixed(2),

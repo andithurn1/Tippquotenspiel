@@ -754,6 +754,11 @@ export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = [], sammel
       : zielVoll;
 
     if (!an[e.typ]) continue;
+    // 🔴 JK14: ein geschütztes Spiel ist unantastbar. Die Marke setzt
+    // `fremdEinsaetze` (fremdjoker.js) — hier wird sie nur befolgt. Ein
+    // Einsatz mit dieser Marke bleibt in der Liste (er zählt gegen das
+    // Kontingent), wirkt aber nicht.
+    if (e.geschuetzt) continue;
 
     let transfer = 0; // was der Von-Nutzer bekommt (vor dem Deckel)
     let abzug = 0;     // was der Ziel-Nutzer verliert — UNABHÄNGIG vom Deckel

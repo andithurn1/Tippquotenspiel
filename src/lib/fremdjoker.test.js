@@ -3,10 +3,10 @@ import {
   aktiveArten, familieAn, familieSchalten, beschreibeFremdjoker,
   zulaessigeZiele, trefferWahrscheinlichkeit, tippGetroffen, gegenwetteVorschau,
   fremdEinsaetze, eingriffFenster, offeneEingriffe, zieleJeArt, sperrGrund,
-  losZiele, meinLos, konflikte, zweiPhasenHinweis,
+  losZiele, meinLos, geschuetzteSpiele, schutzStand, konflikte, zweiPhasenHinweis,
 } from "@/lib/fremdjoker";
 import { DEFAULT_EINGRIFFE } from "@/lib/eingriffe";
-import { DEFAULT_DUELL } from "@/lib/duellJoker";
+import { DEFAULT_DUELL, applyDuellJoker } from "@/lib/duellJoker";
 import { DEFAULT_RULES, brauchtVerlauf } from "@/lib/engine";
 
 // Ein ausgeglichenes Spiel, dasselbe Raster wie in `ergebnisMatrix.test.js` —
@@ -737,5 +737,92 @@ describe("meinLos und die Zielwahl „ausgelost“", () => {
       bisherigeEinsaetze: [{ spieltag: 3, vonUserId: angreifer, aufUserId: "a", typ: "klau" }],
     });
     expect(ziele.sort()).toEqual([los.ziel, angreifer].sort());
+  });
+});
+
+// ── JK14: geschützte Spiele ─────────────────────────────────
+// 🔴 Andi, 22.08.2026: „dass die Option für jeden Tippabgeber besteht,
+// ausgewählte Spiele für jeden Spieltag vor jedem Fremdjoker zu schützen (weil
+// man die halt evtl selber live verfolgen will)." Die einzige Schutzregel, die
+// dem SPIELER gehört — der Admin stellt nur die Anzahl.
+describe("geschuetzteSpiele und der Schutz in der Wertung", () => {
+  const tipp = (userId, matchId, kickoff, extra = {}) => ({
+    userId, matchday: 5, matchId, kickoff,
+    tip: { home: 1, away: 1, ...extra },
+  });
+  const R3 = (schutz = {}, duellTeil = {}) => ({
+    ...DEFAULT_RULES,
+    duell: { ...DEFAULT_DUELL, enabled: true, typen: ["block"], proSpieltag: 3, ...duellTeil },
+    eingriffe: { ...DEFAULT_EINGRIFFE, schutz: { ...DEFAULT_EINGRIFFE.schutz, ...schutz } },
+  });
+
+  it("nur markierte Spiele sind geschützt", () => {
+    const tipps = [
+      tipp("b", "m1", "2026-09-05T15:30:00Z", { schutz: true }),
+      tipp("b", "m2", "2026-09-05T18:30:00Z"),
+    ];
+    const g = geschuetzteSpiele(tipps, R3());
+    expect(g.has("b#m1")).toBe(true);
+    expect(g.has("b#m2")).toBe(false);
+  });
+
+  // ⚠️ Die Zahl gehört dem Admin: bei „alle Spiele schützbar" gibt es keine
+  // Fremdjoker mehr. Deshalb ein Kontingent je Spieltag.
+  it("das Kontingent wird in der WERTUNG durchgesetzt, nicht nur im Screen", () => {
+    const tipps = ["m1", "m2", "m3"].map((m, i) =>
+      tipp("b", m, `2026-09-05T1${i}:30:00Z`, { schutz: true }));
+    const eins = geschuetzteSpiele(tipps, R3({ proSpieltag: 1 }));
+    expect(eins.size).toBe(1);
+    // Es gewinnt der früheste Anpfiff — nicht die Reihenfolge in der Liste.
+    expect(eins.has("b#m1")).toBe(true);
+    expect(geschuetzteSpiele([...tipps].reverse(), R3({ proSpieltag: 1 }))).toEqual(eins);
+    expect(geschuetzteSpiele(tipps, R3({ proSpieltag: 0 })).size).toBe(0);
+    expect(geschuetzteSpiele(tipps, R3({ proSpieltag: 3 })).size).toBe(3);
+  });
+
+  it("`schutzStand` sagt, wie viele noch frei sind", () => {
+    const tipps = [tipp("b", "m1", "2026-09-05T15:30:00Z", { schutz: true })];
+    const stand = schutzStand(tipps, R3({ proSpieltag: 2 }), { userId: "b", spieltag: 5 });
+    expect(stand).toMatchObject({ erlaubt: 2, vergeben: 1, frei: 1 });
+    expect(stand.spiele).toEqual(["m1"]);
+  });
+
+  // 🔴 Die zwei Varianten aus Andis offener Frage, jetzt als Einstellung.
+  it("`zurueck` nimmt den Einsatz aus der Liste, `verfaellt` lässt ihn stehen", () => {
+    const tipps = [
+      tipp("a", "m1", "2026-09-05T15:30:00Z", { duell: { auf: "b", typ: "block" } }),
+      tipp("b", "m1", "2026-09-05T15:30:00Z", { schutz: true }),
+    ];
+    expect(fremdEinsaetze(tipps, R3({ verfall: "zurueck" }))).toEqual([]);
+
+    const bleibt = fremdEinsaetze(tipps, R3({ verfall: "verfaellt" }));
+    expect(bleibt).toHaveLength(1);
+    expect(bleibt[0].geschuetzt).toBe(true);
+  });
+
+  // Der Kern: ein geschütztes Spiel kostet keine Punkte.
+  it("ein Einsatz auf ein geschütztes Spiel bewegt nichts", () => {
+    const verlauf = [{ wettbewerb: "BL", matchday: 1, board: [
+      { userId: "a", name: "A", total: 0 },
+      { userId: "b", name: "B", total: 100 },
+    ] }];
+    const rules = R3({ verfall: "verfaellt" });
+    const ein = [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "block", matchId: "m1" }];
+    // Ohne Schutz dämpft der Block.
+    expect(applyDuellJoker(verlauf, rules, ein)[0].board.find((z) => z.userId === "b").total)
+      .toBeLessThan(100);
+    // Mit Marke bleibt alles, wie es war.
+    const geschuetzt = [{ ...ein[0], geschuetzt: true }];
+    expect(applyDuellJoker(verlauf, rules, geschuetzt)).toEqual(verlauf);
+  });
+
+  it("meldet den verdeckten Schutz mit Rückgabe — er verrät sich selbst", () => {
+    const rules = {
+      ...R3({ sichtbar: false, verfall: "zurueck" }),
+      tippfenster: { vorlaufStunden: 168, anker: "spieltag", schlussStunden: 24 },
+    };
+    expect(konflikte(rules).map((k) => k.key)).toContain("schutz-verdeckt-verraet-sich");
+    const sauber = { ...rules, eingriffe: { ...rules.eingriffe, schutz: { ...rules.eingriffe.schutz, sichtbar: true } } };
+    expect(konflikte(sauber).map((k) => k.key)).not.toContain("schutz-verdeckt-verraet-sich");
   });
 });
