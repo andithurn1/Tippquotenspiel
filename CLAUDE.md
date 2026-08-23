@@ -212,6 +212,13 @@ Dateien sind lang:
 7. Erst dann arbeiten. Nach Logik-Änderungen `npm test`, vor Abschluss
    `npm run build`.
 
+🔴 **Zum Nachsehen im Browser gibt es zwei Demo-Runden**, nicht eine:
+`DEMO` („Freundeskreis") fährt die Vorgabe und hat fast alles AUS — richtig für
+den ersten Eindruck, unbrauchbar zum Prüfen. `ALLES` („Schaufenster") schaltet
+an, was man sehen soll, und hat Tipps, die es auslösen (`src/lib/schaufenster.js`).
+⛔ Die Zahlen darin sind DEMO-Werte, keine Empfehlung — nichts davon gehört in
+`presets.js` oder `charaktere.js`.
+
 Erlaubnisse liegen in `.claude/settings.json` (committed) — Lesen/Schreiben,
 `git`, `npm`, `node`; nur Force-Pushes fragen nach. Da ist nichts einzurichten.
 
@@ -361,7 +368,7 @@ nach.** Fehlt die Store-Methode, wird sie gebaut; das ist billiger als die
 zweite Wahrheit. Ein Screen darf rechnen, was NUR er zeigt (Vorschauen,
 Was-wäre-wenn) — dann aber mit den vier Antworten oben als Eingabe.
 
-### 🔴 Fünf Abnahmen statt Tests — wer eine Mechanik ergänzt, geht sie ALLE durch
+### 🔴 Abnahmen statt Tests — wer eine Mechanik ergänzt, geht sie ALLE durch
 
 Ein Test fragt „ist es kaputt". Diese fünf fragen etwas anderes, und **keine
 kann die Frage der anderen beantworten** — jede von ihnen ist aus einem Fund
@@ -373,6 +380,7 @@ entstanden, den die beiden anderen nicht gesehen haben.
 | `npm run greift` | **Bewegt die Einstellung überhaupt etwas?** Vorgabe gegen Extremwert, je Regel-Block. Teil 2 misst Ebenen, die keine PUNKTE bewegen, sondern Gutschriften. | `autoTip.js` war fertig, getestet, einstellbar — und von niemandem aufgerufen |
 | `npm run stufen` | **Kommt ein Admin überhaupt an sie heran?** Jedes Regel-Feld muss auf Stufe 1 oder 2 erreichbar sein — oder in `NUR_PROFI` einen Begründungssatz tragen. | `rules.ereignisse` war wirksam UND richtig angezeigt und trotzdem unfertig: nur in der Profi-Ansicht |
 | `npm run lint` | **Gibt es die Variable überhaupt?** Nur ZWEI Regeln: `no-undef` und `react-hooks/rules-of-hooks`. | Beim Umbau fiel `gestartet` weg und stand weiter im JSX — Build grün, 2019 Tests grün, Screen im Browser weiß |
+| `npm run einstellbar` | **Nimmt das Feld überhaupt einen anderen Wert an — und überlebt er das Teilen?** Geht JEDES Blatt des Regelwerks durch, nicht eine Auswahl. Kandidaten werden aus Presets, Charakteren, Regler-Stufen und der Schaufenster-Runde GEERNTET, nicht von Hand gepflegt. | Zwei Blöcke standen in `greift` Teil 3 jahrelang ohne Messfall, weil dessen Liste von Hand gepflegt ist |
 | `npm run tot` | **Ruft die gebaute Funktion überhaupt jemand auf?** Ein Export, den außerhalb seiner Datei und ihrer Tests niemand nennt. Sortiert nach Risiko: Funktionen in `rules.*`-Modulen zuerst. | An EINEM Tag sechs Mechaniken, die fertig, getestet und einstellbar waren — und niemand fragte sie |
 
 🔴 **Der gemeinsame Nenner aller sechs Funde vom 06.08.:** ein grüner Test
