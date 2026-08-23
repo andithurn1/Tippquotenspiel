@@ -22,7 +22,8 @@
 //
 //  Aufruf: `npm run einstellbar`
 // ============================================================
-import { pruefeEinstellbarkeit, abdeckung, GEKOPPELT, ueberholteKopplungen } from "../src/lib/einstellbarkeit.js";
+import { pruefeEinstellbarkeit, abdeckung, GEKOPPELT, ueberholteKopplungen, ueberholteAusnahmen } from "../src/lib/einstellbarkeit.js";
+import { SCHAU_AUSGENOMMEN } from "../src/lib/schaufenster.js";
 
 const alle = pruefeEinstellbarkeit();
 const a = abdeckung();
@@ -72,6 +73,31 @@ console.log("  ⚠️ Das ist KEIN Fehler — es heißt, dass diese Einstellung 
 console.log("     nirgends vorgeführt wird. Wer sie im Browser sehen will, muss sie von Hand");
 console.log("     einstellen. Die Schaufenster-Runde (`ALLES`) ist der Ort, das zu ändern.\n");
 
+// 🔴 Der Rest, aufgeschlüsselt. Ohne diese Aufschlüsselung liest sich
+// „188 von 199“ wie eine unfertige Arbeit — dabei trägt jeder der elf
+// übrigen einen Satz, warum er übrig ist. Was KEINEN trägt, steht darunter,
+// und das ist die einzige Zahl hier, die 0 sein muss.
+console.log(`  Davon ${a.ausgenommen.length} bewusst ausgenommen — eine Runde kann nicht`);
+console.log("  jede Einstellung zugleich vorführen, weil manche einander ausschließen:");
+for (const pfad of a.ausgenommen) {
+  console.log(`     ${pfad.padEnd(28)} ${SCHAU_AUSGENOMMEN[pfad].slice(0, 56)}…`);
+}
+console.log();
+
+if (a.unerklaert.length) {
+  console.log(`  🔴 ${a.unerklaert.length} Felder werden nirgends vorgeführt UND tragen keinen Grund:`);
+  for (const pfad of a.unerklaert) console.log(`     ${pfad}`);
+  console.log("     Entweder ins Schaufenster — oder in `SCHAU_AUSGENOMMEN` mit einem Satz.\n");
+} else {
+  console.log("  ✅ Kein Feld bleibt unerklärt: jedes wird vorgeführt, ausgenommen oder gekoppelt.\n");
+}
+
+const ausUeberholt = ueberholteAusnahmen();
+if (ausUeberholt.length) {
+  console.log(`  ⚠️ ${ausUeberholt.length} Ausnahmen stimmen nicht mehr — das Schaufenster führt sie`);
+  console.log(`     inzwischen doch vor: ${ausUeberholt.join(", ")}\n`);
+}
+
 if (a.ohneKandidat.length) {
   console.log(`  ${a.ohneKandidat.length} Felder mit unbekanntem Wortschatz (Katalog-Werte, die sonst nirgends vorkommen):`);
   const zeilen = [];
@@ -83,8 +109,9 @@ if (a.ohneKandidat.length) {
 }
 console.log();
 console.log(strich);
-console.log(`  Ergebnis: ${a.funde.length} Funde · ${a.gekoppelt.length} begründet gekoppelt`
+console.log(`  Ergebnis: ${a.funde.length} Funde · ${a.unerklaert.length} unerklärt`
+  + ` · ${a.ausgenommen.length} begründet ausgenommen · ${a.gekoppelt.length} begründet gekoppelt`
   + ` · Abdeckung ${a.ausProjekt}/${a.blaetter}`);
 console.log();
 
-process.exitCode = a.funde.length || ueberholt.length ? 1 : 0;
+process.exitCode = a.funde.length || a.unerklaert.length || ueberholt.length || ausUeberholt.length ? 1 : 0;

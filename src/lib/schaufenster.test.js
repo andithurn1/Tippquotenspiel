@@ -6,6 +6,7 @@ import {
 import { aktiveArten, familieAn, konflikte } from "@/lib/fremdjoker";
 import { sanitizeRules, DEFAULT_RULES } from "@/lib/engine";
 import { FREMDJOKER_ARTEN } from "@/lib/eingriffe";
+import { wettbewerbVon } from "@/lib/wettbewerbe";
 
 // 🔴 Andi am 23.08.2026: „mach die demo runde bzw tests so dass sie alle
 // Einstellbarkeiten abdeckt … um sie zu prüfen."
@@ -39,9 +40,14 @@ describe("Schaufenster — die Runde, in der alles an ist", () => {
     expect(eg.sperrfrist.standard.aufschlag).toBeGreaterThan(0);
     // Ebene 2: mindestens eine Art weicht ab.
     expect(Object.keys(eg.sperrfrist).some((k) => k !== "standard")).toBe(true);
-    // JK6 je Art: eine offen, eine verborgen.
-    expect(eg.sichtbar.standard).toBe(true);
-    expect(Object.values(eg.sichtbar).some((v) => v === false)).toBe(true);
+    // JK6 je Art: eine offen, eine verborgen. WELCHE von beiden der Standard
+    // ist, steht hier bewusst nicht — er liegt seit dem 23.08.2026 verdeckt,
+    // damit der Standard selbst von der Vorgabe abweicht und nicht nur die
+    // Ausnahme. Der Test prüft, dass BEIDE Ebenen vorkommen.
+    const sichten = Object.values(eg.sichtbar);
+    expect(sichten).toContain(true);
+    expect(sichten).toContain(false);
+    expect(Object.keys(eg.sichtbar).some((k) => k !== "standard")).toBe(true);
     // JK14 an.
     expect(eg.schutz.proSpieltag).toBeGreaterThan(0);
   });
@@ -56,10 +62,10 @@ describe("Schaufenster — die Runde, in der alles an ist", () => {
   // einschalten. Ein Regler, der auf der Vorgabe steht, zeigt zwar die
   // Mechanik, aber nicht, dass er verstellbar ist.
   //
-  // ⚠️ Die sieben, die auf der Vorgabe BLEIBEN, bleiben es mit Grund: ihr
-  // anderer Wert machte das Schaufenster schlechter (verdeckte Schilde,
-  // „mitverdienen" ohne Deckel, ein Duell, das einen Joker kostet, den diese
-  // Runde gar nicht verteilt). Deshalb eine Untergrenze und keine Vollzahl.
+  // ⚠️ Was auf der Vorgabe BLEIBT, bleibt es mit Grund, und der Grund steht in
+  // `SCHAU_AUSGENOMMEN` — für die Familie ist das nur noch `duell.kosten`
+  // („stattJoker" verbraucht einen Joker, den diese Runde nicht verteilt).
+  // Deshalb eine Untergrenze und keine Vollzahl.
   it("führt die Fremdjoker-Familie weitgehend vor, nicht nur eingeschaltet", () => {
     const r = schaufensterRegeln();
     const basis = sanitizeRules(DEFAULT_RULES);
@@ -95,10 +101,16 @@ describe("Schaufenster — die Runde im Store", () => {
     expect(board.length).toBe(SCHAU_SPIELER.length);
   });
 
-  it("nur Bundesliga — sonst gäbe es „Spieltag 1“ sechsmal", async () => {
+  // ⚠️ Nur Bundesliga (sonst gäbe es „Spieltag 1“ sechsmal) UND nur die
+  // Spieltage 1–6: `spiele.spieltagVon/Bis` gehören seit dem 23.08.2026 zu
+  // den Einstellungen, die das Schaufenster vorführt. Dasselbe Fenster wie
+  // beim Duell — 6 Spieltage × 9 Begegnungen.
+  it("nur Bundesliga, und nur das eingestellte Spieltags-Fenster", async () => {
     const st = createMockStore();
     const spiele = await st.listRoundMatches(SCHAU_ROUND_ID);
-    expect(spiele.length).toBe(306);
+    expect(spiele.length).toBe(54);
+    expect(Math.max(...spiele.map((m) => m.matchday))).toBe(6);
+    expect([...new Set(spiele.map((m) => wettbewerbVon(m)))]).toEqual(["bl"]);
   });
 
   // 🔴 Der eigentliche Zweck: jede der vier Arten hinterlässt eine SPUR, die

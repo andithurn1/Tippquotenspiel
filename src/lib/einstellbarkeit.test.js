@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
-  pruefeEinstellbarkeit, funde, abdeckung, GEKOPPELT, ueberholteKopplungen,
+  pruefeEinstellbarkeit, funde, abdeckung, GEKOPPELT, ueberholteKopplungen, ueberholteAusnahmen,
 } from "@/lib/einstellbarkeit";
+import { SCHAU_AUSGENOMMEN } from "@/lib/schaufenster";
 import { DEFAULT_RULES, sanitizeRules, encodePreset, decodePreset } from "@/lib/engine";
 
 // 🔴 Andi am 23.08.2026: „mach die demo runde bzw tests so dass sie alle
@@ -56,10 +57,34 @@ describe("Einstellbarkeit — die Abdeckung", () => {
   // Sinkt sie, hat jemand ein Preset, einen Charakter, eine Regler-Stufe oder
   // das Schaufenster ausgedünnt — und eine Einstellung wird seither nirgends
   // mehr vorgeführt.
-  const ABDECKUNG_BEI_EINFUEHRUNG = 78;
+  const ABDECKUNG_BEI_EINFUEHRUNG = 188;
 
   it("die Zahl der im Projekt vorgeführten Felder sinkt NICHT", () => {
     expect(abdeckung().ausProjekt).toBeGreaterThanOrEqual(ABDECKUNG_BEI_EINFUEHRUNG);
+  });
+
+  // 🔴 Die eigentliche Prüf-Zahl zu Andis Auftrag („alle Einstellbarkeiten
+  // abdecken“). `ausProjekt` allein sagt es nicht: 188 von 199 liest sich wie
+  // ein Rest von 11, dabei trägt jeder der elf einen Satz. UNERKLÄRT ist ein
+  // Feld, das nirgends vorgeführt wird UND für das niemand einen geschrieben
+  // hat — und davon darf es keines geben.
+  it("kein Feld bleibt unerklärt — vorgeführt, ausgenommen oder gekoppelt", () => {
+    expect(abdeckung().unerklaert).toEqual([]);
+  });
+
+  // Die Gegenprobe dazu, dasselbe Muster wie `ueberholteKopplungen`: eine
+  // Ausnahme, die das Schaufenster inzwischen doch vorführt, beschreibt einen
+  // Zustand, den es nicht mehr gibt.
+  it("keine Schaufenster-Ausnahme ist überholt", () => {
+    expect(ueberholteAusnahmen()).toEqual([]);
+  });
+
+  // Jede Ausnahme trägt einen Satz, der sie vertritt — nicht bloß ein Wort.
+  it("jede Schaufenster-Ausnahme trägt einen Grund", () => {
+    for (const [pfad, grund] of Object.entries(SCHAU_AUSGENOMMEN)) {
+      expect(typeof grund, pfad).toBe("string");
+      expect(grund.length, pfad).toBeGreaterThan(40);
+    }
   });
 
   // 🔴 Der Beleg, dass die Prüfung überhaupt etwas prüft: ein absichtlich
@@ -86,15 +111,27 @@ describe("Einstellbarkeit — die Abdeckung", () => {
     }
   });
 
-  // Die Gegenprobe zum Nachrücker: ein Feld mit einer GRENZE (`phasenStufe`
-  // deckelt bei 0.3) nimmt keinen der runden generischen Werte exakt an — es
-  // kommt geklemmt an. Das ist ein Beleg, kein Fund, und es muss einer bleiben:
-  // sonst stünde die halbe Regler-Landschaft als „nicht setzbar“ da.
+  // Die Gegenprobe zum Nachrücker: ein Feld mit einer GRENZE nimmt keinen der
+  // runden generischen Werte exakt an — es kommt GEKLEMMT an. Das muss als
+  // Beleg zählen, sonst stünde die halbe Regler-Landschaft als „nicht
+  // setzbar“ da.
+  //
+  // ⚠️ Der Test nennt bewusst KEIN Beispielfeld mehr: `wettbewerbe.phasenStufe`
+  // war eines, bis das Schaufenster anfing, es mit 0.1 vorzuführen — seither
+  // hat es einen exakten Treffer. Ein Test, der ein bestimmtes Feld festnagelt,
+  // geht bei der nächsten Demo-Einstellung kaputt, ohne dass etwas kaputt ist.
+  // Geprüft wird deshalb die PRÄMISSE (die Grenze klemmt wirklich) und die
+  // FOLGE (das Feld gilt als setzbar, mit einem Wert ungleich der Vorgabe).
   it("ein Wert, der auf seiner Grenze ankommt, zählt als Beleg — nicht als Fund", () => {
+    const geklemmt = sanitizeRules({
+      ...DEFAULT_RULES,
+      wettbewerbe: { enabled: true, aufschlaege: {}, phasenStufe: 1 },
+    });
+    expect(geklemmt.wettbewerbe.phasenStufe).toBe(0.3);
+
     const e = pruefeEinstellbarkeit().find((x) => x.pfad === "wettbewerbe.phasenStufe");
     expect(e.setzbar).toBe(true);
-    expect(e.angeboten).toBe(1);
-    expect(e.kandidat).toBe(0.3);
+    expect(e.kandidat).not.toBe(e.vorgabe);
   });
 
   it("ein gesetzter Wert überlebt den Creator-Code — an einem echten Beispiel", () => {

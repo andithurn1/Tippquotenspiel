@@ -47,7 +47,7 @@ import { DEFAULT_RULES, sanitizeRules, encodePreset, decodePreset } from "./engi
 import { PRESETS } from "./presets";
 import { CHARAKTERE } from "./charaktere";
 import { REGLER } from "./einfachRegler";
-import { schaufensterRegeln } from "./schaufenster";
+import { schaufensterRegeln, SCHAU_AUSGENOMMEN } from "./schaufenster";
 
 // ── Felder, die sich NICHT allein umlegen lassen ────────────
 //
@@ -68,6 +68,22 @@ export const GEKOPPELT = {
     "Dito: nur zusammen mit mindestens einem Aufschlag oder einer Phasen-Stufe. "
     + "Ein eingeschaltetes Wettbewerbs-Gewicht ohne Gewicht wäre eine Zeile in "
     + "der Übersicht, die nichts bedeutet.",
+  // 🔴 Aufgefallen am 23.08.2026, als das Schaufenster anfing, `werWert`
+  // vorzuführen: der Durchgang setzt jedes Feld EINZELN auf die Vorgabe-Regeln
+  // — dort steht `wer: „alle“`, und für „alle“ hat eine Platz-Zahl keine
+  // Bedeutung. Die Bereinigung nullt sie also zu Recht. Im Schaufenster, wo
+  // `wer: „abPlatz“` daneben steht, kommt derselbe Wert an.
+  //
+  // ⚠️ Das ist der Grund, warum die Ablehnung eines PROJEKT-Werts nicht
+  // automatisch ein Fehler ist: sie kann auch heißen „ohne seinen Partner
+  // ergibt dieser Wert nichts“.
+  "jokerBasis.standard.werWert":
+    "Trägt nur bei `wer: „abPlatz“`/`„abRueckstand“` eine Bedeutung — ein "
+    + "Tabellenplatz für „alle“ ist keine Angabe, sondern ein Missverständnis. "
+    + "Bei passendem `wer` kommt der Wert an (Schaufenster: `abPlatz` + 1).",
+  "drehrad.werWert":
+    "Dieselbe Kopplung wie in `jokerBasis` — EIN Katalog, EINE Regel "
+    + "(drehrad.js Abschnitt 2.4).",
 };
 
 // ── Blätter und Zugriff ─────────────────────────────────────
@@ -284,6 +300,18 @@ export function ueberholteKopplungen() {
   });
 }
 
+// Dieselbe Gegenprobe wie `ueberholteKopplungen`, für die Schaufenster-Seite:
+// eine Ausnahme, die das Schaufenster inzwischen doch vorführt, beschreibt
+// einen Zustand, den es nicht mehr gibt. Wer sie liest, hält eine Einstellung
+// für unmöglich, die längst dasteht.
+export function ueberholteAusnahmen() {
+  const alle = pruefeEinstellbarkeit();
+  return Object.keys(SCHAU_AUSGENOMMEN).filter((pfad) => {
+    const e = alle.find((x) => x.pfad === pfad);
+    return !e || e.quelle === "projekt";
+  });
+}
+
 // Wie viele Blätter setzt das PROJEKT selbst irgendwo anders als die Vorgabe?
 // Das ist die Abdeckungs-Zahl, nach der Andi gefragt hat: „deckt alle
 // Einstellbarkeiten ab".
@@ -300,6 +328,19 @@ export function abdeckung() {
     ausProjekt: belegt.length,
     nurGenerisch: alle.filter((e) => e.quelle === "generisch").map((e) => e.pfad),
     ohneKandidat: alle.filter((e) => e.setzbar === null).map((e) => e.pfad),
+    // 🔴 Die Zahl, auf die es Andi ankam. „Abdeckung 188/199“ liest sich wie
+    // ein Rest von 11 — der Rest ist aber KEINE Restmenge, sondern eine Liste
+    // mit Gründen: 7 schließen sich mit dem aus, was die Runde zeigt
+    // (`SCHAU_AUSGENOMMEN`), 4 lassen sich ohne ihren Partner gar nicht setzen
+    // (`GEKOPPELT`).
+    //
+    // ⚠️ `unerklaert` ist deshalb die eigentliche Prüf-Zahl: ein Feld, das
+    // nirgends vorgeführt wird UND für das niemand einen Satz geschrieben hat.
+    // Sie gehört auf 0 — und ein Test hält sie dort.
+    ausgenommen: alle.filter((e) => e.quelle !== "projekt" && SCHAU_AUSGENOMMEN[e.pfad]).map((e) => e.pfad),
+    unerklaert: alle
+      .filter((e) => e.quelle !== "projekt" && !SCHAU_AUSGENOMMEN[e.pfad] && !GEKOPPELT[e.pfad])
+      .map((e) => e.pfad),
     funde: alle.filter((e) => (e.setzbar === false || e.teilbar === false) && !GEKOPPELT[e.pfad]),
     gekoppelt: alle.filter((e) => GEKOPPELT[e.pfad]).map((e) => e.pfad),
   };
