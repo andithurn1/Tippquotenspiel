@@ -84,6 +84,21 @@ export const GEKOPPELT = {
   "drehrad.werWert":
     "Dieselbe Kopplung wie in `jokerBasis` — EIN Katalog, EINE Regel "
     + "(drehrad.js Abschnitt 2.4).",
+  // 🔴 Aufgefallen am 24.08.2026, als „Klassisch & fair" die erste
+  // Spielauswahl bekam: `sanitizeSpiele` setzt `modus` auf „alle" zurück,
+  // solange die Angabe darunter fehlt (`teams` unter 2 Einträgen, `matchIds`
+  // leer). Das ist richtig so — ein Modus „nur bestimmte Vereine" ohne
+  // Vereine wäre eine Auswahl, die alles durchlässt und dabei behauptet, sie
+  // filtere.
+  //
+  // ⚠️ Der Durchgang setzt jedes Feld EINZELN auf die Vorgabe, und dort steht
+  // `teams: []` — deshalb kommt „teams" hier nie an. Im Charakter, wo sechs
+  // Vereine daneben stehen, kommt es an.
+  "spiele.modus":
+    "Trägt nur mit der Angabe darunter: „teams“ braucht mindestens ZWEI "
+    + "Vereine, „liste“ mindestens eine Begegnung — sonst fällt der Modus auf "
+    + "„alle“ zurück (spielauswahl.js). Ein Filter ohne Filterwert wäre eine "
+    + "Auswahl, die alles durchlässt und behauptet, sie filtere.",
 };
 
 // ── Blätter und Zugriff ─────────────────────────────────────

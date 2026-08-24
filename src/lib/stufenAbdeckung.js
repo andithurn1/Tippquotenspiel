@@ -61,10 +61,18 @@ export const NUR_PROFI = {
     + "werden am Ende festgelegt (Andi, 22.08.2026). Ein Charakter, der sie "
     + "jetzt setzte, behauptete eine Empfehlung, die es noch nicht gibt — "
     + "deshalb steht der Block hier und nicht in einem Buendel.",
-  spiele:
-    "Welche Spiele zur Runde gehören, wird beim ANLEGEN gewählt (eigene "
-    + "Oberfläche mit Wettbewerben, Vereinen und Spieltag-Bereich) und nicht "
-    + "über einen Charakter — sonst gäbe es zwei Wege zur selben Auswahl.",
+  // 🔴 `spiele` stand hier bis zum 24.08.2026 mit der Begründung, die Auswahl
+  // werde „beim ANLEGEN gewählt und nicht über einen Charakter — sonst gäbe es
+  // zwei Wege zur selben Auswahl". Der Eintrag ist WEG, weil Andi das Gegenteil
+  // bestellt hat: „mach des mal so mit klassisch und fair, dass auch mal teams
+  // ausgewählt sind". Seither trägt „Klassisch & fair" eine Auswahl, und
+  // `ueberholteBegruendungen()` hat die Zeile prompt als überholt gemeldet.
+  //
+  // ⚠️ Die Sorge dahinter war nicht falsch, nur zu streng: es gibt jetzt
+  // tatsächlich zwei Wege zur selben Auswahl — die Vorlage bringt einen
+  // Vorschlag mit, die Oberfläche beim Anlegen ändert ihn. Das ist kein
+  // Widerspruch, sondern genau der Baukasten-Grundsatz (CLAUDE.md): das
+  // Gängige ist vorbelegt, das Feine bleibt einstellbar.
 
   // ── Die vier Wertungs-Leitplanken ─────────────────────────
   // ⚠️ Gemeinsame Begründung, und sie ist eine MESSUNG: alle sechs vermessenen

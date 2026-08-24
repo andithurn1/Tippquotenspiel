@@ -68,6 +68,39 @@ export const CHARAKTERE = [
       // Richtung 1,0 und darunter wird das Ranking beliebig.
       aufholen: { enabled: true, staerke: 0.10, schwelle: 0.30, betrifft: "unteres-drittel" },
       saisonform: { kurve: "flach", staerke: 1.5, streich: 1, nurGetippte: true },
+      // 🔴 **Die erste Vorlage mit einer SPIELAUSWAHL** (Andi, 24.08.2026:
+      // „mach des mal so mit klassisch und fair, dass auch mal teams
+      // ausgewählt sind, will testen wie funkt mit im nachhinein Teams
+      // anpassen").
+      //
+      // ⚠️ Vorher trug KEINE der elf Vorlagen eine Auswahl — alle standen auf
+      // „alle Wettbewerbe, alle Vereine". Wer „Klassisch & fair" wählte,
+      // bekam eine Runde über sechs Wettbewerbe mit **1943 Spielen**; für
+      // einen Freundeskreis ist das keine Runde, sondern ein Zweitjob.
+      //
+      // Gemessen mit `filterSpiele` über den echten Spielplan:
+      //
+      //     alles                       1943 Spiele · ~51 je Spieltag
+      //     nur Bundesliga               306 Spiele · ~9
+      //     BL + diese 6 („einer")       174 Spiele · ~5   ← hier
+      //     BL + diese 6 („beide")        30 Spiele · ~1,5
+      //
+      // `teamModus: "einer"` heißt: JEDES Spiel dieser Vereine zählt, auch
+      // gegen alle anderen — die Lesart „unsere Lieblingsvereine". „beide"
+      // wäre „nur die Duelle untereinander" und ergäbe 30 Spiele in einer
+      // ganzen Saison, also an den meisten Spieltagen keins.
+      //
+      // ⚠️ Die Grenze `AUSWAHL_LIMITS.maxSpiele` liegt bei 200 — mit 174 ist
+      // Luft, aber nicht viel. Wer hier Vereine ergänzt, prüft die Zahl nach.
+      spiele: {
+        modus: "teams",
+        wettbewerbe: ["bl"],
+        teams: [
+          "FC Bayern München", "Borussia Dortmund", "RB Leipzig",
+          "Bayer 04 Leverkusen", "VfB Stuttgart", "Eintracht Frankfurt",
+        ],
+        teamModus: "einer",
+      },
     }),
   },
   {
