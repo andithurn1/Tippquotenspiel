@@ -117,7 +117,7 @@ export default function JokerGrundform({ rules, onChange }) {
 
   return (
     <div>
-      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Sechs bis dreizehn Fragen, die sich bei JEDEM Joker wiederholen — hier stellst du sie
         <strong> einmal</strong> als Standard und weichst nur dort ab, wo du willst.
       </p>
@@ -142,10 +142,10 @@ export default function JokerGrundform({ rules, onChange }) {
       )}
 
       {/* ── Der Standard: prominent, alle elf Dimensionen ── */}
-      <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, marginBottom: 4 }}>
+      <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginTop: 4, marginBottom: 4 }}>
         Standard — gilt für alle Joker-Arten
       </div>
-      <p style={{ fontSize: 11, color: C.muted, marginBottom: 10, lineHeight: 1.4 }}>
+      <p style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 10, lineHeight: 1.4 }}>
         {beschreibeBasis(effektivStandard)}
       </p>
       <BasisFelder basisRoh={standard} effektiv={effektivStandard}
@@ -153,8 +153,8 @@ export default function JokerGrundform({ rules, onChange }) {
 
       {/* ── Abweichungen: opt-in je Joker-Art ── */}
       <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 16, paddingTop: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Abweichungen je Joker-Art</div>
-        <p style={{ fontSize: 11, color: C.muted, marginBottom: 10, lineHeight: 1.4 }}>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 4 }}>Abweichungen je Joker-Art</div>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 10, lineHeight: 1.4 }}>
           Jede Art folgt dem Standard oben, bis du für sie ausdrücklich abweichst.
         </p>
         {JOKER_ARTEN.map((art) => (
@@ -186,11 +186,11 @@ function ArtZeile({ art, rules, abweichung, onBeginnen, onZuruecksetzen, onPatch
         padding: "9px 12px", marginBottom: 8,
       }}>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700 }}>{art.label}</div>
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>folgt dem Standard</div>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>{art.label}</div>
+          <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2 }}>folgt dem Standard</div>
         </div>
         <button onClick={onBeginnen} style={{
-          cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, flexShrink: 0,
+          cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", fontWeight: 700, flexShrink: 0,
           background: C.surface2, color: C.akzent, border: `1px solid ${C.akzent}44`,
           ...TAPZIEL, borderRadius: RUND.karte, padding: "7px 12px", whiteSpace: "nowrap",
         }}>abweichen</button>
@@ -204,14 +204,14 @@ function ArtZeile({ art, rules, abweichung, onBeginnen, onZuruecksetzen, onPatch
       padding: "10px 12px", marginBottom: 10,
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>{art.label}</div>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: C.akzent }}>{art.label}</div>
         <button onClick={onZuruecksetzen} style={{
-          cursor: "pointer", fontFamily: "inherit", fontSize: 12, flexShrink: 0,
+          cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", flexShrink: 0,
           background: "transparent", color: C.muted, border: `1px solid ${C.line}`,
           borderRadius: RUND.karte, padding: "6px 10px", whiteSpace: "nowrap",
         }}>auf Standard zurücksetzen</button>
       </div>
-      <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.5 }}>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 5, lineHeight: 1.5 }}>
         {kurz.length ? kurz.join(" · ") : "Noch keine eigene Einstellung — unten anpassen."}
       </div>
       <div style={{ marginTop: 9 }}>
@@ -309,7 +309,7 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
         )}
         {umfangAktuell !== "spieltag" && (
           <div style={{ marginTop: 8 }}>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 5 }}>Welche Spiele</div>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 5 }}>Welche Spiele</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
               <ChipButton aktiv={wert("wahl") === "selbst"} onClick={() => onPatch({ wahl: "selbst" })}>Selbst wählen</ChipButton>
               <ChipButton aktiv={wert("wahl") === "bestes"} onClick={() => onPatch({ wahl: "bestes" })}>Automatisch das beste</ChipButton>
@@ -319,7 +319,7 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
       </Feldgruppe>
 
       <Feldgruppe titel="Bedingung — worauf der Joker überhaupt gilt">
-        <p style={{ fontSize: 11, color: C.akzent, margin: "0 0 8px", lineHeight: 1.45 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.akzent, margin: "0 0 8px", lineHeight: 1.45 }}>
           ⚠️ Min./Max.-Quote messen die Außenseiter-Siegquote <strong>des Spiels</strong>, nicht die
           Quote deines Tipps — sonst ließe sich die Bedingung farmen (aussichtslos tippen, um
           freizuschalten, und dann auf das setzen, was man wirklich erwartet).
@@ -331,7 +331,7 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
             limits={BASIS_LIMITS.quote} leerErlaubt breite={150} onChange={(v) => onPatchBedingung({ maxQuote: v })} />
         </div>
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 11, color: C.muted, marginBottom: 5 }}>Wettbewerbe (leer = alle)</div>
+          <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 5 }}>Wettbewerbe (leer = alle)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
             {WETTBEWERBE.map((w) => (
               <ChipButton key={w.key} aktiv={(bedWert("wettbewerbe") ?? []).includes(w.key)}
@@ -340,7 +340,7 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
           </div>
         </div>
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 11, color: C.muted, marginBottom: 5 }}>Phasen (leer = alle)</div>
+          <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 5 }}>Phasen (leer = alle)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
             {PHASEN.map((p) => (
               <ChipButton key={p.key} aktiv={(bedWert("phasen") ?? []).includes(p.key)}
@@ -358,7 +358,7 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
 function Feldgruppe({ titel, children }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, lineHeight: 1.4 }}>{titel}</div>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 5, lineHeight: 1.4 }}>{titel}</div>
       {children}
     </div>
   );
@@ -379,7 +379,7 @@ function Katalog({ katalog, aktiv, onWahl }) {
 function ChipButton({ aktiv, titel, onClick, children }) {
   return (
     <button title={titel} onClick={onClick} style={{
-      ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: RUND.pille,
+      ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", padding: "5px 10px", borderRadius: RUND.pille,
       background: aktiv ? `${C.indigo}22` : C.surface2, color: aktiv ? C.indigo : C.muted,
       border: `1px solid ${aktiv ? C.indigo + "66" : C.line}`,
     }}>{children}</button>
@@ -403,7 +403,7 @@ function ToggleKnopf({ an, onChange, textAn, textAus }) {
           borderRadius: RUND.pille, background: C.ink2, transition: "left .15s",
         }} />
       </span>
-      <span style={{ fontSize: 12 }}>{an ? textAn : textAus}</span>
+      <span style={{ fontSize: "0.75rem" }}>{an ? textAn : textAus}</span>
     </button>
   );
 }
@@ -413,7 +413,7 @@ function Banner({ ton, children }) {
   return (
     <div style={{
       background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: RUND.karte,
-      padding: "9px 11px", marginBottom: 10, fontSize: 12, color: C.text, lineHeight: 1.5,
+      padding: "9px 11px", marginBottom: 10, fontSize: "0.75rem", color: C.text, lineHeight: 1.5,
     }}>
       {children}
     </div>

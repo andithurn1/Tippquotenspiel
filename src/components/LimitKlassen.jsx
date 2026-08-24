@@ -108,7 +108,7 @@ export default function LimitKlassen({ rules, onChange }) {
 
   return (
     <div>
-      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Eine Limitierungsklasse ist ein gemeinsames Kontingent für mehrere Joker-Arten.
         Mehrere Klassen dürfen sich <strong>überlagern</strong> — ein Einsatz zählt gegen
         JEDE Klasse, in der seine Art Mitglied ist.
@@ -133,12 +133,12 @@ export default function LimitKlassen({ rules, onChange }) {
       {/* ── Die Überlagerung: Abdeckung je Joker-Art ── */}
       {klassen.length > 0 && (
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Abdeckung je Joker-Art</div>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 6 }}>Abdeckung je Joker-Art</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {abdeckung.map(({ art, treffer }) => (
               <div key={art.key} style={{
                 background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
-                padding: "8px 10px", fontSize: 12, lineHeight: 1.5,
+                padding: "8px 10px", fontSize: "0.75rem", lineHeight: 1.5,
               }}>
                 <span style={{ fontWeight: 700 }}>{art.label}</span>
                 {" → "}
@@ -159,11 +159,11 @@ export default function LimitKlassen({ rules, onChange }) {
       )}
 
       {/* ── Klassen-Liste ── */}
-      <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, marginBottom: 8 }}>
+      <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginTop: 4, marginBottom: 8 }}>
         Klassen ({klassen.length})
       </div>
       {klassen.length === 0 && (
-        <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
+        <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 8 }}>
           Noch keine Klassen — leg die erste an.
         </div>
       )}
@@ -183,7 +183,7 @@ export default function LimitKlassen({ rules, onChange }) {
       <button onClick={hinzufuegen} style={{
         cursor: "pointer", background: "transparent", color: C.muted,
         ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
-        fontFamily: "inherit", fontSize: 13, textAlign: "left", width: "100%", boxSizing: "border-box",
+        fontFamily: "inherit", fontSize: "0.8125rem", textAlign: "left", width: "100%", boxSizing: "border-box",
       }}>+ Klasse anlegen</button>
     </div>
   );
@@ -209,29 +209,29 @@ function KlasseZeile({
           style={{
             flex: 1, minWidth: 0, boxSizing: "border-box", background: C.ink2, color: C.text,
             border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "7px 9px",
-            fontSize: 13, fontFamily: "inherit", outline: "none",
+            fontSize: "0.8125rem", fontFamily: "inherit", outline: "none",
           }} />
         <button onClick={onEntfernen} aria-label="Klasse entfernen" style={{
           cursor: "pointer", background: "transparent", border: "none",
-          color: C.muted, fontSize: 20, lineHeight: 1, padding: "0 2px", flexShrink: 0,
+          color: C.muted, fontSize: "1.25rem", lineHeight: 1, padding: "0 2px", flexShrink: 0,
         }}>×</button>
       </div>
 
       {verworfenGrund && (
-        <div style={{ fontSize: 11, color: C.coral, marginTop: 6, lineHeight: 1.4 }}>
+        <div style={{ fontSize: "0.6875rem", color: C.coral, marginTop: 6, lineHeight: 1.4 }}>
           Zählt gerade nicht mit: {verworfenGrund}
         </div>
       )}
 
       {/* Mitglieder */}
       <div style={{ marginTop: 9 }}>
-        <div style={{ fontSize: 11, color: C.muted, marginBottom: 5 }}>Mitglieder</div>
+        <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 5 }}>Mitglieder</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
           {JOKER_ARTEN.map((art) => {
             const an = mitglieder.includes(art.key);
             return (
               <button key={art.key} title={art.desc} onClick={() => onToggleMitglied(art.key)} style={{
-                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: RUND.pille,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", padding: "5px 10px", borderRadius: RUND.pille,
                 background: an ? `${C.indigo}22` : C.surface2, color: an ? C.indigo : C.muted,
                 border: `1px solid ${an ? C.indigo + "66" : C.line}`,
               }}>{art.label}</button>
@@ -239,7 +239,7 @@ function KlasseZeile({
           })}
         </div>
         {mitglieder.length === 0 && (
-          <div style={{ fontSize: 11, color: C.akzent, marginTop: 5, lineHeight: 1.4 }}>
+          <div style={{ fontSize: "0.6875rem", color: C.akzent, marginTop: 5, lineHeight: 1.4 }}>
             Ohne Mitglieder greift diese Klasse für keine Joker-Art.
           </div>
         )}
@@ -253,13 +253,13 @@ function KlasseZeile({
 
       {/* Zeitraum */}
       <div style={{ marginTop: 9 }}>
-        <div style={{ fontSize: 11, color: C.muted, marginBottom: 5 }}>Zeitraum</div>
+        <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 5 }}>Zeitraum</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
           {PRO_ZEITRAUM.map((p) => {
             const an = (klasse.proZeitraum ?? "saison") === p.key;
             return (
               <button key={p.key} title={p.desc} onClick={() => onPatch({ proZeitraum: p.key })} style={{
-                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: RUND.pille,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", padding: "5px 10px", borderRadius: RUND.pille,
                 background: an ? `${C.akzent}22` : C.surface2, color: an ? C.akzent : C.muted,
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
               }}>{p.label}</button>
@@ -276,13 +276,13 @@ function KlasseZeile({
 
       {/* Aktivierung — nur die Parameter zeigen, die der gewählte Typ braucht. */}
       <div style={{ marginTop: 9 }}>
-        <div style={{ fontSize: 11, color: C.muted, marginBottom: 5 }}>Aktivierung</div>
+        <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 5 }}>Aktivierung</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
           {AKTIVIERUNG_TYPEN.map((t) => {
             const an = aktivierung.typ === t.key;
             return (
               <button key={t.key} title={t.desc} onClick={() => onAktivierungsTyp(t.key)} style={{
-                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: RUND.pille,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", padding: "5px 10px", borderRadius: RUND.pille,
                 background: an ? `${C.mint}22` : C.surface2, color: an ? C.mint : C.muted,
                 border: `1px solid ${an ? C.mint + "66" : C.line}`,
               }}>{t.label}</button>
@@ -320,14 +320,14 @@ function KlasseZeile({
           </div>
         )}
         {aktivierung.typ === "nachEreignis" && (
-          <label style={{ fontSize: 11, color: C.muted, display: "block", marginTop: 8, maxWidth: 280 }}>
+          <label style={{ fontSize: "0.6875rem", color: C.muted, display: "block", marginTop: 8, maxWidth: 280 }}>
             Ereignis
             <select value={aktivierung.ereignisKey ?? ""}
               onChange={(e) => onAktivierungPatch({ ereignisKey: e.target.value })}
               style={{
                 display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
                 background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: RUND.karte, padding: "7px 9px", fontSize: 13, fontFamily: "inherit",
+                borderRadius: RUND.karte, padding: "7px 9px", fontSize: "0.8125rem", fontFamily: "inherit",
               }}>
               <option value="">— auswählen —</option>
               {EREIGNIS_TYPEN.map((e) => <option key={e.key} value={e.key}>{e.label}</option>)}
@@ -349,7 +349,7 @@ function KlasseZeile({
       </div>
 
       {beschreibung && (
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 9, lineHeight: 1.4 }}>{beschreibung}</div>
+        <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 9, lineHeight: 1.4 }}>{beschreibung}</div>
       )}
     </div>
   );
@@ -362,7 +362,7 @@ function Banner({ ton, children }) {
   return (
     <div style={{
       background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: RUND.karte,
-      padding: "9px 11px", marginBottom: 10, fontSize: 12, color: C.text, lineHeight: 1.5,
+      padding: "9px 11px", marginBottom: 10, fontSize: "0.75rem", color: C.text, lineHeight: 1.5,
     }}>
       {children}
     </div>

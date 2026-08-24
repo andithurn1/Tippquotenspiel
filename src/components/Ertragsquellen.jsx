@@ -26,7 +26,7 @@ export default function Ertragsquellen({ tip, actual, snap, rules, stufe = "voll
       borderRadius: RUND.karte, padding: "14px 15px",
     }}>
       <div style={{
-        fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, color: C.muted,
+        fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.5, color: C.muted,
         textTransform: "uppercase", marginBottom: 10,
       }}>
         Woher deine Punkte kamen
@@ -40,9 +40,9 @@ export default function Ertragsquellen({ tip, actual, snap, rules, stufe = "voll
         display: "flex", alignItems: "baseline", justifyContent: "space-between",
         borderTop: `1px solid ${C.line}`, marginTop: 8, paddingTop: 9,
       }}>
-        <span style={{ fontSize: 13, fontWeight: 700 }}>Gesamt</span>
+        <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Gesamt</span>
         <span style={{
-          fontFamily: MONO, fontSize: 20, fontWeight: 700,
+          fontFamily: MONO, fontSize: "1.25rem", fontWeight: 700,
           color: b.gesamt < 0 ? C.coral : C.akzent,
         }}>
           {b.gesamt > 0 ? `+${b.gesamt}` : b.gesamt}
@@ -75,17 +75,17 @@ function Zeile({ p, zeigeHinweis }) {
     <div style={{ padding: "5px 0", opacity: istInfo ? 0.55 : 1 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
         <span style={{
-          flex: 1, minWidth: 0, fontSize: 13,
+          flex: 1, minWidth: 0, fontSize: "0.8125rem",
           color: istInfo ? C.muted : C.text,
           textDecoration: istInfo ? "line-through" : "none",
         }}>{p.label}</span>
         <span style={{
-          fontFamily: MONO, fontSize: 13, fontWeight: istFaktor ? 400 : 700,
+          fontFamily: MONO, fontSize: "0.8125rem", fontWeight: istFaktor ? 400 : 700,
           color: farbe, fontVariantNumeric: "tabular-nums",
         }}>{text}</span>
       </div>
       {zeigeHinweis && p.hinweis && (
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 1, lineHeight: 1.4 }}>
+        <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 1, lineHeight: 1.4 }}>
           {p.hinweis}
         </div>
       )}

@@ -92,16 +92,16 @@ export default function SpottSenden() {
     }}>
       <BackLink href="/hub" label="Tippspiel" />
       <div style={{
-        width: "100%", maxWidth: 400, borderRadius: RUND.schirm,
+        width: "100%", maxWidth: "var(--tqs-schirm-breite)", borderRadius: RUND.schirm,
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
         padding: "26px 22px 24px",
       }}>
-        <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+        <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Spott verschicken
         </span>
-        <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>Wen willst du ärgern?</div>
-        <p style={{ fontSize: 13, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+        <div style={{ marginTop: 6, fontSize: "1.25rem", fontWeight: 700 }}>Wen willst du ärgern?</div>
+        <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
           Such dir ein Opfer, nimm einen Spruch — der Rest geht über deinen
           üblichen Chat raus. Einer pro Mitspieler und Spieltag, mehr wäre albern.
         </p>
@@ -122,9 +122,9 @@ export default function SpottSenden() {
                   border: `1px solid ${aktiv ? C.akzent + "55" : C.line}`,
                   ...TAPZIEL, borderRadius: RUND.karte, padding: "10px 12px", color: C.text, fontFamily: "inherit",
                 }}>
-                  <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 18 }}>{z.rank}</span>
-                  <span style={{ flex: 1, fontSize: 15, fontWeight: aktiv ? 700 : 400 }}>{z.name}</span>
-                  <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>{z.total}</span>
+                  <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted, width: 18 }}>{z.rank}</span>
+                  <span style={{ flex: 1, fontSize: "0.9375rem", fontWeight: aktiv ? 700 : 400 }}>{z.name}</span>
+                  <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted }}>{z.total}</span>
                 </button>
               );
             })}
@@ -135,7 +135,7 @@ export default function SpottSenden() {
         {ziel && (
           <>
             <div style={{ height: 1, background: C.line, margin: "20px 0" }} />
-            <div style={{ fontSize: 13, fontWeight: 700 }}>
+            <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>
               {relation === "ueberholt" && "Du liegst vorn — genieß es."}
               {relation === "hinterher" && "Du liegst hinten — Frechheit siegt."}
               {relation === "gleichauf" && "Punktgleich — Duell-Modus."}
@@ -145,7 +145,7 @@ export default function SpottSenden() {
                 const aktiv = s.key === (spruch?.key ?? null);
                 return (
                   <button key={s.key} onClick={() => { setSpruchKey(s.key); setStatus(""); }} style={{
-                    cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                    cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
                     background: aktiv ? `${C.akzent}18` : C.surface, color: aktiv ? C.akzent : C.muted,
                     border: `1px solid ${aktiv ? C.akzent + "66" : C.line}`,
                     borderRadius: RUND.pille, padding: "6px 11px",
@@ -160,20 +160,20 @@ export default function SpottSenden() {
                 borderRadius: RUND.karte, padding: "14px", display: "flex", gap: 12, alignItems: "center",
               }}>
                 <ReactionGif reaction={RANK_REACTIONS[spott.reaction] ?? RANK_REACTIONS.mittelfeld} size={84} />
-                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, flex: 1, minWidth: 0 }}>{spott.text}</p>
+                <p style={{ margin: 0, fontSize: "0.8125rem", lineHeight: 1.5, flex: 1, minWidth: 0 }}>{spott.text}</p>
               </div>
             )}
 
             <button onClick={senden} disabled={blockiert} style={{
               width: "100%", marginTop: 16, cursor: blockiert ? "default" : "pointer",
               background: blockiert ? C.surface : C.akzent, color: blockiert ? C.muted : C.ink,
-              fontWeight: 700, fontSize: 15, border: `1px solid ${blockiert ? C.line : C.akzent}`,
+              fontWeight: 700, fontSize: "0.9375rem", border: `1px solid ${blockiert ? C.line : C.akzent}`,
               borderRadius: RUND.karte, padding: "13px 0", fontFamily: "inherit",
             }}>
               {blockiert ? `${ziel.name} hat diesen Spieltag genug` : "Spott verschicken"}
             </button>
-            {status && <div style={{ fontSize: 13, color: C.mint, marginTop: 8, textAlign: "center" }}>{status}</div>}
-            <p style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.5, textAlign: "center" }}>
+            {status && <div style={{ fontSize: "0.8125rem", color: C.mint, marginTop: 8, textAlign: "center" }}>{status}</div>}
+            <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 10, lineHeight: 1.5, textAlign: "center" }}>
               Geht über deine normale Teilen-Funktion raus — wir speichern keinen Spott.
             </p>
           </>
@@ -184,5 +184,5 @@ export default function SpottSenden() {
 }
 
 function Hint({ children }) {
-  return <div style={{ fontSize: 13, color: C.muted, fontFamily: MONO, padding: "10px 0" }}>{children}</div>;
+  return <div style={{ fontSize: "0.8125rem", color: C.muted, fontFamily: MONO, padding: "10px 0" }}>{children}</div>;
 }

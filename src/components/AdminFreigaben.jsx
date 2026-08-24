@@ -97,15 +97,15 @@ export default function AdminFreigaben() {
     }}>
       <div style={{ width: "100%", maxWidth: 560 }}>
         <BackLink href="/hub" label="Tippspiel" />
-        <h1 style={{ fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
+        <h1 style={{ fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
           Freigaben
         </h1>
-        <p style={{ fontSize: 13, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
+        <p style={{ fontSize: "0.8125rem", color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
           {WER.find((w) => w.key === "adminFreigabe")?.desc
             ?? "Einsetzen darf nur, wer für diesen Spieltag freigegeben ist."}
         </p>
 
-        {matches == null && <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>lädt …</div>}
+        {matches == null && <div style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted }}>lädt …</div>}
 
         {matches != null && artenMitFreigabe.length === 0 && (
           <Kasten>
@@ -128,14 +128,14 @@ export default function AdminFreigaben() {
 
         {matches != null && artenMitFreigabe.length > 0 && jetzt != null && (
           <>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 8, lineHeight: 1.45 }}>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 8, lineHeight: 1.45 }}>
               Betroffen: {artenMitFreigabe.length === 1 ? "eine Joker-Art" : `${artenMitFreigabe.length} Joker-Arten`}.
               {" "}Angezeigt sind der aktuelle und die nächsten Spieltage der Runde —
               nicht die Liga-Spieltage, denn eine Freigabe gilt rundenweit.
             </div>
 
             <div style={{ overflowX: "auto" }}>
-              <table style={{ borderCollapse: "collapse", fontSize: 13, minWidth: 360 }}>
+              <table style={{ borderCollapse: "collapse", fontSize: "0.8125rem", minWidth: 360 }}>
                 <thead>
                   <tr>
                     <th style={{ textAlign: "left", padding: "6px 10px 6px 0", color: C.muted, fontWeight: 400 }}>
@@ -166,7 +166,7 @@ export default function AdminFreigaben() {
                                 title={an ? "Freigegeben — zum Zurücknehmen klicken" : "Nicht freigegeben"}
                                 style={{
                                   width: 30, height: 30, borderRadius: RUND.karte, cursor: istAdmin ? "pointer" : "default",
-                                  fontFamily: "inherit", fontSize: 13,
+                                  fontFamily: "inherit", fontSize: "0.8125rem",
                                   background: an ? `${C.mint}22` : C.surface,
                                   color: an ? C.mint : "rgba(138,144,180,0.5)",
                                   border: `1px solid ${an ? C.mint + "66" : C.line}`,
@@ -181,7 +181,7 @@ export default function AdminFreigaben() {
               </table>
             </div>
 
-            <p style={{ fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
               Eine Freigabe gilt für genau diesen Runden-Spieltag und lässt sich jederzeit
               zurücknehmen. Sie erlaubt das Einsetzen — sie erzwingt es nicht.
             </p>
@@ -196,7 +196,7 @@ function Kasten({ children }) {
   return (
     <div style={{
       background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
-      padding: "14px 16px", fontSize: 13, color: C.muted, lineHeight: 1.5, marginBottom: 12,
+      padding: "14px 16px", fontSize: "0.8125rem", color: C.muted, lineHeight: 1.5, marginBottom: 12,
     }}>{children}</div>
   );
 }

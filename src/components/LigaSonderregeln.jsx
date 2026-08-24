@@ -115,8 +115,8 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
       marginTop: 8, background: C.ink2, border: `1px solid ${C.line}`,
       borderRadius: RUND.karte, padding: "12px 12px 10px",
     }}>
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Sonderregeln — {label}</div>
-      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
+      <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Sonderregeln — {label}</div>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
         Gelten nur für diese Liga. Alles Übrige bleibt bei der Einstellung der Runde.
       </p>
 
@@ -131,8 +131,8 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
           die Einstellung, die ins Leere läuft (CLAUDE.md, Baukasten). */}
       {(spiele?.modus === "teams" || (spiele?.teams?.length ?? 0) > 0) && (
         <>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Gewählte Vereine</div>
-          <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Gewählte Vereine</div>
+          <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
             Zählt jedes Spiel der gewählten Vereine, oder nur die Duelle untereinander?
           </p>
           <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
@@ -150,7 +150,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
                   })}
                   style={{
                     ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 12, fontWeight: an ? 700 : 400, padding: "8px 10px",
+                    fontSize: "0.75rem", fontWeight: an ? 700 : 400, padding: "8px 10px",
                     textAlign: "left", borderRadius: RUND.karte,
                     background: an ? `${C.mint}22` : C.surface,
                     color: an ? C.mint : C.muted,
@@ -158,7 +158,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
                   }}>
                   {m.label}
                   {an && !eigen && (
-                    <span style={{ display: "block", fontSize: 10, color: C.muted, fontWeight: 400 }}>
+                    <span style={{ display: "block", fontSize: "0.6875rem", color: C.muted, fontWeight: 400 }}>
                       von der Runde
                     </span>
                   )}
@@ -174,8 +174,8 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
           („Abstiegskampf"), der `zonen[0]` schrieb — Andi wollte 14–18 UND
           1–4 gleichzeitig betippen können. Die Liste konnte das immer, nur
           diese Anzeige nicht. */}
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Tabellenzonen</div>
-      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+      <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Tabellenzonen</div>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
         Getippt wird, wer in EINER der Zonen steht. Ohne Zone gilt die ganze Liga.
       </p>
 
@@ -192,7 +192,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
                 ? zonen.filter((z) => !(z.von === v.von && z.bis === v.bis))
                 : [...zonen, { von: v.von, bis: v.bis }])}
               style={{
-                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
                 padding: "0 12px", borderRadius: RUND.karte,
                 background: drin ? `${C.akzent}1A` : C.surface,
                 color: drin ? C.akzent : C.muted,
@@ -220,7 +220,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
                 type="button"
                 onClick={() => setzeZonen(zonen.filter((_, k) => k !== i))}
                 style={{
-                  ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                  ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
                   padding: "0 12px", borderRadius: RUND.karte, background: C.surface,
                   color: C.muted, border: `1px solid ${C.line}`,
                 }}
@@ -234,7 +234,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
             type="button"
             onClick={() => setzeZonen([...zonen, { von: 1, bis: 4 }])}
             style={{
-              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
               padding: "0 12px", borderRadius: RUND.karte, background: C.surface,
               color: C.text, border: `1px dashed ${C.line}`, marginBottom: 6,
             }}
@@ -250,7 +250,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
 
           {/* Die Betreuung, die eine nackte Zahl nicht leistet — dieselbe
               Rolle wie `anteile()` bei den Wettbewerbs-Gewichten. */}
-          <p style={{ fontSize: 11, color: C.akzent, margin: "8px 0 0", lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.akzent, margin: "8px 0 0", lineHeight: 1.45 }}>
             Getippt wird, wer auf {zonen.map((z) => `${z.von}–${z.bis}`).join(" oder ")} steht
             — abgelesen am Tabellenstand beim Öffnen des Spieltags, nicht zwischen zwei
             Spielen desselben Spieltags.
@@ -261,7 +261,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
               Spielen. Ohne diese Erklärung sieht eine korrekt greifende
               Einstellung wie ein kaputter Filter aus — und der nächste
               Durchgang „repariert" sie. */}
-          <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "6px 0 0", lineHeight: 1.45 }}>
             Die Vorschau kann das noch nicht zeigen: die Tabelle steht erst, wenn der
             erste Spieltag geöffnet ist. Diese Liga erscheint bis dahin mit 0 Spielen.
           </p>
@@ -278,7 +278,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
         />
         {derbysAn && (
           <div style={{ padding: "8px 2px 2px" }}>
-            <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
               Unsere Empfehlung, frei änderbar — einzelne Begegnungen ab- oder dazuwählen.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -293,17 +293,17 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
                     border: `1px solid ${on ? C.mint + "55" : C.line}`,
                   }}>
                     <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontSize: 13, fontWeight: 700 }}>{d.paarung}</span>
-                      <span style={{ display: "block", fontSize: 11, color: C.muted }}>{d.label}</span>
+                      <span style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700 }}>{d.paarung}</span>
+                      <span style={{ display: "block", fontSize: "0.6875rem", color: C.muted }}>{d.label}</span>
                     </span>
-                    <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted, flexShrink: 0 }}>
+                    <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, flexShrink: 0 }}>
                       ST {d.spieltag}
                     </span>
                   </button>
                 );
               })}
             </div>
-            <div style={{ fontSize: 11, color: C.mint, marginTop: 8 }}>
+            <div style={{ fontSize: "0.6875rem", color: C.mint, marginTop: 8 }}>
               {matchIds.length} Begegnung{matchIds.length === 1 ? "" : "en"} gewählt.
             </div>
           </div>
@@ -316,7 +316,7 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
             Object.entries(spiele?.jeWettbewerb ?? {}).filter(([k]) => k !== wettbewerb)),
         })} style={{
           marginTop: 10, width: "100%", minHeight: 44, boxSizing: "border-box",
-          cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+          cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
           background: "transparent", color: C.muted,
           border: `1px dashed ${C.line}`, borderRadius: RUND.karte,
         }}>Sonderregeln dieser Liga entfernen</button>
@@ -335,8 +335,8 @@ function Schalter({ an, titel, unter, onChange }) {
       border: `1px solid ${an ? C.mint + "55" : C.line}`,
     }}>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontSize: 13, fontWeight: 700 }}>{titel}</span>
-        <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 1 }}>{unter}</span>
+        <span style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700 }}>{titel}</span>
+        <span style={{ display: "block", fontSize: "0.6875rem", color: C.muted, marginTop: 1 }}>{unter}</span>
       </span>
       <span style={{
         flexShrink: 0, width: 34, height: 20, borderRadius: RUND.pille,
@@ -357,7 +357,7 @@ function Schalter({ an, titel, unter, onChange }) {
 function Zahl({ label, value, min, max, onChange }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 11, color: C.muted }}>{label}</span>
+      <span style={{ fontSize: "0.6875rem", color: C.muted }}>{label}</span>
       <input type="number" min={min} max={max} value={value}
         onChange={(e) => {
           const n = Number(e.target.value);
@@ -366,7 +366,7 @@ function Zahl({ label, value, min, max, onChange }) {
         style={{
           width: 72, minHeight: 44, boxSizing: "border-box",
           background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-          borderRadius: RUND.karte, padding: "8px 10px", fontSize: 15, fontFamily: MONO, outline: "none",
+          borderRadius: RUND.karte, padding: "8px 10px", fontSize: "0.9375rem", fontFamily: MONO, outline: "none",
         }} />
     </label>
   );

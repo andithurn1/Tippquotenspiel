@@ -31,15 +31,15 @@ export default function RankingVerlauf() {
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink href="/hub" label="Tippspiel" />
-      <div style={{ width: "100%", maxWidth: 400 }}>
-        <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+      <div style={{ width: "100%", maxWidth: "var(--tqs-schirm-breite)" }}>
+        <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Ranking-Verlauf
         </span>
-        <h1 style={{ fontSize: 20, fontWeight: 800, margin: "8px 0 18px" }}>Dein Rang über die Spieltage</h1>
+        <h1 style={{ fontSize: "1.25rem", fontWeight: 800, margin: "8px 0 18px" }}>Dein Rang über die Spieltage</h1>
 
-        {history == null && <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>Verlauf lädt …</div>}
+        {history == null && <div style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted }}>Verlauf lädt …</div>}
         {history?.length === 0 && (
-          <div style={{ fontSize: 13, color: C.muted }}>
+          <div style={{ fontSize: "0.8125rem", color: C.muted }}>
             Noch keine gewerteten Spieltage — sobald Ergebnisse feststehen, erscheint hier der Rang-Verlauf.
           </div>
         )}
@@ -52,9 +52,9 @@ export default function RankingVerlauf() {
               borderRadius: RUND.karte, padding: "14px 16px",
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: 13, fontWeight: 700 }}>Spieltag {matchday}</span>
+                <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Spieltag {matchday}</span>
                 {mine && (
-                  <span style={{ fontFamily: MONO, fontSize: 13, color: C.mint }}>
+                  <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.mint }}>
                     Rang #{mine.rank} · {mine.total} Pkt.
                   </span>
                 )}
@@ -65,15 +65,15 @@ export default function RankingVerlauf() {
                     display: "flex", alignItems: "center", gap: 8, padding: "4px 0",
                     borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
                   }}>
-                    <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 16 }}>{b.rank}</span>
-                    <span style={{ flex: 1, fontSize: 13, color: b.userId === meId ? C.akzent : C.text }}>{b.name}</span>
+                    <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted, width: 16 }}>{b.rank}</span>
+                    <span style={{ flex: 1, fontSize: "0.8125rem", color: b.userId === meId ? C.akzent : C.text }}>{b.name}</span>
                     {/* Anschluss-Bonus (Aufhol-Mechanismus), falls angefallen */}
                     {b.bonus > 0 && (
-                      <span title="Anschluss-Bonus für Zurückliegende" style={{ fontFamily: MONO, fontSize: 11, color: C.sky }}>
+                      <span title="Anschluss-Bonus für Zurückliegende" style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.sky }}>
                         +{b.bonus}
                       </span>
                     )}
-                    <span style={{ fontFamily: MONO, fontSize: 13 }}>{b.total}</span>
+                    <span style={{ fontFamily: MONO, fontSize: "0.8125rem" }}>{b.total}</span>
                   </div>
                 ))}
               </div>

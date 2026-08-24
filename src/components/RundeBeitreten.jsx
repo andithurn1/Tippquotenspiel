@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
+import { useRueckmeldung } from "@/components/Rueckmeldung";
 
 
 export default function RundeBeitreten() {
@@ -23,6 +24,11 @@ export default function RundeBeitreten() {
     return () => { live = false; };
   }, [roundId]);
 
+  // Andi, 24.08.2026 — Rückmeldung auch hier: der Beitritt ändert, welche
+  // Runde die ganze App zeigt. Eine Zustandsänderung dieser Größe darf nicht
+  // nur an einem gewechselten Namen weiter oben erkennbar sein.
+  const melder = useRueckmeldung();
+
   const submit = async (e) => {
     e.preventDefault();
     const clean = code.trim().toUpperCase();
@@ -36,8 +42,10 @@ export default function RundeBeitreten() {
       setRoundId(round.id);
       setJoinedName(round.name);
       setState("joined");
+      melder.gespeichert(`Beigetreten: ${round.name}`);
     } catch {
       setState("error");
+      melder.fehler("Beitritt hat nicht geklappt");
     }
   };
 
@@ -49,17 +57,17 @@ export default function RundeBeitreten() {
     }}>
       <BackLink href="/menu" label="Menü" />
       <div style={{
-        width: "100%", maxWidth: 400, position: "relative",
+        width: "100%", maxWidth: "var(--tqs-schirm-breite)", position: "relative",
         borderRadius: RUND.schirm, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
         <div style={{ position: "relative", padding: "26px 22px 24px" }}>
-          <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+          <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
             Runde beitreten
           </span>
-          <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>Beitritts-Code eingeben</div>
-          <p style={{ fontSize: 13, color: C.muted, marginTop: 4, marginBottom: 20, lineHeight: 1.5 }}>
+          <div style={{ marginTop: 6, fontSize: "1.25rem", fontWeight: 700 }}>Beitritts-Code eingeben</div>
+          <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 4, marginBottom: 20, lineHeight: 1.5 }}>
             Von einem Freund bekommen, oder zurück zur Demo-Runde? Der Code{" "}
             <span style={{ fontFamily: MONO, color: C.akzent }}>DEMO</span>{" "}
             führt immer zur „Freundeskreis"-Runde.
@@ -71,39 +79,39 @@ export default function RundeBeitreten() {
                 placeholder="z. B. AB3XQ9" maxLength={12} autoCapitalize="characters" style={{
                   width: "100%", boxSizing: "border-box", background: C.surface, color: C.text,
                   border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "14px 16px",
-                  fontSize: 20, fontFamily: MONO, letterSpacing: 3, textAlign: "center",
+                  fontSize: "1.25rem", fontFamily: MONO, letterSpacing: 3, textAlign: "center",
                   textTransform: "uppercase", outline: "none",
                 }} />
               <button type="submit" disabled={state === "joining" || !code.trim()} style={{
                 marginTop: 14, width: "100%", cursor: state === "joining" || !code.trim() ? "default" : "pointer",
-                background: C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
+                background: C.akzent, color: C.ink, fontWeight: 700, fontSize: "0.9375rem",
                 border: "none", borderRadius: RUND.karte, padding: "14px 0",
                 opacity: state === "joining" || !code.trim() ? 0.6 : 1,
               }}>
                 {state === "joining" ? "wird geprüft …" : "Beitreten"}
               </button>
               {state === "notfound" && (
-                <div style={{ fontSize: 12, color: C.coral, marginTop: 8 }}>Keine Runde mit diesem Code gefunden.</div>
+                <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 8 }}>Keine Runde mit diesem Code gefunden.</div>
               )}
               {state === "error" && !user && (
-                <div style={{ fontSize: 12, color: C.akzent, marginTop: 8 }}>Bitte zuerst auf der Startseite einloggen.</div>
+                <div style={{ fontSize: "0.75rem", color: C.akzent, marginTop: 8 }}>Bitte zuerst auf der Startseite einloggen.</div>
               )}
               {state === "error" && user && (
-                <div style={{ fontSize: 12, color: C.coral, marginTop: 8 }}>Beitritt fehlgeschlagen — später erneut versuchen.</div>
+                <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 8 }}>Beitritt fehlgeschlagen — später erneut versuchen.</div>
               )}
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 12 }}>
+              <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 12 }}>
                 Aktive Runde gerade: <span style={{ color: C.text }}>{currentRoundName ?? "…"}</span>
               </div>
             </form>
           ) : (
             <div style={{ background: `${C.mint}12`, border: `1px solid ${C.mint}44`, borderRadius: RUND.karte, padding: "16px 18px" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: C.mint }}>✓ Beigetreten: „{joinedName}"</div>
-              <p style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+              <div style={{ fontSize: "0.9375rem", fontWeight: 700, color: C.mint }}>✓ Beigetreten: „{joinedName}"</div>
+              <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Das ist jetzt deine aktive Runde für Tippen und Abrechnung.
               </p>
               <Link href="/tippen" style={{
                 marginTop: 14, display: "block", textAlign: "center", textDecoration: "none",
-                color: C.ink, background: C.akzent, fontWeight: 700, fontSize: 15,
+                color: C.ink, background: C.akzent, fontWeight: 700, fontSize: "0.9375rem",
                 borderRadius: RUND.karte, padding: "12px 0",
               }}>
                 Jetzt tippen →

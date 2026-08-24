@@ -26,7 +26,7 @@ const SNAP = odds.getSnapshot("JOR-ESP");
 const SIDES = ["home", "away"];
 const short = (side) => (side === "home" ? SNAP.home : SNAP.away).slice(0, 3).toUpperCase();
 
-const braceBtn = (on) => ({ ...TAPZIEL, fontFamily: MONO, fontSize: 11, cursor: "pointer", padding: "4px 12px", borderRadius: RUND.pille,
+const braceBtn = (on) => ({ ...TAPZIEL, fontFamily: MONO, fontSize: "0.6875rem", cursor: "pointer", padding: "4px 12px", borderRadius: RUND.pille,
   background: on ? `${C.akzent}22` : C.surface2, color: on ? C.akzent : C.muted, border: `1px solid ${on ? C.akzent + "66" : C.line}` });
 
 // Ein hypothetischer Endstand {h,a}: Engine wertet, Kombi-Regel obendrauf.
@@ -91,29 +91,29 @@ export default function AuszahlungsExplorer() {
     <div style={{ minHeight: "100vh", background: C.ink, color: C.text,
       fontFamily: SCHRIFT, padding: "26px 14px", display: "flex", flexDirection: "column", alignItems: "center" }}>
       <BackLink href="/menu" label="Menü" />
-      <div style={{ width: "100%", maxWidth: 400, borderRadius: RUND.schirm, position: "relative", overflow: "hidden",
+      <div style={{ width: "100%", maxWidth: "var(--tqs-schirm-breite)", borderRadius: RUND.schirm, position: "relative", overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)", padding: "22px 18px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>Ergebnis-Auszahlung</span>
-          <button onClick={() => setDec((v) => !v)} style={{ ...TAPZIEL, fontFamily: MONO, fontSize: 11, cursor: "pointer",
+          <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>Ergebnis-Auszahlung</span>
+          <button onClick={() => setDec((v) => !v)} style={{ ...TAPZIEL, fontFamily: MONO, fontSize: "0.6875rem", cursor: "pointer",
             color: dec ? C.akzent : C.muted, background: C.surface, border: `1px solid ${dec ? C.akzent + "66" : C.line}`, borderRadius: RUND.pille, padding: "4px 10px" }}>
             Quoten {dec ? "1.xx" : "1.x"}
           </button>
         </div>
-        <div style={{ fontSize: 17, fontWeight: 700, marginTop: 6 }}>
+        <div style={{ fontSize: "1.0625rem", fontWeight: 700, marginTop: 6 }}>
           {SNAP.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {SNAP.away}
         </div>
         {/* Sagen, WORAN gerechnet wird. Ohne diesen Satz liest sich der
             Explorer wie eine Aussage über das nächste eigene Spiel — er zeigt
             aber ein Beispiel-Spiel, nur eben unter den Regeln DIESER Runde. */}
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+        <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
           Beispiel-Begegnung, gerechnet mit dem Regelwerk dieser Runde. Was dein
           Tipp im echten Spiel zahlt, steht beim Tippen.
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
-          <span style={{ fontSize: 12, color: C.muted }}>Mein Tipp</span>
+          <span style={{ fontSize: "0.75rem", color: C.muted }}>Mein Tipp</span>
           <Mini value={tip.h} onStep={(d) => step("h", d)} />
           <span style={{ fontFamily: MONO, color: C.muted }}>:</span>
           <Mini value={tip.a} onStep={(d) => step("a", d)} />
@@ -122,12 +122,12 @@ export default function AuszahlungsExplorer() {
         {/* Tore (gleicher Spieler 2× = Doppelpack) */}
         <div style={{ marginTop: 14, background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "12px 14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Tore (je {RULES.markets.goals.picksPerTeam} pro Team)</span>
-            <span style={{ fontFamily: MONO, fontSize: 12, color: C.coral }}>Wert +{fmt(sc.net)}</span>
+            <span style={{ fontSize: "0.75rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Tore (je {RULES.markets.goals.picksPerTeam} pro Team)</span>
+            <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.coral }}>Wert +{fmt(sc.net)}</span>
           </div>
           {SIDES.map((side) => (
             <div key={side} style={{ display: "flex", gap: 6, marginBottom: side === "home" ? 8 : 0, alignItems: "center" }}>
-              <span style={{ width: 34, fontSize: 11, color: C.muted, fontFamily: MONO }}>{short(side)}</span>
+              <span style={{ width: 34, fontSize: "0.6875rem", color: C.muted, fontFamily: MONO }}>{short(side)}</span>
               {goals[side].map((p, i) => (
                 <Sel key={i} side={side} value={p} fmt={fmt} onChange={(v) => setGoal(side, i, v)} />
               ))}
@@ -137,20 +137,20 @@ export default function AuszahlungsExplorer() {
             <div style={{ marginTop: 10 }}>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                 {sc.braces.map((b, i) => (
-                  <span key={i} style={{ fontFamily: MONO, fontSize: 11, color: C.akzent,
+                  <span key={i} style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.akzent,
                     background: `${C.akzent}18`, border: `1px solid ${C.akzent}55`, borderRadius: RUND.pille, padding: "3px 9px" }}>
                     ⚽ {b.player} · 1 Tor {fmt(b.single)} / 2 Tore {fmt(b.double)}
                   </span>
                 ))}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 11, color: C.muted }}>angenommen:</span>
+                <span style={{ fontSize: "0.6875rem", color: C.muted }}>angenommen:</span>
                 <button onClick={() => setBraceGoals(1)} style={braceBtn(braceGoals === 1)}>1 Tor</button>
                 <button onClick={() => setBraceGoals(2)} style={braceBtn(braceGoals === 2)}>2 Tore</button>
               </div>
             </div>
           )}
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
             Denselben Spieler zweimal = beide Tipps auf ihn. Trifft er zweifach, zählt die Doppelpack-Quote; trifft er nur einmal, immer noch die Einzelquote.
           </p>
         </div>
@@ -162,11 +162,11 @@ export default function AuszahlungsExplorer() {
 
         <div style={{ marginTop: 16 }}>
           <div style={{ display: "flex", gap: 4, marginLeft: 22, marginBottom: 4 }}>
-            {[0,1,2,3,4,5].map((a) => (<div key={a} style={{ flex: 1, textAlign: "center", fontSize: 11, color: C.muted, fontFamily: MONO }}>{a}</div>))}
+            {[0,1,2,3,4,5].map((a) => (<div key={a} style={{ flex: 1, textAlign: "center", fontSize: "0.6875rem", color: C.muted, fontFamily: MONO }}>{a}</div>))}
           </div>
           {[0,1,2,3,4,5].map((h) => (
             <div key={h} style={{ display: "flex", gap: 4, marginBottom: 4, alignItems: "center" }}>
-              <div style={{ width: 18, textAlign: "center", fontSize: 11, color: C.muted, fontFamily: MONO }}>{h}</div>
+              <div style={{ width: 18, textAlign: "center", fontSize: "0.6875rem", color: C.muted, fontFamily: MONO }}>{h}</div>
               {[0,1,2,3,4,5].map((a) => {
                 const cell = grid.cells[h * 6 + a];
                 const visible = !aroundOnly || cell.near;
@@ -177,7 +177,7 @@ export default function AuszahlungsExplorer() {
                     flex: 1, aspectRatio: "1", minWidth: 0, cursor: "pointer", borderRadius: RUND.karte,
                     background: hz.bg, color: hz.fg, boxShadow: hz.glow,
                     border: isSel ? `2px solid ${C.mint}` : isTip ? `2px solid ${C.text}` : `1px solid ${C.line}`,
-                    fontFamily: MONO, fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums",
+                    fontFamily: MONO, fontSize: "0.75rem", fontWeight: 700, fontVariantNumeric: "tabular-nums",
                     display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
                     {visible ? Math.round(cell.s.total) : ""}
                   </button>
@@ -185,7 +185,7 @@ export default function AuszahlungsExplorer() {
               })}
             </div>
           ))}
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: C.muted }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: "0.6875rem", color: C.muted }}>
             <span><span style={{ color: C.text }}>▢</span> dein Tipp</span>
             <span>Zeile = {SNAP.home} · Spalte = {SNAP.away}</span>
           </div>
@@ -193,11 +193,11 @@ export default function AuszahlungsExplorer() {
 
         <div style={{ marginTop: 16, background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <div style={{ fontSize: 13, color: C.muted }}>
+            <div style={{ fontSize: "0.8125rem", color: C.muted }}>
               Wenn es <b style={{ color: C.text, fontFamily: MONO }}>{sel.h}:{sel.a}</b> würde
               {!selScore.winnerRight && <span style={{ color: C.coral }}> · Sieger falsch</span>}
             </div>
-            <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: C.akzent, textShadow: `0 0 20px ${C.akzent}44` }}>{Math.round(selScore.total)}</div>
+            <div style={{ fontFamily: MONO, fontSize: "1.75rem", fontWeight: 700, color: C.akzent, textShadow: `0 0 20px ${C.akzent}44` }}>{Math.round(selScore.total)}</div>
           </div>
           <div style={{ height: 1, background: C.line, margin: "12px 0" }} />
           <BreakLine label="Tendenz (Sieger)" v={selScore.parts.tendBoden} won={selScore.ebene === "tendenz"} />
@@ -205,7 +205,7 @@ export default function AuszahlungsExplorer() {
           <BreakLine label="Ergebnis-Nähe" v={selScore.parts.ergNaehe} won={selScore.ebene === "exakt"} />
           <BreakLine label="Team-Tore-Nähe (siegerunabh.)" v={selScore.parts.teamTore} won={!selScore.winnerRight} />
           <div style={{ height: 1, background: C.line, margin: "10px 0" }} />
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem" }}>
             <span style={{ color: C.muted }}>gewertet{withScorer ? " + Tore × Kombi" : ""}</span>
             <span style={{ fontFamily: MONO, color: C.text }}>
               {withScorer ? (selScore.ebene === "keiner"
@@ -221,11 +221,11 @@ export default function AuszahlungsExplorer() {
 }
 
 function Mini({ value, onStep }) {
-  const b = { ...TAPZIEL_QUADRAT, borderRadius: RUND.karte, cursor: "pointer", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, fontSize: 16, lineHeight: 1 };
+  const b = { ...TAPZIEL_QUADRAT, borderRadius: RUND.karte, cursor: "pointer", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, fontSize: "1rem", lineHeight: 1 };
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <button onClick={() => onStep(-1)} style={b}>−</button>
-      <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: 20, color: C.akzent, width: 20, textAlign: "center" }}>{value}</div>
+      <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: "1.25rem", color: C.akzent, width: 20, textAlign: "center" }}>{value}</div>
       <button onClick={() => onStep(1)} style={b}>+</button>
     </div>
   );
@@ -236,7 +236,7 @@ function Sel({ side, value, onChange, fmt }) {
   return (
     <div style={{ flex: 1, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "6px 8px", minWidth: 0 }}>
       <select value={value} onChange={(e) => onChange(e.target.value)} style={{
-        width: "100%", background: "transparent", color: value ? C.text : C.muted, border: "none", fontSize: 13, outline: "none", fontFamily: "inherit" }}>
+        width: "100%", background: "transparent", color: value ? C.text : C.muted, border: "none", fontSize: "0.8125rem", outline: "none", fontFamily: "inherit" }}>
         <option value="" style={{ color: "#000" }}>– keiner –</option>
         {Object.keys(players).map((p) => (<option key={p} value={p} style={{ color: "#000" }}>{p} ({fmt(players[p].anytime)})</option>))}
       </select>
@@ -246,14 +246,14 @@ function Sel({ side, value, onChange, fmt }) {
 
 function Toggle({ on, onClick, label, tone }) {
   return (
-    <button onClick={onClick} style={{ ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: 12, fontFamily: MONO, padding: "9px 0", borderRadius: RUND.pille,
+    <button onClick={onClick} style={{ ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: "0.75rem", fontFamily: MONO, padding: "9px 0", borderRadius: RUND.pille,
       background: on ? `${tone}22` : C.surface, color: on ? tone : C.muted, border: `1px solid ${on ? tone + "66" : C.line}` }}>{label}</button>
   );
 }
 
 function BreakLine({ label, v, won }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 13 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: "0.8125rem" }}>
       <span style={{ color: won ? C.akzent : C.muted }}>{won ? "→ " : ""}{label}</span>
       <span style={{ fontFamily: MONO, color: won ? C.akzent : C.muted, fontVariantNumeric: "tabular-nums" }}>{v >= 0.05 ? "+" + v.toFixed(1) : "—"}</span>
     </div>

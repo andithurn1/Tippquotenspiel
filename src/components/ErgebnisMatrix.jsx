@@ -42,9 +42,9 @@ export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = fa
         gap: 10, flexWrap: "wrap", marginBottom: 8,
       }}>
         <span style={{
-          fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted, textTransform: "uppercase",
+          fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1, color: C.muted, textTransform: "uppercase",
         }}>Jedes Ergebnis, jede Punktzahl</span>
-        <span style={{ fontSize: 11, color: C.muted }}>{info.text}</span>
+        <span style={{ fontSize: "0.6875rem", color: C.muted }}>{info.text}</span>
       </div>
 
       {/* Größe (TI2). Die automatischen Stufen stehen vorn: sie sind die
@@ -54,7 +54,7 @@ export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = fa
           const an = stufe === s.key;
           return (
             <button key={s.key} title={s.desc} onClick={() => setStufe(s.key)} style={{
-              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
               padding: "6px 11px", borderRadius: RUND.pille,
               background: an ? `${C.akzent}22` : C.surface,
               color: an ? C.akzent : C.muted,
@@ -76,7 +76,7 @@ export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = fa
           <div />
           {Array.from({ length: spalten }, (_, a) => (
             <div key={`k${a}`} style={{
-              textAlign: "center", fontFamily: MONO, fontSize: 11, color: C.muted, paddingBottom: 2,
+              textAlign: "center", fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, paddingBottom: 2,
             }}>{a}</div>
           ))}
 
@@ -87,7 +87,7 @@ export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = fa
         </div>
       </div>
 
-      <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+      <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
         Zeilen = Tore {snap?.home ?? "Heim"}, Spalten = Tore {snap?.away ?? "Gast"}.
         Die Zahl im Feld ist die Auszahlung <strong>für das Ergebnis allein</strong> —
         deine Torschützen kommen oben drauf.
@@ -103,7 +103,7 @@ function FeldZeile({ h, spalten, feldVon, maxPunkte, tip, onWahl, gesperrt }) {
     <>
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "flex-end",
-        paddingRight: 6, fontFamily: MONO, fontSize: 11, color: C.muted,
+        paddingRight: 6, fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
       }}>{h}</div>
       {Array.from({ length: spalten }, (_, a) => {
         const f = feldVon(h, a);
@@ -126,11 +126,11 @@ function FeldZeile({ h, spalten, feldVon, maxPunkte, tip, onWahl, gesperrt }) {
               color: C.text, opacity: gesperrt ? 0.55 : 1,
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1,
             }}>
-            <span style={{ fontFamily: MONO, fontSize: 11, color: gewaehlt ? C.akzent : C.muted }}>
+            <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: gewaehlt ? C.akzent : C.muted }}>
               {h}:{a}
             </span>
             <span style={{
-              fontFamily: MONO, fontSize: 13, fontWeight: 700,
+              fontFamily: MONO, fontSize: "0.8125rem", fontWeight: 700,
               color: gewaehlt ? C.akzent : C.text,
             }}>{f.punkte}</span>
           </button>

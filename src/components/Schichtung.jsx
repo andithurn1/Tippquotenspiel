@@ -51,7 +51,7 @@ export default function Schichtung({ basis, schichten = [], handAngepasst }) {
       borderRadius: RUND.karte, padding: "11px 13px",
     }}>
       <div style={{
-        fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
+        fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.2, color: C.muted,
         textTransform: "uppercase", marginBottom: 8,
       }}>Darauf liegt gerade</div>
 
@@ -59,16 +59,16 @@ export default function Schichtung({ basis, schichten = [], handAngepasst }) {
         {zeilen.map((z, i) => (
           <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <span style={{
-              fontFamily: MONO, fontSize: 11, color: C.muted,
+              fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
               minWidth: 16, textAlign: "right", flexShrink: 0,
             }}>{i + 1}</span>
-            <span style={{ fontSize: 14, flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: "0.9375rem", flex: 1, minWidth: 0 }}>
               <span style={{ color: z.art === "hand" ? C.muted : C.text, fontWeight: z.art === "basis" ? 700 : 500 }}>
                 {z.text}
               </span>
               {z.code && (
                 <span style={{
-                  fontFamily: MONO, fontSize: 11, color: C.muted, marginLeft: 7,
+                  fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, marginLeft: 7,
                   wordBreak: "break-all",
                 }}>{z.code.slice(0, 18)}…</span>
               )}
@@ -80,7 +80,7 @@ export default function Schichtung({ basis, schichten = [], handAngepasst }) {
       {/* ⚠️ Der Satz gehört dazu, nicht als Fußnote: ohne ihn liest sich die
           Liste wie eine Verlaufs-Historie („war mal so“) statt wie das, was
           sie ist — die Schichten, die JETZT gelten. */}
-      <div style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
         Später Aufgelegtes gewinnt — aber nur in seinem eigenen Bereich. Alles
         andere bleibt stehen.
       </div>

@@ -27,10 +27,10 @@ export default function BalanceAmpel({ rules }) {
       borderRadius: RUND.karte, padding: "13px 15px",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ color: farbe, fontSize: 15 }}>{SYMBOL[sim.ampel.stufe]}</span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: farbe }}>{sim.ampel.titel}</span>
+        <span style={{ color: farbe, fontSize: "0.9375rem" }}>{SYMBOL[sim.ampel.stufe]}</span>
+        <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: farbe }}>{sim.ampel.titel}</span>
       </div>
-      <p style={{ fontSize: 12, color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
         {sim.ampel.text}
       </p>
 
@@ -63,7 +63,7 @@ export default function BalanceAmpel({ rules }) {
       {sim.unvermessen.length > 0 && (
         <div style={{
           marginTop: 10, paddingTop: 9, borderTop: `1px solid ${C.line}`,
-          fontSize: 11, color: C.muted, lineHeight: 1.5,
+          fontSize: "0.6875rem", color: C.muted, lineHeight: 1.5,
         }}>
           <strong style={{ color: C.text }}>Nicht mitgerechnet:</strong>{" "}
           {sim.unvermessen.map((e, i) => (
@@ -77,7 +77,7 @@ export default function BalanceAmpel({ rules }) {
         </div>
       )}
 
-      <p style={{ fontSize: 11, color: C.muted, margin: "9px 0 0", lineHeight: 1.4, opacity: 0.8 }}>
+      <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "9px 0 0", lineHeight: 1.4, opacity: 0.8 }}>
         Simuliert {LIVE.seasons} Saisons: ein guter Tipper (tippt den wahrscheinlichsten Ausgang)
         gegen einen, der stur auf Außenseiter setzt.
       </p>
@@ -88,8 +88,8 @@ export default function BalanceAmpel({ rules }) {
 function Kennzahl({ label, wert, hint }) {
   return (
     <div title={hint} style={{ minWidth: 92 }}>
-      <div style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: C.text }}>{wert}</div>
-      <div style={{ fontSize: 11, color: C.muted, marginTop: 1, lineHeight: 1.3 }}>{label}</div>
+      <div style={{ fontFamily: MONO, fontSize: "0.9375rem", fontWeight: 700, color: C.text }}>{wert}</div>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 1, lineHeight: 1.3 }}>{label}</div>
     </div>
   );
 }

@@ -20,11 +20,11 @@ export default function Datenschutz() {
         width: "100%", maxWidth: 460, borderRadius: RUND.schirm,
         background: C.ink2, border: `1px solid ${C.line}`, padding: "26px 22px", lineHeight: 1.6,
       }}>
-        <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+        <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Datenschutz
         </span>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: "6px 0 4px" }}>Datenschutzerklärung</h1>
-        <p style={{ fontSize: 12, color: C.muted, marginTop: 0 }}>Stand: {LEGAL.stand}</p>
+        <h1 style={{ fontSize: "1.375rem", fontWeight: 800, margin: "6px 0 4px" }}>Datenschutzerklärung</h1>
+        <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 0 }}>Stand: {LEGAL.stand}</p>
 
         <P>
           Uns ist der Schutz deiner Daten wichtig. {LEGAL.appName} ist ein Tippspiel
@@ -43,7 +43,7 @@ export default function Datenschutz() {
         <H>2. Welche Daten wir verarbeiten</H>
         <ul style={{ margin: "6px 0", paddingLeft: 18 }}>
           {DATA_POINTS.map((d) => (
-            <li key={d.key} style={{ fontSize: 13, marginBottom: 6 }}>
+            <li key={d.key} style={{ fontSize: "0.8125rem", marginBottom: 6 }}>
               <b>{d.label}:</b> <span style={{ color: C.muted }}>{d.zweck}</span>
             </li>
           ))}
@@ -88,7 +88,7 @@ export default function Datenschutz() {
         </P>
 
         <div style={{ height: 1, background: C.line, margin: "18px 0" }} />
-        <p style={{ fontSize: 12, color: C.muted }}>
+        <p style={{ fontSize: "0.75rem", color: C.muted }}>
           <Link href="/impressum" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "underline" }}>Impressum</Link>
         </p>
       </div>
@@ -97,8 +97,8 @@ export default function Datenschutz() {
 }
 
 function H({ children }) {
-  return <h2 style={{ fontSize: 15, fontWeight: 700, margin: "18px 0 2px" }}>{children}</h2>;
+  return <h2 style={{ fontSize: "0.9375rem", fontWeight: 700, margin: "18px 0 2px" }}>{children}</h2>;
 }
 function P({ children }) {
-  return <p style={{ fontSize: 13, color: "#D5D8EA", margin: "6px 0" }}>{children}</p>;
+  return <p style={{ fontSize: "0.8125rem", color: "#D5D8EA", margin: "6px 0" }}>{children}</p>;
 }

@@ -25,14 +25,14 @@ export default function PresetRating({ rules }) {
       marginTop: 12, background: C.ink2, border: `1px solid ${C.line}`,
       borderRadius: RUND.karte, padding: "14px 16px",
     }}>
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
         So wirkt dein Regelwerk über eine Saison
       </div>
 
       {/* Underdog-Neigung */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span style={{ fontSize: 13, fontWeight: 700 }}>Underdog-Neigung</span>
-        <span style={{ fontFamily: MONO, fontSize: 13, color: lc }}>{rating.underdogLean}/100 · {rating.label}</span>
+        <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Underdog-Neigung</span>
+        <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: lc }}>{rating.underdogLean}/100 · {rating.label}</span>
       </div>
       <div style={{ height: 8, borderRadius: RUND.pille, background: C.surface, marginTop: 6, overflow: "hidden" }}>
         <div style={{ width: `${rating.underdogLean}%`, height: "100%", background: lc, transition: "width .25s" }} />
@@ -44,23 +44,23 @@ export default function PresetRating({ rules }) {
       </div>
 
       {/* Reale Verteilung */}
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1, margin: "16px 0 8px" }}>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1, margin: "16px 0 8px" }}>
         So oft kommt jede Spielart real vor
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
         {DIST.map((d) => (
           <div key={d.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 12, width: 128, flexShrink: 0 }}>{d.label}</span>
+            <span style={{ fontSize: "0.75rem", width: 128, flexShrink: 0 }}>{d.label}</span>
             <div style={{ flex: 1, height: 7, borderRadius: RUND.pille, background: C.surface, overflow: "hidden" }}>
               <div style={{ width: `${(d.freq / MAX_FREQ) * 100}%`, height: "100%", background: d.key === "aussenseiter" ? C.coral : C.bar }} />
             </div>
-            <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 34, textAlign: "right" }}>
+            <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted, width: 34, textAlign: "right" }}>
               {Math.round(d.freq * 100)}%
             </span>
           </div>
         ))}
       </div>
-      <p style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
         Gerundete Richtwerte an realen Bundesliga-Saisons (Heim {Math.round(OUTCOME_SPLIT.heimsieg * 100)}% ·
         Remis {Math.round(OUTCOME_SPLIT.remis * 100)}% · Auswärts {Math.round(OUTCOME_SPLIT.auswaertssieg * 100)}%,
         ~{AVG_GOALS.toString().replace(".", ",")} Tore/Spiel) — kein exakter Datensatz.
@@ -74,9 +74,9 @@ export default function PresetRating({ rules }) {
 function Stat({ label, value, hint, tone }) {
   return (
     <div style={{ flex: 1, background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "8px 10px" }}>
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontFamily: MONO, fontSize: 16, fontWeight: 700, color: tone, marginTop: 2 }}>{value}</div>
-      <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.3 }}>{hint}</div>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+      <div style={{ fontFamily: MONO, fontSize: "1rem", fontWeight: 700, color: tone, marginTop: 2 }}>{value}</div>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.3 }}>{hint}</div>
     </div>
   );
 }

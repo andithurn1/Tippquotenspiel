@@ -141,6 +141,8 @@
     --tqs-dauer-ruhig: 1ms;
   }
   .tqs-laedt::after { animation: none; }
+  /* Fläche bleibt, Wanderung fällt weg — Begründung am Skelett selbst. */
+  .tqs-skelett::after { animation: none; opacity: 0; }
 }
 
 /* ── Bedienelemente: die Antwort auf eine Berührung ─────────
@@ -267,6 +269,75 @@
   }
 }
 
+/* ── 🔴 RÜCKMELDUNG: der Streifen, der „gespeichert" sagt ───
+   Andi am 24.08.2026: „feedback dass eingeloggt und abgespeichert ist".
+   Die Komponente dazu ist `src/components/Rueckmeldung.jsx`.
+
+   ⚠️ Kommt von UNTEN herein und nicht per Deckkraft: eine Meldung, die
+   einfach da ist, wird übersehen — genau das war der Zustand vorher. Die
+   Bewegung IST die Aufmerksamkeit, nicht die Verzierung.
+
+   ⚠️ `--tqs-kurve-feder` ist hier richtig und sonst fast nirgends: der
+   winzige Überschwung liest sich als „angekommen". Bei Flächen, die stehen
+   bleiben, wäre er Zappeln. */
+.tqs-meldung {
+  animation: tqs-meldung-auf var(--tqs-dauer-ruhig) var(--tqs-kurve-feder) both;
+}
+
+@keyframes tqs-meldung-auf {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Der Haken, der sich zeichnet ───────────────────────────
+   Für den Moment NACH dem Speichern, wenn etwas an Ort und Stelle bleibt
+   (ein gesetzter Tipp, ein übernommenes Regelwerk) — dort wäre ein Streifen
+   zu viel, aber gar nichts zu wenig.
+
+   Anwendung: `<span className="tqs-haken">✓</span>`. */
+.tqs-haken {
+  display: inline-block;
+  animation: tqs-haken-auf var(--tqs-dauer) var(--tqs-kurve-feder) both;
+}
+
+@keyframes tqs-haken-auf {
+  from { opacity: 0; transform: scale(0.4) rotate(-12deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Platzhalter, solange etwas lädt ────────────────────────
+   Ein wanderndes Glänzen auf einer Fläche in der Größe des kommenden
+   Inhalts. Der Unterschied zu einem Ladekreisel: der Screen springt danach
+   nicht, weil der Platz schon stimmt.
+
+   ⚠️ `prefers-reduced-motion` nimmt nur die WANDERUNG weg, nicht die
+   Fläche — sonst bliebe an der Stelle nichts, und „lädt noch" wäre von
+   „ist leer" nicht mehr zu unterscheiden. */
+.tqs-skelett {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--tqs-rund);
+  background: var(--tqs-surface);
+}
+
+.tqs-skelett::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--tqs-ink) 65%, transparent),
+    transparent
+  );
+  animation: tqs-skelett-lauf 1.4s var(--tqs-kurve) infinite;
+}
+
+@keyframes tqs-skelett-lauf {
+  to { transform: translateX(100%); }
+}
+
 /* ── Die Schrift, an EINER Stelle ────────────────────────────
    🔴 21.08.2026. Vorher trug jeder Screen seine eigene Kopie von
    `fontFamily: "system-ui, -apple-system, …"` — 30 Stück. Eine Schriftart zu
@@ -277,7 +348,55 @@
    Inline-Styles stärker sind als eine Regel. Sie tragen denselben Wert, also
    ändert sich nichts — sie fallen beim nächsten Durchgang weg. Wer eine neue
    Komponente baut, setzt KEINE Schriftfamilie mehr. */
+/* ── 🔴 DIE SCHIRM-BREITE, an EINER Stelle (24.08.2026) ──────
+   Andis Frage nach „jedem Modell": im Code standen **22 Kopien von
+   `maxWidth: 400`** — jede Seite hielt ihre eigene Zahl. Auf einem Handy ist
+   das richtig, auf einem Tablet eine schmale Säule mitten im Bild.
+
+   ⚠️ **Die Spalte wächst, sie wird nicht aufgelöst.** Eine Zeile Fließtext
+   über die volle iPad-Breite liest sich schlechter, nicht besser — deshalb
+   wächst sie nur bis 560 px. Ein ECHTES Tablet-Layout (zwei Spalten, Liste
+   und Detail nebeneinander) ist ein eigenes Vorhaben und steht als Befund in
+   `design/roadmap.md`; es gehört geplant, nicht nebenbei erledigt.
+
+   ⚠️ Die Zahl steht hier und nicht in `theme.js`, weil sie sich mit der
+   Fensterbreite ändert — das kann nur CSS. */
+:root {
+  --tqs-schirm-breite: 400px;
+}
+
+@media (min-width: 700px) {
+  :root { --tqs-schirm-breite: 480px; }
+}
+
+@media (min-width: 900px) {
+  :root { --tqs-schirm-breite: 560px; }
+}
+
+/* ── 🔴 SICHERE ZONEN: Notch, Dynamic Island, Home-Indicator ──
+   Gemessen am 24.08.2026, auf Andis Frage „passt sich das an jedes Modell an?":
+   `layout.js` setzt `viewportFit: "cover"`, und `safe-area-inset` kam im ganzen
+   Projekt **null Mal** vor.
+
+   🔴 **Das ist die schlechteste der drei möglichen Kombinationen.** „cover"
+   sagt dem Gerät ausdrücklich: zieh meinen Inhalt bis in die Ecken — auch unter
+   die Kamera-Insel und über den Home-Balken. Wer das setzt, MUSS die Insets
+   zurückgeben; sonst ist die Kopfzeile teilweise verdeckt und der unterste
+   Knopf liegt unter dem Wischbalken.
+
+   ⚠️ Warum trotzdem „cover" bleibt und nicht einfach „auto": nur mit „cover"
+   reicht der Hintergrund bis an den Rand. „auto" ergäbe weiße Balken oben und
+   unten — auf einem Handy sieht das nach Webseite aus, nicht nach App.
+
+   ⚠️ `env()` mit Rückfallwert 0px: auf dem Schreibtisch und in älteren
+   Browsern gibt es die Variable nicht, und ohne den zweiten Wert fiele die
+   ganze Regel weg. */
 body {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  box-sizing: border-box;
   font-family: var(--tqs-schrift-familie);
   /* Apples eigene Glättung. Ohne sie wirkt SF auf macOS fetter, als Apple es
      zeichnet — der häufigste Grund, warum eine Nachbildung „fast richtig"

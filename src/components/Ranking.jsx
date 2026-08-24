@@ -50,52 +50,52 @@ export default function Ranking() {
     }}>
       <BackLink href="/hub" label="Tippspiel" />
       <div style={{
-        width: "100%", maxWidth: 400, position: "relative",
+        width: "100%", maxWidth: "var(--tqs-schirm-breite)", position: "relative",
         borderRadius: RUND.schirm, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
         <div style={{ position: "relative", padding: "26px 22px 24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+            <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
               Ranking
             </span>
-            <Link href="/ranking/verlauf" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", fontFamily: MONO, fontSize: 12, color: C.mint, textDecoration: "none", paddingLeft: 10 }}>
+            <Link href="/ranking/verlauf" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", fontFamily: MONO, fontSize: "0.75rem", color: C.mint, textDecoration: "none", paddingLeft: 10 }}>
               Verlauf →
             </Link>
           </div>
-          <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>{roundName ?? "…"}</div>
+          <div style={{ marginTop: 6, fontSize: "1.25rem", fontWeight: 700 }}>{roundName ?? "…"}</div>
 
           <div style={{ marginTop: 20 }}>
             {board == null ? (
-              <div style={{ fontSize: 13, color: C.muted, fontFamily: MONO, padding: "8px 0" }}>Tabelle lädt …</div>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, fontFamily: MONO, padding: "8px 0" }}>Tabelle lädt …</div>
             ) : board.length === 0 ? (
-              <div style={{ fontSize: 13, color: C.muted, padding: "8px 0" }}>Noch keine gewerteten Tipps in dieser Runde.</div>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, padding: "8px 0" }}>Noch keine gewerteten Tipps in dieser Runde.</div>
             ) : board.map((b, i) => (
               <div key={b.userId} style={{
                 display: "flex", alignItems: "center", gap: 10, padding: "9px 0",
                 borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
               }}>
-                <span style={{ fontFamily: MONO, fontSize: 13, color: C.muted, width: 20 }}>{b.rank}</span>
-                <span style={{ flex: 1, fontSize: 15, color: b.userId === meId ? C.akzent : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
+                <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted, width: 20 }}>{b.rank}</span>
+                <span style={{ flex: 1, fontSize: "0.9375rem", color: b.userId === meId ? C.akzent : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
                   {b.name}
-                  {b.userId === meId && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● du</span>}
+                  {b.userId === meId && <span style={{ color: C.coral, fontSize: "0.6875rem", marginLeft: 6 }}>● du</span>}
                 </span>
                 {/* gewertet/getippt — bei einem reinen Saison-Tipper wäre „0/0"
                     irreführend: er hat keinen Spieltag versäumt, sondern eine
                     andere Ebene bespielt. `saison !== undefined` heißt: die
                     Saison-Wetten laufen in dieser Runde überhaupt. */}
                 {b.tips === 0 && b.saison !== undefined ? (
-                  <span title="Bisher nur Saison-Wetten, kein Spieltags-Tipp" style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>
+                  <span title="Bisher nur Saison-Wetten, kein Spieltags-Tipp" style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>
                     nur Saison
                   </span>
                 ) : (
-                  <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{b.gewertet}/{b.tips}</span>
+                  <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>{b.gewertet}/{b.tips}</span>
                 )}
                 {/* Anschluss-Bonus (Aufhol-Mechanismus) — nur wenn welcher anfiel */}
                 {b.bonus > 0 && (
                   <span title="Anschluss-Bonus für Zurückliegende" style={{
-                    fontFamily: MONO, fontSize: 11, color: C.sky,
+                    fontFamily: MONO, fontSize: "0.6875rem", color: C.sky,
                     border: `1px solid ${C.sky}55`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>+{b.bonus} Anschluss</span>
                 )}
@@ -104,7 +104,7 @@ export default function Ranking() {
                     besser getippt, obwohl er nur früh richtig geraten hat. */}
                 {b.saison > 0 && (
                   <span title="Punkte aus den Saison-Wetten (Meister, Torschützenkönig …)" style={{
-                    fontFamily: MONO, fontSize: 11, color: C.mint,
+                    fontFamily: MONO, fontSize: "0.6875rem", color: C.mint,
                     border: `1px solid ${C.mint}55`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>+{b.saison} Saison</span>
                 )}
@@ -116,7 +116,7 @@ export default function Ranking() {
                   <span title={`Die ${b.gestrichen} schwächsten Spieltage zählen nicht`
                     + (b.gestrichenPunkte ? ` — das sind ${b.gestrichenPunkte} Punkte.` : ".")
                     + (b.vorlaeufig ? " Welche das sind, kann sich noch ändern." : "")} style={{
-                    fontFamily: MONO, fontSize: 11, color: C.muted,
+                    fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
                     border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>−{b.gestrichen} gestrichen</span>
                 )}
@@ -126,7 +126,7 @@ export default function Ranking() {
                   <span title={b.duell > 0
                     ? "Aus Duellen gewonnen"
                     : "Durch ein Duell verloren — jemand hat auf dich gesetzt"} style={{
-                    fontFamily: MONO, fontSize: 11, color: b.duell > 0 ? C.mint : C.coral,
+                    fontFamily: MONO, fontSize: "0.6875rem", color: b.duell > 0 ? C.mint : C.coral,
                     border: `1px solid ${b.duell > 0 ? C.mint + "55" : C.coral + "55"}`,
                     borderRadius: RUND.pille, padding: "2px 7px",
                   }}>{b.duell > 0 ? "+" : ""}{b.duell} Duell</span>
@@ -137,7 +137,7 @@ export default function Ranking() {
                 {b.ersatz > 0 && (
                   <span title={`${b.ersatz} versäumte Spiele wurden mit einem Ersatz-Tipp gewertet`
                     + (b.ersatzPunkte ? ` — das sind ${b.ersatzPunkte} Punkte.` : ".")} style={{
-                    fontFamily: MONO, fontSize: 11, color: C.muted,
+                    fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
                     border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>+{b.ersatzPunkte} Ersatz</span>
                 )}
@@ -149,7 +149,7 @@ export default function Ranking() {
                     ohne Marke sähe er nach Bevorzugung aus. */}
                 {b.alleinPunkte > 0 && (
                   <span title="Bonus dafür, dass du als (fast) Einziger richtig lagst" style={{
-                    fontFamily: MONO, fontSize: 11, color: C.akzent,
+                    fontFamily: MONO, fontSize: "0.6875rem", color: C.akzent,
                     border: `1px solid ${C.akzent}55`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>+{b.alleinPunkte} Alleingang</span>
                 )}
@@ -159,7 +159,7 @@ export default function Ranking() {
                     etwas stand. `form` ist `null`, wenn die Kurve flach ist. */}
                 {b.form != null && b.form !== 0 && (
                   <span title="Späte Spieltage zählen anders als frühe (Saison-Kurve)" style={{
-                    fontFamily: MONO, fontSize: 11, color: b.form > 0 ? C.mint : C.muted,
+                    fontFamily: MONO, fontSize: "0.6875rem", color: b.form > 0 ? C.mint : C.muted,
                     border: `1px solid ${b.form > 0 ? C.mint + "55" : C.line}`,
                     borderRadius: RUND.pille, padding: "2px 7px",
                   }}>{b.form > 0 ? "+" : ""}{b.form} Kurve</span>
@@ -171,12 +171,12 @@ export default function Ranking() {
                     Dieselbe Begründung wie bei den drei Marken darüber. */}
                 {b.drehrad > 0 && (
                   <span title="Punkte vom Glücksrad" style={{
-                    fontFamily: MONO, fontSize: 11, color: C.akzent,
+                    fontFamily: MONO, fontSize: "0.6875rem", color: C.akzent,
                     border: `1px solid ${C.akzent}55`, borderRadius: RUND.pille, padding: "2px 7px",
                   }}>+{b.drehrad} Rad</span>
                 )}
                 <span style={{
-                  fontFamily: MONO, fontSize: 15, fontVariantNumeric: "tabular-nums", minWidth: 44, textAlign: "right",
+                  fontFamily: MONO, fontSize: "0.9375rem", fontVariantNumeric: "tabular-nums", minWidth: 44, textAlign: "right",
                   color: b.total < 0 ? C.coral : C.text,
                 }}>{b.total}</span>
               </div>
@@ -192,8 +192,8 @@ export default function Ranking() {
           Marke wird aus den rohen Werten gebildet. Eine erste Fassung rundete
           jede Zeile und kam auf 1123, wo im Ranking 1122 stand. */}
       {meineDuelle.length > 0 && (
-        <div style={{ width: "100%", maxWidth: 400, marginTop: 18 }}>
-          <div style={{ fontSize: 12, letterSpacing: 1.5, color: C.muted, textTransform: "uppercase", marginBottom: 8 }}>
+        <div style={{ width: "100%", maxWidth: "var(--tqs-schirm-breite)", marginTop: 18 }}>
+          <div style={{ fontSize: "0.75rem", letterSpacing: 1.5, color: C.muted, textTransform: "uppercase", marginBottom: 8 }}>
             Deine Duelle
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -215,12 +215,12 @@ export default function Ranking() {
                   background: C.surface, border: `1px solid ${C.line}`,
                   borderRadius: RUND.karte, padding: "8px 11px",
                 }}>
-                  <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted, minWidth: 34 }}>
+                  <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, minWidth: 34 }}>
                     ST {v.spieltag}
                   </span>
-                  <span style={{ flex: 1, fontSize: 12, lineHeight: 1.4 }}>{text}</span>
+                  <span style={{ flex: 1, fontSize: "0.75rem", lineHeight: 1.4 }}>{text}</span>
                   <span style={{
-                    fontFamily: MONO, fontSize: 11,
+                    fontFamily: MONO, fontSize: "0.6875rem",
                     color: ichAngreifer ? C.mint : C.coral,
                   }}>{ichAngreifer ? "+" : "−"}{betrag}</span>
                 </div>

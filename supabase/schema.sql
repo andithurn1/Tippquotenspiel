@@ -220,6 +220,40 @@ create table if not exists public.presets (
   created_at timestamptz not null default now()
 );
 
+-- Nachgereicht am 24.08.2026, damit die Bibliothek geteilte Regelwerke
+-- AUFLISTEN kann und nicht nur per bekanntem Kurzcode einzeln abrufen:
+--   beschreibung  Ein Satz des Erstellers - was das Regelwerk ausmacht.
+--   aspekt        Bei einem Teil-Code der eine Aspekt (siehe presetMerge.js),
+--                 bei einem ganzen Regelwerk null.
+--   uebernahmen   Wie oft jemand das Preset uebernommen hat. Die Grundlage
+--                 der Sortierung "beliebteste Auswahl".
+alter table public.presets add column if not exists beschreibung text;
+alter table public.presets add column if not exists aspekt       text;
+alter table public.presets add column if not exists uebernahmen  integer not null default 0;
+
+create index if not exists presets_uebernahmen_idx on public.presets (uebernahmen desc);
+create index if not exists presets_created_idx     on public.presets (created_at desc);
+
+-- Zaehler-Erhoehung als Funktion, aus zwei Gruenden:
+--   1. Lesen-Rechnen-Schreiben verliert gleichzeitige Uebernahmen.
+--   2. Ein UPDATE auf ein FREMDES Preset laesst RLS nicht zu - und genau das
+--      ist der Normalfall: man uebernimmt ja das Regelwerk eines anderen.
+--      `security definer` hebt das fuer GENAU diese eine Spalte auf.
+create or replace function public.bump_preset(p_code text)
+returns public.presets
+language sql
+security definer
+set search_path = public
+as $$
+  update public.presets
+     set uebernahmen = uebernahmen + 1
+   where code = upper(trim(p_code))
+  returning *;
+$$;
+
+revoke all on function public.bump_preset(text) from public;
+grant execute on function public.bump_preset(text) to authenticated;
+
 create index if not exists tips_round_match_idx on public.tips (round_id, match_id);
 create index if not exists round_members_user_idx on public.round_members (user_id);
 

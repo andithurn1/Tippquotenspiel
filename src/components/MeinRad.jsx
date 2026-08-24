@@ -118,11 +118,11 @@ export default function MeinRad() {
     }}>
       <div style={{ width: "100%", maxWidth: 480 }}>
         <BackLink href="/hub" label="Tippspiel" />
-        <h1 style={{ fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
+        <h1 style={{ fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
           Dein Glücksrad
         </h1>
 
-        {matches == null && <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>lädt …</div>}
+        {matches == null && <div style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted }}>lädt …</div>}
 
         {matches != null && !aktiv && (
           <Kasten>
@@ -133,7 +133,7 @@ export default function MeinRad() {
 
         {matches != null && aktiv && (
           <>
-            <p style={{ fontSize: 13, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: "0.8125rem", color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
               {beschreibeDrehrad(cfg, achse.length || 34)}
             </p>
 
@@ -147,13 +147,13 @@ export default function MeinRad() {
                 background: C.surface, border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte,
                 padding: "12px 15px", marginTop: 12,
               }}>
-                <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.akzent, textTransform: "uppercase", letterSpacing: 1 }}>
                   Spieltag {letzte.spieltag}
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4 }}>
+                <div style={{ fontSize: "0.9375rem", fontWeight: 700, marginTop: 4 }}>
                   {feldVon.get(letzte.feldId)?.label || "—"}
                 </div>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                   {belohnungsText(gutschriftVon.get(`${letzte.spieltag}`)?.belohnung
                     ?? feldVon.get(letzte.feldId)?.belohnung)}
                 </div>
@@ -172,16 +172,16 @@ export default function MeinRad() {
             {/* Alle bisherigen Drehungen — nachvollziehbar, nicht nur die letzte. */}
             {gefallen.length > 1 && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Bisher</div>
+                <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 6 }}>Bisher</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {[...gefallen].reverse().map((z) => (
                     <div key={z.spieltag} style={{
                       display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10,
                       background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "8px 12px",
                     }}>
-                      <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>ST {z.spieltag}</span>
-                      <span style={{ fontSize: 13, flex: 1 }}>{feldVon.get(z.feldId)?.label || "—"}</span>
-                      <span style={{ fontSize: 12, color: C.muted }}>
+                      <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>ST {z.spieltag}</span>
+                      <span style={{ fontSize: "0.8125rem", flex: 1 }}>{feldVon.get(z.feldId)?.label || "—"}</span>
+                      <span style={{ fontSize: "0.75rem", color: C.muted }}>
                         {belohnungsText(gutschriftVon.get(`${z.spieltag}`)?.belohnung
                           ?? feldVon.get(z.feldId)?.belohnung, true)}
                       </span>
@@ -195,14 +195,14 @@ export default function MeinRad() {
                 kürzen — sonst rechnet der Spieler mit einer Zahl, die er nie
                 bekommen hat. */}
             {gedeckelt.length > 0 && (
-              <p style={{ fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
                 Der Saison-Deckel dieser Runde ist erreicht: {gedeckelt.length}{" "}
                 {gedeckelt.length === 1 ? "Gewinn wurde" : "Gewinne wurden"} deshalb gekürzt.
               </p>
             )}
 
             {kommend.length > 0 && (
-              <p style={{ fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
                 Nächste Drehung an Spieltag {kommend[0]} — vorausgesetzt, du tippst
                 ihn. Was dabei herauskommt, steht erst fest, wenn der Spieltag da ist.
               </p>
@@ -234,7 +234,7 @@ function Kasten({ children }) {
   return (
     <div style={{
       background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
-      padding: "14px 16px", fontSize: 13, color: C.muted, lineHeight: 1.5, marginTop: 12,
+      padding: "14px 16px", fontSize: "0.8125rem", color: C.muted, lineHeight: 1.5, marginTop: 12,
     }}>{children}</div>
   );
 }

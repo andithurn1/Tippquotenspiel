@@ -45,6 +45,7 @@ import WertungSondermenue, { wertungStand } from "@/components/WertungSondermenu
 import VerlaufSondermenue, { verlaufStand } from "@/components/VerlaufSondermenue";
 import SaisonZeitSondermenue, { saisonZeitStand } from "@/components/SaisonZeitSondermenue";
 import { TAPZIEL } from "@/lib/tapziel";
+import { useRueckmeldung } from "@/components/Rueckmeldung";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
 // Bundesliga und Premier League mischt.
@@ -247,11 +248,24 @@ export default function Spielerstellung() {
     return () => { live = false; };
   }, [user]);
 
+  // 🔴 Andi, 24.08.2026: „feedback dass … abgespeichert ist". Die Stellen
+  // hier sind die folgenreichsten der ganzen App — eine Runde anlegen und
+  // ein Regelwerk veröffentlichen kann man nicht rückgängig machen.
+  const melder = useRueckmeldung();
+
   const code = useMemo(() => encodePreset(rules), [rules]);
 
   const copy = async () => {
-    try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500); }
-    catch { /* Clipboard nicht verfügbar — Nutzer kann den Code markieren */ }
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true); setTimeout(() => setCopied(false), 1500);
+      melder.gespeichert("GameCode kopiert");
+    }
+    // ⚠️ Hier MUSS gemeldet werden, gerade weil der Knopf sich selbst schon
+    // ändert: schlägt die Zwischenablage fehl (Safari ohne Nutzergeste, ein
+    // eingebetteter Rahmen), sieht man sonst gar nichts und hält einen leeren
+    // Zwischenspeicher für einen kopierten Code.
+    catch { melder.fehler("Kopieren ging nicht — Code bitte markieren"); }
   };
 
   // Lädt entweder einen langen Text-Creator-Code oder einen kurzen
@@ -275,6 +289,7 @@ export default function Spielerstellung() {
         const teil = zerlegeTeilCode(val);
         if (teil?.aspekt) merkeCode(teil.aspekt, val);
         setImp("");
+        melder.gespeichert("Teil-Code aufgesetzt");
       } catch {
         setImpErr("Kein gültiger Teil-Code.");
       }
@@ -294,6 +309,7 @@ export default function Spielerstellung() {
         // …", obwohl davon nichts mehr gilt.
         setGeladeneCodes({});
         setImp("");
+        melder.gespeichert("GameCode übernommen");
       }
       catch { setImpErr("Kein gültiger Creator-Code."); }
       return;
@@ -309,6 +325,15 @@ export default function Spielerstellung() {
       // Derselbe Fall wie beim langen Code — siehe dort.
       setGeladeneCodes({});
       setImp("");
+      melder.gespeichert(`„${preset.name || "Regelwerk"}" übernommen`);
+      // 🔴 DIE Zählung, aus der „beliebteste Auswahl" entsteht — und sie steht
+      // genau hier: an der ÜBERNAHME, nicht am Anschauen. Wer eine Liste
+      // durchscrollt, bewegt keine Zahl; sonst sortierte die Liste sich
+      // selbst nach oben, weil oben stehen zu oben stehen führt.
+      //
+      // ⚠️ Ohne `await` und mit verschlucktem Fehler: der Zähler ist Beiwerk.
+      // Ein klemmender Zähler darf das Übernehmen nicht scheitern lassen.
+      getStore().merkePresetNutzung?.(preset.code).catch(() => {});
     } catch { setImpErr("Konnte den Code nicht laden. Später erneut versuchen."); }
   };
 
@@ -319,14 +344,22 @@ export default function Spielerstellung() {
     try {
       const p = await getStore().publishPreset({ name: rules.name, rules, creatorId: user.id });
       setShortCode(p.code);
-    } catch { setImpErr("Kurzcode konnte nicht erstellt werden. Später erneut versuchen."); }
+      melder.gespeichert(`Veröffentlicht als ${p.code}`);
+    } catch {
+      setImpErr("Kurzcode konnte nicht erstellt werden. Später erneut versuchen.");
+      melder.fehler("Kurzcode nicht erstellt");
+    }
     finally { setPublishing(false); }
   };
 
   const copyShort = async () => {
     if (!shortCode) return;
-    try { await navigator.clipboard.writeText(shortCode); setShortCopied(true); setTimeout(() => setShortCopied(false), 1500); }
-    catch { /* Nutzer kann den Code markieren */ }
+    try {
+      await navigator.clipboard.writeText(shortCode);
+      setShortCopied(true); setTimeout(() => setShortCopied(false), 1500);
+      melder.gespeichert("Kurzcode kopiert");
+    }
+    catch { melder.fehler("Kopieren ging nicht — Code bitte markieren"); }
   };
 
   // Spielauswahl aus dem Regelwerk. `patchSpiele` laesst sie durch
@@ -458,8 +491,10 @@ export default function Spielerstellung() {
       });
       setCreated(round);
       setRoundId(round.id);
+      melder.gespeichert(`Runde „${round.name}" angelegt`);
     } catch {
       setCreateErr("Runde konnte nicht angelegt werden. Später erneut versuchen.");
+      melder.fehler("Runde nicht angelegt");
     } finally {
       setCreating(false);
     }
@@ -467,8 +502,12 @@ export default function Spielerstellung() {
 
   const copyJoinCode = async () => {
     if (!created) return;
-    try { await navigator.clipboard.writeText(created.join_code); setCodeCopied(true); setTimeout(() => setCodeCopied(false), 1500); }
-    catch { /* Nutzer kann den Code markieren */ }
+    try {
+      await navigator.clipboard.writeText(created.join_code);
+      setCodeCopied(true); setTimeout(() => setCodeCopied(false), 1500);
+      melder.gespeichert("Beitritts-Code kopiert");
+    }
+    catch { melder.fehler("Kopieren ging nicht — Code bitte markieren"); }
   };
 
   const L = RULE_LIMITS;
@@ -496,7 +535,7 @@ export default function Spielerstellung() {
           sonst schöbe sich die Ampel beim Scrollen darüber. */}
       <div style={{
         position: "sticky", top: 0, zIndex: 20,
-        width: "100%", maxWidth: 400,
+        width: "100%", maxWidth: "var(--tqs-schirm-breite)",
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
         // Deckend, sonst scrollt der Inhalt sichtbar dahinter durch. Der
         // negative Rand + Polsterung verbreitern den Deckel bis an die
@@ -542,7 +581,7 @@ export default function Spielerstellung() {
         </div>
       </div>
       <div style={{
-        width: "100%", maxWidth: 400, position: "relative",
+        width: "100%", maxWidth: "var(--tqs-schirm-breite)", position: "relative",
         // `clip` statt `hidden`: beides schneidet den Inhalt an den runden Ecken
         // ab, aber `hidden` macht den Rahmen zum SCROLL-Container — und damit
         // klebt `position: sticky` daran fest, statt am Fenster. Die Ampel
@@ -566,11 +605,11 @@ export default function Spielerstellung() {
         <div style={{ position: "relative", padding: "26px 22px 24px" }}>
           {/* Kopf */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+            <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
               Spiel erstellen
             </span>
             <button onClick={() => { setRules(DEFAULT_RULES); setPresetKey("standard"); }} style={{
-              fontFamily: MONO, fontSize: 11, color: C.muted, cursor: "pointer",
+              fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, cursor: "pointer",
               minHeight: 44, boxSizing: "border-box",
               background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "4px 14px",
             }}>zurücksetzen</button>
@@ -583,7 +622,7 @@ export default function Spielerstellung() {
               Ansicht ändert, WIE VIEL man sieht, nicht WO man ist.
               Gemessen am 20.08.: die Abschnittsfolge beider Ansichten war
               danach an jeder Stelle gleich. */}
-          <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>
+          <div style={{ marginTop: 6, fontSize: "1.25rem", fontWeight: 700 }}>
             Wie soll eure Runde sein?
           </div>
           {/* Der Erklärsatz „Du als Admin legst fest …“ ist auf Andis Ansage
@@ -592,7 +631,7 @@ export default function Spielerstellung() {
               wiederholte, was der Creator-Code-Block weiter unten ohnehin
               sagt. Der Untertitel hier gilt seit 20.08. in BEIDEN Ansichten —
               die Voreinstellungen stehen jetzt in beiden. */}
-          <p style={{ fontSize: 13, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+          <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
             Ein Klick genügt — den Rest stellen wir stimmig ein. Wer mag, geht danach ins Detail.
           </p>
 
@@ -629,8 +668,8 @@ export default function Spielerstellung() {
               background: C.ink2, border: `1px solid ${C.line}`,
               borderRadius: RUND.karte, padding: "12px 14px",
             }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>Du hast einen GameCode?</div>
-              <p style={{ fontSize: 12, color: C.muted, margin: "3px 0 10px", lineHeight: 1.4 }}>
+              <div style={{ fontSize: "0.9375rem", fontWeight: 700 }}>Du hast einen GameCode?</div>
+              <p style={{ fontSize: "0.75rem", color: C.muted, margin: "3px 0 10px", lineHeight: 1.4 }}>
                 Hier einsetzen — Regelwerk steht sofort, ohne einen einzigen Regler.
               </p>
               <div style={{ display: "flex", gap: 8 }}>
@@ -639,7 +678,7 @@ export default function Spielerstellung() {
                   placeholder="Code einsetzen" style={{
                     flex: 1, minWidth: 0, background: C.ink, color: C.text,
                     border: `1px solid ${C.line}`, borderRadius: RUND.karte,
-                    padding: "12px 12px", fontSize: 15, fontFamily: MONO, outline: "none",
+                    padding: "12px 12px", fontSize: "0.9375rem", fontFamily: MONO, outline: "none",
                     minHeight: 44, boxSizing: "border-box",
                   }} />
                 <button onClick={load} disabled={!imp.trim()} style={{
@@ -647,11 +686,11 @@ export default function Spielerstellung() {
                   background: imp.trim() ? C.akzent : C.surface2,
                   color: imp.trim() ? C.ink : C.muted,
                   border: imp.trim() ? "none" : `1px solid ${C.line}`,
-                  borderRadius: RUND.karte, padding: "0 18px", fontSize: 15, fontWeight: 700,
+                  borderRadius: RUND.karte, padding: "0 18px", fontSize: "0.9375rem", fontWeight: 700,
                   ...TAPZIEL,
                 }}>Einsetzen</button>
               </div>
-              {impErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{impErr}</div>}
+              {impErr && <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 6 }}>{impErr}</div>}
 
               {/* 🔴 „neben dem am anfang soll ein button sein mit bibliothek
                   Kompletteinstellung" (Andi, 24.08.2026). Er steht bewusst in
@@ -662,9 +701,9 @@ export default function Spielerstellung() {
                 marginTop: 10, width: "100%", cursor: "pointer", fontFamily: "inherit",
                 display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
                 background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: RUND.karte, fontSize: 15, fontWeight: 700, ...TAPZIEL,
+                borderRadius: RUND.karte, fontSize: "0.9375rem", fontWeight: 700, ...TAPZIEL,
               }}>
-                <span style={{ fontSize: 17, lineHeight: 1 }}>📚</span>
+                <span style={{ fontSize: "1.0625rem", lineHeight: 1 }}>📚</span>
                 Bibliothek — Kompletteinstellungen
               </button>
             </div>
@@ -724,7 +763,7 @@ export default function Spielerstellung() {
             onGeladen={merkeCode}
             onChange={(neu) => { touched(); setRules(neu); }} />
 
-          <p style={{ fontSize: 13, color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.45 }}>
             Mannschaften und Begegnungen wählen, Regeln je Wettbewerb festlegen.
           </p>
 
@@ -753,7 +792,7 @@ export default function Spielerstellung() {
               zur VEREINSAUSWAHL — sie ergeben ohne sie keinen Sinn. */}
             <div style={{ marginTop: 8, marginBottom: 8 }}>
               {teamFilterOn && (
-                <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.4 }}>
+                <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.4 }}>
                   Mindestens 2 Vereine — ein Spiel zählt, sobald eine Seite dabei ist.
                 </p>
               )}
@@ -783,18 +822,18 @@ export default function Spielerstellung() {
                         border: `1px solid ${auf ? C.mint + "55" : C.line}`,
                         borderRadius: RUND.karte, padding: "10px 12px",
                       }}>
-                        <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700 }}>{g.label}</span>
-                        <span style={{ fontFamily: MONO, fontSize: 12, color: drin > 0 ? C.mint : C.muted }}>
+                        <span style={{ flex: 1, minWidth: 0, fontSize: "0.9375rem", fontWeight: 700 }}>{g.label}</span>
+                        <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: drin > 0 ? C.mint : C.muted }}>
                           {drin}/{g.vereine.length}
                         </span>
                         <span style={{
-                          fontSize: 16, color: C.muted, lineHeight: 1,
+                          fontSize: "1rem", color: C.muted, lineHeight: 1,
                           transform: auf ? "rotate(90deg)" : "none", transition: "transform .15s",
                         }}>›</span>
                       </button>
                       {/* Alle einer Liga auf einmal — sonst klickt man 18-mal. */}
                       <button onClick={() => toggleLiga(g.vereine)} style={{
-                        cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "3px 14px",
+                        cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", padding: "3px 14px",
                         minHeight: 48, boxSizing: "border-box", flexShrink: 0,
                         borderRadius: RUND.karte, background: "transparent", color: C.mint,
                         border: `1px solid ${C.line}`,
@@ -807,7 +846,7 @@ export default function Spielerstellung() {
                             const on = selectedTeams.includes(team);
                             return (
                               <button key={team} onClick={() => toggleTeam(team)} style={{
-                                cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "6px 12px", borderRadius: RUND.pille,
+                                cursor: "pointer", fontSize: "0.8125rem", fontFamily: "inherit", padding: "6px 12px", borderRadius: RUND.pille,
                                 minHeight: 44, boxSizing: "border-box",
                                 background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                                 border: `1px solid ${on ? C.mint + "66" : C.line}`,
@@ -823,7 +862,7 @@ export default function Spielerstellung() {
                             wird ausschließlich in `auswahlFuer`. */}
                         <button onClick={() => setSonderregelnLiga((o) => (o === g.key ? null : g.key))} style={{
                           marginTop: 8, width: "100%", minHeight: 44, boxSizing: "border-box",
-                          cursor: "pointer", fontFamily: "inherit", fontSize: 13, textAlign: "left",
+                          cursor: "pointer", fontFamily: "inherit", fontSize: "0.8125rem", textAlign: "left",
                           background: "transparent", color: sonderregelnLiga === g.key ? C.mint : C.muted,
                           border: `1px dashed ${sonderregelnLiga === g.key ? C.mint + "55" : C.line}`,
                           borderRadius: RUND.karte, padding: "8px 12px",
@@ -841,7 +880,7 @@ export default function Spielerstellung() {
               })}
 
               {teamFilterOn && (
-              <div style={{ fontSize: 11, color: teamFilterInvalid ? C.coral : C.muted, marginTop: 8 }}>
+              <div style={{ fontSize: "0.6875rem", color: teamFilterInvalid ? C.coral : C.muted, marginTop: 8 }}>
                 {selectedTeams.length} von mindestens 2 Teams ausgewählt
                 {teamFilterInvalid && " — bitte noch mindestens ein weiteres Team wählen"}.
               </div>
@@ -863,7 +902,7 @@ export default function Spielerstellung() {
                         onClick={() => patchSpiele({ teamModus: m.key })}
                         style={{
                           ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit",
-                          fontSize: 12, fontWeight: an ? 700 : 400, padding: "8px 10px",
+                          fontSize: "0.75rem", fontWeight: an ? 700 : 400, padding: "8px 10px",
                           borderRadius: RUND.karte, textAlign: "left",
                           background: an ? `${C.akzent}22` : C.surface,
                           color: an ? C.akzent : C.muted,
@@ -878,7 +917,7 @@ export default function Spielerstellung() {
                   vorkommen. Ohne diesen Hinweis filtert die Runde still gegen
                   Vereine, die gar nicht mehr auftauchen. */}
               {verwaisteTeams.length > 0 && (
-                <div style={{ fontSize: 11, color: C.akzent, marginTop: 4, lineHeight: 1.45 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.akzent, marginTop: 4, lineHeight: 1.45 }}>
                   {verwaisteTeams.length} gewählte{verwaisteTeams.length === 1 ? "r Verein spielt" : " Vereine spielen"} in
                   keinem der gewählten Wettbewerbe ({verwaisteTeams.join(", ")}) — {verwaisteTeams.length === 1 ? "er zählt" : "sie zählen"} nicht mit.
                 </div>
@@ -897,7 +936,7 @@ export default function Spielerstellung() {
                 // Derselbe Satz mit „0 bis 1" darunter hätte das verharmlost.
                 if ((sp.teamModus ?? "einer") === "beide") {
                   return (
-                    <div style={{ fontSize: 11, color: C.akzent, marginTop: 4, lineHeight: 1.45 }}>
+                    <div style={{ fontSize: "0.6875rem", color: C.akzent, marginTop: 4, lineHeight: 1.45 }}>
                       Höchstens {max} Spiel{max === 1 ? "" : "e"} pro Spieltag — und an den
                       meisten Spieltagen <strong>keins</strong>. In einer Hin- und Rückrunde
                       treffen sich zwei Vereine genau zweimal. Für eine Runde, die jede Woche
@@ -907,7 +946,7 @@ export default function Spielerstellung() {
                   );
                 }
                 return (
-                  <div style={{ fontSize: 11, color: duenn ? C.akzent : C.mint, marginTop: 4, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: "0.6875rem", color: duenn ? C.akzent : C.mint, marginTop: 4, lineHeight: 1.45 }}>
                     Bleiben {min === max ? min : `${min} bis ${max}`} Spiele pro Spieltag
                     {duenn && " — das ist wenig; ein einzelner Tipp entscheidet dann fast den ganzen Spieltag"}.
                   </div>
@@ -958,27 +997,27 @@ export default function Spielerstellung() {
                   borderRadius: RUND.karte, padding: "12px 14px", color: C.text,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700 }}>
+                    <span style={{ fontSize: "0.9375rem", fontWeight: 700 }}>
                       {p.label}
                       {/* Ohne Premium greift der Joker-Anteil nicht — das gehört
                           sichtbar an den Preset, nicht erst in eine Fehlermeldung. */}
                       {p.premium && !premium && (
-                        <span style={{ fontSize: 12, color: C.akzent, marginLeft: 6 }} title="Premium-Funktion">🔒</span>
+                        <span style={{ fontSize: "0.75rem", color: C.akzent, marginLeft: 6 }} title="Premium-Funktion">🔒</span>
                       )}
                     </span>
                     {active && (
                       <span style={{
-                        fontFamily: MONO, fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}55`,
+                        fontFamily: MONO, fontSize: "0.6875rem", color: C.akzent, border: `1px solid ${C.akzent}55`,
                         borderRadius: RUND.pille, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
                       }}>gewählt</span>
                     )}
                   </div>
-                  <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{p.desc}</div>
+                  <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{p.desc}</div>
                 </button>
               );
             })}
           </div>
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
             Nur ein Startpunkt — alle Regler unten bleiben danach frei einstellbar.
           </p>
 
@@ -987,7 +1026,7 @@ export default function Spielerstellung() {
             <button onClick={() => setMischenOffen((o) => !o)} style={{
               width: "100%", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
               background: "transparent", color: C.muted, border: `1px dashed ${C.line}`,
-              borderRadius: RUND.karte, padding: "10px 12px", fontSize: 13,
+              borderRadius: RUND.karte, padding: "10px 12px", fontSize: "0.8125rem",
             }}>
               {mischenOffen ? "▾" : "▸"} Zwei Presets mischen — „Schärfe von A, Kombi von B"
             </button>
@@ -1009,7 +1048,7 @@ export default function Spielerstellung() {
               placeholder="z. B. Hardcore-Runde" style={{
                 width: "100%", boxSizing: "border-box", background: C.surface, color: C.text,
                 border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
-                fontSize: 15, fontFamily: "inherit", outline: "none",
+                fontSize: "0.9375rem", fontFamily: "inherit", outline: "none",
               }} />
           </Field>
 
@@ -1220,13 +1259,13 @@ export default function Spielerstellung() {
           <SectionTitle>Runde erstellen</SectionTitle>
           {!created ? (
             <>
-              <p style={{ fontSize: 13, color: C.muted, marginTop: -4, marginBottom: 10, lineHeight: 1.5 }}>
+              <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: -4, marginBottom: 10, lineHeight: 1.5 }}>
                 Legt mit diesem Regelwerk eine echte Runde an. Du wirst Admin,
                 bekommst einen Beitritts-Code zum Teilen, und diese Runde wird
                 deine aktive Runde zum Tippen.
               </p>
               {!user && (
-                <p style={{ fontSize: 12, color: C.akzent, marginBottom: 10 }}>
+                <p style={{ fontSize: "0.75rem", color: C.akzent, marginBottom: 10 }}>
                   Bitte zuerst auf der Startseite einloggen.
                 </p>
               )}
@@ -1235,32 +1274,32 @@ export default function Spielerstellung() {
                   der Runde wirklich greift, wäre das Ergebnis eine Runde ohne
                   ein einziges Spiel — und man sähe es erst darin. */}
               {leereAuswahl && (
-                <p style={{ fontSize: 12, color: C.coral, marginBottom: 10, lineHeight: 1.45 }}>
+                <p style={{ fontSize: "0.75rem", color: C.coral, marginBottom: 10, lineHeight: 1.45 }}>
                   Diese Auswahl lässt kein einziges Spiel übrig. So angelegt hätte die
                   Runde nichts zu tippen — oben eine Einschränkung zurücknehmen.
                 </p>
               )}
               <button onClick={createRound} disabled={creating || !user || teamFilterInvalid || leereAuswahl} style={{
                 width: "100%", cursor: creating || !user || teamFilterInvalid || leereAuswahl ? "default" : "pointer",
-                background: C.mint, color: C.ink, fontWeight: 700, fontSize: 15,
+                background: C.mint, color: C.ink, fontWeight: 700, fontSize: "0.9375rem",
                 ...TAPZIEL, border: "none", borderRadius: RUND.karte, padding: "13px 0",
                 opacity: creating || !user || teamFilterInvalid || leereAuswahl ? 0.6 : 1,
               }}>
                 {creating ? "wird angelegt …" : "Runde jetzt erstellen"}
               </button>
-              {createErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{createErr}</div>}
+              {createErr && <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 6 }}>{createErr}</div>}
             </>
           ) : (
             <div style={{ background: `${C.mint}12`, border: `1px solid ${C.mint}44`, borderRadius: RUND.karte, padding: "14px 16px" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.mint }}>✓ „{created.name}“ ist angelegt — deine aktive Runde</div>
-              <div style={{ marginTop: 10, fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Beitritts-Code</div>
-              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: C.akzent, marginTop: 4, letterSpacing: 3 }}>{created.join_code}</div>
+              <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: C.mint }}>✓ „{created.name}“ ist angelegt — deine aktive Runde</div>
+              <div style={{ marginTop: 10, fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Beitritts-Code</div>
+              <div style={{ fontFamily: MONO, fontSize: "1.75rem", fontWeight: 700, color: C.akzent, marginTop: 4, letterSpacing: 3 }}>{created.join_code}</div>
               <button onClick={copyJoinCode} style={{
                 marginTop: 10, width: "100%", cursor: "pointer",
-                background: codeCopied ? C.mint : C.surface2, color: codeCopied ? C.ink : C.text, fontWeight: 700, fontSize: 13,
+                background: codeCopied ? C.mint : C.surface2, color: codeCopied ? C.ink : C.text, fontWeight: 700, fontSize: "0.8125rem",
                 border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 0",
               }}>{codeCopied ? "✓ kopiert" : "Code kopieren"}</button>
-              <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 8, lineHeight: 1.4 }}>
                 Freunde geben diesen Code unter „Runde beitreten" ein.
               </p>
             </div>
@@ -1271,35 +1310,35 @@ export default function Spielerstellung() {
           <SectionTitle>Creator-Code</SectionTitle>
           <div style={{
             background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
-            padding: "10px 12px", fontFamily: MONO, fontSize: 12, color: C.akzent,
+            padding: "10px 12px", fontFamily: MONO, fontSize: "0.75rem", color: C.akzent,
             wordBreak: "break-all", lineHeight: 1.5,
           }}>{code}</div>
           <button onClick={copy} style={{
             marginTop: 10, width: "100%", cursor: "pointer",
-            background: copied ? C.mint : C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
+            background: copied ? C.mint : C.akzent, color: C.ink, fontWeight: 700, fontSize: "0.9375rem",
             ...TAPZIEL, border: "none", borderRadius: RUND.karte, padding: "13px 0", transition: "background .2s",
           }}>{copied ? "✓ kopiert" : "Langen Code kopieren & teilen"}</button>
 
           {/* Kurzcode (Content-Creator) */}
           <div style={{ marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "12px 14px" }}>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>Kurzcode statt langem Code</div>
-            <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 10px", lineHeight: 1.4 }}>
+            <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Kurzcode statt langem Code</div>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 10px", lineHeight: 1.4 }}>
               Speichert dein Regelwerk unter einem kurzen, merkbaren Code — perfekt zum
               Teilen (z. B. von Content-Creatorn). Andere laden ihn unten einfach ein.
             </p>
             {!shortCode ? (
               <button onClick={publish} disabled={publishing || !user} style={{
                 width: "100%", cursor: publishing || !user ? "default" : "pointer",
-                background: C.surface2, color: user ? C.text : C.muted, fontWeight: 700, fontSize: 13,
+                background: C.surface2, color: user ? C.text : C.muted, fontWeight: 700, fontSize: "0.8125rem",
                 border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "11px 0", minHeight: 44,
                 opacity: publishing || !user ? 0.6 : 1,
               }}>{publishing ? "wird erstellt …" : user ? "Kurzcode erstellen & teilen" : "Zum Erstellen einloggen"}</button>
             ) : (
               <div>
-                <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: C.akzent, letterSpacing: 3, textAlign: "center" }}>{shortCode}</div>
+                <div style={{ fontFamily: MONO, fontSize: "1.75rem", fontWeight: 700, color: C.akzent, letterSpacing: 3, textAlign: "center" }}>{shortCode}</div>
                 <button onClick={copyShort} style={{
                   marginTop: 8, width: "100%", cursor: "pointer",
-                  background: shortCopied ? C.mint : C.surface2, color: shortCopied ? C.ink : C.text, fontWeight: 700, fontSize: 13,
+                  background: shortCopied ? C.mint : C.surface2, color: shortCopied ? C.ink : C.text, fontWeight: 700, fontSize: "0.8125rem",
                   border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 0",
                 }}>{shortCopied ? "✓ kopiert" : "Kurzcode kopieren"}</button>
               </div>
@@ -1322,15 +1361,15 @@ export default function Spielerstellung() {
             <input value={imp} onChange={(e) => { setImp(e.target.value); setImpErr(""); }}
               placeholder="Code laden (Creator-Code, Kurzcode oder Teil-Code)" style={{
                 flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: RUND.karte, padding: "10px 12px", fontSize: 13, fontFamily: MONO, outline: "none",
+                borderRadius: RUND.karte, padding: "10px 12px", fontSize: "0.8125rem", fontFamily: MONO, outline: "none",
               }} />
             <button onClick={load} disabled={!imp.trim()} style={{
               cursor: imp.trim() ? "pointer" : "default", background: C.surface2,
               color: imp.trim() ? C.text : C.muted, border: `1px solid ${C.line}`,
-              borderRadius: RUND.karte, padding: "0 16px", fontSize: 13, fontWeight: 600, minHeight: 44,
+              borderRadius: RUND.karte, padding: "0 16px", fontSize: "0.8125rem", fontWeight: 600, minHeight: 44,
             }}>Laden</button>
           </div>
-          {impErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{impErr}</div>}
+          {impErr && <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 6 }}>{impErr}</div>}
         </div>
       </div>
       {/* ── Kompletteinstellungen: Andis eigenes Fenster (24.08.2026) ──
@@ -1369,16 +1408,16 @@ function KopfChip({ icon, name, wert, titel, onClick }) {
     <button onClick={onClick} title={titel} style={{
       display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
       minHeight: 44, boxSizing: "border-box", cursor: "pointer",
-      fontFamily: "inherit", fontSize: 12, padding: "4px 10px",
+      fontFamily: "inherit", fontSize: "0.75rem", padding: "4px 10px",
       background: C.surface, color: C.text,
       border: `1px solid ${C.line}`, borderRadius: RUND.pille,
     }}>
-      <span style={{ fontSize: 13, lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontSize: "0.8125rem", lineHeight: 1 }}>{icon}</span>
       {/* Der NAME trägt die Farbe des Textes, der WERT die gedämpfte — sonst
           liest sich „Bibliothek Standard" wie zwei gleichrangige Wörter. */}
-      {name && <span style={{ fontSize: 12, fontWeight: 600 }}>{name}</span>}
+      {name && <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>{name}</span>}
       <span style={{
-        fontFamily: MONO, fontSize: 11, color: C.muted,
+        fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
         maxWidth: 88, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
       }}>{wert}</span>
     </button>
@@ -1388,7 +1427,7 @@ function KopfChip({ icon, name, wert, titel, onClick }) {
 function SectionTitle({ children }) {
   return (
     <div style={{
-      fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1,
+      fontSize: "0.75rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1,
       marginTop: 22, marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${C.line}`,
     }}>{children}</div>
   );

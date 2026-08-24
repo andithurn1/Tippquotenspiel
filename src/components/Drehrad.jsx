@@ -123,7 +123,7 @@ export default function Drehrad({ rules, onChange }) {
 
   return (
     <div>
-      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Ein Rad aus Feldern, die <strong>du</strong> schreibst: Beschriftung, Größe, Belohnung.
         Keine Empfehlung, keine Vorgabe — was ein Feld auszahlt und wie groß es ist, entscheidest du.
       </p>
@@ -156,10 +156,10 @@ export default function Drehrad({ rules, onChange }) {
           }} />
         </span>
         <span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: cfg.enabled ? C.akzent : C.text }}>
+          <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: cfg.enabled ? C.akzent : C.text }}>
             {cfg.enabled ? "Drehrad ist an" : "Drehrad ist aus"}
           </span>
-          <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+          <span style={{ display: "block", fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
             {cfg.enabled
               ? "In dieser Runde wird gedreht."
               : "Du kannst das Rad trotzdem schon bauen — gedreht wird erst, wenn du es einschaltest."}
@@ -200,11 +200,11 @@ export default function Drehrad({ rules, onChange }) {
       )}
 
       {/* ── Felder-Liste ── */}
-      <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, marginBottom: 8 }}>
+      <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginTop: 4, marginBottom: 8 }}>
         Felder ({felder.length})
       </div>
       {felder.length === 0 && (
-        <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
+        <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 8 }}>
           Noch keine Felder — leg das erste an.
         </div>
       )}
@@ -226,7 +226,7 @@ export default function Drehrad({ rules, onChange }) {
       <button onClick={hinzufuegen} style={{
         cursor: "pointer", background: "transparent", color: C.muted,
         ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
-        fontFamily: "inherit", fontSize: 13, textAlign: "left", width: "100%", boxSizing: "border-box",
+        fontFamily: "inherit", fontSize: "0.8125rem", textAlign: "left", width: "100%", boxSizing: "border-box",
       }}>+ Feld hinzufügen</button>
 
       {/* ── Sperrfrist-Vorgabe fürs ganze Rad (2.2b) ── */}
@@ -234,7 +234,7 @@ export default function Drehrad({ rules, onChange }) {
         <Zahl label="Sperrfrist-Vorgabe für alle Felder (Drehungen dieses Spielers, 0 = keine Sperre)"
           wert={cfg.sperrfrist} limits={DREHRAD_LIMITS.sperrfrist}
           onChange={(v) => setze({ sperrfrist: v })} />
-        <p style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.4 }}>
           Am einzelnen Feld gesetzt schlägt diese Vorgabe. Sind rechnerisch irgendwann alle
           Felder gleichzeitig gesperrt, wird die Sperre für diese eine Drehung ausnahmsweise
           ignoriert — eine Drehung ohne Ergebnis wäre der schlechtere Fehler.
@@ -243,14 +243,14 @@ export default function Drehrad({ rules, onChange }) {
 
       {/* ── Wann wird gedreht ── */}
       <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 14, paddingTop: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 700 }}>Wann wird gedreht?</div>
-        <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Wann wird gedreht?</div>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
           {beschreibeDrehrad(raw, SPIELTAGE)}
         </p>
 
         <div style={{ marginTop: 4 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
-            <span style={{ fontSize: 13 }}>Etwa jeder {cfg.frequenz}. Spieltag</span>
+            <span style={{ fontSize: "0.8125rem" }}>Etwa jeder {cfg.frequenz}. Spieltag</span>
           </div>
           <input type="range" value={cfg.frequenz}
             min={DREHRAD_LIMITS.frequenz.min} max={DREHRAD_LIMITS.frequenz.max} step={DREHRAD_LIMITS.frequenz.step}
@@ -268,8 +268,8 @@ export default function Drehrad({ rules, onChange }) {
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 borderRadius: RUND.karte, padding: "9px 12px",
               }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
+                <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
               </button>
             );
           })}
@@ -283,7 +283,7 @@ export default function Drehrad({ rules, onChange }) {
         )}
 
         <div style={{ marginTop: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Saison-Fenster</div>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 6 }}>Saison-Fenster</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {PHASEN.map((p) => {
               const an = cfg.phase === p.key;
@@ -294,8 +294,8 @@ export default function Drehrad({ rules, onChange }) {
                   border: `1px solid ${an ? C.indigo + "66" : C.line}`,
                   borderRadius: RUND.karte, padding: "9px 12px",
                 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.indigo : C.text }}>{p.label}</div>
-                  <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
+                  <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: an ? C.indigo : C.text }}>{p.label}</div>
+                  <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
                 </button>
               );
             })}
@@ -319,7 +319,7 @@ export default function Drehrad({ rules, onChange }) {
 
       {/* ── Wer darf drehen ── */}
       <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 14, paddingTop: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Wer darf drehen?</div>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 6 }}>Wer darf drehen?</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {WER.map((w) => {
             const an = cfg.wer === w.key;
@@ -330,8 +330,8 @@ export default function Drehrad({ rules, onChange }) {
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 borderRadius: RUND.karte, padding: "9px 12px",
               }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{w.label}</div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{w.desc}</div>
+                <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: an ? C.akzent : C.text }}>{w.label}</div>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{w.desc}</div>
               </button>
             );
           })}
@@ -352,8 +352,8 @@ export default function Drehrad({ rules, onChange }) {
           padding: "10px 12px",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontSize: 13, fontWeight: 700 }}>Punkte-Deckel je Saison</span>
-            <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>
+            <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Punkte-Deckel je Saison</span>
+            <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.akzent }}>
               {cfg.maxPunkteProSaison === 0 ? "kein Deckel" : `${cfg.maxPunkteProSaison} Punkte`}
             </span>
           </div>
@@ -362,14 +362,14 @@ export default function Drehrad({ rules, onChange }) {
             step={DREHRAD_LIMITS.maxPunkteProSaison.step}
             onChange={(e) => setze({ maxPunkteProSaison: +e.target.value })}
             style={{ width: "100%", accentColor: C.akzent, cursor: "pointer", marginTop: 8 }} />
-          <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "6px 0 0", lineHeight: 1.45 }}>
             Gilt nur für Felder vom Typ „Punkte". Ganz nach links (0) heißt <strong>kein Deckel</strong>,
             nicht „keine Punkte". Ohne Grenze hebelt ein Rad sonst die ganze Wertung aus.
           </p>
         </div>
       )}
 
-      <p style={{ fontSize: 11, color: C.muted, marginTop: 14, lineHeight: 1.45 }}>
+      <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 14, lineHeight: 1.45 }}>
         {beschreibeDrehrad(raw, SPIELTAGE)}
       </p>
     </div>
@@ -389,7 +389,7 @@ function Balken({ felder, anteile }) {
       {gesamt <= 0 ? (
         <div style={{
           flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 11, color: C.muted,
+          fontSize: "0.6875rem", color: C.muted,
         }}>Noch keine Feldgröße über 0</div>
       ) : (
         felder.filter((f) => (Number(f.gewicht) || 0) > 0).map((f) => {
@@ -405,7 +405,7 @@ function Balken({ felder, anteile }) {
               }}>
               {prozent >= 9 && (
                 <span style={{
-                  fontSize: 11, fontWeight: 700, color: readableInk(farbe), padding: "0 4px",
+                  fontSize: "0.6875rem", fontWeight: 700, color: readableInk(farbe), padding: "0 4px",
                   whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 }}>
                   {f.label || "…"} {prozent.toFixed(0)}%
@@ -426,7 +426,7 @@ function Leiste({ titel, tage = [], von, bis, gedimmt = false }) {
   return (
     <div style={{ marginTop: 11 }}>
       <div style={{
-        fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
+        fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.2, color: C.muted,
         textTransform: "uppercase", marginBottom: 5,
       }}>{titel}</div>
       <div style={{ display: "flex", gap: 2 }}>
@@ -445,7 +445,7 @@ function Leiste({ titel, tage = [], von, bis, gedimmt = false }) {
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
         {[1, 9, 17, 25, 34].map((md) => (
-          <span key={md} style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{md}</span>
+          <span key={md} style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>{md}</span>
         ))}
       </div>
     </div>
@@ -475,14 +475,14 @@ function FeldZeile({
           style={{
             flex: 1, minWidth: 0, boxSizing: "border-box", background: C.ink2, color: C.text,
             border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "7px 9px",
-            fontSize: 13, fontFamily: "inherit", outline: "none",
+            fontSize: "0.8125rem", fontFamily: "inherit", outline: "none",
           }} />
-        <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent, width: 50, textAlign: "right", flexShrink: 0 }}>
+        <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.akzent, width: 50, textAlign: "right", flexShrink: 0 }}>
           {(anteil * 100).toFixed(1)}%
         </span>
         <button onClick={onEntfernen} aria-label="Feld entfernen" style={{
           cursor: "pointer", background: "transparent", border: "none",
-          color: C.muted, fontSize: 20, lineHeight: 1, padding: "0 2px", flexShrink: 0,
+          color: C.muted, fontSize: "1.25rem", lineHeight: 1, padding: "0 2px", flexShrink: 0,
         }}>×</button>
       </div>
 
@@ -493,19 +493,19 @@ function FeldZeile({
           <Zahl label={`Sperrfrist (Vorgabe ${sperrfristVorgabe})`} wert={feld.sperrfrist ?? ""}
             limits={DREHRAD_LIMITS.sperrfrist} leerErlaubt leerText="Vorgabe"
             onChange={(v) => onPatch({ sperrfrist: v })} />
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>
+          <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3 }}>
             {eigeneSperrfrist ? "eigener Wert" : `folgt der Vorgabe (${sperrfristVorgabe})`}
           </div>
         </div>
       </div>
 
       {gewichtNull && (
-        <div style={{ fontSize: 11, color: C.akzent, marginTop: 6, lineHeight: 1.4 }}>
+        <div style={{ fontSize: "0.6875rem", color: C.akzent, marginTop: 6, lineHeight: 1.4 }}>
           Gewicht 0 — liegt auf dem Rad, kann aber nicht fallen.
         </div>
       )}
       {verworfenGrund && (
-        <div style={{ fontSize: 11, color: C.coral, marginTop: 6, lineHeight: 1.4 }}>
+        <div style={{ fontSize: "0.6875rem", color: C.coral, marginTop: 6, lineHeight: 1.4 }}>
           Zählt gerade nicht mit: {verworfenGrund}
         </div>
       )}
@@ -516,7 +516,7 @@ function FeldZeile({
           const an = belohnung.typ === t.key;
           return (
             <button key={t.key} title={t.desc} onClick={() => onBelohnungsTyp(t.key)} style={{
-              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "5px 10px", borderRadius: RUND.pille,
+              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", padding: "5px 10px", borderRadius: RUND.pille,
               background: an ? `${C.indigo}22` : C.surface2, color: an ? C.indigo : C.muted,
               border: `1px solid ${an ? C.indigo + "66" : C.line}`,
             }}>{t.label}</button>
@@ -527,14 +527,14 @@ function FeldZeile({
       {/* Zusatzfelder je Belohnungs-Typ */}
       {belohnung.typ === "joker" && (
         <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-          <label style={{ fontSize: 11, color: C.muted, flex: "1 1 150px" }}>
+          <label style={{ fontSize: "0.6875rem", color: C.muted, flex: "1 1 150px" }}>
             Joker-Art
             <select value={belohnung.art ?? JOKER_ARTEN[0].key}
               onChange={(e) => onBelohnungPatch({ art: e.target.value })}
               style={{
                 display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
                 background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: RUND.karte, padding: "7px 9px", fontSize: 13, fontFamily: "inherit",
+                borderRadius: RUND.karte, padding: "7px 9px", fontSize: "0.8125rem", fontFamily: "inherit",
               }}>
               {JOKER_ARTEN.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
             </select>
@@ -574,7 +574,7 @@ function Banner({ ton, children }) {
   return (
     <div style={{
       background: `${farbe}12`, border: `1px solid ${farbe}55`, borderRadius: RUND.karte,
-      padding: "9px 11px", marginBottom: 10, fontSize: 12, color: C.text, lineHeight: 1.5,
+      padding: "9px 11px", marginBottom: 10, fontSize: "0.75rem", color: C.text, lineHeight: 1.5,
     }}>
       {children}
     </div>

@@ -44,16 +44,16 @@ export default function Fanfarben() {
     }}>
       <BackLink href="/menu" label="Menü" />
       <div style={{
-        width: "100%", maxWidth: 400, borderRadius: RUND.schirm,
+        width: "100%", maxWidth: "var(--tqs-schirm-breite)", borderRadius: RUND.schirm,
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
         padding: "26px 22px 24px",
       }}>
-        <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+        <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Fanfarben
         </span>
-        <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700 }}>Deine Vereinsfarben</div>
-        <p style={{ fontSize: 13, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+        <div style={{ marginTop: 6, fontSize: "1.25rem", fontWeight: 700 }}>Deine Vereinsfarben</div>
+        <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
           Wähle 2–3 Farben, um deinen Verein zu repräsentieren. Das Layout bleibt
           überall gleich — nur die Akzente tragen deine Farben. Zu dunkle Farben
           werden für die Lesbarkeit leicht aufgehellt.
@@ -63,13 +63,13 @@ export default function Fanfarben() {
         <Preview p={preview} />
 
         {/* Presets */}
-        <div style={{ marginTop: 18, fontSize: 13, fontWeight: 700 }}>Schnellauswahl</div>
+        <div style={{ marginTop: 18, fontSize: "0.8125rem", fontWeight: 700 }}>Schnellauswahl</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
           {CLUB_PRESETS.map((p) => (
             <button key={p.id} onClick={() => applyPreset(p.colors)} title={p.label} style={{
               ...TAPZIEL, cursor: "pointer", display: "flex", alignItems: "center", gap: 7,
               background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.pille,
-              padding: "5px 10px 5px 6px", color: C.text, fontFamily: "inherit", fontSize: 12,
+              padding: "5px 10px 5px 6px", color: C.text, fontFamily: "inherit", fontSize: "0.75rem",
             }}>
               <Swatches colors={p.colors} />
               {p.label}
@@ -78,7 +78,7 @@ export default function Fanfarben() {
         </div>
 
         {/* Eigene Farben */}
-        <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700 }}>Eigene Farben</div>
+        <div style={{ marginTop: 20, fontSize: "0.8125rem", fontWeight: 700 }}>Eigene Farben</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
           {draft.map((color, i) => (
             <div key={i} style={{
@@ -94,21 +94,21 @@ export default function Fanfarben() {
                 }} />
               </label>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ fontSize: "0.8125rem", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
                   {SLOTS[i]?.role || `Farbe ${i + 1}`}
                   {wasLightened(i) && (
                     <span title="Für Lesbarkeit leicht aufgehellt" style={{
-                      fontFamily: MONO, fontSize: 11, color: C.mint, textTransform: "uppercase",
+                      fontFamily: MONO, fontSize: "0.6875rem", color: C.mint, textTransform: "uppercase",
                       border: `1px solid ${C.mint}55`, borderRadius: RUND.pille, padding: "1px 6px", letterSpacing: 0.5,
                     }}>aufgehellt</span>
                   )}
                 </div>
-                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.4 }}>{SLOTS[i]?.hint}</div>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, lineHeight: 1.4 }}>{SLOTS[i]?.hint}</div>
               </div>
-              <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{color.toUpperCase()}</span>
+              <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>{color.toUpperCase()}</span>
               <button onClick={() => removeColor(i)} aria-label="Farbe entfernen" style={{
                 cursor: "pointer", background: "transparent", border: "none",
-                ...TAPZIEL_QUADRAT, color: C.muted, fontSize: 20, lineHeight: 1, padding: "0 2px",
+                ...TAPZIEL_QUADRAT, color: C.muted, fontSize: "1.25rem", lineHeight: 1, padding: "0 2px",
               }}>×</button>
             </div>
           ))}
@@ -116,7 +116,7 @@ export default function Fanfarben() {
             <button onClick={addColor} style={{
               cursor: "pointer", background: "transparent", color: C.muted,
               ...TAPZIEL, border: `1px dashed ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
-              fontFamily: "inherit", fontSize: 13, textAlign: "left",
+              fontFamily: "inherit", fontSize: "0.8125rem", textAlign: "left",
             }}>+ Farbe hinzufügen {draft.length === 0 ? "" : `(${draft.length}/3)`}</button>
           )}
         </div>
@@ -126,16 +126,16 @@ export default function Fanfarben() {
           <button onClick={save} disabled={!dirty} style={{
             ...TAPZIEL, flex: 1, cursor: dirty ? "pointer" : "default",
             background: dirty ? C.akzent : C.surface, color: dirty ? readableInk(preview.fan1) : C.muted,
-            fontWeight: 700, fontSize: 15, border: `1px solid ${dirty ? C.akzent : C.line}`,
+            fontWeight: 700, fontSize: "0.9375rem", border: `1px solid ${dirty ? C.akzent : C.line}`,
             borderRadius: RUND.karte, padding: "11px 0", fontFamily: "inherit",
           }}>{dirty ? "Übernehmen" : "Gespeichert"}</button>
           <button onClick={clearAll} style={{
             cursor: "pointer", background: C.surface, color: C.muted,
             ...TAPZIEL, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "11px 16px",
-            fontFamily: "inherit", fontSize: 15, fontWeight: 700,
+            fontFamily: "inherit", fontSize: "0.9375rem", fontWeight: 700,
           }}>Zurücksetzen</button>
         </div>
-        <p style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
           Gilt nur für deine Ansicht auf diesem Gerät — jeder Mitspieler wählt
           seine eigenen Farben. Wertungsfarben (Erfolg/Warnung) bleiben immer gleich.
         </p>
@@ -151,25 +151,25 @@ function Preview({ p }) {
       marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`,
       borderRadius: RUND.karte, padding: "16px 16px 18px",
     }}>
-      <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted, textTransform: "uppercase", marginBottom: 12 }}>
+      <div style={{ fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1, color: C.muted, textTransform: "uppercase", marginBottom: 12 }}>
         Vorschau
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{
-          background: p.fan1, color: onGold, fontWeight: 700, fontSize: 13,
+          background: p.fan1, color: onGold, fontWeight: 700, fontSize: "0.8125rem",
           borderRadius: RUND.karte, padding: "8px 14px",
         }}>Tipp abgeben</span>
         <span style={{
-          fontFamily: MONO, fontSize: 12, color: p.violet,
+          fontFamily: MONO, fontSize: "0.75rem", color: p.violet,
           border: `1px solid ${p.violet}66`, borderRadius: RUND.pille, padding: "4px 10px",
         }}>Zocker des Spieltags</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 14 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: C.muted }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.75rem", color: C.muted }}>
           <span style={{ width: 9, height: 9, borderRadius: RUND.pille, background: p.indigo, boxShadow: `0 0 10px ${p.indigo}` }} />
           Admin
         </span>
-        <span style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: p.fan1, textShadow: `0 0 22px ${p.fan1}55` }}>
+        <span style={{ fontFamily: MONO, fontSize: "1.75rem", fontWeight: 700, color: p.fan1, textShadow: `0 0 22px ${p.fan1}55` }}>
           +18,4
         </span>
       </div>

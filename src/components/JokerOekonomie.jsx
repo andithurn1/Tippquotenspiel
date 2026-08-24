@@ -81,7 +81,7 @@ export default function JokerOekonomie({ rules, onChange }) {
     <div>
       {/* 2.1 Bibliothek — immer sichtbar, sechs kuratierte Kombinationen in
           der vorhandenen, nach Würze aufsteigenden Reihenfolge. */}
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Bibliothek</div>
+      <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 8 }}>Bibliothek</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {KOMBINATIONEN.map((k) => {
           // Achsenprofil NUR der Kombination (nicht des aktuellen Regelwerks)
@@ -95,22 +95,22 @@ export default function JokerOekonomie({ rules, onChange }) {
               background: C.surface, border: `1px solid ${C.line}`,
               borderRadius: RUND.karte, padding: "10px 12px",
             }}>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>{k.label}</div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{k.desc}</div>
+              <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>{k.label}</div>
+              <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{k.desc}</div>
               <MiniAchsen profil={kProfil} />
             </button>
           );
         })}
       </div>
-      <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
+      <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
         Die Balken zeigen nur eine <strong>Richtung</strong>, keine Bewertung — kein Balken
         ist „zu hoch".
       </p>
 
       {/* 2.2 Narren */}
       <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 14, paddingTop: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Narren</div>
-        <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Narren</div>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
           Woher eure Narren kommen. Mehrere Quellen gleichzeitig sind erlaubt —
           sie addieren sich.
         </p>
@@ -128,10 +128,10 @@ export default function JokerOekonomie({ rules, onChange }) {
                   ...TAPZIEL, padding: 0, fontFamily: "inherit", color: C.text, cursor: "pointer",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{q.label}</span>
-                    <span style={{ color: an ? C.akzent : C.muted, fontSize: 13 }}>{an ? "✓" : "+"}</span>
+                    <span style={{ fontSize: "0.8125rem", fontWeight: 700, flex: 1 }}>{q.label}</span>
+                    <span style={{ color: an ? C.akzent : C.muted, fontSize: "0.8125rem" }}>{an ? "✓" : "+"}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{q.desc}</div>
+                  <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{q.desc}</div>
                 </button>
 
                 {an && (
@@ -153,14 +153,14 @@ export default function JokerOekonomie({ rules, onChange }) {
                       </>
                     )}
                     {q.key === "platzierung" && (
-                      <label style={{ fontSize: 11, color: C.muted, flex: "1 1 150px" }}>
+                      <label style={{ fontSize: "0.6875rem", color: C.muted, flex: "1 1 150px" }}>
                         Kurve
                         <div style={{ display: "flex", gap: 6, marginTop: 3 }}>
                           {["linear", "top-schwer"].map((kv) => {
                             const kan = wert(q.key, "kurve") === kv;
                             return (
                               <button key={kv} onClick={() => setzeQuelleFeld(q.key, "kurve", kv)} style={{
-                                ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px", borderRadius: RUND.pille,
+                                ...TAPZIEL, cursor: "pointer", fontSize: "0.75rem", fontFamily: "inherit", padding: "6px 10px", borderRadius: RUND.pille,
                                 background: kan ? `${C.akzent}22` : C.surface2, color: kan ? C.akzent : C.muted,
                                 border: `1px solid ${kan ? C.akzent + "66" : C.line}`,
                               }}>{kv}</button>
@@ -188,7 +188,7 @@ export default function JokerOekonomie({ rules, onChange }) {
                   background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700 }}>{t.label}</div>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700 }}>{t.label}</div>
                 </button>
               );
             })}
@@ -210,7 +210,7 @@ export default function JokerOekonomie({ rules, onChange }) {
                   background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700 }}>{v.label}</div>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700 }}>{v.label}</div>
                 </button>
               );
             })}
@@ -221,15 +221,15 @@ export default function JokerOekonomie({ rules, onChange }) {
             onChange={(v) => patchBudgetFeld({ maxAnsparen: v })} />
         )}
 
-        <p style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.45 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 10, lineHeight: 1.45 }}>
           {beschreibeBudget(budget)}
         </p>
       </div>
 
       {/* 2.3 Jokershop */}
       <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 14, paddingTop: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Shop</div>
-        <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Shop</div>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
           Was jede Joker-Art in dieser Runde kostet. Rechts steht der Startpreis
           — wie er sich bei mehrfachem Einsatz in derselben Periode entwickelt,
           zeigt die Zeile darunter.
@@ -246,7 +246,7 @@ export default function JokerOekonomie({ rules, onChange }) {
                   background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700 }}>{m.label}</div>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700 }}>{m.label}</div>
                 </button>
               );
             })}
@@ -263,23 +263,23 @@ export default function JokerOekonomie({ rules, onChange }) {
               background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 700 }}>{art.label}</span>
+                <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>{art.label}</span>
                 <input type="number" value={preise[art.key] ?? 0}
                   min={BUDGET_LIMITS.preis.min} max={BUDGET_LIMITS.preis.max} step={BUDGET_LIMITS.preis.step}
                   onChange={(e) => setzePreis(art.key, Number(e.target.value))}
                   style={{
                     width: 70, boxSizing: "border-box", background: C.ink2, color: C.text,
                     border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "5px 8px",
-                    fontSize: 13, fontFamily: MONO, textAlign: "right", outline: "none",
+                    fontSize: "0.8125rem", fontFamily: MONO, textAlign: "right", outline: "none",
                   }} />
               </div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>{art.desc}</div>
+              <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.4 }}>{art.desc}</div>
               {/* Der eigentliche Punkt bei `preisModus: "steigend"`: sichtbar
                   machen, dass aus einem Startpreis von 10 beim vierten Einsatz
                   ein deutlich höherer Preis wird. */}
               <div style={{ display: "flex", gap: 12, marginTop: 7, flexWrap: "wrap" }}>
                 {EINSAETZE.map((n) => (
-                  <span key={n} style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>
+                  <span key={n} style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>
                     {n}. Einsatz{" "}
                     <strong style={{ color: n > 1 ? C.akzent : C.text }}>
                       {fmtGeld(preisFuer(art.key, budget, { bisherInPeriode: n - 1, spielerInPeriode: n - 1 }))}
@@ -302,10 +302,10 @@ export default function JokerOekonomie({ rules, onChange }) {
         marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`,
         borderRadius: RUND.karte, padding: "14px 16px",
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700 }}>Achsenprofil des gesamten Regelwerks</div>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Achsenprofil des gesamten Regelwerks</div>
         {/* ⚠️ Muss sichtbar stehen, nicht im Kleingedruckten: die Zuordnung
             ist geschätzt, keine Messung. */}
-        <p style={{ fontSize: 11, color: C.muted, marginTop: 6, marginBottom: 12, lineHeight: 1.5 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, marginBottom: 12, lineHeight: 1.5 }}>
           <strong style={{ color: C.text }}>Geschätzt, nicht gemessen:</strong> welches Feld
           wie stark auf welche Achse zählt, ist eine Annahme, keine Messung. Die Balken
           zeigen eine Richtung, keine Bewertung — kein Wert ist „zu hoch".
@@ -318,7 +318,7 @@ export default function JokerOekonomie({ rules, onChange }) {
         {konflikte.map((k) => (
           <div key={k.achse} style={{
             background: `${C.indigo}12`, border: `1px solid ${C.indigo}44`, borderRadius: RUND.karte,
-            padding: "9px 11px", marginTop: 10, fontSize: 11, color: C.muted, lineHeight: 1.5,
+            padding: "9px 11px", marginTop: 10, fontSize: "0.6875rem", color: C.muted, lineHeight: 1.5,
           }}>
             {k.text}
           </div>
@@ -352,11 +352,11 @@ function AchsenZeile({ achse, eintrag }) {
   const w = eintrag?.wert ?? 0;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span style={{ fontSize: 12, width: 108, flexShrink: 0 }}>{achse.label}</span>
+      <span style={{ fontSize: "0.75rem", width: 108, flexShrink: 0 }}>{achse.label}</span>
       <div style={{ flex: 1, height: 7, borderRadius: RUND.pille, background: C.surface, overflow: "hidden" }}>
         <div style={{ width: `${(w / 3) * 100}%`, height: "100%", background: C.indigo }} />
       </div>
-      <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted, width: 26, textAlign: "right" }}>{w}/3</span>
+      <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, width: 26, textAlign: "right" }}>{w}/3</span>
     </div>
   );
 }
@@ -364,7 +364,7 @@ function AchsenZeile({ achse, eintrag }) {
 function Field({ label, children }) {
   return (
     <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 6 }}>{label}</div>
       {children}
     </div>
   );

@@ -67,8 +67,8 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
 
   return (
     <div>
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Mitbestimmung</div>
-      <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 10px", lineHeight: 1.45 }}>
+      <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Mitbestimmung</div>
+      <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 10px", lineHeight: 1.45 }}>
         Ob die Runde gemeinsam über Regeländerungen entscheidet — und welchen Rahmen
         die Verfassung dafür setzt. Ein Beschluss wirkt nie rückwirkend: ein bereits
         abgegebener Tipp wird immer so gewertet, wie er beim Abgeben gezählt hätte.
@@ -100,7 +100,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                 step={ABSTIMMUNG_LIMITS.quorum.step} value={a.quorum}
                 onChange={(e) => setzeAbstimmung({ quorum: Number(e.target.value) })}
                 style={{ flex: 1, accentColor: C.akzent, cursor: "pointer" }} />
-              <span style={{ fontSize: 13, color: C.akzent, fontWeight: 700, minWidth: 46, textAlign: "right" }}>
+              <span style={{ fontSize: "0.8125rem", color: C.akzent, fontWeight: 700, minWidth: 46, textAlign: "right" }}>
                 {Math.round(a.quorum * 100)} %
               </span>
             </div>
@@ -135,8 +135,8 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
 
           {/* ── Verfassung ── */}
           <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 14, paddingTop: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Verfassung</div>
-            <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
+            <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Verfassung</div>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
               Der Rahmen, den auch eine Mehrheit nicht bricht. Zur Abstimmung steht
               immer ein ganzer Bereich, nie ein einzelner Regler — sonst käme eine
               Kombination heraus, die niemand entworfen hat.
@@ -157,7 +157,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                         m.key === "sperre" ? { aenderbar: [] } : { aenderbar: waehlbar.map((x) => x.key), gesperrt: [] })
                       } style={{
                         ...TAPZIEL, flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px",
-                        borderRadius: RUND.karte, textAlign: "left", fontSize: 12, fontWeight: 700,
+                        borderRadius: RUND.karte, textAlign: "left", fontSize: "0.75rem", fontWeight: 700,
                         background: m.an ? `${C.akzent}22` : C.surface, color: m.an ? C.akzent : C.muted,
                         border: `1px solid ${m.an ? C.akzent + "66" : C.line}`,
                       }}>{m.label}</button>
@@ -180,13 +180,13 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                         display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
                       }}>
                         <span>
-                          <span style={{ fontSize: 13, fontWeight: 700 }}>{asp.label}</span>
-                          <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                          <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>{asp.label}</span>
+                          <span style={{ display: "block", fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
                             {asp.hint}
                           </span>
                         </span>
                         <span style={{
-                          flexShrink: 0, fontSize: 11, padding: "3px 9px", borderRadius: RUND.pille,
+                          flexShrink: 0, fontSize: "0.6875rem", padding: "3px 9px", borderRadius: RUND.pille,
                           color: frei ? C.muted : C.akzent,
                           border: `1px solid ${frei ? C.line : C.akzent + "66"}`,
                         }}>{frei ? "abstimmbar" : "festgeschrieben"}</span>
@@ -194,7 +194,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
                     );
                   })}
                 </div>
-                <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                   Die Mitbestimmung selbst steht bewusst nicht in dieser Liste: über die
                   Verfassung und die Abstimmungsregeln wird nicht abgestimmt, sonst wäre
                   es keine Verfassung.
@@ -204,7 +204,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
           </div>
 
           {/* Live-Vorschau: was die Einstellungen konkret bedeuten. */}
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 12, lineHeight: 1.45 }}>
             {beschreibeMitbestimmung(rules, { mitglieder, aspektKeys: ASPEKT_KEYS })}
           </p>
 
@@ -214,7 +214,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
               padding: "10px 12px", marginTop: 10,
             }}>
               {funde.map((k) => (
-                <div key={k.key} style={{ fontSize: 12, color: C.muted, lineHeight: 1.45, marginBottom: 4 }}>
+                <div key={k.key} style={{ fontSize: "0.75rem", color: C.muted, lineHeight: 1.45, marginBottom: 4 }}>
                   {k.text}
                 </div>
               ))}
@@ -239,7 +239,7 @@ function Karten({ label, katalog, wert, onWaehlen }) {
               background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
               border: `1px solid ${an ? C.akzent + "66" : C.line}`,
             }}>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>{e.label}</div>
+              <div style={{ fontSize: "0.75rem", fontWeight: 700 }}>{e.label}</div>
             </button>
           );
         })}
@@ -251,7 +251,7 @@ function Karten({ label, katalog, wert, onWaehlen }) {
 function Field({ label, children }) {
   return (
     <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 6 }}>{label}</div>
       {children}
     </div>
   );
@@ -263,7 +263,7 @@ function Toggle({ label, on, onChange }) {
       display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
       textAlign: "left", gap: 12, marginBottom: 8, cursor: "pointer", color: C.text,
       background: C.surface, border: `1px solid ${on ? C.mint + "55" : C.line}`,
-      ...TAPZIEL, borderRadius: RUND.karte, padding: "10px 14px", fontSize: 13, fontFamily: "inherit",
+      ...TAPZIEL, borderRadius: RUND.karte, padding: "10px 14px", fontSize: "0.8125rem", fontFamily: "inherit",
     }}>
       <span>{label}</span>
       <span style={{

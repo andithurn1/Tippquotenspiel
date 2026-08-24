@@ -25,7 +25,7 @@ import { sanitizeTabellenBonus, beschreibeTabellenBonus } from "@/lib/tabellenBo
 function Wahl({ label, wert, optionen, onChange }) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 12, color: C.muted, marginBottom: 5 }}>{label}</div>
+      <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 5 }}>{label}</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {optionen.map((o) => {
           const an = wert === o.key;
@@ -38,7 +38,7 @@ function Wahl({ label, wert, optionen, onChange }) {
               onClick={() => onChange(o.key)}
               style={{
                 ...TAPZIEL, flex: 1, minWidth: 120, cursor: "pointer",
-                fontFamily: "inherit", fontSize: 12, textAlign: "left",
+                fontFamily: "inherit", fontSize: "0.75rem", textAlign: "left",
                 padding: "0 12px", borderRadius: RUND.karte,
                 background: an ? `${C.akzent}1A` : C.surface,
                 color: an ? C.akzent : C.muted,
@@ -77,10 +77,10 @@ export default function TabellenBonus({ rules, onChange }) {
         }}
       >
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: "block", fontSize: 13, fontWeight: 700 }}>
+          <span style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700 }}>
             Außenseiter nach Tabelle
           </span>
-          <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 1 }}>
+          <span style={{ display: "block", fontSize: "0.6875rem", color: C.muted, marginTop: 1 }}>
             {cfg.enabled ? beschreibeTabellenBonus({ tabellenBonus: cfg }) : "aus"}
           </span>
         </span>
@@ -88,7 +88,7 @@ export default function TabellenBonus({ rules, onChange }) {
 
       {cfg.enabled && (
         <>
-          <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
             Misst am <b style={{ color: C.text }}>Tabellenstand</b>, nicht an der Quote —
             ein Aufsteiger auf Platz 4 ist für den Markt oft weiter Außenseiter, für die
             Tabelle nicht mehr.
@@ -155,7 +155,7 @@ export default function TabellenBonus({ rules, onChange }) {
                 onChange={(v) => setze({ fallbackQuote: v })} />
             </div>
           )}
-          <p style={{ fontSize: 11, color: C.akzent, margin: "6px 0 0", lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.akzent, margin: "6px 0 0", lineHeight: 1.45 }}>
             Die Tabelle rechnen wir aus den eigenen Ergebnissen und frieren sie beim Öffnen
             des Spieltags ein — wer Freitag tippt, sieht dieselben Plätze wie wer Sonntag
             tippt. Vor Spieltag {cfg.abSpieltag} gilt

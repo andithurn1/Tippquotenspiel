@@ -147,14 +147,14 @@ export default function Regelaenderungen() {
     }}>
       <div style={{ width: "100%", maxWidth: 480 }}>
         <BackLink href="/hub" label="Tippspiel" />
-        <h1 style={{ fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
+        <h1 style={{ fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
           Regeländerungen
         </h1>
-        <p style={{ fontSize: 13, color: C.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
+        <p style={{ fontSize: "0.8125rem", color: C.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
           {beschreibeMitbestimmung(rules, { mitglieder: leute.length || null, aspektKeys: ASPEKT_KEYS })}
         </p>
 
-        {matches == null && <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>lädt …</div>}
+        {matches == null && <div style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted }}>lädt …</div>}
 
         {matches != null && !aktiv && (
           <Kasten>
@@ -166,7 +166,7 @@ export default function Regelaenderungen() {
         {meldung && (
           <div style={{
             background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: RUND.karte,
-            padding: "10px 12px", marginBottom: 12, fontSize: 12, color: C.muted, lineHeight: 1.45,
+            padding: "10px 12px", marginBottom: 12, fontSize: "0.75rem", color: C.muted, lineHeight: 1.45,
           }}>{meldung}</div>
         )}
 
@@ -210,12 +210,12 @@ export default function Regelaenderungen() {
                   background: C.surface, border: `1px solid ${laeuft ? C.akzent + "44" : C.line}`,
                   borderRadius: RUND.karte, padding: "13px 15px", marginBottom: 10,
                 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{aspektDef?.label ?? antrag.aspekt}</div>
-                  <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>{aspektDef?.label ?? antrag.aspekt}</div>
+                  <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
                     {aspektDef?.hint}
                   </div>
 
-                  <div style={{ fontSize: 12, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                     {laeuft
                       ? (frist != null ? `Läuft noch bis Spieltag ${frist}.` : "Läuft.")
                       : `Abgeschlossen: ${aus.angenommen ? "angenommen" : "abgelehnt"}.`}
@@ -226,17 +226,17 @@ export default function Regelaenderungen() {
                   </div>
 
                   {zeigeStand ? (
-                    <div style={{ fontFamily: MONO, fontSize: 12, marginTop: 8, color: C.text }}>
+                    <div style={{ fontFamily: MONO, fontSize: "0.75rem", marginTop: 8, color: C.text }}>
                       {aus.ja} dafür · {aus.nein} dagegen ·{" "}
                       <span style={{ color: C.muted }}>{aus.abgegeben} von {aus.berechtigte}</span>
                       {aus.grund && (
-                        <div style={{ fontFamily: "inherit", fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                        <div style={{ fontFamily: "inherit", fontSize: "0.75rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                           {aus.grund}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div style={{ fontSize: 12, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                    <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                       Die Stimmen sind verdeckt und werden erst am Ende gezeigt —
                       bisher {aus.abgegeben} von {aus.berechtigte} abgegeben.
                     </div>
@@ -250,7 +250,7 @@ export default function Regelaenderungen() {
                           <button key={b.label} disabled={busy === antrag.id}
                             onClick={() => stimmen(antrag.id, b.ja)} style={{
                               flex: 1, cursor: busy === antrag.id ? "default" : "pointer",
-                              fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "9px 6px",
+                              fontFamily: "inherit", fontSize: "0.8125rem", fontWeight: 700, padding: "9px 6px",
                               borderRadius: RUND.karte,
                               background: an ? `${C.akzent}22` : C.surface2, color: an ? C.akzent : C.muted,
                               border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -265,8 +265,8 @@ export default function Regelaenderungen() {
 
             {/* ── Neuen Antrag stellen ── */}
             <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 16, paddingTop: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Änderung vorschlagen</div>
-              <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 10px", lineHeight: 1.45 }}>
+              <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Änderung vorschlagen</div>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 10px", lineHeight: 1.45 }}>
                 Zur Wahl steht immer ein ganzer Bereich, nie ein einzelner Regler — sonst
                 käme eine Kombination heraus, die niemand entworfen hat. Wähle einen
                 Bereich und daraus eine der geprüften Voreinstellungen.
@@ -285,7 +285,7 @@ export default function Regelaenderungen() {
                       onClick={() => { setMeldung(null); setGewaehlterAspekt(an ? null : asp.key); }}
                       style={{
                         flex: "1 1 120px", cursor: pruef.erlaubt ? "pointer" : "default",
-                        fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "8px",
+                        fontFamily: "inherit", fontSize: "0.75rem", fontWeight: 700, padding: "8px",
                         borderRadius: RUND.karte, textAlign: "left",
                         background: an ? `${C.akzent}22` : C.surface,
                         color: an ? C.akzent : pruef.erlaubt ? C.muted : "rgba(138,144,180,0.4)",
@@ -305,8 +305,8 @@ export default function Regelaenderungen() {
                         background: C.surface, border: `1px solid ${C.line}`,
                         borderRadius: RUND.karte, padding: "9px 12px",
                       }}>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>{e.label}</div>
-                      <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{e.desc}</div>
+                      <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>{e.label}</div>
+                      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{e.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -315,19 +315,19 @@ export default function Regelaenderungen() {
 
             {/* Was ist bis heute wirklich wirksam geworden? */}
             <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 16, paddingTop: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Stand der Regeln</div>
-              <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0", lineHeight: 1.45 }}>
+              <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Stand der Regeln</div>
+              <p style={{ fontSize: "0.75rem", color: C.muted, margin: "4px 0 0", lineHeight: 1.45 }}>
                 {beschreibeBeschluesse(stand)}
                 {aktuellerSpieltag != null && ` Gerechnet für Spieltag ${aktuellerSpieltag}.`}
               </p>
               {stand.verworfen.map((v) => (
-                <p key={v.id} style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+                <p key={v.id} style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
                   {ASPEKTE.find((x) => x.key === v.aspekt)?.label ?? v.aspekt}: {v.grund}
                 </p>
               ))}
             </div>
 
-            <p style={{ fontSize: 11, color: C.muted, marginTop: 14, lineHeight: 1.45 }}>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 14, lineHeight: 1.45 }}>
               Die Wertung selbst rechnet noch mit dem Regelwerk, mit dem die Runde
               angelegt wurde — das Einhängen ist der letzte offene Schritt. Ein Beschluss
               wirkt nie rückwirkend: ein bereits abgegebener Tipp wird immer so gewertet,
@@ -344,7 +344,7 @@ function Kasten({ children }) {
   return (
     <div style={{
       background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
-      padding: "14px 16px", fontSize: 13, color: C.muted, lineHeight: 1.5, marginBottom: 12,
+      padding: "14px 16px", fontSize: "0.8125rem", color: C.muted, lineHeight: 1.5, marginBottom: 12,
     }}>{children}</div>
   );
 }

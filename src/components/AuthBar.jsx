@@ -45,7 +45,7 @@ export default function AuthBar() {
     return (
       <div style={{
         display: "flex", alignItems: "center", gap: 8, marginBottom: 18,
-        fontFamily: MONO, fontSize: 11, color: C.muted,
+        fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
       }}>
         <span style={{ width: 7, height: 7, borderRadius: RUND.pille, background: C.akzent }} />
         Demo-Modus — ohne Login, Daten nur lokal. Login erscheint, sobald Supabase verbunden ist.
@@ -54,7 +54,7 @@ export default function AuthBar() {
   }
 
   if (loading) {
-    return <div style={{ fontFamily: MONO, fontSize: 12, color: C.muted, marginBottom: 18 }}>lädt …</div>;
+    return <div style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted, marginBottom: 18 }}>lädt …</div>;
   }
 
   // Nach dem allerersten Login: einmalig einen Anzeigenamen wählen lassen
@@ -70,16 +70,16 @@ export default function AuthBar() {
         marginBottom: 18, background: C.surface, border: `1px solid ${C.line}`,
         borderRadius: RUND.karte, padding: "8px 12px",
       }}>
-        <span style={{ fontSize: 13, color: C.text }}>
+        <span style={{ fontSize: "0.8125rem", color: C.text }}>
           <span style={{ color: C.muted }}>Angemeldet: </span>{user.name}
         </span>
         <span style={{ display: "flex", gap: 6 }}>
           <Link href="/konto" style={{
-            fontFamily: MONO, fontSize: 11, color: C.muted, textDecoration: "none",
+            fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, textDecoration: "none",
             background: C.surface2, border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "4px 10px",
           }}>Konto</Link>
           <button onClick={signOut} style={{
-            fontFamily: MONO, fontSize: 11, color: C.muted, cursor: "pointer",
+            fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, cursor: "pointer",
             background: C.surface2, border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "4px 10px",
           }}>abmelden</button>
         </span>
@@ -91,7 +91,7 @@ export default function AuthBar() {
     return (
       <div style={{
         marginBottom: 18, background: `${C.mint}12`, border: `1px solid ${C.mint}44`,
-        borderRadius: RUND.karte, padding: "12px 14px", fontSize: 13, color: C.text, lineHeight: 1.5,
+        borderRadius: RUND.karte, padding: "12px 14px", fontSize: "0.8125rem", color: C.text, lineHeight: 1.5,
       }}>
         <b style={{ color: C.mint }}>✓ Mail unterwegs</b> an {email}.
 
@@ -103,7 +103,7 @@ export default function AuthBar() {
             Deshalb steht der LINK oben — siehe den Kommentar darunter, der
             erklärt, warum die ursprüngliche Reihenfolge falsch war. */}
         <div style={{ marginTop: 10 }}>
-          <label style={{ fontSize: 12, color: C.muted, display: "block", marginBottom: 5 }}>
+          <label style={{ fontSize: "0.75rem", color: C.muted, display: "block", marginBottom: 5 }}>
             Link aus der Mail hier einsetzen
           </label>
           {/* 🔴 UMGEDREHT am 20.08.2026. Andi auf dem Handy: „fragt nach wie
@@ -122,14 +122,14 @@ export default function AuthBar() {
               nur noch als Nebensatz für später (mit eigenem Mailversand über
               Brevo werden die Vorlagen bearbeitbar, dann gibt es beides). */}
           <ol style={{
-            margin: "0 0 10px 0", paddingLeft: 20, fontSize: 13,
+            margin: "0 0 10px 0", paddingLeft: 20, fontSize: "0.8125rem",
             color: C.text, lineHeight: 1.6,
           }}>
             <li>Mail öffnen (Absender: Supabase)</li>
             <li>Auf den Link <b>tippen und halten</b> → „Link kopieren“</li>
             <li>Hier unten einsetzen → <b>Los</b></li>
           </ol>
-          <div style={{ fontSize: 12, color: C.coral, marginBottom: 8, lineHeight: 1.5 }}>
+          <div style={{ fontSize: "0.75rem", color: C.coral, marginBottom: 8, lineHeight: 1.5 }}>
             ⚠️ Den Link <b>nicht antippen</b>. Er gilt nur einmal, und er öffnet
             Safari — dort wärst du angemeldet, in dieser App weiterhin nicht.
           </div>
@@ -142,7 +142,7 @@ export default function AuthBar() {
               style={{
                 flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: RUND.karte,
                 border: `1px solid ${C.line}`, background: C.ink, color: C.text,
-                fontSize: 15, fontFamily: MONO, outline: "none",
+                fontSize: "0.9375rem", fontFamily: MONO, outline: "none",
               }} />
             <button type="button" onClick={pruefeCode}
               disabled={!bereit || pruefe}
@@ -151,19 +151,19 @@ export default function AuthBar() {
                 padding: "12px 18px", borderRadius: RUND.karte, border: "none",
                 background: bereit ? C.mint : C.surface,
                 color: bereit ? C.ink : C.muted,
-                fontWeight: 700, fontSize: 15,
+                fontWeight: 700, fontSize: "0.9375rem",
                 cursor: bereit ? "pointer" : "default",
               }}>{pruefe ? "…" : "Los"}</button>
           </div>
           {codeFehler && (
-            <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{codeFehler}</div>
+            <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 6 }}>{codeFehler}</div>
           )}
           {/* 🔴 Steht hier, weil die Mail auf dem Gratis-Tarif von Supabase
               KEINEN Zahlencode enthalten kann (die Vorlagen sind dort nicht
               bearbeitbar). Der Link ist also nicht die Ausweichlösung, sondern
               der Normalfall — deshalb die Anleitung zum Kopieren, und nicht
               nur der Hinweis, dass es auch ginge. */}
-          <div style={{ fontSize: 12, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+          <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
             <b style={{ color: C.text }}>Steht ein sechsstelliger Code in der Mail?</b> Dann
             tut der es hier genauso. Aktuell verschickt Supabase keinen — das ändert
             sich, sobald der eigene Mailversand steht.
@@ -177,30 +177,30 @@ export default function AuthBar() {
 
   return (
     <form onSubmit={submit} style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
+      <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 8 }}>
         Mit E-Mail anmelden (Magic-Link, kein Passwort — du bleibst danach angemeldet):
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
           placeholder="du@example.com" style={{
             flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: RUND.karte, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
+            borderRadius: RUND.karte, padding: "10px 12px", fontSize: "0.9375rem", fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={!canSend} style={{
           cursor: canSend ? "pointer" : "default", background: canSend ? C.akzent : C.surface,
-          color: canSend ? C.ink : C.muted, fontWeight: 700, fontSize: 15,
+          color: canSend ? C.ink : C.muted, fontWeight: 700, fontSize: "0.9375rem",
           border: `1px solid ${canSend ? C.akzent : C.line}`, borderRadius: RUND.karte, padding: "0 16px",
         }}>{state === "sending" ? "…" : "Link senden"}</button>
       </div>
       <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, cursor: "pointer" }}>
         <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
           style={{ marginTop: 2, accentColor: C.akzent }} />
-        <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
+        <span style={{ fontSize: "0.75rem", color: C.muted, lineHeight: 1.5 }}>
           Ich habe die <Link href="/datenschutz" style={{ color: C.akzent }}>Datenschutzerklärung</Link> gelesen
           und bin mit der Verarbeitung meiner Daten für dieses Tippspiel einverstanden.
         </span>
       </label>
-      {state === "error" && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{err}</div>}
+      {state === "error" && <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 6 }}>{err}</div>}
     </form>
   );
 }
@@ -224,22 +224,22 @@ function NameOnboarding() {
       marginBottom: 18, background: `${C.akzent}10`, border: `1px solid ${C.akzent}44`,
       borderRadius: RUND.karte, padding: "12px 14px",
     }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Willkommen! 👋 Wie sollen wir dich nennen?</div>
-      <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
+      <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: C.text }}>Willkommen! 👋 Wie sollen wir dich nennen?</div>
+      <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 3, lineHeight: 1.5 }}>
         Dein Name im Leaderboard — jederzeit unter „Konto“ änderbar.
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <input autoFocus value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
           placeholder="Dein Name" style={{
             flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: RUND.karte, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
+            borderRadius: RUND.karte, padding: "10px 12px", fontSize: "0.9375rem", fontFamily: "inherit", outline: "none",
           }} />
         <button type="submit" disabled={!name.trim() || state === "saving"} style={{
           cursor: name.trim() && state !== "saving" ? "pointer" : "default", background: C.akzent, color: "#FFFFFF",
-          fontWeight: 700, fontSize: 15, border: "none", borderRadius: RUND.karte, padding: "0 16px",
+          fontWeight: 700, fontSize: "0.9375rem", border: "none", borderRadius: RUND.karte, padding: "0 16px",
         }}>{state === "saving" ? "…" : "Los"}</button>
       </div>
-      {state === "error" && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{err}</div>}
+      {state === "error" && <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 6 }}>{err}</div>}
     </form>
   );
 }

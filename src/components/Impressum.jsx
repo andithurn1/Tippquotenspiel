@@ -19,29 +19,29 @@ export default function Impressum() {
         width: "100%", maxWidth: 460, borderRadius: RUND.schirm,
         background: C.ink2, border: `1px solid ${C.line}`, padding: "26px 22px", lineHeight: 1.6,
       }}>
-        <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+        <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Impressum
         </span>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: "6px 0 10px" }}>Impressum</h1>
+        <h1 style={{ fontSize: "1.375rem", fontWeight: 800, margin: "6px 0 10px" }}>Impressum</h1>
 
-        <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px" }}>Angaben gemäß § 5 DDG</p>
-        <p style={{ fontSize: 15, color: "#D5D8EA", margin: "6px 0" }}>
+        <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 8px" }}>Angaben gemäß § 5 DDG</p>
+        <p style={{ fontSize: "0.9375rem", color: "#D5D8EA", margin: "6px 0" }}>
           {LEGAL.betreiber}<br />
           {LEGAL.anschrift}
         </p>
 
-        <h2 style={{ fontSize: 15, fontWeight: 700, margin: "16px 0 2px" }}>Kontakt</h2>
-        <p style={{ fontSize: 15, color: "#D5D8EA", margin: "6px 0" }}>E-Mail: {LEGAL.email}</p>
+        <h2 style={{ fontSize: "0.9375rem", fontWeight: 700, margin: "16px 0 2px" }}>Kontakt</h2>
+        <p style={{ fontSize: "0.9375rem", color: "#D5D8EA", margin: "6px 0" }}>E-Mail: {LEGAL.email}</p>
 
-        <h2 style={{ fontSize: 15, fontWeight: 700, margin: "16px 0 2px" }}>Haftung & Inhalt</h2>
-        <p style={{ fontSize: 13, color: C.muted, margin: "6px 0" }}>
+        <h2 style={{ fontSize: "0.9375rem", fontWeight: 700, margin: "16px 0 2px" }}>Haftung & Inhalt</h2>
+        <p style={{ fontSize: "0.8125rem", color: C.muted, margin: "6px 0" }}>
           {LEGAL.appName} ist ein privates Tippspiel unter Freunden ohne Echtgeld-
           oder Glücksspielcharakter. Für Inhalte externer Links wird keine Haftung
           übernommen; verantwortlich sind deren jeweilige Betreiber.
         </p>
 
         <div style={{ height: 1, background: C.line, margin: "18px 0" }} />
-        <p style={{ fontSize: 12, color: C.muted }}>
+        <p style={{ fontSize: "0.75rem", color: C.muted }}>
           <Link href="/datenschutz" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "underline" }}>Datenschutzerklärung</Link>
         </p>
       </div>

@@ -42,7 +42,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
 
   return (
     <div>
-      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Ein Champions-League-Halbfinale darf mehr zählen als ein Ligaspiel. Der
         Aufschlag fließt in <strong>denselben Topf</strong> wie Derby und Big Game —
         addiert, nicht multipliziert, und vom Deckel begrenzt. Ein Wettbewerb
@@ -51,7 +51,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
       </p>
 
       {waehlbar.length < 2 && (
-        <p style={{ fontSize: 12, color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
+        <p style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
           In dieser Runde läuft nur ein Wettbewerb — Gewichte lohnen sich erst,
           wenn mehrere zusammenkommen.
         </p>
@@ -63,9 +63,9 @@ export default function WettbewerbGewichte({ rules, onChange }) {
         return (
           <div key={w.key} style={{ marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>{w.label}</span>
+              <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>{w.label}</span>
               <span
-                style={{ fontFamily: MONO, fontSize: 13, color: auf > 0 ? C.akzent : auf < 0 ? C.indigo : C.muted }}
+                style={{ fontFamily: MONO, fontSize: "0.8125rem", color: auf > 0 ? C.akzent : auf < 0 ? C.indigo : C.muted }}
                 title={auf > 0 ? "zählt mehr" : auf < 0 ? "zählt weniger" : "kein Aufschlag"}>
                 {fmtFaktorOderAus(1 + auf)}
               </span>
@@ -85,13 +85,13 @@ export default function WettbewerbGewichte({ rules, onChange }) {
                     background: auf > 0 ? C.akzent : auf < 0 ? C.indigo : C.sky, borderRadius: RUND.pille,
                   }} />
                 </div>
-                <span style={{ fontFamily: MONO, fontSize: 11, color: C.text, minWidth: 92, textAlign: "right" }}>
+                <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.text, minWidth: 92, textAlign: "right" }}>
                   {Math.round(a.anteil * 100)} % der Wertung
                 </span>
               </div>
             )}
             {a && (
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>
+              <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3 }}>
                 {a.spiele} {a.spiele === 1 ? "Spiel" : "Spiele"} · ohne Gewichte wären es {Math.round(a.anteilRoh * 100)} %
               </div>
             )}
@@ -102,8 +102,8 @@ export default function WettbewerbGewichte({ rules, onChange }) {
       {/* Eine Stufe statt vier Reglern — steigt mit PHASE[...].rang */}
       <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 12, marginTop: 4 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontSize: 13, fontWeight: 700 }}>Je K.-o.-Runde zusätzlich</span>
-          <span style={{ fontFamily: MONO, fontSize: 13, color: cfg.phasenStufe > 0 ? C.akzent : C.muted }}>
+          <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Je K.-o.-Runde zusätzlich</span>
+          <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: cfg.phasenStufe > 0 ? C.akzent : C.muted }}>
             +{zahl(cfg.phasenStufe)}
           </span>
         </div>
@@ -112,7 +112,7 @@ export default function WettbewerbGewichte({ rules, onChange }) {
           step={WETTBEWERB_LIMITS.phasenStufe.step}
           onChange={(e) => setze({ ...cfg, enabled: true, phasenStufe: +e.target.value })}
           style={{ width: "100%", accentColor: C.akzent, cursor: "pointer" }} />
-        <p style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
           Achtelfinale +{zahl(cfg.phasenStufe)}, Viertelfinale +{zahl(cfg.phasenStufe * 2)},
           Halbfinale +{zahl(cfg.phasenStufe * 3)}, Finale +{zahl(cfg.phasenStufe * 4)} —
           ein Regler statt vier.
@@ -122,13 +122,13 @@ export default function WettbewerbGewichte({ rules, onChange }) {
       {hinweis && (
         <div style={{
           background: `${C.akzent}12`, border: `1px solid ${C.akzent}55`, borderRadius: RUND.karte,
-          padding: "10px 12px", marginTop: 12, fontSize: 12, color: C.text, lineHeight: 1.5,
+          padding: "10px 12px", marginTop: 12, fontSize: "0.75rem", color: C.text, lineHeight: 1.5,
         }}>
           {hinweis}
         </div>
       )}
 
-      <div style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.45 }}>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 10, lineHeight: 1.45 }}>
         {beschreibeWettbewerbe({ ...rules, wettbewerbe: cfg })}
       </div>
     </div>

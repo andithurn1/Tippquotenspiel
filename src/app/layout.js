@@ -3,6 +3,7 @@
 // Begründung dafür steht im Kopf der Datei.
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
+import { RueckmeldungProvider } from "@/components/Rueckmeldung";
 import PrefsProvider from "@/components/PrefsProvider";
 import RoundProvider from "@/components/RoundProvider";
 import ThemeProvider from "@/components/ThemeProvider";
@@ -54,6 +55,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="de">
       <body style={{ margin: 0, background: "#FFFFFF", minHeight: "100vh" }}>
+        {/* 🔴 GANZ AUSSEN, und das ist der Punkt: `AuthProvider` selbst muss
+            melden können („Angemeldet als …"). Läge die Rückmeldung weiter
+            innen, wäre ausgerechnet der Vorgang stumm, den Andi als Beispiel
+            genannt hat. */}
+        <RueckmeldungProvider>
         <AuthProvider>
           <RoundProvider>
             <PrefsProvider>
@@ -77,6 +83,7 @@ export default function RootLayout({ children }) {
             </PrefsProvider>
           </RoundProvider>
         </AuthProvider>
+        </RueckmeldungProvider>
       </body>
     </html>
   );

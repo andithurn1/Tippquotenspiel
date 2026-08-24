@@ -211,35 +211,35 @@ export default function Spielwahl() {
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink href="/hub" label="Tippspiel" />
-      <div style={{ width: "100%", maxWidth: 400 }}>
-        <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+      <div style={{ width: "100%", maxWidth: "var(--tqs-schirm-breite)" }}>
+        <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           Spielwahl
         </span>
-        <h1 style={{ fontSize: 20, fontWeight: 800, margin: "8px 0 10px" }}>Auf welches Spiel willst du tippen?</h1>
+        <h1 style={{ fontSize: "1.25rem", fontWeight: 800, margin: "8px 0 10px" }}>Auf welches Spiel willst du tippen?</h1>
         {/* Ehrliche Übersicht statt stiller Kürzung */}
         {matches != null && (
           <div style={{
             background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
             padding: "10px 12px", marginBottom: 12,
           }}>
-            <div style={{ fontSize: 13, color: C.text, lineHeight: 1.5 }}>
+            <div style={{ fontSize: "0.8125rem", color: C.text, lineHeight: 1.5 }}>
               <strong style={{ color: C.mint }}>{stand.offen} tippbar</strong>
               {stand.zu > 0 && ` · ${stand.zu} kommen noch`}
               {stand.vorbei > 0 && ` · ${stand.vorbei} gelaufen`}
             </div>
             {stand.offen === 0 && naechste && (
-              <div style={{ fontSize: 12, color: C.sky, marginTop: 4, lineHeight: 1.45 }}>
+              <div style={{ fontSize: "0.75rem", color: C.sky, marginTop: 4, lineHeight: 1.45 }}>
                 Gerade ist nichts tippbar — das nächste Spiel öffnet am{" "}
                 {formatZeitpunkt(naechste.oeffnetAm)}. Bis dahin siehst du unten,
                 was als Nächstes ansteht.
               </div>
             )}
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
               {beschreibeTippfenster(rules)}
             </div>
             {stand.zu > 0 && (
               <button onClick={() => setAlleZeigen((v) => !v)} style={{
-                marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
+                marginTop: 8, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", fontWeight: 700,
                 background: "transparent", color: C.sky, border: `1px solid ${C.sky}55`,
                 ...TAPZIEL, borderRadius: RUND.pille, padding: "5px 12px",
               }}>
@@ -250,7 +250,7 @@ export default function Spielwahl() {
         )}
 
         {teamFilter?.length > 0 && (
-          <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>
+          <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 12 }}>
             Diese Runde ist beschränkt auf: {teamFilter.join(", ")}
           </div>
         )}
@@ -259,7 +259,7 @@ export default function Spielwahl() {
             Kalender liegen, stimmte ein fest verdrahtetes „Simulierte Saison"
             nicht mehr — und im August ist der Katalog eine Weile gemischt, weil
             die Champions League erst Ende des Monats ausgelost wird. */}
-        <div style={{ fontSize: 11, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+        <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
           {herkunftLabel(matches ?? [], echteSpielplaene())}
           {mehrereWettbewerbe && ` · ${wettbewerbeIn(matches ?? []).map((w) => w.label).join(" + ")}`}
           {" "}— echte Klubs. Wo keine Marktquote vorliegt, sind Quoten und
@@ -267,13 +267,13 @@ export default function Spielwahl() {
         </div>
 
         {matches == null && !ladeFehler && (
-          <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>Spiele laden …</div>
+          <div style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted }}>Spiele laden …</div>
         )}
 
         {ladeFehler && (
           <div style={{
             background: `${C.akzent}0E`, border: `1px solid ${C.akzent}33`, borderRadius: RUND.karte,
-            padding: "10px 12px", fontSize: 12, color: C.text, lineHeight: 1.45,
+            padding: "10px 12px", fontSize: "0.75rem", color: C.text, lineHeight: 1.45,
           }}>
             Die Spiele konnten nicht geladen werden.
             <div style={{ fontFamily: MONO, color: C.muted, marginTop: 4 }}>{ladeFehler}</div>
@@ -297,7 +297,7 @@ export default function Spielwahl() {
             : (md ? `Spieltag ${md}` : "Sonstige");
           return (
             <div key={g.key} style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+              <div style={{ fontSize: "0.75rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
                 {mehrereWettbewerbe && (
                   <span style={{ color: C.akzent }}>{wettbewerbLabel(g.wettbewerb)} · </span>
                 )}
@@ -307,7 +307,7 @@ export default function Spielwahl() {
                   ist „Spieltag 1" allein wertlos — jede Liga zählt anders, und
                   ohne diese Zeile weiß niemand, wo in der Runde er gerade ist. */}
               {rundenSpieltagFuer(g) && (
-                <div style={{ fontSize: 11, color: C.sky, marginTop: -4, marginBottom: 8 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.sky, marginTop: -4, marginBottom: 8 }}>
                   {rundenSpieltagFuer(g)}
                 </div>
               )}
@@ -320,23 +320,23 @@ export default function Spielwahl() {
                   background: `${C.coral}0E`, border: `1px solid ${C.coral}33`,
                   borderRadius: RUND.karte, padding: "8px 10px", marginBottom: 8,
                 }}>
-                  <div style={{ fontSize: 12, color: C.text, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: "0.75rem", color: C.text, lineHeight: 1.45 }}>
                     Spieltag noch nicht geöffnet — das Topspiel steht damit noch nicht fest.
                   </div>
-                  <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
                     Beim Öffnen wird der Spannungswert aus dem HEUTIGEN Tabellenstand
                     berechnet und eingefroren — danach unveränderlich, für alle gleich.
                   </div>
                   <button onClick={() => oeffneSpieltag(g)} disabled={oeffnet === g.key} style={{
                     marginTop: 7, cursor: oeffnet === g.key ? "default" : "pointer",
-                    fontFamily: "inherit", fontSize: 12, fontWeight: 700,
+                    fontFamily: "inherit", fontSize: "0.75rem", fontWeight: 700,
                     background: "transparent", color: C.coral, border: `1px solid ${C.coral}66`,
                     ...TAPZIEL, borderRadius: RUND.pille, padding: "5px 12px",
                   }}>
                     {oeffnet === g.key ? "öffnet …" : "Spieltag öffnen"}
                   </button>
                   {oeffnenFehler === g.key && (
-                    <div style={{ fontSize: 11, color: C.coral, marginTop: 5 }}>
+                    <div style={{ fontSize: "0.6875rem", color: C.coral, marginTop: 5 }}>
                       Öffnen fehlgeschlagen — nur der Admin der Runde darf das, und nur angemeldet.
                     </div>
                   )}
@@ -348,17 +348,17 @@ export default function Spielwahl() {
                   background: `${C.akzent}0E`, border: `1px solid ${C.akzent}2E`,
                   borderRadius: RUND.karte, padding: "7px 10px", marginBottom: 8,
                 }}>
-                  <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Gewichte:</span>
+                  <span style={{ fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Gewichte:</span>
                   {belegung.belegt.filter((b) => b.gewicht !== 1).map((b) => (
                     <span key={b.gewicht} style={{
-                      fontFamily: MONO, fontSize: 11, padding: "2px 7px", borderRadius: RUND.pille,
+                      fontFamily: MONO, fontSize: "0.6875rem", padding: "2px 7px", borderRadius: RUND.pille,
                       background: b.matchId ? "transparent" : `${C.akzent}22`,
                       color: b.matchId ? "rgba(138,144,180,0.5)" : C.akzent,
                       border: `1px solid ${b.matchId ? C.line : C.akzent + "66"}`,
                       textDecoration: b.matchId ? "line-through" : "none",
                     }}>×{b.gewicht.toFixed(1)}</span>
                   ))}
-                  <span style={{ fontSize: 11, color: C.muted, marginLeft: "auto" }}>
+                  <span style={{ fontSize: "0.6875rem", color: C.muted, marginLeft: "auto" }}>
                     {belegung.alleVergeben ? "alle vergeben" : `${belegung.frei.length} frei`}
                   </span>
                 </div>
@@ -398,13 +398,13 @@ function MatchRow({ match, status, tipped, gewicht, rules }) {
       padding: "12px 14px", opacity: open ? 1 : 0.55,
     }}>
       <div>
-        <div style={{ fontSize: 15, fontWeight: 700 }}>{match.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {match.away}</div>
-        <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginTop: 3 }}>{timeFmt.format(new Date(match.kickoff))}</div>
+        <div style={{ fontSize: "0.9375rem", fontWeight: 700 }}>{match.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {match.away}</div>
+        <div style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, marginTop: 3 }}>{timeFmt.format(new Date(match.kickoff))}</div>
         {/* Die eingefrorene Begründung mitliefern: ein Aufschlag ohne Grund
             sieht nach Willkür aus. Sie steht so im Snapshot, wie sie beim
             Öffnen des Spieltags berechnet wurde. */}
         {bigGame > 0 && match.snapshot?.bigGameGrund && (
-          <div style={{ fontSize: 11, color: C.coral, marginTop: 4, lineHeight: 1.4 }}>
+          <div style={{ fontSize: "0.6875rem", color: C.coral, marginTop: 4, lineHeight: 1.4 }}>
             {match.snapshot.bigGameGrund}
           </div>
         )}
@@ -434,7 +434,7 @@ function MatchRow({ match, status, tipped, gewicht, rules }) {
 function Tag({ children, tone }) {
   return (
     <span style={{
-      fontFamily: MONO, fontSize: 11, color: tone, border: `1px solid ${tone}55`,
+      fontFamily: MONO, fontSize: "0.6875rem", color: tone, border: `1px solid ${tone}55`,
       borderRadius: RUND.pille, padding: "3px 9px", whiteSpace: "nowrap",
     }}>{children}</span>
   );

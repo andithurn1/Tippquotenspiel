@@ -24,6 +24,7 @@ import { useState } from "react";
 import { SCHRIFT, RUND } from "@/lib/theme";
 import Aktion from "@/components/Aktion";
 import BackLink from "@/components/BackLink";
+import { useRueckmeldung } from "@/components/Rueckmeldung";
 
 const FARBEN = [
   ["F1", "--tqs-ink", "Seitengrund"],
@@ -66,7 +67,17 @@ const SCHRIFTEN = [
   ["S6", "--tqs-schrift-schlag", "Schlagzeile — einmal pro Seite"],
 ];
 
+// Nebenknopf der Rückmeldungs-Muster — steht hier statt inline, damit die
+// beiden Knöpfe garantiert gleich aussehen.
+const NEBEN = {
+  flex: 1, minHeight: 44, cursor: "pointer", fontFamily: "inherit",
+  background: "var(--tqs-ink2)", border: "1px solid var(--tqs-line)",
+  borderRadius: "var(--tqs-rund)", color: "var(--tqs-muted)",
+  fontSize: "var(--tqs-schrift-klein)",
+};
+
 export default function Stilmuster() {
+  const melder = useRueckmeldung();
   const [an, setAn] = useState(true);
   const [gedrueckt, setGedrueckt] = useState(null);
 
@@ -76,7 +87,7 @@ export default function Stilmuster() {
       fontFamily: SCHRIFT,
       padding: "28px 16px 64px", display: "flex", justifyContent: "center",
     }}>
-      <div style={{ width: "100%", maxWidth: 400 }}>
+      <div style={{ width: "100%", maxWidth: "var(--tqs-schirm-breite)" }}>
         <BackLink href="/menu" label="Menü" />
 
         <h1 style={{ fontSize: "var(--tqs-schrift-schlag)", fontWeight: 800, margin: "0 0 6px" }}>
@@ -136,7 +147,7 @@ export default function Stilmuster() {
             background: "var(--tqs-surface)", border: "1px solid var(--tqs-line)",
             borderRadius: "var(--tqs-rund)", padding: "var(--tqs-raum-3) var(--tqs-raum-4)",
           }}>
-            <span style={{ fontSize: 20 }}>⚽</span>
+            <span style={{ fontSize: "1.25rem" }}>⚽</span>
             <span style={{ flex: 1 }}>
               <span style={{ display: "block", fontSize: "var(--tqs-schrift-gross)", fontWeight: 700 }}>Wettbewerbe</span>
               <span style={{ display: "block", fontSize: "var(--tqs-schrift-klein)", color: "var(--tqs-muted)" }}>Ligen &amp; Teams</span>
@@ -238,6 +249,32 @@ export default function Stilmuster() {
           </div>
         </Muster>
 
+        <Muster k="L3" was="Platzhalter — steht in der Größe dessen, was kommt">
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--tqs-raum-2)" }}>
+            <div className="tqs-skelett" style={{ height: 56 }} />
+            <div className="tqs-skelett" style={{ height: 56, width: "70%" }} />
+          </div>
+        </Muster>
+
+        <Muster k="L4" was={'Rückmeldung — „gespeichert“, antippen zum Auslösen'}>
+          <button onClick={() => melder.gespeichert("Beispiel gespeichert")} style={{
+            minHeight: 56, width: "100%", cursor: "pointer", fontFamily: "inherit",
+            background: "var(--tqs-surface)", border: "1px solid var(--tqs-line)",
+            borderRadius: "var(--tqs-rund)", color: "var(--tqs-text)",
+            fontSize: "var(--tqs-schrift)", fontWeight: 700,
+          }}>Melden lassen</button>
+          <div style={{ display: "flex", gap: "var(--tqs-raum-2)", marginTop: "var(--tqs-raum-2)" }}>
+            <button onClick={() => melder.fehler("Beispiel: ging nicht")} style={NEBEN}>Fehler</button>
+            <button onClick={() => melder.info("Beispiel: Hinweis")} style={NEBEN}>Hinweis</button>
+          </div>
+        </Muster>
+
+        <Muster k="L5" was="Haken — für den Moment nach dem Speichern">
+          <span key={String(an)} className="tqs-haken" style={{
+            fontSize: "var(--tqs-schrift-schlag)", color: "var(--tqs-mint)",
+          }}>✓</span>
+        </Muster>
+
         <p style={{ fontSize: "var(--tqs-schrift-mikro)", color: "var(--tqs-muted)", lineHeight: 1.6, marginTop: "var(--tqs-raum-6)" }}>
           Wer am Gerät „Bewegung reduzieren" eingeschaltet hat, sieht alle
           Zustände, aber keine Bewegung dorthin. Das ist eingebaut, nicht
@@ -262,7 +299,7 @@ function Titel({ children }) {
 function Kuerzel({ children }) {
   return (
     <span style={{
-      fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 700,
+      fontFamily: "ui-monospace, monospace", fontSize: "0.6875rem", fontWeight: 700,
       color: "var(--tqs-akzent)", border: "1px solid color-mix(in srgb, var(--tqs-akzent) 40%, transparent)",
       borderRadius: RUND.pille, padding: "1px 6px", whiteSpace: "nowrap",
     }}>{children}</span>

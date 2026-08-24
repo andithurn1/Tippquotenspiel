@@ -39,10 +39,10 @@ export default function PresetMischen({ onUebernehmen = null }) {
     <div style={{
       background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "18px 16px",
     }}>
-      <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, color: C.muted, textTransform: "uppercase" }}>
+      <div style={{ fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.5, color: C.muted, textTransform: "uppercase" }}>
         Presets mischen
       </div>
-      <p style={{ fontSize: 12, color: C.muted, margin: "6px 0 14px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "6px 0 14px", lineHeight: 1.5 }}>
         Zwei Regelwerke kombinieren — z. B. die Schärfe des einen mit den
         Kombi-Stufen des anderen. Du entscheidest nur dort, wo sie sich
         tatsächlich unterscheiden.
@@ -55,14 +55,14 @@ export default function PresetMischen({ onUebernehmen = null }) {
       </div>
 
       {relevante.length === 0 ? (
-        <div style={{ fontSize: 13, color: C.muted, marginTop: 16, lineHeight: 1.5 }}>
+        <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 16, lineHeight: 1.5 }}>
           Diese beiden Regelwerke sind identisch — es gibt nichts zu mischen.
           Wähle zwei verschiedene Presets.
         </div>
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 18, marginBottom: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>
+            <span style={{ fontSize: "0.8125rem", fontWeight: 700, flex: 1 }}>
               {relevante.length} Unterschied{relevante.length === 1 ? "" : "e"}
             </span>
             <MiniBtn onClick={() => setzeAlle("a")}>alles A</MiniBtn>
@@ -77,8 +77,8 @@ export default function PresetMischen({ onUebernehmen = null }) {
                   background: C.surface, border: `1px solid ${C.line}`,
                   borderRadius: RUND.karte, padding: "11px 13px",
                 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{asp.label}</div>
-                  <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{asp.hint}</div>
+                  <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>{asp.label}</div>
+                  <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{asp.hint}</div>
                   <div style={{ display: "flex", gap: 6, marginTop: 9 }}>
                     <Seite an={seite === "a"} tone={C.akzent} label={A.label}
                       onClick={() => setAuswahl((w) => ({ ...w, [asp.key]: "a" }))} />
@@ -95,9 +95,9 @@ export default function PresetMischen({ onUebernehmen = null }) {
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40}
               placeholder={mix.name} style={{
                 width: "100%", background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: RUND.karte, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none",
+                borderRadius: RUND.karte, padding: "10px 12px", fontSize: "0.8125rem", fontFamily: "inherit", outline: "none",
               }} />
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 5 }}>
               Name des Mixes — leer lassen für „{mix.name}".
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function PresetMischen({ onUebernehmen = null }) {
           {onUebernehmen && (
             <button onClick={() => onUebernehmen(mix)} style={{
               width: "100%", marginTop: 12, cursor: "pointer", background: C.akzent, color: C.ink,
-              fontWeight: 700, fontSize: 15, border: "none", borderRadius: RUND.karte, padding: "12px 0",
+              fontWeight: 700, fontSize: "0.9375rem", border: "none", borderRadius: RUND.karte, padding: "12px 0",
               fontFamily: "inherit",
             }}>Mix als Regelwerk übernehmen</button>
           )}
@@ -118,10 +118,10 @@ export default function PresetMischen({ onUebernehmen = null }) {
 function PresetWahl({ label, value, onChange, tone }) {
   return (
     <label style={{ flex: 1, minWidth: 0 }}>
-      <span style={{ display: "block", fontFamily: MONO, fontSize: 11, color: tone, marginBottom: 4 }}>{label}</span>
+      <span style={{ display: "block", fontFamily: MONO, fontSize: "0.6875rem", color: tone, marginBottom: 4 }}>{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} style={{
         width: "100%", background: C.surface, color: C.text, border: `1px solid ${tone}44`,
-        borderRadius: RUND.karte, padding: "9px 10px", fontSize: 13, fontFamily: "inherit",
+        borderRadius: RUND.karte, padding: "9px 10px", fontSize: "0.8125rem", fontFamily: "inherit",
       }}>
         {PRESETS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
       </select>
@@ -132,7 +132,7 @@ function PresetWahl({ label, value, onChange, tone }) {
 function Seite({ an, tone, label, onClick }) {
   return (
     <button onClick={onClick} style={{
-      flex: 1, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
+      flex: 1, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", fontWeight: 700,
       ...TAPZIEL, padding: "8px 6px", borderRadius: RUND.karte,
       background: an ? `${tone}22` : "transparent", color: an ? tone : C.muted,
       border: `1px solid ${an ? tone + "66" : C.line}`,
@@ -144,7 +144,7 @@ function Seite({ an, tone, label, onClick }) {
 function MiniBtn({ children, onClick }) {
   return (
     <button onClick={onClick} style={{
-      cursor: "pointer", fontFamily: MONO, fontSize: 11, color: C.muted,
+      cursor: "pointer", fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
       background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "4px 9px",
     }}>{children}</button>
   );

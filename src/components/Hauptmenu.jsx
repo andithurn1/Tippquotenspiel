@@ -77,7 +77,7 @@ export default function Hauptmenu() {
       fontFamily: SCHRIFT,
       padding: "48px 16px", display: "flex", justifyContent: "center",
     }}>
-      <div style={{ width: "100%", maxWidth: 400 }}>
+      <div style={{ width: "100%", maxWidth: "var(--tqs-schirm-breite)" }}>
         {/* ⛔ Hier stand kurz das volle Logo als Bild (09.08.2026). Wieder
             raus auf Andis Ansage: „schaut sehr klobig aus." Und er hat recht —
             ein 148 px hohes Wappen über einer 26-px-Überschrift kippt das
@@ -87,11 +87,11 @@ export default function Hauptmenu() {
             Die Dateien bleiben (`logo-hell.png`, `logo-dunkel.png`,
             `wappen-*.png`) — sie werden gebraucht, sobald die Kopfzeile
             gestaltet ist. */}
-        <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+        <div style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
           QuotenTippspiel
         </div>
-        <h1 style={{ fontSize: 28, fontWeight: 800, margin: "8px 0 6px" }}>Mut zahlt sich aus.</h1>
-        <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.6, marginTop: 0, marginBottom: 24 }}>
+        <h1 style={{ fontSize: "1.75rem", fontWeight: 800, margin: "8px 0 6px" }}>Mut zahlt sich aus.</h1>
+        <p style={{ fontSize: "0.9375rem", color: C.muted, lineHeight: 1.6, marginTop: 0, marginBottom: 24 }}>
           Quoten-gewichtetes Tippspiel unter Freunden. Kein Echtgeld — Ehre und
           ein Wichtelgeschenk.
         </p>
@@ -119,15 +119,15 @@ export default function Hauptmenu() {
                   borderRadius: RUND.karte, padding: "14px 16px", color: C.text,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 15, fontWeight: 700 }}>{r.name}</span>
+                    <span style={{ fontSize: "0.9375rem", fontWeight: 700 }}>{r.name}</span>
                     {active && (
                       <span style={{
-                        fontFamily: MONO, fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}55`,
+                        fontFamily: MONO, fontSize: "0.6875rem", color: C.akzent, border: `1px solid ${C.akzent}55`,
                         borderRadius: RUND.pille, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
                       }}>aktiv</span>
                     )}
                   </div>
-                  <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginTop: 5 }}>
+                  <div style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, marginTop: 5 }}>
                     {r.status.total} Spiele · {r.status.open} offen · {r.status.tippedByMe} von dir getippt
                   </div>
                   {(r.stand || r.narren != null) && (
@@ -151,16 +151,16 @@ export default function Hauptmenu() {
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: s.tone, boxShadow: `0 0 12px ${s.tone}` }} />
-                  <span style={{ fontSize: 16, fontWeight: 700 }}>{s.title}</span>
+                  <span style={{ fontSize: "1rem", fontWeight: 700 }}>{s.title}</span>
                   {s.tag && (
                     <span style={{
-                      marginLeft: "auto", fontFamily: MONO, fontSize: 11, color: s.tone,
+                      marginLeft: "auto", fontFamily: MONO, fontSize: "0.6875rem", color: s.tone,
                       border: `1px solid ${s.tone}55`, borderRadius: RUND.pille, padding: "2px 8px",
                       textTransform: "uppercase", letterSpacing: 1,
                     }}>{s.tag}</span>
                   )}
                 </div>
-                <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>{s.desc}</div>
+                <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>{s.desc}</div>
               </Link>
             ))}
 
@@ -171,15 +171,15 @@ export default function Hauptmenu() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
-                <span style={{ fontSize: 16, fontWeight: 700 }}>Tutorial</span>
+                <span style={{ fontSize: "1rem", fontWeight: 700 }}>Tutorial</span>
               </div>
-              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>Quoten, Punkte & das Admin-System — mit Beispielen erklärt.</div>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>Quoten, Punkte & das Admin-System — mit Beispielen erklärt.</div>
             </Link>
           </div>
         </Section>
 
         <div style={{
-          textAlign: "center", fontFamily: MONO, fontSize: 11, color: C.muted,
+          textAlign: "center", fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
           paddingTop: 6, borderTop: `1px solid ${C.line}`,
         }}>
           <Link href="/datenschutz" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.muted, textDecoration: "none", padding: "0 6px" }}>Datenschutz</Link>
@@ -196,12 +196,12 @@ export default function Hauptmenu() {
 function Section({ title, children }) {
   return (
     <div style={{ marginTop: 8, marginBottom: 24 }}>
-      <div style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>{title}</div>
+      <div style={{ fontSize: "0.75rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>{title}</div>
       {children}
     </div>
   );
 }
 
 function Hint({ children }) {
-  return <div style={{ fontSize: 13, color: C.muted, fontFamily: MONO, padding: "4px 0 10px" }}>{children}</div>;
+  return <div style={{ fontSize: "0.8125rem", color: C.muted, fontFamily: MONO, padding: "4px 0 10px" }}>{children}</div>;
 }

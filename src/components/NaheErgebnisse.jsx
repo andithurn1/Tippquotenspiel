@@ -34,13 +34,13 @@ export default function NaheErgebnisse({ tip, snap, rules, kompakt = false }) {
       borderRadius: RUND.karte, padding: "12px 14px",
     }}>
       <div style={{
-        fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: C.muted,
+        fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1, color: C.muted,
         textTransform: "uppercase", marginBottom: 4,
       }}>
         Wenn es knapp anders ausgeht
       </div>
       {!kompakt && (
-        <p style={{ fontSize: 11, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
           Was dein Tipp zahlt, falls ein Tor mehr oder weniger fällt — die Nähe
           wird belohnt, du gehst also nicht leer aus.
         </p>
@@ -65,21 +65,21 @@ function Zeile({ r, best }) {
         background: r.isTip ? `${C.akzent}20` : `${C.indigo}18`,
       }} />
       <span style={{
-        position: "relative", fontFamily: MONO, fontSize: 15, fontWeight: 700,
+        position: "relative", fontFamily: MONO, fontSize: "0.9375rem", fontWeight: 700,
         color: r.isTip ? C.akzent : C.text, minWidth: 40,
       }}>
         {r.home}:{r.away}
       </span>
-      <span style={{ position: "relative", fontSize: 11, color: C.muted, flex: 1, minWidth: 0 }}>
+      <span style={{ position: "relative", fontSize: "0.6875rem", color: C.muted, flex: 1, minWidth: 0 }}>
         {KIND_LABEL[r.kind]}
       </span>
       {r.quote != null && (
-        <span style={{ position: "relative", fontFamily: MONO, fontSize: 11, color: C.muted }}>
+        <span style={{ position: "relative", fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>
           Quote {r.quote.toFixed(1)}
         </span>
       )}
       <span style={{
-        position: "relative", fontFamily: MONO, fontSize: 13, fontWeight: 700,
+        position: "relative", fontFamily: MONO, fontSize: "0.8125rem", fontWeight: 700,
         color: r.points > 0 ? (r.isTip ? C.akzent : C.mint) : C.muted, minWidth: 52, textAlign: "right",
       }}>
         {r.points > 0 ? `+${r.points}` : "0"}
@@ -100,7 +100,7 @@ export function ErgebnisUebersicht({ snap, rules, limit = 3 }) {
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
       {rows.map((r) => (
         <span key={`${r.home}:${r.away}`} style={{
-          fontFamily: MONO, fontSize: 11, color: C.muted,
+          fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
           border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "3px 9px",
         }}>
           {r.home}:{r.away} <span style={{ color: C.mint, fontWeight: 700 }}>+{r.points}</span>

@@ -97,7 +97,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
       <GrosseZeile icon="⏳" titel="Ab wann tippbar?" unter="Vorlauf, Anker und Tippschluss"
         wert={fensterStand(rules)}
         offen={zeile === "fenster"} onClick={() => auf("fenster")}>
-        <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 8px", lineHeight: 1.45 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 8px", lineHeight: 1.45 }}>
           Quoten erscheinen erst einige Tage vor Anpfiff. Wie früh eure Runde
           tippt, entscheidest du — und seit dem gemeinsamen Tippschluss auch,
           wie spät.
@@ -110,7 +110,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
                 onClick={() => setzeTippfenster({ vorlaufStunden: st.stunden })}
                 style={{
                   ...TAPZIEL, flex: "1 1 70px", cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
-                  borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
+                  borderRadius: RUND.karte, fontSize: "0.75rem", fontWeight: 700,
                   background: an ? `${C.akzent}22` : C.surface,
                   color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -129,7 +129,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
                 onClick={() => setzeTippfenster({ anker: a.key })}
                 style={{
                   flex: "1 1 140px", cursor: "pointer", fontFamily: "inherit", padding: "8px 8px",
-                  borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
+                  borderRadius: RUND.karte, fontSize: "0.75rem", fontWeight: 700,
                   background: an ? `${C.akzent}22` : C.surface,
                   color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -141,10 +141,10 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
             🔴 Die dritte Kante des Fensters. Sie steht UNTER dem Anker, weil
             sie ihn voraussetzt: ohne den Spieltag als Block gibt es keinen
             gemeinsamen Moment, an dem alle getippt haben. */}
-        <div style={{ fontSize: 12, color: C.text, fontWeight: 700, marginTop: 12 }}>
+        <div style={{ fontSize: "0.75rem", color: C.text, fontWeight: 700, marginTop: 12 }}>
           Wann ist Tippschluss?
         </div>
-        <p style={{ fontSize: 11, color: C.muted, margin: "3px 0 6px", lineHeight: 1.45 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "3px 0 6px", lineHeight: 1.45 }}>
           Normalerweise schließt jedes Spiel bei seinem eigenen Anpfiff. Ein
           gemeinsamer Schluss vorher macht die Tipps aller gleichzeitig
           sichtbar — die Voraussetzung für Fremdjoker.
@@ -157,7 +157,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
                 onClick={() => setzeTippfenster({ schlussStunden: st.stunden })}
                 style={{
                   ...TAPZIEL, flex: "1 1 90px", cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
-                  borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
+                  borderRadius: RUND.karte, fontSize: "0.75rem", fontWeight: 700,
                   background: an ? `${C.akzent}22` : C.surface,
                   color: an ? C.akzent : C.muted,
                   border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -172,13 +172,13 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
           <div key={k.key} style={{
             marginTop: 8, background: `${C.coral}14`, border: `1px solid ${C.coral}55`,
             borderRadius: RUND.karte, padding: "8px 10px",
-            fontSize: 11, color: C.text, lineHeight: 1.45,
+            fontSize: "0.6875rem", color: C.text, lineHeight: 1.45,
           }}>
             ⚠️ {k.text}
           </div>
         ))}
 
-        <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
           {beschreibeTippfenster(rules)}
         </p>
         {/* Die drei Fragen, die ein Spieler wirklich stellt — statt einer
@@ -186,7 +186,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
             gebaut und hatte keinen Aufrufer (gefunden über `npm run tot`). */}
         <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
           {erklaereTippfenster(rules).map((z) => (
-            <div key={z.frage} style={{ fontSize: 11, lineHeight: 1.45 }}>
+            <div key={z.frage} style={{ fontSize: "0.6875rem", lineHeight: 1.45 }}>
               <span style={{ color: C.text, fontWeight: 700 }}>{z.frage}</span>{" "}
               <span style={{ color: C.muted }}>{z.antwort}</span>
             </div>
@@ -208,13 +208,13 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
       {/* ── Zeitraum ── */}
       <GrosseZeile icon="📅" titel="Zeitraum" unter="welchen Ausschnitt der Saison die Runde umfasst"
         wert={zeitraumStand} offen={zeile === "zeitraum"} onClick={() => auf("zeitraum")}>
-        <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 8px", lineHeight: 1.45 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 8px", lineHeight: 1.45 }}>
           Leer = ganze Saison. Für kurze Runden („nur die Rückrunde", „die letzten
           fünf Spieltage") hier eingrenzen.
         </p>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {[["spieltagVon", "von"], ["spieltagBis", "bis"]].map(([feld, label]) => (
-            <label key={feld} style={{ flex: 1, fontSize: 12, color: C.muted }}>
+            <label key={feld} style={{ flex: 1, fontSize: "0.75rem", color: C.muted }}>
               Spieltag {label}
               <input type="number" inputMode="numeric"
                 min={AUSWAHL_LIMITS.spieltag.min} max={AUSWAHL_LIMITS.spieltag.max}
@@ -224,7 +224,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
                 style={{
                   display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
                   background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-                  borderRadius: RUND.karte, padding: "8px 10px", fontSize: 13, fontFamily: MONO, outline: "none",
+                  borderRadius: RUND.karte, padding: "8px 10px", fontSize: "0.8125rem", fontFamily: MONO, outline: "none",
                 }} />
             </label>
           ))}
@@ -234,13 +234,13 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
           marginTop: 10, background: C.ink2, border: `1px solid ${C.line}`,
           borderRadius: RUND.karte, padding: "10px 12px",
         }}>
-          <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted, textTransform: "uppercase" }}>
+          <div style={{ fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.2, color: C.muted, textTransform: "uppercase" }}>
             Wandert mit dem Code
           </div>
-          <div style={{ fontSize: 12, color: C.text, marginTop: 4, lineHeight: 1.45 }}>
+          <div style={{ fontSize: "0.75rem", color: C.text, marginTop: 4, lineHeight: 1.45 }}>
             {beschreibeAuswahl(sp)}
           </div>
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+          <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
             Wer deinen Creator-Code lädt, bekommt diese Auswahl gleich mit — und
             kann sie danach trotzdem ändern.
           </div>

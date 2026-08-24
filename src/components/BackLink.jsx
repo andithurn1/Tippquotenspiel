@@ -21,14 +21,14 @@ import { C, MONO, RUND } from "@/lib/theme";
 // Deshalb hier und nicht in der Spielerstellung.
 export default function BackLink({ href = "/", label = "Übersicht" }) {
   return (
-    <div style={{ width: "100%", maxWidth: 400, marginBottom: 6 }}>
+    <div style={{ width: "100%", maxWidth: "var(--tqs-schirm-breite)", marginBottom: 6 }}>
       <Link href={href} style={{
         display: "inline-flex", alignItems: "center", gap: 8,
         minHeight: 48, padding: "0 14px", marginLeft: -14, borderRadius: RUND.karte,
-        fontFamily: MONO, fontSize: 15, color: C.text, textDecoration: "none",
+        fontFamily: MONO, fontSize: "0.9375rem", color: C.text, textDecoration: "none",
         WebkitTapHighlightColor: "transparent",
       }}>
-        <span style={{ fontSize: 20, lineHeight: 1 }}>←</span> {label}
+        <span style={{ fontSize: "1.25rem", lineHeight: 1 }}>←</span> {label}
       </Link>
     </div>
   );

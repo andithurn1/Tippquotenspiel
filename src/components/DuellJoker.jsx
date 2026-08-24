@@ -40,16 +40,16 @@ export default function DuellJoker({ rules, onChange }) {
       // wird — 44 hoch, 40 breit. `TAPZIEL` setzt bewusst nur die HÖHE (die
       // Begründung steht in `tapziel.js`), und bei langen Beschriftungen genügt
       // das auch. Bei zwei Buchstaben nicht.
-      ...TAPZIEL_QUADRAT, cursor: "pointer", padding: "5px 11px", fontSize: 12, fontWeight: aktiv ? 700 : 500,
+      ...TAPZIEL_QUADRAT, cursor: "pointer", padding: "5px 11px", fontSize: "0.75rem", fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
   );
 
   const Block = ({ titel, hinweis, children }) => (
     <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 12, color: C.muted, marginBottom: 5 }}>{titel}</div>
+      <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 5 }}>{titel}</div>
       {children}
       {hinweis && (
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>{hinweis}</div>
+        <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>{hinweis}</div>
       )}
     </div>
   );
@@ -60,7 +60,7 @@ export default function DuellJoker({ rules, onChange }) {
           anderen trifft". Seit es die Fremdjoker-Familie gibt, sind es VIER —
           ein Satz, der beim Bau einer Nachbar-Mechanik unwahr wird, ist
           schlimmer als einer, der nichts sagt. */}
-      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Die zwei ältesten Fremdjoker: Punkte <strong>abnehmen</strong> (Klau) oder
         eine Wertung <strong>dämpfen</strong> (Block). Standardmäßig aus.
       </p>
@@ -100,7 +100,7 @@ export default function DuellJoker({ rules, onChange }) {
                 sie nur in `reglerWarnung.js` zu melden: viele freie Einsätze
                 heißt, dass am Ende alle auf denselben gehen. */}
             {d.zielWahl === "frei" && d.anzahl >= EMPFEHLUNG.zielWahlBeiVielenEinsaetzen.abAnzahl && (
-              <div style={{ fontSize: 11, color: C.coral, marginTop: 4, lineHeight: 1.45 }}>
+              <div style={{ fontSize: "0.6875rem", color: C.coral, marginTop: 4, lineHeight: 1.45 }}>
                 ⚠️ Freie Zielwahl bei {d.anzahl} Einsätzen: erfahrungsgemäß gehen dann
                 alle auf den Führenden. „Nur nach vorne“ ist die direkte Antwort darauf.
               </div>
@@ -117,7 +117,7 @@ export default function DuellJoker({ rules, onChange }) {
               {knopf(d.konter, "Konter erlaubt", () => setze({ konter: true }), "kt-an",
                 "Wer an diesem Spieltag getroffen wurde, darf seinen Angreifer zurückschlagen — auch entgegen der Zielwahl.")}
             </div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
               {d.konter
                 ? (d.zielWahl === "frei"
                     ? "Bei freier Zielwahl ändert der Konter wenig — jeder darf ohnehin jeden treffen."
@@ -172,7 +172,7 @@ export default function DuellJoker({ rules, onChange }) {
                 ändert am Ergebnis nichts mehr" — der Regler daneben wäre
                 wirkungslos. Deshalb hier direkt am Feld. */}
             {d.maxProSaison > 0 && d.maxProSaison < 150 && (
-              <div style={{ fontSize: 11, color: C.coral, marginTop: 4, lineHeight: 1.45 }}>
+              <div style={{ fontSize: "0.6875rem", color: C.coral, marginTop: 4, lineHeight: 1.45 }}>
                 ⚠️ Ein Deckel unter ~150 greift schon beim ersten Duell — die Stärke
                 darunter ändert dann nichts mehr.
               </div>
@@ -227,10 +227,10 @@ export default function DuellJoker({ rules, onChange }) {
           )}
 
           <p style={{
-            fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.5,
+            fontSize: "0.6875rem", color: C.muted, marginTop: 12, lineHeight: 1.5,
             borderTop: `1px solid ${C.line}`, paddingTop: 8,
           }}>
-            <span style={{ fontFamily: MONO, fontSize: 11, color: C.coral }}>SO LIEST ES SICH: </span>
+            <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.coral }}>SO LIEST ES SICH: </span>
             {beschreibeDuell(d)}
           </p>
         </>

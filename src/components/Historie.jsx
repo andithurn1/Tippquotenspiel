@@ -216,13 +216,13 @@ export default function Historie() {
     }}>
       <div style={{ width: "100%", maxWidth: 480 }}>
         <BackLink href="/hub" label="Tippspiel" />
-        <h1 style={{ fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 14px" }}>
+        <h1 style={{ fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 14px" }}>
           Historie &amp; Rekorde
         </h1>
 
-        {entries == null && <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>lädt …</div>}
+        {entries == null && <div style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted }}>lädt …</div>}
         {entries?.length === 0 && (
-          <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.5 }}>
+          <div style={{ fontSize: "0.8125rem", color: C.muted, lineHeight: 1.5 }}>
             Noch keine gewerteten Spieltage — sobald Ergebnisse feststehen, erscheinen hier
             Rekorde und Verlauf.
           </div>
@@ -237,13 +237,13 @@ export default function Historie() {
                   background: C.ink2, border: `1px solid ${r.holder.userId === meId ? C.akzent + "55" : C.line}`,
                   borderRadius: RUND.karte, padding: "11px 13px",
                 }}>
-                  <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+                  <div style={{ fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
                     {r.emoji} {r.label}
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4, color: r.holder.userId === meId ? C.akzent : C.text }}>
+                  <div style={{ fontSize: "0.9375rem", fontWeight: 700, marginTop: 4, color: r.holder.userId === meId ? C.akzent : C.text }}>
                     {r.holder.name}
                   </div>
-                  <div style={{ fontFamily: MONO, fontSize: 12, color: C.muted, marginTop: 1 }}>
+                  <div style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted, marginTop: 1 }}>
                     {r.value} {r.einheit}
                   </div>
                 </div>
@@ -251,7 +251,7 @@ export default function Historie() {
             </div>
 
             {/* Preset-Vergleich */}
-            <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 7 }}>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 7 }}>
               Wertung nach Regelwerk
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
@@ -259,7 +259,7 @@ export default function Historie() {
                 const on = o.key === presetKey;
                 return (
                   <button key={o.key} onClick={() => setPresetKey(o.key)} style={{
-                    cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 600,
+                    cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", fontWeight: 600,
                     ...TAPZIEL, padding: "7px 12px", borderRadius: RUND.pille,
                     background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
                     border: `1px solid ${on ? C.akzent + "77" : C.line}`,
@@ -267,7 +267,7 @@ export default function Historie() {
                 );
               })}
             </div>
-            <p style={{ fontSize: 11, color: wasWaere ? C.akzent : C.muted, margin: "0 0 16px", lineHeight: 1.4 }}>
+            <p style={{ fontSize: "0.6875rem", color: wasWaere ? C.akzent : C.muted, margin: "0 0 16px", lineHeight: 1.4 }}>
               {wasWaere
                 ? `„Was wäre gewesen" mit Preset „${gewaehlt.label}" — nur zur Inspiration, die Runde bleibt unverändert gewertet.`
                 : "Die echte Wertung dieser Runde. Wähle ein Preset, um zu sehen, was mit anderen Regeln herausgekommen wäre."}
@@ -279,7 +279,7 @@ export default function Historie() {
                 const on = k.key === kriterium;
                 return (
                   <button key={k.key} onClick={() => setKriterium(k.key)} style={{
-                    flex: 1, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700,
+                    flex: 1, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", fontWeight: 700,
                     ...TAPZIEL, padding: "8px 0", borderRadius: RUND.karte,
                     background: on ? `${C.mint}22` : C.surface, color: on ? C.mint : C.muted,
                     border: `1px solid ${on ? C.mint + "66" : C.line}`,
@@ -287,7 +287,7 @@ export default function Historie() {
                 );
               })}
             </div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{kritInfo.help}</div>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 8 }}>{kritInfo.help}</div>
 
             {/* Plot */}
             <div style={{ background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "12px 12px 8px" }}>
@@ -295,7 +295,7 @@ export default function Historie() {
               {/* Legende */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 8 }}>
                 {series.players.map((p) => (
-                  <span key={p.userId} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: p.userId === meId ? C.text : C.muted }}>
+                  <span key={p.userId} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.75rem", color: p.userId === meId ? C.text : C.muted }}>
                     <span style={{ width: 10, height: 3, borderRadius: RUND.klein, background: p.color, display: "inline-block" }} />
                     {p.name}{p.userId === meId ? " (du)" : ""}
                   </span>

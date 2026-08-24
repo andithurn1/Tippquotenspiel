@@ -13,7 +13,7 @@ export default function EinfacheRegler({ rules, onChange }) {
 
   return (
     <div>
-      <p style={{ fontSize: 13, color: C.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.8125rem", color: C.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
         Vier Fragen genügen. Unten siehst du jederzeit, was deine Antworten
         konkret für die Punkte bedeuten — alle weiteren Einzelheiten stehen in
         der Profi-Stufe.
@@ -23,8 +23,8 @@ export default function EinfacheRegler({ rules, onChange }) {
         const aktiv = erkenneStufe(rules, regler.key);
         return (
           <div key={regler.key} style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>{regler.label}</div>
-            <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+            <div style={{ fontSize: "0.9375rem", fontWeight: 700 }}>{regler.label}</div>
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
               {regler.hint}
             </div>
 
@@ -42,7 +42,7 @@ export default function EinfacheRegler({ rules, onChange }) {
                     onClick={() => onChange(anwenden(rules, regler.key, stufe.key))}
                     style={{
                       ...TAPZIEL, flex: "1 1 92px", cursor: "pointer", fontFamily: "inherit", padding: "9px 6px",
-                      borderRadius: RUND.karte, fontSize: 13, fontWeight: 700,
+                      borderRadius: RUND.karte, fontSize: "0.8125rem", fontWeight: 700,
                       background: an ? `${C.akzent}22` : C.surface,
                       color: an ? C.akzent : C.muted,
                       border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -51,7 +51,7 @@ export default function EinfacheRegler({ rules, onChange }) {
               })}
             </div>
 
-            <div style={{ fontSize: 12, color: C.muted, marginTop: 7, lineHeight: 1.45, minHeight: 32 }}>
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 7, lineHeight: 1.45, minHeight: 32 }}>
               {aktiv
                 ? regler.stufen.find((s) => s.key === aktiv)?.beschreibung
                 : "Eigene Einstellung aus der Profi-Stufe — wähle hier etwas aus, um sie zu ersetzen."}
@@ -66,12 +66,12 @@ export default function EinfacheRegler({ rules, onChange }) {
         padding: "13px 15px", marginTop: 4,
       }}>
         <div style={{
-          fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, color: C.muted,
+          fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.5, color: C.muted,
           textTransform: "uppercase", marginBottom: 9,
         }}>
           Was das für die Punkte heißt
         </div>
-        <div style={{ fontSize: 11, color: C.muted, marginBottom: 10, lineHeight: 1.45 }}>
+        <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 10, lineHeight: 1.45 }}>
           Beispiel-Spiel: Außenseiter gewinnt 3:1 gegen den Favoriten.
         </div>
 
@@ -80,9 +80,9 @@ export default function EinfacheRegler({ rules, onChange }) {
             display: "flex", alignItems: "baseline", justifyContent: "space-between",
             gap: 10, padding: "4px 0",
           }}>
-            <span style={{ fontSize: 13, color: C.text, flex: 1, minWidth: 0 }}>{z.text}</span>
+            <span style={{ fontSize: "0.8125rem", color: C.text, flex: 1, minWidth: 0 }}>{z.text}</span>
             <span style={{
-              fontFamily: MONO, fontSize: 13, fontWeight: 700,
+              fontFamily: MONO, fontSize: "0.8125rem", fontWeight: 700,
               color: z.wert > 0 ? C.akzent : z.wert < 0 ? C.coral : C.muted,
               fontVariantNumeric: "tabular-nums",
             }}>{z.wert > 0 ? `+${z.wert}` : z.wert}</span>
@@ -90,7 +90,7 @@ export default function EinfacheRegler({ rules, onChange }) {
         ))}
 
         <div style={{
-          fontSize: 12, color: C.mint, marginTop: 10, paddingTop: 9,
+          fontSize: "0.75rem", color: C.mint, marginTop: 10, paddingTop: 9,
           borderTop: `1px solid ${C.line}`, lineHeight: 1.45,
         }}>
           {naeheSatz(rules)}

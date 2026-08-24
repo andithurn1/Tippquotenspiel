@@ -92,8 +92,8 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
         background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`,
         borderRadius: RUND.karte, padding: "13px 15px",
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
-        <p style={{ fontSize: 12, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
+        <p style={{ fontSize: "0.75rem", color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
           Es genügt, wenn <strong>du als Admin</strong> Premium hast.
         </p>
       </div>
@@ -108,7 +108,7 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
 
   return (
     <div>
-      <p style={{ fontSize: 12, color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.45 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.45 }}>
         Gilt für <strong>alle</strong> in der Runde — anders als der Joker, den jeder
         selbst setzt. Alle vier zahlen in denselben Topf und teilen sich einen Deckel.
       </p>
@@ -126,7 +126,7 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
           onChange={(on) => { setEigeneVereine(on); if (!on) setzeTeamMods({ teams: {} }); }} />
         {eigeneVereine && (
           <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginBottom: 8 }}>
-            <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 8px", lineHeight: 1.4 }}>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "2px 0 8px", lineHeight: 1.4 }}>
               Antippen wandert durch ×1,25, ×1,5, ×2, ×0,75, ×0,5 und zurück auf „aus".
               Werte unter ×1 dämpfen den Verein: er zählt dann weniger, nicht mehr.
             </p>
@@ -142,7 +142,7 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
                   <button key={team} onClick={() => cycleTeamFaktor(team)}
                     title={f > 1 ? "zählt mehr" : f < 1 ? "zählt weniger" : "kein Modifikator"}
                     style={{
-                      cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "6px 10px",
+                      cursor: "pointer", fontSize: "0.75rem", fontFamily: "inherit", padding: "6px 10px",
                       borderRadius: RUND.pille, minHeight: 44, boxSizing: "border-box",
                       background: an ? `${ton}22` : C.surface, color: an ? ton : C.muted,
                       border: `1px solid ${an ? ton + "66" : C.line}`,
@@ -166,7 +166,7 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
         offen={zeile === "biggame"} onClick={() => auf("biggame")}>
         <Toggle label="Big Game — das Topspiel des Spieltags" on={bg.enabled}
           onChange={(on) => setzeBigGame({ enabled: on })} />
-        <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 0", lineHeight: 1.45 }}>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "2px 0 0", lineHeight: 1.45 }}>
           Ein Derby steht vorher fest, „Erster gegen Zweiter am 31. Spieltag" nicht.
           Beim Öffnen jedes Spieltags sucht die App das brisanteste Spiel — aus
           Tabellenzone, Rangnähe, Quoten und Derby — und hebt es hervor. Es steht
@@ -204,12 +204,12 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
             step={reglerSchritt(rules, L.modCap)} pfad="modCap"
             onChange={(v) => onChange({ modCap: v })} fmt={fmtFaktor}
             hint="Obergrenze, wenn Joker und Team-Regeln zusammentreffen." />
-          <p style={{ fontSize: 11, color: C.muted, marginTop: -2, marginBottom: 8, lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: -2, marginBottom: 8, lineHeight: 1.45 }}>
             Modifikatoren werden <strong>addiert, nicht multipliziert</strong>: Joker ×2,0
             und Derby ×1,5 ergeben <strong>×2,5</strong> (nicht ×3,0). Das bleibt
             berechenbar — der Deckel fängt den Rest ab.
           </p>
-          <p style={{ fontSize: 11, color: C.muted, margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, margin: 0, lineHeight: 1.5 }}>
             In denselben Topf zahlen außerdem: der <strong>Joker</strong> (eigene Zeile
             oben) und die <strong>Wettbewerbs-Gewichte</strong> — die stehen bei den
             Wettbewerben, weil dort ausgewählt wird, was überhaupt mitspielt.

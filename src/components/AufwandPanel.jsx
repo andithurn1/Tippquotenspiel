@@ -30,10 +30,10 @@ export default function AufwandPanel({ rules, kontext }) {
       borderRadius: RUND.karte, padding: "14px 16px",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+        <span style={{ fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
           Aufwand pro Spieltag
         </span>
-        <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: farbe }}>
+        <span style={{ fontFamily: MONO, fontSize: "0.75rem", fontWeight: 700, color: farbe }}>
           {stufe?.label ?? "—"}
         </span>
       </div>
@@ -47,13 +47,13 @@ export default function AufwandPanel({ rules, kontext }) {
 
       {/* Erst danach die Schätzung — ausdrücklich als solche markiert, nicht
           im Kleingedruckten. */}
-      <p style={{ fontSize: 12, color: C.text, marginTop: 12, marginBottom: 0, lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.75rem", color: C.text, marginTop: 12, marginBottom: 0, lineHeight: 1.5 }}>
         Etwa <strong style={{ color: farbe }}>{a.sekundenJeSpiel}</strong> Sekunden je Spiel
         <span style={{ color: C.muted }}> — geschätzt, nicht gemessen.</span>
       </p>
 
       {stufe?.desc && (
-        <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>{stufe.desc}</p>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>{stufe.desc}</p>
       )}
 
       {a.hinweise.length > 0 && (
@@ -61,7 +61,7 @@ export default function AufwandPanel({ rules, kontext }) {
           {a.hinweise.map((h, i) => (
             <div key={i} style={{
               background: `${farbe}12`, border: `1px solid ${farbe}33`, borderRadius: RUND.karte,
-              padding: "8px 10px", fontSize: 11, color: C.muted, lineHeight: 1.5,
+              padding: "8px 10px", fontSize: "0.6875rem", color: C.muted, lineHeight: 1.5,
             }}>{h}</div>
           ))}
         </div>
@@ -73,10 +73,10 @@ export default function AufwandPanel({ rules, kontext }) {
 function Stat({ label, value, tone }) {
   return (
     <div style={{ flex: 1, background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "8px 10px" }}>
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, lineHeight: 1.3 }}>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, lineHeight: 1.3 }}>
         {label}
       </div>
-      <div style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: tone ?? C.text, marginTop: 2 }}>
+      <div style={{ fontFamily: MONO, fontSize: "0.9375rem", fontWeight: 700, color: tone ?? C.text, marginTop: 2 }}>
         {value}
       </div>
     </div>

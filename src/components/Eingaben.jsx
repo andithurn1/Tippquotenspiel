@@ -28,8 +28,8 @@ export function Slider({ label, hint, value, min, max, step, onChange, fmt, pfad
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <span style={{ fontSize: 13 }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: 13, color: draussen ? C.coral : C.akzent }}>
+        <span style={{ fontSize: "0.8125rem" }}>{label}</span>
+        <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: draussen ? C.coral : C.akzent }}>
           {fmt ? fmt(value) : value.toFixed(2)}
         </span>
       </div>
@@ -46,7 +46,7 @@ export function Slider({ label, hint, value, min, max, step, onChange, fmt, pfad
           }} />
         </div>
       )}
-      {hint && <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{hint}</div>}
+      {hint && <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{hint}</div>}
     </div>
   );
 }
@@ -57,7 +57,7 @@ export function Toggle({ label, on, onChange }) {
       display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
       textAlign: "left", gap: 12, marginBottom: 8, cursor: "pointer", color: C.text,
       background: C.surface, border: `1px solid ${on ? C.mint + "55" : C.line}`,
-      borderRadius: RUND.karte, padding: "10px 14px", fontSize: 13, fontFamily: "inherit",
+      borderRadius: RUND.karte, padding: "10px 14px", fontSize: "0.8125rem", fontFamily: "inherit",
       // 44 pt (Apple) / 48 dp (Google) — gilt für jeden Schalter.
       minHeight: 44, boxSizing: "border-box",
     }}>
@@ -78,7 +78,7 @@ export function Toggle({ label, on, onChange }) {
 export function Field({ label, children }) {
   return (
     <div style={{ marginTop: 16 }}>
-      <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 8 }}>{label}</div>
       {children}
     </div>
   );
@@ -91,12 +91,12 @@ export function Stepper({ value, min, max, onStep }) {
   const b = (dis) => ({
     ...TAPZIEL_QUADRAT, borderRadius: RUND.karte, cursor: dis ? "default" : "pointer",
     background: C.surface2, color: dis ? C.muted : C.text, border: `1px solid ${C.line}`,
-    fontSize: 20, lineHeight: 1,
+    fontSize: "1.25rem", lineHeight: 1,
   });
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <button onClick={() => onStep(-1)} disabled={value <= min} style={b(value <= min)}>−</button>
-      <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 20, color: C.akzent, width: 18, textAlign: "center" }}>{value}</span>
+      <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: "1.25rem", color: C.akzent, width: 18, textAlign: "center" }}>{value}</span>
       <button onClick={() => onStep(1)} disabled={value >= max} style={b(value >= max)}>+</button>
     </div>
   );
@@ -123,18 +123,18 @@ export function GrosseZeile({ icon, titel, unter, wert, offen, onClick, children
         border: `1px solid ${offen ? C.mint + "55" : C.line}`,
         borderRadius: RUND.karte, padding: "12px 14px",
       }}>
-        {icon && <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1 }}>{icon}</span>}
+        {icon && <span style={{ fontSize: "1.25rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>}
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: "block", fontSize: 15, fontWeight: 700 }}>{titel}</span>
+          <span style={{ display: "block", fontSize: "0.9375rem", fontWeight: 700 }}>{titel}</span>
           {unter && (
-            <span style={{ display: "block", fontSize: 12, color: C.muted, marginTop: 2 }}>{unter}</span>
+            <span style={{ display: "block", fontSize: "0.75rem", color: C.muted, marginTop: 2 }}>{unter}</span>
           )}
         </span>
         {wert && (
-          <span style={{ fontFamily: MONO, fontSize: 12, color: C.akzent, flexShrink: 0 }}>{wert}</span>
+          <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.akzent, flexShrink: 0 }}>{wert}</span>
         )}
         <span style={{
-          fontSize: 20, color: C.muted, flexShrink: 0, lineHeight: 1,
+          fontSize: "1.25rem", color: C.muted, flexShrink: 0, lineHeight: 1,
           transform: offen ? "rotate(90deg)" : "none", transition: "transform .15s",
         }}>›</span>
       </button>
@@ -172,7 +172,7 @@ export function Zahl({
   leerErlaubt = false, leerText = "keine", breite = 130, marginTop = 0,
 }) {
   return (
-    <label style={{ fontSize: 11, color: C.muted, flex: `1 1 ${breite}px`, display: "block", marginTop }}>
+    <label style={{ fontSize: "0.6875rem", color: C.muted, flex: `1 1 ${breite}px`, display: "block", marginTop }}>
       {label}
       <input type="number" value={wert ?? ""}
         min={limits.min} max={limits.max} step={limits.step}
@@ -185,7 +185,7 @@ export function Zahl({
         style={{
           display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
           background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-          borderRadius: RUND.karte, padding: "7px 9px", fontSize: 13, fontFamily: MONO, outline: "none",
+          borderRadius: RUND.karte, padding: "7px 9px", fontSize: "0.8125rem", fontFamily: MONO, outline: "none",
         }} />
     </label>
   );

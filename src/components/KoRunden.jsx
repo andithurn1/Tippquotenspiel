@@ -175,10 +175,10 @@ export default function KoRunden({ spiele, alle = [], onChange }) {
   return (
     <div style={{ marginTop: 12 }}>
       <div style={{
-        fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
+        fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.2, color: C.muted,
         textTransform: "uppercase", marginBottom: 6,
       }}>K.-o.-Runden</div>
-      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 9px", lineHeight: 1.45 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 9px", lineHeight: 1.45 }}>
         Ab welcher Runde zählt ein Pokal mit? „Alle“ nimmt auch die Ligaphase dazu.
       </p>
 
@@ -195,8 +195,8 @@ export default function KoRunden({ spiele, alle = [], onChange }) {
           return (
             <div key={w}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginBottom: 5 }}>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>{wettbewerbLabel(w)}</span>
-                <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>
+                <span style={{ fontSize: "0.9375rem", fontWeight: 700 }}>{wettbewerbLabel(w)}</span>
+                <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>
                   {/* ⚠️ „etwa", sobald eine Vereins-Bedingung auf einer noch
                       nicht ausgelosten Runde liegt — siehe Kopfkommentar. */}
                   {gewaehlteVereine.length >= 2 && ab !== null ? "etwa " : ""}{zahl(ab)} Spiele
@@ -215,12 +215,12 @@ export default function KoRunden({ spiele, alle = [], onChange }) {
               <button onClick={() => setDetailOffen(offen ? null : w)} style={{
                 marginTop: 6, cursor: "pointer", fontFamily: "inherit", textAlign: "left",
                 background: "transparent", border: "none", padding: 0,
-                fontSize: 13, color: C.sky, ...TAPZIEL,
+                fontSize: "0.8125rem", color: C.sky, ...TAPZIEL,
               }}>
                 {offen ? "▾" : "▸"} Nur wenn bestimmte Vereine dabei sind
                 {gewaehlteVereine.length > 0 && (
                   <span style={{
-                    fontFamily: MONO, fontSize: 11, marginLeft: 6,
+                    fontFamily: MONO, fontSize: "0.6875rem", marginLeft: 6,
                     color: gewaehlteVereine.length >= 2 ? C.muted : C.coral,
                   }}>
                     {/* ⚠️ Bei genau einem Verein steht dort NICHT „1 gewählt",
@@ -238,7 +238,7 @@ export default function KoRunden({ spiele, alle = [], onChange }) {
                   marginTop: 6, background: C.ink, border: `1px solid ${C.line}`,
                   borderRadius: RUND.karte, padding: "10px 11px",
                 }}>
-                  <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+                  <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
                     Mindestens 2 Vereine — die Runde zählt dann nur, wenn einer von
                     ihnen beteiligt ist. Bei Pokalen ohne Auslosung ist die Zahl
                     darüber deshalb eine Schätzung.
@@ -264,7 +264,7 @@ export default function KoRunden({ spiele, alle = [], onChange }) {
 function Stufe({ an, label, onClick }) {
   return (
     <button onClick={onClick} style={{
-      cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "6px 13px",
+      cursor: "pointer", fontFamily: "inherit", fontSize: "0.8125rem", padding: "6px 13px",
       minHeight: 44, boxSizing: "border-box", borderRadius: RUND.pille,
       background: an ? `${C.mint}22` : C.surface,
       color: an ? C.mint : C.muted,

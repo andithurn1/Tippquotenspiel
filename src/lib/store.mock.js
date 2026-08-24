@@ -432,18 +432,64 @@ export function createMockStore() {
 
     // Kurzcode-Presets (Content-Creator-Codes): Regelwerk unter einem kurzen,
     // teilbaren Code speichern statt als langem Text-Creator-Code.
-    async publishPreset({ name, rules, creatorId }) {
+    async publishPreset({ name, rules, creatorId, beschreibung, aspekt }) {
       let code = generateJoinCode();
       while (presets.has(code)) code = generateJoinCode();
       const row = {
         code, name: (name ?? "").trim() || "Regelwerk",
+        beschreibung: (beschreibung ?? "").trim() || null,
+        // Ein Teil-Code beschreibt genau EINEN Aspekt; ein ganzes Regelwerk
+        // traegt hier null. Die Bibliothek entscheidet daran, ob der Eintrag
+        // unter "Baustein" oder unter "Regelwerk" einsortiert wird.
+        aspekt: aspekt ?? null,
         rules: sanitizeRules(rules), creator_id: creatorId ?? null,
+        uebernahmen: 0,
+        created_at: new Date().toISOString(),
       };
       presets.set(code, row);
       return row;
     },
     async getPresetByCode(code) {
       return presets.get((code ?? "").trim().toUpperCase()) ?? null;
+    },
+
+    // ── Die geteilten Regelwerke als LISTE ──────────────────
+    //
+    // Bis hierher gab es nur `getPresetByCode` — man musste den Code also
+    // schon kennen. Damit war "beliebteste Auswahl" nicht bloss ungebaut,
+    // sondern unmoeglich: es gab keinen Weg, auch nur EINEN geteilten Code
+    // zu sehen, den einem niemand geschickt hat.
+    //
+    // Sortierung, bewusst knapp gehalten:
+    //   "beliebt" - wie oft uebernommen. Die einzige echte Beliebtheit, die
+    //               wir zaehlen koennen (siehe `merkePresetNutzung`).
+    //   "neu"     - zuletzt veroeffentlicht.
+    //   "name"    - alphabetisch, fuer die Suche nach etwas Bekanntem.
+    async listPresets({ sortierung = "beliebt", text = "", limit = 60 } = {}) {
+      const t = (text ?? "").trim().toLowerCase();
+      let liste = [...presets.values()];
+      if (t) {
+        liste = liste.filter((p) => (
+          p.name.toLowerCase().includes(t)
+          || (p.beschreibung ?? "").toLowerCase().includes(t)
+          || p.code.toLowerCase().includes(t)
+        ));
+      }
+      const nachName = (a, b) => a.name.localeCompare(b.name, "de");
+      if (sortierung === "name") liste.sort(nachName);
+      else if (sortierung === "neu") liste.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)) || nachName(a, b));
+      else liste.sort((a, b) => (b.uebernahmen ?? 0) - (a.uebernahmen ?? 0) || nachName(a, b));
+      return liste.slice(0, Math.max(1, limit));
+    },
+
+    // ⚠️ Zaehlt die UEBERNAHME, nicht den Blick. Wer eine Liste durchscrollt,
+    // bewegt keine Zahl — sonst waere "beliebt" nur ein Mass dafuer, was weit
+    // oben stand, und die Liste sortierte sich selbst nach oben.
+    async merkePresetNutzung(code) {
+      const row = presets.get((code ?? "").trim().toUpperCase());
+      if (!row) return null;
+      row.uebernahmen = (row.uebernahmen ?? 0) + 1;
+      return row;
     },
     async joinRound({ roundId, userId, name }) {
       if (!members.some((m) => m.round_id === roundId && m.user_id === userId)) {

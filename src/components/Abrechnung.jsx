@@ -183,9 +183,9 @@ export default function Abrechnung() {
           erklärte, warum. */}
       {verwaist && (
         <div style={{
-          width: "100%", maxWidth: 400, marginBottom: 10, lineHeight: 1.45,
+          width: "100%", maxWidth: "var(--tqs-schirm-breite)", marginBottom: 10, lineHeight: 1.45,
           background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
-          padding: "10px 12px", fontSize: 13, color: C.muted,
+          padding: "10px 12px", fontSize: "0.8125rem", color: C.muted,
         }}>
           Deine zuletzt gewählte Runde gibt es nicht mehr — hier läuft jetzt die
           Demo-Runde. Über <strong style={{ color: C.text }}>wechseln</strong>
@@ -193,14 +193,14 @@ export default function Abrechnung() {
         </div>
       )}
       <div style={{
-        width: "100%", maxWidth: 400, display: "flex", justifyContent: "space-between",
-        alignItems: "center", marginBottom: 10, fontFamily: MONO, fontSize: 12, color: C.muted,
+        width: "100%", maxWidth: "var(--tqs-schirm-breite)", display: "flex", justifyContent: "space-between",
+        alignItems: "center", marginBottom: 10, fontFamily: MONO, fontSize: "0.75rem", color: C.muted,
       }}>
         <span>Runde: <span style={{ color: C.text }}>{roundName ?? "…"}</span></span>
         <Link href="/beitreten" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", color: C.mint, textDecoration: "none", paddingLeft: 10 }}>wechseln</Link>
       </div>
       <div style={{
-        width: "100%", maxWidth: 400, position: "relative",
+        width: "100%", maxWidth: "var(--tqs-schirm-breite)", position: "relative",
         borderRadius: RUND.schirm, overflow: "hidden",
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`,
@@ -216,20 +216,20 @@ export default function Abrechnung() {
         <div style={{ position: "relative", padding: "26px 22px 22px" }}>
           {/* Eyebrow */}
           <div style={{ ...show(0), display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+            <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
               Spieltag {DATA.spieltag}
             </span>
-            <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>deine abrechnung</span>
+            <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted }}>deine abrechnung</span>
           </div>
 
           {/* Anzeigetafel */}
           <div style={{ ...show(1), marginTop: 18 }}>
-            <div style={{ fontSize: 13, color: C.muted, marginBottom: 8 }}>
+            <div style={{ fontSize: "0.8125rem", color: C.muted, marginBottom: 8 }}>
               {DATA.home} <span style={{ opacity: .5 }}>vs</span> {DATA.away}
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
               <ScoreBox label="Dein Tipp" a={DATA.tippHome} b={DATA.tippAway} tone={C.muted} />
-              <div style={{ display: "flex", alignItems: "center", color: C.muted, fontSize: 20 }}>→</div>
+              <div style={{ display: "flex", alignItems: "center", color: C.muted, fontSize: "1.25rem" }}>→</div>
               <ScoreBox label="Endstand" a={DATA.realHome} b={DATA.realAway} tone={C.akzent}
                 stamped={stage >= 2} big />
             </div>
@@ -241,9 +241,9 @@ export default function Abrechnung() {
               <div style={{
                 display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
               }}>
-                <span style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>Distanz zum Ergebnis</span>
+                <span style={{ fontSize: "0.8125rem", color: C.text, fontWeight: 600 }}>Distanz zum Ergebnis</span>
                 <span style={{
-                  fontFamily: MONO, fontSize: 12, color: C.coral,
+                  fontFamily: MONO, fontSize: "0.75rem", color: C.coral,
                   border: `1px solid ${C.coral}55`, borderRadius: RUND.pille, padding: "2px 8px",
                 }}>{DATA.dist} {DATA.dist === 1 ? "Tor — hauchdünn" : "Tore"}</span>
               </div>
@@ -263,7 +263,7 @@ export default function Abrechnung() {
               einem Effekt suchen, den es nicht gibt. */}
           {lvl === "voll" && gezeigt?.rules?.tippEinfluss?.staerke > 0 && (
             <div style={{
-              ...show(3), marginTop: 14, fontSize: 11, color: C.muted, lineHeight: 1.5,
+              ...show(3), marginTop: 14, fontSize: "0.6875rem", color: C.muted, lineHeight: 1.5,
               borderLeft: `2px solid ${C.line}`, paddingLeft: 10,
             }}>
               <strong style={{ color: C.text }}>Eure Tipps zählen mit: </strong>
@@ -278,12 +278,12 @@ export default function Abrechnung() {
 
           {/* Punkte-Zähler */}
           <div style={{ ...show(4), marginTop: 14, textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: C.muted, letterSpacing: 1, textTransform: "uppercase" }}>
+            <div style={{ fontSize: "0.75rem", color: C.muted, letterSpacing: 1, textTransform: "uppercase" }}>
               gewertet
             </div>
             <div style={{
               fontFamily: MONO, fontWeight: 700, color: C.akzent,
-              fontSize: 68, lineHeight: 1, marginTop: 4,
+              fontSize: "4.25rem", lineHeight: 1, marginTop: 4,
               fontVariantNumeric: "tabular-nums",
               textShadow: `0 0 34px ${C.akzent}66`,
             }}>
@@ -299,7 +299,7 @@ export default function Abrechnung() {
               </div>
             )}
             {lvl !== "aus" && (
-              <p style={{ fontSize: 13, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
+              <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
                 {wertungsSatz(me, gezeigt.result)}
               </p>
             )}
@@ -308,12 +308,12 @@ export default function Abrechnung() {
           {/* Rang + Rollen-GIF */}
           <div style={{ ...show(5), marginTop: 20, display: "flex", gap: 10, alignItems: "stretch" }}>
             <div style={{ flex: 1, background: C.surface, borderRadius: RUND.karte, padding: "12px 14px", border: `1px solid ${C.line}` }}>
-              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Rang in der Runde</div>
-              <div style={{ fontFamily: MONO, fontSize: 22, marginTop: 2, color: C.mint }}>
+              <div style={{ fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Rang in der Runde</div>
+              <div style={{ fontFamily: MONO, fontSize: "1.375rem", marginTop: 2, color: C.mint }}>
                 {myRank ? `#${myRank}` : "…"}
               </div>
               {rankReact && (
-                <div style={{ fontSize: 13, marginTop: 6, fontWeight: 700, color: rankReact.tone }}>
+                <div style={{ fontSize: "0.8125rem", marginTop: 6, fontWeight: 700, color: rankReact.tone }}>
                   {rankReact.emoji} {rankReact.label}
                 </div>
               )}
@@ -328,9 +328,9 @@ export default function Abrechnung() {
           {/* Mini-Leaderboard mit Toggle */}
           <div style={{ ...show(5), marginTop: 18 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Tabelle</span>
+              <span style={{ fontSize: "0.75rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Tabelle</span>
               <button onClick={() => setFair((f) => !f)} style={{
-                ...TAPZIEL, fontFamily: MONO, fontSize: 11, color: C.text, cursor: "pointer",
+                ...TAPZIEL, fontFamily: MONO, fontSize: "0.6875rem", color: C.text, cursor: "pointer",
                 background: C.surface, border: `1px solid ${C.line}`,
                 borderRadius: RUND.pille, padding: "4px 10px",
               }}>
@@ -338,19 +338,19 @@ export default function Abrechnung() {
               </button>
             </div>
             {board == null ? (
-              <div style={{ fontSize: 13, color: C.muted, fontFamily: MONO, padding: "8px 0" }}>Tabelle lädt …</div>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, fontFamily: MONO, padding: "8px 0" }}>Tabelle lädt …</div>
             ) : shown.map((b, i) => (
               <div key={b.userId} style={{
                 display: "flex", alignItems: "center", gap: 10, padding: "7px 0",
                 borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
               }}>
-                <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted, width: 16 }}>{i + 1}</span>
-                <span style={{ flex: 1, fontSize: 15, color: b.userId === meId ? C.akzent : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
+                <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted, width: 16 }}>{i + 1}</span>
+                <span style={{ flex: 1, fontSize: "0.9375rem", color: b.userId === meId ? C.akzent : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
                   {b.name}
-                  {b.userId === meId && <span style={{ color: C.coral, fontSize: 11, marginLeft: 6 }}>● du</span>}
+                  {b.userId === meId && <span style={{ color: C.coral, fontSize: "0.6875rem", marginLeft: 6 }}>● du</span>}
                 </span>
                 <span style={{
-                  fontFamily: MONO, fontSize: 15, fontVariantNumeric: "tabular-nums",
+                  fontFamily: MONO, fontSize: "0.9375rem", fontVariantNumeric: "tabular-nums",
                   color: b.disp < 0 ? C.coral : C.text,
                 }}>
                   {b.disp > 0 && !fair ? "+" : ""}{b.disp}
@@ -362,7 +362,7 @@ export default function Abrechnung() {
           {/* Replay */}
           <button onClick={() => { setStage(0); setKey((k) => k + 1); }} style={{
             ...TAPZIEL, ...show(5), marginTop: 18, width: "100%", cursor: "pointer",
-            background: C.akzent, color: C.ink, fontWeight: 700, fontSize: 15,
+            background: C.akzent, color: C.ink, fontWeight: 700, fontSize: "0.9375rem",
             border: "none", borderRadius: RUND.karte, padding: "13px 0",
           }}>
             Nochmal ansehen
@@ -381,7 +381,7 @@ function ScoreBox({ label, a, b, tone, big, stamped }) {
       transform: stamped ? "scale(1)" : big ? "scale(0.9)" : "scale(1)",
       transition: "transform .5s cubic-bezier(.2,1.5,.4,1)",
     }}>
-      <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 6 }}>{label}</div>
       <div style={{
         fontFamily: MONO, fontWeight: 700, color: tone,
         fontSize: big ? 30 : 26, letterSpacing: 1,
@@ -415,7 +415,7 @@ function DistanceLadder({ active, wertung }) {
             boxShadow: s.hot && s.reached && active ? `0 0 16px ${C.coral}aa` : "none",
           }} />
           <div style={{
-            fontSize: 11, marginTop: 6, textAlign: "center",
+            fontSize: "0.6875rem", marginTop: 6, textAlign: "center",
             color: s.reached ? (s.hot ? C.coral : C.muted) : C.muted,
             fontWeight: s.hot ? 700 : 400,
           }}>{s.label}</div>

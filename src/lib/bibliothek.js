@@ -55,7 +55,7 @@ const ASPEKT_LABEL = Object.fromEntries(ASPEKTE.map((a) => [a.key, a.label ?? a.
 // `geladen` sind Creator- und Teil-Codes, die jemand in diesem Browser
 // eingelesen hat. Sie stehen gleichberechtigt in der Liste, tragen aber einen
 // anderen Urheber — genau darum fragt Andis „von wem".
-export function eintraege(geladen = []) {
+export function eintraege(geladen = [], geteilte = []) {
   const liste = [];
 
   for (const c of CHARAKTERE) {
@@ -101,6 +101,30 @@ export function eintraege(geladen = []) {
     });
   }
 
+  // ── Geteilte Regelwerke aus dem Store ─────────────────
+  //
+  // Kommen aus `getStore().listPresets()` — anders als `geladen` hat sie
+  // niemand hier eingetippt, sie liegen veröffentlicht in der Datenbank.
+  // Genau das macht „beliebteste Auswahl" überhaupt möglich: `uebernahmen`
+  // ist gezählt, nicht geschätzt.
+  //
+  // ⚠️ Getrennt von `geladen` gehalten, obwohl beide „nicht vom Haus" sind:
+  // ein geladener Code ist EINEM Browser bekannt, ein geteiltes Preset allen.
+  // Ein gemeinsamer Topf würde die Herkunft verwischen — und die Herkunft ist
+  // genau das, wonach Andis „von wem" fragt.
+  for (const g of geteilte) {
+    liste.push({
+      id: `geteilt:${g.code}`, art: g.aspekt ? "baustein" : "preset",
+      key: g.code, label: g.name ?? "Geteiltes Regelwerk",
+      desc: g.beschreibung ?? "", kurz: null, emoji: "🌐",
+      fuer: null, aspekt: g.aspekt ?? null,
+      urheber: "geteilt", code: g.code,
+      uebernahmen: g.uebernahmen ?? 0,
+      werte: null,
+      rules: g.rules ? sanitizeRules(g.rules) : null,
+    });
+  }
+
   return liste;
 }
 
@@ -113,6 +137,7 @@ export function verbreitung(eintrag, charaktere = CHARAKTERE) {
   if (!eintrag) return null;
   if (eintrag.art === "charakter") return null;      // eine Idee ist die oberste Ebene
   if (eintrag.urheber === "geladen") return null;    // über fremde Codes wissen wir nichts
+  if (eintrag.urheber === "geteilt") return null;    // dito — dafür tragen sie `uebernahmen`
 
   if (eintrag.art === "preset") {
     // Ein Charakter baut auf einem Preset auf: der Name steht in seinen Regeln
@@ -341,7 +366,7 @@ export function suche(liste, text) {
   if (!q) return liste;
   const worte = q.split(/\s+/);
   return liste.filter((e) => {
-    const heu = normalisiere([e.label, e.desc, e.kurz, e.fuer, ASPEKT_LABEL[e.aspekt] ?? e.aspekt].filter(Boolean).join(" "));
+    const heu = normalisiere([e.label, e.desc, e.kurz, e.fuer, e.code, ASPEKT_LABEL[e.aspekt] ?? e.aspekt].filter(Boolean).join(" "));
     // ALLE Wörter müssen vorkommen: „joker streng" soll die Schnittmenge
     // liefern, nicht alles mit „joker" ODER „streng".
     return worte.every((w) => heu.includes(w));
@@ -352,6 +377,11 @@ export function suche(liste, text) {
 export const SORTIERUNGEN = [
   { key: "relevanz", label: "Relevanz", desc: "Fertige Runden-Ideen zuerst, dann Regelwerke, dann Bausteine" },
   { key: "verbreitung", label: "Verbreitung", desc: "Was in den meisten kuratierten Runden-Ideen steckt" },
+  // 🔴 Andis „beliebteste Auswahl". Zählt nur, was der Store zählen kann:
+  // Übernahmen geteilter Codes. Haus-Einträge tragen keine — sie stehen
+  // deshalb hinten, nicht auf 0. Ein Haus-Regelwerk als „unbeliebt" zu
+  // zeigen, wäre eine erfundene Zahl.
+  { key: "beliebt", label: "Beliebt", desc: "Geteilte Codes nach Übernahmen — Haus-Einträge dahinter" },
   { key: "name", label: "Name", desc: "alphabetisch" },
 ];
 
@@ -361,6 +391,12 @@ export function sortiere(liste, modus = "relevanz") {
   const kopie = [...liste];
   if (modus === "name") {
     return kopie.sort((a, b) => a.label.localeCompare(b.label, "de"));
+  }
+  if (modus === "beliebt") {
+    // -1 statt 0 für alles ohne Zählung: „nicht gemessen" ist nicht „null mal
+    // übernommen", und die beiden dürfen nicht auf demselben Platz landen.
+    const wie_oft = (e) => (e.urheber === "geteilt" ? (e.uebernahmen ?? 0) : -1);
+    return kopie.sort((a, b) => wie_oft(b) - wie_oft(a) || a.label.localeCompare(b.label, "de"));
   }
   if (modus === "verbreitung") {
     const anteil = (e) => {

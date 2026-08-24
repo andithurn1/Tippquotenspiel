@@ -47,19 +47,19 @@ export default function Erstkontakt() {
 
   return (
     <div className="tqs-auf" style={{
-      width: "100%", maxWidth: 400, marginBottom: 14,
+      width: "100%", maxWidth: "var(--tqs-schirm-breite)", marginBottom: 14,
       background: `radial-gradient(120% 120% at 50% -20%, ${C.akzent}18 0%, ${C.surface} 100%)`,
       border: `1px solid ${C.akzent}55`, borderRadius: RUND.karte, padding: "16px 16px 14px",
     }}>
       <div style={{
-        fontFamily: MONO, fontSize: 11, letterSpacing: 1.4, color: C.akzent,
+        fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.4, color: C.akzent,
         textTransform: "uppercase", marginBottom: 6,
       }}>Willkommen</div>
 
-      <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25 }}>
+      <div style={{ fontSize: "1.25rem", fontWeight: 800, lineHeight: 1.25 }}>
         Quoten-Tippspiel unter Freunden
       </div>
-      <p style={{ fontSize: 14, color: C.muted, margin: "6px 0 14px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.9375rem", color: C.muted, margin: "6px 0 14px", lineHeight: 1.5 }}>
         Wer aus einer unwahrscheinlichen Lage richtig liegt, bekommt mehr.
         Kein Echtgeld — Ehre und ein Wichtelgeschenk.
       </p>
@@ -72,11 +72,11 @@ export default function Erstkontakt() {
             padding: "12px 14px", ...TAPZIEL,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-              <span style={{ fontSize: 18, lineHeight: 1 }}>{w.icon}</span>
-              <span style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>{w.titel}</span>
-              <span style={{ color: C.sky, fontSize: 15 }}>›</span>
+              <span style={{ fontSize: "1.25rem", lineHeight: 1 }}>{w.icon}</span>
+              <span style={{ fontSize: "0.9375rem", fontWeight: 700, flex: 1 }}>{w.titel}</span>
+              <span style={{ color: C.sky, fontSize: "0.9375rem" }}>›</span>
             </div>
-            <div style={{ fontSize: 13, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+            <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
               {w.text}
             </div>
           </Link>
@@ -87,7 +87,7 @@ export default function Erstkontakt() {
           nächsten Start ohnehin nicht wieder. Ein Knopf, der nur das
           wiederholt, was von selbst passiert, ist eine Entscheidung, die
           niemand treffen muss. */}
-      <div style={{ fontSize: 11, color: C.muted, marginTop: 10, opacity: 0.8 }}>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 10, opacity: 0.8 }}>
         Diese Begrüßung siehst du nur einmal.
       </div>
     </div>

@@ -5,6 +5,7 @@ import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import { eintraege, suche, sortiere, SORTIERUNGEN, verbreitung, beschreibeTreffer } from "@/lib/bibliothek";
 import { merkmale } from "@/lib/charaktere";
+import { useGeteilte } from "@/lib/useGeteilte";
 
 // ============================================================
 //  GESAMTSPIEL — drei Empfehlungen im Ablauf, alles Übrige im FENSTER
@@ -70,8 +71,8 @@ const WIE_VIELE_EMPFEHLUNGEN = 3;
 // Die Einträge, die ein ganzes Spiel beschreiben — eine Stelle für beide
 // Ansichten, damit die Kurzliste garantiert aus derselben Menge kommt wie
 // das Fenster.
-function gesamtspielEintraege(geladene) {
-  return eintraege(geladene).filter((e) => GESAMTSPIEL.includes(e.art));
+function gesamtspielEintraege(geladene, geteilte = []) {
+  return eintraege(geladene, geteilte).filter((e) => GESAMTSPIEL.includes(e.art));
 }
 
 // ============================================================
@@ -94,7 +95,7 @@ export default function GesamtspielAuswahl({
 
   return (
     <div>
-      <p style={{ fontSize: 13, color: C.muted, margin: "0 0 12px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.8125rem", color: C.muted, margin: "0 0 12px", lineHeight: 1.5 }}>
         Such dir aus, wie eure Runde sich anfühlen soll. Alles andere stellen wir
         passend ein — ändern kannst du es später jederzeit.
       </p>
@@ -116,11 +117,11 @@ export default function GesamtspielAuswahl({
         padding: "14px 16px", ...TAPZIEL,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <span style={{ fontSize: 20, lineHeight: 1 }}>📚</span>
-          <span style={{ fontSize: 16, fontWeight: 800, flex: 1 }}>Alle Kompletteinstellungen</span>
-          <span style={{ color: C.sky, fontSize: 15 }}>▸</span>
+          <span style={{ fontSize: "1.25rem", lineHeight: 1 }}>📚</span>
+          <span style={{ fontSize: "1rem", fontWeight: 800, flex: 1 }}>Alle Kompletteinstellungen</span>
+          <span style={{ color: C.sky, fontSize: "0.9375rem" }}>▸</span>
         </div>
-        <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+        <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
           Suchen, filtern und vergleichen — in einem eigenen Fenster.
         </div>
       </button>
@@ -144,7 +145,19 @@ export function GesamtspielFenster({
   const [art, setArt] = useState(null);
   const [sortierung, setSortierung] = useState("relevanz");
 
-  const alle = useMemo(() => gesamtspielEintraege(geladene), [geladene]);
+  // 🔴 Die geteilten Regelwerke aus dem Store — Andis „beliebteste Auswahl".
+  //
+  // ⚠️ `aktiv: offen`: geladen wird erst, wenn das Fenster aufgeht. Ein
+  // Erstellen-Screen, der beim Öffnen die halbe Preset-Tabelle zieht, wartet
+  // auf etwas, das die meisten nie aufschlagen.
+  //
+  // ⚠️ Die Suche läuft ZWEIMAL, und das ist Absicht: der Store sucht in dem,
+  // was er hat (Name, Beschreibung, Code), `suche()` danach über alle
+  // Einträge — auch die Haus-Einträge, die der Store gar nicht kennt.
+  const { geteilte, laedt: geteilteLaden, fehler: geteilteFehler } =
+    useGeteilte({ sortierung: sortierung === "beliebt" ? "beliebt" : "neu", text, aktiv: offen });
+
+  const alle = useMemo(() => gesamtspielEintraege(geladene, geteilte), [geladene, geteilte]);
   const gefiltert = useMemo(() => {
     const nachArt = art ? alle.filter((e) => e.art === art) : alle;
     return sortiere(suche(nachArt, text), sortierung);
@@ -171,15 +184,15 @@ export function GesamtspielFenster({
             zurückscrollen muss. */}
         <div style={{ padding: "14px 16px 10px", borderBottom: `1px solid ${C.line}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 18, lineHeight: 1 }}>📚</span>
+            <span style={{ fontSize: "1.25rem", lineHeight: 1 }}>📚</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 800 }}>Kompletteinstellungen</div>
-              <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>
+              <div style={{ fontSize: "1rem", fontWeight: 800 }}>Kompletteinstellungen</div>
+              <div style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>
                 {beschreibeTreffer(gefiltert.length, alle.length, text)}
               </div>
             </div>
             <button onClick={onSchliessen} aria-label="Fenster schließen" style={{
-              cursor: "pointer", fontFamily: "inherit", fontSize: 20, lineHeight: 1,
+              cursor: "pointer", fontFamily: "inherit", fontSize: "1.25rem", lineHeight: 1,
               background: C.surface, color: C.muted, border: `1px solid ${C.line}`,
               borderRadius: RUND.pille, width: 44, height: 44,
             }}>×</button>
@@ -190,7 +203,7 @@ export function GesamtspielFenster({
             style={{
               width: "100%", boxSizing: "border-box", marginTop: 10,
               background: C.ink, color: C.text, border: `1px solid ${C.line}`,
-              borderRadius: RUND.karte, padding: "12px 12px", fontSize: 15,
+              borderRadius: RUND.karte, padding: "12px 12px", fontSize: "0.9375rem",
               fontFamily: "inherit", outline: "none", minHeight: 44,
             }} />
 
@@ -202,7 +215,7 @@ export function GesamtspielFenster({
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" }}>
-            <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginRight: 2 }}>sortiert:</span>
+            <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted, marginRight: 2 }}>sortiert:</span>
             {SORTIERUNGEN.map((so) => (
               <FilterChip key={so.key} an={sortierung === so.key} titel={so.desc}
                 onClick={() => setSortierung(so.key)} label={so.label} />
@@ -212,10 +225,31 @@ export function GesamtspielFenster({
 
         {/* Liste */}
         <div style={{ overflowY: "auto", padding: "12px 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-          {gefiltert.length === 0 && (
-            <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.5 }}>
+          {gefiltert.length === 0 && !geteilteLaden && (
+            <div style={{ fontSize: "0.8125rem", color: C.muted, lineHeight: 1.5 }}>
               Nichts gefunden. Andere Schreibweise probieren — einzelne
               Bausteine stehen in der großen Bibliothek über den 📚-Chip.
+            </div>
+          )}
+          {/* ⚠️ Ein Platzhalter in der Größe der kommenden Karten, kein
+              Ladekreisel: der Screen springt danach nicht, weil der Platz
+              schon stimmt. Siehe `.tqs-skelett` in globals.css. */}
+          {geteilteLaden && (
+            <div aria-hidden style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div className="tqs-skelett" style={{ height: 86 }} />
+              <div className="tqs-skelett" style={{ height: 86 }} />
+            </div>
+          )}
+          {/* 🔴 „Wir kommen gerade nicht an die geteilten Codes" ist NICHT
+              dasselbe wie „es gibt keine". Ohne diesen Satz behauptete die
+              Liste eine Leere, die sie nicht kennt. */}
+          {geteilteFehler && (
+            <div style={{
+              fontSize: "0.75rem", color: C.muted, lineHeight: 1.5,
+              border: `1px dashed ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
+            }}>
+              Geteilte Regelwerke sind gerade nicht erreichbar — was hier steht,
+              kommt aus dem Haus.
             </div>
           )}
           {gefiltert.map((e) => (
@@ -248,23 +282,23 @@ function EintragKarte({ eintrag: e, aktiv, onClick }) {
       borderRadius: RUND.karte, padding: "15px 16px",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-        <span style={{ fontSize: 20, lineHeight: 1 }}>{e.emoji ?? (e.art === "preset" ? "📐" : "🎯")}</span>
-        <span style={{ fontSize: 16, fontWeight: 800, flex: 1 }}>{e.label}</span>
+        <span style={{ fontSize: "1.25rem", lineHeight: 1 }}>{e.emoji ?? (e.art === "preset" ? "📐" : "🎯")}</span>
+        <span style={{ fontSize: "1rem", fontWeight: 800, flex: 1 }}>{e.label}</span>
         {aktiv && (
           <span style={{
-            fontFamily: MONO, fontSize: 11, color: C.akzent, border: `1px solid ${C.akzent}66`,
+            fontFamily: MONO, fontSize: "0.6875rem", color: C.akzent, border: `1px solid ${C.akzent}66`,
             borderRadius: RUND.pille, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 1,
           }}>gewählt</span>
         )}
       </div>
 
       {e.tagline && (
-        <div style={{ fontSize: 13, color: C.akzent, marginTop: 5, fontStyle: "italic" }}>
+        <div style={{ fontSize: "0.8125rem", color: C.akzent, marginTop: 5, fontStyle: "italic" }}>
           {e.tagline}
         </div>
       )}
       {(e.desc || e.kurz) && (
-        <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+        <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
           {e.desc ?? e.kurz}
         </div>
       )}
@@ -273,17 +307,30 @@ function EintragKarte({ eintrag: e, aktiv, onClick }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 9 }}>
           {marken.map((m) => (
             <span key={m} style={{
-              fontFamily: MONO, fontSize: 11, color: C.muted,
+              fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
               border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "2px 8px",
             }}>{m}</span>
           ))}
         </div>
       )}
 
-      <div style={{ fontSize: 11, color: C.muted, marginTop: 8, opacity: 0.8 }}>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 8, opacity: 0.8 }}>
         {e.fuer ? `Für ${e.fuer}` : null}
         {e.fuer && v ? " · " : null}
         {v ? `in ${v.von} von ${v.gesamt} Runden-Ideen` : null}
+        {/* 🔴 Die Herkunft steht DA, wo die Verbreitung stünde — beides
+            beantwortet dieselbe Frage („kann ich dem trauen?"), nur trägt
+            ein geteilter Code eine gezählte Zahl statt einer gerechneten.
+            ⚠️ Der Code steht mit dabei: er ist bei einem geteilten Regelwerk
+            die einzige Kennung, die man weitergeben kann. */}
+        {e.urheber === "geteilt" ? (
+          <>
+            {`geteilt · ${e.code} · `}
+            {e.uebernahmen > 0
+              ? `${e.uebernahmen}× übernommen`
+              : "noch nicht übernommen"}
+          </>
+        ) : null}
       </div>
     </button>
   );
@@ -292,7 +339,7 @@ function EintragKarte({ eintrag: e, aktiv, onClick }) {
 function FilterChip({ an, label, titel, onClick }) {
   return (
     <button onClick={onClick} title={titel} style={{
-      cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: an ? 700 : 500,
+      cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", fontWeight: an ? 700 : 500,
       background: an ? C.akzent : C.surface, color: an ? C.ink : C.muted,
       border: `1px solid ${an ? C.akzent : C.line}`, borderRadius: RUND.pille,
       padding: "7px 12px", minHeight: 34,

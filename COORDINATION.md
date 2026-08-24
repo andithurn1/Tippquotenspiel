@@ -126,6 +126,61 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-24 (XVI) · **Eine neue SCHICHT: Rückmeldung** — plus `listPresets` und drei App-Befunde erledigt
+
+⚠️ **Für dich relevant, wenn du irgendwo etwas speicherst:** ab jetzt gibt es
+`useRueckmeldung()` aus `src/components/Rueckmeldung.jsx`. Wer einen
+Store-Aufruf macht, meldet danach — `melder.gespeichert("…")` bzw.
+`melder.fehler("…")`. **Baue keinen eigenen Speichern-Hinweis in einen
+Screen**; genau das war der Zustand, den diese Schicht ablöst.
+
+Der Provider liegt ganz außen im Layout (außerhalb `AuthProvider`, damit der
+melden kann). Fehlt er, greift ein Notbehelf mit Konsolen-Warnung — dein Code
+stürzt also nicht ab, aber es fällt auf.
+
+**Angeschlossen sind 9 Stellen:** Tipp, Runde anlegen, Beitritt, Kurzcode
+veröffentlichen, drei Kopier-Knöpfe, Teil-Code aufsetzen, Code übernehmen.
+
+---
+
+🔴 **Store-Erweiterung — bitte beim nächsten Schema-Lauf mitnehmen:**
+
+| Neu | Wo |
+|---|---|
+| `listPresets({sortierung, text, limit})` | beide Stores. Sortierung `beliebt` · `neu` · `name` |
+| `merkePresetNutzung(code)` | beide Stores. In Supabase über die SQL-Funktion `bump_preset` |
+| Spalten `beschreibung` · `aspekt` · `uebernahmen` auf `presets` | `supabase/schema.sql`, idempotent (`add column if not exists`) |
+
+⚠️ **`schema.sql` muss im SQL-Editor erneut laufen**, sonst fehlen die drei
+Spalten und `bump_preset`. Die Datei ist idempotent, einfach komplett
+ausführen — dieselbe Ansage wie beim letzten Mal.
+
+⚠️ `bump_preset` ist `security definer`, und das ist Absicht, kein Versehen:
+RLS lässt ein UPDATE auf ein FREMDES Preset nicht zu — und genau das ist der
+Normalfall, wenn jemand das Regelwerk eines anderen übernimmt.
+
+Damit trägt Andis Kette „Code austeilen → hochgeladen → beliebteste Auswahl →
+übernehmen" Punkt ④ (RF6). Punkt ③ hängt weiter an den Supabase-Env-Vars:
+live läuft der Mock, dort ist jede Veröffentlichung beim Reload weg.
+
+---
+
+**Drei App-Befunde vom Vortag sind erledigt** (`design/roadmap.md`,
+„App-Tauglichkeit"): Safe Areas · alle Schriftgrößen auf `rem` (1 210 Stellen,
+0 nackte px übrig) · `--tqs-schirm-breite` in drei Stufen statt festem 400 px
+(22 Stellen in 18 Dateien).
+
+🔴 **Neuer Wächter: `npm run schrift`.** Verbietet die nackte px-Schriftgröße,
+nach dem Muster von `rund.test.js`. Wenn dein Build daran scheitert: die Leiter
+steht in `theme.js` als `TEXT`, `px()` rechnet zurück.
+
+**Neue CSS-Klassen** (alle auf `/stil` als L3–L5 vorgeführt):
+`.tqs-meldung` · `.tqs-haken` · `.tqs-skelett`.
+
+**Abnahmen:** `npm test` 2479 grün (44 skipped, das ist die Balance-Sperre) ·
+`lint` · `build` · `schrift` · `stufen` · `einstellbar` (0 unerklärt,
+Abdeckung 188/199) · `greift` · `tot` · `anzeige` — alle grün.
+
 ### 2026-08-24 (XV) · **Nach `main` gemergt** — Fremdjoker-Familie + Abdeckung sind jetzt live
 
 Auf Andis Bestätigung (er sah noch die alte Version, weil der Branch nie nach

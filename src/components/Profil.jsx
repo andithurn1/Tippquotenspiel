@@ -73,12 +73,12 @@ export default function Profil() {
       <div style={{ width: "100%", maxWidth: 520 }}>
         <BackLink href="/menu" label="Menü" />
 
-        <h1 style={{ fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 14px" }}>
+        <h1 style={{ fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 14px" }}>
           Profil
         </h1>
 
         {!user ? (
-          <p style={{ fontSize: 13, color: C.akzent, lineHeight: 1.5 }}>
+          <p style={{ fontSize: "0.8125rem", color: C.akzent, lineHeight: 1.5 }}>
             Bitte zuerst auf der Startseite einloggen — dein Profil hängt an deinem Konto.
           </p>
         ) : (
@@ -90,16 +90,16 @@ export default function Profil() {
             }}>
               <AvatarKreis id={avatar} size={52} />
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div style={{ fontSize: "0.9375rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {sanitizeDisplayName(name) ?? "—"}
                 </div>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 2 }}>
                   So sehen dich deine Mitspieler
                 </div>
               </div>
               {premium && (
                 <span style={{
-                  marginLeft: "auto", fontSize: 11, letterSpacing: 1, textTransform: "uppercase",
+                  marginLeft: "auto", fontSize: "0.6875rem", letterSpacing: 1, textTransform: "uppercase",
                   color: C.akzent, border: `1px solid ${C.akzent}55`, borderRadius: RUND.pille, padding: "3px 9px",
                 }}>Premium</span>
               )}
@@ -111,16 +111,16 @@ export default function Profil() {
               border: `1px solid ${premium ? C.mint + "33" : C.line}`,
               borderRadius: RUND.karte, padding: "12px 15px",
             }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: premium ? C.mint : C.text }}>
+              <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: premium ? C.mint : C.text }}>
                 {premium ? "✓ Premium aktiv" : "Premium nicht aktiv"}
               </div>
-              <p style={{ fontSize: 12, color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
+              <p style={{ fontSize: "0.75rem", color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
                 {premium
                   ? "In Runden, die du als Admin anlegst, stehen die Zusatzfunktionen bereit."
                   : "Legst du eine Runde als Admin an, sind diese Funktionen gesperrt:"}
               </p>
               {!premium && (
-                <ul style={{ margin: "7px 0 0", paddingLeft: 18, fontSize: 12, color: C.muted, lineHeight: 1.6 }}>
+                <ul style={{ margin: "7px 0 0", paddingLeft: 18, fontSize: "0.75rem", color: C.muted, lineHeight: 1.6 }}>
                   {PREMIUM_FEATURES.map((f) => (
                     <li key={f.key}><strong style={{ color: C.text }}>{f.label}</strong> — {f.desc}</li>
                   ))}
@@ -130,18 +130,18 @@ export default function Profil() {
 
             {/* Anzeigename */}
             <div style={{ marginTop: 20 }}>
-              <label htmlFor="anzeigename" style={{ fontSize: 11, letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>
+              <label htmlFor="anzeigename" style={{ fontSize: "0.6875rem", letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>
                 Anzeigename
               </label>
               <input id="anzeigename" value={name} onChange={(e) => setName(e.target.value)}
                 maxLength={NAME_LIMITS.max + 10} placeholder="Wie sollen dich alle nennen?"
                 style={{
                   width: "100%", marginTop: 7, boxSizing: "border-box",
-                  background: C.surface, color: C.text, fontFamily: "inherit", fontSize: 15,
+                  background: C.surface, color: C.text, fontFamily: "inherit", fontSize: "0.9375rem",
                   border: `1px solid ${nameOk || name === "" ? C.line : C.coral}`,
                   borderRadius: RUND.karte, padding: "11px 13px", outline: "none",
                 }} />
-              <div style={{ fontSize: 11, color: nameOk || name === "" ? C.muted : C.coral, marginTop: 6 }}>
+              <div style={{ fontSize: "0.6875rem", color: nameOk || name === "" ? C.muted : C.coral, marginTop: 6 }}>
                 {nameOk || name === ""
                   ? `${NAME_LIMITS.min}–${NAME_LIMITS.max} Zeichen.`
                   : `Mindestens ${NAME_LIMITS.min} Zeichen.`}
@@ -150,7 +150,7 @@ export default function Profil() {
 
             {/* Avatar-Auswahl */}
             <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: 11, letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>
+              <div style={{ fontSize: "0.6875rem", letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>
                 Avatar
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
@@ -167,7 +167,7 @@ export default function Profil() {
                   );
                 })}
               </div>
-              <p style={{ fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.45 }}>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 10, lineHeight: 1.45 }}>
                 Eigene Fotos sind noch nicht freigeschaltet — das braucht erst eine
                 Melde- und Prüfmöglichkeit (Auflage der App-Stores für Nutzerbilder).
               </p>
@@ -177,14 +177,14 @@ export default function Profil() {
               marginTop: 22, width: "100%",
               cursor: !nameOk || status === "speichern" ? "default" : "pointer",
               background: status === "ok" ? C.mint : C.akzent, color: C.ink,
-              fontWeight: 700, fontSize: 15, fontFamily: "inherit",
+              fontWeight: 700, fontSize: "0.9375rem", fontFamily: "inherit",
               border: "none", borderRadius: RUND.karte, padding: "13px 0",
               opacity: !nameOk || status === "speichern" ? 0.6 : 1,
             }}>
               {status === "speichern" ? "wird gespeichert …" : status === "ok" ? "✓ gespeichert" : "Profil speichern"}
             </button>
             {status === "fehler" && (
-              <div style={{ fontSize: 12, color: C.coral, marginTop: 8 }}>
+              <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 8 }}>
                 Speichern fehlgeschlagen — bitte nochmal versuchen.
               </div>
             )}

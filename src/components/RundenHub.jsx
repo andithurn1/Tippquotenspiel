@@ -92,18 +92,18 @@ export default function RundenHub() {
       fontFamily: SCHRIFT,
       padding: "48px 16px", display: "flex", justifyContent: "center",
     }}>
-      <div style={{ width: "100%", maxWidth: 400 }}>
+      <div style={{ width: "100%", maxWidth: "var(--tqs-schirm-breite)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
+          <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
             Tippquotenspiel
           </span>
-          <Link href="/menu" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", fontFamily: MONO, fontSize: 12, color: C.mint, textDecoration: "none", paddingLeft: 10 }}>
+          <Link href="/menu" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", fontFamily: MONO, fontSize: "0.75rem", color: C.mint, textDecoration: "none", paddingLeft: 10 }}>
             Alle Tippspiele →
           </Link>
         </div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: "8px 0 6px" }}>{roundName ?? "…"}</h1>
+        <h1 style={{ fontSize: "1.375rem", fontWeight: 800, margin: "8px 0 6px" }}>{roundName ?? "…"}</h1>
 
-        <div style={{ fontFamily: MONO, fontSize: 12, color: C.muted, marginBottom: 20 }}>
+        <div style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted, marginBottom: 20 }}>
           {status
             ? `${status.total} Spiele · ${status.open} offen · ${status.tippedByMe} von dir getippt`
             : "Status lädt …"}
@@ -127,9 +127,9 @@ export default function RundenHub() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
-                <span style={{ fontSize: 16, fontWeight: 700 }}>🃏 Joker-Abstimmung</span>
+                <span style={{ fontSize: "1rem", fontWeight: 700 }}>🃏 Joker-Abstimmung</span>
               </div>
-              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Stimmt ab, an welchen Spieltagen es einen Joker gibt.
               </div>
             </Link>
@@ -142,9 +142,9 @@ export default function RundenHub() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
-                <span style={{ fontSize: 16, fontWeight: 700 }}>⚖️ Regeländerungen</span>
+                <span style={{ fontSize: "1rem", fontWeight: 700 }}>⚖️ Regeländerungen</span>
               </div>
-              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Änderungen am Regelwerk vorschlagen und darüber abstimmen.
               </div>
             </Link>
@@ -157,9 +157,9 @@ export default function RundenHub() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.indigo, boxShadow: `0 0 12px ${C.indigo}` }} />
-                <span style={{ fontSize: 16, fontWeight: 700 }}>🔑 Freigaben</span>
+                <span style={{ fontSize: "1rem", fontWeight: 700 }}>🔑 Freigaben</span>
               </div>
-              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Wer an welchem Spieltag einsetzen darf — erteilt der Admin.
               </div>
             </Link>
@@ -172,9 +172,9 @@ export default function RundenHub() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
-                <span style={{ fontSize: 16, fontWeight: 700 }}>🃏 Deine Joker</span>
+                <span style={{ fontSize: "1rem", fontWeight: 700 }}>🃏 Deine Joker</span>
               </div>
-              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Wie viele du hast, welche Spieltage sie tragen, wie weit du bist.
               </div>
             </Link>
@@ -187,9 +187,9 @@ export default function RundenHub() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.sky, boxShadow: `0 0 12px ${C.sky}` }} />
-                <span style={{ fontSize: 16, fontWeight: 700 }}>🎡 Dein Glücksrad</span>
+                <span style={{ fontSize: "1rem", fontWeight: 700 }}>🎡 Dein Glücksrad</span>
               </div>
-              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Was für dich gefallen ist — und wann sich das Rad das nächste Mal dreht.
               </div>
             </Link>
@@ -202,9 +202,9 @@ export default function RundenHub() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.violet, boxShadow: `0 0 12px ${C.violet}` }} />
-                <span style={{ fontSize: 16, fontWeight: 700 }}>🏆 Saison-Wetten</span>
+                <span style={{ fontSize: "1rem", fontWeight: 700 }}>🏆 Saison-Wetten</span>
               </div>
-              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                 Langzeit-Tipps: Meister, Torschützenkönig & Co.
               </div>
             </Link>
@@ -217,9 +217,9 @@ export default function RundenHub() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: s.tone, boxShadow: `0 0 12px ${s.tone}` }} />
-                <span style={{ fontSize: 16, fontWeight: 700 }}>{s.title}</span>
+                <span style={{ fontSize: "1rem", fontWeight: 700 }}>{s.title}</span>
               </div>
-              <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>{s.desc}</div>
+              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>{s.desc}</div>
             </Link>
           ))}
 
@@ -229,14 +229,14 @@ export default function RundenHub() {
               borderRadius: RUND.karte, padding: "16px 18px", opacity: 0.6,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 16, fontWeight: 700 }}>{s.title}</span>
+                <span style={{ fontSize: "1rem", fontWeight: 700 }}>{s.title}</span>
                 <span style={{
-                  marginLeft: "auto", fontFamily: MONO, fontSize: 11, color: C.muted,
+                  marginLeft: "auto", fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
                   border: `1px solid ${C.line}`, borderRadius: RUND.pille, padding: "2px 8px",
                   textTransform: "uppercase", letterSpacing: 1,
                 }}>bald verfügbar</span>
               </div>
-              <div style={{ fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>{s.desc}</div>
+              <div style={{ fontSize: "0.8125rem", marginTop: 6, lineHeight: 1.5 }}>{s.desc}</div>
             </div>
           ))}
         </div>
@@ -244,7 +244,7 @@ export default function RundenHub() {
         <Link href="/menu" style={{
           marginTop: 16, display: "block", textDecoration: "none", textAlign: "center",
           color: C.text, background: C.surface2, border: `1px solid ${C.line}`,
-          borderRadius: RUND.karte, padding: "13px 0", fontSize: 15, fontWeight: 600,
+          borderRadius: RUND.karte, padding: "13px 0", fontSize: "0.9375rem", fontWeight: 600,
         }}>
           Alle Tippspiele, erstellen, Einstellungen →
         </Link>

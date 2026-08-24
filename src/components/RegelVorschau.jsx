@@ -18,10 +18,10 @@ export default function RegelVorschau({ rules }) {
       marginTop: 18, background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`,
       borderRadius: RUND.karte, padding: "14px 16px",
     }}>
-      <div style={{ fontSize: 11, color: C.akzent, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
+      <div style={{ fontSize: "0.6875rem", color: C.akzent, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
         Live-Vorschau · typische Spielarten
       </div>
-      <p style={{ fontSize: 11, color: C.muted, margin: "0 0 12px", lineHeight: 1.4 }}>
+      <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "0 0 12px", lineHeight: 1.4 }}>
         Punkte, die verschiedene nahe Tipps mit deinen aktuellen Reglern gäben. Dreh an
         k / Underdog-Boost / Favoriten-Malus und beobachte, wie sich die Spielarten spreizen.
         {jokerMax > 1 && (
@@ -34,8 +34,8 @@ export default function RegelVorschau({ rules }) {
         {rows.map((r) => (
           <div key={r.key}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>{r.label}</span>
-              <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>
+              <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>{r.label}</span>
+              <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>
                 {r.real.home}:{r.real.away} · Sieger-Quote {r.winnerQuote}
               </span>
             </div>
@@ -48,16 +48,16 @@ export default function RegelVorschau({ rules }) {
                     background: best ? `${C.akzent}18` : C.surface,
                     border: `1px solid ${best ? C.akzent + "55" : C.line}`,
                   }}>
-                    <span style={{ fontSize: 11, color: C.muted }}>{t.kind}</span>
-                    <span style={{ fontFamily: MONO, fontSize: 12, color: C.muted }}>
+                    <span style={{ fontSize: "0.6875rem", color: C.muted }}>{t.kind}</span>
+                    <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted }}>
                       {t.tip.home}:{t.tip.away}
                     </span>
                     <span style={{
-                      fontFamily: MONO, fontSize: 13, fontWeight: 700,
+                      fontFamily: MONO, fontSize: "0.8125rem", fontWeight: 700,
                       color: t.points > 0 ? (best ? C.akzent : C.text) : C.coral,
                     }}>{t.points}</span>
                     {t.pointsJoker != null && (
-                      <span style={{ fontFamily: MONO, fontSize: 11, color: C.mint }}
+                      <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.mint }}
                         title={`mit Gewicht ×${jokerMax.toFixed(1)}`}>
                         →{t.pointsJoker}
                       </span>
@@ -66,7 +66,7 @@ export default function RegelVorschau({ rules }) {
                 );
               })}
             </div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>{r.hint}</div>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4 }}>{r.hint}</div>
           </div>
         ))}
       </div>

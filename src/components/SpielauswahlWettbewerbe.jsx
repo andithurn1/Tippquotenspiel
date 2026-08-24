@@ -86,7 +86,7 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
       {/* Keine eigene Überschrift mehr: seit 08.08.2026 steht dieser Block in
           der aufgeklappten Zeile „Wettbewerbe" der Spielerstellung, die
           Überschrift stand dadurch zweimal übereinander. */}
-      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
         Nichts ausgewählt = alles dabei. Eingrenzen für „nur aus dem Besten“ —
         etwa nur die Champions League ab dem Achtelfinale.
       </p>
@@ -126,10 +126,10 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
         marginTop: 9, background: C.ink2, border: `1px solid ${C.line}`,
         borderRadius: RUND.karte, padding: "9px 11px",
       }}>
-        <div style={{ fontSize: 15, color: uebrig.length === 0 ? C.coral : C.text }}>
+        <div style={{ fontSize: "0.9375rem", color: uebrig.length === 0 ? C.coral : C.text }}>
           <strong style={{ fontFamily: MONO }}>{uebrig.length}</strong> von {alle.length} Spielen
           {summe.spieltage > 0 && (
-            <span style={{ color: C.muted, fontSize: 13 }}>
+            <span style={{ color: C.muted, fontSize: "0.8125rem" }}>
               {" · rund "}<strong style={{ fontFamily: MONO, color: C.text }}>{summe.proSpieltag}</strong>
               {" je Spieltag"}
             </span>
@@ -139,14 +139,14 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
         {/* 🔴 Die Begründung, nicht nur die Zahl. Ohne sie liest sich eine 0
             wie ein Fehler und ein folgenloser Haken wie ein kaputter Knopf. */}
         {uebrig.length === 0 && engpass && (
-          <div style={{ fontSize: 13, color: C.coral, marginTop: 6, lineHeight: 1.45 }}>
+          <div style={{ fontSize: "0.8125rem", color: C.coral, marginTop: 6, lineHeight: 1.45 }}>
             Diese Auswahl lässt nichts übrig. Am meisten nimmt {FELD_TEXT[engpass.feld] ?? "eine Einschränkung"} weg
             {engpass.ohne > 0 && <> — ohne sie wären es <strong style={{ fontFamily: MONO }}>{engpass.ohne}</strong> Spiele</>}.
           </div>
         )}
 
         {uebrig.length > 0 && folgenlos.length > 0 && (
-          <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+          <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
             <strong style={{ color: C.text }}>{folgenlos.join(", ").toUpperCase()}</strong>
             {folgenlos.length === 1 ? " bringt " : " bringen "}
             hier nichts: dort spielt keiner deiner gewählten Vereine.
@@ -154,13 +154,13 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
         )}
 
         {uebrig.length > 0 && summe.duenn && (
-          <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+          <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
             Das ist dünn — an vielen Spieltagen gibt es nur ein Spiel oder keins.
           </div>
         )}
 
         {(gewaehltW.length > 0 || gewaehltP.length > 0) && (
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+          <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
             {VERKNUEPFUNG_HINWEIS}
           </div>
         )}
@@ -185,7 +185,7 @@ function Gruppe({ titel, children }) {
   return (
     <div style={{ marginBottom: 8 }}>
       <div style={{
-        fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
+        fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.2, color: C.muted,
         textTransform: "uppercase", marginBottom: 5,
       }}>{titel}</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{children}</div>
@@ -202,7 +202,7 @@ function Chip({ an, label, zusatz, folgenlos, onClick }) {
     <button onClick={onClick}
       title={folgenlos ? "Gewählt, trägt aber nichts bei" : undefined}
       style={{
-      cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "6px 13px",
+      cursor: "pointer", fontFamily: "inherit", fontSize: "0.8125rem", padding: "6px 13px",
       minHeight: 44, boxSizing: "border-box",
       borderRadius: RUND.pille, display: "flex", alignItems: "center", gap: 5,
       background: an ? (folgenlos ? C.surface : `${C.mint}22`) : C.surface,
@@ -212,7 +212,7 @@ function Chip({ an, label, zusatz, folgenlos, onClick }) {
       border: `1px ${an && folgenlos ? "dashed" : "solid"} ${an ? (folgenlos ? C.line : C.mint + "66") : C.line}`,
     }}>
       <span style={{ fontWeight: 700 }}>{label}</span>
-      <span style={{ fontFamily: MONO, fontSize: 11, opacity: 0.75 }}>{zusatz}</span>
+      <span style={{ fontFamily: MONO, fontSize: "0.6875rem", opacity: 0.75 }}>{zusatz}</span>
     </button>
   );
 }

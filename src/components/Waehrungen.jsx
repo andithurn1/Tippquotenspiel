@@ -39,7 +39,7 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
     return (
       <div style={{
         display: "flex", alignItems: "center", gap: 10,
-        fontFamily: MONO, fontSize: 11, color: C.muted,
+        fontFamily: MONO, fontSize: "0.6875rem", color: C.muted,
       }}>
         {muenzenKompaktZeigen && (
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -66,20 +66,20 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
       {stand && (
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+            <span style={{ fontSize: "0.75rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
               🪙 Münzen — {stand.periodeLabel ?? `Spieltag ${stand.spieltag?.matchday ?? "?"}`}
             </span>
             {stand.aktiv !== false && (
-              <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>
+              <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.akzent }}>
                 {zahl(stand.frei)} frei
               </span>
             )}
           </div>
           {stand.aktiv === false ? (
-            <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{stand.grund}</div>
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4 }}>{stand.grund}</div>
           ) : (
             <>
-              <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>
+              <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4 }}>
                 {zahl(stand.verteilt)} von {zahl(stand.budget)} Münzen verteilt
               </div>
               <div style={{ position: "relative", height: 6, borderRadius: RUND.pille, background: C.line, marginTop: 5 }}>
@@ -94,10 +94,10 @@ export default function Waehrungen({ stand, narren, kompakt = false }) {
       )}
       {narren != null && (
         <div style={{ marginTop: stand ? 10 : 0, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontSize: 12, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+          <span style={{ fontSize: "0.75rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
             🃏 Narren
           </span>
-          <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>{zahl(narren)}</span>
+          <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.akzent }}>{zahl(narren)}</span>
         </div>
       )}
     </div>

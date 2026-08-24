@@ -146,6 +146,43 @@ export const SANS = "system-ui, -apple-system, 'Segoe UI', sans-serif";
 // zwei Schichten, ein Wert (Kopf von `cssVariablen.js`).
 export const RUND = { pille: 999, karte: 12, schirm: 26, klein: 4 };
 
+// ── 🔴 DIE SCHRIFT-LEITER (24.08.2026) ──────────────────────
+//
+// Andis Frage: „wenn man das dann als App für Android und iOS rausbringt,
+// passt sich das dann an jedes Modell richtig professionell an?"
+//
+// Gemessen war die Antwort nein: **1202 Schriftgrößen standen in px, null in
+// rem.** Eine px-Größe ist absolut — sie ignoriert, was jemand am Gerät unter
+// „Schrift größer" eingestellt hat. Auf iOS ist „Dynamic Type wird nicht
+// unterstützt" ein bekannter Ablehnungsgrund im App-Review, auf Android eine
+// Barrierefreiheits-Lücke. Und es trifft genau die Leute, die es am nötigsten
+// haben.
+//
+// ⚠️ **Die Werte sind dieselben wie vorher**, nur relativ ausgedrückt: 16 px
+// ist die Vorgabe jedes Browsers, also ist `1rem = 16px`, solange niemand
+// etwas verstellt. Wer nichts einstellt, sieht exakt dasselbe wie bisher —
+// das ist der ganze Punkt, und deshalb war die Umstellung mechanisch möglich.
+//
+// Die Stufen sind Apples eigene (G3, 21.08.2026); von 1210 gemessenen Stellen
+// lagen 1198 bereits darauf.
+export const TEXT = {
+  caption2: "0.6875rem",   // 11 — Kürzel, Zähler, Fußnoten in Mono
+  caption1: "0.75rem",     // 12 — Beschriftungen über Gruppen
+  footnote: "0.8125rem",   // 13 — Erklärsätze unter einer Zeile
+  subhead:  "0.9375rem",   // 15 — Fließtext, Eingabefelder
+  callout:  "1rem",        // 16 — hervorgehobener Fließtext
+  body:     "1.0625rem",   // 17 — Apples Grundmaß
+  title3:   "1.25rem",     // 20 — Karten-Überschrift
+  title2:   "1.375rem",    // 22
+  title1:   "1.75rem",     // 28 — Screen-Titel
+};
+
+// ⚠️ Umrechnung für die Stellen, die eine echte ZAHL brauchen (SVG-Attribute,
+// Rechnungen). Nicht für Stile — dort gehört ein Wert aus `TEXT` hin, sonst
+// entsteht wieder eine zweite Leiter, wie sie G2 bei den Radien zutage
+// gefördert hat (`--tqs-rund-karte` 16 gegen `RUND.karte` 12).
+export const px = (rem) => Math.round(parseFloat(rem) * 16);
+
 // ── Datenreihen-Farben (Plots) ──────────────────────────────
 // Bewusst gut unterscheidbare Farbtöne, hell auf dunklem Grund. Reihenfolge
 // ist die Vergabereihenfolge — die ersten sind am besten unterscheidbar.

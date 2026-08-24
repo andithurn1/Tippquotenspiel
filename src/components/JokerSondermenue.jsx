@@ -196,7 +196,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
         <div style={{
           background: `${C.mint}12`, border: `1px solid ${C.mint}33`,
           borderRadius: RUND.karte, padding: "10px 13px", marginBottom: 10,
-          fontSize: 12, color: C.mint, lineHeight: 1.5,
+          fontSize: "0.75rem", color: C.mint, lineHeight: 1.5,
         }}>
           {zusammenfassung}
         </div>
@@ -211,8 +211,8 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
             background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`,
             borderRadius: RUND.karte, padding: "13px 15px", marginBottom: 8,
           }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
-            <p style={{ fontSize: 12, color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
+            <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
+            <p style={{ fontSize: "0.75rem", color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
               Es genügt, wenn <strong>du als Admin</strong> Premium hast — die ganze
               Runde kann dann gewichten. Alle anderen Regler bleiben frei nutzbar.
             </p>
@@ -234,13 +234,13 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                   const on = j.modus === m.key;
                   return (
                     <button key={m.key} onClick={() => setzeJoker({ modus: m.key })} style={{
-                      cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
+                      cursor: "pointer", fontSize: "0.75rem", fontFamily: "inherit", padding: "8px 12px",
                       borderRadius: RUND.karte, flex: 1, textAlign: "left",
                       background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
                       border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                     }}>
                       <div style={{ fontWeight: 700 }}>{m.label}</div>
-                      <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>{m.hint}</div>
+                      <div style={{ fontSize: "0.6875rem", opacity: 0.8, marginTop: 2 }}>{m.hint}</div>
                     </button>
                   );
                 })}
@@ -251,8 +251,8 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                 etwas markieren muss. Hier nur die SCHALTER — die Stärke steht
                 in Karte B, weil das die Frage „wie stark" ist. */}
             <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 12, paddingTop: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Weitere Joker-Arten</div>
-              <p style={{ fontSize: 11, color: C.muted, marginTop: 0, marginBottom: 8, lineHeight: 1.4 }}>
+              <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Weitere Joker-Arten</div>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 0, marginBottom: 8, lineHeight: 1.4 }}>
                 Greifen von allein, ohne dass jemand etwas markieren muss. Ihre
                 Aufschläge werden <strong>addiert</strong> und vom Deckel begrenzt.
               </p>
@@ -260,7 +260,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                 onChange={(on) => setzeJoker({ heimat: { ...jh, enabled: on } })} />
               <Toggle label="Mut-Bonus — gegen den Favoriten, und du behältst recht" on={jm.enabled === true}
                 onChange={(on) => setzeJoker({ mut: { ...jm, enabled: on } })} />
-              <p style={{ fontSize: 11, color: C.muted, marginTop: -2, lineHeight: 1.4 }}>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: -2, lineHeight: 1.4 }}>
                 Wie stark die beiden wirken, steht in <strong>Wie stark wirken sie?</strong>
               </p>
             </div>
@@ -285,13 +285,13 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
         wert={standB} offen={karte === "B"} onClick={() => auf("B")}>
 
         {!premium || !j.enabled ? (
-          <p style={{ fontSize: 12, color: C.muted, margin: "4px 0", lineHeight: 1.5 }}>
+          <p style={{ fontSize: "0.75rem", color: C.muted, margin: "4px 0", lineHeight: 1.5 }}>
             Die Gewichtung ist aus — es gibt nichts zu stärken. Einschalten in
             <strong> Welche Joker gibt es?</strong>
           </p>
         ) : (
           <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}` }}>
-            <p style={{ fontSize: 12, color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.4 }}>
+            <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.4 }}>
               Der Faktor greift auf die fertige Wertung — Ergebnis <em>und</em> Torschützen
               zusammen — und wirkt in beide Richtungen: ein gewichtetes Spiel, das
               danebengeht, tut auch mehr weh.
@@ -319,7 +319,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
             {j.modus === "ranking" && (
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-                  <span style={{ fontSize: 13, color: C.muted }}>Stufen</span>
+                  <span style={{ fontSize: "0.8125rem", color: C.muted }}>Stufen</span>
                   <Stepper value={j.faktoren.length} min={L.joker.anzahlFaktoren.min} max={L.joker.anzahlFaktoren.max}
                     onStep={(d) => {
                       const n = Math.min(L.joker.anzahlFaktoren.max, Math.max(L.joker.anzahlFaktoren.min, j.faktoren.length + d));
@@ -329,14 +329,14 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
                   {j.faktoren.map((f) => (
                     <span key={f} style={{
-                      ...TAPZIEL, fontSize: 12, fontFamily: MONO, padding: "5px 10px", borderRadius: RUND.pille,
+                      ...TAPZIEL, fontSize: "0.75rem", fontFamily: MONO, padding: "5px 10px", borderRadius: RUND.pille,
                       background: f > 1 ? `${C.akzent}18` : C.surface,
                       color: f > 1 ? C.akzent : C.muted,
                       border: `1px solid ${f > 1 ? C.akzent + "44" : C.line}`,
                     }}>{fmtFaktor(f)}</span>
                   ))}
                 </div>
-                <p style={{ fontSize: 11, color: C.muted, marginBottom: 8, lineHeight: 1.4 }}>
+                <p style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 8, lineHeight: 1.4 }}>
                   Jedes Gewicht darf pro Spieltag nur <strong>einmal</strong> vergeben werden —
                   alle haben denselben Pool, die Verteilung ist die Kunst. Übrige Spiele zählen ×1,0.
                 </p>
@@ -396,7 +396,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
 
                 <Toggle label="Spiele auslassen erlaubt" on={j.skippenErlaubt !== false}
                   onChange={(on) => setzeJoker({ skippenErlaubt: on })} />
-                <p style={{ fontSize: 11, color: C.muted, marginTop: -4, marginBottom: 8, lineHeight: 1.4 }}>
+                <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: -4, marginBottom: 8, lineHeight: 1.4 }}>
                   Erlaubt: ein Spiel mit Einsatz 0 tippen, ohne den Mindesteinsatz zu verletzen —
                   die Poker-Blind-Lesart „entweder gar nicht, oder mindestens so viel".
                 </p>
@@ -410,12 +410,12 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                     padding: "10px 12px", marginBottom: 10,
                   }}>
                     {einsatzKonfliktListe.map((k) => (
-                      <div key={k.key} style={{ fontSize: 12, color: C.muted, lineHeight: 1.45, marginBottom: 4 }}>
+                      <div key={k.key} style={{ fontSize: "0.75rem", color: C.muted, lineHeight: 1.45, marginBottom: 4 }}>
                         {k.text}
                       </div>
                     ))}
                     {einsatzSpieleTypisch != null && (
-                      <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
                         {spieltageJePeriode > 1
                           ? <>Angenommen bei etwa {einsatzSpieleTypisch} Spielen je Spieltag, macht das rund{" "}
                               {einsatzSpieleJePeriode} Spiele über die {spieltageJePeriode} Spieltage einer
@@ -438,7 +438,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                   value={jh.faktor ?? 1.2}
                   onChange={(e) => setzeJoker({ heimat: { ...jh, faktor: Number(e.target.value) } })}
                   style={{ width: "100%", accentColor: C.akzent }} />
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
                   Jeder wählt seinen Verein selbst. Wirkt symmetrisch — auch auf
                   Minuspunkte, denn Fans tippen ihr Team gern zu optimistisch.
                 </div>
@@ -452,7 +452,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                   value={jm.faktor ?? 1.1}
                   onChange={(e) => setzeJoker({ mut: { ...jm, faktor: Number(e.target.value) } })}
                   style={{ width: "100%", accentColor: C.akzent }} />
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
                   Zahlt nur, wenn der mutige Tipp <strong>aufgeht</strong> — sonst würde
                   blindes Dagegenhalten belohnt. Deshalb auch die engere Obergrenze
                   (×{L.joker.mutFaktor.max}): darüber gewinnt in der Simulation der Zocker.
@@ -462,7 +462,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
 
             {duell.enabled && (
               <p style={{
-                fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.45,
+                fontSize: "0.6875rem", color: C.muted, marginTop: 10, lineHeight: 1.45,
                 borderTop: `1px solid ${C.line}`, paddingTop: 8,
               }}>
                 Wie viel ein <strong>Fremdjoker</strong> klaut oder blockt, steht bei ihm
@@ -477,13 +477,13 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
       <GrosseZeile icon="🎁" titel="Woher kommen sie?" unter="geschenkt · gekauft · erspielt"
         wert={standC} offen={karte === "C"} onClick={() => auf("C")}>
 
-        <p style={{ fontSize: 12, color: C.muted, marginTop: 4, marginBottom: 10, lineHeight: 1.45 }}>
+        <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, marginBottom: 10, lineHeight: 1.45 }}>
           Drei Wege nebeneinander, jeder einzeln zuschaltbar. Wer keinen davon
           einschaltet, spielt reines Quotentippen.
         </p>
 
         {/* ── geschenkt ── */}
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Geschenkt — vom Admin verteilt</div>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 6 }}>Geschenkt — vom Admin verteilt</div>
         {j.enabled ? (
           <>
             <JokerVerteilung verteilung={j.verteilung}
@@ -497,14 +497,14 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                 <>
                   <Toggle label="Spieltage gemeinsam abstimmen" on={j.abstimmung === true}
                     onChange={(on) => setzeJoker({ abstimmung: on })} />
-                  <p style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
+                  <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>
                     {j.abstimmung
                       ? "Die Runde stimmt ab: Joker gibt es nur an Spieltagen mit Mehrheit."
                       : "Aus = Joker an jedem Spieltag. An = die Runde entscheidet per Mehrheit, welche Spieltage einen Joker bekommen."}
                   </p>
                 </>
               ) : (
-                <p style={{ fontSize: 11, color: C.muted, margin: 0, lineHeight: 1.4 }}>
+                <p style={{ fontSize: "0.6875rem", color: C.muted, margin: 0, lineHeight: 1.4 }}>
                   Die Abstimmung über Joker-Spieltage entfällt — du hast die Verteilung
                   oben schon festgelegt. Für eine Abstimmung wieder auf <strong>Frei</strong> stellen.
                 </p>
@@ -512,7 +512,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
             </div>
           </>
         ) : (
-          <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
             Die Gewichtung ist aus — es wird nichts verteilt.
           </p>
         )}
@@ -571,7 +571,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                       background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
                       border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                     }}>
-                      <div style={{ fontSize: 12, fontWeight: 700 }}>{t.label}</div>
+                      <div style={{ fontSize: "0.75rem", fontWeight: 700 }}>{t.label}</div>
                     </button>
                   );
                 })}
@@ -585,7 +585,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
 
             {j.einsatzTakt === "phase" && (
               <div style={{ marginTop: 8 }}>
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Saison-Fenster</div>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 6 }}>Saison-Fenster</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {PHASEN.map((p) => {
                     const an = (j.einsatzFenster?.phase ?? "letztesDrittel") === p.key;
@@ -596,8 +596,8 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                         border: `1px solid ${an ? C.akzent + "66" : C.line}`,
                         ...TAPZIEL, borderRadius: RUND.karte, padding: "9px 12px",
                       }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{p.label}</div>
-                        <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
+                        <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: an ? C.akzent : C.text }}>{p.label}</div>
+                        <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{p.desc}</div>
                       </button>
                     );
                   })}
@@ -623,12 +623,12 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
                 SPIELTAG) übergeben, NICHT `einsatzSpieleJePeriode` —
                 `beschreibeMuenzTakt` rechnet die Periode selbst hoch. Die
                 bereits hochgerechnete Zahl würde ein zweites Mal multipliziert. */}
-            <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
               {beschreibeMuenzTakt(rules, { spieltage: spieltageGesamt, spieleJeSpieltag: einsatzSpieleTypisch })}
             </p>
           </>
         ) : (
-          <p style={{ fontSize: 12, color: C.muted, marginTop: 4, marginBottom: 10, lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, marginBottom: 10, lineHeight: 1.45 }}>
             Ein Joker gilt für den Spieltag, an dem er gesetzt wird — er wird mit dem
             Tipp abgegeben und friert beim Anpfiff ein. Einen eigenen Takt gibt es nur
             im <strong>Einsatz</strong>-Modus (Münzen), einzustellen in
@@ -641,7 +641,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
             (zwei Wahrheiten) steht hier, wo sie zu finden sind. */}
         <div style={{
           borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 10,
-          fontSize: 11, color: C.muted, lineHeight: 1.6,
+          fontSize: "0.6875rem", color: C.muted, lineHeight: 1.6,
         }}>
           <strong style={{ color: C.text }}>Weitere Fristen, dort wo sie hingehören:</strong>
           <div>· <strong>Verfall · Widerruf · Abklingzeit</strong> je Joker-Art → <em>Wo sind die Grenzen?</em>, Grundform</div>
@@ -655,7 +655,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
       <GrosseZeile icon="🛡️" titel="Wo sind die Grenzen?" unter="Grundform, Kontingente, Bedingungen"
         wert={standE} offen={karte === "E"} onClick={() => auf("E")}>
 
-        <p style={{ fontSize: 12, color: C.muted, marginTop: 4, marginBottom: 10, lineHeight: 1.45 }}>
+        <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, marginBottom: 10, lineHeight: 1.45 }}>
           Was ein Joker höchstens darf — und worauf er überhaupt gilt. Diese Karte
           ist der Grund, warum ein Baukasten nicht zum Selbstbedienungsladen wird.
         </p>
@@ -672,7 +672,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
         </GrosseZeile>
 
         {duell.enabled && (
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
             Die Schutzregeln der <strong>Fremdjoker</strong> (max. je Ziel, Schonfrist,
             Zielwahl, Punkte-Deckel) stehen bei ihnen selbst — in
             <strong> Welche Joker gibt es?</strong>, Zeile „Fremdjoker".

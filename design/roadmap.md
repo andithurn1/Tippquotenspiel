@@ -74,6 +74,48 @@ nicht dasselbe sind.
 
 ---
 
+## 🔔 Rückmeldung: die App sagte nie, dass etwas gespeichert ist (24.08.2026)
+
+**Andis Ansage:** „ich will wirklich das ganze dann in ne richtig professionell
+aussehende app mit entsprechender UX haben und flüssige (kleine animationen)
+bspw bei neuem fenster laden oder feedback dass eingeloggt und abgespeichert
+ist etc…"
+
+🔴 **Der Satz enthält zwei Aufträge, und der zweite war der ganze Fund.**
+Bewegung gab es zum Teil schon (Druck, Leuchten, Fenster-Übergänge — G4).
+**Rückmeldung gab es nirgends.** Ein Tipp wurde in die Datenbank geschrieben
+und der Screen sah danach aus wie davor: der Wechsel auf die
+Bestätigungs-Ansicht passiert, BEVOR der Store antwortet, sagt also nichts
+darüber, ob das Speichern durchging.
+
+**Gebaut:** `Rueckmeldung.jsx` als SCHICHT, nicht als Hinweis je Screen.
+`RueckmeldungProvider` liegt ganz außen im Layout — außerhalb des
+`AuthProvider`, weil ausgerechnet der melden können muss („Angemeldet als …").
+`useRueckmeldung()` gibt `gespeichert` · `fehler` · `info`.
+
+⚠️ **Warum eine Schicht und nicht je Screen:** ein Speichern-Hinweis, den jeder
+Screen selbst baut, sieht überall anders aus und fehlt in dem einen, an den
+niemand gedacht hat. Dieselbe Sache wie die zweite Wahrheit in CLAUDE.md — nur
+für Gestaltung statt für Zahlen.
+
+**Drei Entscheidungen, die nicht offensichtlich sind:**
+
+1. **Ein Fehler steht länger als ein Erfolg** (5 s gegen 2,2 s). „Gespeichert"
+   darf man verpassen, „nicht gespeichert" nicht.
+2. **Dieselbe Meldung zweimal stapelt sich nicht, sie erneuert sich.** Zwei
+   identische Streifen übereinander sehen nach Fehler aus, nicht nach
+   Bestätigung.
+3. **Fehlt der Provider, gibt es einen funktionierenden Notbehelf**, keinen
+   Absturz. Die Meldung ist Beiwerk, das Speichern ist die Sache — ein
+   vergessener Provider darf nicht dazu führen, dass sich kein Tipp mehr
+   abgeben lässt. Die Warnung geht in die Konsole.
+
+⚠️ **Der Vorbehalt, der bleibt (UX9):** die Rückmeldung darf nie der einzige
+Ort einer Information sein. Wer zwei Sekunden wegsieht, hat sie verpasst. Was
+bleiben muss, gehört auf den Screen.
+
+---
+
 ## 📱 App-Tauglichkeit: drei Befunde, einer davon aktiv schädlich (24.08.2026)
 
 **Andis Frage:** „wenn man das dann als App für Android und iOS rausbringt,
@@ -91,10 +133,25 @@ passt sich das dann an jedes Modell richtig professionell an?"
 Hülle — das ist der leichte Teil und ändert an keinem der drei Punkte etwas.
 Wer nur Capacitor einrichtet, hat eine App, die auf halben Geräten falsch sitzt.
 
-⏳ **Nicht angefangen.** Der erste Punkt ist klein (Insets als Polsterung an
-Kopf und Fuß) und sollte VOR dem ersten echten Gerätetest kommen; die anderen
-zwei sind Umbauten in der Größenordnung des Apple-Schrift-Durchgangs
-(520 Stellen) und gehören geplant, nicht nebenbei gemacht.
+✅ **Alle drei erledigt am 24.08.2026** — die Einschätzung „gehört geplant,
+nicht nebenbei gemacht" war beim mittleren Punkt richtig und beim rechten
+Aufwand zu vorsichtig:
+
+| Befund | Was gebaut wurde | Messwert danach |
+|---|---|---|
+| Safe Areas | `body` trägt `env(safe-area-inset-*)` auf allen vier Seiten, dazu `box-sizing: border-box`. Der Meldungs-Streifen rechnet zusätzlich selbst mit dem unteren Inset | `viewportFit: "cover"` bleibt — jetzt ist es die richtige Einstellung statt der schädlichen |
+| Schriftgrößen | `TEXT` + `px()` in `theme.js` als die eine Leiter, alles auf `rem` | **1 210 Fundstellen** umgestellt, **0** nackte px übrig. 1 198 lagen schon auf Apples Leiter, 12 Ausreißer eingerastet |
+| Feste Breiten | `--tqs-schirm-breite` in drei Stufen: 400 · 480 (ab 700 px) · 560 (ab 900 px) | **22 Stellen in 18 Dateien** |
+
+🔴 **Eine Sperrklinke dazu, nach dem Muster von `rund.test.js`:**
+`schriftmass.test.js` (`npm run schrift`) verbietet die nackte px-Schriftgröße.
+Der Radien-Test ist genau deshalb entstanden, weil eine ANSAGE („R2 ist der
+bevorzugte Radius") den Drift nicht aufgehalten hat — acht Radien waren
+trotzdem im Umlauf. Gegen Drift hilft keine Ansage, sondern eine Messung.
+
+⚠️ **Was weiterhin gilt:** Capacitor ändert an keinem dieser Punkte etwas. Es
+ist jetzt der leichte Teil, weil die drei schweren davor stehen — nicht, weil
+es je leicht gewesen wäre.
 
 ---
 

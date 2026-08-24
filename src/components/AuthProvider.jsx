@@ -1,11 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { hasSupabaseEnv, getSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { getStore } from "@/lib/store";
 import { DEMO_ROUND_ID } from "@/lib/constants";
 import { DEMO_USER } from "@/lib/session";
 import { leseAnmeldung } from "@/lib/anmeldung";
+import { useRueckmeldung } from "@/components/Rueckmeldung";
 
 // ── Auth-Context: EINE Quelle für den eingeloggten Nutzer ────
 // Mock-Betrieb (keine Supabase-Env): immer der Demo-Nutzer „Du".
@@ -37,6 +38,16 @@ const mapUser = (u) => ({
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(hasSupabaseEnv ? null : DEMO_USER);
   const [loading, setLoading] = useState(hasSupabaseEnv);
+  const melder = useRueckmeldung();
+  // ⚠️ In einem Ref und nicht in der Abhängigkeitsliste des Effekts: sonst
+  // würde sich der Auth-Listener bei jeder neuen Meldung neu aufhängen — und
+  // ein Listener, der sich beim Melden abmeldet, verpasst das nächste Ereignis.
+  const melderRef = useRef(melder);
+  melderRef.current = melder;
+  // Merkt sich, wer schon begrüßt wurde. `onAuthStateChange` feuert auch beim
+  // stillen Erneuern des Tokens — ohne diese Sperre stünde alle paar Minuten
+  // „Angemeldet als …" auf dem Schirm.
+  const begruesst = useRef(null);
 
   useEffect(() => {
     if (!hasSupabaseEnv) return; // Mock: Demo-Nutzer bleibt bestehen
@@ -44,7 +55,15 @@ export default function AuthProvider({ children }) {
 
     const apply = (sessionUser) => {
       if (!sessionUser) { setUser(null); return; }
-      setUser(mapUser(sessionUser));
+      const abgebildet = mapUser(sessionUser);
+      setUser(abgebildet);
+      // 🔴 Andis „feedback dass eingeloggt … ist" (24.08.2026). Genau hier und
+      // nicht im Login-Screen: der Weg über den Magic-Link kommt gar nicht
+      // durch das Formular zurück, sondern durch diesen Listener.
+      if (begruesst.current !== sessionUser.id) {
+        begruesst.current = sessionUser.id;
+        melderRef.current.gespeichert(`Angemeldet als ${abgebildet.name}`);
+      }
       // Auto-Beitritt zur Runde (idempotent); Fehler still schlucken.
       getStore().joinRound?.({ roundId: DEMO_ROUND_ID, userId: sessionUser.id }).catch(() => {});
     };
@@ -108,6 +127,9 @@ export default function AuthProvider({ children }) {
     const sb = getSupabaseBrowserClient();
     await sb?.auth.signOut();
     setUser(null);
+    // Zurücksetzen, sonst bliebe die nächste Anmeldung DESSELBEN Kontos stumm.
+    begruesst.current = null;
+    melder.info("Abgemeldet");
   };
 
   // Anzeigenamen setzen/ändern — sowohl in den Auth-Metadaten (Quelle für

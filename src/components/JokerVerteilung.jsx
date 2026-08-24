@@ -27,8 +27,8 @@ export default function JokerVerteilung({ verteilung, onChange }) {
 
   return (
     <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 12 }}>
-      <div style={{ fontSize: 13, fontWeight: 700 }}>Wann gibt es einen Joker?</div>
-      <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
+      <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Wann gibt es einen Joker?</div>
+      <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
         {beschreibeVerteilung(v, SPIELTAGE)}
       </p>
 
@@ -42,8 +42,8 @@ export default function JokerVerteilung({ verteilung, onChange }) {
               border: `1px solid ${an ? C.akzent + "66" : C.line}`,
               borderRadius: RUND.karte, padding: "9px 12px",
             }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
+              <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: an ? C.akzent : C.text }}>{m.label}</div>
+              <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
             </button>
           );
         })}
@@ -53,8 +53,8 @@ export default function JokerVerteilung({ verteilung, onChange }) {
         <>
           <div style={{ marginTop: 13 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
-              <span style={{ fontSize: 13 }}>Etwa jeder {v.frequenz}. Spieltag</span>
-              <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>
+              <span style={{ fontSize: "0.8125rem" }}>Etwa jeder {v.frequenz}. Spieltag</span>
+              <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.akzent }}>
                 {kontingent(SPIELTAGE, v.frequenz)} Joker
               </span>
             </div>
@@ -72,7 +72,7 @@ export default function JokerVerteilung({ verteilung, onChange }) {
           {v.modus === "kontingent" && (
             <>
               <Leiste titel="…und ein anderer" tage={plan.proSpieler[BEISPIEL[1]]} gedimmt />
-              <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
                 Gleich viele Joker für jeden, nur zu anderen Zeitpunkten. Mitten in
                 der Saison hat deshalb nicht jeder gleich viele gehabt — angezeigt
                 wird darum immer der Fortschritt („3 von {plan.anzahl}"), nie eine
@@ -82,14 +82,14 @@ export default function JokerVerteilung({ verteilung, onChange }) {
           )}
 
           <div style={{ marginTop: 13 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Wer sieht die Spieltage?</div>
+            <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 6 }}>Wer sieht die Spieltage?</div>
             <div style={{ display: "flex", gap: 6 }}>
               {SICHTBARKEIT.map((s) => {
                 const an = v.sichtbarkeit === s.key;
                 return (
                   <button key={s.key} onClick={() => patch({ sichtbarkeit: s.key })} style={{
                     ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
-                    borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
+                    borderRadius: RUND.karte, fontSize: "0.75rem", fontWeight: 700,
                     background: an ? `${C.akzent}22` : C.surface,
                     color: an ? C.akzent : C.muted,
                     border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -97,7 +97,7 @@ export default function JokerVerteilung({ verteilung, onChange }) {
                 );
               })}
             </div>
-            <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
               {SICHTBARKEIT.find((s) => s.key === v.sichtbarkeit)?.desc}
             </p>
           </div>
@@ -114,7 +114,7 @@ function Leiste({ titel, tage = [], gedimmt = false }) {
   return (
     <div style={{ marginTop: 11 }}>
       <div style={{
-        fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted,
+        fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.2, color: C.muted,
         textTransform: "uppercase", marginBottom: 5,
       }}>{titel}</div>
       <div style={{ display: "flex", gap: 2 }}>
@@ -131,7 +131,7 @@ function Leiste({ titel, tage = [], gedimmt = false }) {
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
         {[1, 9, 17, 25, 34].map((md) => (
-          <span key={md} style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>{md}</span>
+          <span key={md} style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>{md}</span>
         ))}
       </div>
     </div>

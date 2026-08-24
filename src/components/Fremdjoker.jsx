@@ -131,16 +131,16 @@ export default function Fremdjoker({ rules, onChange }) {
       // wird — 44 hoch, 40 breit. `TAPZIEL` setzt bewusst nur die HÖHE (die
       // Begründung steht in `tapziel.js`), und bei langen Beschriftungen genügt
       // das auch. Bei zwei Buchstaben nicht.
-      ...TAPZIEL_QUADRAT, cursor: "pointer", padding: "5px 11px", fontSize: 12, fontWeight: aktiv ? 700 : 500,
+      ...TAPZIEL_QUADRAT, cursor: "pointer", padding: "5px 11px", fontSize: "0.75rem", fontWeight: aktiv ? 700 : 500,
     }}>{text}</button>
   );
 
   const Block = ({ titel, hinweis: hint, children }) => (
     <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 12, color: C.muted, marginBottom: 5 }}>{titel}</div>
+      <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 5 }}>{titel}</div>
       {children}
       {hint && (
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>{hint}</div>
+        <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>{hint}</div>
       )}
     </div>
   );
@@ -164,7 +164,7 @@ export default function Fremdjoker({ rules, onChange }) {
   return (
     <div>
       {/* ── 1) JK7: der eine Griff ── */}
-      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Vier Joker in den Tipp eines <strong>anderen</strong>: blocken, klauen,
         mitprofitieren, dagegen wetten. Ein Griff für die ganze Familie —
         Büro-Runde aus, Freundesrunde an.
@@ -180,7 +180,7 @@ export default function Fremdjoker({ rules, onChange }) {
       {/* Die eine Auskunft über die Familie — `aktiveArten` ist die EINZIGE
           Stelle, an der „welche Fremdjoker laufen gerade?" beantwortet wird.
           Hier nachzuzählen wäre die zweite Wahrheit (Runden-Schicht, CLAUDE.md). */}
-      <div style={{ fontFamily: MONO, fontSize: 11, color: an ? C.akzent : C.muted, marginTop: 6 }}>
+      <div style={{ fontFamily: MONO, fontSize: "0.6875rem", color: an ? C.akzent : C.muted, marginTop: 6 }}>
         {arten.length} von {FREMDJOKER_ARTEN.length} Arten aktiv
         {arten.length > 0 && `: ${arten.map((k) => FREMDJOKER_ARTEN.find((a) => a.key === k).label).join(" · ")}`}
       </div>
@@ -193,7 +193,7 @@ export default function Fremdjoker({ rules, onChange }) {
         <div style={{
           border: `1px solid ${C.coral}`, background: `${C.coral}12`,
           borderRadius: RUND.karte, padding: "10px 13px", marginTop: 10,
-          fontSize: 12, color: C.coral, lineHeight: 1.5,
+          fontSize: "0.75rem", color: C.coral, lineHeight: 1.5,
         }}>
           {hinweis}
         </div>
@@ -203,7 +203,7 @@ export default function Fremdjoker({ rules, onChange }) {
              Korrektur-Knopf würde eine Runde umschreiben, die der Admin so
              gewollt haben könnte. ── */}
       {streit.map((k) => (
-        <div key={k.key} style={{ fontSize: 11, color: C.coral, marginTop: 6, lineHeight: 1.45 }}>
+        <div key={k.key} style={{ fontSize: "0.6875rem", color: C.coral, marginTop: 6, lineHeight: 1.45 }}>
           ⚠️ {k.text}
         </div>
       ))}
@@ -262,30 +262,30 @@ export default function Fremdjoker({ rules, onChange }) {
                   <Zahl label="Einsatz" wert={eg.gegenwette.einsatz} limits={EINGRIFF_LIMITS.einsatz}
                     breite={110} onChange={(v) => setzeGegen({ einsatz: v })} />
                 </div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                   Ohne Einsatz wäre auch eine Gegenquote von 1,01 ein Geschenk — der Einsatz ist der Preis
                   dafür, dass fast jede Gegenwette aufgeht.
                 </div>
 
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>
+                <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 10, marginBottom: 5 }}>
                   Auf welcher Genauigkeit?
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {GEGEN_STUFEN.map((s) => knopf(eg.gegenwette.stufe === s.key, s.label,
                     () => setzeGegen({ stufe: s.key }), s.key, s.desc))}
                 </div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                   {stufe?.desc}
                 </div>
 
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>
+                <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 10, marginBottom: 5 }}>
                   Woher kommt der Gewinn?
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {GEGEN_MODI.map((m) => knopf(eg.gegenwette.modus === m.key, m.label,
                     () => setzeGegen({ modus: m.key }), m.key, m.desc))}
                 </div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                   {modus?.desc}
                 </div>
               </>
@@ -323,7 +323,7 @@ export default function Fremdjoker({ rules, onChange }) {
                 marginTop: 8, paddingLeft: 10, borderLeft: `1px solid ${C.line}`,
                 display: "flex", flexDirection: "column", gap: 8,
               }}>
-                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, lineHeight: 1.45 }}>
                   Leer heißt: diese Art folgt der Zahl oben. Gespeichert wird nur, was abweicht.
                 </div>
                 {arten.map((k) => {
@@ -368,7 +368,7 @@ export default function Fremdjoker({ rules, onChange }) {
                     limits={EINGRIFF_LIMITS.hoechstens} breite={170}
                     onChange={(v) => setzeSperre(null, { hoechstens: v })} />
                 </div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
                   {verlaufText(sperreFuer(null, rules?.eingriffe))}
                 </div>
               </div>
@@ -381,30 +381,30 @@ export default function Fremdjoker({ rules, onChange }) {
           {lostAus && (
             <Block titel="Wie wird ausgelost?"
               hinweis="Du suchst dir dein Opfer nicht aus — du entscheidest, bei welchem SPIEL du zuschlägst. Jeder zieht genau einen und wird genau einmal gezogen.">
-              <div style={{ fontSize: 12, color: C.muted, marginBottom: 5 }}>Wie oft neu?</div>
+              <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 5 }}>Wie oft neu?</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {LOS_TAKTE.map((t) => knopf(losKarte.standard.takt === t.key, t.label,
                   () => setzeLos(null, { takt: t.key }), t.key, t.desc))}
               </div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+              <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                 {LOS_TAKTE.find((t) => t.key === losKarte.standard.takt)?.desc}
               </div>
 
-              <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>Gegenseitig?</div>
+              <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 10, marginBottom: 5 }}>Gegenseitig?</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {LOS_PAARE.map((t) => knopf(losKarte.standard.paare === t.key, t.label,
                   () => setzeLos(null, { paare: t.key }), t.key, t.desc))}
               </div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+              <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                 {LOS_PAARE.find((t) => t.key === losKarte.standard.paare)?.desc}
               </div>
 
-              <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>Sieht man sein Los?</div>
+              <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 10, marginBottom: 5 }}>Sieht man sein Los?</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {LOS_SICHT.map((t) => knopf(losKarte.standard.sichtbar === t.key, t.label,
                   () => setzeLos(null, { sichtbar: t.key }), t.key, t.desc))}
               </div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+              <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                 {LOS_SICHT.find((t) => t.key === losKarte.standard.sichtbar)?.desc}
               </div>
 
@@ -433,7 +433,7 @@ export default function Fremdjoker({ rules, onChange }) {
                     const eigen = losFuer(k, rules?.eingriffe);
                     return (
                       <div key={k} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 12, color: C.muted, minWidth: 108 }}>{name}</span>
+                        <span style={{ fontSize: "0.75rem", color: C.muted, minWidth: 108 }}>{name}</span>
                         {LOS_TAKTE.map((t) => knopf(eigen.takt === t.key, t.label,
                           () => setzeLos(k, { takt: t.key }), `${k}-${t.key}`, t.desc))}
                       </div>
@@ -459,7 +459,7 @@ export default function Fremdjoker({ rules, onChange }) {
 
             {schutz.proSpieltag > 0 && (
               <>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>
+                <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 10, marginBottom: 5 }}>
                   Sieht der Angreifer den Schutz?
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -468,20 +468,20 @@ export default function Fremdjoker({ rules, onChange }) {
                   {knopf(!schutz.sichtbar, "Verdeckt", () => setzeSchutz({ sichtbar: false }), "sch-aus",
                     "Der Angreifer erfährt es erst, wenn sein Einsatz verpufft ist.")}
                 </div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                   {schutz.sichtbar
                     ? "Offen: ein Fremdjoker verpufft nicht ungewarnt. Der Angreifer weiß dafür, welches Spiel dir wichtig ist."
                     : "Verdeckt: dein wichtigstes Spiel bleibt dein Geheimnis — dafür verbrennt jemand einen Einsatz für nichts."}
                 </div>
 
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 10, marginBottom: 5 }}>
+                <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 10, marginBottom: 5 }}>
                   Was wird aus dem verpufften Einsatz?
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {SCHUTZ_VERFALL.map((v) => knopf(schutz.verfall === v.key, v.label,
                     () => setzeSchutz({ verfall: v.key }), v.key, v.desc))}
                 </div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
                   {SCHUTZ_VERFALL.find((v) => v.key === schutz.verfall)?.desc}
                 </div>
               </>
@@ -489,7 +489,7 @@ export default function Fremdjoker({ rules, onChange }) {
           </Block>
 
           {/* ── 8) JK6: sichtbar und zurücknehmbar ── */}
-          <div style={{ fontSize: 11, color: C.coral, marginTop: 14, lineHeight: 1.5 }}>
+          <div style={{ fontSize: "0.6875rem", color: C.coral, marginTop: 14, lineHeight: 1.5 }}>
             🔴 Der ganze Zweck der Familie: „nimm den Block bei mir fürs Bayern-Spiel raus, ich habe da
             ein zu gutes Gefühl." Ein Eingriff, den man erst bei der Abrechnung sieht oder nicht mehr
             herausnehmen kann, leistet davon nichts — aus dem Austausch wird eine stille
@@ -525,7 +525,7 @@ export default function Fremdjoker({ rules, onChange }) {
                 marginTop: 8, paddingLeft: 10, borderLeft: `1px solid ${C.line}`,
                 display: "flex", flexDirection: "column", gap: 8,
               }}>
-                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>
+                <div style={{ fontSize: "0.6875rem", color: C.muted, lineHeight: 1.45 }}>
                   Ein Block, über den man reden kann — und eine Gegenwette, die überrascht.
                   Ohne eigene Wahl folgt jede Art dem Schalter oben.
                 </div>
@@ -535,7 +535,7 @@ export default function Fremdjoker({ rules, onChange }) {
                   const eigen = sicht[k] !== undefined;
                   return (
                     <div key={k} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 12, color: C.muted, minWidth: 108 }}>{name}</span>
+                      <span style={{ fontSize: "0.75rem", color: C.muted, minWidth: 108 }}>{name}</span>
                       {knopf(wert, "Offen", () => setzeSicht(k, true), `${k}-s-an`)}
                       {knopf(!wert, "Verborgen", () => setzeSicht(k, false), `${k}-s-aus`)}
                       {eigen && knopf(false, "zurück auf Standard",
@@ -556,17 +556,17 @@ export default function Fremdjoker({ rules, onChange }) {
               `jokerArtVon` in `eingriffe.js`. */}
           <Block titel="Bis wann zurücknehmbar?"
             hinweis="Steht in der Joker-Grundform („Widerruf“), einstellbar je Fremdjoker einzeln: bis zum Anpfiff, bis X Stunden vorher, oder gar nicht. Vorgabe ist bis zum Anpfiff — nur so kann jemand den Block bei dir noch herausnehmen.">
-            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>
+            <div style={{ fontSize: "0.75rem", color: C.muted, lineHeight: 1.45 }}>
               {ruecknahmeText}
             </div>
           </Block>
 
           {/* ── 9) Die Schlusszeile, Muster `DuellJoker.jsx` ── */}
           <p style={{
-            fontSize: 11, color: C.muted, marginTop: 12, lineHeight: 1.5,
+            fontSize: "0.6875rem", color: C.muted, marginTop: 12, lineHeight: 1.5,
             borderTop: `1px solid ${C.line}`, paddingTop: 8,
           }}>
-            <span style={{ fontFamily: MONO, fontSize: 11, color: C.coral }}>SO LIEST ES SICH: </span>
+            <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.coral }}>SO LIEST ES SICH: </span>
             {beschreibeFremdjoker(rules)}
           </p>
         </>

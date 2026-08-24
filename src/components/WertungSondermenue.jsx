@@ -80,7 +80,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
       <GrosseZeile icon="🐴" titel="Wer wird zusätzlich belohnt?" unter="Underdog-Boost &amp; Favoriten-Malus"
         wert={rules.underdogBoost > 1 || rules.favFlopPenalty > 0 ? "an" : "aus"}
         offen={karte === "underdog"} onClick={() => auf("underdog")}>
-        <p style={{ fontSize: 12, color: C.muted, marginTop: 4, marginBottom: 10, lineHeight: 1.4 }}>
+        <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, marginBottom: 10, lineHeight: 1.4 }}>
           Belohne das Vorhersagen von Überraschungen — und/oder bestrafe, wer stur auf den
           Favoriten setzt, wenn der patzt. Beide wirken nur bei echten Außenseiter-Siegen
           und werden über dieselbe Sieger-Quote skaliert.
@@ -119,7 +119,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
             {/* Wie die Namen gewählt werden. Mehr als Geschmack: bei echten
                 Marktquoten kommen die Torschützen OHNE Vereinszuordnung
                 herein — im Spiel-Modus lässt sich trotzdem tippen. */}
-            <div style={{ fontSize: 12, color: C.muted, marginTop: 6, marginBottom: 5 }}>
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 6, marginBottom: 5 }}>
               Wie viele Schützen?
             </div>
             <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
@@ -131,7 +131,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                 return (
                   <button key={m.key} title={m.hint} onClick={() => setzeGoals({ modus: m.key })} style={{
                     ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "8px 6px",
-                    borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
+                    borderRadius: RUND.karte, fontSize: "0.75rem", fontWeight: 700,
                     background: an ? `${C.sky}22` : C.surface, color: an ? C.sky : C.muted,
                     border: `1px solid ${an ? C.sky + "66" : C.line}`,
                   }}>{m.label}</button>
@@ -140,18 +140,18 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
             </div>
             {(g.modus ?? "proTeam") === "proSpiel" ? (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-                <span style={{ fontSize: 13, color: C.muted }}>Schützen pro Spiel</span>
+                <span style={{ fontSize: "0.8125rem", color: C.muted }}>Schützen pro Spiel</span>
                 <Stepper value={g.picksProSpiel} min={L.picksProSpiel.min} max={L.picksProSpiel.max}
                   onStep={(d) => setzeGoals({ picksProSpiel: Math.min(L.picksProSpiel.max, Math.max(L.picksProSpiel.min, g.picksProSpiel + d)) })} />
               </div>
             ) : (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-                <span style={{ fontSize: 13, color: C.muted }}>Picks pro Team</span>
+                <span style={{ fontSize: "0.8125rem", color: C.muted }}>Picks pro Team</span>
                 <Stepper value={g.picksPerTeam} min={L.picksPerTeam.min} max={L.picksPerTeam.max}
                   onStep={(d) => setzeGoals({ picksPerTeam: Math.min(L.picksPerTeam.max, Math.max(L.picksPerTeam.min, g.picksPerTeam + d)) })} />
               </div>
             )}
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6, lineHeight: 1.45 }}>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 6, lineHeight: 1.45 }}>
               {(g.modus ?? "proTeam") === "proSpiel"
                 ? `${g.picksProSpiel} Namen aus beiden Mannschaften zusammen — wer sie verteilt, ist euch überlassen.`
                 : `${g.picksPerTeam} Namen je Mannschaft, also ${g.picksPerTeam * 2} im Spiel.`}
@@ -167,7 +167,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
             ERGEBNIS getroffen wurde. Steht deshalb in derselben Karte wie
             die Märkte und nicht in einem eigenen Abschnitt. */}
         <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 10 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Kombi-Multiplikatoren (Tore × Ebene)</div>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 8 }}>Kombi-Multiplikatoren (Tore × Ebene)</div>
           <Slider label="bei richtiger Tendenz" value={rules.combo.tendenz} {...L.combo.tendenz} step={reglerSchritt(rules, L.combo.tendenz)}
             onChange={(v) => setzeCombo({ tendenz: v })} fmt={(x) => "×" + x.toFixed(2)} />
           <Slider label="bei richtigem Abstand" value={rules.combo.abstand} {...L.combo.abstand} step={reglerSchritt(rules, L.combo.abstand)} pfad="combo.abstand"
@@ -182,7 +182,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
           <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 12, paddingTop: 12 }}>
             <Toggle label="Seltener Schütze zählt extra" on={kombi.enabled}
               onChange={(on) => setzeKombi({ enabled: on })} />
-            <p style={{ fontSize: 11, color: C.muted, marginTop: 2, marginBottom: 8, lineHeight: 1.45 }}>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2, marginBottom: 8, lineHeight: 1.45 }}>
               Bei einem 5:1 ist klar, dass der Stürmer trifft — ein pauschaler Aufschlag
               belohnt genau das. Mit dieser Regel wächst der Kombi-Faktor mit der
               <strong> Quote des Schützen</strong>: der Innenverteidiger bringt mehr als
@@ -198,7 +198,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                       return (
                         <button key={s.key} title={s.desc} onClick={() => setzeKombi({ stufe: s.key })} style={{
                           ...TAPZIEL, flex: "1 1 110px", cursor: "pointer", fontFamily: "inherit",
-                          padding: "8px 10px", borderRadius: RUND.karte, fontSize: 12, fontWeight: 700,
+                          padding: "8px 10px", borderRadius: RUND.karte, fontSize: "0.75rem", fontWeight: 700,
                           background: an ? `${C.akzent}22` : C.surface,
                           color: an ? C.akzent : C.muted,
                           border: `1px solid ${an ? C.akzent + "66" : C.line}`,
@@ -217,7 +217,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                   onChange={(v) => setzeKombi({ maxAufschlag: v })} fmt={(x) => `+${x.toFixed(2)}`}
                   hint="Ohne ihn zahlt ein 6:0 mit Torwart-Treffer unbegrenzt." />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0" }}>
-                  <span style={{ fontSize: 13, color: C.muted }}>Wie viele Schützen müssen treffen?</span>
+                  <span style={{ fontSize: "0.8125rem", color: C.muted }}>Wie viele Schützen müssen treffen?</span>
                   <Stepper value={kombi.mindestSchuetzen}
                     min={KOMBI_LIMITS.mindestSchuetzen.min} max={KOMBI_LIMITS.mindestSchuetzen.max}
                     onStep={(d) => setzeKombi({ mindestSchuetzen: kombi.mindestSchuetzen + d })} />
@@ -226,12 +226,12 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                 {/* Live-Rechnung statt einer Zahl ohne Bedeutung — dieselbe
                     Rolle wie `anteilHinweis()` bei den Wettbewerben. */}
                 <p style={{
-                  fontSize: 12, color: C.text, lineHeight: 1.45, marginTop: 8,
+                  fontSize: "0.75rem", color: C.text, lineHeight: 1.45, marginTop: 8,
                   padding: "8px 10px", borderRadius: RUND.karte, background: C.surface, border: `1px solid ${C.line}`,
                 }}>
                   {beschreibeKombi(rules)}
                 </p>
-                <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+                <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
                   ⏳ Welche Werte hier gut sind, wird am Ende zusammen mit dem übrigen
                   Balancing entschieden. Die Mechanik steht unabhängig davon.
                 </p>
@@ -253,12 +253,12 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
             background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`, borderRadius: RUND.karte,
             padding: "9px 12px", marginBottom: 10,
           }}>
-            <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
+            <span style={{ fontSize: "0.75rem", color: C.muted, lineHeight: 1.4 }}>
               Empfohlen: <strong style={{ color: C.akzent }}>×{empfohleneSkala}</strong> — hält
               exakte Tipps bei angenehmen Werten{rules.joker?.enabled ? " (Gewichtung eingerechnet)" : ""}.
             </span>
             <button onClick={() => setze({ displayScale: empfohleneSkala })} style={{
-              cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 700,
+              cursor: "pointer", fontSize: "0.75rem", fontFamily: "inherit", fontWeight: 700,
               background: C.surface2, color: C.akzent, border: `1px solid ${C.akzent}44`,
               ...TAPZIEL, borderRadius: RUND.karte, padding: "7px 12px", whiteSpace: "nowrap",
             }}>übernehmen</button>
@@ -268,7 +268,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
         {/* ⚠️ Ab hier ist es KEINE Optik mehr. Die Skalierung oben verändert
             nur die angezeigte Zahl; die beiden hier verändern, wer gewinnt. */}
         <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 10 }}>
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.45 }}>
             Die Skalierung oben ist reine Optik. Die beiden folgenden greifen in die
             <strong> Wertung</strong> ein — sie verändern die Reihenfolge.
           </p>
@@ -289,8 +289,8 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
       <GrosseZeile icon="🔬" titel="Feinheiten" unter="Regler-Raster und der Einfluss eurer Tipps"
         wert={te.staerke > 0 ? "Totalisator" : "Markt"}
         offen={karte === "fein"} onClick={() => auf("fein")}>
-        <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, marginBottom: 4 }}>Regler-Feinheit</div>
-        <p style={{ fontSize: 12, color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.4 }}>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginTop: 4, marginBottom: 4 }}>Regler-Feinheit</div>
+        <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.4 }}>
           Wie fein sich die Multiplikator-Regler stellen lassen — eine Feineinstellung,
           keine Einstiegsfrage.
         </p>
@@ -299,13 +299,13 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
             const an = (rules.reglerFeinheit ?? DEFAULT_RULES.reglerFeinheit) === f.wert;
             return (
               <button key={f.key} onClick={() => setze({ reglerFeinheit: f.wert })} style={{
-                cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "8px 12px",
+                cursor: "pointer", fontSize: "0.75rem", fontFamily: "inherit", padding: "8px 12px",
                 borderRadius: RUND.karte, flex: "1 1 120px", textAlign: "left",
                 background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
                 border: `1px solid ${an ? C.akzent + "66" : C.line}`,
               }}>
                 <div style={{ fontWeight: 700 }}>{f.label}</div>
-                <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>{f.desc}</div>
+                <div style={{ fontSize: "0.6875rem", opacity: 0.8, marginTop: 2 }}>{f.desc}</div>
               </button>
             );
           })}
@@ -313,8 +313,8 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
 
         {/* Tipp-Einfluss auf die Quote (Totalisator-Anteil) */}
         <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 10 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Bewegt eure Runde die Quoten?</div>
-          <p style={{ fontSize: 12, color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.4 }}>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 4 }}>Bewegt eure Runde die Quoten?</div>
+          <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 0, marginBottom: 10, lineHeight: 1.4 }}>
             Normalerweise gelten allein die Marktquoten. Ihr könnt aber einstellen, dass
             eure eigenen Tipps mitzählen — wie bei einem Totalisator. <strong>Wer tippt,
             was alle tippen, bekommt dann weniger</strong>; wer sich traut, mehr.
@@ -331,7 +331,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                 const on = te.staerke === s.v;
                 return (
                   <button key={s.v} onClick={() => setzeTippEinfluss({ staerke: s.v })} style={{
-                    ...TAPZIEL, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "7px 11px", borderRadius: RUND.pille,
+                    ...TAPZIEL, cursor: "pointer", fontSize: "0.75rem", fontFamily: "inherit", padding: "7px 11px", borderRadius: RUND.pille,
                     background: on ? `${C.akzent}22` : C.surface, color: on ? C.akzent : C.muted,
                     border: `1px solid ${on ? C.akzent + "66" : C.line}`,
                   }}>{s.label}</button>
@@ -350,7 +350,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                 step={TIPPEINFLUSS_LIMITS.marktTiefe.step}
                 fmt={(v) => `${v} Mitspieler`}
                 onChange={(v) => setzeTippEinfluss({ marktTiefe: v })} />
-              <p style={{ fontSize: 11, color: C.muted, marginTop: -8, marginBottom: 12, lineHeight: 1.4 }}>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: -8, marginBottom: 12, lineHeight: 1.4 }}>
                 Kleiner Markt = eure Tipps schlagen stärker durch. Großer Markt = ihr seid
                 ein Tropfen darin, so wie ein einzelner Wetter bei einem Buchmacher.
               </p>
@@ -360,7 +360,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                 step={TIPPEINFLUSS_LIMITS.minTipper.step}
                 fmt={(v) => `${v} Tipper`}
                 onChange={(v) => setzeTippEinfluss({ minTipper: v })} />
-              <p style={{ fontSize: 11, color: C.muted, marginTop: -8, marginBottom: 10, lineHeight: 1.4 }}>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: -8, marginBottom: 10, lineHeight: 1.4 }}>
                 Darunter bleibt alles beim Markt — zu wenige Tipps wären Zufall, keine
                 Meinung.
               </p>
@@ -369,13 +369,13 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
                   Mischung" sagt niemandem etwas, „ein Tipp verschiebt 0,45 %"
                   schon. Dieselbe Rolle wie anteile() bei den Wettbewerben. */}
               <p style={{
-                fontSize: 12, color: C.text, lineHeight: 1.45,
+                fontSize: "0.75rem", color: C.text, lineHeight: 1.45,
                 padding: "8px 10px", borderRadius: RUND.karte, background: C.surface, border: `1px solid ${C.line}`,
               }}>
                 {beschreibeTippEinfluss(te, Math.max(te.minTipper, 12))}
               </p>
 
-              <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
                 Fair bleibt es durch zwei Regeln: <strong>dein eigener Tipp drückt deine
                 eigene Quote nicht</strong>, und gerechnet wird erst nach Anpfiff, wenn
                 alle Tipps da sind — früh oder spät tippen ändert also nichts. Die

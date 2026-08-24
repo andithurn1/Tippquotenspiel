@@ -7,6 +7,7 @@ import {
 } from "@/lib/bibliothek";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
+import { useGeteilte } from "@/lib/useGeteilte";
 
 // ============================================================
 //  BIBLIOTHEK — Andis PP1: „Bibliothek als eigenes Fenster"
@@ -33,7 +34,14 @@ export default function Bibliothek({ offen, onUebernehmen, onSchliessen, geladen
   const [sortierung, setSortierung] = useState("relevanz");
   const [detail, setDetail] = useState(null);    // aufgeklappter Eintrag
 
-  const alle = useMemo(() => eintraege(geladene), [geladene]);
+  // Dieselbe Quelle wie im Gesamtspiel-Fenster (`useGeteilte`). ⚠️ Zwei
+  // Bibliotheken, die verschiedene Einträge zeigen, wären genau die zweite
+  // Wahrheit, vor der CLAUDE.md warnt — nur eben für Listen statt für Zahlen.
+  const { geteilte, laedt: geteilteLaden } = useGeteilte({
+    sortierung: sortierung === "beliebt" ? "beliebt" : "neu", text, aktiv: offen,
+  });
+
+  const alle = useMemo(() => eintraege(geladene, geteilte), [geladene, geteilte]);
   const bewertungen = useMemo(() => bewerteAlle(alle), [alle]);
 
   const gefiltert = useMemo(() => {
@@ -64,15 +72,15 @@ export default function Bibliothek({ offen, onUebernehmen, onSchliessen, geladen
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontFamily: MONO, fontSize: 11, letterSpacing: 1.2, color: C.muted, textTransform: "uppercase",
+                fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1.2, color: C.muted, textTransform: "uppercase",
               }}>Bibliothek</div>
-              <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>
+              <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 3 }}>
                 {beschreibeTreffer(gefiltert.length, alle.length, text)}
               </div>
             </div>
             <button onClick={onSchliessen} aria-label="Bibliothek schließen" style={{
               ...TAPZIEL_QUADRAT, borderRadius: RUND.karte, cursor: "pointer", fontFamily: "inherit",
-              background: C.surface, color: C.muted, border: `1px solid ${C.line}`, fontSize: 18, lineHeight: 1,
+              background: C.surface, color: C.muted, border: `1px solid ${C.line}`, fontSize: "1.25rem", lineHeight: 1,
             }}>✕</button>
           </div>
 
@@ -82,7 +90,7 @@ export default function Bibliothek({ offen, onUebernehmen, onSchliessen, geladen
             style={{
               ...TAPZIEL, width: "100%", marginTop: 10, boxSizing: "border-box",
               background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-              borderRadius: RUND.karte, padding: "10px 12px", fontSize: 14,
+              borderRadius: RUND.karte, padding: "10px 12px", fontSize: "0.9375rem",
               fontFamily: "inherit", outline: "none",
             }} />
 
@@ -106,8 +114,16 @@ export default function Bibliothek({ offen, onUebernehmen, onSchliessen, geladen
 
         {/* ── Liste ── */}
         <div style={{ overflowY: "auto", padding: "10px 16px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
-          {gefiltert.length === 0 && (
-            <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.5, margin: "10px 0" }}>
+          {/* Platzhalter in Kartengröße statt Ladekreisel — der Screen
+              springt danach nicht (`.tqs-skelett`, globals.css). */}
+          {geteilteLaden && (
+            <div aria-hidden style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="tqs-skelett" style={{ height: 72 }} />
+              <div className="tqs-skelett" style={{ height: 72 }} />
+            </div>
+          )}
+          {gefiltert.length === 0 && !geteilteLaden && (
+            <p style={{ fontSize: "0.8125rem", color: C.muted, lineHeight: 1.5, margin: "10px 0" }}>
               Dafür gibt es noch nichts Fertiges. Alles, was hier fehlt, lässt
               sich in den Sondermenüs von Hand einstellen — und als Teil-Code
               teilen.
@@ -158,20 +174,20 @@ function Karte({ eintrag, bewertung, aktiv, offen, onDetail, onUebernehmen }) {
       borderRadius: RUND.karte, padding: "12px 13px",
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-        <span style={{ fontSize: 20, lineHeight: 1.1, flexShrink: 0 }}>{eintrag.emoji}</span>
+        <span style={{ fontSize: "1.25rem", lineHeight: 1.1, flexShrink: 0 }}>{eintrag.emoji}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{eintrag.label}</span>
-            <span style={{ fontSize: 11, color: C.muted }}>
+            <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: C.text }}>{eintrag.label}</span>
+            <span style={{ fontSize: "0.6875rem", color: C.muted }}>
               {artInfo?.label}{eintrag.aspekt ? ` · ${ASPEKT_LABEL[eintrag.aspekt] ?? eintrag.aspekt}` : ""}
             </span>
           </div>
           {eintrag.kurz && (
-            <div style={{ fontSize: 12, color: C.akzent, marginTop: 2 }}>{eintrag.kurz}</div>
+            <div style={{ fontSize: "0.75rem", color: C.akzent, marginTop: 2 }}>{eintrag.kurz}</div>
           )}
-          <p style={{ fontSize: 12.5, color: C.muted, margin: "4px 0 0", lineHeight: 1.45 }}>{eintrag.desc}</p>
+          <p style={{ fontSize: "0.75rem", color: C.muted, margin: "4px 0 0", lineHeight: 1.45 }}>{eintrag.desc}</p>
           {eintrag.fuer && (
-            <p style={{ fontSize: 11.5, color: C.muted, margin: "3px 0 0", lineHeight: 1.4 }}>Für {eintrag.fuer}</p>
+            <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "3px 0 0", lineHeight: 1.4 }}>Für {eintrag.fuer}</p>
           )}
         </div>
       </div>
@@ -180,7 +196,7 @@ function Karte({ eintrag, bewertung, aktiv, offen, onDetail, onUebernehmen }) {
         <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 8 }}>
           {badges.map((b) => (
             <span key={b.achse ?? b.key} title={b.desc} style={{
-              fontSize: 11, padding: "3px 8px", borderRadius: RUND.pille,
+              fontSize: "0.6875rem", padding: "3px 8px", borderRadius: RUND.pille,
               background: C.ink2, border: `1px solid ${C.line}`, color: C.text,
             }}>{b.icon} {b.label}</span>
           ))}
@@ -189,12 +205,12 @@ function Karte({ eintrag, bewertung, aktiv, offen, onDetail, onUebernehmen }) {
 
       {/* Urheber und Verbreitung — Andis „von wem" und „Popularität". */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 11, color: C.muted }}>
+        <span style={{ fontSize: "0.6875rem", color: C.muted }}>
           {eintrag.urheber === "geladen" ? "📥 von euch geladen" : "🏠 vom Haus"}
         </span>
         {v && (
           <span title="Wie viele der fünf kuratierten Runden-Ideen das benutzen — nachgerechnet, nicht gezählt."
-            style={{ fontSize: 11, color: v.von > 0 ? C.akzent : C.muted, fontFamily: MONO }}>
+            style={{ fontSize: "0.6875rem", color: v.von > 0 ? C.akzent : C.muted, fontFamily: MONO }}>
             in {v.von}/{v.gesamt} Runden-Ideen
           </span>
         )}
@@ -202,13 +218,13 @@ function Karte({ eintrag, bewertung, aktiv, offen, onDetail, onUebernehmen }) {
 
       <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
         <button onClick={onUebernehmen} style={{
-          ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+          ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", fontSize: "0.8125rem", fontWeight: 700,
           background: aktiv ? C.surface : `${C.akzent}22`, color: aktiv ? C.muted : C.akzent,
           border: `1px solid ${aktiv ? C.line : C.akzent + "66"}`, borderRadius: RUND.karte,
         }}>{aktiv ? "gilt gerade" : "Übernehmen"}</button>
         {bewertung?.kennzahlen && (
           <button onClick={onDetail} aria-expanded={offen} style={{
-            ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: 12, padding: "0 12px",
+            ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", padding: "0 12px",
             background: C.surface, color: C.muted, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
           }}>{offen ? "Zahlen aus" : "Zahlen"}</button>
         )}
@@ -226,7 +242,7 @@ function Karte({ eintrag, bewertung, aktiv, offen, onDetail, onUebernehmen }) {
             ["Torschützen", "schuetzen", "Anteil der Schützen an der Summe"],
           ].map(([label, key, hint]) => (
             <div key={key} title={hint} style={{
-              display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11.5, padding: "2px 0",
+              display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.6875rem", padding: "2px 0",
             }}>
               <span style={{ color: C.muted }}>{label}</span>
               <span style={{ fontFamily: MONO, color: C.text }}>
@@ -235,7 +251,7 @@ function Karte({ eintrag, bewertung, aktiv, offen, onDetail, onUebernehmen }) {
               </span>
             </div>
           ))}
-          <p style={{ fontSize: 10.5, color: C.muted, margin: "6px 0 0", lineHeight: 1.4 }}>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "6px 0 0", lineHeight: 1.4 }}>
             Gemessen an denselben drei Beispielspielen, die auch die Vorschau
             im Erstellen-Screen benutzt.
           </p>

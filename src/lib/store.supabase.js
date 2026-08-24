@@ -176,12 +176,17 @@ export function createSupabaseStore() {
     },
 
     // Kurzcode-Presets (Content-Creator-Codes).
-    async publishPreset({ name, rules, creatorId }) {
+    async publishPreset({ name, rules, creatorId, beschreibung, aspekt }) {
       let code = generateJoinCode();
       for (let attempt = 0; attempt < 5; attempt++) {
         const { data, error } = await sb
           .from("presets")
-          .insert({ code, name: (name ?? "").trim() || "Regelwerk", rules: sanitizeRules(rules), creator_id: creatorId })
+          .insert({
+            code, name: (name ?? "").trim() || "Regelwerk",
+            beschreibung: (beschreibung ?? "").trim() || null,
+            aspekt: aspekt ?? null,
+            rules: sanitizeRules(rules), creator_id: creatorId,
+          })
           .select()
           .single();
         if (!error) return data;
@@ -192,6 +197,41 @@ export function createSupabaseStore() {
     },
     async getPresetByCode(code) {
       return orThrow(await sb.from("presets").select("*").eq("code", (code ?? "").trim().toUpperCase()).maybeSingle());
+    },
+
+    // Die geteilten Regelwerke als LISTE — Gegenstück zu `listPresets` im
+    // Mock. Dieselbe Sortier-Sprache, damit die Bibliothek nicht wissen muss,
+    // auf welchem Store sie gerade läuft.
+    async listPresets({ sortierung = "beliebt", text = "", limit = 60 } = {}) {
+      let q = sb.from("presets").select("*");
+      const t = (text ?? "").trim();
+      if (t) {
+        // `or` mit ilike: Name, Beschreibung oder Code. Kommas im Suchtext
+        // würden den Filter-Ausdruck zerlegen, deshalb fliegen sie raus.
+        const sicher = t.replace(/[,()]/g, " ");
+        q = q.or(`name.ilike.%${sicher}%,beschreibung.ilike.%${sicher}%,code.ilike.%${sicher}%`);
+      }
+      if (sortierung === "name") q = q.order("name", { ascending: true });
+      else if (sortierung === "neu") q = q.order("created_at", { ascending: false });
+      else q = q.order("uebernahmen", { ascending: false }).order("name", { ascending: true });
+      return orThrow(await q.limit(Math.max(1, limit)));
+    },
+
+    // ⚠️ Läuft über eine SQL-Funktion (`bump_preset` in `schema.sql`), NICHT
+    // über Lesen-Rechnen-Schreiben. Zwei Übernahmen im selben Moment würden
+    // sonst als eine gezählt — und RLS lässt ein UPDATE auf ein fremdes
+    // Preset ohnehin nicht zu.
+    async merkePresetNutzung(code) {
+      const c = (code ?? "").trim().toUpperCase();
+      if (!c) return null;
+      const { data, error } = await sb.rpc("bump_preset", { p_code: c });
+      if (error) {
+        // Die Zählung ist Beiwerk. Wer ein Preset übernimmt, soll deshalb
+        // nicht scheitern — der Code ist ja gültig, nur der Zähler klemmt.
+        if (typeof console !== "undefined") console.warn("[store] bump_preset:", error.message);
+        return null;
+      }
+      return data ?? null;
     },
     async joinRound({ roundId, userId }) {
       // idempotent: bereits Mitglied → nichts tun

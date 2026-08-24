@@ -36,7 +36,7 @@ export default function Alleinstellung({ rules, onChange }) {
           {/* Die Betreuung zuerst: was bedeutet das Eingestellte konkret? */}
           <div style={{
             background: `${C.akzent}10`, border: `1px solid ${C.akzent}33`,
-            borderRadius: RUND.karte, padding: "10px 12px", fontSize: 12,
+            borderRadius: RUND.karte, padding: "10px 12px", fontSize: "0.75rem",
             color: C.text, lineHeight: 1.5, marginBottom: 12,
           }}>
             {beschreibeAlleinstellung({ alleinstellung: a })}
@@ -101,8 +101,8 @@ export default function Alleinstellung({ rules, onChange }) {
 function Feld({ titel, hint, children }) {
   return (
     <div style={{ marginTop: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{titel}</div>
-      {hint && <div style={{ fontSize: 11, color: C.muted, marginBottom: 7, lineHeight: 1.4 }}>{hint}</div>}
+      <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>{titel}</div>
+      {hint && <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 7, lineHeight: 1.4 }}>{hint}</div>}
       {children}
     </div>
   );
@@ -120,8 +120,8 @@ function Reihe({ optionen, wert, onWaehlen }) {
             background: an ? `${C.mint}18` : C.surface, color: C.text,
             border: `1px solid ${an ? C.mint + "66" : C.line}`,
           }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: an ? C.mint : C.text }}>{o.label}</div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 1, lineHeight: 1.35 }}>{o.desc}</div>
+            <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: an ? C.mint : C.text }}>{o.label}</div>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 1, lineHeight: 1.35 }}>{o.desc}</div>
           </button>
         );
       })}
@@ -136,8 +136,8 @@ function Regler({ label, wert, limits, fmt, onChange, hint }) {
   return (
     <div style={{ marginTop: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <span style={{ fontSize: 13 }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: 13, color: C.akzent }}>{fmt ? fmt(wert) : wert}</span>
+        <span style={{ fontSize: "0.8125rem" }}>{label}</span>
+        <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.akzent }}>{fmt ? fmt(wert) : wert}</span>
       </div>
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <input type="range" min={min} max={max} step={step} value={wert}
@@ -151,10 +151,10 @@ function Regler({ label, wert, limits, fmt, onChange, hint }) {
           style={{
             width: 78, minHeight: 44, boxSizing: "border-box", flexShrink: 0,
             background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: RUND.karte, padding: "8px 10px", fontSize: 13, fontFamily: MONO, outline: "none",
+            borderRadius: RUND.karte, padding: "8px 10px", fontSize: "0.8125rem", fontFamily: MONO, outline: "none",
           }} />
       </div>
-      {hint && <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{hint}</div>}
+      {hint && <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{hint}</div>}
     </div>
   );
 }
@@ -169,8 +169,8 @@ function Schalter({ an, titel, unter, onChange }) {
       border: `1px solid ${an ? C.mint + "55" : C.line}`,
     }}>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontSize: 13, fontWeight: 700 }}>{titel}</span>
-        <span style={{ display: "block", fontSize: 11, color: C.muted, marginTop: 1, lineHeight: 1.4 }}>{unter}</span>
+        <span style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700 }}>{titel}</span>
+        <span style={{ display: "block", fontSize: "0.6875rem", color: C.muted, marginTop: 1, lineHeight: 1.4 }}>{unter}</span>
       </span>
       <span style={{
         flexShrink: 0, width: 34, height: 20, borderRadius: RUND.pille,

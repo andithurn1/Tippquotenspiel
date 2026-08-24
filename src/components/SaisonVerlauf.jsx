@@ -86,15 +86,15 @@ export default function SaisonVerlauf() {
     }}>
       <div style={{ width: "100%", maxWidth: 520 }}>
         <BackLink href="/hub" label="Tippspiel" />
-        <h1 style={{ fontSize: 12, letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
+        <h1 style={{ fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase", margin: "18px 0 6px" }}>
           Saison-Fahrplan
         </h1>
 
-        {matches == null && <div style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>lädt …</div>}
+        {matches == null && <div style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted }}>lädt …</div>}
 
         {matches != null && (
           <>
-            <p style={{ fontSize: 13, color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: "0.8125rem", color: C.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
               {beschreibeFahrplan(zeilen, jetztTag)}
             </p>
 
@@ -106,7 +106,7 @@ export default function SaisonVerlauf() {
               <button onClick={() => setAlle(true)} style={{
                 marginTop: 12, width: "100%", cursor: "pointer",
                 background: C.surface2, color: C.text, border: `1px solid ${C.line}`,
-                ...TAPZIEL, borderRadius: RUND.karte, padding: "10px 0", fontSize: 13, fontFamily: "inherit",
+                ...TAPZIEL, borderRadius: RUND.karte, padding: "10px 0", fontSize: "0.8125rem", fontFamily: "inherit",
               }}>
                 Alle {zeilen.length} Spieltage zeigen
               </button>
@@ -114,7 +114,7 @@ export default function SaisonVerlauf() {
 
             {/* Was die Marken bedeuten. Ohne Legende ist ein Punkt am Rand
                 eine Frage statt einer Antwort. */}
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 14, lineHeight: 1.6 }}>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 14, lineHeight: 1.6 }}>
               <b style={{ color: C.akzent }}>🃏</b> dein Joker-Spieltag ·{" "}
               <b style={{ color: C.sky }}>🎡</b> Drehung am Rad ·{" "}
               <b style={{ color: C.mint }}>★</b> Saison-Wette öffnet oder schließt.
@@ -140,13 +140,13 @@ function Zeile({ z, jetzt }) {
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
         <span style={{
-          fontFamily: MONO, fontSize: 12, fontWeight: jetzt ? 700 : 400,
+          fontFamily: MONO, fontSize: "0.75rem", fontWeight: jetzt ? 700 : 400,
           color: jetzt ? C.akzent : C.muted, minWidth: 34,
         }}>
           ST {z.nummer}
         </span>
-        <span style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{z.label}</span>
-        <span style={{ display: "flex", gap: 5, fontSize: 13 }}>
+        <span style={{ flex: 1, minWidth: 0, fontSize: "0.8125rem" }}>{z.label}</span>
+        <span style={{ display: "flex", gap: 5, fontSize: "0.8125rem" }}>
           {z.joker && <span title="Dein Joker-Spieltag">🃏</span>}
           {z.rad && <span title="Drehung am Glücksrad">🎡</span>}
           {z.saison.length > 0 && (
@@ -156,7 +156,7 @@ function Zeile({ z, jetzt }) {
         </span>
       </div>
 
-      <div style={{ fontSize: 11, color: C.muted, marginTop: 4, display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, display: "flex", gap: 10, flexWrap: "wrap" }}>
         {/* Was hier steht, ist bewusst SPIELERSPRACHE: „3 von 9 getippt" ist
             die Antwort auf die Frage, mit der jemand herkommt. */}
         <span>
@@ -179,7 +179,7 @@ function Zeile({ z, jetzt }) {
       {/* Die Saison-Marken ausgeschrieben — ein Stern allein sagt nicht, WAS
           aufgeht, und genau danach fragt jemand an dieser Stelle. */}
       {z.saison.length > 0 && (
-        <div style={{ fontSize: 11, color: C.mint, marginTop: 4, lineHeight: 1.45 }}>
+        <div style={{ fontSize: "0.6875rem", color: C.mint, marginTop: 4, lineHeight: 1.45 }}>
           {z.saison.map((s) => `${s.label} ${s.was === "oeffnet" ? "öffnet" : "schließt"}`).join(" · ")}
         </div>
       )}
