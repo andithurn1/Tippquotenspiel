@@ -5,6 +5,7 @@ import { C, MONO, RUND } from "@/lib/theme";
 import { getStore } from "@/lib/store";
 import { PHASEN, wettbewerbeIn, wettbewerbVon, phaseVon } from "@/lib/wettbewerbe";
 import { filterSpiele, engpaesse, zusammenfassung, VERKNUEPFUNG_HINWEIS } from "@/lib/spielauswahl";
+import KoRunden from "@/components/KoRunden";
 
 // ── „Nur das Interessanteste" ───────────────────────────────
 // Welche Wettbewerbe und welche Phasen gehören zur Runde. Der Reiz daran ist
@@ -113,6 +114,12 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
           ))}
         </Gruppe>
       )}
+
+      {/* 🔴 K.-o.-Runden je Wettbewerb (SA1, Andi 24.08.2026). Steht NACH den
+          Phasen-Chips, weil es dieselbe Frage feiner stellt: die Chips oben
+          gelten für die ganze Runde, hier zählt jeder Pokal für sich. Genau
+          das Muster, das Andi für alles will — gängiges oben, Feines darunter. */}
+      <KoRunden spiele={spiele ?? {}} alle={alle} onChange={onChange} />
 
       {/* Die Zahl ist der eigentliche Punkt */}
       <div style={{
