@@ -41,7 +41,13 @@
 import { DEFAULT_RULES, sanitizeRules } from "./engine";
 import { zeitachse, rundenSpieltagVon } from "./zeitachse";
 import { wettbewerbVon } from "./wettbewerbe";
-import { duellPlan, zulaessigeZiele, einsaetzeAusTipps, DUELL_TYPEN } from "./duellJoker";
+import { duellPlan } from "./duellJoker";
+// 🔴 Seit dem 23.08.2026 hat die Familie VIER Arten (JK4), und zwei davon
+// stehen gar nicht in `rules.duell`. Alles, was „welche Art?", „welches Ziel?"
+// oder „wie viele je Spieltag?" beantwortet, kommt deshalb aus `fremdjoker.js`
+// bzw. `eingriffe.js` — die Kurzformen hier hätten zwei Arten übersehen.
+import { aktiveArten, familieAn, zulaessigeZiele, fremdEinsaetze, sperrGrund } from "./fremdjoker";
+import { FREMDJOKER_ARTEN, jokerArtVon } from "./eingriffe";
 import { duellBasis as duellBasisVon } from "./jokerBasis";
 import { jokerPlan } from "./jokerPlan";
 import { darfDuellSetzen, erspielteJoker } from "./jokerKontingent";
@@ -60,22 +66,32 @@ function hatDuell(tip) {
 // Spieltag", dann „ist das ein erlaubtes Ziel", dann „kannst du es bezahlen",
 // zuletzt die Limit-Klassen. Von grob nach fein — sonst bekommt der Nutzer die
 // Feinbegründung für ein Duell, das schon aus einem gröberen Grund nicht geht.
+// Wie oft hat jeder schon eingesetzt? Nur für `losTakt: "einsatz"` gebraucht —
+// dort wechselt das Los genau dann, wenn jemand zugeschlagen hat.
+function zaehleJeSpieler(einsaetze = []) {
+  const out = new Map();
+  for (const e of einsaetze) out.set(e.vonUserId, (out.get(e.vonUserId) ?? 0) + 1);
+  return out;
+}
+
 export async function pruefeDuellEinsatz({ store, roundId, matchId, userId, tip } = {}) {
   if (!hatDuell(tip)) return { erlaubt: true, grund: null };
 
   const round = await store.getRound(roundId);
   const rules = sanitizeRules(round?.rules ?? DEFAULT_RULES);
-  if (rules.duell?.enabled !== true) {
-    return { erlaubt: false, grund: "In dieser Runde gibt es keine Duell-Joker." };
+  if (!familieAn(rules)) {
+    return { erlaubt: false, grund: "In dieser Runde gibt es keine Fremdjoker." };
   }
 
   const ziel = tip.duell.auf;
-  const typ = tip.duell.typ ?? DUELL_TYPEN[0]?.key;
+  const erlaubteArten = aktiveArten(rules);
+  const typ = tip.duell.typ ?? erlaubteArten[0];
   if (ziel === userId) {
     return { erlaubt: false, grund: "Man kann sich nicht selbst herausfordern." };
   }
-  if (!rules.duell.typen?.includes(typ)) {
-    return { erlaubt: false, grund: `Die Duell-Art „${typ}“ ist in dieser Runde nicht erlaubt.` };
+  if (!erlaubteArten.includes(typ)) {
+    const name = FREMDJOKER_ARTEN.find((a) => a.key === typ)?.label ?? typ;
+    return { erlaubt: false, grund: `„${name}“ gibt es in dieser Runde nicht.` };
   }
 
   const [spiele, board, alleTipps, entries, spieltagsPunkte] = await Promise.all([
@@ -136,13 +152,32 @@ export async function pruefeDuellEinsatz({ store, roundId, matchId, userId, tip 
   // sich der Nutzer selbst den letzten Joker weg. Genau diese Ausnahme macht
   // der Screen auch (`meineTipsOhneAktuellen`).
   const andere = alleTipps.filter((t) => (t.match_id ?? t.matchId) !== matchId);
-  const bisherigeEinsaetze = einsaetzeAusTipps(andere.map(alsEintrag));
+  // ⚠️ MIT der Umrechnung auf den RUNDEN-Spieltag: `spieltag` (oben) ist
+  // bereits einer, und die Prüfung vergleicht beide gegeneinander. Ohne sie
+  // stünde hier in einer Runde über mehrere Wettbewerbe Liga-Spieltag gegen
+  // Runden-Spieltag — zwei Skalen, ein Vergleich (Befund vom 23.08.2026).
+  const bisherigeEinsaetze = fremdEinsaetze(andere.map(alsEintrag), rules, {
+    rundenSpieltag: (m) => rundenSpieltagVon(achse, m),
+  });
 
-  const zulaessig = zulaessigeZiele(board, userId, rules.duell, {
-    bisherigeEinsaetze, aktuellerSpieltag: spieltag,
+  // ⚠️ MIT der Art gefragt: die Sperrfrist steht je Fremdjoker (JK5, Ebene 2),
+  // also ist „ist Kemal ein erlaubtes Ziel?" ohne sie gar nicht beantwortbar.
+  // ⚠️ `seed` MUSS derselbe sein wie in der Tippabgabe (`roundId`) — sonst
+  // zöge die Prüfung ein anderes Los als der Screen, und der Spieler bekäme
+  // sein eigenes Ziel abgelehnt. Dieselbe Kante wie beim `zufall`-Auslöser.
+  const zulaessig = zulaessigeZiele(board, userId, rules, {
+    bisherigeEinsaetze, aktuellerSpieltag: spieltag, art: typ, seed,
+    einsaetzeJeSpieler: zaehleJeSpieler(bisherigeEinsaetze),
   });
   if (!zulaessig.includes(ziel)) {
-    return { erlaubt: false, grund: "Dieser Spieler ist gerade kein erlaubtes Ziel." };
+    // 🔴 Wenn es die SPERRE war, sagen wir das auch — samt „wieder frei ab".
+    // Ein „geht gerade nicht" ohne Grund liest sich wie ein Fehler, und der
+    // Spieler sucht ihn dann bei sich.
+    const grund = sperrGrund(rules, {
+      art: typ, vonUserId: userId, aufUserId: ziel, bisherigeEinsaetze,
+      aktuellerSpieltag: spieltag,
+    });
+    return { erlaubt: false, grund: grund?.text ?? "Dieser Spieler ist gerade kein erlaubtes Ziel." };
   }
 
   // Kosten: bei `stattJoker` verbraucht ein Duell einen Joker aus demselben
@@ -163,10 +198,10 @@ export async function pruefeDuellEinsatz({ store, roundId, matchId, userId, tip 
 
   // Zuletzt die Limit-Klassen: die feinste Frage, und die einzige, die quer
   // über mehrere Joker-Arten geht.
-  const jokerArt = typ === "block" ? "duell.block" : "duell.klau";
+  const jokerArt = jokerArtVon(typ) ?? "duell.klau";
   const historie = bisherigeEinsaetze.map((e) => ({
     spieltag: e.spieltag,
-    jokerArt: e.typ === "block" ? "duell.block" : "duell.klau",
+    jokerArt: jokerArtVon(e.typ) ?? "duell.klau",
     vonUserId: e.vonUserId, aufUserId: e.aufUserId,
   }));
   const klassen = pruefeEinsatz(

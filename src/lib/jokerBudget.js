@@ -101,6 +101,16 @@ export const JOKER_ARTEN = [
   { key: "joker.ranking", label: "Ranking-Joker", desc: "Joker auf die eigene Platzierung." },
   { key: "duell.klau", label: "Klau-Joker", desc: "Verdient an der Ausbeute eines Mitspielers mit." },
   { key: "duell.block", label: "Block-Joker", desc: "Dämpft die Wertung eines Mitspielers für ein Spiel." },
+  // 🔴 Die zwei neuen FREMDJOKER (JK4, 23.08.2026). Sie stehen hier, weil
+  // „Was für ALLE neuen Arten gilt" (design/joker-sondermenue.md Teil C) genau
+  // das verlangt: jede Art erbt die Grundform aus `jokerBasis` — Widerruf,
+  // Sichtbarkeit, Abklingzeit, Verfall, Bedingung. Diese 18 Werte je Art neu
+  // zu erfinden ist der ganze Grund, warum es die Grundform gibt.
+  // ⚠️ Ohne Eintrag hier hätten Trittbrettfahrer und Gegenwette keinen
+  // Schlüssel für `basisFuer()` — und `darfWiderrufen` fiele bei ihnen still
+  // auf die Vorgabe zurück, statt der Einstellung der Runde zu folgen.
+  { key: "eingriffe.trittbrett", label: "Trittbrettfahrer", desc: "Hängt sich an einen fremden Tipp und bekommt einen Anteil." },
+  { key: "eingriffe.gegenwette", label: "Gegenwette", desc: "Setzt darauf, dass ein fremder Tipp NICHT aufgeht." },
   { key: "ereignis.trost", label: "Trost-Joker", desc: "Ausgleich für den Letzten eines Spieltags." },
   { key: "saison.wette", label: "Saison-Wette", desc: "Eine Wette über den Saisonverlauf." },
 ];

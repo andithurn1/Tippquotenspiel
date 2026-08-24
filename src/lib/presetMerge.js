@@ -61,7 +61,12 @@ export const ASPEKTE = [
     key: "joker",
     label: "Jokercode",
     hint: "Alles rund um Joker: Art und Stärke, Grundform, Narren-Shop, Kontingente und Fremdjoker.",
-    keys: ["joker", "jokerBasis", "budget", "limitKlassen", "duell"],
+    // ⚠️ `eingriffe` gehört zwingend dazu: es ist das DACH über `duell` (JK7,
+    // 23.08.2026). Ein Joker-Teilcode ohne dieses Feld übernähme Klau und
+    // Block, ließe aber offen, ob die Familie in der Zielrunde überhaupt
+    // eingeschaltet ist — und ein geladener Code, der halb wirkt, ist
+    // schlimmer als einer, der gar nicht wirkt.
+    keys: ["joker", "jokerBasis", "budget", "limitKlassen", "duell", "eingriffe"],
   },
   // 🔴 EREIGNIS-CODE (Andis TC4) — „samt Auslosung am Rad", deshalb steht das
   // Drehrad hier und nicht bei den Jokern: es ist der ZWEITE Auslöser derselben

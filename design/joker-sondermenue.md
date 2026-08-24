@@ -304,6 +304,47 @@ gemeinsam, oder bekommt jede Art ihre eigene?
 
 # TEIL D · FREMDJOKER — Eingriffe in fremde Tipps
 
+> ## ✔️ GEBAUT am 23.08.2026 — was davon noch Entwurf ist, steht unten
+>
+> `src/lib/eingriffe.js` (Kataloge, Grenzen, `rules.eingriffe`, die Formel) ·
+> `src/lib/fremdjoker.js` (Familienlogik) · Wertung in `applyDuellJoker` ·
+> Oberfläche `Fremdjoker.jsx` · Spieler-Ansicht in `MeineJoker.jsx`.
+>
+> | | Stand |
+> |---|---|
+> | **Die drei Handlungen** (JK4) | ✔️ alle vier Arten: Block · Klau · Trittbrettfahrer · Gegenwette |
+> | **Sichtbar und zurücknehmbar** (JK6) | ✔️ `sichtbarVorFrist` + `jokerBasis.widerruf` · `eingriffFenster()` |
+> | **Sperrfrist je Ziel** (JK5) | ✔️ `sperrfristJeZiel` |
+> | **Ein Griff über allem** (JK7) | ✔️ `eingriffe.enabled` · `familieSchalten()` |
+> | **Einzelne Spiele statt Spieltage** (JK15) | ✔️ `matchId` reist mit |
+> | **Zwei-Phasen-Spieltag** (JK18) | ✔️ war schon da (`tippfenster.schlussStunden`) |
+> | **Der ehrliche Hinweis** (JK19) | ✔️ `zweiPhasenHinweis()` |
+> | **Geschützte Spiele** (JK14) | ✔️ `eingriffe.schutz`; Schild im Browser gesehen (Demo-Runde `ALLES`) |
+> | **Ausgelostes Ziel** (JK12) | ✔️ `duell.zielWahl: "ausgelost"` + `eingriffe.los` |
+> | **Je Fremdjoker einzeln** (JK13) | ✔️ Grundform · Sperrfrist · Sichtbarkeit · Auslosung — überall dieselbe Karte (`karteVon`) |
+>
+> ⚠️ **Drei Entscheidungen weichen bewusst vom Text darunter ab:**
+>
+> 0. **Kein eigenes Rücknahme-Feld.** Der Text unten nennt für JK6 „die Felder
+>    dafür gibt es: `duell.sichtbarkeit` und `jokerBasis.widerruf`" — und genau
+>    so ist es gebaut. Eine erste Fassung legte trotzdem ein zweites Feld
+>    `eingriffe.ruecknahme` daneben; es ist am 23.08.2026 wieder gelöscht
+>    worden, bevor es je in einer Runde stand. Zwei Felder für „bis wann darf
+>    ich zurücknehmen?" heißt, dass die Anzeige etwas zusagen kann, was das
+>    Speichern verweigert.
+>
+> 1. **Kein „verdeckt“-Mittelding.** `sichtbarVorFrist: false` blendet den
+>    Eingriff beim Betroffenen ganz aus, statt „jemand blockt eines deiner
+>    Spiele" zu zeigen. Ob das Mittelding besser wäre, steht unten als OFFENE
+>    Frage von Andi — sie auf Verdacht zu bauen hieße, einen dritten Zustand zu
+>    erfinden, den niemand bestellt hat.
+> 2. **Kein `blindOderVerzoegert` beim Trittbrettfahrer.** Teil C nennt die
+>    Falle „Tipps sind bis zum Anpfiff VERDECKT, man kann nicht abschreiben,
+>    was man nicht sieht" — **JK18 hat sie erledigt.** In Phase 2 stehen alle
+>    Tipps fest und sind sichtbar. Der Regler wäre eine Antwort auf ein Problem,
+>    das es nicht mehr gibt.
+
+
 🔴 **Der Name steht seit 22.08.2026 fest: Fremdjoker** (Andi). Er umfasst
 **Block · Trittbrettfahrer · Gegenwette · Klau** — jeden Joker, der in den Tipp
 eines anderen greift. Begriff im `vokabular.md`.

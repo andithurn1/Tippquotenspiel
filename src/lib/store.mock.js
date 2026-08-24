@@ -8,8 +8,15 @@ import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboard
 // design/abstimmung-verfassung.md). `regelnFuerSpieltag` liefert dafür die
 // Funktion, die die Engine als `regelnFuer` erwartet.
 import { regelnFuerSpieltag } from "./beschluss";
+// 🔴 Die Position im Verlauf — siehe die Begründung dort.
+import { verlaufPositionen } from "./spieltag";
 import { zeitachse, rundenSpieltagVon, bespielteSpieltage } from "./zeitachse";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
+// 🔴 Die zweite Demo-Runde: eine, in der ALLES an ist (Andi, 23.08.2026 —
+// „mach die demo runde bzw tests so dass sie alle Einstellbarkeiten abdeckt").
+// Die erste fährt `DEFAULT_RULES` und zeigt damit fast nichts; ohne eine
+// zweite lässt sich im Browser nicht nachsehen, ob eine Mechanik ankommt.
+import { SCHAU_ROUND_ID, SCHAU_JOIN_CODE, SCHAU_NAME, schaufensterRegeln, schaufensterTipps } from "./schaufenster";
 import { generateJoinCode } from "./joinCode";
 import { alleMatches } from "./ligen";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
@@ -19,7 +26,14 @@ import { withSaisonPunkte } from "./saisonBoard";
 import { scoreSaison } from "./saisonwetten";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
-import { einsaetzeAusTipps } from "./duellJoker";
+// 🔴 `fremdEinsaetze` statt der rohen Grundform (23.08.2026): dieselbe Liste,
+// aber zusätzlich mit dem, was eine GEGENWETTE braucht — die Wahrscheinlichkeit
+// des getroffenen Tipps und sein Ausgang. Beides entsteht aus Quoten-
+// Schnappschuss und Ergebnis, die `duellJoker.js` nicht lesen darf
+// (Importzyklus, siehe Kopf von `fremdjoker.js`). Wer hier auf die alte
+// Funktion zurückgeht, bekommt Einsätze ohne `p` — und die Gegenwette
+// verpufft still, ohne dass irgendetwas fehlschlägt.
+import { fremdEinsaetze, familieAn } from "./fremdjoker";
 import { rundenSpiele as rundenSpieleVon, rundenAuswahl } from "./roundStatus";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
@@ -68,12 +82,27 @@ export function createMockStore() {
       wettbewerb: m.wettbewerb, phase: m.phase,
     }]),
   ]);
-  const rounds = new Map([[ROUND_ID, {
-    id: ROUND_ID, name: "Freundeskreis", admin_id: "u-du",
-    rules: DEFAULT_RULES, join_code: DEMO_JOIN_CODE,
-  }]]);
+  const rounds = new Map([
+    [ROUND_ID, {
+      id: ROUND_ID, name: "Freundeskreis", admin_id: "u-du",
+      rules: DEFAULT_RULES, join_code: DEMO_JOIN_CODE,
+    }],
+    // ⚠️ Nur Bundesliga (siehe `schaufenster.js`) — deshalb auch hier der
+    // eingefrorene Zuschnitt, sonst zählte die Runde 1943 Spiele statt 306.
+    // Genau der Fund vom 09.08.2026: `team_filter` allein hielt zu wenig fest.
+    [SCHAU_ROUND_ID, {
+      id: SCHAU_ROUND_ID, name: SCHAU_NAME, admin_id: "u-du",
+      rules: schaufensterRegeln(), join_code: SCHAU_JOIN_CODE,
+      spiele: schaufensterRegeln().spiele,
+    }],
+  ]);
   const presets = new Map();  // Kurzcode → geteiltes Regelwerk (Content-Creator-Codes)
-  const members = DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar }));
+  const members = [
+    ...DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar })),
+    // Dieselben fünf im Schaufenster: eine Runde mit einem Mitglied kann
+    // weder ein Ziel noch ein Los zeigen.
+    ...DEMO_TIPS.map((t) => ({ round_id: SCHAU_ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar })),
+  ];
   // Profile getrennt von der Mitgliedschaft halten — wie in der DB (profiles).
   // Der Demo-Nutzer „Du" hat Premium, damit die Premium-Funktionen beim
   // Entwickeln ohne Backend sichtbar sind; die übrigen bewusst nicht, damit
@@ -82,10 +111,16 @@ export function createMockStore() {
     id: t.userId, display_name: t.name, avatar: t.avatar,
     premium_until: t.userId === "u-du" ? "2099-12-31T00:00:00Z" : null,
   }]));
-  const tips = DEMO_TIPS.map((t) => ({
-    id: `tip-${t.userId}`, round_id: ROUND_ID, match_id: SNAP.matchId,
-    user_id: t.userId, tip: t.tip, snapshot: SNAP,
-  }));
+  const tips = [
+    ...DEMO_TIPS.map((t) => ({
+      id: `tip-${t.userId}`, round_id: ROUND_ID, match_id: SNAP.matchId,
+      user_id: t.userId, tip: t.tip, snapshot: SNAP,
+    })),
+    // 🔴 Ohne Tipps ist die Tabelle des Schaufensters leer — und eine leere
+    // Tabelle heißt „kein zulässiges Ziel", also fehlt der ganze
+    // Fremdjoker-Block. Gemessen am 23.08.2026 im Browser.
+    ...schaufensterTipps([...matches.values()].filter((m) => wettbewerbVon(m) === "bl")),
+  ];
   const votes = [];   // Joker-Abstimmung: { round_id, matchday, user_id, ja }
   // Regel-Abstimmung (design/abstimmung-verfassung.md) — eine ANDERE Frage
   // als `votes`: dort geht es um Joker-Spieltage, hier um Änderungen AM
@@ -192,13 +227,15 @@ export function createMockStore() {
     // und der Bonus fiele still aus. Genau die halbe Verkabelung, die
     // design/kontaktstellen.md auflistet.
     if (brauchtVerlauf(rules) || brauchtVerlauf(amEnde)) {
-      // `einsaetzeAusTipps` braucht `matchId` für den Gleichstand-Fall
+      // `fremdEinsaetze` braucht `matchId` für den Gleichstand-Fall
       // (zwei Duell-Einsätze am selben Spieltag mit identischem Kickoff,
       // z. B. zwei zeitgleich angepfiffene Bundesliga-Spiele) — `entries`
       // (aus `eintragVon`) trägt das Feld nicht, `roundTips` schon
       // (`match_id`), deshalb hier separat angereichert statt `entries`
       // selbst zu verändern.
-      const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
+      const einsaetze = fremdEinsaetze(
+        roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules,
+        { rundenSpieltag: verlaufPositionen(entries) });
       verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
       board = verlauf.length ? verlauf[verlauf.length - 1].board : [];
     } else {
@@ -270,6 +307,11 @@ export function createMockStore() {
     return {
       board, rules, kontext, entries, regelnFuer, verlauf, roundTips,
       spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse),
+      // 🔴 Die Position IM VERLAUF, nicht der Liga-Spieltag und auch nicht die
+      // Zeitachse — die Begründung steht bei `verlaufPositionen` (spieltag.js).
+      // Sie wird aus DENSELBEN `entries` abgeleitet, aus denen der Verlauf
+      // entsteht; zwei Ableitungen könnten auseinanderlaufen.
+      rundenSpieltag: verlaufPositionen(entries),
     };
   }
 
@@ -277,9 +319,9 @@ export function createMockStore() {
   // ihn aus den rohen Tipps, `standVorDemRad` aus `entries` (mit Ersatz-Tipps):
   // zwei Kurven für dieselbe Runde, sobald das Versäumnis eingeschaltet war.
   async function verlaufVon(roundId) {
-    const { verlauf, entries, rules, regelnFuer, roundTips } = await standVorDemRad(roundId);
+    const { verlauf, entries, rules, regelnFuer, roundTips, rundenSpieltag } = await standVorDemRad(roundId);
     if (verlauf) return verlauf;
-    const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
+    const einsaetze = fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules, { rundenSpieltag });
     return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
   }
 
@@ -725,10 +767,32 @@ export function createMockStore() {
       });
     },
 
+    // 🔴 JK6 (23.08.2026): welche Fremdjoker liegen JETZT auf dem Tisch — und
+    // von wem? Das ist etwas anderes als `getDuellVorgaenge`: dort steht, was
+    // eine Überweisung am Ende GEBRACHT hat, hier, was gerade GESETZT ist.
+    // Andis Zweck ist das Gespräch vor dem Anpfiff („nimm den Block bei mir
+    // raus"), und dafür kommt die Abrechnung zu spät.
+    //
+    // ⚠️ Der Screen darf das nicht selbst aus den Tipps ableiten
+    // (Runden-Schicht, CLAUDE.md): dieselbe Liste, aus der die WERTUNG rechnet,
+    // muss die sein, die der Spieler sieht. Sonst steht auf dem Bildschirm ein
+    // Block, den die Wertung nie gesehen hat — oder umgekehrt.
+    async getFremdEingriffe(roundId) {
+      const { rules, roundTips, rundenSpieltag } = await standVorDemRad(roundId);
+      if (!familieAn(rules)) return [];
+      return fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules, { rundenSpieltag })
+        .map((e) => ({ ...e, vonName: nameOf(e.vonUserId), aufName: nameOf(e.aufUserId) }));
+    },
+
     async getDuellVorgaenge(roundId) {
-      const { entries, rules, regelnFuer, roundTips } = await standVorDemRad(roundId);
-      if (!rules?.duell?.enabled) return [];
-      const einsaetze = einsaetzeAusTipps(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })));
+      const { entries, rules, regelnFuer, roundTips, rundenSpieltag } = await standVorDemRad(roundId);
+      // 🔴 `familieAn` statt `rules.duell.enabled`: seit dem 23.08.2026 gibt es
+      // VIER Fremdjoker, und zwei davon stehen gar nicht in `duell`. Die rohe
+      // Abfrage hätte Trittbrettfahrer und Gegenwette aus der Vorgangsliste
+      // geworfen — sichtbar erst daran, dass ein Spieler eine Summe sieht, zu
+      // der keine Zeile führt.
+      if (!familieAn(rules)) return [];
+      const einsaetze = fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules, { rundenSpieltag });
       const sammeln = [];
       scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln, roundId);
       return sammeln.map((v) => ({ ...v, vonName: nameOf(v.vonUserId), aufName: nameOf(v.aufUserId) }));

@@ -151,9 +151,34 @@ const FAELLE = [
     hinweis: "braucht ein bereits ANGEPFIFFENES Spiel und ein MITGLIED, das es versäumt hat — "
       + "vor Saisonstart gibt es beides nicht" }],
   ["wettbewerbe (Aufschlag)", { wettbewerbe: { enabled: true, aufschlaege: { bl: 1 } } }],
+  // 🔴 Der letzte Block ohne Messfall (Befund vom 23.08.2026). Er braucht
+  // `fallback: "quote"`: der Tabellenplatz wird beim ÖFFNEN des Spieltags auf
+  // dem Snapshot eingefroren, und im Messfall gibt es keine Tabelle. Genau
+  // dafür ist der Fallback gebaut — „ohne diese Wahl wäre er an den ersten
+  // Spieltagen still wirkungslos, und niemand merkt es" (tabellenBonus.js).
+  // `abSpieltag: 1`, damit alle gemessenen Spieltage zählen.
+  ["tabellenBonus", {
+    tabellenBonus: {
+      enabled: true, aufschlag: 1.0, nurWennRichtig: false, abSpieltag: 1,
+      fallback: "quote", fallbackQuote: 1.5,
+    },
+  }],
   ["duell", {
     duell: { enabled: true, typen: ["klau"], maxProSaison: 0, klau: { anteil: 0.5, modus: "nullsumme" } },
   }, { duell: true }],
+  // 🔴 Die FREMDJOKER-Familie (JK4–JK7). Gemessen wird der TRITTBRETTFAHRER,
+  // weil er der einzige der drei neuen Fälle ist, der ohne Anreicherung
+  // rechnet: die Gegenwette braucht `p` und `getroffen` aus `fremdEinsaetze`,
+  // und der Rest der Familie ist über `duell` oben schon abgedeckt.
+  // ⚠️ `maxProSaison: 0` (kein Deckel), damit die Zahl die WIRKUNG zeigt und
+  // nicht den Deckel — sonst stünde hier bei jedem Anteil dieselbe Summe.
+  ["eingriffe", {
+    eingriffe: {
+      enabled: true,
+      trittbrett: { enabled: true, anteil: 0.5, kopierterBekommt: 0 },
+    },
+    duell: { enabled: false, maxProSaison: 0 },
+  }, { fremd: "trittbrett" }],
   ["drehrad", {
     drehrad: {
       enabled: true, frequenz: 2, phase: "ganze", maxPunkteProSaison: 0,
@@ -216,6 +241,9 @@ async function board(extra, opt = {}) {
       };
       if (opt.joker && u === "u-du" && i % 9 === 0) tip.joker = true;
       if (opt.duell && u === "u-du") tip.duell = { auf: "u-lena", typ: "klau" };
+      // Dieselbe Ablage, andere Art — ein Fremdjoker steht immer in
+      // `tip.duell` (der Feldname ist älter als die Familie).
+      if (opt.fremd && u === "u-du") tip.duell = { auf: "u-lena", typ: opt.fremd };
       // Ein eingefrorener Big-Game-Wert, wie ihn `spieltagOeffnen` ablegt.
       // Nur für den Messfall — im Betrieb kommt er aus dem Tabellenstand.
       const snapshot = opt.bigGameWert != null
@@ -542,6 +570,8 @@ console.log();
 //  Richtung.
 // ════════════════════════════════════════════════════════════
 import { zulaessigeZiele, DEFAULT_DUELL } from "../src/lib/duellJoker.js";
+import { zulaessigeZiele as zulaessigeZieleFamilie, fremdEinsaetze } from "../src/lib/fremdjoker.js";
+import { DEFAULT_EINGRIFFE } from "../src/lib/eingriffe.js";
 import { darfDuellSetzen } from "../src/lib/jokerKontingent.js";
 import { jokerPlan } from "../src/lib/jokerPlan.js";
 import { pruefeEinsatz, sanitizeLimitKlassen } from "../src/lib/limitKlassen.js";
@@ -575,6 +605,34 @@ const zieleGesamt = (duell, spieltag = 8) => GIDS.reduce((s, id) =>
   }).length, 0);
 
 const D = (teil) => ({ ...DEFAULT_DUELL, enabled: true, immun: 0, maxProZiel: 6, ...teil });
+
+// 🔴 Die Familien-Fassung (`fremdjoker.js`): sie löst Sperrfrist UND Los aus
+// dem Regelwerk auf. Die rohe aus `duellJoker.js` darüber kann das nicht — wer
+// nur sie misst, sieht bei JK5 und JK12 immer dieselbe Zahl und hält eine tote
+// Einstellung für eine, die greift.
+const zieleFamilie = (rules, spieltag = 8, art = "klau") => GIDS.reduce((s, id) =>
+  s + zulaessigeZieleFamilie(GBOARD, id, rules, {
+    bisherigeEinsaetze: GHISTORIE, aktuellerSpieltag: spieltag, seed: "greift", art,
+  }).length, 0);
+// Drei Angriffe von „a" auf drei Spiele von „b" — davon schützt „b" die
+// ersten `schutzProSpieltag`. Übrig bleibt, was die Wertung noch sieht.
+const wirksameEinsaetze = (schutzProSpieltag) => {
+  const tipps = ["s1", "s2", "s3"].flatMap((m, i) => [
+    { userId: "a", matchday: 5, matchId: m, kickoff: `2026-09-05T1${i}:00:00Z`,
+      tip: { home: 1, away: 1, duell: { auf: "b", typ: "klau" } } },
+    { userId: "b", matchday: 5, matchId: m, kickoff: `2026-09-05T1${i}:00:00Z`,
+      tip: { home: 1, away: 1, schutz: true } },
+  ]);
+  return fremdEinsaetze(tipps, {
+    duell: D({ proSpieltag: 3, maxProZiel: 9 }),
+    eingriffe: { ...DEFAULT_EINGRIFFE, schutz: { proSpieltag: schutzProSpieltag, sichtbar: true, verfall: "zurueck" } },
+  }).length;
+};
+
+const F = (duellTeil, eingriffeTeil = {}) => ({
+  duell: D(duellTeil),
+  eingriffe: { ...DEFAULT_EINGRIFFE, ...eingriffeTeil },
+});
 
 // An wie vielen der ersten 20 Spieltage ist ein Duell-Einsatz bezahlbar?
 const GPLAN = jokerPlan({
@@ -669,6 +727,22 @@ const GATE_FAELLE = [
   // „nur nach vorne" NIE ein Ziel — außer dem, der ihn gerade getroffen hat.
   ["duell.konter", () => zieleGesamt(D({ zielWahl: "nurVorne", konter: false })),
     () => zieleGesamt(D({ zielWahl: "nurVorne", konter: true })), "erlaubte Ziele über 5 Spieler"],
+  // 🔴 JK5 (23.08.2026): die Sperrfrist je Ziel — und ihre Vertiefung, der
+  // wachsende Cooldown. Beides bewegt keine PUNKTE, sondern erlaubte Ziele.
+  ["eingriffe.sperrfrist", () => zieleFamilie(F({ zielWahl: "frei" })),
+    () => zieleFamilie(F({ zielWahl: "frei" }, { sperrfrist: { standard: { spieltage: 6 } } })),
+    "erlaubte Ziele über 5 Spieler"],
+  ["eingriffe.sperrfrist.aufschlag",
+    () => zieleFamilie(F({ zielWahl: "frei" }, { sperrfrist: { standard: { spieltage: 0, aufschlag: 0 } } })),
+    () => zieleFamilie(F({ zielWahl: "frei" }, { sperrfrist: { standard: { spieltage: 0, aufschlag: 6 } } })),
+    "erlaubte Ziele über 5 Spieler"],
+  // 🔴 JK14: ein geschütztes Spiel ist für Fremdjoker unantastbar. Gemessen
+  // werden die Einsätze, die die Wertung überhaupt erreichen.
+  ["eingriffe.schutz", () => wirksameEinsaetze(0), () => wirksameEinsaetze(1),
+    "wirksame Einsätze von 3"],
+  // 🔴 JK12: das Los ERSETZT die Wahl — aus vier möglichen Zielen wird eines.
+  ["duell.zielWahl: ausgelost", () => zieleFamilie(F({ zielWahl: "frei" })),
+    () => zieleFamilie(F({ zielWahl: "ausgelost" })), "erlaubte Ziele über 5 Spieler"],
   ["duell.kosten", () => bezahlbareTage(D({ kosten: "frei" })),
     () => bezahlbareTage(D({ kosten: "stattJoker" })), "bezahlbare Spieltage von 20"],
   ["jokerBasis.wer", () => duerfenEinsetzen({ wer: "alle" }),

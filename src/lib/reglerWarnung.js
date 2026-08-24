@@ -31,6 +31,13 @@ import { RULE_LIMITS, sanitizeRules, maxTotalModifier } from "./engine";
 import { PRESETS } from "./presets";
 import { SAISON_LIMITS, SAISON_PRESETS } from "./saisonwetten";
 import { BIGGAME_LIMITS } from "./bigGame";
+// 🔴 Die FREMDJOKER-Familie (JK4–JK14). `aktiveArten` ist die einzige Stelle,
+// die sagt, welche der vier Arten laufen — hier `duell.enabled` zu fragen
+// hieße, zwei davon zu übersehen (sie stehen in `rules.eingriffe`).
+// ⚠️ Zyklusfrei: `fremdjoker.js` liest `engine.js`, aber niemand in dieser
+// Kette liest `reglerWarnung.js` zurück.
+import { aktiveArten } from "./fremdjoker";
+import { EINGRIFF_LIMITS, sanitizeSchutz, sanitizeSperrKarte } from "./eingriffe";
 
 // Wie weit über das Preset-Spektrum hinaus noch als normal gilt — als Anteil
 // der gesamten Regler-Spanne. Ohne diesen Rand wäre jede Feinjustierung sofort
@@ -352,6 +359,99 @@ const KOMBINATIONEN = [
         ...r.duell,
         maxProSaison: Math.min(RULE_LIMITS.duell?.maxProSaison?.max ?? 200,
           Math.max(1, Math.round((r.displayScale ?? 1) * 10))),
+      },
+    }),
+  },
+
+  // ── Die FREMDJOKER-Familie (23.08.2026) ───────────────────
+  // Drei Kombinationen, die jede für sich erlaubt sind und zusammen eine
+  // Runde ergeben, die niemand spielen will. Gemeldet, nicht gesperrt —
+  // „will ein Admin etwas Unbalanciertes, soll er es haben" (Andi, 21.08.).
+  {
+    // 🔴 Andis eigene Begründung, warum der Schutz existiert: „weil man die
+    // halt evtl selber live verfolgen will, und's deswegen blöd wäre." Ein
+    // Fremdjoker, der das trifft, nimmt keine Punkte weg, sondern den Spaß —
+    // und dann schaltet die Runde die ganze Familie ab. Der Schutz ist damit
+    // die BEDINGUNG dafür, dass Fremdjoker eingeschaltet bleiben, nicht ihr
+    // Gegenstück.
+    id: "fremdjoker-ohne-schutz",
+    stufe: "warnung",
+    titel: "Niemand kann sein Spiel schützen",
+    gilt: (r) => aktiveArten(r).length > 0 && sanitizeSchutz(r?.eingriffe?.schutz).proSpieltag === 0,
+    text: () =>
+      "Fremdjoker sind an, aber niemand darf ein Spiel davor schützen. Wer Samstag im Stadion "
+      + "sitzt, muss zusehen, wie ihm genau dieses Spiel weggeblockt wird — und Runden schalten "
+      + "danach erfahrungsgemäß die ganze Familie ab, nicht nur den einen Joker.",
+    fix: "Ein geschütztes Spiel je Spieltag erlauben",
+    korrektur: (r) => ({
+      ...r,
+      eingriffe: { ...r.eingriffe, schutz: { ...sanitizeSchutz(r?.eingriffe?.schutz), proSpieltag: 1 } },
+    }),
+  },
+  {
+    // 🔴 Das Rudelbilden. Es stand bis zum 23.08.2026 nur als `EMPFEHLUNG` in
+    // `duellJoker.js` und wurde allein im Duell-Baustein angezeigt — die
+    // Profi-Warnungen kannten es nicht. Mit vier Arten statt zwei liegen jetzt
+    // deutlich mehr Einsätze auf demselben Spieltag, und das Los (JK12) ist
+    // die Antwort, die es nicht nur bemängelt, sondern unmöglich macht.
+    id: "fremdjoker-rudel",
+    stufe: "warnung",
+    titel: "Alle gehen auf den Führenden",
+    gilt: (r) => {
+      const arten = aktiveArten(r).length;
+      if (arten < 2 || r?.duell?.zielWahl !== "frei") return false;
+      const sperre = sanitizeSperrKarte(r?.eingriffe?.sperrfrist).standard;
+      // Freie Zielwahl ist für sich harmlos. Gefährlich wird sie erst, wenn
+      // NICHTS bremst: keine Sperrfrist und ein großzügiges `maxProZiel`.
+      return sperre.spieltage === 0 && sperre.aufschlag === 0 && (r?.duell?.maxProZiel ?? 0) >= 3;
+    },
+    text: (r) =>
+      `${aktiveArten(r).length} Fremdjoker mit freier Zielwahl, ohne Sperrfrist und mit bis zu `
+      + `${r.duell.maxProZiel} Treffern auf dieselbe Person: erfahrungsgemäß gehen dann alle auf den `
+      + "Führenden. Die Zielwahl „Ausgelost“ macht das unmöglich, statt es nur unwahrscheinlich zu machen.",
+    fix: "Sperrfrist von 2 Spieltagen setzen",
+    korrektur: (r) => ({
+      ...r,
+      eingriffe: {
+        ...r.eingriffe,
+        sperrfrist: {
+          ...sanitizeSperrKarte(r?.eingriffe?.sperrfrist),
+          standard: { ...sanitizeSperrKarte(r?.eingriffe?.sperrfrist).standard, spieltage: 2 },
+        },
+      },
+    }),
+  },
+  {
+    // ⚠️ Kein Balance-Urteil, sondern eine Rechenaussage: die Sperre wächst
+    // pro Wiederholung, und ohne Deckel wächst sie über die Saison hinaus.
+    // Dann ist die zweite Hälfte des Reglers Zierde.
+    id: "sperrfrist-waechst-unbegrenzt",
+    stufe: "hinweis",
+    titel: "Die Sperrfrist wächst über die Saison hinaus",
+    gilt: (r) => {
+      if (aktiveArten(r).length === 0) return false;
+      const s = sanitizeSperrKarte(r?.eingriffe?.sperrfrist).standard;
+      // Nach dem vierten Treffer schon länger als eine halbe Saison.
+      return s.aufschlag > 0 && s.hoechstens === 0 && s.spieltage + 3 * s.aufschlag > 17;
+    },
+    text: (r) => {
+      const s = sanitizeSperrKarte(r?.eingriffe?.sperrfrist).standard;
+      return `Jeder Wiederholungstreffer legt ${s.aufschlag} Spieltage drauf, und es gibt keine `
+        + `Obergrenze: nach dem vierten Mal wären es ${s.spieltage + 3 * s.aufschlag} Spieltage — `
+        + "mehr als eine halbe Saison. Danach ist dieselbe Person praktisch für immer gesperrt.";
+    },
+    fix: "Obergrenze auf 6 Spieltage setzen",
+    korrektur: (r) => ({
+      ...r,
+      eingriffe: {
+        ...r.eingriffe,
+        sperrfrist: {
+          ...sanitizeSperrKarte(r?.eingriffe?.sperrfrist),
+          standard: {
+            ...sanitizeSperrKarte(r?.eingriffe?.sperrfrist).standard,
+            hoechstens: Math.min(EINGRIFF_LIMITS.hoechstens.max, 6),
+          },
+        },
       },
     }),
   },

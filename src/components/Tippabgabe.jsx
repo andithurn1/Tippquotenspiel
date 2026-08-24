@@ -18,7 +18,17 @@ import { pruefeJokerEinsatz, basisFuer, darfWiderrufen, duellBasis as duellBasis
 import {
   kontoVerlauf, perioden, preisFuer, kannBezahlen, sanitizeBudget, istNarrenKauf, einsaetzeAllerArten,
 } from "@/lib/jokerBudget";
-import { duellPlan, zulaessigeZiele, einsaetzeAusTipps, DUELL_TYPEN } from "@/lib/duellJoker";
+import { duellPlan } from "@/lib/duellJoker";
+// 🔴 Die FREMDJOKER-Familie hat seit dem 23.08.2026 VIER Arten (JK4), und zwei
+// davon stehen gar nicht in `rules.duell`. `aktiveArten` ist die EINE Stelle,
+// die sagt, welche laufen — hier `DUELL_TYPEN` zu lesen hieße, zwei davon zu
+// übersehen. `zulaessigeZiele` kommt aus derselben Datei, weil nur diese
+// Fassung die Sperrfrist je Ziel (JK5) durchreicht.
+import {
+  aktiveArten, familieAn, zulaessigeZiele, gegenwetteVorschau, zieleJeArt, sperrGrund,
+  meinLos, schutzStand, fremdEinsaetze,
+} from "@/lib/fremdjoker";
+import { FREMDJOKER_ARTEN, jokerArtVon, sanitizeSchutz } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
@@ -155,6 +165,9 @@ export default function Tippabgabe({ matchId }) {
   // `null` = keine Auswahl = kein Duell — kein Zwang, siehe dortiger Plan.
   const [duellZiel, setDuellZiel] = useState(null);
   const [duellTypGewaehlt, setDuellTypGewaehlt] = useState(null);
+  // 🔴 JK14: das eine Spiel, an dem der Abend hängt. Gehört dem SPIELER —
+  // der Admin stellt nur die Anzahl (`eingriffe.schutz.proSpieltag`).
+  const [geschuetzt, setGeschuetzt] = useState(false);
   // Schnappschuss dessen, was beim Laden BEREITS gespeichert war — Grundlage
   // für `darfWiderrufen` (design/kontaktstellen.md Abschnitt 5 Punkt 5,
   // jokerBasis.js): nur ein VORHER gesetzter Joker/Duell, der jetzt entfernt
@@ -266,6 +279,9 @@ export default function Tippabgabe({ matchId }) {
           // er gegen denselben Vorrat — ohne dieses Feld sähe `kontingent()`
           // ihn nicht und die Einstellung liefe ins Leere.
           duell: t.tip?.duell ?? null,
+          // JK14: für `schutzStand` — wie viele Schilde habe ich an diesem
+          // Spieltag schon vergeben?
+          tip: t.tip,
         }));
       setMeineTips(eigene);
       // Käufe ALLER Spieler, angereichert um `matchday`/`matchId` — Grundlage
@@ -302,6 +318,7 @@ export default function Tippabgabe({ matchId }) {
         setDuellZiel(dieser.tip.duell.auf);
         setDuellTypGewaehlt(dieser.tip.duell.typ ?? null);
       }
+      setGeschuetzt(dieser?.tip?.schutz === true);
       // Schnappschuss des GELADENEN Zustands für `darfWiderrufen` (siehe
       // Kommentar bei `urspruenglich` oben) — unabhängig davon, was der
       // Spieler danach an den Reglern ändert.
@@ -653,29 +670,106 @@ export default function Tippabgabe({ matchId }) {
   // `basis` kommt aus `duellBasis(rules)` (jokerBasis.js) — `duellPlan` selbst
   // kennt keine Art, es gibt nur EINEN Plan je Spieler. Sind beide Arten
   // erlaubt, gilt die LÄNGERE Abklingzeit; die Begründung steht dort.
-  const duellTypenErlaubt = (RULES.duell?.typen ?? []).filter((t) => DUELL_TYPEN.some((d) => d.key === t));
+  // 🔴 Alle vier Fremdjoker, nicht nur die zwei aus `duell.typen`. Die Liste
+  // kommt aus `aktiveArten(RULES)` — der einzigen Stelle, die beide Regel-
+  // Blöcke zusammenliest (siehe Kopf von `fremdjoker.js`).
+  const duellTypenErlaubt = aktiveArten(RULES);
   // ⚠️ Nicht mehr „klau zuerst": sind beide Arten erlaubt, gilt die LÄNGERE
   // Abklingzeit (`duellBasis` in jokerBasis.js, dort steht die Begründung).
   // Die alte Reihenfolge war keine Regel, sondern eine Reihenfolge — und sie
   // ließ die strengere Einstellung ins Leere laufen.
   const duellBasis = duellBasisVon(RULES);
-  const duellPlanErgebnis = RULES.duell?.enabled && user
+  // ⚠️ EIN Plan für die ganze Familie, nicht einer je Art. `duellPlan` verteilt
+  // Spieltage aus `rules.duell` (Anzahl, Phase, Abklingzeit) — die zwei neuen
+  // Arten teilen sich dieses Kontingent, genau wie sie sich `maxProSaison`
+  // teilen. Ein zweiter Plan daneben wäre ein zweites Kontingent, das niemand
+  // bestellt hat.
+  const duellPlanErgebnis = familieAn(RULES) && user
     ? duellPlan({
         spieltage: spieltageDerRunde, duell: RULES.duell, basis: duellBasis,
         seed: roundId ?? "", userIds: board.map((b) => b.userId),
       })
     : null;
-  const istDuellSpieltag = !!(RULES.duell?.enabled && user
+  const istDuellSpieltag = !!(familieAn(RULES) && user
     && duellPlanErgebnis?.proSpieler?.[user.id]?.includes(meinSpieltagRunde));
   // `bisherigeEinsaetze` aus den rohen Tipps ALLER Spieler abgeleitet
   // (`alleTipps`, dieselbe Liste wie beim Narren-Kontostand oben) —
   // `zulaessigeZiele` filtert selbst auf den eigenen Nutzer.
-  const bisherigeDuellEinsaetze = einsaetzeAusTipps(alleTippsRunde);
-  const duellZulaessig = istDuellSpieltag
-    ? zulaessigeZiele(board, user?.id, RULES.duell, {
-        bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
+  // 🔴 `fremdEinsaetze`, nicht die rohe Grundform: nur sie kennt „mehrere je
+  // Spieltag" (`proSpieltag`) und den Schutz. Zählte dieser Screen Einsätze
+  // mit, welche die WERTUNG längst verwirft, wäre er strenger als sie — und
+  // ein Ziel verschwände hier, das dort erlaubt ist.
+  //
+  // ⚠️ `alleTippsRunde` trägt bereits den RUNDEN-Spieltag (siehe oben), also
+  // braucht es hier keine zweite Umrechnung. Genau diese Umrechnung fehlte bis
+  // zum 23.08.2026 auf der STORE-Seite — dort stand der Liga-Spieltag, und
+  // beide Seiten verglichen zwei verschiedene Skalen miteinander.
+  const bisherigeDuellEinsaetze = fremdEinsaetze(alleTippsRunde, RULES);
+  // 🔴 Seit die Sperrfrist JE FREMDJOKER steht (JK5, Ebene 2), ist „ist Kemal
+  // ein erlaubtes Ziel?" ohne die Art nicht mehr beantwortbar: der Block kann
+  // gesperrt sein, während der Trittbrettfahrer frei ist.
+  //
+  // Deshalb zwei Listen statt einer: die ZIELLISTE zeigt jeden, den irgendeine
+  // Art hergibt, und die ART-Knöpfe darunter sperren sich einzeln. Ein Ziel
+  // ganz zu verstecken, nur weil eine von vier Arten es nicht darf, wäre die
+  // schlechtere Hälfte — der Spieler suchte den Namen und fände ihn nicht.
+  // 🔴 `seed: roundId` — dieselbe Quelle wie `duellPlan` und wie die Prüfung
+  // beim Speichern (`duellPruefung.js`). Zieht der Screen ein anderes Los als
+  // die Prüfung, bekommt der Spieler sein eigenes Ziel abgelehnt.
+  const einsaetzeJeSpieler = bisherigeDuellEinsaetze.reduce((m, e) => {
+    m.set(e.vonUserId, (m.get(e.vonUserId) ?? 0) + 1);
+    return m;
+  }, new Map());
+  const zielKontext = {
+    bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
+    seed: roundId ?? "", einsaetzeJeSpieler,
+  };
+  const zieleProArt = istDuellSpieltag ? zieleJeArt(board, user?.id, RULES, zielKontext) : {};
+
+  // JK14: wie viele Spiele darf ich an diesem Spieltag noch schützen?
+  // ⚠️ Der EIGENE Tipp fliegt raus — sonst zählt sich das Schild, das man
+  // gerade setzt, selbst gegen das Kontingent (dieselbe Ausnahme wie bei
+  // `meineTipsOhneAktuellen`).
+  const schutzRegel = sanitizeSchutz(RULES.eingriffe?.schutz);
+  const schutzLage = schutzStand(
+    meineTipsRunde
+      .filter((t) => (t.match_id ?? t.matchId) !== matchId)
+      .map((t) => ({ ...t, userId: user?.id, matchId: t.match_id ?? t.matchId })),
+    RULES, { userId: user?.id, spieltag: meinSpieltagRunde },
+  );
+  // Schützen darf ich, wenn die Runde es kennt, Fremdjoker überhaupt laufen
+  // und noch etwas frei ist (oder dieses Spiel schon geschützt IST).
+  const schutzMoeglich = schutzRegel.proSpieltag > 0 && familieAn(RULES)
+    && (schutzLage.frei > 0 || geschuetzt);
+
+  // JK12: „Dein Ziel diesen Spieltag: Lena." Die Anzeige gehört genau hierher —
+  // Andi: „muss eben bei seiner Tippabgabe schauen, bei welchem Einzelspiel man
+  // den jeweiligen Joker einsetzt."
+  const losLage = istDuellSpieltag
+    ? meinLos(RULES, {
+        userId: user?.id, userIds: board.map((b) => b.userId),
+        spieltag: meinSpieltagRunde, seed: roundId ?? "",
+        art: duellTypGewaehlt, einsaetzeJeSpieler,
       })
-    : [];
+    : null;
+  const duellZulaessig = [...new Set(Object.values(zieleProArt).flat())];
+
+  // 🔴 Was eine Gegenwette einbringt, steht VOR dem Setzen da — sie ist die
+  // einzige der vier Arten, deren Ertrag nicht an den Punkten des Ziels hängt,
+  // sondern an einer Quote. Ohne die Zahl daneben ist „dagegen wetten" eine
+  // Wette ins Blaue.
+  //
+  // ⚠️ `gegenwetteVorschau` rechnet aus DERSELBEN Formel wie die Wertung
+  // (`gegenquote` in eingriffe.js). Eine Vorschau, die eine andere Zahl nennt
+  // als die Abrechnung, ist schlimmer als gar keine.
+  //
+  // ⚠️ Angezeigt wird die Wette gegen den EIGENEN Tipp als Näherung: der Tipp
+  // des Ziels ist bis zum gemeinsamen Tippschluss verdeckt. Das steht auch so
+  // im Text daneben — eine Zahl ohne diesen Satz wäre eine Zusage, die
+  // niemand halten kann.
+  const gegenVorschau = duellTypGewaehlt === "gegenwette" && SNAP
+    ? gegenwetteVorschau({ home: Number(h), away: Number(a) }, SNAP, RULES)
+    : null;
 
   // 🔴 KANN ich mir den Einsatz überhaupt leisten? Bei `duell.kosten:
   // "stattJoker"` verbraucht ein Duell einen Joker aus demselben Vorrat wie
@@ -942,7 +1036,7 @@ export default function Tippabgabe({ matchId }) {
       // ein NEUES Ziel läuft.
       if (RULES.duell?.enabled && urspruenglich.duellZiel != null
         && (duellZiel !== urspruenglich.duellZiel || duellTypGewaehlt !== urspruenglich.duellTyp)) {
-        const duellArtVorher = urspruenglich.duellTyp === "block" ? "duell.block" : "duell.klau";
+        const duellArtVorher = jokerArtVon(urspruenglich.duellTyp) ?? "duell.klau";
         const basisWiderruf = basisFuer(duellArtVorher, RULES);
         if (!darfWiderrufen(basisWiderruf, Date.now(), new Date(SNAP.kickoff).getTime())) {
           setWiderrufGrund("dieser Duell-Joker ist nicht mehr widerrufbar — die erlaubte Frist ist vorbei");
@@ -952,8 +1046,10 @@ export default function Tippabgabe({ matchId }) {
       }
       let duellSicher = null;
       if (istDuellSpieltag && !gesperrt && duellZiel && duellTypGewaehlt) {
-        const zulaessigJetzt = zulaessigeZiele(board, user.id, RULES.duell, {
-          bisherigeEinsaetze: bisherigeDuellEinsaetze, aktuellerSpieltag: meinSpieltagRunde,
+        // ⚠️ MIT der gewählten Art — sonst prüft das Speichern gegen eine
+        // andere Sperre als die, die der Knopf gezeigt hat.
+        const zulaessigJetzt = zulaessigeZiele(board, user.id, RULES, {
+          ...zielKontext, art: duellTypGewaehlt,
         });
         // Die Kosten-Prüfung steht VOR den Kontingent-Klassen: sie ist die
         // gröbere Frage („kann ich zahlen"), und sie hat eine eigene
@@ -967,7 +1063,7 @@ export default function Tippabgabe({ matchId }) {
           // Kontingent-Klassen prüfen (design/kontaktstellen.md Abschnitt 5
           // Punkt 5, limitKlassen.js) — dieselbe Bedingung: nur wenn hier
           // tatsächlich ein Duell gesetzt wird.
-          const duellJokerArt = duellTypGewaehlt === "block" ? "duell.block" : "duell.klau";
+          const duellJokerArt = jokerArtVon(duellTypGewaehlt) ?? "duell.klau";
           const klassenPruef = pruefeEinsatz(
             { spieltag: meinSpieltagRunde, jokerArt: duellJokerArt, vonUserId: user.id, aufUserId: duellZiel },
             RULES.limitKlassen, einsatzHistorie, klassenKontext,
@@ -987,6 +1083,10 @@ export default function Tippabgabe({ matchId }) {
           home: h, away: a, goals,
           ...(jokerAktiv && !gesperrt ? gewichtungSicher : {}),
           ...(duellSicher ? { duell: duellSicher } : {}),
+          // JK14 — nur mitschicken, wenn die Runde den Schutz überhaupt kennt
+          // und noch ein Kontingent frei ist. Eine Markierung, die die Wertung
+          // ohnehin verwirft, gehört nicht in die Datenbank.
+          ...(geschuetzt && schutzMoeglich ? { schutz: true } : {}),
         },
         snapshot: SNAP,
       });
@@ -1402,6 +1502,48 @@ export default function Tippabgabe({ matchId }) {
               </div>
             )}
 
+            {/* ── JK14: das Schild ──
+                🔴 Andi: „weil man die halt evtl selber live verfolgen will,
+                und's deswegen blöd wäre." Es steht ÜBER dem Fremdjoker-Block
+                und nicht darin: es ist keine Angriffs-Einstellung, sondern die
+                Gegenwehr — und sie gehört dem Spieler, nicht dem Admin.
+
+                ⚠️ Nach Anpfiff eingefroren, wie der Tipp selbst. Sonst
+                schützte man nach, sobald man einen Angriff kommen sieht. */}
+            {schutzRegel.proSpieltag > 0 && familieAn(RULES) && (
+              <div style={{
+                marginTop: 16, padding: "11px 13px", borderRadius: RUND.karte,
+                background: C.surface, border: `1px solid ${geschuetzt ? C.mint + "77" : C.line}`,
+              }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <button type="button" disabled={gesperrt || (!schutzMoeglich && !geschuetzt)}
+                    onClick={() => setGeschuetzt((v) => !v)}
+                    title="Dieses Spiel ist für alle Fremdjoker unantastbar."
+                    style={{
+                      ...TAPZIEL_QUADRAT, cursor: gesperrt || !schutzMoeglich ? "default" : "pointer",
+                      fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                      padding: "8px 14px", borderRadius: RUND.pille,
+                      opacity: gesperrt || (!schutzMoeglich && !geschuetzt) ? 0.5 : 1,
+                      background: geschuetzt ? `${C.mint}22` : "transparent",
+                      color: geschuetzt ? C.mint : C.muted,
+                      border: `1px solid ${geschuetzt ? C.mint + "77" : C.line}`,
+                    }}>
+                    {geschuetzt ? "🛡 Geschützt" : "🛡 Dieses Spiel schützen"}
+                  </button>
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>
+                    {schutzLage.frei + (geschuetzt ? 0 : 0)} von {schutzLage.erlaubt} frei
+                  </span>
+                </div>
+                <p style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+                  {geschuetzt
+                    ? "Kein Fremdjoker kann dir dieses Spiel wegnehmen. Nach Anpfiff steht es fest."
+                    : schutzMoeglich
+                      ? "Für das eine Spiel, das du selbst live verfolgst — kein Block, kein Klau, keine Gegenwette."
+                      : "Deine Schilde für diesen Spieltag sind vergeben."}
+                </p>
+              </div>
+            )}
+
             {/* Duell-Joker (nur an einem Duell-Spieltag DIESES Spielers, siehe
                 `istDuellSpieltag` oben) — dasselbe Chip-Muster wie beim
                 Ranking-Gewicht/Joker oben, nur in Coral statt Gold, damit der
@@ -1412,7 +1554,7 @@ export default function Tippabgabe({ matchId }) {
                 borderRadius: RUND.karte, padding: "13px 15px", opacity: gesperrt ? 0.55 : 1,
               }}>
                 <div style={{ fontSize: 11, color: C.coral, textTransform: "uppercase", letterSpacing: 1 }}>
-                  Duell-Joker
+                  Fremdjoker
                 </div>
                 {/* Was der Einsatz kostet — nur wenn er überhaupt etwas kostet
                     (`duell.kosten: "stattJoker"`). Steht ÜBER den Zielen, weil
@@ -1428,6 +1570,28 @@ export default function Tippabgabe({ matchId }) {
                     {duellErlaubnis.grund}
                   </p>
                 )}
+                {/* 🔴 JK12: das Los steht ÜBER der Zielliste — es ist keine
+                    Einschränkung der Wahl, sondern ersetzt sie. Wer es unten
+                    als Fußnote läse, hielte die eine übrige Zeile für einen
+                    Fehler. */}
+                {losLage && (
+                  <div style={{
+                    marginTop: 9, padding: "9px 12px", borderRadius: RUND.karte,
+                    background: C.surface, border: `1px solid ${C.akzent}44`,
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>
+                      {losLage.sichtbar && losLage.ziel
+                        ? `Dein Ziel diesen Spieltag: ${board.find((b) => b.userId === losLage.ziel)?.name ?? losLage.ziel}`
+                        : "Dein Ziel ist verdeckt ausgelost."}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                      Du suchst dir das Ziel nicht aus — du entscheidest, bei welchem
+                      SPIEL du zuschlägst.
+                      {losLage.gezogenVon && ` Gezogen wirst du von ${board.find((b) => b.userId === losLage.gezogenVon)?.name ?? losLage.gezogenVon}.`}
+                    </div>
+                  </div>
+                )}
+
                 {duellZulaessig.length === 0 ? (
                   <p style={{ fontSize: 12, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
                     Aktuell kein zulässiges Ziel — z.&nbsp;B. weil niemand infrage kommt,
@@ -1446,6 +1610,12 @@ export default function Tippabgabe({ matchId }) {
                         return (
                           <button key={zielId} disabled={zu}
                             onClick={() => setDuellZiel(on ? null : zielId)} style={{
+                              // 🔴 Gemessen am 23.08.2026 im Browser (375 px):
+                              // diese Pillen waren 33 px hoch. Apple verlangt
+                              // 44 — und ein danebengetroffenes Ziel ist beim
+                              // Fremdjoker keine Kleinigkeit, sondern greift
+                              // die falsche Person an.
+                              ...TAPZIEL_QUADRAT,
                               cursor: zu ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
                               opacity: zu && !on ? 0.5 : 1,
                               padding: "8px 14px", borderRadius: RUND.pille,
@@ -1459,13 +1629,19 @@ export default function Tippabgabe({ matchId }) {
                     {duellZiel && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                         {duellTypenErlaubt.map((typKey) => {
-                          const info = DUELL_TYPEN.find((d) => d.key === typKey);
+                          const info = FREMDJOKER_ARTEN.find((d) => d.key === typKey);
                           const on = duellTypGewaehlt === typKey;
+                          // Diese Art bei DIESEM Ziel gerade nicht möglich?
+                          // Dann wird der Knopf stumpf — und der Grund steht
+                          // darunter, statt dass der Spieler ihn sucht.
+                          const geht = (zieleProArt[typKey] ?? []).includes(duellZiel);
+                          const zu = gesperrt || (!geht && !on);
                           return (
-                            <button key={typKey} disabled={gesperrt}
+                            <button key={typKey} disabled={zu}
                               onClick={() => setDuellTypGewaehlt(on ? null : typKey)} style={{
-                                cursor: gesperrt ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
-                                padding: "8px 14px", borderRadius: RUND.pille,
+                                ...TAPZIEL_QUADRAT,
+                                cursor: zu ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                                padding: "8px 14px", borderRadius: RUND.pille, opacity: zu ? 0.45 : 1,
                                 background: on ? `${C.coral}22` : C.surface,
                                 color: on ? C.coral : C.muted,
                                 border: `1px solid ${on ? C.coral + "77" : C.line}`,
@@ -1474,14 +1650,65 @@ export default function Tippabgabe({ matchId }) {
                         })}
                       </div>
                     )}
+                    {/* 🔴 Warum eine Art gerade stumpf ist. Der Text kommt aus
+                        `sperrGrund` — dieselbe Rechnung, mit der das Speichern
+                        entscheidet. Ein „geht nicht" ohne Grund liest sich wie
+                        ein Fehler, und der Spieler sucht ihn dann bei sich. */}
+                    {duellZiel && duellTypenErlaubt
+                      .filter((k) => !(zieleProArt[k] ?? []).includes(duellZiel))
+                      .map((k) => sperrGrund(RULES, {
+                        art: k, vonUserId: user?.id, aufUserId: duellZiel,
+                        bisherigeEinsaetze: bisherigeDuellEinsaetze,
+                        aktuellerSpieltag: meinSpieltagRunde,
+                      }))
+                      .filter(Boolean)
+                      .map((g) => (
+                        <p key={g.art} style={{ fontSize: 11, color: C.coral, marginTop: 6, lineHeight: 1.45 }}>
+                          {g.text}
+                        </p>
+                      ))}
+
+                    {/* Die Beschreibung der gewählten Art — vier Arten sind
+                        drei zu viel, um sie sich zu merken. */}
+                    {duellTypGewaehlt && (
+                      <p style={{ fontSize: 11, color: C.muted, marginTop: 8, lineHeight: 1.45 }}>
+                        {FREMDJOKER_ARTEN.find((d) => d.key === duellTypGewaehlt)?.desc}
+                      </p>
+                    )}
+
+                    {/* 🔴 Die Gegenwette ist die einzige Art mit einem PREIS —
+                        wer sie setzt, riskiert seinen Einsatz. Die Zahl gehört
+                        vor die Entscheidung, nicht in die Abrechnung. */}
+                    {gegenVorschau && (
+                      <div style={{
+                        marginTop: 9, padding: "9px 12px", borderRadius: RUND.karte,
+                        background: C.surface, border: `1px solid ${C.coral}44`,
+                      }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: C.coral }}>
+                          Gegenquote {gegenVorschau.quote.toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                          Einsatz {gegenVorschau.einsatz} · geht der fremde Tipp daneben,
+                          bekommst du +{gegenVorschau.gewinn}; geht er auf, sind die
+                          {" "}{gegenVorschau.verlust} weg.
+                        </div>
+                        <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+                          Gerechnet gegen DEINEN Tipp — der des Ziels ist bis zum
+                          gemeinsamen Tippschluss verdeckt. Die Quote kann sich also
+                          noch ändern.
+                        </div>
+                      </div>
+                    )}
+
                     <p style={{ fontSize: 11, color: C.muted, marginTop: 9, lineHeight: 1.45 }}>
-                      Wähle ein Ziel und eine Art — keine Auswahl heißt kein Duell an diesem Spieltag.
+                      Wähle ein Ziel und eine Art — keine Auswahl heißt kein Fremdjoker an
+                      diesem Spieltag.
                     </p>
                   </>
                 )}
                 {gesperrt && (
                   <p style={{ fontSize: 11, color: C.coral, marginTop: 8, lineHeight: 1.4 }}>
-                    Angepfiffen — der Duell-Joker ist eingefroren.
+                    Angepfiffen — der Fremdjoker ist eingefroren.
                   </p>
                 )}
               </div>

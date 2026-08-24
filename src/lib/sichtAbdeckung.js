@@ -67,6 +67,10 @@ export const SPUREN = {
   ereignisse: ["ereignisse", "erspielteJoker", "erspielteLage"],
   joker: ["joker", "kontingent", "jokerFaktor"],
   duell: ["duell", "duellPlan", "zulaessigeZiele"],
+  // Fremdjoker: der Spieler sieht nicht den Regel-Block, sondern WER bei ihm
+  // eingegriffen hat — und ob er es noch herausnehmen kann (JK6). Genau das
+  // ist die Anzeige, nach der hier gesucht wird.
+  eingriffe: ["eingriffe", "Fremdjoker", "offeneEingriffe", "aktiveArten"],
   drehrad: ["drehrad", "drehradZiehungen"],
   saison: ["saison", "saisonwetten", "scoreSaison"],
   aufholen: ["aufholen", "catchup", "applyCatchup", "anschluss"],

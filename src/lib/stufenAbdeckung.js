@@ -110,10 +110,16 @@ export const NUR_PROFI = {
     + "greifen quer über mehrere Ebenen und setzen voraus, dass man diese "
     + "Ebenen schon kennt. Die Bündel von Stufe 1/2 deckeln jede Art einzeln.",
 
-  tippfenster:
-    "Wann ein Spiel tippbar wird, hängt daran, wann echte Quoten vorliegen "
-    + "(wenige Tage vorher) — eine Betriebsfrage der Runde, kein Spielgefühl. "
-    + "Die Vorgabe von einer Woche passt zu jedem Charakter.",
+  // ⚠️ `tippfenster` stand hier bis zum 23.08.2026 mit der Begründung „eine
+  // Betriebsfrage der Runde, kein Spielgefühl — die Vorgabe von einer Woche
+  // passt zu jedem Charakter". Beides war richtig, solange das Fenster nur
+  // zwei Kanten hatte. Mit dem gemeinsamen TIPPSCHLUSS (JK18) ist es keine
+  // Betriebsfrage mehr: er entscheidet, ob eine Runde überhaupt zwei Phasen
+  // hat, und ohne ihn geht die ganze Fremdjoker-Familie nicht auf. Deshalb
+  // setzt ihn die Regler-Stufe „Auch aufeinander wetten" jetzt mit — und der
+  // Eintrag hier ist damit überholt, nicht bloß unnötig. `ueberholteBegruendungen()`
+  // hat das im selben Lauf gemeldet, in dem er entstand; genau dafür gibt es
+  // die Gegenprobe.
 
   // ⚠️ Der einzige Eintrag hier, der ein KANDIDAT für Stufe 2 ist, sobald er
   // vermessen ist. Er steht bewusst als Begründung und nicht als Lücke da,

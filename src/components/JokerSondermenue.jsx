@@ -5,6 +5,7 @@ import { DEFAULT_RULES, RULE_LIMITS, reglerSchritt, einsatzKonflikte } from "@/l
 import { beschreibeVerteilung } from "@/lib/jokerPlan";
 import { TAKTE, perioden } from "@/lib/jokerBudget";
 import { PHASEN, DUELL_LIMITS, sanitizeDuellJoker } from "@/lib/duellJoker";
+import { aktiveArten, familieAn } from "@/lib/fremdjoker";
 import { beschreibeMuenzTakt, muenzTaktKonflikte } from "@/lib/muenzTakt";
 import { C, MONO, RUND } from "@/lib/theme";
 import { zahl, fmtFaktor } from "@/lib/format";
@@ -15,7 +16,7 @@ import JokerOekonomie from "@/components/JokerOekonomie";
 import JokerGrundform from "@/components/JokerGrundform";
 import LimitKlassen from "@/components/LimitKlassen";
 import Ereignisse from "@/components/Ereignisse";
-import DuellJoker from "@/components/DuellJoker";
+import Fremdjoker from "@/components/Fremdjoker";
 import Drehrad from "@/components/Drehrad";
 import TeilCodeFeld from "@/components/TeilCodeFeld";
 
@@ -89,6 +90,13 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
   const jh = j.heimat ?? DEFAULT_RULES.joker.heimat;   // Heimatbonus
   const jm = j.mut ?? DEFAULT_RULES.joker.mut;         // Mut-Bonus
   const duell = sanitizeDuellJoker(rules?.duell);
+  // 🔴 „Welche Fremdjoker laufen?" wird NICHT hier nachgezählt: Klau und Block
+  // stehen in `rules.duell`, Trittbrettfahrer und Gegenwette in
+  // `rules.eingriffe`, und das Dach (`eingriffe.enabled`) kann beides
+  // wegnehmen. `aktiveArten`/`familieAn` sind die EINE Stelle, die das
+  // beantwortet (Runden-Schicht, CLAUDE.md).
+  const fremdArten = aktiveArten(rules);
+  const fremdAn = familieAn(rules);
 
   const setzeJoker = (p) => onChange({ joker: { ...j, ...p } });
   // `einsatzFenster` ist dieselbe Form wie `rules.duell`/`budget.fenster` —
@@ -157,7 +165,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
     j.modus === "ranking" ? "Rangliste" : j.modus === "einsatz" ? "Einsatz" : "Ein Joker",
     jh.enabled ? "Heimat" : null,
     jm.enabled ? "Mut" : null,
-    duell.enabled ? "Duell" : null,
+    fremdAn ? "Fremdjoker" : null,
   ].filter(Boolean).join(" · ");
 
   const standB = !j.enabled ? "—" : j.modus === "einsatz"
@@ -263,10 +271,11 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
             ANDEREN trifft — eigene Zeile mit eigenem Untermenü, weil er
             eigene Zeitfenster und eigene Schutzregeln hat. */}
         <div style={{ marginTop: 12 }}>
-          <GrosseZeile icon="⚔️" titel="Fremdjoker (Duell)" unter="Klauen und Blocken"
-            wert={duell.enabled ? "an" : "aus"}
+          <GrosseZeile icon="⚔️" titel="Fremdjoker"
+            unter="Blocken · Klauen · Mitprofitieren · Gegenwette"
+            wert={fremdAn ? `an · ${fremdArten.length} Arten` : "aus"}
             offen={unter === "duell"} onClick={() => aufUnter("duell")}>
-            <DuellJoker rules={rules} onChange={(d) => onChange({ duell: d })} />
+            <Fremdjoker rules={rules} onChange={onChange} />
           </GrosseZeile>
         </div>
       </GrosseZeile>

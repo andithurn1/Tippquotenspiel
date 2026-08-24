@@ -5,6 +5,7 @@ import {
 import { DEFAULT_RULES, sanitizeRules, RULE_LIMITS, maxTotalModifier } from "@/lib/engine";
 import { PRESETS } from "@/lib/presets";
 import { CHARAKTERE } from "@/lib/charaktere";
+import { schaufensterRegeln } from "@/lib/schaufenster";
 
 const BASIS = PRESETS[0].rules;
 
@@ -217,5 +218,75 @@ describe("Zusammenfassung", () => {
     expect(zusammenfassung(DEFAULT_RULES).stufe).toBe("warnung");
     const nurHinweis = sanitizeRules({ ...BASIS, combo: { tendenz: 1.15, abstand: 1.5, exakt: 1.6 } });
     expect(zusammenfassung(nurHinweis).stufe).toBe("hinweis");
+  });
+});
+
+// ── Die FREMDJOKER-Familie (23.08.2026) ─────────────────────
+// 🔴 Drei Kombinationen, die jede für sich erlaubt sind und zusammen eine
+// Runde ergeben, die niemand spielen will. Gemeldet, nicht gesperrt — „will
+// ein Admin etwas Unbalanciertes, soll er es haben" (Andi, 21.08.2026).
+describe("Fremdjoker: Kombinationen, die eine Runde kippen", () => {
+  const R = (duell = {}, eingriffe = {}) => sanitizeRules({
+    ...DEFAULT_RULES,
+    duell: { ...DEFAULT_RULES.duell, enabled: true, typen: ["klau", "block"], ...duell },
+    eingriffe: { ...DEFAULT_RULES.eingriffe, ...eingriffe },
+  });
+  const ids = (r) => pruefe(r).map((w) => w.id);
+
+  it("ohne Fremdjoker schweigt die Familie", () => {
+    const raus = ids(sanitizeRules(DEFAULT_RULES));
+    expect(raus).not.toContain("fremdjoker-ohne-schutz");
+    expect(raus).not.toContain("fremdjoker-rudel");
+    expect(raus).not.toContain("sperrfrist-waechst-unbegrenzt");
+  });
+
+  // 🔴 Andis Begründung: „weil man die halt evtl selber live verfolgen will,
+  // und's deswegen blöd wäre." Der Schutz ist die Bedingung dafür, dass eine
+  // Runde die Fremdjoker eingeschaltet LÄSST.
+  it("meldet Fremdjoker ohne jeden Schutz — und setzt ein Schild ein", () => {
+    const r = R({}, { schutz: { proSpieltag: 0, sichtbar: true, verfall: "zurueck" } });
+    expect(ids(r)).toContain("fremdjoker-ohne-schutz");
+    expect(korrigieren(r, "fremdjoker-ohne-schutz").eingriffe.schutz.proSpieltag).toBe(1);
+  });
+
+  // Das Rudelbilden stand bis zum 23.08.2026 nur im Duell-Baustein und kam in
+  // den Profi-Warnungen gar nicht vor.
+  it("meldet das Rudelbilden — freie Zielwahl, keine Sperre, viele Treffer", () => {
+    const r = R({ zielWahl: "frei", maxProZiel: 4 });
+    expect(ids(r)).toContain("fremdjoker-rudel");
+    expect(korrigieren(r, "fremdjoker-rudel").eingriffe.sperrfrist.standard.spieltage).toBe(2);
+  });
+
+  it("das Los macht das Rudelbilden unmöglich — dann schweigt die Warnung", () => {
+    expect(ids(R({ zielWahl: "ausgelost", maxProZiel: 4 }))).not.toContain("fremdjoker-rudel");
+  });
+
+  it("eine Sperrfrist bremst ebenfalls — die Warnung ist keine Dauermeldung", () => {
+    const r = R({ zielWahl: "frei", maxProZiel: 4 },
+      { sperrfrist: { standard: { spieltage: 2, aufschlag: 0, hoechstens: 0 } } });
+    expect(ids(r)).not.toContain("fremdjoker-rudel");
+  });
+
+  // ⚠️ Kein Balance-Urteil, sondern eine Rechenaussage.
+  it("meldet eine Sperrfrist, die über die Saison hinauswächst", () => {
+    const r = R({}, { sperrfrist: { standard: { spieltage: 2, aufschlag: 6, hoechstens: 0 } } });
+    expect(ids(r)).toContain("sperrfrist-waechst-unbegrenzt");
+    expect(korrigieren(r, "sperrfrist-waechst-unbegrenzt").eingriffe.sperrfrist.standard.hoechstens).toBe(6);
+  });
+
+  it("mit Obergrenze schweigt sie", () => {
+    const r = R({}, { sperrfrist: { standard: { spieltage: 2, aufschlag: 6, hoechstens: 6 } } });
+    expect(ids(r)).not.toContain("sperrfrist-waechst-unbegrenzt");
+  });
+
+  // 🔴 Die Gegenprobe, die im Projekt schon dreimal etwas gefunden hat: die
+  // Schaufenster-Runde hat ALLE vier Arten an und darf trotzdem keine dieser
+  // Warnungen auslösen. Täte sie es, wäre die Vorführrunde selbst der Beleg
+  // dafür, dass die Familie so nicht spielbar ist.
+  it("die Schaufenster-Runde löst keine davon aus", () => {
+    const raus = ids(schaufensterRegeln());
+    expect(raus).not.toContain("fremdjoker-ohne-schutz");
+    expect(raus).not.toContain("fremdjoker-rudel");
+    expect(raus).not.toContain("sperrfrist-waechst-unbegrenzt");
   });
 });

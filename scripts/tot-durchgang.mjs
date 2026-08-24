@@ -57,6 +57,25 @@ const GEDULDET = {
     + "selbst, weil sie zusätzlich nach Regelwerk je Spiel gruppiert. Beide "
     + "gehen über `tippStatus`, also eine Rechnung.",
 
+  // ── Am 23.08.2026 geprüft und stehen gelassen ─────────────
+  // 🔴 Die beiden Hälften EINER Definition: „geht dieser Tipp auf der Stufe X
+  // auf?" — einmal als Wahrscheinlichkeit VORHER (aus dem Quoten-Raster),
+  // einmal als Tatsache NACHHER (gegen das echte Ergebnis). Innerhalb von
+  // `fremdjoker.js` ruft `fremdEinsaetze` beide auf; diese Textsuche sieht
+  // Aufrufe in derselben Datei bauartbedingt nicht.
+  // ⚠️ Sie bleiben EXPORTIERT, weil genau daran ihr Test hängt: laufen die
+  // zwei Fassungen auseinander, gewinnt eine Gegenwette, die nach der Wertung
+  // verloren ist. Ein internes `passt()` verbindet sie im Code, der Test
+  // verbindet sie in der Aussage.
+  trefferWahrscheinlichkeit:
+    "Vorher-Hälfte der Gegenwetten-Definition. Wird in `fremdjoker.js` selbst "
+    + "von `fremdEinsaetze`/`gegenwetteVorschau` benutzt — dieselbe Datei, "
+    + "also für diese Suche unsichtbar. Der Export trägt den Test, der sie an "
+    + "`tippGetroffen` bindet.",
+  tippGetroffen:
+    "Nachher-Hälfte derselben Definition. Dito — von `fremdEinsaetze` in "
+    + "derselben Datei aufgerufen.",
+
   // ── Am 07.08.2026 geprüft und stehen gelassen ─────────────
   // Beide werden INNERHALB von `balanceSim.js` aufgerufen (`simulateBalance`
   // benutzt sie) — dieselbe Datei sieht diese Textsuche bauartbedingt nicht.

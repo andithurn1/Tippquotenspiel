@@ -34,6 +34,163 @@ dieselbe austauschbare Stelle wie bei den Quoten.
 
 ---
 
+## 🔴🔴 Fremdjoker wirkten auf dem FALSCHEN SPIELTAG — behoben (23.08.2026)
+
+**Der teuerste Fehlertyp dieses Projekts, wieder einmal** (CLAUDE.md,
+Runden-Schicht, Frage 2: „Welcher Spieltag ist das?"). Gefunden beim
+prüfenden Lesen der eigenen Arbeit, nicht von einem Test.
+
+Die Fremdjoker-Einsätze trugen den **Liga-Spieltag** (`t.matchday`). Der
+Verlauf ist aber nach der **chronologischen Position über alle Wettbewerbe**
+geordnet. In einer Runde mit einem Wettbewerb ist das dieselbe Zahl — deshalb
+ist es nie aufgefallen.
+
+**Gemessen an vier echten Spielen** (bl#1 · bl#2 · cl#1 · cl#2): ein Klau,
+gesetzt am **CL-Spieltag 2**, wirkte auf den **Bundesliga-Spieltag 2**. Er nahm
+Punkte von einem ganz anderen Tag ab. Fehlgeschlagen ist dabei nichts, kein
+Test wurde rot, keine Zahl sah verdächtig aus.
+
+⚠️ **Die naheliegende Reparatur war ebenfalls falsch.** `rundenSpieltagVon`
+(zeitachse.js) zählt die Spieltage der ZEITACHSE, und die bündelt anders —
+gemessen ergeben 34 Bundesliga-Spieltage **42 Achsen-Positionen**. Mit ihr
+landete der Einsatz auf Position 5 von 4, also nirgends.
+
+**Maßgeblich ist `verlaufPositionen(entries)`** (neu in `spieltag.js`): die
+Zahl wird aus DERSELBEN Liste abgeleitet, aus der auch der Verlauf entsteht.
+Zwei Ableitungen könnten auseinanderlaufen, eine kann es nicht.
+
+### ⚠️ Zwei Skalen, die nie verglichen werden dürfen
+
+| Wo | Welche Zahl | Wer benutzt sie |
+|---|---|---|
+| **Wertung** | Position im Verlauf (`verlaufPositionen`) | Stores, `Historie.jsx`, `applyDuellJoker` |
+| **Prüfung/Anzeige** | Runden-Spieltag der Zeitachse | `Tippabgabe.jsx`, `duellPruefung.js` |
+
+Die Schutzregeln (`maxProZiel`, `immun`, `sperrfristJeZiel`) leben **ganz** in
+der zweiten Skala; die Wertung fragt sie nie. Solange das so bleibt, ist beides
+in sich stimmig. **Wer eine Schutzregel in die Wertung zieht, muss zuerst diese
+Tabelle auflösen** — sonst vergleicht er zwei Zahlen, die dasselbe heißen und
+nicht dasselbe sind.
+
+---
+
+## 📏 Abdeckung: 188 von 199 Einstellbarkeiten werden vorgeführt — der Rest hat Gründe
+
+`npm run einstellbar` (23.08.2026) beantwortet zwei Fragen, die vorher niemand
+stellte: nimmt ein Feld überhaupt einen anderen Wert an, und überlebt er das
+Teilen? Die zweite Zahl daneben ist die, um die es Andi ging.
+
+**Beim ersten Lauf: 78 von 199.** 121 Blattfelder wurden NIRGENDS im Projekt
+anders gesetzt als in der Vorgabe — nicht in einem Preset, nicht in einem
+Charakter, nicht in einer Regler-Stufe, nicht im Schaufenster. Gebaut, geprüft,
+teilbar, und von keinem Menschen je vorgeführt.
+
+**Seit dem 23.08.2026: 188 von 199.** Das Schaufenster (`ALLES`) setzt jetzt
+jede Einstellung, die sich mit dem verträgt, was die Runde zeigt.
+
+🔴 **Und hier steht der eigentliche Merksatz dieses Abschnitts**, weil an
+dieser Stelle vorher das Gegenteil stand: an derselben Stelle hieß es „⛔ die
+Zahl NICHT als Ziel behandeln“ — geschrieben von der Session, die die Messung
+gebaut hatte, mit einer an sich vernünftigen Begründung (eine Runde, die jeden
+Regler verstellt, liest sich niemand durch). Andis Auftrag lautete wörtlich
+anders: *„mach die demo runde bzw tests so dass sie alle Einstellbarkeiten
+abdeckt.“* **Ein eigener Vorbehalt ist keine Absage an eine Ansage** — er
+gehört daneben, nicht davor (CLAUDE.md, „UMFANG NIE EIGENMÄCHTIG KÜRZEN“).
+
+### Die 11 übrigen sind kein Rest, sondern eine Liste mit Gründen
+
+| Wo | Wie viele | Was das heißt |
+|---|---|---|
+| `SCHAU_AUSGENOMMEN` (schaufenster.js) | 7 | Einstellungen, die einander AUSSCHLIESSEN. `spiele.modus` hat genau einen Wert, und „teams“ zeigt eine andere Runde als „alle“. |
+| `GEKOPPELT` (einstellbarkeit.js) | 4 | Felder, die sich ohne ihren Partner gar nicht setzen lassen — `werWert` ohne `wer: abPlatz` ist keine Angabe, sondern ein Missverständnis. |
+
+⚠️ **Die Prüf-Zahl ist deshalb nicht die Abdeckung, sondern `unerklaert`:** ein
+Feld, das nirgends vorgeführt wird UND für das niemand einen Satz geschrieben
+hat. Sie steht auf 0 und wird von drei Tests dort gehalten.
+
+⛔ **Was weiter gilt:** die Werte im Schaufenster sind DEMO-Werte. Sie behaupten
+keine Empfehlung, und nichts davon gehört in `presets.js` oder `charaktere.js`.
+Dass `reglerWarnung.pruefe()` auf dieser Runde acht Meldungen wirft, ist der
+Beleg, dass die Warnungen greifen — nicht eine Aufgabe, sie stillzustellen.
+
+---
+
+## 🔍 Drei Befunde beim Bau der Fremdjoker (23.08.2026) — alle GEMESSEN
+
+Keiner kam aus einem Test; alle drei aus den Durchgängen und aus dem Nachrechnen
+am Rand. Sie stehen hier und nicht im Chat, weil ein Chatverlauf nach dem
+Fenster weg ist.
+
+### 1. ✅ ERLEDIGT — `duell.proSpieltag` war wirkungslos, ist angeschlossen
+
+**Andis Entscheidung vom 23.08.2026: mehrere ja, aber auf VERSCHIEDENE Spiele.**
+`einsaetzeAusTipps` nimmt jetzt `proSpieltag` entgegen, `fremdEinsaetze` reicht
+es aus dem Regelwerk durch. Nachgemessen: drei gesetzte Tipps an einem Spieltag
+ergeben bei `proSpieltag` 1 · 2 · 3 jetzt **1 · 2 · 3 Einsätze** in der Wertung
+— vorher dreimal einen. „Verschiedene Spiele" braucht keine eigene Prüfung: ein
+Fremdjoker wird beim Tippen EINES Spiels gesetzt, und je Spieler und Spiel gibt
+es genau einen Tipp.
+
+Der Befund, wie er dastand:
+
+
+
+**Gemessen**, nicht vermutet: ein Plan im engstmöglichen Fenster
+(`phase: "manuell"`, Spieltag 30–32, `anzahl: 6`) ergibt bei `proSpieltag` 1, 2
+und 3 **dreimal dieselben drei Plan-Tage und dreimal drei Einsätze**.
+
+Zwei Gründe, unabhängig voneinander:
+
+- `duellPlan` baut die Tage aus einer MENGE von Spieltagen — ein Spieltag kann
+  darin gar nicht doppelt vorkommen, also findet
+  `abstandUndProSpieltagAnwenden` nie etwas zu begrenzen.
+- Selbst wenn: `einsaetzeAusTipps` lässt „je Spieler UND Spieltag höchstens EIN
+  Einsatz" durch. Ein zweiter Einsatz am selben Tag käme in der Wertung nie an.
+
+⚠️ **Warum es keiner der Durchgänge gefunden hat:** `npm run greift` Teil 4
+misst beim Duell `zielWahl`, `maxProZiel`, `immun`, `konter` und `kosten` — die
+Liste ist von Hand gepflegt, und `proSpieltag` steht nicht darin. Genau die
+Lücke, vor der der Kopf des Skripts warnt: *„eine Liste, die schweigt, sieht
+aus wie eine ohne Befund."*
+
+**Nicht behoben** — es gehört nicht zu JK4–JK7 und die Antwort ist keine
+Kleinigkeit: entweder `proSpieltag` fällt weg (dann ist `anzahl` die einzige
+Mengenangabe), oder die Ein-Einsatz-Regel in `einsaetzeAusTipps` wird gelockert.
+Das Zweite hängt an Andis offener Frage aus Teil D — *„Darf man auf denselben
+Tipp mehrere Handlungen legen?"*
+
+### 1b. Vier Tippziele der Fremdjoker-Oberfläche waren 40 px breit
+
+Im Browser gemessen (375 px, Chromium): die Pillen „An" und „Aus" wurden
+44 hoch, aber nur **40 breit** — `TAPZIEL` setzt bewusst nur die HÖHE (die
+Begründung steht im Kopf von `tapziel.js`), und bei langen Beschriftungen
+genügt das auch. Bei zwei Buchstaben nicht. `Fremdjoker.jsx` und
+`DuellJoker.jsx` nehmen jetzt `TAPZIEL_QUADRAT`; nachgemessen: **5 → 1**, und
+der letzte ist der 32-px-Stepper, den `tapziel.js` ausdrücklich als Ausnahme
+führt.
+
+⚠️ Der Verdacht liegt nahe, dass es weitere kurze Pillen mit `TAPZIEL` gibt.
+`npm run sicht` misst das nicht — es fragt nach Anzeige, nicht nach Größe.
+
+### 2. ✅ ERLEDIGT — `tabellenBonus` hatte keinen Messfall in `npm run greift`
+
+Nachgetragen am 23.08.2026: **bewegt 2625 Punkte.** Er brauchte
+`fallback: "quote"` — der Tabellenplatz wird beim ÖFFNEN des Spieltags auf dem
+Snapshot eingefroren, und im Messfall gibt es keine Tabelle. Genau dafür ist
+der Fallback gebaut („ohne diese Wahl wäre er an den ersten Spieltagen still
+wirkungslos, und niemand merkt es").
+
+**Damit ist `greift` Teil 3 zum ersten Mal vollständig:** 31 von 41 Blöcken mit
+Messfall, 10 ausdrücklich begründet, keiner mehr stumm.
+
+### 3. `wettbewerbe` ist weiter die eine Lücke in `npm run stufen`
+
+Unverändert seit dem 06.08.2026, durch eine Sperrklinke im Test festgehalten.
+Der Übergabe-Eintrag im Kanal vom 23.08. sagt „stufen ohne Lücke" — das war
+schon damals eine zu freundliche Zusammenfassung.
+
+---
+
 ## 🧱 Sondermenüs — der Umbau zur EINEN Ansicht (Andi EB2/EB4, 22.08.2026)
 
 **Reihenfolge ist zwingend: erst alle Sondermenüs, DANN der Umschalter weg.**
@@ -89,6 +246,13 @@ beide waren beim Nachsehen keine.
    28.08.2026, vorher ist die Tabelle leer). Steht als `hinweis` am Messfall.
 
 ## ⛔ ENDPHASE — hier steht, was ERST GANZ AM SCHLUSS drankommt
+
+- ⚠️ **Die Balance-Ampel sagt „Nicht mitgerechnet: Duell-Joker (Klau und
+  Block)".** Seit dem 23.08.2026 sind es VIER Fremdjoker; Trittbrettfahrer und
+  Gegenwette fehlen in dem Satz genauso. Der Text ist damit nicht falsch,
+  sondern unvollständig. ⛔ **Nicht jetzt anfassen** — `balanceSim.js` und die
+  Ampel bleiben, wie sie sind (CLAUDE.md). Hier vermerkt, damit es beim
+  Balancing nicht neu entdeckt werden muss.
 
 **Nicht anfangen. Nicht messen. Nicht melden.** Ausdrückliche Anweisung von
 Andi, mehrfach wiederholt; die verbindliche Fassung steht ganz oben in

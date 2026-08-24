@@ -126,10 +126,351 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
-### 2026-08-23 (X) · **ÜBERGABE an ein frisches Fenster** — und: es gibt nur noch EIN Fenster
+### 2026-08-23 (XIV) · **Das Schaufenster führt jetzt 188 von 199 Einstellungen vor** — und zwei Funde aus dem prüfenden Lesen
 
 > **👉 Frische Session: DAS ist dein Einstieg.** Alles darunter ist Historie.
 > Arbeitsordner: **`C:\Dev\Tippquotenspiel`**.
+
+Branch `claude/fremdjoker-jk4-jk7-ehc5fw` · **2453 Tests grün** · neun
+Durchgänge ohne offenen Befund (außer der bekannten `wettbewerbe`-Lücke).
+
+#### Worum es ging
+
+Andi wörtlich: *„mach die demo runde bzw tests so dass sie alle
+Einstellbarkeiten abdeckt.. um sie zu prüfen."* Gemessen mit dem neuen
+`npm run einstellbar` waren es **78 von 199** Blattfeldern — 121 Einstellungen
+wurden im ganzen Projekt nirgends anders gesetzt als in der Vorgabe. Jetzt sind
+es **188 von 199**, und die 11 übrigen tragen je einen Satz.
+
+🔴 **Der Teil, der hier für die nächste Session steht, ist nicht die Zahl.**
+An genau dieser Stelle in `design/roadmap.md` stand vorher „⛔ die Zahl NICHT
+als Ziel behandeln" — geschrieben von der Session, die die Messung gebaut
+hatte, mit einer an sich vernünftigen Begründung. Andis Ansage lautete wörtlich
+anders. **Ein eigener Vorbehalt ist keine Absage an eine Ansage**; er gehört
+daneben, nicht davor. Der Vorbehalt steht jetzt als **PR2** in
+`design/auftraege.md` — als Frage an ihn, nicht als stilles Nein.
+
+#### Zwei Funde, beide aus dem Lesen, keiner aus einem Test
+
+**1. Der einstellbar-Durchgang hat sich selbst belogen.** Für eine ZAHL mit
+Vorgabe 0 liefert der generische Kandidaten-Vorrat über `wert * 2` und
+`wert / 2` zweimal **die 0 selbst**. Wurden alle anderen Kandidaten von
+`sanitizeRules` verworfen, kam die 0 durch — und das Feld stand als „geprüft"
+in der Liste, ohne sich je bewegt zu haben. Betroffen: `wettbewerbe.phasenStufe`
+(Vorgabe 0, Deckel 0.3 — 1, 2, 3, 10, 100 klemmen alle auf 0.3, −1 auf 0).
+Behoben in `einstellbarkeit.js`: Kandidaten gleich der Vorgabe fliegen raus,
+und ein Wert, der auf seiner eigenen GRENZE ankommt, zählt als Beleg (nur als
+Nachrücker, und nie für einen Projekt-Wert — dort bleibt Klemmen ein Fund).
+
+**2. Der anzeige-Durchgang kannte die neuen Fremdjoker nicht.** Trittbrettfahrer
+und Gegenwette schreiben in dieselbe Marke `duell` wie Klau und Block; eine
+Verschiebung aus ihnen wäre als „unerklärter Rest" in der Tabelle gestanden.
+Zwei Fälle ergänzt, beide mit Vorzeichen (Trittbrett bewegt BEIDE Seiten, die
+Gegenwette kann den Angreifer ins Minus setzen).
+
+#### Was sich am Regelwerk NICHT geändert hat
+
+⚠️ **Nichts.** Kein neues Feld, keine geänderte Bedeutung, keine Migration.
+Was sich geändert hat, sind DEMO-Werte in `schaufenster.js` und die Prüf-Skripte.
+
+#### Was die nächste Session wissen muss
+
+- 🔴 **`SCHAU_AUSGENOMMEN` in `schaufenster.js`** ist eine Entscheidungs-Liste,
+  kein Ablagefach: 7 Einstellungen, die sich mit dem ausschließen, was die
+  Runde zeigt (`spiele.modus` hat genau einen Wert). Jede Zeile trägt ihren
+  Satz, und `ueberholteAusnahmen()` meldet eine, die nicht mehr stimmt.
+- 🔴 **Die Prüf-Zahl heißt `unerklaert`, nicht „Abdeckung".** 188/199 liest
+  sich wie ein Rest von 11 — der Rest ist begründet. `unerklaert` steht auf 0
+  und wird von drei Tests dort gehalten.
+- ⚠️ **`reglerWarnung.pruefe()` meldet auf der Schaufenster-Runde acht Punkte,
+  und das ist richtig.** Ein Regelwerk, in dem jede Einstellung von der Vorgabe
+  abweicht, verlässt zwangsläufig die Empfehlungsbänder. ⛔ **Nicht
+  glattziehen** — das wäre Balance-Arbeit (Endphase) an einer Prüfhilfe.
+- Die Runde umfasst jetzt **54 Spiele** (Bundesliga, Spieltag 1–6) statt 306:
+  `spiele.spieltagVon/Bis` gehören zu den vorgeführten Einstellungen. Wer im
+  Browser nachsieht: Beitritts-Code `ALLES`, und dem Screen ein bis zwei
+  Sekunden geben — der erste Render zeigt noch die Vorgabe-Runde.
+
+#### Offen für Andi (unverändert aus XIII, plus eine neue)
+
+1. **Sichtbarkeit je Fremdjoker** — er hat nur die SPERRFRIST einzeln benannt;
+   die Sichtbarkeit hat dieselbe Bauform bekommen. Zurückdrehen: zwei Zeilen.
+2. **PR2** — ob er neben `ALLES` eine RUHIGE Vorführ-Runde will. Diese hier ist
+   dicht, weil sie alles zeigt.
+
+---
+
+### 2026-08-23 (XIII) · 🔴 **Ein Wertungs-Fund** — und drei neue Prüfungen
+
+Branch `claude/fremdjoker-jk4-jk7-ehc5fw` · **2448 Tests grün** · neun
+Durchgänge ohne offenen Befund (außer der bekannten `wettbewerbe`-Lücke).
+
+#### 🔴🔴 Der Fund: Fremdjoker wirkten auf dem FALSCHEN Spieltag
+
+Gefunden beim prüfenden Lesen der eigenen Arbeit, nicht von einem Test.
+
+Die Einsätze trugen den LIGA-Spieltag. Der Verlauf ist aber nach der
+CHRONOLOGISCHEN Position über alle Wettbewerbe geordnet. Gemessen an vier
+echten Spielen (bl#1 · bl#2 · cl#1 · cl#2):
+
+> ein Klau, gesetzt am **CL-Spieltag 2**, wirkte auf den **Bundesliga-Spieltag 2**
+
+Er nahm Punkte von einem ganz anderen Tag ab. Nichts wurde rot. Bei EINEM
+Wettbewerb sind beide Zahlen dieselbe — genau deshalb ist es nie aufgefallen.
+
+⚠️ **Die naheliegende Reparatur war ebenfalls falsch.** `rundenSpieltagVon`
+zählt die Spieltage der ZEITACHSE, und die bündelt anders (34
+Bundesliga-Spieltage → 42 Achsen-Positionen). Maßgeblich ist
+`verlaufPositionen(entries)` (neu in `spieltag.js`): abgeleitet aus DERSELBEN
+Liste, aus der auch der Verlauf entsteht.
+
+**🔴 ZWEI SKALEN, die nie verglichen werden dürfen** — die Tabelle steht in
+`design/roadmap.md`. Kurzform: die Wertung rechnet in Verlaufs-Positionen, die
+Prüfung und die Oberfläche in Runden-Spieltagen der Zeitachse. Die
+Schutzregeln (`maxProZiel`, `immun`, `sperrfristJeZiel`) leben GANZ in der
+zweiten. **Wer eine davon in die Wertung zieht, muss zuerst die Tabelle
+auflösen.**
+
+#### Drei neue Prüfungen
+
+| | |
+|---|---|
+| **`npm run einstellbar`** (neu, der neunte) | Nimmt JEDES Blatt des Regelwerks einen anderen Wert an — und überlebt er den Creator-Code? Kandidaten werden GEERNTET, nicht gepflegt. Ergebnis: 0 Funde · 2 begründet gekoppelt · **Abdeckung 78/199** |
+| **`greift` Teil 3 vollständig** | `tabellenBonus` hatte als letzter Block keinen Messfall (bewegt 2625 Punkte). Zum ersten Mal ist keiner mehr stumm |
+| **Drei Fremdjoker-Warnungen** | `reglerWarnung.js` kannte die Familie gar nicht — es fragte `duell.enabled` und übersah zwei der vier Arten |
+
+#### 🔴 Die zweite Demo-Runde: Code `ALLES`
+
+`DEMO` fährt die Vorgabe und hat fast alles AUS — richtig für den ersten
+Eindruck, **unbrauchbar zum Prüfen**. `ALLES` („Schaufenster") schaltet an, was
+man sehen soll, und hat Tipps, die es auslösen.
+
+⛔ Die Zahlen darin sind DEMO-Werte. Nichts davon gehört in `presets.js` oder
+`charaktere.js`.
+
+⚠️ **Der Fund beim Bauen:** eine Runde ohne Tipps hat eine LEERE Tabelle — und
+die Tabelle ist die Zielliste. Also kein Ziel, also fehlte der ganze
+Fremdjoker-Block. Im Betrieb löst sich das über den Zwei-Phasen-Spieltag von
+selbst.
+
+#### ❓ Offen für Andi
+
+1. Die **Sichtbarkeit** steht jetzt auch je Art — er hat nur die Sperrfrist
+   einzeln benannt. Zurückdrehen kostet zwei Zeilen.
+2. **121 von 199 Blattfeldern** werden nirgends im Projekt vorgeführt. Kein
+   Fehler, aber eine Zahl, die er kennen sollte — ⛔ **nicht als Ziel
+   behandeln**, Begründung in der Roadmap.
+
+---
+
+### 2026-08-23 (XII) · **Die Fremdjoker-Familie ist vollständig** — JK4–JK7, JK12, JK14
+
+> ⚠️ **Nicht mehr der Einstieg** — der steht im Eintrag (XIII) darüber. Alles
+> hier gilt weiter.
+
+Branch `claude/fremdjoker-jk4-jk7-ehc5fw` · **2415 Tests grün** · alle acht
+Abnahmen ohne neuen Befund.
+
+Der Eintrag (XI) darunter beschreibt den Regel-Block `rules.eingriffe` — er
+gilt weiter, ist aber gewachsen. Was seither dazukam:
+
+| | |
+|---|---|
+| **JK5** Sperrfrist | jetzt **drei Ebenen**: eine Zahl · je Fremdjoker · wie die Sperre wirkt |
+| **JK12** ausgelostes Ziel | fünfte Stufe der Zielwahl + `eingriffe.los` |
+| **JK13** je Fremdjoker einzeln | Grundform · Sperrfrist · Sichtbarkeit · Auslosung |
+| **JK14** geschützte Spiele | `eingriffe.schutz`, Kontingent in der Wertung |
+| „max. je Spieltag" | war wirkungslos, ist angeschlossen |
+
+#### 🔴 Die eine Bauform, die man einmal versteht
+
+Vier Einstellungen stehen „je Fremdjoker einzeln", und alle vier benutzen
+DIESELBE Karte — `karteVon()` in `eingriffe.js`:
+
+```
+{ standard: <volle Form>,  block: <Abweichung>,  gegenwette: <Abweichung> }
+```
+
+Wer eine fünfte ergänzt, nimmt diese Funktion. Zwei handgeschriebene Läufe
+über `FREMDJOKER_ARTEN` wären die Sorte Doppelung, die auseinanderläuft: dann
+trüge die eine Karte einen Schlüssel weiter, den die andere wegwirft.
+
+#### 🔴 Die Sperrfrist trägt beide Verhalten in EINER Formel
+
+```
+warte = spieltage + max(0, n−1) × aufschlag        (gedeckelt: hoechstens)
+```
+
+`aufschlag: 0` ist die feste Sperre. `spieltage: 0, aufschlag: 2` ist Andis
+Fall: **kein Verbot beim zweiten Mal, und genau dadurch wächst die Wartezeit.**
+Bewusst KEIN zusätzliches Feld „Verbot oder Aufschlag?" — die Zahl sagt es
+schon, und ein zweiter Weg zur selben Aussage musste hier am selben Tag schon
+einmal aufgeräumt werden (siehe unten).
+
+#### 🔴 Das Los ist eine PERMUTATION, keine unabhängige Ziehung
+
+Jeder zieht genau einen und wird genau einmal gezogen. Zöge jeder für sich,
+könnten drei denselben ziehen — und das Rudelbilden, das das Los verhindern
+soll, wäre wieder da, nur mit Zufall statt Absicht. `seeded.js` ist die
+Quelle, also ist das Los Spielstand: ändert sich die Funktion, verschieben
+sich rückwirkend alle Lose.
+
+#### ⚠️ Ein Fund an der eigenen Arbeit, damit er nicht wiederkommt
+
+`eingriffe.ruecknahme` war ein ZWEITES Feld für „bis wann darf ich einen
+Einsatz zurücknehmen?" — die Joker-Grundform (`jokerBasis.widerruf`)
+beantwortet das längst, je Art, und die Tippabgabe setzt SIE beim Speichern
+durch. Eine Runde hätte „zurücknehmbar" anzeigen können, während das Speichern
+es verweigert. Gelöscht, bevor es je in einer Runde stand.
+
+**Die Lehre, allgemein:** bevor ein neues Feld in `eingriffe` entsteht, erst
+prüfen, ob die Grundform die Frage schon stellt. Sie stellt sehr viele.
+
+#### ❓ Was Andi noch entscheiden muss
+
+1. **Die Sichtbarkeit steht jetzt auch je Art** — er hat am 23.08.2026 nur die
+   SPERRFRIST einzeln benannt, aber die Antwort „gemeinsam lassen" als Ganzes
+   verworfen. Zurückdrehen kostet zwei Zeilen.
+2. **JK14 steht auf 🔨, nicht ✅:** das Schild in der Tippabgabe ist gebaut und
+   durch Tests belegt, aber nicht im Browser gesehen — die Demo-Runde hat die
+   Fremdjoker aus. Wer das nachholt, setzt die Zeile auf ✅.
+
+#### Was NICHT drankommt
+
+- ⛔ **Balancing.** Die Zahlen in `DEFAULT_EINGRIFFE` (Anteil 0,30 · Einsatz 25
+  · Aufschlag 2) sind Platzhalter im Sinne des Baukastens, keine Empfehlung.
+- ⛔ **Platzierung von Reglern**, bis die Masterdatei steht.
+
+---
+
+### 2026-08-23 (XI) · ⚠️ **REGELWERK** — der neue Block `rules.eingriffe` (Fremdjoker JK4–JK7)
+
+> ⚠️ **Nicht mehr der Einstieg** — der steht im Eintrag (XII) darüber. Alles
+> hier gilt weiter, ist aber gewachsen; die Ergänzungen stehen oben.
+
+**Push-Regel 3.** Ein neuer Regel-Block, der im Creator-Code mitwandert — und
+eine Verhaltensänderung, die hier ausdrücklich benannt gehört. `engine.js`
+rechnet unverändert; die Wertung selbst ist unberührt.
+
+Branch: `claude/fremdjoker-jk4-jk7-ehc5fw` · **2379 Tests grün** · lint sauber ·
+alle acht Abnahmen ohne neuen Befund.
+
+#### Was gebaut ist
+
+Die **Fremdjoker-Familie** hat jetzt vier Arten statt zwei:
+**Block · Klau · Trittbrettfahrer · Gegenwette**.
+
+| Zeile | Stand |
+|---|---|
+| **JK4** blocken · mitprofitieren · dagegen wetten | ✅ alle vier Arten, `greift`: bewegt 228 Punkte |
+| **JK5** Sperrfrist je Ziel | ✅ `eingriffe.sperrfristJeZiel` |
+| **JK6** vor der Frist sichtbar UND zurücknehmbar | ✅ inkl. Spieler-Ansicht in `MeineJoker` |
+| **JK7** die ganze Familie in EINEM Griff | ✅ `eingriffe.enabled` + `familieSchalten()` |
+
+Nebenbei fertig geworden: **JK9** (`minPayout` gilt für die Gegenwette nicht),
+**JK10** (sie kostet einen Einsatz), **JK15** (Fremdjoker treffen einzelne
+Spiele — dazu unten), **JK19** (der ehrliche Hinweis beim Einschalten).
+
+#### 🔴 Zwei neue Dateien, und WARUM es zwei sind
+
+```
+eingriffe.js    importiert NICHTS   Kataloge, Grenzen, rules.eingriffe, 1/(1−p)
+duellJoker.js → eingriffe.js        die Wertung, jetzt alle vier Arten
+fremdjoker.js → beide + ergebnisMatrix, jokerBasis, tippfenster
+```
+
+Die Aufteilung ist kein Geschmack: `duellJoker.js` MUSS die Familien-Vorgabe
+lesen (die Wertung kennt vier Arten), und `fremdjoker.js` MUSS `duellJoker.js`
+lesen. Lägen Dach und Logik zusammen, wäre das ein Importzyklus — genau der,
+vor dem der Kopf von `duellJoker.js` schon warnte.
+
+#### 🔴 Die EINE Auskunft: `aktiveArten(rules)`
+
+Klau und Block bleiben in `rules.duell`, Trittbrettfahrer und Gegenwette liegen
+in `rules.eingriffe`. Das ist asymmetrisch, und zwar mit Absicht: die beiden
+alten Arten ein zweites Mal unter `eingriffe` zu führen hieße, dass eine Runde
+ZWEI Antworten auf „ist der Block an?“ hätte.
+
+**Der Preis:** „welche Fremdjoker laufen?“ ist an keinem einzelnen Feld
+abzulesen. Deshalb `aktiveArten(rules)` in `fremdjoker.js` — **die einzige
+Stelle, an der diese Frage beantwortet wird.** Wer sie nachbaut, baut die
+zweite Wahrheit.
+
+⚠️ `engine.js` kann sie nicht importieren (Zyklus über `ergebnisMatrix`) und
+hält eine gleichlautende Kurzform. Beide sind durch einen Test aneinander
+gebunden — genau die Vorsichtsmaßnahme, die bei `brauchtVerlauf` zweimal
+gefehlt hat.
+
+#### ⚠️ `eingriffe.enabled` ist standardmäßig AN
+
+Das sieht verkehrt herum aus. Der Grund, damit ihn niemand „korrigiert":
+
+1. Jede Art hat ihren eigenen Schalter und ist von sich aus AUS. Das Dach
+   schaltet also nichts ein — es steht bereit, alles auf einmal auszuschalten.
+2. Vorgabe „aus" würde jeden bestehenden Creator-Code mit `duell.enabled: true`
+   rückwirkend umschreiben.
+
+Beide Richtungen bedient `familieSchalten(rules, an)`.
+
+#### 🔴 VERHALTENSÄNDERUNG: Fremdjoker rechnen jetzt auf dem EINZELSPIEL
+
+Bis gestern warf `einsaetzeAusTipps` die `matchId` weg. Der Einsatz kam ohne
+Spiel bei `applyDuellJoker` an — und rechnete deshalb auf den ganzen SPIELTAG,
+obwohl die Einzelspiel-Rechnung seit dem 22.08. fertig danebenlag. Der
+Übergangszustand war im Code sauber benannt, nur hatte niemand die eine Zeile
+nachgetragen, die ihn beendet.
+
+Das ist Andis Ansage vom 22.08.2026 („also alle Fremdjoker nur für einzelne
+Spiele"), also die beschlossene Zielform — **aber es ist eine
+Verhaltensänderung**: ein Klau holt jetzt einen Anteil aus EINEM Spiel statt
+aus dem ganzen Spieltag, also deutlich weniger. Wer das rückgängig machen will,
+findet die Stelle in `einsaetzeAusTipps` (`matchId: t.matchId ?? null`).
+
+#### 🔴 Drei Funde beim Bauen, alle gemessen, keiner aus den Tests
+
+1. **`maxProZiel` und `immun` zählten nur die EIGENEN Einsätze** — obwohl ihre
+   Karte „Schutz der Getroffenen" heißt und der Hinweis darunter verspricht,
+   dass sich nicht die ganze RUNDE auf eine Person einschießt. Fünf Spieler
+   durften denselben fünfmal treffen, jeder einmal, ohne dass eine Schranke
+   ansprach. Beide sind jetzt ziel-bezogen; `sperrfristJeZiel` ist die
+   paar-bezogene. Damit sagt jede der drei genau das, was auf ihr steht.
+2. **`applyDuellJoker` fragte nie `duell.typen`.** Eine Runde mit
+   `typen: ["block"]` rechnete einen Klau-Einsatz mit.
+3. **`duellJoker.konflikte()` war von KEINER Oberfläche aufgerufen** — nur von
+   seinem eigenen Test. Die Meldung „mitverdienen ohne Deckel ist ein neuer
+   Punkte-Kanal" stand gebaut, geprüft und begründet da, und kein Admin hat sie
+   je gesehen. `npm run tot` fand das nicht: `konflikte` heißt in einem halben
+   Dutzend Module gleich. Jetzt bündelt `fremdjoker.konflikte()` beide.
+
+Dazu drei Befunde AUSSERHALB dieser Aufgabe, ausführlich in `design/roadmap.md`
+unter „Drei Befunde beim Bau der Fremdjoker": **`duell.proSpieltag` ist
+wirkungslos** (gemessen: von 1 bis 3 ändert sich nichts), `tabellenBonus` hat
+keinen Messfall in `greift`, und `wettbewerbe` ist weiter die eine Lücke in
+`stufen`.
+
+#### ❓ Was Andi entscheiden muss
+
+1. **Die drei FAMILIEN-Werte gelten für alle vier Arten gemeinsam**
+   (`sperrfristJeZiel`, `sichtbarVorFrist`, `ruecknahme`). JK13 sagt „je
+   Fremdjoker einzeln" — die GRUNDFORM (Widerruf, Sichtbarkeit, Abklingzeit) ist
+   das jetzt, diese drei nicht. Sollen sie es werden?
+2. **`duell.proSpieltag`**: streichen oder die Ein-Einsatz-Regel lockern? Hängt
+   an seiner offenen Frage „darf man auf denselben Tipp mehrere Handlungen
+   legen?“
+
+#### Was NICHT drankommt
+
+- ⛔ **Balancing** — die Zahlen in `DEFAULT_EINGRIFFE` (Anteil 0,30 · Einsatz 25)
+  sind Platzhalter im Sinne des Baukastens, keine Empfehlung.
+- ⏳ **JK12** (ausgelostes Ziel) und **JK14** (geschützte Spiele) sind weiter
+  offen — sie waren nicht Teil dieser Bestellung.
+
+---
+
+### 2026-08-23 (X) · **ÜBERGABE an ein frisches Fenster** — und: es gibt nur noch EIN Fenster
+
+> ⚠️ **Nicht mehr der Einstieg** — der steht im Eintrag (XI) darüber. Der
+> Ausblick unten („was als Nächstes ansteht: die Fremdjoker") ist ERLEDIGT.
 
 `main` bei `24d530d` · **2312 Tests grün** · Arbeitskopie leer · lint sauber.
 
