@@ -44,43 +44,119 @@ und zu technisch zum Reden.
 
 ---
 
-## 2 · Der Aufbau: Achsen statt Buchstaben
+## 2 · Die Achsen gehören JE TEILBIBLIOTHEK — nicht global
 
-Ein Regelwerk hat **12 Aspekte** (`presetMerge.ASPEKTE`). Die alle in einen
-Namen zu pressen ergäbe einen Absatz, keinen Namen.
+🔴 **Andis Korrektur vom 24.08.2026, und sie trifft einen Denkfehler von mir:**
 
-🔴 **Höchstens DREI Bedeutungs-Wörter plus EIN Ortsname.** Vier Bausteine sind
-die Grenze dessen, was jemand nach einmal Hören wiedergeben kann — darüber
-kippt es von „Name" zu „Aufzählung".
+> „ich denke wir sollten die Achsen für jede einzelne Teilbibliothek einzeln
+> bewerten. Weil ja bspw. bei Joker mit Rating des Umfangs (also Frequenz oder
+> Häufigkeit für den normalen Einsatz), Wucht natürlich wie stark die wirken
+> und wie viel sie am eigentlichen Ergebnis komplett ohne Joker wirken, und
+> Schärfe weiss ich noch nicht ganz für was das steht"
 
-Die drei Achsen, die ein Regelwerk am stärksten prägen:
+**Er hat recht, und der Beweis steckt in seinem eigenen Satz.** „Schärfe" war
+mein Wort für eine Eigenschaft der WERTUNG — wie hart ein knapper Fehltipp
+bestraft wird. Auf den Joker-Aspekt geklebt bedeutet es nichts, und genau
+deshalb konnte er damit nichts anfangen. Der Fehler war nicht das Wort, sondern
+**drei Achsen für zwölf verschiedene Dinge**.
 
-| Achse | aus welchem Aspekt | was das Wort sagt |
+⚠️ **Die Regel daraus:** Eine Achse gehört zu dem Aspekt, den sie beschreibt.
+`naehe` hat eine Schärfe, `joker` hat eine Frequenz — und keins von beiden hat
+die Achse des anderen.
+
+### Was das für den Satz heißt
+
+Der Satz bleibt **vierteilig**, aber jedes Wort kommt aus den Achsen SEINES
+Aspekts statt aus einer für alle geltenden Liste:
+
+```
+  auf der Allee      im Galopp        bei Sturm         ins Nebeltal
+  └ Aspekt spiele ┘  └ Aspekt joker ┘ └ Aspekt naehe ┘  └ Identität ┘
+     seine Achse        seine Achse      seine Achse
+```
+
+### Die Achsen je Teilbibliothek — Vorschlag
+
+⚠️ **Entwurf, nicht beschlossen.** Andis Vorbehalt in Abschnitt 2b gilt für die
+ganze Tabelle: solange nicht alle Parameter stehen, ist jede Zuordnung
+vorläufig.
+
+| Aspekt | Achsen, die ihn beschreiben | Andis Worte dazu |
 |---|---|---|
-| **UMFANG** | `spiele` | Wie viele Begegnungen umfasst die Runde? |
-| **WUCHT** | `joker` | Wie stark und wie oft greifen Joker ein? |
-| **SCHÄRFE** | `naehe` + `underdog` | Wie hart bestraft die Wertung einen knappen Fehltipp? |
+| **joker** | **Frequenz** (wie oft im normalen Einsatz) · **Wucht** (wie stark, gemessen als Abstand zum Ergebnis OHNE Joker) | beide wörtlich von ihm |
+| **spiele** | **Umfang** (wie viele Begegnungen) · **Breite** (wie viele Wettbewerbe) | — |
+| **naehe** | **Schärfe** (wie hart ein knapper Fehltipp fällt) · **Boden** (was ein völliger Fehltipp noch zahlt) | hier gehört „Schärfe" hin, nicht zu den Jokern |
+| **underdog** | **Neigung** (wie stark Außenseiter bevorzugt werden) | — |
+| **ereignisse** | **Dichte** (wie oft) · **Wucht** | — |
+| **modifikatoren** | **Wucht** (gemeinsamer Deckel) · **Vielfalt** (wie viele greifen) | — |
+| **fairness** | **Nachsicht** (Anschluss, Versäumnis, Streicher) | — |
+| **saison** | **Gewicht** (Anteil an der Gesamtwertung) | — |
+| **maerkte** | **Tiefe** (Ergebnis allein oder mit Torschützen) | — |
+| **mitbestimmung** | **Mitsprache** (wie viel die Runde selbst ändern darf) | — |
+| **kombi** · **anzeige** | *vermutlich keine eigene Achse* | zu klein für ein eigenes Wort im Satz |
 
-⚠️ **Diese drei sind ein Vorschlag, kein Naturgesetz.** Wer sie ändert, ändert,
-worauf der Name antwortet — das ist Andis Entscheidung, nicht meine.
+🔴 **Daraus folgt: der Satz zeigt nur die Aspekte, die tatsächlich abweichen.**
+Ein Regelwerk, das nur die Joker verstellt, bekommt keinen Vier-Wort-Satz,
+sondern einen kurzen. Alles andere wäre eine Behauptung über Dinge, die auf der
+Vorgabe stehen.
 
-### 🔴 Die Wörter kommen aus MESSUNGEN, nicht aus Handarbeit
+### 🔴 Die Zahl dahinter ist eine BEWERTUNG, kein Code
 
-Der Punkt, an dem so ein Schema sonst stirbt: Wenn jemand für jedes neue
-Regelwerk ein Wort **erfinden** muss, bleibt die Hälfte namenlos, und geladene
-Fremd-Codes bekommen nie einen.
+Andis zweite Korrektur, und auch die trifft einen Fehler von mir:
 
-Das Projekt kann es bereits messen — `bibliothek.js` rechnet über die echte
-Engine vier Kennzahlen je Regelwerk (Schärfe · Boden · Überraschung ·
-Torschützen-Anteil), und `spielauswahl.js` weiß, wie viele Spiele eine Auswahl
-umfasst. **Das Wort ist damit ableitbar statt gepflegt.**
+> „ich denke die knappen codes dahinter sollten eher eine Bewertung sein, wie
+> stark das jeweilige tatsächlich gewichtet ist bzw. in irgendeiner Aufschluss
+> darüber gibt, weil die game bzw. creatorcodes müssen ja eh nicht da rein bzw.
+> bringen die beim miteinander sprechen nichts"
 
-⚠️ Daraus folgt eine harte Regel: Ändert jemand das Regelwerk, ändert sich der
-Name mit. Ein Name, der nach einer Änderung stehen bliebe, würde lügen — genau
-wie der Kurzcode, der bei jeder Regeländerung ungültig wird (`touched()` in
-`Spielerstellung.jsx`).
+**Genau richtig, und mein Vorschlag war an dieser Stelle sinnlos.** Ich hatte
+Teil-Codes hinter die Wörter gelegt (`TS2A-joker-…`). Ein 2 315 Zeichen langer
+Code hilft niemandem, der über eine Runde SPRICHT — und Sprechen ist der ganze
+Zweck des Satzes.
+
+```
+  vorher (falsch)   im Galopp  →  TS2A-joker-eyJqb2tlciI6eyJlbmFibGVk…
+  jetzt (richtig)   im Galopp⁴ →  „Wucht 4 von 9"
+```
+
+Die Zahl beantwortet die Frage, die beim Reden wirklich aufkommt: **„und wie
+stark ist das?"** Sie ist die Stufe auf der Skala, nicht der Weg zurück zum
+Regelwerk.
+
+⚠️ Der Weg zurück zum Regelwerk bleibt der **Kurzcode** — 6 Zeichen, eine
+Ebene für sich. Er verschwindet nicht, er gehört nur nicht in den Satz.
 
 ---
+
+## 2b · 🔴 Andis Vorbehalt: erst die Parameter, dann die Zuordnung
+
+> „ich denke bevor wir das so richtig klar zuordnen können müssen echt alle
+> einstellbaren Parameter stehen, und das ist ja grade wegen meiner gewünschten
+> echt extrem hohen individualisierbarkeit echt schwer, deswegen sowieso nur
+> grobe Namensbeschreibung mit eben angemessenen Bereichen für die exakt
+> ausgewählten Parameter"
+
+⛔ **Das ist der Grund, warum hier nichts gebaut wird**, und er wiegt schwerer
+als die offenen Fragen darunter. Eine Achse ist eine Aussage über ALLE
+Parameter ihres Aspekts. Kommen morgen fünf dazu, verschiebt sich die Skala —
+und jeder Name, der heute vergeben wurde, zeigt danach auf etwas anderes.
+
+**Zwei Folgerungen, die den Entwurf prägen:**
+
+1. **GROB bleiben ist kein Kompromiss, sondern die Anforderung.** Der Satz sagt
+   „viele Joker, stark" — nicht „Joker-Faktor 1,6 bei Frequenz 4". Eine grobe
+   Aussage überlebt neue Parameter; eine genaue wird von jedem neuen Regler
+   falsch.
+2. **„Angemessene Bereiche" heißt: die Stufe ist ein BAND, kein Punkt.** Fünf
+   bis sieben Stufen je Achse, jede ein Wertebereich. Wer eine Achse in zwanzig
+   Stufen schneidet, hat bei jeder Regeländerung ein anderes Wort.
+
+⚠️ Das ist NICHT dasselbe wie Balancing (CLAUDE.md: Endphase). Hier wird nicht
+gefragt, ob eine Einstellung gut ist, sondern nur, **wo sie auf ihrer eigenen
+Skala liegt**. Die Messung dafür gibt es im Projekt schon zweimal — der
+Schützenanteil in `bibliothek.js` rechnet „mit" gegen „ohne", und
+`npm run greift` misst Vorgabe gegen Extremwert. Genau diese Bauform bräuchte
+Andis „wie viel sie am eigentlichen Ergebnis komplett ohne Joker wirken".
 
 ## 3 · Andis Vorschlag, ausbuchstabiert
 
@@ -216,28 +292,14 @@ Drei echte Beispiele:
 
 ---
 
-## 6 · Die Codes hinter den Wörtern — und was sie NICHT können
+## 6 · Warum der Satz das Regelwerk ohnehin nicht tragen könnte
 
-Andis zweiter Gedanke: *„die einzelnen codes hinter den einzelnen Variablen
-verstecken, der evtl ja sogar später zum gesamten Gamecode zusammensetzbar
-ist"*.
+⚠️ **Dieser Abschnitt hat sich mit Andis Korrektur erledigt** (siehe 2: hinter
+den Wörtern stehen BEWERTUNGEN, keine Codes). Er bleibt trotzdem stehen, weil
+die Messung dahinter unabhängig davon gilt — und weil sie erklärt, warum die
+Bewertungs-Lösung nicht nur schöner, sondern die einzig mögliche ist.
 
-✅ **Das passt genau auf die bestehende Architektur.** Ein Teil-Code
-(`TS2A-<aspekt>-…`) trägt schon heute genau EINEN Aspekt. Jedes Wort im Satz
-steht für einen Aspekt — also steht hinter jedem Wort ein fertiger Teil-Code,
-ohne dass etwas Neues erfunden wird.
-
-```
-  auf der Allee   →  TS2A-spiele-…          (Spielauswahl)
-  im Galopp       →  TS2A-joker-…           (Jokercode)
-  bei Sturm       →  TS2A-naehe-… + underdog
-  ins Nebeltal    →  die Identität des GANZEN
-```
-
-### 🔴 Aber: der Satz KANN das Regelwerk nicht tragen. Gemessen.
-
-Andi ahnte es (*„son Gesamtgamecode schnell mal über 200 Zeichen"*) — die echte
-Zahl ist deutlich größer. Gemessen am 24.08.2026 mit `encodePreset`:
+Gemessen am 24.08.2026 mit `encodePreset`:
 
 | Regelwerk | Zeichen |
 |---|---|
@@ -248,7 +310,7 @@ Zahl ist deutlich größer. Gemessen am 24.08.2026 mit `encodePreset`:
 | Charakter „Mutig & wild" | 1 300 |
 | 🔴 **Schaufenster** (188 von 199 Feldern abweichend) | **4 903** |
 
-Und aufgeschlüsselt, wo die Zeichen liegen (Schaufenster):
+Und wo die Zeichen liegen (Schaufenster):
 
 | Aspekt | Zeichen | Anteil |
 |---|---|---|
@@ -259,22 +321,25 @@ Und aufgeschlüsselt, wo die Zeichen liegen (Schaufenster):
 | spiele | 304 | 6 % |
 | alle übrigen sieben zusammen | 851 | 17 % |
 
-⚠️ **Vier Wörter können keine 4 903 Zeichen tragen.** Das ist keine Frage von
-Geschick, sondern von Informationsmenge: der Satz hat rund 9 × 4 × 6 × 2048 ≈
-442 000 mögliche Formen, das Regelwerk hat astronomisch mehr Zustände.
+Andi hatte „schnell mal über 200 Zeichen" befürchtet — es sind bis zu **4 903**,
+und fast die Hälfte davon ist ein einziger Aspekt.
 
-**Die Auflösung ist Andis eigene Formulierung: der Satz VERSTECKT die Codes, er
-IST sie nicht.** Drei Ebenen, jede mit ihrer Aufgabe:
+🔴 **Vier Wörter können das nicht tragen**, und zwar nicht aus Ungeschick,
+sondern weil die Informationsmenge nicht passt: der Satz hat rund
+9 × 4 × 6 × 2048 ≈ 442 000 mögliche Formen, das Regelwerk astronomisch mehr
+Zustände. **Damit ist die Bewertungs-Lösung nicht nur die angenehmere, sondern
+die einzige, die überhaupt geht.**
+
+Drei Ebenen, jede mit ihrer Aufgabe:
 
 | Ebene | Länge | trägt | wofür |
 |---|---|---|---|
-| **Satz** | ~45 Zeichen | eine Zusammenfassung | wiedererkennen, darüber reden |
-| **Teil-Codes** | je 15–2 315 | einen Aspekt vollständig | einzeln weitergeben („nimm meine Joker") |
+| **Satz** | ~45 Zeichen | grobe Bewertung je Aspekt | **darüber reden**, wiedererkennen |
+| **Teil-Code** | 15–2 315 | einen Aspekt vollständig | einzeln weitergeben („nimm meine Joker") |
 | **Kurzcode** | 6 | einen Verweis | tippen, verschicken |
 
-Ein Klick auf „im Galopp" gibt den Joker-Teil-Code her. Alle vier zusammen
-ergeben das ganze Regelwerk — nicht weil der Satz es trägt, sondern weil er
-darauf zeigt.
+⚠️ Die Teil-Codes verschwinden nicht — sie stehen weiter in der Bibliothek und
+an den Teil-Code-Feldern. Sie gehören nur **nicht in den Satz**.
 
 ### 💡 Und ein Weg, die 4 903 Zeichen wirklich zu drücken
 
@@ -299,30 +364,39 @@ stehen. Notiert als eigene Zeile in `design/roadmap.md`, nicht hier eingebaut.
 
 | ❓ | Frage | Stand |
 |---|---|---|
-| ~~❓1~~ | Welches Schema? | ✅ **Satz** („auf der Allee im Galopp bei Sturm ins Nebeltal") |
-| ❓2 | **Welche drei Achsen?** Vorgeschlagen: Umfang · Wucht · Schärfe | offen — legt fest, worauf der Name antwortet |
+| ~~❓1~~ | Welches Schema? | ✅ **Satz** — „auf der Allee im Galopp bei Sturm ins Nebeltal" |
+| ~~❓2~~ | Drei globale Achsen (Umfang · Wucht · Schärfe)? | ✅ **Verworfen.** Achsen gehören JE Teilbibliothek — Andi, 24.08.2026 |
 | ~~❓3~~ | Erzeugte Ortsnamen statt echter Städte? | ✅ **Ja** |
-| ❓4 | **Darf der Name sich ändern, wenn das Regelwerk sich ändert?** | offen. Ich halte Ja für richtig (ein Name, der stehen bliebe, lügt) — aber dann zeigt ein Name in einem alten Chat auf etwas anderes |
-| ❓5 | **Darf der Admin den Namen überschreiben?** | offen. Vorschlag: eigener Name erlaubt, erzeugter steht klein daneben |
-| ❓6 | **Kürzeres Code-Format gegen den Charakter** (siehe 6) — eigenes Thema, jetzt oder später? | offen |
+| ~~❓5a~~ | Codes hinter den Wörtern? | ✅ **Nein — Bewertungen.** Codes bringen beim Sprechen nichts |
+| ❓7 | **Stimmt die Achsen-Tabelle in Abschnitt 2?** Vor allem: hat `joker` genau zwei Achsen (Frequenz · Wucht) oder braucht es eine dritte? | offen — aber laut 2b ohnehin erst zu entscheiden, wenn die Parameter stehen |
+| ❓8 | **Wie viele Stufen je Achse?** Vorschlag: 5–7, jede ein Wertebereich | offen |
+| ❓9 | **Darf der Name sich ändern, wenn das Regelwerk sich ändert?** | offen. Ich halte Ja für richtig — ein Name, der stehen bliebe, lügt |
+| ❓10 | **Darf der Admin den Namen überschreiben?** | offen. Vorschlag: eigener Name erlaubt, erzeugter klein daneben |
+| ❓11 | **Kürzeres Code-Format gegen den Charakter** (Abschnitt 6) — eigenes Thema, jetzt oder später? | offen, unabhängig vom Namensschema |
 
----
+## 8 · Was zu bauen wäre — und warum jetzt nicht
 
-## 8 · Was zu bauen wäre (wenn ❓2 entschieden ist)
+⛔ **GESPERRT bis alle einstellbaren Parameter stehen** (Andis Vorbehalt,
+Abschnitt 2b). Das ist keine Vorsicht, sondern Rechnen: eine Achse ist eine
+Aussage über ALLE Parameter ihres Aspekts, und jeder neue Regler verschiebt die
+Skala. Namen, die vorher vergeben wurden, zeigen danach auf etwas anderes.
 
-Reihenfolge, kleinste lauffähige Schritte zuerst:
+⚠️ **Nicht als „nächster Schritt" in eine Übergabe schreiben** — dieselbe
+Falle, über die das Balancing dreimal zurückkam (CLAUDE.md).
 
-1. `src/lib/namensschema.js` — die vier Skalen MIT Genus und Fuge, die zwei
+Wenn es soweit ist, in dieser Reihenfolge:
+
+1. `src/lib/namensschema.js` — die Skalen MIT Genus und Fuge, die zwei
    Silbenlisten, `satzVon(rules)`. UI-frei (Architektur-Regel 1).
-2. **Die Stufen-Zuordnung messen, nicht raten**: welcher Messwert ergibt welches
-   Wort. Braucht einen Durchgang über alle Presets und Charaktere, damit die
-   Skala nicht 90 % ihrer Einträge in eine Stufe wirft — derselbe Fehler wie bei
-   PP2 („64 von 69 Einträgen dasselbe Icon").
-3. **Grammatik-Test über ALLE Kombinationen** (9 × 4 × 6 × 2048): keine Fuge
+2. **Je Aspekt eine Messung**, nach der Bauform, die es schon zweimal gibt: der
+   Schützenanteil in `bibliothek.js` rechnet „mit" gegen „ohne",
+   `npm run greift` misst Vorgabe gegen Extremwert. Andis „wie viel sie am
+   eigentlichen Ergebnis komplett ohne Joker wirken" ist genau das.
+3. **Die Stufen-Verteilung nachmessen**, bevor sie feststeht: wirft eine Skala
+   90 % ihrer Einträge in eine Stufe, ist sie unbrauchbar — derselbe Fehler wie
+   bei PP2 („64 von 69 Einträgen dasselbe Icon").
+4. **Grammatik-Test über ALLE Kombinationen** (9 × 4 × 6 × 2048): keine Fuge
    leer, kein doppeltes Leerzeichen, jeder Satz endet ohne Rest.
-4. Anzeige: der Satz neben dem Kurzcode, jedes Wort anklickbar → sein Teil-Code.
-5. Kollisions-Gegenprobe als Test: alle bekannten Regelwerke durchrechnen, die
+5. Anzeige: der Satz neben dem Kurzcode, je Wort seine Bewertung.
+6. Kollisions-Gegenprobe als Test: alle bekannten Regelwerke durchrechnen, die
    Zahl gleicher Sätze muss 0 sein.
-
-⛔ **Nicht anfangen, bevor ❓2 beantwortet ist.** Die Skalen sind schnell
-gebaut; welche Achsen der Satz trägt, legt alles andere fest.
