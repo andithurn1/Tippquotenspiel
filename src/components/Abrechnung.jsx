@@ -135,6 +135,17 @@ export default function Abrechnung() {
     return () => { live = false; };
   }, [roundId, meId]);
 
+  // 🔴 Der Rückfall MUSS erkennbar sein (24.08.2026, beim Leerzustands-Durchgang
+  // gefunden): eine frisch angelegte Runde zeigte „Dein Tipp 4:1 → Endstand
+  // 5:1 · GEWERTET +0" — vollständig, gewertet und **von einem echten Tipp
+  // nicht zu unterscheiden**. Der Rückfall war beabsichtigt (ohne ihn eine
+  // leere Fläche), nur sagte er nie, dass er einer ist.
+  //
+  // ⚠️ Nicht ersatzlos gestrichen: eine leere Abrechnung erklärt gar nichts.
+  // Die Antwort ist, das Beispiel als Beispiel zu KENNZEICHNEN und den Weg
+  // hinaus danebenzustellen — dieselbe Regel wie beim verwaisten Runden-Hinweis
+  // ein paar Zeilen weiter unten.
+  const istBeispiel = !eigener;
   const gezeigt = eigener ?? DEMO;
   const me = scoreTip(gezeigt.tip, gezeigt.result, gezeigt.snapshot, gezeigt.rules);
   const TIP_REACTION = tipScenario(me);   // GIF nach Tipp-Genauigkeit
@@ -190,6 +201,30 @@ export default function Abrechnung() {
           Deine zuletzt gewählte Runde gibt es nicht mehr — hier läuft jetzt die
           Demo-Runde. Über <strong style={{ color: C.text }}>wechseln</strong>
           {" "}kommst du mit einem Code zurück in eure Runde.
+        </div>
+      )}
+      {/* 🔴 Beispiel als Beispiel kennzeichnen — Begründung bei `istBeispiel`. */}
+      {istBeispiel && (
+        <div style={{
+          width: "100%", maxWidth: "var(--tqs-schirm-breite)", marginBottom: 10, lineHeight: 1.45,
+          background: C.ink2, border: `1px solid ${C.bernstein}55`, borderRadius: RUND.karte,
+          padding: "12px 14px",
+        }}>
+          <div style={{
+            fontFamily: MONO, fontSize: "0.6875rem", color: C.bernstein,
+            textTransform: "uppercase", letterSpacing: 1, marginBottom: 4,
+          }}>Beispiel</div>
+          <div style={{ fontSize: "0.9375rem", color: C.text, fontWeight: 700, lineHeight: 1.4 }}>
+            In dieser Runde ist noch kein Tipp gewertet.
+          </div>
+          <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+            Was unten steht, zeigt nur, wie eine Abrechnung aussieht — es sind
+            nicht deine Punkte.
+          </div>
+          <Link href="/tippen" style={{
+            ...TAPZIEL, display: "inline-flex", alignItems: "center", marginTop: 8,
+            color: C.mint, textDecoration: "none", fontSize: "0.9375rem", fontWeight: 700,
+          }}>Jetzt tippen →</Link>
         </div>
       )}
       <div style={{

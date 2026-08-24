@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createMockStore } from "@/lib/store.mock";
 import { eintraege, sortiere, suche, SORTIERUNGEN } from "@/lib/bibliothek";
 import { DEFAULT_RULES } from "@/lib/engine";
+import { ASPEKT_KEYS } from "@/lib/presetMerge";
 
 // ============================================================
 //  GETEILTE REGELWERKE — die Voraussetzung für „beliebteste Auswahl"
@@ -24,14 +25,40 @@ import { DEFAULT_RULES } from "@/lib/engine";
 const teile = async (store, name, extra = {}) =>
   store.publishPreset({ name, rules: DEFAULT_RULES, creatorId: "u1", ...extra });
 
+// 🔴 Der Mock ist seit dem 24.08.2026 mit drei geteilten Regelwerken GESEEDET
+// (ATE4 — sonst wäre „beliebteste Auswahl" im Demo-Betrieb nie zu sehen).
+// Die Tests hier prüfen das VERHALTEN, nicht den Katalog: sie filtern deshalb
+// auf ihre eigenen Einträge, statt eine Gesamtzahl festzunageln.
+// ⚠️ Ein Test, der `toHaveLength(3)` schriebe, ginge beim vierten Seed-Eintrag
+// kaputt, ohne dass etwas kaputt wäre.
+const nurMeine = (liste, namen) => liste.filter((p) => namen.includes(p.name)).map((p) => p.name);
+
+describe("Der Seed", () => {
+  it("bringt geteilte Regelwerke mit, sonst wäre „Beliebt\" im Demo leer", async () => {
+    const store = createMockStore();
+    const liste = await store.listPresets();
+    expect(liste.length).toBeGreaterThan(0);
+    // Mindestens einer mit Übernahmen und einer ohne — beide Anzeigefälle.
+    expect(liste.some((p) => (p.uebernahmen ?? 0) > 0)).toBe(true);
+    expect(liste.some((p) => (p.uebernahmen ?? 0) === 0)).toBe(true);
+  });
+
+  it("führt den Teil-Code mit einem gültigen Aspekt", async () => {
+    const store = createMockStore();
+    const mitAspekt = (await store.listPresets()).filter((p) => p.aspekt);
+    expect(mitAspekt.length).toBeGreaterThan(0);
+    for (const p of mitAspekt) expect(ASPEKT_KEYS).toContain(p.aspekt);
+  });
+});
+
 describe("listPresets", () => {
   it("gibt zurück, was veröffentlicht wurde", async () => {
     const store = createMockStore();
-    expect(await store.listPresets()).toEqual([]);
+    const vorher = (await store.listPresets()).length;
     const a = await teile(store, "Erstes");
     const liste = await store.listPresets();
-    expect(liste).toHaveLength(1);
-    expect(liste[0].code).toBe(a.code);
+    expect(liste).toHaveLength(vorher + 1);
+    expect(liste.map((p) => p.code)).toContain(a.code);
   });
 
   it("sortiert nach Übernahmen — das ist „beliebteste Auswahl\"", async () => {
@@ -43,8 +70,8 @@ describe("listPresets", () => {
     await store.merkePresetNutzung(selten.code);
 
     const liste = await store.listPresets({ sortierung: "beliebt" });
-    expect(liste.map((p) => p.name)).toEqual(["Oft", "Selten"]);
-    expect(liste[0].uebernahmen).toBe(2);
+    expect(nurMeine(liste, ["Oft", "Selten"])).toEqual(["Oft", "Selten"]);
+    expect(liste.find((p) => p.name === "Oft").uebernahmen).toBe(2);
   });
 
   // Die Gegenprobe zur Sortierung: ein neu geteiltes Preset steht bei
@@ -59,8 +86,8 @@ describe("listPresets", () => {
     await new Promise((r) => setTimeout(r, 5));
     await teile(store, "Neu");
 
-    expect((await store.listPresets({ sortierung: "beliebt" }))[0].name).toBe("Alt");
-    expect((await store.listPresets({ sortierung: "neu" }))[0].name).toBe("Neu");
+    expect(nurMeine(await store.listPresets({ sortierung: "beliebt" }), ["Alt", "Neu"])).toEqual(["Alt", "Neu"]);
+    expect(nurMeine(await store.listPresets({ sortierung: "neu" }), ["Alt", "Neu"])).toEqual(["Neu", "Alt"]);
   });
 
   it("findet über Name, Beschreibung und Code", async () => {
@@ -68,9 +95,13 @@ describe("listPresets", () => {
     const p = await teile(store, "Sturmnacht", { beschreibung: "viele Joker, wenig Gnade" });
     await teile(store, "Lüftchen");
 
-    expect((await store.listPresets({ text: "sturm" })).map((x) => x.name)).toEqual(["Sturmnacht"]);
-    expect((await store.listPresets({ text: "gnade" })).map((x) => x.name)).toEqual(["Sturmnacht"]);
-    expect((await store.listPresets({ text: p.code })).map((x) => x.name)).toEqual(["Sturmnacht"]);
+    // ⚠️ „sturm" trifft auch den Seed-Eintrag „Sturmnacht" — genau deshalb
+    // sucht dieser Test über den CODE, der garantiert einmalig ist, und prüft
+    // bei den Wörtern nur, dass der eigene Eintrag dabei und der andere weg ist.
+    const namen = async (t) => (await store.listPresets({ text: t })).map((x) => x.name);
+    expect(await namen("gnade")).toContain("Sturmnacht");
+    expect(await namen("gnade")).not.toContain("Lüftchen");
+    expect(await namen(p.code)).toEqual(["Sturmnacht"]);
   });
 
   it("zählt nur die Übernahme, nicht den Blick", async () => {

@@ -18,6 +18,8 @@ import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 // zweite lässt sich im Browser nicht nachsehen, ob eine Mechanik ankommt.
 import { SCHAU_ROUND_ID, SCHAU_JOIN_CODE, SCHAU_NAME, schaufensterRegeln, schaufensterTipps } from "./schaufenster";
 import { generateJoinCode } from "./joinCode";
+// Nur für die geseedeten geteilten Regelwerke (Demo) — siehe GETEILTE_DEMO.
+import { PRESETS } from "./presets";
 import { alleMatches } from "./ligen";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { isPremium, applyEntitlements } from "./premium";
@@ -61,6 +63,36 @@ const DEMO_TIPS = [
 
 const ROUND_ID = DEMO_ROUND_ID;
 
+// ── Geseedete geteilte Regelwerke (Demo) ────────────────────
+// Begründung steht an der Verwendungsstelle in `createMockStore`.
+// Absichtlich verschiedene Übernahme-Zahlen UND ein Eintrag mit 0: sonst
+// bliebe ungeprüft, ob „noch nicht übernommen" richtig angezeigt wird.
+const GETEILTE_DEMO = [
+  {
+    code: "STURM7", name: "Sturmnacht",
+    beschreibung: "Harte Wertung, viele Joker — für Runden, die sich nichts schenken.",
+    rules: sanitizeRules({ ...DEFAULT_RULES, ...(PRESETS.find((p) => p.key === "hardcore")?.rules ?? {}) }),
+    creator_id: "u-lena", aspekt: null, uebernahmen: 41,
+    created_at: "2026-08-10T12:00:00.000Z",
+  },
+  {
+    code: "BRISE2", name: "Brise",
+    beschreibung: "Gemütlich, ohne Fremdjoker — läuft nebenbei mit.",
+    rules: sanitizeRules({ ...DEFAULT_RULES, ...(PRESETS.find((p) => p.key === "gemuetlich")?.rules ?? {}) }),
+    creator_id: "u-max", aspekt: null, uebernahmen: 17,
+    created_at: "2026-08-14T12:00:00.000Z",
+  },
+  {
+    code: "AUSSEN9", name: "Außenseiter-Abend",
+    beschreibung: "Nur die Underdog-Ebene — zum Daraufsetzen auf ein eigenes Regelwerk.",
+    rules: sanitizeRules({ ...DEFAULT_RULES, ...(PRESETS.find((p) => p.key === "underdog-party")?.rules ?? {}) }),
+    // 🔴 Ein Teil-Code: er trägt einen `aspekt` und wird von der Bibliothek
+    // deshalb als BAUSTEIN geführt, nicht als ganzes Regelwerk.
+    creator_id: "u-kemal", aspekt: "underdog", uebernahmen: 0,
+    created_at: "2026-08-22T12:00:00.000Z",
+  },
+];
+
 export function createMockStore() {
   // frische Kopien pro Store, damit Schreibvorgänge isoliert sind
   const matches = new Map([
@@ -96,7 +128,22 @@ export function createMockStore() {
       spiele: schaufensterRegeln().spiele,
     }],
   ]);
-  const presets = new Map();  // Kurzcode → geteiltes Regelwerk (Content-Creator-Codes)
+  // Kurzcode → geteiltes Regelwerk (Content-Creator-Codes).
+  //
+  // 🔴 **Drei geseedete Einträge, damit „beliebteste Auswahl" im Demo-Betrieb
+  // überhaupt SICHTBAR ist** (ATE4, 24.08.2026). Ohne sie ist die Liste leer,
+  // solange niemand etwas veröffentlicht hat — und da der Mock bei jedem
+  // Seitenwechsel neu startet, wäre sie im Demo-Betrieb IMMER leer. Man könnte
+  // die Sortierung „Beliebt" also bauen, ohne je zu sehen, ob sie stimmt.
+  //
+  // ⚠️ Das sind **Demo-Daten wie `DEMO_TIPS`**, keine Empfehlung: die Regeln
+  // darin sind die vorhandenen Haus-Presets, nur unter einem fremden Namen und
+  // einem fremden Urheber. Nichts davon gehört nach `presets.js` oder
+  // `charaktere.js` — dieselbe Grenze wie beim Schaufenster.
+  //
+  // ⚠️ Die Übernahme-Zahlen sind erfunden und dürfen es sein: sie beantworten
+  // die Frage „sortiert die Liste richtig?", nicht „was ist beliebt?".
+  const presets = new Map(GETEILTE_DEMO.map((p) => [p.code, { ...p }]));
   const members = [
     ...DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar })),
     // Dieselben fünf im Schaufenster: eine Runde mit einem Mitglied kann
