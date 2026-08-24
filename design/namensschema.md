@@ -170,94 +170,159 @@ HINTEN (32)  -hafen · -tal · -berg · -furt · -bach · -burg · -heim · -fel
 
 ---
 
-## 5 · Drei fertige Schemata zur Auswahl
+## 5 · ENTSCHIEDEN (Andi, 24.08.2026): ein Satz, der immer aufgeht
 
-### A · Die Reise (Andis Idee, aufgeräumt)
-
-```
-  Allee im Galopp nach Sturmhafen
-  └UMFANG┘  └WUCHT┘      └Identität┘
-```
-
-- **Dafür:** Ein echter Satz, gut zu sprechen, die Metapher passt zur Saison.
-- **Dagegen:** Die SCHÄRFE fehlt — drei Achsen machen den Satz zu lang.
-- Varianten der Verbindung: `nach` · `Richtung` · `bis`
-
-### B · Die Reise mit Wetter (drei Achsen, kompakt)
+Andi wörtlich: *„B aber kann man da nicht immer nen Satz machen? der immer auf
+geht? … bspw. **auf der Allee im Galopp bei Sturm ins Nebeltal**"*
 
 ```
-  Allee · Galopp · Sturm  →  Nebeltal
-  └UMFANG┘ └WUCHT┘ └SCHÄRFE┘   └Identität┘
+  auf der Allee    im Galopp    bei Sturm     ins Nebeltal
+  └── UMFANG ──┘  └─ WUCHT ─┘  └ SCHÄRFE ┘   └ Identität ┘
 ```
 
-- **Dafür:** Alle drei Achsen drin, trotzdem kurz. Liest sich wie ein Steckbrief.
-- **Dagegen:** Kein Satz mehr, sondern eine Reihe. Weniger zum Erzählen.
+✅ **Das ist besser als mein Schema B**, und zwar aus einem Grund, den ich
+unterschätzt hatte: ein Satz wird beim Hören EINMAL verarbeitet, eine Reihe aus
+vier Wörtern viermal. „Spielt ihr auf der Allee im Galopp?" kann man sagen —
+„spielt ihr Allee Galopp Sturm Nebeltal?" nicht.
 
-### C · Der Zweiteiler (kürzest möglich)
+### 🔴 Warum er IMMER aufgeht — Grammatik gehört in die Skala, nicht in Code
+
+Andis Sorge (*„mit den ganzen kombis immer nen grammatikalischen satz machen
+vllt nich so leicht"*) ist berechtigt, aber sie löst sich vollständig, wenn man
+sie an der richtigen Stelle löst: **Das Geschlecht wird MIT dem Wort
+gespeichert.** Dann beugt niemand zur Laufzeit, und es gibt keinen Fall, den
+jemand vergessen kann.
+
+| Fuge | Form | geht immer auf, weil … |
+|---|---|---|
+| `auf …` | auf **dem** Feldweg · auf **der** Allee | Genus steht am Wort: `{ wort: "Allee", genus: "f" }` → Dativ dem/der/dem |
+| `im …` | im Schritt · im Trab · im Galopp · im Sprint | **alle Gangarten sind maskulin** — „im" passt ausnahmslos |
+| `bei …` | bei Windstille · bei Wind · bei Sturm · bei Orkan | Dativ **ohne Artikel** — das Genus spielt gar keine Rolle |
+| `ins/zum/zur …` | ins Nebeltal · zum Goldbach · zur Rabenburg | Die **Endung** trägt die Präposition: `-tal → ins`, `-hafen → zum`, `-burg → zur` |
+
+⚠️ Zwei der vier Fugen sind also von Natur aus geschlechtsblind, und die
+anderen zwei brauchen nur eine Spalte in einer Tabelle, die ohnehin von Hand
+geschrieben wird. **Kein Fall bleibt offen** — und ein Test kann alle
+Kombinationen durchrechnen (9 Wege × 4 Gangarten × 6 Wetter × 2048 Orte) und
+prüfen, dass keine Fuge leer bleibt.
+
+Drei echte Beispiele:
 
 ```
-  Sturmhafen · Allee/Galopp
-  └Identität┘  └die zwei Achsen┘
+  auf der Allee im Galopp bei Sturm ins Nebeltal
+  auf dem Feldweg im Schritt bei Windstille zum Goldbach
+  auf der Autobahn im Sprint bei Orkan zur Rabenburg
 ```
-
-- **Dafür:** Der Ortsname steht vorn und wird zum eigentlichen Rufnamen
-  („spielt ihr Sturmhafen?"), die Achsen sind der Untertitel.
-- **Dagegen:** Die Bedeutung rückt in die zweite Reihe.
-
-🔴 **Meine Empfehlung: B.** Der Ortsname ist der Rufname, die drei Wörter davor
-sind der Steckbrief — und genau die drei Fragen beantwortet, die ein Mitspieler
-vorher stellt („wie viele Spiele? wie viele Joker? wie streng?"). Schema A ist
-schöner zu sprechen, aber die Schärfe wegzulassen kostet die wichtigste der
-drei Auskünfte.
 
 ---
 
-## 6 · Die Aneinanderreihung von Teil-Auswahlen
+## 6 · Die Codes hinter den Wörtern — und was sie NICHT können
 
-Andis zweiter Satzteil: „bzw. auch für die aneinanderreihung der einzelnen
-Teilbibliotheks auswahlen".
+Andis zweiter Gedanke: *„die einzelnen codes hinter den einzelnen Variablen
+verstecken, der evtl ja sogar später zum gesamten Gamecode zusammensetzbar
+ist"*.
 
-Das passt ohne Zusatzerfindung, weil **jeder Aspekt eine eigene Achse ist**:
-Wer nur den Joker-Aspekt teilt (`TS2A-joker-…`), teilt genau EIN Wort.
+✅ **Das passt genau auf die bestehende Architektur.** Ein Teil-Code
+(`TS2A-<aspekt>-…`) trägt schon heute genau EINEN Aspekt. Jedes Wort im Satz
+steht für einen Aspekt — also steht hinter jedem Wort ein fertiger Teil-Code,
+ohne dass etwas Neues erfunden wird.
 
 ```
-  ganzes Regelwerk   Allee · Galopp · Sturm → Nebeltal
-  nur Joker-Aspekt   Galopp → Nebeltal          (nur seine Achse + Identität)
-  nur Spielauswahl   Allee → Goldfurt
+  auf der Allee   →  TS2A-spiele-…          (Spielauswahl)
+  im Galopp       →  TS2A-joker-…           (Jokercode)
+  bei Sturm       →  TS2A-naehe-… + underdog
+  ins Nebeltal    →  die Identität des GANZEN
 ```
 
-⚠️ **Der Ortsname wird je Teil-Code aus DESSEN Inhalt gebildet**, nicht aus dem
-ganzen Regelwerk — sonst hießen zwei verschiedene Joker-Codes gleich, sobald
-sie aus derselben Runde stammen.
+### 🔴 Aber: der Satz KANN das Regelwerk nicht tragen. Gemessen.
+
+Andi ahnte es (*„son Gesamtgamecode schnell mal über 200 Zeichen"*) — die echte
+Zahl ist deutlich größer. Gemessen am 24.08.2026 mit `encodePreset`:
+
+| Regelwerk | Zeichen |
+|---|---|
+| Vorgabe (`DEFAULT_RULES`) | **7** |
+| Preset „Standard" | 62 |
+| Preset „Rangliste" | 159 |
+| Charakter „Kenner-Runde" | 462 |
+| Charakter „Mutig & wild" | 1 300 |
+| 🔴 **Schaufenster** (188 von 199 Feldern abweichend) | **4 903** |
+
+Und aufgeschlüsselt, wo die Zeichen liegen (Schaufenster):
+
+| Aspekt | Zeichen | Anteil |
+|---|---|---|
+| **joker** | **2 315** | **47 %** |
+| ereignisse | 672 | 14 % |
+| modifikatoren | 453 | 9 % |
+| fairness | 445 | 9 % |
+| spiele | 304 | 6 % |
+| alle übrigen sieben zusammen | 851 | 17 % |
+
+⚠️ **Vier Wörter können keine 4 903 Zeichen tragen.** Das ist keine Frage von
+Geschick, sondern von Informationsmenge: der Satz hat rund 9 × 4 × 6 × 2048 ≈
+442 000 mögliche Formen, das Regelwerk hat astronomisch mehr Zustände.
+
+**Die Auflösung ist Andis eigene Formulierung: der Satz VERSTECKT die Codes, er
+IST sie nicht.** Drei Ebenen, jede mit ihrer Aufgabe:
+
+| Ebene | Länge | trägt | wofür |
+|---|---|---|---|
+| **Satz** | ~45 Zeichen | eine Zusammenfassung | wiedererkennen, darüber reden |
+| **Teil-Codes** | je 15–2 315 | einen Aspekt vollständig | einzeln weitergeben („nimm meine Joker") |
+| **Kurzcode** | 6 | einen Verweis | tippen, verschicken |
+
+Ein Klick auf „im Galopp" gibt den Joker-Teil-Code her. Alle vier zusammen
+ergeben das ganze Regelwerk — nicht weil der Satz es trägt, sondern weil er
+darauf zeigt.
+
+### 💡 Und ein Weg, die 4 903 Zeichen wirklich zu drücken
+
+Der Creator-Code speichert heute die Abweichung von **`DEFAULT_RULES`**. Die
+meisten echten Regelwerke sind aber Abwandlungen eines **Charakters** — und
+gegen den gemessen wäre das Delta ein Bruchteil.
+
+```
+heute    TS2-<Abweichung von der Vorgabe>              4 903 Zeichen
+möglich  TS3-<Charakter-Schlüssel>-<Abweichung davon>    ~300 Zeichen
+```
+
+⚠️ **Das ist ein eigener Vorschlag, kein Teil des Namensschemas** — er würde
+den Code kürzen, egal ob der Satz je gebaut wird. Er hat einen Preis: der Code
+hängt dann an einem Charakter, und ändert sich dessen Definition, ändert sich
+die Bedeutung alter Codes. Deshalb müsste die Charakter-Fassung mit im Code
+stehen. Notiert als eigene Zeile in `design/roadmap.md`, nicht hier eingebaut.
 
 ---
 
 ## 7 · Offene Fragen an Andi
 
-| ❓ | Frage | warum sie das Ergebnis ändert |
+| ❓ | Frage | Stand |
 |---|---|---|
-| ❓1 | **Welches Schema — A, B oder C?** | Bestimmt, ob es ein Satz oder ein Steckbrief wird |
-| ❓2 | **Welche drei Achsen?** Vorgeschlagen: Umfang · Wucht · Schärfe | Der Name antwortet genau auf diese Fragen und auf keine andere |
-| ❓3 | **Erzeugte Ortsnamen statt echter Städte — einverstanden?** | Echte Städte sind endlich und tragen Nebenbedeutungen |
-| ❓4 | **Darf der Name sich ändern, wenn das Regelwerk sich ändert?** | Ich halte Ja für richtig (ein Name, der nach einer Änderung stehen bleibt, lügt) — aber es heißt auch: der Name in einem alten Chat zeigt auf etwas anderes |
-| ❓5 | **Soll der Admin den Namen überschreiben dürfen?** | Ein eigener Name ist schön, hebelt aber die Wiedererkennung aus. Vorschlag: eigener Name ERLAUBT, erzeugter steht klein daneben |
+| ~~❓1~~ | Welches Schema? | ✅ **Satz** („auf der Allee im Galopp bei Sturm ins Nebeltal") |
+| ❓2 | **Welche drei Achsen?** Vorgeschlagen: Umfang · Wucht · Schärfe | offen — legt fest, worauf der Name antwortet |
+| ~~❓3~~ | Erzeugte Ortsnamen statt echter Städte? | ✅ **Ja** |
+| ❓4 | **Darf der Name sich ändern, wenn das Regelwerk sich ändert?** | offen. Ich halte Ja für richtig (ein Name, der stehen bliebe, lügt) — aber dann zeigt ein Name in einem alten Chat auf etwas anderes |
+| ❓5 | **Darf der Admin den Namen überschreiben?** | offen. Vorschlag: eigener Name erlaubt, erzeugter steht klein daneben |
+| ❓6 | **Kürzeres Code-Format gegen den Charakter** (siehe 6) — eigenes Thema, jetzt oder später? | offen |
 
 ---
 
-## 8 · Was zu bauen wäre (wenn entschieden)
+## 8 · Was zu bauen wäre (wenn ❓2 entschieden ist)
 
 Reihenfolge, kleinste lauffähige Schritte zuerst:
 
-1. `src/lib/namensschema.js` — die Skalen, die Silbenlisten, `nameVon(rules)`.
-   UI-frei, wie jede Logik (Architektur-Regel 1).
+1. `src/lib/namensschema.js` — die vier Skalen MIT Genus und Fuge, die zwei
+   Silbenlisten, `satzVon(rules)`. UI-frei (Architektur-Regel 1).
 2. **Die Stufen-Zuordnung messen, nicht raten**: welcher Messwert ergibt welches
-   Wort. Braucht einen Durchgang über alle Presets/Charaktere, damit die Skala
-   nicht 90 % ihrer Einträge in eine Stufe wirft — derselbe Fehler wie bei PP2
-   („64 von 69 Einträgen dasselbe Icon").
-3. Anzeige neben Kurzcode und in der Bibliothek.
-4. Kollisions-Gegenprobe als Test: alle bekannten Regelwerke durchrechnen, die
-   Zahl gleicher Namen muss 0 sein.
+   Wort. Braucht einen Durchgang über alle Presets und Charaktere, damit die
+   Skala nicht 90 % ihrer Einträge in eine Stufe wirft — derselbe Fehler wie bei
+   PP2 („64 von 69 Einträgen dasselbe Icon").
+3. **Grammatik-Test über ALLE Kombinationen** (9 × 4 × 6 × 2048): keine Fuge
+   leer, kein doppeltes Leerzeichen, jeder Satz endet ohne Rest.
+4. Anzeige: der Satz neben dem Kurzcode, jedes Wort anklickbar → sein Teil-Code.
+5. Kollisions-Gegenprobe als Test: alle bekannten Regelwerke durchrechnen, die
+   Zahl gleicher Sätze muss 0 sein.
 
-⛔ **Nicht anfangen, bevor ❓1–❓3 beantwortet sind.** Die Skalen sind schnell
-gebaut; welche Achsen der Name trägt, ist die Entscheidung, die alles andere
-festlegt.
+⛔ **Nicht anfangen, bevor ❓2 beantwortet ist.** Die Skalen sind schnell
+gebaut; welche Achsen der Satz trägt, legt alles andere fest.

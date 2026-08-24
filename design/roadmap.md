@@ -74,6 +74,39 @@ nicht dasselbe sind.
 
 ---
 
+## 💡 Creator-Codes sind bis zu 4 903 Zeichen lang — ein kürzeres Format wäre möglich
+
+**Gemessen am 24.08.2026** mit `encodePreset`, aufgekommen bei Andis Frage zum
+Namensschema („son Gesamtgamecode schnell mal über 200 Zeichen"):
+
+| Regelwerk | Zeichen |
+|---|---|
+| Vorgabe | 7 |
+| Preset „Rangliste" | 159 |
+| Charakter „Mutig & wild" | 1 300 |
+| **Schaufenster** (188/199 Felder abweichend) | **4 903** |
+
+Fast die Hälfte davon ist EIN Aspekt: `joker` mit 2 315 Zeichen.
+
+**Der Weg, der sich anbietet:** Der Code speichert heute die Abweichung von
+`DEFAULT_RULES`. Die meisten echten Regelwerke sind aber Abwandlungen eines
+CHARAKTERS — gegen den gemessen wäre das Delta ein Bruchteil.
+
+```
+heute    TS2-<Abweichung von der Vorgabe>               4 903 Zeichen
+möglich  TS3-<Charakter>-<Fassung>-<Abweichung davon>     ~300 Zeichen
+```
+
+⚠️ **Der Preis:** Der Code hängt dann an einem Charakter. Ändert sich dessen
+Definition, ändert sich die Bedeutung alter Codes — deshalb müsste die
+Charakter-FASSUNG mit im Code stehen, sonst entsteht genau die stille
+Verschiebung, vor der die Runden-Schicht warnt.
+
+⏳ **Nicht angefangen.** Steht als ❓6 in `design/namensschema.md` — es ist ein
+eigenes Thema, unabhängig davon, ob der Satz-Name je gebaut wird.
+
+---
+
 ## 📏 Abdeckung: 188 von 199 Einstellbarkeiten werden vorgeführt — der Rest hat Gründe
 
 `npm run einstellbar` (23.08.2026) beantwortet zwei Fragen, die vorher niemand
