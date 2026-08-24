@@ -456,14 +456,20 @@ export default function Spielerstellung() {
           // Bei drei Chips auf 375 px darf die ZEILE scrollen, nie die Seite.
           overflowX: "auto", justifyContent: "flex-end", flex: 1,
         }}>
-          <KopfChip icon="📚" titel="Bibliothek — welche Vorlage gerade gilt"
+          {/* ⚠️ `name` steht MIT dabei, nicht nur im `title` (24.08.2026).
+              Vorher trug jeder Chip nur sein Sinnbild und seinen Wert — „📚
+              Standard" — und das Wort „Bibliothek" stand ausschließlich im
+              Tooltip. Auf dem Handy gibt es keinen Tooltip. Wer die Seite zum
+              ersten Mal sieht, liest damit drei Sinnbilder ohne Namen und
+              findet die Bibliothek nicht, weil sie nirgends so heißt. */}
+          <KopfChip icon="📚" name="Bibliothek" titel="Bibliothek — welche Vorlage gerade gilt"
             wert={PRESETS.find((p) => p.key === presetKey)?.label
               ?? CHARAKTERE.find((c) => c.key === charakterKey)?.label ?? "eigenes"}
             onClick={() => setBibliothekOffen(true)} />
-          <KopfChip icon="🎮" titel="Gamemode — Quotentippen oder Budget"
+          <KopfChip icon="🎮" name="Gamemode" titel="Gamemode — Quotentippen oder Budget"
             wert={rules.joker?.modus === "einsatz" ? "Budget" : "Quoten"}
             onClick={() => springZu("gamemode")} />
-          <KopfChip icon="🔑" titel="GameCode — der kurze Code zum Teilen"
+          <KopfChip icon="🔑" name="GameCode" titel="GameCode — der kurze Code zum Teilen"
             wert={shortCode ?? "—"}
             onClick={() => springZu("gamecode")} />
         </div>
@@ -528,6 +534,59 @@ export default function Spielerstellung() {
               Umschalters (EB1) versprach er etwas, das es nicht mehr gibt —
               die schlimmste Sorte Resttext, weil man ihn erst sucht und dann
               an sich selbst zweifelt. */}
+
+          {/* ── 🔴 GameCode EINSETZEN — ganz oben (ST5, korrigiert am 24.08.2026) ──
+
+              Andis Folie 1 nennt zwei Zeilen, nicht eine:
+
+                  Bibliothek · Gamemode
+                  **Du hast einen GameCode?** Hier einsetzen.
+
+              Gebaut war bis heute nur die erste. Für die zweite stand ein
+              🔑-Chip in der Kopfzeile, der den EIGENEN Kurzcode ANZEIGT und
+              nach unten springt — das Einsetzen eines FREMDEN Codes lag am
+              Seitenende, hinter dem ganzen Regelwerk.
+
+              ⚠️ **Das Verb war verlorengegangen.** „Einsetzen" ist der erste
+              Handgriff einer Runde, die jemand geteilt bekommen hat: wer einen
+              Code hat, will nichts einstellen, sondern ihn loswerden. Steht das
+              Feld am Ende, scrollt er an allem vorbei, was er gar nicht braucht
+              — und die Voreinstellungen darüber behaupten eine Wahl, die er
+              längst getroffen hat.
+
+              Dasselbe `load()` wie unten, kein zweiter Weg: Teil-Code,
+              Creator-Code und Kurzcode landen in derselben Prüfung, und ein
+              Tippfehler meldet sich hier mit demselben Satz wie dort. */}
+          <div id="gamecode-einsetzen" style={{ scrollMarginTop: 64, marginTop: 14 }}>
+            <div style={{
+              background: C.ink2, border: `1px solid ${C.line}`,
+              borderRadius: RUND.karte, padding: "12px 14px",
+            }}>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>Du hast einen GameCode?</div>
+              <p style={{ fontSize: 12, color: C.muted, margin: "3px 0 10px", lineHeight: 1.4 }}>
+                Hier einsetzen — Regelwerk steht sofort, ohne einen einzigen Regler.
+              </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={imp} onChange={(e) => { setImp(e.target.value); setImpErr(""); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && imp.trim()) load(); }}
+                  placeholder="Code einsetzen" style={{
+                    flex: 1, minWidth: 0, background: C.ink, color: C.text,
+                    border: `1px solid ${C.line}`, borderRadius: RUND.karte,
+                    padding: "12px 12px", fontSize: 15, fontFamily: MONO, outline: "none",
+                    minHeight: 44, boxSizing: "border-box",
+                  }} />
+                <button onClick={load} disabled={!imp.trim()} style={{
+                  cursor: imp.trim() ? "pointer" : "default",
+                  background: imp.trim() ? C.akzent : C.surface2,
+                  color: imp.trim() ? C.ink : C.muted,
+                  border: imp.trim() ? "none" : `1px solid ${C.line}`,
+                  borderRadius: RUND.karte, padding: "0 18px", fontSize: 15, fontWeight: 700,
+                  ...TAPZIEL,
+                }}>Einsetzen</button>
+              </div>
+              {impErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{impErr}</div>}
+            </div>
+          </div>
 
           {/* ── Voreinstellungen ──────────────────────────────────
               🔴 Seit 20.08.2026 in BEIDEN Ansichten (ST2/ST3). Vorher standen
@@ -1215,16 +1274,19 @@ export default function Spielerstellung() {
 // Zeigt einen Stand und springt zu seinem Abschnitt. Bewusst schmal: auf
 // 375 px stehen drei davon neben „Menü“, und der Wert ist die Information —
 // die Beschriftung steckt im Symbol und im `title`.
-function KopfChip({ icon, wert, titel, onClick }) {
+function KopfChip({ icon, name, wert, titel, onClick }) {
   return (
     <button onClick={onClick} title={titel} style={{
-      display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
+      display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
       minHeight: 44, boxSizing: "border-box", cursor: "pointer",
       fontFamily: "inherit", fontSize: 12, padding: "4px 10px",
       background: C.surface, color: C.text,
       border: `1px solid ${C.line}`, borderRadius: RUND.pille,
     }}>
       <span style={{ fontSize: 13, lineHeight: 1 }}>{icon}</span>
+      {/* Der NAME trägt die Farbe des Textes, der WERT die gedämpfte — sonst
+          liest sich „Bibliothek Standard" wie zwei gleichrangige Wörter. */}
+      {name && <span style={{ fontSize: 12, fontWeight: 600 }}>{name}</span>}
       <span style={{
         fontFamily: MONO, fontSize: 11, color: C.muted,
         maxWidth: 88, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
