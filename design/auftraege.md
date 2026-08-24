@@ -183,6 +183,14 @@ eine Falle: gesucht wird nach `| EB1 |`, und getroffen wird die erste.
 |---|---|---|---|
 | VL1 | **Streicher gelten nur für EINZELNE SPIELE, nie für einen ganzen Spieltag** — „ich meine die Streicher gelten natürlich nur für einzelne Spiele und nie den gesamten Spieltag aussetzen" | ✅ | `saisonform.js` (`streichSpiele`) + `engine.js` (`punkteJeSpiel`); 13 Tests umgeschrieben, 2170 grün. Kanal-Eintrag (VII) mit den drei Entscheidungen. ⚠️ Alte Creator-Codes werden dadurch milder: `streich: 2` heißt jetzt zwei Spiele |
 
+## Namensschema (24.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| NS1 | **Sprechender Name je Regelwerk statt nur Code** — „ein gewisser code in der Namensgebung … beispiel besten 4 Teams der topligen plus champions League heisst **Allee** [alternativen so wie straße, Auffahrt, Schotterpiste, Autobahn] … **auf den Weg zur** … für die Jokerauswahl und dann **Städte** oder sowas, sodass sich eben auch für menschen eine Wiedererkennung in dieser Codierung ergibt, doch dennoch Einzigartigkeit im Gesamtnamen" | ⏳ | **Entwurf steht: `design/namensschema.md`.** Andis tragende Idee übernommen — das WORT trägt die Bedeutung, die ZAHL/der Ortsname die Identität. Drei Achsen vorgeschlagen (Umfang · Wucht · Schärfe), Skalen mit je 6–9 Stufen, drei fertige Schemata zur Auswahl. ⛔ **Nichts gebaut** — erst ❓1–❓3 beantworten, sie legen alles Weitere fest |
+| NS2 | Dasselbe **für die Aneinanderreihung der Teilbibliotheks-Auswahlen** | ⏳ | Fällt ohne Zusatzerfindung ab: jeder Aspekt ist eine Achse, ein Teil-Code trägt genau sein Wort (`design/namensschema.md`, Abschnitt 6). ⚠️ Der Ortsname muss je Teil-Code aus DESSEN Inhalt kommen, sonst hießen zwei Joker-Codes derselben Runde gleich |
+| NS3 | „Kannst auch deine Gedanken dazu näher ausführen bzw vorschlagen was vllt eher passt mit mehr auswahl statt der Wege oder Städte" | ✅ | Abschnitt 4: sechs Skalen bewertet (Wege · Gewässer · Bauwerke · Wetter · Gangart · Tempo · Feuer · Höhe). 🔴 **Bei den Wegen würde ich nichts ersetzen** — 9 Stufen mit einer Ordnung, die niemand lernen muss, ist das Beste der Reihe. **Bei den Städten schon**: echte Ortsnamen sind endlich und tragen Nebenbedeutungen; Vorschlag sind 64 × 32 = 2048 erzeugte Ortsnamen (Sturmhafen · Nebeltal · Goldfurt) |
+
 ## Prüfbarkeit (23.08.2026)
 
 | Nr | Ansage | Stand | Beleg / was fehlt |
