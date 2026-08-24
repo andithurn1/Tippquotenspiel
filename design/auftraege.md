@@ -183,6 +183,16 @@ eine Falle: gesucht wird nach `| EB1 |`, und getroffen wird die erste.
 |---|---|---|---|
 | VL1 | **Streicher gelten nur für EINZELNE SPIELE, nie für einen ganzen Spieltag** — „ich meine die Streicher gelten natürlich nur für einzelne Spiele und nie den gesamten Spieltag aussetzen" | ✅ | `saisonform.js` (`streichSpiele`) + `engine.js` (`punkteJeSpiel`); 13 Tests umgeschrieben, 2170 grün. Kanal-Eintrag (VII) mit den drei Entscheidungen. ⚠️ Alte Creator-Codes werden dadurch milder: `streich: 2` heißt jetzt zwei Spiele |
 
+## Reihenfolge & Gerüst (24.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| RF1 | **Reihenfolge gesetzt:** „bevor wir ja den code anwenden und unsere ersten creator presets erstellen müssen wir schaun dass das Gerüst passt und funktioniert … bzw. dann auch erstmal das userinterface machen und n kleines walkthrough wie man son spiel erstellt nach seinen Wünschen" | ✅ *(notiert)* | Damit sind **Namensschema (NS1–NS11) und die ersten Creator-Presets ausdrücklich HINTEN**. Die Folge lautet: **1.** Gerüst prüfen · **2.** Oberfläche · **3.** Walkthrough zur Spielerstellung. ⚠️ Das deckt sich mit NS9 (Namensschema braucht ohnehin erst alle Parameter) |
+| RF2 | **Gerüst prüfen** — Punkt 1 der Reihenfolge | ✅ | Durchgang am 24.08.2026 über die ganze Kette auf 390 px: Erstellen-Screen · Vorlage übernehmen · eigenen Namen setzen · Creator-Code (466 Zeichen) · „Runde jetzt erstellen" · Beitritts-Code · Beitreten · Tippen · Abrechnung. **Alle neun Stufen tragen**, keine Seitenfehler. ⚠️ Zwei erste „Funde" waren Fehler im Prüfskript (der Knopf heißt „Runde jetzt erstellen", nicht „anlegen"; ein Fließtext-Wort sah aus wie ein Code) — nachgemessen statt gemeldet |
+| RF3 | 🔴 **Fund aus RF2: die aktive Runde konnte ins Leere zeigen** | ✅ | Runde anlegen, Seite neu laden — und die App stand auf einer Runde, die es nicht mehr gab: „Runde: …" in der Abrechnung, leere Spielliste, Ranking ohne Zeilen, **nirgends eine Auskunft**. `RoundProvider` übernahm die gespeicherte Id ungeprüft. Jetzt wird sie vor dem Gelten aufgelöst; schlägt das fehl, gilt die Demo-Runde, die tote Id wird weggeräumt und `verwaist` sagt es dem Screen. ⚠️ Ein Netzfehler räumt NICHT auf — sonst kostet ein Aussetzer die Rundenwahl. Im Browser beide Richtungen geprüft |
+| RF4 | **Oberfläche** — Punkt 2 der Reihenfolge | ⏳ | noch nicht angefangen |
+| RF5 | **Walkthrough „wie erstelle ich ein Spiel nach meinen Wünschen"** — Punkt 3 | ⏳ | ⚠️ Das bestehende `/tutorial` erklärt die **Wertung** (wie aus Quote und Tipp Punkte werden), nicht das **Erstellen**. Der Walkthrough ist also neu, nicht eine Erweiterung |
+
 ## Namensschema (24.08.2026)
 
 | Nr | Ansage | Stand | Beleg / was fehlt |

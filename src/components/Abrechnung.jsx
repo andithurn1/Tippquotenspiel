@@ -80,7 +80,7 @@ function useCountUp(target, run, ms = 1100) {
 export default function Abrechnung() {
   const { user } = useAuth();
   const { prefs } = usePrefs();
-  const { roundId } = useCurrentRound();
+  const { roundId, verwaist } = useCurrentRound();
   const lvl = prefs.abrechnung;             // voll | dezent | aus
   const meId = user?.id ?? "u-du";          // im Mock „u-du", live die echte Id
   const [stage, setStage] = useState(0);   // 0..5 gestaffelte Enthüllung
@@ -177,6 +177,21 @@ export default function Abrechnung() {
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       <BackLink href="/menu" label="Menü" />
+      {/* 🔴 Die verwaiste Runde SAGEN, nicht stumm wegspringen (24.08.2026).
+          Ohne diesen Hinweis stand die Abrechnung einfach auf einer anderen
+          Runde als der, die der Spieler zuletzt gewählt hatte — und nichts
+          erklärte, warum. */}
+      {verwaist && (
+        <div style={{
+          width: "100%", maxWidth: 400, marginBottom: 10, lineHeight: 1.45,
+          background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
+          padding: "10px 12px", fontSize: 13, color: C.muted,
+        }}>
+          Deine zuletzt gewählte Runde gibt es nicht mehr — hier läuft jetzt die
+          Demo-Runde. Über <strong style={{ color: C.text }}>wechseln</strong>
+          {" "}kommst du mit einem Code zurück in eure Runde.
+        </div>
+      )}
       <div style={{
         width: "100%", maxWidth: 400, display: "flex", justifyContent: "space-between",
         alignItems: "center", marginBottom: 10, fontFamily: MONO, fontSize: 12, color: C.muted,
