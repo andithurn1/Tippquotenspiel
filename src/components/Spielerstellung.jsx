@@ -18,7 +18,7 @@ import BackLink from "@/components/BackLink";
 import VariantenWahl from "@/components/VariantenWahl";
 import TeilCodeFeld from "@/components/TeilCodeFeld";
 import Bibliothek from "@/components/Bibliothek";
-import GesamtspielAuswahl from "@/components/GesamtspielAuswahl";
+import GesamtspielAuswahl, { GesamtspielFenster } from "@/components/GesamtspielAuswahl";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
@@ -79,6 +79,9 @@ export default function Spielerstellung() {
   // Andis PP1: die Bibliothek ist ein FENSTER, kein Abschnitt — sie legt sich
   // über den Screen und gibt ihn danach unverändert zurück.
   const [bibliothekOffen, setBibliothekOffen] = useState(false);
+  // Andis eigenes Fenster für die Kompletteinstellungen (24.08.2026) — getrennt
+  // von `bibliothekOffen`: dieses zeigt NUR ganze Spiele, jenes auch Bausteine.
+  const [komplettOffen, setKomplettOffen] = useState(false);
   const [mischenOffen, setMischenOffen] = useState(false);
   // Die Spielauswahl ist KEIN lokaler Zustand mehr, sondern Teil des
   // Regelwerks — nur so reist sie im Creator-Code mit.
@@ -608,6 +611,21 @@ export default function Spielerstellung() {
                 }}>Einsetzen</button>
               </div>
               {impErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{impErr}</div>}
+
+              {/* 🔴 „neben dem am anfang soll ein button sein mit bibliothek
+                  Kompletteinstellung" (Andi, 24.08.2026). Er steht bewusst in
+                  DERSELBEN Karte wie das Code-Feld: beide beantworten dieselbe
+                  Frage — „ich will nicht selbst einstellen" —, nur einmal mit
+                  einem geschenkten Code und einmal mit einer fertigen Vorlage. */}
+              <button onClick={() => setKomplettOffen(true)} style={{
+                marginTop: 10, width: "100%", cursor: "pointer", fontFamily: "inherit",
+                display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
+                background: C.surface, color: C.text, border: `1px solid ${C.line}`,
+                borderRadius: RUND.karte, fontSize: 15, fontWeight: 700, ...TAPZIEL,
+              }}>
+                <span style={{ fontSize: 17, lineHeight: 1 }}>📚</span>
+                Bibliothek — Kompletteinstellungen
+              </button>
             </div>
           </div>
 
@@ -640,7 +658,7 @@ export default function Spielerstellung() {
           <GesamtspielAuswahl
             gewaehltId={charakterKey ? `charakter:${charakterKey}` : presetKey ? `preset:${presetKey}` : null}
             onWaehlen={uebernimmEintrag}
-            onAlleAnzeigen={() => setBibliothekOffen(true)}
+            onFensterOeffnen={() => setKomplettOffen(true)}
           />
 
           {/* ── Wettbewerbe auswählen ─────────────────────────────
@@ -1269,6 +1287,16 @@ export default function Spielerstellung() {
           {impErr && <div style={{ fontSize: 12, color: C.coral, marginTop: 6 }}>{impErr}</div>}
         </div>
       </div>
+      {/* ── Kompletteinstellungen: Andis eigenes Fenster (24.08.2026) ──
+          Getrennt vom großen Bibliotheks-Fenster darunter, weil es eine andere
+          Frage beantwortet: hier ganze Spiele, dort auch die Bausteine. */}
+      <GesamtspielFenster
+        offen={komplettOffen}
+        onSchliessen={() => setKomplettOffen(false)}
+        gewaehltId={charakterKey ? `charakter:${charakterKey}` : presetKey ? `preset:${presetKey}` : null}
+        onWaehlen={uebernimmEintrag}
+      />
+
       {/* ── Die Bibliothek (Andis PP1) ──
           Steht ganz unten im Baum und ist trotzdem oben zu sehen: als
           `position: fixed` hängt sie am Fenster, nicht an dieser Stelle. Sie

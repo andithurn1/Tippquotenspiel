@@ -7,43 +7,43 @@ import { eintraege, suche, sortiere, SORTIERUNGEN, verbreitung, beschreibeTreffe
 import { merkmale } from "@/lib/charaktere";
 
 // ============================================================
-//  GESAMTSPIEL-AUSWAHL — die Bibliothek als VORAUSWAHL, ganz oben
+//  GESAMTSPIEL — drei Empfehlungen im Ablauf, alles Übrige im FENSTER
 //
-//  🔴 Andi am 24.08.2026, zum dritten Mal: „gleich am anfang mit dem code auch
-//  die Gesamtspielbibliothek mit den Complete game einstellungen als
-//  vorauswahl und oben auch filter mit relevanz etc und suchenfunktion."
+//  🔴 Andi am 24.08.2026, nachdem der erste Anlauf es genau umgedreht hatte:
 //
-//  Was vorher dastand und warum es die Ansage NICHT erfüllt hat:
-//  `RundenCharaktere` zeigte die vier `CHARAKTERE` als Karten — ohne Suche,
-//  ohne Filter, ohne Sortierung, und ohne die REGELWERKE (`PRESETS`). Die
-//  vollständige Bibliothek mit alldem gab es zwar (`Bibliothek.jsx`), aber als
-//  FENSTER hinter einem Chip. Sie war damit nicht die Vorauswahl, sondern ein
-//  Nachschlagewerk für Leute, die schon wissen, dass es sie gibt.
+//    „neben dem am anfang soll ein button sein mit bibliothek
+//     Kompletteinstellung wodurch ein neues fenster sich öffnet (dass das alle
+//     alte überdeckt, es soll nicht im standard Kompletteinstellungsfenster
+//     sein) und es sollen nur 3 vorpresets (meine Empfehlungen …) da stehen
+//     direkt unter dem"
 //
-//  ⚠️ **Der Unterschied ist nicht Deko.** Eine Vorauswahl beantwortet die erste
-//  Frage des Screens („womit fange ich an?"). Vier Karten ohne Suche
-//  beantworten sie nur, solange es vier sind — mit den Regelwerken sind es
-//  schon elf, und mit geladenen Codes wächst die Zahl weiter.
+//  ⚠️ **Der Fehler davor war die Richtung, nicht der Inhalt.** Gebaut worden
+//  war die VOLLE Liste inline: Suchfeld, zwei Filterreihen, elf Karten — alles
+//  im Ablauf des Erstellen-Screens. Damit fängt der Screen mit einer
+//  Recherche-Oberfläche an, obwohl die erste Frage „womit fange ich an?"
+//  lautet und drei gute Antworten genügen.
+//
+//  Richtig herum:
+//
+//    IM ABLAUF   drei Empfehlungen, sonst nichts. Keine Suche, kein Filter.
+//    IM FENSTER  alles — Suche, Art-Filter, Sortierung, jeder Eintrag.
+//
+//  Das Fenster legt sich ÜBER den Screen und gibt ihn unverändert zurück;
+//  wer nichts sucht, sieht es nie. Genau das meint „soll nicht im standard
+//  Kompletteinstellungsfenster sein".
 //
 //  ── Was „Complete Game" hier heißt ──
 //  Nur die beiden Arten, die ein GANZES Spiel beschreiben:
 //    🎯 Runden-Idee (`charakter`) — Wertung, Wetten und Joker in einem
 //    📐 Regelwerk (`preset`)      — die Wertung allein
-//  Bausteine (`baustein`) sind Teilebenen und gehören NICHT in die
-//  Vorauswahl — sie mischen sich in ein bestehendes Regelwerk, sie ersetzen
-//  keins. Wer sie will, öffnet die volle Bibliothek über „Alle anzeigen".
+//  Bausteine (`baustein`) sind Teilebenen und gehören in keins von beiden —
+//  sie mischen sich in ein Regelwerk, sie ersetzen keins. Für sie gibt es
+//  weiter die volle Bibliothek über den 📚-Chip in der Kopfzeile.
 //
 //  ⚠️ Rechnet nichts selbst: Einträge, Suche, Sortierung und Verbreitung
-//  kommen aus `bibliothek.js` — dieselben Funktionen, die das Fenster benutzt.
-//  Zwei Listen, die sich unterschiedlich sortieren, wären genau die zweite
-//  Wahrheit, vor der die Runden-Schicht in CLAUDE.md warnt.
-//
-//  ⚠️ `geladene` steht in der Schnittstelle, wird vom Erstellen-Screen aber
-//  (noch) nicht befüllt — genau wie beim Fenster. Der Grund ist kein
-//  Vergessen: `geladeneCodes` dort ist `{ aspekt: codeString }`, und
-//  `eintraege()` erwartet Einträge mit Label und Werten. Ein String ergäbe
-//  eine Karte ohne Namen. Wer das anschließt, baut ZUERST die Umwandlung —
-//  an EINER Stelle, für beide Orte.
+//  kommen aus `bibliothek.js` — dieselben Funktionen, die das große
+//  Bibliotheks-Fenster benutzt. Zwei Listen, die sich unterschiedlich
+//  sortieren, wären die zweite Wahrheit, vor der CLAUDE.md warnt.
 // ============================================================
 
 // Die Arten, die ein ganzes Spiel beschreiben — siehe Kopfkommentar.
@@ -55,25 +55,42 @@ const ART_FILTER = [
   { key: "preset", label: "📐 Regelwerke" },
 ];
 
+// 🔴 **Andis drei Empfehlungen — die Auswahl steht noch aus.**
+// Er dazu wörtlich: „nur 3 vorpresets (meine Empfehlungen, zur
+// Kompletteinstellung bzw. machen wir später)". Bis er sie benennt, stehen
+// hier die ersten drei der Relevanz-Sortierung — also fertige Runden-Ideen,
+// nicht nackte Regelwerke.
+//
+// ⚠️ Das ist ein PLATZHALTER mit Ablaufdatum, keine Empfehlung von mir. Wer
+// ihn ersetzt, trägt hier drei Schlüssel ein (`charakter:…` / `preset:…`) —
+// die Reihenfolge dieser Liste ist dann die Reihenfolge auf dem Schirm.
+export const EMPFEHLUNGEN = null;   // null = „noch nicht gesetzt", siehe oben
+const WIE_VIELE_EMPFEHLUNGEN = 3;
+
+// Die Einträge, die ein ganzes Spiel beschreiben — eine Stelle für beide
+// Ansichten, damit die Kurzliste garantiert aus derselben Menge kommt wie
+// das Fenster.
+function gesamtspielEintraege(geladene) {
+  return eintraege(geladene).filter((e) => GESAMTSPIEL.includes(e.art));
+}
+
+// ============================================================
+//  1 · IM ABLAUF: drei Empfehlungen und ein Knopf ins Fenster
+// ============================================================
+
 export default function GesamtspielAuswahl({
-  gewaehltId, onWaehlen, onAlleAnzeigen, geladene = [],
+  gewaehltId, onWaehlen, onFensterOeffnen, geladene = [],
 }) {
-  const [text, setText] = useState("");
-  const [art, setArt] = useState(null);
-  const [sortierung, setSortierung] = useState("relevanz");
-
-  // Nur Gesamtspiel-Einträge. `eintraege()` liefert ALLES (auch Bausteine) —
-  // gefiltert wird hier, nicht dort: die Bibliothek soll für beide Orte
-  // dieselbe Liste bauen.
-  const alle = useMemo(
-    () => eintraege(geladene).filter((e) => GESAMTSPIEL.includes(e.art)),
-    [geladene],
-  );
-
-  const gefiltert = useMemo(() => {
-    const nachArt = art ? alle.filter((e) => e.art === art) : alle;
-    return sortiere(suche(nachArt, text), sortierung);
-  }, [alle, art, text, sortierung]);
+  const drei = useMemo(() => {
+    const alle = sortiere(gesamtspielEintraege(geladene), "relevanz");
+    if (EMPFEHLUNGEN) {
+      // Ausdrücklich gesetzte Auswahl: exakt diese, in dieser Reihenfolge.
+      // Ein Schlüssel, den es nicht (mehr) gibt, fällt still weg — lieber
+      // zwei Karten als eine Lücke mit Fehlermeldung.
+      return EMPFEHLUNGEN.map((id) => alle.find((e) => e.id === id)).filter(Boolean);
+    }
+    return alle.slice(0, WIE_VIELE_EMPFEHLUNGEN);
+  }, [geladene]);
 
   return (
     <div>
@@ -82,70 +99,129 @@ export default function GesamtspielAuswahl({
         passend ein — ändern kannst du es später jederzeit.
       </p>
 
-      {/* ── Suche ──────────────────────────────────────────── */}
-      <input value={text} onChange={(e) => setText(e.target.value)}
-        placeholder={'Suchen — z. B. „streng" oder „joker"'}
-        style={{
-          width: "100%", boxSizing: "border-box", background: C.ink2, color: C.text,
-          border: `1px solid ${C.line}`, borderRadius: RUND.karte,
-          padding: "12px 12px", fontSize: 15, fontFamily: "inherit", outline: "none",
-          minHeight: 44,
-        }} />
-
-      {/* ── Filter nach Art ────────────────────────────────── */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-        {ART_FILTER.map((a) => (
-          <FilterChip key={a.key ?? "alle"} an={art === a.key}
-            onClick={() => setArt(a.key)} label={a.label} />
-        ))}
-      </div>
-
-      {/* ── Sortierung: Andis „filter mit relevanz etc" ────── */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" }}>
-        <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginRight: 2 }}>sortiert:</span>
-        {SORTIERUNGEN.map((s) => (
-          <FilterChip key={s.key} an={sortierung === s.key} titel={s.desc}
-            onClick={() => setSortierung(s.key)} label={s.label} />
-        ))}
-      </div>
-
-      <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginTop: 8 }}>
-        {beschreibeTreffer(gefiltert.length, alle.length, text)}
-      </div>
-
-      {/* ── Die Karten ─────────────────────────────────────── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
-        {gefiltert.length === 0 && (
-          <div style={{
-            fontSize: 13, color: C.muted, background: C.ink2, border: `1px solid ${C.line}`,
-            borderRadius: RUND.karte, padding: "14px 16px", lineHeight: 1.5,
-          }}>
-            Nichts gefunden. Andere Schreibweise probieren — oder die volle
-            Bibliothek öffnen, dort stehen auch die einzelnen Bausteine.
-          </div>
-        )}
-
-        {gefiltert.map((e) => (
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {drei.map((e) => (
           <EintragKarte key={e.id} eintrag={e} aktiv={gewaehltId === e.id}
             onClick={() => onWaehlen?.(e)} />
         ))}
+      </div>
 
-        {/* Die volle Bibliothek — mit Bausteinen, Kennzahlen und Urheber. */}
-        <button onClick={onAlleAnzeigen} style={{
-          cursor: "pointer", fontFamily: "inherit", color: C.text, textAlign: "left",
-          background: C.ink2, border: `1px dashed ${C.sky}55`, borderRadius: RUND.karte,
-          padding: "14px 16px", ...TAPZIEL,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-            <span style={{ fontSize: 20, lineHeight: 1 }}>📚</span>
-            <span style={{ fontSize: 16, fontWeight: 800, flex: 1 }}>Alle anzeigen</span>
-            <span style={{ color: C.sky, fontSize: 15 }}>▸</span>
+      {/* Der Weg zu allem Übrigen. Steht UNTER den dreien, nicht darüber:
+          wer schon eine passende Karte sieht, soll nicht erst an einem
+          Recherche-Angebot vorbei. */}
+      <button onClick={onFensterOeffnen} style={{
+        marginTop: 10, width: "100%", cursor: "pointer", fontFamily: "inherit",
+        color: C.text, textAlign: "left",
+        background: C.ink2, border: `1px dashed ${C.sky}55`, borderRadius: RUND.karte,
+        padding: "14px 16px", ...TAPZIEL,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <span style={{ fontSize: 20, lineHeight: 1 }}>📚</span>
+          <span style={{ fontSize: 16, fontWeight: 800, flex: 1 }}>Alle Kompletteinstellungen</span>
+          <span style={{ color: C.sky, fontSize: 15 }}>▸</span>
+        </div>
+        <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+          Suchen, filtern und vergleichen — in einem eigenen Fenster.
+        </div>
+      </button>
+    </div>
+  );
+}
+
+// ============================================================
+//  2 · IM FENSTER: die volle Gesamtspiel-Bibliothek
+// ============================================================
+//
+// ⚠️ Eigenes Fenster, nicht der 📚-Chip aus der Kopfzeile: dieses hier zeigt
+// NUR Kompletteinstellungen (Runden-Ideen + Regelwerke), das große auch die
+// Bausteine. Zwei Fragen, zwei Fenster — wer eine ganze Runde sucht, will
+// nicht durch 58 Teilstücke blättern.
+
+export function GesamtspielFenster({
+  offen, gewaehltId, onWaehlen, onSchliessen, geladene = [],
+}) {
+  const [text, setText] = useState("");
+  const [art, setArt] = useState(null);
+  const [sortierung, setSortierung] = useState("relevanz");
+
+  const alle = useMemo(() => gesamtspielEintraege(geladene), [geladene]);
+  const gefiltert = useMemo(() => {
+    const nachArt = art ? alle.filter((e) => e.art === art) : alle;
+    return sortiere(suche(nachArt, text), sortierung);
+  }, [alle, art, text, sortierung]);
+
+  if (!offen) return null;
+
+  return (
+    <div
+      role="dialog" aria-modal="true" aria-label="Kompletteinstellungen"
+      onClick={(e) => { if (e.target === e.currentTarget) onSchliessen?.(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 70, background: "rgba(17,20,28,0.35)",
+        backdropFilter: "blur(3px)", display: "flex", alignItems: "center",
+        justifyContent: "center", padding: 16,
+      }}>
+      <div style={{
+        background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
+        width: "100%", maxWidth: 460, maxHeight: "86vh", display: "flex", flexDirection: "column",
+        boxShadow: "0 24px 60px rgba(17,20,28,0.18)",
+      }}>
+        {/* Kopf: bleibt stehen, damit man beim Blättern nicht zum Suchfeld
+            zurückscrollen muss. */}
+        <div style={{ padding: "14px 16px 10px", borderBottom: `1px solid ${C.line}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 18, lineHeight: 1 }}>📚</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>Kompletteinstellungen</div>
+              <div style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>
+                {beschreibeTreffer(gefiltert.length, alle.length, text)}
+              </div>
+            </div>
+            <button onClick={onSchliessen} aria-label="Fenster schließen" style={{
+              cursor: "pointer", fontFamily: "inherit", fontSize: 20, lineHeight: 1,
+              background: C.surface, color: C.muted, border: `1px solid ${C.line}`,
+              borderRadius: RUND.pille, width: 44, height: 44,
+            }}>×</button>
           </div>
-          <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
-            Die volle Bibliothek — zusätzlich die einzelnen Bausteine, mit
-            Kennzahlen, Urheber und Verbreitung.
+
+          <input value={text} onChange={(e) => setText(e.target.value)}
+            placeholder={'Suchen — z. B. „streng" oder „joker"'}
+            style={{
+              width: "100%", boxSizing: "border-box", marginTop: 10,
+              background: C.ink, color: C.text, border: `1px solid ${C.line}`,
+              borderRadius: RUND.karte, padding: "12px 12px", fontSize: 15,
+              fontFamily: "inherit", outline: "none", minHeight: 44,
+            }} />
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            {ART_FILTER.map((a) => (
+              <FilterChip key={a.key ?? "alle"} an={art === a.key}
+                onClick={() => setArt(a.key)} label={a.label} />
+            ))}
           </div>
-        </button>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" }}>
+            <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted, marginRight: 2 }}>sortiert:</span>
+            {SORTIERUNGEN.map((so) => (
+              <FilterChip key={so.key} an={sortierung === so.key} titel={so.desc}
+                onClick={() => setSortierung(so.key)} label={so.label} />
+            ))}
+          </div>
+        </div>
+
+        {/* Liste */}
+        <div style={{ overflowY: "auto", padding: "12px 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+          {gefiltert.length === 0 && (
+            <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.5 }}>
+              Nichts gefunden. Andere Schreibweise probieren — einzelne
+              Bausteine stehen in der großen Bibliothek über den 📚-Chip.
+            </div>
+          )}
+          {gefiltert.map((e) => (
+            <EintragKarte key={e.id} eintrag={e} aktiv={gewaehltId === e.id}
+              onClick={() => { onWaehlen?.(e); onSchliessen?.(); }} />
+          ))}
+        </div>
       </div>
     </div>
   );
