@@ -158,6 +158,83 @@ Schützenanteil in `bibliothek.js` rechnet „mit" gegen „ohne", und
 `npm run greift` misst Vorgabe gegen Extremwert. Genau diese Bauform bräuchte
 Andis „wie viel sie am eigentlichen Ergebnis komplett ohne Joker wirken".
 
+## 2c · 🔴 Das Wort trägt auch die AUSSTATTUNG, nicht nur die Stärke
+
+Andi am 24.08.2026:
+
+> „die Codenomen sollen halt bisschen für die Auswahl stehen, was überhaupt
+> dabei ist. Bspw. **Sturm und Orkan** hat die und die **Fremdjoker**, und
+> **Brise oder Lüftchen** ist eben ohne — aber **Lüftchen** hat halt
+> **Underdog-Joker** und **Brise** eher normal, nur doppelt
+> **Modifikator-Joker**"
+
+**Das ist eine andere Anforderung als „wie stark", und sie ist die wichtigere.**
+Beim Sprechen fragt niemand „wie hoch ist der Joker-Faktor?" — gefragt wird
+„habt ihr Fremdjoker?". Ein Wort, das nur eine Stärke trägt, beantwortet die
+Frage nicht, die tatsächlich gestellt wird.
+
+### Der Zielkonflikt — und warum er sich in diesem Fall auflöst
+
+⚠️ **Eine Skala ist geordnet, eine Ausstattung ist eine Menge.** „Lüftchen mit
+Underdog-Joker" und „Brise mit Modifikator-Joker" sind nicht mehr oder weniger
+— sie sind ANDERS. Streng genommen passt eine Menge nicht auf eine Leiter.
+
+✅ **Hier passt sie trotzdem, weil die Ausstattung mit der Wucht mitläuft.** Ein
+Fremdjoker greift in einen FREMDEN Tipp ein; ein Underdog-Joker verstärkt nur
+den eigenen. Das eine ist wuchtiger als das andere — nicht per Definition,
+sondern messbar. Deshalb landen „die mit Fremdjoker" von selbst oben auf der
+Leiter, genau da, wo Andi sie hinsetzt.
+
+🔴 **Nur bei GLEICHSTAND muss jemand entscheiden**, und das ist genau die
+Stelle in seinem Beispiel: Lüftchen (Underdog) und Brise (Modifikator) liegen
+wuchtmäßig nah beieinander. **Vorschlag für die Regel:** Bei ähnlicher Wucht
+liegt weiter oben, was MEHR MITSPIELER betrifft — was in fremde Tipps
+eingreift, vor dem, was nur den eigenen verändert.
+
+### Ein Profil-Katalog statt einer reinen Zahlenskala
+
+Damit wird aus der Wetter-Skala eine Liste von **Ausstattungs-Profilen**, jedes
+mit einem Wort. Andis Beispiel, ausbuchstabiert:
+
+| Wort | was dabei ist | Wucht |
+|---|---|---|
+| **Windstille** | keine Joker | 0 |
+| **Lüftchen** | nur milde, helfende Arten — Underdog, Trost | 1 |
+| **Brise** | Einzel-Joker normal, doppelte Modifikatoren | 2 |
+| **Wind** | Einzel + Ranking | 3 |
+| **Böe** | dazu Saison-Wetten | 4 |
+| **Sturm** | dazu **Fremdjoker** (Klau, Block) | 5 |
+| **Orkan** | alle Arten, hohe Frequenz | 6 |
+
+Ein Regelwerk bekommt das Wort des Profils, dem es am **nächsten** kommt.
+
+### ⚠️ Wo das Wort anfängt zu lügen — und was dagegen hilft
+
+Es gibt **neun Joker-Arten** (`JOKER_ARTEN` in `jokerBudget.js`), also 512
+mögliche Kombinationen. Sieben Wörter können davon nur die häufigen abdecken.
+
+**Was das heißt:** Wer eine ungewöhnliche Mischung baut — sagen wir Fremdjoker
+OHNE Einzel-Joker — bekommt „Sturm", obwohl der Sturm im Katalog anders
+aussieht. Das Wort ist dann eine Näherung, keine Aussage.
+
+Drei Dinge, die das auffangen:
+
+1. **Die Bewertungszahl daneben** (Abschnitt 2) sagt, wie weit oben es liegt —
+   sie stimmt auch dann, wenn das Profil nur ungefähr passt.
+2. **Ein Aufklappen zeigt die echte Liste.** Das Wort ist die Überschrift, nicht
+   die Auskunft. Wer es genau wissen will, klickt.
+3. 🔴 **Ein Abstandsmaß, das ehrlich ist.** Liegt ein Regelwerk zu weit von
+   jedem Profil, bekommt es **kein** Profilwort, sondern ein neutrales („eigene
+   Mischung"). Lieber keine Auskunft als eine falsche — dieselbe Regel wie bei
+   den Bibliotheks-Icons, wo bei zu kleiner Spannweite gar kein Icon steht.
+
+⚠️ **Und der Katalog ist damit Pflege-Arbeit.** Kommt eine Joker-Art dazu — wie
+am 23.08. die beiden Fremdjoker —, muss jemand entscheiden, in welche Profile
+sie gehört. Das ist ein weiterer Grund für Andis Sperre in 2b: **Ein Katalog,
+der vor den Parametern festgelegt wird, ist beim ersten neuen Regler veraltet.**
+
+---
+
 ## 3 · Andis Vorschlag, ausbuchstabiert
 
 ```
