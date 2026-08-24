@@ -74,6 +74,30 @@ nicht dasselbe sind.
 
 ---
 
+## 📱 App-Tauglichkeit: drei Befunde, einer davon aktiv schädlich (24.08.2026)
+
+**Andis Frage:** „wenn man das dann als App für Android und iOS rausbringt,
+passt sich das dann an jedes Modell richtig professionell an?"
+
+**Gemessen, nicht geschätzt — die Antwort ist NEIN, noch nicht:**
+
+| Befund | Messwert | Folge auf dem Gerät |
+|---|---|---|
+| 🔴 **`viewportFit: "cover"` OHNE Safe Areas** | `layout.js:50` setzt es, `safe-area-inset` kommt im ganzen Projekt **0×** vor | Die schlechteste Kombination von beiden. „cover" sagt dem Gerät ausdrücklich „zieh den Inhalt bis unter die Notch" — und ohne die Insets holt ihn niemand zurück. Kopfzeile unter der Dynamic Island, Knöpfe unter dem Home-Indicator |
+| ⚠️ **Alle Schriftgrößen in px** | **1202×** `fontSize: <zahl>`, **0×** `rem` | Die Schriftgrößen-Einstellung des Nutzers wird ignoriert. Auf iOS ist „Dynamic Type wird nicht unterstützt" ein bekannter Ablehnungsgrund im App-Review, auf Android eine Barrierefreiheits-Lücke |
+| ⚠️ **51 feste `maxWidth`-Stellen** | meist 400 px | Auf Tablets eine schmale Säule mitten im Bild. Für Handys richtig, für „jedes Modell" zu wenig |
+
+⚠️ **Was NICHT das Problem ist:** Capacitor packt die Web-App in eine native
+Hülle — das ist der leichte Teil und ändert an keinem der drei Punkte etwas.
+Wer nur Capacitor einrichtet, hat eine App, die auf halben Geräten falsch sitzt.
+
+⏳ **Nicht angefangen.** Der erste Punkt ist klein (Insets als Polsterung an
+Kopf und Fuß) und sollte VOR dem ersten echten Gerätetest kommen; die anderen
+zwei sind Umbauten in der Größenordnung des Apple-Schrift-Durchgangs
+(520 Stellen) und gehören geplant, nicht nebenbei gemacht.
+
+---
+
 ## 💡 Creator-Codes sind bis zu 4 903 Zeichen lang — ein kürzeres Format wäre möglich
 
 **Gemessen am 24.08.2026** mit `encodePreset`, aufgekommen bei Andis Frage zum
