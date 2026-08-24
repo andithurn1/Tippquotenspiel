@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   AUSWAHL_MODI, AUSWAHL_LIMITS, DEFAULT_SPIELE,
   sanitizeSpiele, passtSpiel, filterSpiele, zusammenfassung, beschreibeAuswahl,
-  spieleProSpieltag,
+  spieleProSpieltag, engpaesse,
 } from "@/lib/spielauswahl";
 import { DEFAULT_RULES, sanitizeRules, encodePreset, decodePreset } from "@/lib/engine";
 
@@ -413,5 +413,66 @@ describe("Beschreibung nennt die neuen Ebenen", () => {
       .toBe("alle Spiele, Plätze 14–18");
     expect(beschreibeAuswahl({ jeWettbewerb: { bl: { spieltagVon: 30 } } }))
       .toBe("alle Spiele, Sonderregeln für 1 Wettbewerb");
+  });
+});
+
+
+// ── 🔴 Der Engpass: WARUM bleiben so wenige übrig? ──────
+//
+// Andis Fund vom 24.08.2026 im Browser: „+Premier League" ändert die Zahl
+// nicht, „−Bundesliga" macht daraus 0 — und nichts sagt, woran es liegt.
+describe("Engpass — welche Einschränkung kostet die meisten Spiele", () => {
+  // Ein Spielplan aus zwei Wettbewerben, damit sich Wettbewerb und
+  // Vereinsliste gegeneinander ausspielen lassen.
+  const ZWEI = [
+    { matchId: "b1", home: "A", away: "B", matchday: 1, wettbewerb: "bl" },
+    { matchId: "b2", home: "C", away: "D", matchday: 1, wettbewerb: "bl" },
+    { matchId: "p1", home: "X", away: "Y", matchday: 1, wettbewerb: "pl" },
+    { matchId: "p2", home: "Y", away: "Z", matchday: 2, wettbewerb: "pl" },
+  ];
+
+  it("nennt keine Einschränkung, wenn keine gesetzt ist", () => {
+    expect(engpaesse(ZWEI, DEFAULT_SPIELE)).toEqual([]);
+  });
+
+  it("findet die Vereinsliste als Engpass — Andis „+PL bringt nichts“", () => {
+    // Zwei Wettbewerbe gewählt, aber nur Bundesliga-Vereine in der Liste.
+    const spiele = { modus: "teams", teams: ["A", "B"], wettbewerbe: ["bl", "pl"] };
+    const [erster] = engpaesse(ZWEI, spiele);
+    expect(erster.feld).toBe("teams");
+    // Ohne die Vereinsliste wären ALLE vier Spiele dabei, mit ihr nur eins.
+    expect(erster.jetzt).toBe(1);
+    expect(erster.ohne).toBe(4);
+  });
+
+  it("erklärt auch die NULL — Andis „−Bundesliga“", () => {
+    // Nur Premier League gewählt, aber ausschließlich BL-Vereine in der Liste.
+    const spiele = { modus: "teams", teams: ["A", "B"], wettbewerbe: ["pl"] };
+    const funde = engpaesse(ZWEI, spiele);
+    expect(filterSpiele(ZWEI, sanitizeSpiele(spiele))).toHaveLength(0);
+    expect(funde[0].jetzt).toBe(0);
+    // Beide Einschränkungen sind beteiligt, und beide werden genannt — wer nur
+    // eine wegnimmt, hat wieder Spiele.
+    expect(funde.map((f) => f.feld).sort()).toEqual(["teams", "wettbewerbe"]);
+    expect(funde.every((f) => f.ohne > 0)).toBe(true);
+  });
+
+  it("sortiert den teuersten zuerst", () => {
+    const spiele = { modus: "teams", teams: ["A", "B"], wettbewerbe: ["bl", "pl"] };
+    const funde = engpaesse(ZWEI, spiele);
+    for (let i = 1; i < funde.length; i++) {
+      expect(funde[i - 1].gewinn).toBeGreaterThanOrEqual(funde[i].gewinn);
+    }
+  });
+
+  // ⚠️ Eine Einschränkung, die nichts kostet, ist kein Fehler — sie steht nur
+  // hinter einer anderen, die schon alles wegnimmt. Sie muss trotzdem
+  // auftauchen, sonst fehlt sie in der Erklärung.
+  it("nennt auch eine Einschränkung, die gerade nichts kostet", () => {
+    const spiele = { wettbewerbe: ["bl"], spieltagVon: 1, spieltagBis: 9 };
+    const funde = engpaesse(ZWEI, spiele);
+    const spieltage = funde.find((f) => f.feld === "spieltage");
+    expect(spieltage).toBeTruthy();
+    expect(spieltage.gewinn).toBe(0);
   });
 });

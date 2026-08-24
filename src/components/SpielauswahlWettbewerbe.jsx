@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { C, MONO, RUND } from "@/lib/theme";
 import { getStore } from "@/lib/store";
 import { PHASEN, wettbewerbeIn, wettbewerbVon, phaseVon } from "@/lib/wettbewerbe";
-import { filterSpiele, VERKNUEPFUNG_HINWEIS } from "@/lib/spielauswahl";
+import { filterSpiele, engpaesse, zusammenfassung, VERKNUEPFUNG_HINWEIS } from "@/lib/spielauswahl";
 
 // ── „Nur das Interessanteste" ───────────────────────────────
 // Welche Wettbewerbe und welche Phasen gehören zur Runde. Der Reiz daran ist
@@ -41,6 +41,28 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
   const gewaehltP = spiele?.phasen ?? [];
   const uebrig = useMemo(() => filterSpiele(alle, spiele ?? {}), [alle, spiele]);
 
+  // 🔴 Andis Fund vom 24.08.2026: „+Premier League" ändert die Zahl nicht,
+  // „−Bundesliga" macht daraus 0 — und die Oberfläche sagt nicht, warum.
+  // Beides beantwortet `engpaesse()` durch WEGLASSEN: welche Einschränkung
+  // kostet die meisten Spiele?
+  const engpass = useMemo(() => engpaesse(alle, spiele ?? {})[0] ?? null, [alle, spiele]);
+  // Die zweite Frage daneben: welcher EINZELNE gewählte Wettbewerb trägt nichts
+  // bei? Das ist der „+PL"-Fall — die Dimension ist nicht schuld, dieser eine
+  // Haken ist folgenlos.
+  const beitrag = useMemo(() => {
+    const m = new Map();
+    for (const x of uebrig) {
+      const w = wettbewerbVon(x);
+      m.set(w, (m.get(w) ?? 0) + 1);
+    }
+    return m;
+  }, [uebrig]);
+  const folgenlos = gewaehltW.filter((w) => (beitrag.get(w) ?? 0) === 0);
+  // ⚠️ Die Spieltags-Zahl ist die zweite Auskunft, nach der Andi gefragt hat
+  // („wie viele Spiele über die gesamte Saison bzw. pro Woche"). `zusammenfassung`
+  // rechnet sie längst — sie stand hier nur nie.
+  const summe = useMemo(() => zusammenfassung(alle, spiele ?? {}), [alle, spiele]);
+
   // ⚠️ Der Hook steht VOR dem frühen `return` weiter unten (CLAUDE.md: „Hooks
   // stehen VOR jedem frühen return"). Genau so lag `Tippabgabe.jsx` einmal
   // still kaputt.
@@ -73,6 +95,10 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
           {wettbewerbe.map((w) => (
             <Chip key={w.key} an={gewaehltW.includes(w.key)}
               label={w.kurz} zusatz={zaehle((m) => wettbewerbVon(m) === w.key)}
+              // ⚠️ Ein gewählter Wettbewerb, der nach den ANDEREN Filtern nichts
+              // beiträgt, sieht sonst aus wie jeder andere — und der Klick wirkt
+              // wirkungslos statt folgenlos.
+              folgenlos={gewaehltW.includes(w.key) && (beitrag.get(w.key) ?? 0) === 0}
               onClick={() => umschalten("wettbewerbe", w.key, gewaehltW)} />
           ))}
         </Gruppe>
@@ -93,12 +119,41 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
         marginTop: 9, background: C.ink2, border: `1px solid ${C.line}`,
         borderRadius: RUND.karte, padding: "9px 11px",
       }}>
-        <div style={{ fontSize: 13, color: uebrig.length === 0 ? C.coral : C.text }}>
+        <div style={{ fontSize: 15, color: uebrig.length === 0 ? C.coral : C.text }}>
           <strong style={{ fontFamily: MONO }}>{uebrig.length}</strong> von {alle.length} Spielen
-          {uebrig.length === 0 && " — diese Auswahl lässt nichts übrig"}
+          {summe.spieltage > 0 && (
+            <span style={{ color: C.muted, fontSize: 13 }}>
+              {" · rund "}<strong style={{ fontFamily: MONO, color: C.text }}>{summe.proSpieltag}</strong>
+              {" je Spieltag"}
+            </span>
+          )}
         </div>
+
+        {/* 🔴 Die Begründung, nicht nur die Zahl. Ohne sie liest sich eine 0
+            wie ein Fehler und ein folgenloser Haken wie ein kaputter Knopf. */}
+        {uebrig.length === 0 && engpass && (
+          <div style={{ fontSize: 13, color: C.coral, marginTop: 6, lineHeight: 1.45 }}>
+            Diese Auswahl lässt nichts übrig. Am meisten nimmt {FELD_TEXT[engpass.feld] ?? "eine Einschränkung"} weg
+            {engpass.ohne > 0 && <> — ohne sie wären es <strong style={{ fontFamily: MONO }}>{engpass.ohne}</strong> Spiele</>}.
+          </div>
+        )}
+
+        {uebrig.length > 0 && folgenlos.length > 0 && (
+          <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+            <strong style={{ color: C.text }}>{folgenlos.join(", ").toUpperCase()}</strong>
+            {folgenlos.length === 1 ? " bringt " : " bringen "}
+            hier nichts: dort spielt keiner deiner gewählten Vereine.
+          </div>
+        )}
+
+        {uebrig.length > 0 && summe.duenn && (
+          <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+            Das ist dünn — an vielen Spieltagen gibt es nur ein Spiel oder keins.
+          </div>
+        )}
+
         {(gewaehltW.length > 0 || gewaehltP.length > 0) && (
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
             {VERKNUEPFUNG_HINWEIS}
           </div>
         )}
@@ -106,6 +161,18 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
     </div>
   );
 }
+
+// Die Beschriftung der Engpass-Schlüssel. Sie steht HIER und nicht in
+// `spielauswahl.js`: die Logik liefert Zahlen und Schlüssel, die Worte gehören
+// in die Oberfläche (Architektur-Regel 1).
+const FELD_TEXT = {
+  teams: "deine Vereinsliste",
+  wettbewerbe: "die Wettbewerbs-Auswahl",
+  phasen: "die Phasen-Auswahl",
+  spieltage: "der gewählte Spieltag-Bereich",
+  zonen: "die Tabellenzone",
+  liste: "die feste Begegnungs-Liste",
+};
 
 function Gruppe({ titel, children }) {
   return (
@@ -123,15 +190,19 @@ function Gruppe({ titel, children }) {
 // Google 48 dp. Diese Chips waren 29 px hoch und stellten allein dreizehn der
 // 18 zu kleinen Tippziele auf dem Erstellungs-Screen (gemessen 07.08.2026 bei
 // 390 px Breite).
-function Chip({ an, label, zusatz, onClick }) {
+function Chip({ an, label, zusatz, folgenlos, onClick }) {
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick}
+      title={folgenlos ? "Gewählt, trägt aber nichts bei" : undefined}
+      style={{
       cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "6px 13px",
       minHeight: 44, boxSizing: "border-box",
       borderRadius: RUND.pille, display: "flex", alignItems: "center", gap: 5,
-      background: an ? `${C.mint}22` : C.surface,
-      color: an ? C.mint : C.muted,
-      border: `1px solid ${an ? C.mint + "66" : C.line}`,
+      background: an ? (folgenlos ? C.surface : `${C.mint}22`) : C.surface,
+      color: an ? (folgenlos ? C.muted : C.mint) : C.muted,
+      // Gewählt UND folgenlos: gestrichelt statt durchgezogen — der Haken ist
+      // gesetzt, wirkt aber nicht.
+      border: `1px ${an && folgenlos ? "dashed" : "solid"} ${an ? (folgenlos ? C.line : C.mint + "66") : C.line}`,
     }}>
       <span style={{ fontWeight: 700 }}>{label}</span>
       <span style={{ fontFamily: MONO, fontSize: 11, opacity: 0.75 }}>{zusatz}</span>

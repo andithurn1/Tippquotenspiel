@@ -324,6 +324,63 @@ export function zusammenfassung(matches = [], spiele = DEFAULT_SPIELE) {
   };
 }
 
+// ── 🔴 WARUM bleiben so wenige übrig? ────────────────────
+//
+// Andis Fund vom 24.08.2026, im Browser gemessen: auf einer Runde mit sechs
+// Bundesliga-Vereinen ändert „+Premier League" die Spielzahl **nicht** (174
+// bleibt 174), und „−Bundesliga" macht daraus **0 von 1943**. Beides ist
+// logisch richtig — es steht kein Premier-League-Verein in der Liste, und alle
+// Dimensionen wirken UND. **Nur sagt die Oberfläche es nicht.** Wer eine Liga
+// dazunimmt und nichts passieren sieht, hält es für kaputt.
+//
+// ⚠️ Die Antwort darauf ist NICHT, die Dimensionen zu entkoppeln (das wäre die
+// zweite Regel-Sprache, die `VERKNUEPFUNG_HINWEIS` bewusst ablehnt), sondern
+// zu SAGEN, welche Einschränkung gerade der Engpass ist.
+//
+// Gemessen wird durch WEGLASSEN: für jede aktive Dimension einmal ausrechnen,
+// wie viele Spiele ohne sie übrig blieben. Die mit dem größten Unterschied ist
+// der Engpass. Das braucht keine Sonderfälle und bleibt richtig, wenn eine
+// Dimension dazukommt.
+//
+// ⚠️ Absichtlich OHNE Textbausteine — die Beschriftung gehört in die
+// Oberfläche, nicht in die Logik (Architektur-Regel 1). Zurück kommen Zahlen
+// und ein Schlüssel.
+// Nicht exportiert: nur `engpaesse()` braucht die Liste, und der
+// tot-Durchgang meldet zu Recht jeden Export ohne Aufrufer.
+const ENGPASS_FELDER = [
+  { key: "teams", leer: { modus: "alle", teams: [] } },
+  { key: "wettbewerbe", leer: { wettbewerbe: [] } },
+  { key: "phasen", leer: { phasen: [] } },
+  { key: "spieltage", leer: { spieltagVon: null, spieltagBis: null } },
+  { key: "zonen", leer: { zonen: [] } },
+  { key: "liste", leer: { modus: "alle", matchIds: [] } },
+];
+
+export function engpaesse(matches = [], spiele = DEFAULT_SPIELE) {
+  const s = sanitizeSpiele(spiele);
+  const jetzt = filterSpiele(matches, s).length;
+
+  const aktiv = {
+    teams: s.modus === "teams" && s.teams.length > 0,
+    wettbewerbe: s.wettbewerbe.length > 0,
+    phasen: s.phasen.length > 0,
+    spieltage: s.spieltagVon !== null || s.spieltagBis !== null,
+    zonen: s.zonen.length > 0,
+    liste: s.modus === "liste" && s.matchIds.length > 0,
+  };
+
+  const funde = [];
+  for (const f of ENGPASS_FELDER) {
+    if (!aktiv[f.key]) continue;
+    const ohne = filterSpiele(matches, { ...s, ...f.leer }).length;
+    // `gewinn` = wie viele Spiele diese eine Einschränkung kostet.
+    funde.push({ feld: f.key, jetzt, ohne, gewinn: ohne - jetzt });
+  }
+  // Der teuerste zuerst. Bei Gleichstand die Reihenfolge aus ENGPASS_FELDER —
+  // sonst wechselte die Meldung bei jedem Render den Schuldigen.
+  return funde.sort((a, b) => b.gewinn - a.gewinn);
+}
+
 // Wie viele Spiele bleiben je Spieltag übrig, wenn man k von n Vereinen wählt?
 // Ohne Spielplan lässt sich das nicht exakt sagen, aber sehr wohl eingrenzen:
 // an einem Spieltag spielt jeder Verein genau einmal. Spielen die Gewählten
