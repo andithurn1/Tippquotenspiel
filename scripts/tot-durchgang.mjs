@@ -40,6 +40,14 @@ const GEDULDET = {
   createMockStore:
     "Dito — die eine Stelle, an der Mock gegen Supabase getauscht wird.",
 
+  // ── Am 24.08.2026 geprüft und stehen gelassen ─────────────
+  vergissBesuch:
+    "Stellt den Erstkontakt (G5) wieder auf „noch nie da gewesen“. Bewusst "
+    + "NICHT an einen Knopf in der App gehängt: „Begrüßung nochmal zeigen“ ist "
+    + "eine Einstellung, die niemand sucht und die den Screen belastet. Sie "
+    + "steht für die Entwicklung und die Musterseite — und ohne sie ließe sich "
+    + "der erste Start nur durch Löschen der Seitendaten wiederholen.",
+
   // ── Am 06.08.2026 geprüft und stehen gelassen ─────────────
   catchupLeaderboard:
     "Bequemer Weg zum Endstand mit Anschluss-Bonus. Der Store nimmt statt "

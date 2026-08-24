@@ -214,6 +214,59 @@
   to   { opacity: 1; transform: none; }
 }
 
+/* ── 🔴 ÜBERGÄNGE ZWISCHEN FENSTERN (G4, 24.08.2026) ────────
+   Andis Ansage vom 09.08., zweiter Halbsatz: „Nutzerfarben nur noch für
+   minimalistische Verzierungen UND ÜBERGÄNGE ZWISCHEN FENSTERN."
+
+   ⚠️ Der zweite Halbsatz ist eine ZUWEISUNG, keine Erlaubnis nebenbei: die
+   Vereinsfarben haben genau zwei Orte, an denen sie noch vorkommen dürfen —
+   und einer davon ist dieser. Deshalb tragen die Übergänge hier `--tqs-fan1`
+   und nicht den Akzent: ein Fenster, das in DEINEN Vereinsfarben aufgeht,
+   ist der Ort, an dem die Farbwahl überhaupt noch spürbar wird.
+
+   ⚠️ Sie färben NICHT das Fenster ein. Was sich färbt, ist der Moment: ein
+   Schimmer am Rand, während es kommt. Alles Kräftigere widerspräche
+   „minimalistisch" aus demselben Satz.
+
+   `prefers-reduced-motion` gilt automatisch mit — die Dauern oben werden
+   dort auf 1 ms gesetzt, der Zustand bleibt, die Bewegung fällt weg. */
+
+/* Der abdunkelnde Grund hinter einem Fenster. */
+.tqs-fenster-grund {
+  animation: tqs-grund-auf var(--tqs-dauer) var(--tqs-kurve) both;
+}
+
+@keyframes tqs-grund-auf {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Das Fenster selbst: kommt von unten, mit einem Schimmer in der ersten
+   Vereinsfarbe, der sich wieder verliert.
+
+   ⚠️ `translateY(8px)` und nicht mehr. Ein Fenster, das über den halben
+   Schirm fliegt, sieht beim zweiten Mal nach Effekt aus — und beim zehnten
+   nach Wartezeit. */
+.tqs-fenster {
+  animation: tqs-fenster-auf var(--tqs-dauer) var(--tqs-kurve) both;
+}
+
+@keyframes tqs-fenster-auf {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--tqs-fan1) 55%, transparent);
+  }
+  60% {
+    box-shadow: 0 0 18px 2px color-mix(in srgb, var(--tqs-fan1) 40%, transparent);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    box-shadow: 0 24px 60px rgba(17, 20, 28, 0.18);
+  }
+}
+
 /* ── Die Schrift, an EINER Stelle ────────────────────────────
    🔴 21.08.2026. Vorher trug jeder Screen seine eigene Kopie von
    `fontFamily: "system-ui, -apple-system, …"` — 30 Stück. Eine Schriftart zu

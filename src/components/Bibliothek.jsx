@@ -47,12 +47,13 @@ export default function Bibliothek({ offen, onUebernehmen, onSchliessen, geladen
     <div
       role="dialog" aria-modal="true" aria-label="Bibliothek"
       onClick={(e) => { if (e.target === e.currentTarget) onSchliessen?.(); }}
+      className="tqs-fenster-grund"
       style={{
         position: "fixed", inset: 0, zIndex: 60, background: "rgba(17,20,28,0.35)",
         backdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center",
         padding: 16, fontFamily: SCHRIFT,
       }}>
-      <div style={{
+      <div className="tqs-fenster" style={{
         background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
         width: "100%", maxWidth: 460, maxHeight: "86vh", display: "flex", flexDirection: "column",
         boxShadow: "0 24px 60px rgba(17,20,28,0.18)",

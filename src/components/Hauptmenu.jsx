@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthBar from "@/components/AuthBar";
+import Erstkontakt from "@/components/Erstkontakt";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { getStore } from "@/lib/store";
@@ -96,6 +97,13 @@ export default function Hauptmenu() {
         </p>
 
         <AuthBar />
+
+        {/* 🔴 Erstkontakt (G5, Andi 09.08.2026): nur beim allerersten Start.
+            Steht ÜBER der Liste, nicht als Fenster DAVOR — der häufigste Fall
+            ist, dass jemand einen Code bekommen hat und loslegen will; ein
+            Fenster müsste er erst wegklicken. Zeigt sich genau einmal und
+            merkt sich das selbst. */}
+        <Erstkontakt />
 
         <Section title="Meine Tippspiele">
           {rounds == null && <Hint>Tippspiele laden …</Hint>}
