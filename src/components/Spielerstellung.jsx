@@ -18,11 +18,11 @@ import BackLink from "@/components/BackLink";
 import VariantenWahl from "@/components/VariantenWahl";
 import TeilCodeFeld from "@/components/TeilCodeFeld";
 import Bibliothek from "@/components/Bibliothek";
+import GesamtspielAuswahl from "@/components/GesamtspielAuswahl";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
 import WettbewerbGewichte from "@/components/WettbewerbGewichte";
-import RundenCharaktere from "@/components/RundenCharaktere";
 import EinfacheRegler from "@/components/EinfacheRegler";
 import { CHARAKTERE } from "@/lib/charaktere";
 import BalanceAmpel from "@/components/BalanceAmpel";
@@ -136,6 +136,29 @@ export default function Spielerstellung() {
     setPresetKey(preset.key); setShortCode(null);
     setRules({ ...sanitizeRules(preset.rules), name: preset.label });
   };
+  // 🔴 EIN Weg, einen Bibliotheks-Eintrag zu übernehmen — benutzt vom Fenster
+  // (`Bibliothek`) UND von der Vorauswahl oben (`GesamtspielAuswahl`).
+  // Stünde die Fallunterscheidung zweimal da, liefe sie irgendwann
+  // auseinander: ein Charakter ERSETZT alles, ein Preset auch (trägt aber
+  // seinen Namen), ein Baustein mischt sich nur in SEINEN Aspekt.
+  const uebernimmEintrag = (e) => {
+    touched();
+    setShortCode(null);
+    if (e.art === "charakter") {
+      setCharakterKey(e.key); setPresetKey(null); setRules(e.rules);
+    } else if (e.art === "preset") {
+      setCharakterKey(null); setPresetKey(e.key);
+      setRules({ ...sanitizeRules(e.rules), name: e.label });
+    } else {
+      // Ein Baustein ERSETZT seinen Aspekt und lässt alles andere stehen —
+      // dieselbe Regel wie beim Teil-Code (`wendeTeilCodeAn`). Preset- und
+      // Charakter-Name fallen dabei weg: was jetzt gilt, ist keins von
+      // beiden mehr.
+      setCharakterKey(null); setPresetKey(null);
+      setRules((r) => sanitizeRules({ ...r, ...(e.werte ?? {}) }));
+    }
+  };
+
   const patch = (p) => { touched(); setRules((r) => ({ ...r, ...p })); };
   const patchJoker = (p) => { touched(); setRules((r) => ({ ...r, joker: { ...r.joker, ...p } })); };
 
@@ -604,11 +627,20 @@ export default function Spielerstellung() {
             <VariantenWahl rules={rules} onWaehlen={waehleVariante} />
           </div>
 
-          <RundenCharaktere
-            gewaehlt={charakterKey}
-            onWaehlen={(ch) => { setCharakterKey(ch.key); setPresetKey(null); setShortCode(null); setRules(ch.rules); }}
-            onCodeLaden={(c) => { setImp(c); load(); }}
-            codeFehler={impErr}
+          {/* 🔴 Die GESAMTSPIEL-BIBLIOTHEK als Vorauswahl (Andi, 24.08.2026,
+              zum dritten Mal). Hier stand `RundenCharaktere`: vier Karten aus
+              `CHARAKTERE`, ohne Suche, ohne Filter, ohne Sortierung — und ohne
+              die REGELWERKE. Wer mehr wollte, musste wissen, dass es hinter
+              dem 📚-Chip ein Fenster gibt.
+
+              ⚠️ Das Code-Feld, das früher eingeklappt IN diesem Block saß,
+              steht jetzt oben als eigener Schritt („Du hast einen GameCode?").
+              Zweimal dasselbe Feld wäre die schlimmere Antwort: der Screen
+              fragte an zwei Stellen nach derselben Sache. */}
+          <GesamtspielAuswahl
+            gewaehltId={charakterKey ? `charakter:${charakterKey}` : presetKey ? `preset:${presetKey}` : null}
+            onWaehlen={uebernimmEintrag}
+            onAlleAnzeigen={() => setBibliothekOffen(true)}
           />
 
           {/* ── Wettbewerbe auswählen ─────────────────────────────
@@ -1246,23 +1278,7 @@ export default function Spielerstellung() {
         offen={bibliothekOffen}
         onSchliessen={() => setBibliothekOffen(false)}
         aktivId={charakterKey ? `charakter:${charakterKey}` : presetKey ? `preset:${presetKey}` : null}
-        onUebernehmen={(e) => {
-          touched();
-          setShortCode(null);
-          if (e.art === "charakter") {
-            setCharakterKey(e.key); setPresetKey(null); setRules(e.rules);
-          } else if (e.art === "preset") {
-            setCharakterKey(null); setPresetKey(e.key);
-            setRules({ ...sanitizeRules(e.rules), name: e.label });
-          } else {
-            // Ein Baustein ERSETZT seinen Aspekt und lässt alles andere stehen —
-            // dieselbe Regel wie beim Teil-Code (`wendeTeilCodeAn`). Preset- und
-            // Charakter-Name fallen dabei weg: was jetzt gilt, ist keins von
-            // beiden mehr.
-            setCharakterKey(null); setPresetKey(null);
-            setRules((r) => sanitizeRules({ ...r, ...(e.werte ?? {}) }));
-          }
-        }}
+        onUebernehmen={uebernimmEintrag}
       />
 
     </div>
