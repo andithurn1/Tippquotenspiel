@@ -126,6 +126,23 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-24 (XV) · **Nach `main` gemergt** — Fremdjoker-Familie + Abdeckung sind jetzt live
+
+Auf Andis Bestätigung (er sah noch die alte Version, weil der Branch nie nach
+`main` gemergt war): `claude/fremdjoker-jk4-jk7-ehc5fw` (20 Commits, siehe
+Eintrag XIV) per `--no-ff` nach `main` gemergt, `ffbca71`. Kein Konflikt, `main`
+stand bei `75faf95` (nur der COORDINATION-Eintrag „nur noch ein Fenster" seit
+dem letzten Sync). Nach dem Merge nochmal komplett durchlaufen: 2453 Tests
+grün, lint, build sauber. Gepusht.
+
+**main enthält jetzt:** die ganze Fremdjoker-Familie (Block/Klau/Trittbrett/
+Gegenwette unter `rules.eingriffe` + `rules.duell`), JK5/12/13/14/19, den
+neunten Abnahme-Durchgang `npm run einstellbar`, und die Schaufenster-Runde
+(`ALLES`) mit 188/199 Einstellungen vorgeführt. Alles Weitere zu Inhalt und
+offenen Fragen steht in Eintrag XIV — der ändert sich durch den Merge nicht.
+
+---
+
 ### 2026-08-23 (XIV) · **Das Schaufenster führt jetzt 188 von 199 Einstellungen vor** — und zwei Funde aus dem prüfenden Lesen
 
 > **👉 Frische Session: DAS ist dein Einstieg.** Alles darunter ist Historie.
