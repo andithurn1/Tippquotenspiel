@@ -5,7 +5,7 @@ import {
   DEFAULT_RULES, RULE_LIMITS,
   encodePreset, decodePreset, sanitizeRules, istCreatorCode,
 } from "@/lib/engine";
-import { istTeilCode, wendeTeilCodeAn } from "@/lib/teilbibliothek";
+import { istTeilCode, wendeTeilCodeAn, zerlegeTeilCode } from "@/lib/teilbibliothek";
 import { PRESETS } from "@/lib/presets";
 import { recommendedDisplayScale } from "@/lib/rulePreview";
 import { isPremium } from "@/lib/premium";
@@ -19,6 +19,7 @@ import VariantenWahl from "@/components/VariantenWahl";
 import TeilCodeFeld from "@/components/TeilCodeFeld";
 import Bibliothek from "@/components/Bibliothek";
 import GesamtspielAuswahl, { GesamtspielFenster } from "@/components/GesamtspielAuswahl";
+import Schichtung from "@/components/Schichtung";
 import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
@@ -74,7 +75,25 @@ export default function Spielerstellung() {
   // Zwei Codes derselben Ebene überschreiben einander — ohne Anzeige wirkt
   // der zweite Ladevorgang wie ein Fehlschlag des ersten.
   const [geladeneCodes, setGeladeneCodes] = useState({});
-  const merkeCode = (aspekt, code) => setGeladeneCodes((g) => ({ ...g, [aspekt]: code }));
+  // 🔴 Die REIHE, in der aufgelegt wurde (Andi, 24.08.2026: „schön untereinander
+  // in der Reihe kombinierbar"). `geladeneCodes` weiß nur, WAS gilt — die Map
+  // kann nicht erzählen, in welcher Folge es dazukam. Genau das ist sein Punkt.
+  //
+  // ⚠️ Ein zweiter Code desselben Aspekts rutscht ans ENDE, statt an seiner
+  // alten Stelle zu bleiben: er hat zuletzt gewirkt.
+  const [schichten, setSchichten] = useState([]);
+  // Wurde nach dem letzten Auflegen von Hand geschraubt? `touched()` läuft bei
+  // JEDER Regeländerung durch — daran hängt die Auskunft, ohne einen zweiten
+  // Weg zu erfinden.
+  const [handAngepasst, setHandAngepasst] = useState(false);
+  // Woraus die Runde entstanden ist: Vorlage, Gesamt-Code oder die Vorgabe.
+  const [basisName, setBasisName] = useState(null);
+
+  const merkeCode = (aspekt, code) => {
+    setGeladeneCodes((g) => ({ ...g, [aspekt]: code }));
+    setSchichten((l) => [...l.filter((x) => x.aspekt !== aspekt), { aspekt, code }]);
+    setHandAngepasst(false);
+  };
   const [charakterKey, setCharakterKey] = useState(null);
   // Andis PP1: die Bibliothek ist ein FENSTER, kein Abschnitt — sie legt sich
   // über den Screen und gibt ihn danach unverändert zurück.
@@ -134,7 +153,7 @@ export default function Spielerstellung() {
 
   // Jede Regeländerung macht einen zuvor erzeugten Kurzcode ungültig (er zeigt
   // sonst auf ein altes Regelwerk).
-  const touched = () => { setPresetKey(null); setShortCode(null); };
+  const touched = () => { setPresetKey(null); setShortCode(null); setHandAngepasst(true); };
   const applyPreset = (preset) => {
     setPresetKey(preset.key); setShortCode(null);
     setRules({ ...sanitizeRules(preset.rules), name: preset.label });
@@ -147,6 +166,18 @@ export default function Spielerstellung() {
   const uebernimmEintrag = (e) => {
     touched();
     setShortCode(null);
+    // 🔴 Eine ganze Vorlage ist eine neue GRUNDLAGE, kein Aufsatz: die Schichten
+    // darüber gälten sonst weiter, obwohl das Regelwerk darunter ausgetauscht
+    // ist — die Reihe behauptete dann eine Herkunft, die es nicht mehr gibt.
+    // Ein BAUSTEIN dagegen ist genau ein Aufsatz und wird unten mitgezählt.
+    if (e.art === "charakter" || e.art === "preset") {
+      setBasisName(e.label);
+      setSchichten([]);
+      setGeladeneCodes({});
+    } else {
+      setSchichten((l) => [...l.filter((x) => x.aspekt !== e.aspekt), { aspekt: e.aspekt, code: "aus der Bibliothek" }]);
+    }
+    setHandAngepasst(false);
     if (e.art === "charakter") {
       setCharakterKey(e.key); setPresetKey(null); setRules(e.rules);
     } else if (e.art === "preset") {
@@ -240,6 +271,9 @@ export default function Spielerstellung() {
         const neu = wendeTeilCodeAn(rules, val);
         setPresetKey(null);
         setRules(neu);
+        // Ein Teil-Code ist ein AUFSATZ: die Reihe wächst, die Grundlage bleibt.
+        const teil = zerlegeTeilCode(val);
+        if (teil?.aspekt) merkeCode(teil.aspekt, val);
         setImp("");
       } catch {
         setImpErr("Kein gültiger Teil-Code.");
@@ -250,6 +284,10 @@ export default function Spielerstellung() {
       try {
         setPresetKey(null);
         setRules(sanitizeRules(decodePreset(val)));
+        // Wie eine Vorlage: neue Grundlage, die Schichten darüber verfallen.
+        setBasisName("geladener GameCode");
+        setSchichten([]);
+        setHandAngepasst(false);
         // 🔴 Andis Regel (21.08.2026): ein GESAMT-Code setzt alle Teilebenen neu
         // und überschreibt damit auch jede vorherige Teil-Anpassung. Bliebe die
         // Merkliste stehen, behauptete die Oberfläche weiter „zuletzt geladen:
@@ -264,6 +302,9 @@ export default function Spielerstellung() {
       const preset = await getStore().getPresetByCode(val);
       if (!preset) { setImpErr("Kein Regelwerk unter diesem Code gefunden."); return; }
       setPresetKey(null);
+      setBasisName(preset.name || "geladener Kurzcode");
+      setSchichten([]);
+      setHandAngepasst(false);
       setRules({ ...sanitizeRules(preset.rules), name: preset.name || sanitizeRules(preset.rules).name });
       // Derselbe Fall wie beim langen Code — siehe dort.
       setGeladeneCodes({});
@@ -1268,6 +1309,11 @@ export default function Spielerstellung() {
           {/* Bausteine: einzelne Aspekte (Drehrad, Joker-Ökonomie, …) als
               eigener Teil-Code — nur ab „anpassen", weil in „einfach"
               Charakter und Preset die Entscheidung treffen. */}
+          {/* 🔴 Andis Reihe (SA7): woraus diese Runde entstanden ist, von unten
+              nach oben. Steht VOR den Bausteinen, weil sie erklärt, was die
+              Codes darunter überhaupt bewirkt haben. */}
+          <Schichtung basis={basisName} schichten={schichten} handAngepasst={handAngepasst} />
+
           <SectionTitle>Bausteine</SectionTitle>
           <Bausteine rules={rules} />
 
