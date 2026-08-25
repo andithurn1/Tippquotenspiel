@@ -483,11 +483,18 @@ describe("konflikte und der ehrliche Hinweis", () => {
     expect(zweiPhasenHinweis(DEFAULT_RULES)).toBeNull();
   });
 
-  // 🔴 Andi: „Das muss halt vom Admin klar so eingestellt werden, weil sonst
-  // geht's nicht auf." Gemeldet, nicht still korrigiert.
-  it("meldet den fehlenden Tippschluss, sobald ein Fremdjoker läuft", () => {
+  // 🔴 UMGEDREHT AM 25.08.2026. Hier wurde geprüft, dass der fehlende
+  // Tippschluss GEMELDET wird — die App verlangte ihn (`korrigieren: true`).
+  //
+  // Andi: „will nicht so nen engen Zeitplan bei Tippabgabe und Jokereinsatz
+  // verpflichtend machen." Der Eintrag ist weg; `zweiPhasenHinweis` sagt
+  // dasselbe in derselben Komponente, nur ohne Vorwurf.
+  //
+  // ⚠️ Der Test bleibt und sichert jetzt das Gegenteil — sonst käme die
+  // Pflicht beim nächsten Umbau unbemerkt zurück.
+  it("verlangt KEINEN Tippschluss mehr", () => {
     const keys = konflikte(mitDuell()).map((k) => k.key);
-    expect(keys).toContain("fremdjoker-ohne-tippschluss");
+    expect(keys).not.toContain("fremdjoker-ohne-tippschluss");
   });
 
   it("meldet den fehlenden Anker, wenn der Tippschluss steht", () => {
@@ -542,15 +549,44 @@ describe("konflikte und der ehrliche Hinweis", () => {
   });
 
   // JK19 — in Andis Sprache, nicht als Systemmeldung.
-  it("der Hinweis sagt, was die Runde erwartet: zweimal reinschauen", () => {
+  //
+  // 🔴 UMGESCHRIEBEN AM 25.08.2026. Der Text sagte vorher in BEIDEN Fällen
+  // „muss zweimal reinschauen" — auch ohne Tippschluss, wo es gar nicht
+  // stimmte. Andi: „will nicht so nen engen Zeitplan … verpflichtend machen."
+  it("bei getrennter Fahrweise: sagt, was die Runde erwartet", () => {
     const rules = R({
       duell: { ...DEFAULT_DUELL, enabled: true },
       tippfenster: { vorlaufStunden: 168, anker: "spieltag", schlussStunden: 24 },
     });
-    const text = zweiPhasenHinweis(rules);
-    expect(text).toMatch(/zweimal pro Spieltag/);
-    expect(text).toMatch(/1 Tag später/);
-    expect(text).toMatch(/Büro-Runde/);
+    const h = zweiPhasenHinweis(rules);
+    expect(h.ton).toBe("warnung");
+    expect(h.text).toMatch(/zweimal pro Spieltag/);
+    expect(h.text).toMatch(/1 Tag später/);
+    expect(h.text).toMatch(/Benachrichtigungen/);
+    expect(h.text).toMatch(/Büro-Runde/);
+  });
+
+  it("ohne Tippschluss: beruhigt, statt zu mahnen", () => {
+    // 🔴 Der Normalfall. Ein roter Kasten hätte den Admin zu einer
+    // Einstellung gedrängt, die er gar nicht braucht.
+    const h = zweiPhasenHinweis(mitDuell());
+    expect(h.ton).toBe("info");
+    expect(h.text).toMatch(/einmal reinschauen/);
+    expect(h.text).toMatch(/verpufft/);
+    expect(h.text).not.toMatch(/muss/);
+  });
+
+  it("meldet den fehlenden Anker weiter — das IST ein Fehler", () => {
+    // ⚠️ Die Gegenprobe: nicht jede Meldung ist weggefallen. Wer einen
+    // Tippschluss SETZT, braucht dazu den passenden Anker, sonst geht ein
+    // spätes Spiel erst auf, wenn der Schluss vorbei ist.
+    const rules = R({
+      duell: { ...DEFAULT_DUELL, enabled: true },
+      tippfenster: { vorlaufStunden: 168, anker: "spiel", schlussStunden: 24 },
+    });
+    const fund = konflikte(rules).find((k) => k.key === "fremdjoker-ohne-anker");
+    expect(fund).toBeTruthy();
+    expect(fund.korrigieren).toBe(true);
   });
 });
 

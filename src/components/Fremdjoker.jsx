@@ -197,20 +197,34 @@ export default function Fremdjoker({ rules, onChange }) {
              auseinanderläuft. ── */}
       {an && hinweis && (
         <div style={{
-          border: `1px solid ${C.coral}`, background: `${C.coral}12`,
+          // 🔴 Der Ton entscheidet die Farbe (25.08.2026). Vorher war der
+          // Kasten IMMER rot — auch im Normalfall ohne Tippschluss, der gar
+          // kein Problem ist. Ein roter Kasten für den Normalfall drängt den
+          // Admin zu einer Einstellung, die er nicht braucht.
+          border: `1px solid ${hinweis.ton === "warnung" ? C.coral : C.line}`,
+          background: hinweis.ton === "warnung" ? `${C.coral}12` : C.ink2,
           borderRadius: RUND.karte, padding: "10px 13px", marginTop: 10,
-          fontSize: "0.75rem", color: C.coral, lineHeight: 1.5,
+          fontSize: "0.75rem",
+          color: hinweis.ton === "warnung" ? C.coral : C.muted,
+          lineHeight: 1.5,
         }}>
-          {hinweis}
+          {hinweis.ton === "warnung" ? "⚠️ " : "💡 "}{hinweis.text}
         </div>
       )}
 
       {/* ── 3) Konflikte: gemeldet, nicht still korrigiert. Ein
              Korrektur-Knopf würde eine Runde umschreiben, die der Admin so
              gewollt haben könnte. ── */}
+      {/* 🔴 `korrigieren` entscheidet den Ton (25.08.2026) — vorher stand hier
+          IMMER ⚠️ und immer rot, auch bei einem Eintrag, der ausdrücklich
+          `korrigieren: false` trägt. Dieselbe Unterscheidung macht
+          `Ereignisse.jsx` seit jeher; hier fehlte sie. */}
       {streit.map((k) => (
-        <div key={k.key} style={{ fontSize: "0.6875rem", color: C.coral, marginTop: 6, lineHeight: 1.45 }}>
-          ⚠️ {k.text}
+        <div key={k.key} style={{
+          fontSize: "0.6875rem", marginTop: 6, lineHeight: 1.45,
+          color: k.korrigieren ? C.coral : C.muted,
+        }}>
+          {k.korrigieren ? "⚠️ " : "💡 "}{k.text}
         </div>
       ))}
 

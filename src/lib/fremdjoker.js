@@ -715,15 +715,29 @@ export function konflikte(rules) {
   if (!familieAn(rules)) return out;
   const f = sanitizeTippfenster(rules?.tippfenster);
 
-  if (f.schlussStunden <= 0) {
-    out.push({
-      key: "fremdjoker-ohne-tippschluss",
-      korrigieren: true,
-      text: "Fremdjoker brauchen einen gemeinsamen Tippschluss: erst tippen alle, danach werden "
-        + "die Joker auf die anderen gesetzt. Ohne ihn setzt jemand seinen Block, während andere "
-        + "noch tippen — und wer zuletzt tippt, weiß bereits, was ihn erwartet.",
-    });
-  } else if (f.anker !== "spieltag") {
+  // 🔴 HIER STAND „fremdjoker-ohne-tippschluss" (bis 25.08.2026).
+  //
+  // Zuerst als zu behebender Konflikt (⚠️ `korrigieren: true`), dann kurz als
+  // Hinweis — und dann ganz entfernt, weil `zweiPhasenHinweis` in DERSELBEN
+  // Komponente dasselbe sagt, nur besser. Im Browser standen zwei fast
+  // gleiche Sätze untereinander.
+  //
+  // Andi, 25.08.2026: „will nicht so nen engen Zeitplan bei Tippabgabe und
+  // Jokereinsatz verpflichtend machen … Hinweistext, dass ohne eigentlich
+  // besser ist bzw. genauso aufgeht."
+  //
+  // ⚠️ Die alte Begründung war nicht falsch, aber sie ist ENTSCHÄRFT:
+  //   · Bei `block.wirkung: "gesperrt"` nützt Vorwissen nichts — wer geblockt
+  //     ist, kann ohnehin nicht mehr tippen.
+  //   · Beim Dämpfen bleibt ein Rest-Vorteil für den, der zuletzt tippt —
+  //     dagegen gibt es aber `eingriffe.sichtbar`, und ein Regler ist das
+  //     passendere Werkzeug als ein Zeitplan, an den sich alle halten müssen.
+  //   · Und seit dem 25.08.2026 ist der blinde Einsatz eine WETTE: wer auf
+  //     ein ungetipptes Spiel blockt, verpufft. Früh zuzuschlagen ist damit
+  //     kein Freifahrtschein mehr.
+  //
+  // ⛔ Wer ihn wieder einträgt, macht den Tippschluss erneut zur Pflicht.
+  if (f.schlussStunden > 0 && f.anker !== "spieltag") {
     out.push({
       key: "fremdjoker-ohne-anker",
       korrigieren: true,
@@ -779,17 +793,44 @@ export function konflikte(rules) {
 // Gehört in die Oberfläche, in SEINER Sprache — nicht „aktiviert erweiterte
 // Zeitsteuerung", sondern was es für die Runde bedeutet. `null`, wenn kein
 // Fremdjoker läuft: dann gibt es nichts zu warnen.
+// 🔴 UMGESCHRIEBEN AM 25.08.2026. Der Text sagte vorher in BEIDEN Fällen
+// „Eure Runde MUSS zweimal pro Spieltag reinschauen" — auch dann, wenn gar
+// kein Tippschluss gesetzt war. Er beschrieb damit eine Pflicht, die es im
+// Code nie gab: `eingriffFenster` lässt Fremdjoker ohne Tippschluss schlicht
+// beim Tippen setzen.
+//
+// Andi, 25.08.2026: „will nicht so nen engen Zeitplan bei Tippabgabe und
+// Jokereinsatz verpflichtend machen … Hinweistext, dass ohne eigentlich
+// besser ist bzw. genauso aufgeht … aber wenn mans ganz genau will und immer
+// Benachrichtigungen anhat, es eben auch so fahren kann."
+//
+// ⚠️ Deshalb jetzt ZWEI Texte statt eines Vorwurfs, und der Rückgabewert
+// trägt einen `ton`: die getrennte Fahrweise ist eine Ansage an die Runde
+// (⚠️), die zusammengelegte ist eine Beruhigung (💡). Ein roter Kasten für
+// den Normalfall hätte den Admin zu einer Einstellung gedrängt, die er gar
+// nicht braucht.
 export function zweiPhasenHinweis(rules) {
   if (!familieAn(rules)) return null;
   const f = sanitizeTippfenster(rules?.tippfenster);
   const stunden = f.schlussStunden;
+
+  if (stunden <= 0) {
+    return {
+      ton: "info",
+      text: "Tippen und Fremdjoker laufen gemeinsam — einmal reinschauen genügt. "
+        + "Wer blockt, ohne den fremden Tipp zu kennen, geht ein Risiko ein: "
+        + "auf ein ungetipptes Spiel verpufft der Joker.",
+    };
+  }
+
   const wann = stunden >= 24 && stunden % 24 === 0
     ? `${stunden / 24} ${stunden === 24 ? "Tag" : "Tage"}`
     : `${stunden} Std.`;
-  return stunden > 0
-    ? `Eure Runde muss zweimal pro Spieltag reinschauen: erst tippen alle, ${wann} später `
-      + "werden die Joker auf die anderen gesetzt. Für eine Büro-Runde ist das zu viel — dort "
-      + "die Fremdjoker lieber ganz ausschalten."
-    : "Eure Runde muss zweimal pro Spieltag reinschauen: erst tippen alle, danach werden die "
-      + "Joker auf die anderen gesetzt. Dafür fehlt noch der gemeinsame Tippschluss.";
+  return {
+    ton: "warnung",
+    text: `Getrennte Fahrweise: erst tippen alle, ${wann} später werden die Joker gesetzt. `
+      + "Eure Runde muss dafür zweimal pro Spieltag reinschauen — mit eingeschalteten "
+      + "Benachrichtigungen geht das, ohne sie wird es vergessen. "
+      + "Für eine Büro-Runde ist das zu viel; dort lieber ohne Tippschluss spielen.",
+  };
 }
