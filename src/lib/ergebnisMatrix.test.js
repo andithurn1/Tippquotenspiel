@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   MATRIX_STUFEN, DEFAULT_MATRIX_STUFE, stufeVon, rasterMasse, wahrscheinlichkeiten,
-  matrixMasse, abdeckungVon, matrixFelder, beschreibeMatrix,
+  matrixMasse, abdeckungVon, matrixFelder, beschreibeMatrix, nutzbareStufen,
 } from "@/lib/ergebnisMatrix";
 import { DEFAULT_RULES } from "@/lib/engine";
 
@@ -284,5 +284,58 @@ describe("Volles Raster bis zum Stepper (bisTipp)", () => {
     expect(text).toMatch(/geschätzt/);
     expect(text).toMatch(/Deckel/);
     expect(beschreibeMatrix(FAVORIT, "auto").text).not.toMatch(/Deckel/);
+  });
+});
+
+// 🔴 Andis TI2 („viele Stufen für die Matrixgröße, bis 10"), nachgeholt am
+// 25.08.2026. Sie stand aus, weil das Quoten-Raster 6×6 ist und eine Stufe
+// darüber von „5" nicht zu unterscheiden gewesen wäre — Dekoration. Der Grund
+// ist entfallen: `randquoten.js` schreibt fort, und „volles Raster" reicht bis
+// an die Grenze des Steppers.
+describe("Stufen der Matrixgröße (TI2)", () => {
+  it("es gibt eine Stufe bis 9 — das 10×10-Raster, das Andi meint", () => {
+    const st = MATRIX_STUFEN.find((s) => s.key === "9");
+    expect(st).toBeTruthy();
+    expect(st.feste).toBe(9);
+  });
+
+  // ⚠️ Der Kern: eine Stufe, die dasselbe zeigt wie eine kleinere, ist keine
+  // Stufe. Bei einem 6×6-Raster fallen „6", „8" und „9" alle auf 6×6 zurück.
+  it("blendet Stufen aus, die auf dasselbe Raster zusammenfallen", () => {
+    const eng = nutzbareStufen(FAVORIT, { bisTipp: false });
+    const groessen = eng
+      .filter((s) => s.feste != null)
+      .map((s) => {
+        const m = matrixMasse(FAVORIT, s.key, { bisTipp: false });
+        return `${m.maxHeim}x${m.maxGast}`;
+      });
+    expect(new Set(groessen).size).toBe(groessen.length);
+  });
+
+  it("mit vollem Raster sind alle Stufen unterscheidbar", () => {
+    const alle = nutzbareStufen(FAVORIT, { bisTipp: true });
+    expect(alle.length).toBe(MATRIX_STUFEN.length);
+    const groessen = alle
+      .filter((s) => s.feste != null)
+      .map((s) => {
+        const m = matrixMasse(FAVORIT, s.key, { bisTipp: true });
+        return `${m.maxHeim}x${m.maxGast}`;
+      });
+    expect(new Set(groessen).size).toBe(groessen.length);
+  });
+
+  // „automatisch" beantwortet eine andere Frage und muss immer wählbar sein.
+  it("automatisch bleibt in jedem Fall dabei", () => {
+    for (const bisTipp of [false, true]) {
+      const st = nutzbareStufen(FAVORIT, { bisTipp });
+      expect(st.some((s) => s.key === "auto"), String(bisTipp)).toBe(true);
+    }
+  });
+
+  it("die Stufe 9 ergibt wirklich 10×10 Felder", () => {
+    const m = matrixMasse(FAVORIT, "9", { bisTipp: true });
+    expect(m.maxHeim).toBe(9);
+    expect(m.maxGast).toBe(9);
+    expect(matrixFelder(FAVORIT, DEFAULT_RULES, m)).toHaveLength(100);
   });
 });

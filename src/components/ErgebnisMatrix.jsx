@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   MATRIX_STUFEN, DEFAULT_MATRIX_STUFE, matrixMasse, matrixFelder, beschreibeMatrix,
+  nutzbareStufen,
 } from "@/lib/ergebnisMatrix";
 import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
@@ -38,6 +39,10 @@ export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = fa
   const masse = useMemo(() => matrixMasse(snap, stufe, { bisTipp }), [snap, stufe, bisTipp]);
   const felder = useMemo(() => matrixFelder(snap, rules, masse, tip), [snap, rules, masse, tip]);
   const info = useMemo(() => beschreibeMatrix(snap, stufe, { bisTipp }), [snap, stufe, bisTipp]);
+  // ⚠️ Nur Stufen anbieten, die für DIESES Spiel etwas anderes zeigen. Sonst
+  // stehen bei einem 6×6-Raster „6", „8" und „9" nebeneinander und tun alle
+  // dasselbe — die „Dekoration", wegen der TI2 lange ausgesetzt hat.
+  const stufen = useMemo(() => nutzbareStufen(snap, { bisTipp }), [snap, bisTipp]);
 
   if (!felder.length) return null;
 
@@ -60,7 +65,7 @@ export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = fa
       {/* Größe (TI2). Die automatischen Stufen stehen vorn: sie sind die
           bessere Antwort, das feste Quadrat die verlässlichere. */}
       <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
-        {MATRIX_STUFEN.map((s) => {
+        {stufen.map((s) => {
           const an = stufe === s.key;
           return (
             <button key={s.key} title={s.desc} onClick={() => setStufe(s.key)} style={{

@@ -69,12 +69,47 @@ export const MATRIX_STUFEN = [
   { key: "4", label: "4", feste: 4, desc: "Festes Quadrat 0–4." },
   { key: "5", label: "5", feste: 5, desc: "Festes Quadrat 0–5." },
   { key: "6", label: "6", feste: 6, desc: "Festes Quadrat 0–6." },
-  { key: "8", label: "8", feste: 8, desc: "Festes Quadrat 0–8 — das volle Raster." },
+  { key: "8", label: "8", feste: 8, desc: "Festes Quadrat 0–8 — das volle erzeugte Raster." },
+  // 🔴 Andis TI2 („viele Stufen für die Matrixgröße, bis 10"), nachgeholt am
+  // 25.08.2026. Sie stand bis heute mit der Begründung aus, das Quoten-Raster
+  // sei 6×6 und für ein 6:2 gebe es keine Quote — eine Stufe darüber wäre von
+  // „5" nicht zu unterscheiden gewesen, also Dekoration.
+  //
+  // Der Grund ist entfallen: `randquoten.js` schreibt seit dem 22.08. fort,
+  // und seit der Einstellung „volles Raster" (`prefs.rasterWeite`) reicht die
+  // Matrix bis an die Grenze des Steppers.
+  //
+  // ⚠️ Sie heißt „9" und nicht „10", obwohl Andi „bis 10" geschrieben hat:
+  // die Beschriftungen sind TORZAHLEN, nicht Feldzahlen. 0–9 ergibt genau das
+  // 10×10-Raster, das er meint — ein 10:0 lässt der Stepper gar nicht zu, und
+  // eine Stufe, die untippbare Ergebnisse zeigt, wäre wieder Dekoration.
+  { key: "9", label: "9", feste: 9, desc: "Festes Quadrat 0–9 — alles, was der Stepper zulässt (10×10)." },
 ];
 
 export const DEFAULT_MATRIX_STUFE = "auto";
 
 export const stufeVon = (key) => MATRIX_STUFEN.find((s) => s.key === key) ?? MATRIX_STUFEN[0];
+
+// 🔴 Welche Stufen sind für DIESES Spiel überhaupt unterscheidbar?
+//
+// Ohne diese Frage stehen bei einem 6×6-Raster die Knöpfe „6", „8" und „9"
+// nebeneinander und zeigen alle drei dasselbe — weil sie am Raster
+// abgeschnitten werden. Genau das meinte die alte Begründung zu TI2 mit
+// „Dekoration": eine Stufe, die nichts ändert, ist keine Stufe.
+//
+// ⚠️ „automatisch" bleibt IMMER dabei: sie beantwortet eine andere Frage
+// („wie weit muss es reichen?") und nicht „wie groß soll es sein?".
+export function nutzbareStufen(snap, { bisTipp = false } = {}) {
+  const gesehen = new Set();
+  return MATRIX_STUFEN.filter((st) => {
+    if (st.feste == null) return true;
+    const m = matrixMasse(snap, st.key, { bisTipp });
+    const schluessel = `${m.maxHeim}x${m.maxGast}`;
+    if (gesehen.has(schluessel)) return false;
+    gesehen.add(schluessel);
+    return true;
+  });
+}
 
 // Wie groß ist das Raster im Snapshot? Nicht geraten, sondern abgelesen —
 // wächst die Quotenquelle, wächst die Matrix mit.
