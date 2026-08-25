@@ -63,6 +63,17 @@ const OHNE_DETAIL = {
     "Glossar-Blase im Fließtext, keine Einstellung.",
   "WettbewerbGewichte.jsx":
     "Eine Zahl je Wettbewerb — die Liste IST schon die feinste Ebene.",
+  "EinfacheRegler.jsx":
+    "IST die gängige Ebene. Vier Fragen statt zwanzig Regler; das Detail dazu "
+    + "ist die ganze übrige Spielerstellung. Eine Klappe darin wäre eine "
+    + "dritte Ebene in der Ebene, die es einfach machen soll.",
+  "SpielauswahlWettbewerbe.jsx":
+    "Die zweite Ebene sitzt in `KoRunden`, das dieser Screen einhängt — dort "
+    + "liegt die Vereins-Bedingung hinter einer `Feinheiten`-Klappe. Eigene "
+    + "Regler hat er keine: Chips, Zahlen und der Engpass-Satz.",
+  "SpielauswahlListe.jsx":
+    "Eine Liste einzelner Begegnungen zum An- und Abwählen. Dahinter liegt "
+    + "nichts Feineres — ein Spiel ist dabei oder nicht.",
 };
 
 // Was eine Datei zu einer REGEL-OBERFLÄCHE macht — und zwar an der
@@ -95,6 +106,29 @@ function istRegelOberflaeche(quelle) {
   return REGEL_PROP.test(props) && RUECKKANAL.test(props);
 }
 
+// 🔴 **ZWEI gemeinsame Bauteile, nicht eines** — nachgetragen am 25.08.2026,
+// nachdem die Liste 15 Oberflächen als „ohne zweite Ebene" meldete, die
+// nachweislich eine hatten.
+//
+// `GrosseZeile` (in `Eingaben.jsx`) IST Andis Regel, nur auf einer gröberen
+// Ebene: Titel, Untertitel und der AKTUELLE WERT stehen offen da, die Regler
+// liegen hinter dem Klick. Genau „gängigstes oben, Feinheiten dahinter" —
+// eine ganze Karte statt einer einzelnen Einstellung.
+//
+//     <GrosseZeile titel="…" unter="…" wert="an · 3 Arten">  ← Abschnitt
+//       <Feinheiten titel="…" zusammenfassung="…">            ← darin
+//
+// ⚠️ Beide werden getrennt gezählt und nicht in einen Topf geworfen: eine
+// Datei, die NUR `GrosseZeile` benutzt, hat ihre Abschnitte gefaltet, aber
+// innerhalb eines Abschnitts womöglich zwanzig Regler nebeneinander. Das ist
+// besser als nichts und schlechter als beides.
+//
+// ⚠️ Eine Messung, die das Problem größer macht, als es ist, ist genauso
+// falsch wie eine, die es kleiner macht. Sie kostet Vertrauen, und beim
+// nächsten Mal glaubt ihr niemand mehr.
+const NUTZT_FEINHEITEN = /from "@\/components\/Feinheiten"/;
+const NUTZT_GROSSEZEILE = /\bGrosseZeile\b/;
+
 // Ein selbstgebauter Aufklapp-Weg: ein Zustand, der eine Fläche auf- und
 // zuklappt. Absichtlich großzügig — lieber ein Verdacht zu viel als eine
 // Drift-Stelle übersehen.
@@ -104,7 +138,8 @@ const dateien = readdirSync("src/components")
   .filter((n) => n.endsWith(".jsx"))
   .sort();
 
-const mitBauteil = [];
+const mitBeidem = [];
+const nurZeile = [];
 const eigenbau = [];
 const ohne = [];
 const begruendet = [];
@@ -115,7 +150,8 @@ for (const name of dateien) {
   if (OHNE_DETAIL[name]) { begruendet.push(name); continue; }
   if (!istRegelOberflaeche(quelle)) { keineEinstellung.push(name); continue; }
 
-  if (/from "@\/components\/Feinheiten"/.test(quelle)) mitBauteil.push(name);
+  if (NUTZT_FEINHEITEN.test(quelle)) mitBeidem.push(name);
+  else if (NUTZT_GROSSEZEILE.test(quelle)) nurZeile.push(name);
   else if (EIGENBAU.test(quelle)) eigenbau.push(name);
   else ohne.push(name);
 }
@@ -127,8 +163,11 @@ console.log("  DETAIL-DURCHGANG — gängigstes oben, Feinheiten hinter einem Kl
 console.log(`  ${dateien.length} Dateien · ${keineEinstellung.length} sind keine Regel-Oberfläche · ${begruendet.length} ausdrücklich begründet`);
 console.log(linie);
 
-console.log(`\n  ✅ ÜBER DAS GEMEINSAME BAUTEIL  (${mitBauteil.length})`);
-for (const n of mitBauteil) console.log(`     ${n}`);
+console.log(`\n  ✅ MIT \`Feinheiten\` — die feine Ebene innerhalb einer Karte  (${mitBeidem.length})`);
+for (const n of mitBeidem) console.log(`     ${n}`);
+
+console.log(`\n  ◐ NUR \`GrosseZeile\` — Abschnitte gefaltet, darin flach  (${nurZeile.length})`);
+for (const n of nurZeile) console.log(`     ${n}`);
 
 console.log(`\n  ⚠️ EIGENE AUFKLAPP-MECHANIK — funktioniert, driftet aber  (${eigenbau.length})`);
 for (const n of eigenbau) console.log(`     ${n}`);
@@ -140,7 +179,7 @@ console.log(`\n${strich}`);
 if (ohne.length === 0) {
   console.log("  ✅ Jede Einstell-Oberfläche hat eine zweite Ebene oder einen Grund.");
 } else {
-  console.log(`  Ergebnis: ${ohne.length} ohne zweite Ebene · ${eigenbau.length} mit eigener Mechanik`);
+  console.log(`  Ergebnis: ${ohne.length} ohne jede zweite Ebene · ${nurZeile.length} nur grob gefaltet · ${eigenbau.length} mit eigener Mechanik`);
   console.log("\n  🔴 Für jeden Eintrag der letzten Gruppe gilt: eine Feinheit ergänzen,");
   console.log("     oder mit einem Begründungssatz in `OHNE_DETAIL` eintragen.");
   console.log("  ⚠️ Die mittlere Gruppe ist KEIN Fehler — sie ist die Drift-Liste.");

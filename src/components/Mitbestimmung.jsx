@@ -6,9 +6,10 @@ import { ASPEKTE, ASPEKT_KEYS } from "@/lib/presetMerge";
 import { TAPZIEL } from "@/lib/tapziel";
 import {
   WAEHLER, MEHRHEITEN, ANTRAGSRECHT, WIRKUNG_AB, STIMM_SICHT,
-  ABSTIMMUNG_LIMITS, MITBESTIMMUNG_ASPEKT,
+  ABSTIMMUNG_LIMITS, MITBESTIMMUNG_ASPEKT, DEFAULT_REGEL_ABSTIMMUNG,
   beschreibeMitbestimmung, konflikte, aspektAenderbar,
 } from "@/lib/regelAbstimmung";
+import Feinheiten from "@/components/Feinheiten";
 
 // ── Stufe 3 für die Mitbestimmung (design/abstimmung-verfassung.md) ──
 //
@@ -28,6 +29,19 @@ import {
 // bekommt eine Kombination heraus, die niemand entworfen hat.
 export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
   const a = rules.regelAbstimmung;
+
+  // Was hinter der Klappe von der Vorgabe abweicht. ⚠️ Gegen
+  // `DEFAULT_REGEL_ABSTIMMUNG` geprüft, nicht gegen hier notierte Werte —
+  // eine zweite Fassung der Vorgabe liefe beim nächsten Wechsel auseinander.
+  const D = DEFAULT_REGEL_ABSTIMMUNG;
+  const feinAbweichend = [
+    a?.quorum !== D.quorum ? `${Math.round((a?.quorum ?? D.quorum) * 100)} % Beteiligung` : null,
+    a?.dauer !== D.dauer || a?.sperrfrist !== D.sperrfrist ? "Fristen" : null,
+    a?.wirkungAb !== D.wirkungAb ? "Wirkung" : null,
+    a?.antragsrecht !== D.antragsrecht ? "Antragsrecht" : null,
+    a?.sichtbarkeit !== D.sichtbarkeit ? "Sichtbarkeit" : null,
+    a?.vetoAdmin !== D.vetoAdmin ? "Veto" : null,
+  ].filter(Boolean);
   const v = rules.verfassung;
 
   const setzeAbstimmung = (teil) => onChange({ regelAbstimmung: { ...a, ...teil } });
@@ -91,6 +105,15 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
           <Karten label="Wie hoch ist die Hürde?" katalog={MEHRHEITEN} wert={a.mehrheit}
             onWaehlen={(k) => setzeAbstimmung({ mehrheit: k })} />
 
+          {/* 🔴 Andis Detail-Regel (SA6): oben stehen die zwei Fragen, die
+              JEDE Runde beantwortet — wer stimmt mit, und wie hoch ist die
+              Hürde. Alles Weitere ist Verfahrensordnung: wichtig, wenn man
+              sie braucht, und im Weg, wenn nicht. */}
+          <Feinheiten
+            titel="Feinheiten: Verfahren und Fristen"
+            zusammenfassung={feinAbweichend.length ? feinAbweichend.join(" · ") : "Vorgabe"}
+            abweichend={feinAbweichend.length > 0}
+          >
           {/* Regler UND Zahleneingabe — der Regler zum Fühlen, das Feld zum
               Treffen. Der Regler zeigt Prozent, gespeichert wird der Anteil. */}
           <Field label="Wie viele müssen sich beteiligen?">
@@ -132,6 +155,7 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
             <Toggle label="Der Admin kann einen Beschluss kippen" on={a.vetoAdmin === true}
               onChange={(on) => setzeAbstimmung({ vetoAdmin: on })} />
           </div>
+          </Feinheiten>
 
           {/* ── Verfassung ── */}
           <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 14, paddingTop: 12 }}>

@@ -6,9 +6,11 @@ import { KOMBINATIONEN, ACHSEN, achsenProfil, achsenKonflikte } from "@/lib/joke
 import {
   BUDGET_QUELLEN, TAKTE, VERFALL_TYPEN, PREISMODI, JOKER_ARTEN,
   preisFuer, BUDGET_LIMITS, beschreibeBudget,
+  DEFAULT_BUDGET,
 } from "@/lib/jokerBudget";
 import { Zahl } from "@/components/Eingaben";
 import { TAPZIEL } from "@/lib/tapziel";
+import Feinheiten from "@/components/Feinheiten";
 
 // Vorgabe je Quellen-Typ beim Hinzufügen — deckt sich mit den Fallbacks in
 // `sanitizeQuelle` (jokerBudget.js), damit ein frisch hinzugefügter Block
@@ -35,6 +37,16 @@ const EINSAETZE = [1, 2, 3, 4];
 // sind.
 export default function JokerOekonomie({ rules, onChange }) {
   const budget = rules.budget || {};
+
+  // Was hinter der Klappe von der Vorgabe abweicht — gegen `DEFAULT_BUDGET`
+  // geprüft, nicht gegen hier notierte Werte.
+  const DB = DEFAULT_BUDGET;
+  const budgetAbweichend = [
+    (budget.takt ?? DB.takt) !== DB.takt ? "Takt" : null,
+    (budget.verfall ?? DB.verfall) !== DB.verfall ? "Verfall" : null,
+    (budget.verfall ?? DB.verfall) === "deckel" && (budget.maxAnsparen ?? DB.maxAnsparen) !== DB.maxAnsparen
+      ? `Deckel ${budget.maxAnsparen}` : null,
+  ].filter(Boolean);
   const quellen = budget.quellen || [];
   const preise = budget.preise || {};
 
@@ -176,6 +188,15 @@ export default function JokerOekonomie({ rules, onChange }) {
           })}
         </div>
 
+        {/* 🔴 Andis Detail-Regel (SA6): oben steht, WOHER die Narren kommen —
+            die Frage, die eine Runde überhaupt entscheidet. Takt und Verfall
+            regeln, wie sie sich über die Saison verhalten: wichtig, wenn man
+            daran dreht, und im Weg, solange man es nicht tut. */}
+        <Feinheiten
+          titel="Feinheiten: Takt und Verfall"
+          zusammenfassung={budgetAbweichend.length ? budgetAbweichend.join(" · ") : "Vorgabe"}
+          abweichend={budgetAbweichend.length > 0}
+        >
         {/* Takt & Verfall — als Karten-Reihe */}
         <Field label="Takt">
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -221,6 +242,10 @@ export default function JokerOekonomie({ rules, onChange }) {
             onChange={(v) => patchBudgetFeld({ maxAnsparen: v })} />
         )}
 
+        </Feinheiten>
+
+        {/* ⚠️ Der Klartext-Satz bleibt AUSSERHALB der Klappe: er sagt, was
+            gerade gilt — auch für den, der die Feinheiten nie aufmacht. */}
         <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 10, lineHeight: 1.45 }}>
           {beschreibeBudget(budget)}
         </p>
