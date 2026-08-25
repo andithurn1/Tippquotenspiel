@@ -23,13 +23,17 @@ import { usePrefs } from "@/components/PrefsProvider";
 // `ergebnisMatrix.js`; hier steht es als Satz unter der Matrix, weil ein
 // Spieler sonst zwei verschiedene Zahlen für dasselbe Spiel sieht (die große
 // oben rechnet die Schützen mit) und keine Erklärung dafür hat.
-export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = false }) {
+// ⚠️ `weite` überschreibt die persönliche Einstellung — gebraucht von der
+// Vorschau in den Anzeige-Einstellungen, die JEDE Stufe zeigen muss, nicht
+// die gerade gewählte. Ohne den Ausweg ließe sich eine Stufe nur vorführen,
+// indem man sie einschaltet.
+export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = false, weite = null }) {
   const [stufe, setStufe] = useState(DEFAULT_MATRIX_STUFE);
   // 🔴 Wie weit das Raster reicht, ist eine PERSÖNLICHE Anzeige-Einstellung
   // (Andi, 25.08.2026) — nicht eine Regel der Runde. Sie steht bei „Meine
   // Anzeige", erreichbar über den Account.
   const { prefs } = usePrefs();
-  const bisTipp = prefs?.rasterWeite === "voll";
+  const bisTipp = (weite ?? prefs?.rasterWeite) === "voll";
 
   const masse = useMemo(() => matrixMasse(snap, stufe, { bisTipp }), [snap, stufe, bisTipp]);
   const felder = useMemo(() => matrixFelder(snap, rules, masse, tip), [snap, rules, masse, tip]);

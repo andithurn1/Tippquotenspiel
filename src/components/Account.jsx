@@ -8,6 +8,7 @@ import BackLink from "@/components/BackLink";
 import { AvatarKreis } from "@/components/Profil";
 import GeburtsdatumWahl from "@/components/GeburtsdatumWahl";
 import Feinheiten from "@/components/Feinheiten";
+import AnzeigeVorschau from "@/components/AnzeigeVorschau";
 import { useAuth } from "@/components/AuthProvider";
 import { useTheme } from "@/components/ThemeProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -217,6 +218,10 @@ export default function Account() {
                 );
               })}
             </div>
+            {/* 🔴 Vorschau der gewählten Stufe — an DIESER Kiste, nicht am
+                Dokument. Sonst müsste man eine Stufe einschalten, um zu
+                sehen, wie sie aussieht (Andi, 25.08.2026). */}
+            <AnzeigeVorschau art="bewegung" stufe={prefs?.bewegung ?? "voll"} />
             <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
               Gemessen kostet die Bewegung hier nichts: keine Animation zwingt
               das Gerät, die Seite neu auszumessen. Auf einem alten Telefon

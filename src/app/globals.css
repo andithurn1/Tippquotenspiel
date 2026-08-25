@@ -425,19 +425,26 @@ body {
    App, die eine Bedienungshilfe des Betriebssystems überstimmt, ist kaputt,
    nicht flexibel. */
 
+/* ⚠️ SELEKTOR AM BELIEBIGEN ELEMENT, nicht nur am `:root` (25.08.2026).
+   Der Grund ist die Vorschau in den Anzeige-Einstellungen: sie zeigt jede
+   Stufe an einem echten Beispiel, und dafür muss eine einzelne KISTE die
+   Stufe tragen können, ohne die ganze App umzustellen. Am `:root` gebunden
+   ließe sich eine Stufe nur vorführen, indem man sie einschaltet — dann wäre
+   die Vorschau keine Vorschau mehr, sondern der Schalter selbst. */
+
 /* ── sparsam: nur noch Compositor-Bewegung ──
    Weg fällt, was der Browser neu MALEN muss (Leuchten, Schatten-Übergänge)
    und was Bild für Bild dekodiert wird (laufende Bilder). Bleiben: Ein- und
    Ausblenden über `transform`/`opacity` — die kosten nichts. */
-:root[data-bewegung="sparsam"] .tqs-aktion {
+[data-bewegung="sparsam"] .tqs-aktion {
   transition: transform var(--tqs-dauer-schnell) var(--tqs-kurve);
 }
-:root[data-bewegung="sparsam"] .tqs-aktion:hover,
-:root[data-bewegung="sparsam"] .tqs-aktion:active {
+[data-bewegung="sparsam"] .tqs-aktion:hover,
+[data-bewegung="sparsam"] .tqs-aktion:active {
   box-shadow: none;
 }
-:root[data-bewegung="sparsam"] .tqs-laedt::after,
-:root[data-bewegung="sparsam"] .tqs-skelett::after {
+[data-bewegung="sparsam"] .tqs-laedt::after,
+[data-bewegung="sparsam"] .tqs-skelett::after {
   animation: none;
 }
 /* 🔴 Die Stelle, an der später die Reaktions-GIFs hängen (`reactions.js`).
@@ -445,18 +452,18 @@ body {
    dekodiert jedes Einzelbild neu, und zwar unabhängig davon, ob es zu sehen
    ist. Deshalb greift die Sparsam-Stufe genau hier, bevor es sie überhaupt
    gibt: `.tqs-laufbild` auf jedes bewegte Bild, dann steht es still. */
-:root[data-bewegung="sparsam"] .tqs-laufbild,
-:root[data-bewegung="aus"] .tqs-laufbild {
+[data-bewegung="sparsam"] .tqs-laufbild,
+[data-bewegung="aus"] .tqs-laufbild {
   animation-play-state: paused;
 }
 
 /* ── aus: wie „Bewegung reduzieren" am Gerät ──
    Dieselben Werte wie im `prefers-reduced-motion`-Block, damit es genau EINE
    Bedeutung von „aus" gibt und nicht zwei, die auseinanderlaufen. */
-:root[data-bewegung="aus"] {
+[data-bewegung="aus"] {
   --tqs-dauer-schnell: 1ms;
   --tqs-dauer: 1ms;
   --tqs-dauer-ruhig: 1ms;
 }
-:root[data-bewegung="aus"] .tqs-laedt::after { animation: none; }
-:root[data-bewegung="aus"] .tqs-skelett::after { animation: none; opacity: 0; }
+[data-bewegung="aus"] .tqs-laedt::after { animation: none; }
+[data-bewegung="aus"] .tqs-skelett::after { animation: none; opacity: 0; }
