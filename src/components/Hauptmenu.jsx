@@ -18,9 +18,12 @@ import { TAPZIEL } from "@/lib/tapziel";
 const SCREENS = [
   { href: "/erstellen", title: "Spiel erstellen", desc: "Regelwerk einstellen, Runde anlegen und per Code teilen.", tone: C.indigo, tag: "Admin" },
   { href: "/beitreten", title: "Runde beitreten", desc: "Mit Beitritts-Code einer Runde beitreten oder wechseln.", tone: C.sky },
-  { href: "/einstellungen", title: "Meine Anzeige", desc: "Wie viel Mathematik & Vorschau du sehen willst.", tone: C.violet, tag: "persönlich" },
-  { href: "/farben", title: "Fanfarben", desc: "Deine Vereinsfarben als Akzent — 2–3 Farben wählen.", tone: C.akzent, tag: "persönlich" },
-  { href: "/benachrichtigungen", title: "Benachrichtigungen", desc: "Nur neuer Spieltag & Erinnerung vor Anpfiff — fein einstellbar.", tone: C.sky, tag: "persönlich" },
+  // 🔴 EIN Einstieg statt fünf (Andi KT8, 25.08.2026). Anzeige, Fanfarben,
+  // Benachrichtigungen, Name/Sinnbild und Konto standen hier als getrennte
+  // Kacheln bzw. gar nicht (`/profil` war aus dem Hauptmenü nicht
+  // erreichbar). Die Seiten bleiben — nur der Weg dorthin führt jetzt über
+  // eine Übersicht, die zeigt, was eingestellt IST.
+  { href: "/account", title: "Account anpassen", desc: "Name, Sinnbild, Vereinsfarben, Anzeige, Benachrichtigungen.", tone: C.akzent, tag: "persönlich" },
   { href: "/abrechnung", title: "Abrechnung", desc: "Dein zuletzt gewerteter Tipp, aufgeschlüsselt.", tone: C.coral },
   { href: "/explorer", title: "Auszahlungs-Explorer", desc: "Heat-Grid: was jeder mögliche Endstand zahlen würde.", tone: C.mint },
 ];

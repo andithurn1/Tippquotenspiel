@@ -26,9 +26,46 @@ export const START_SCREEN_LABEL = { menu: "Hauptmenü", hub: "Aktive Tipprunde" 
 // zwei Sekunden erfassen.
 export const MAX_VERGLEICH = 3;
 
+// ── Bewegung: wie viel Schmuck soll laufen? (Andi, 25.08.2026) ──
+// Wörtlich: „kann man auch in den account einstellungen verfügbar machen,
+// dass jeder individuell solche performanceteuren sachen ausstellen kann,
+// wenn man mit der performance unzufrieden ist, aber im normalfall sollts
+// schon klappen".
+//
+// 🔴 Genau in dieser Reihenfolge gebaut: „voll" ist die Vorgabe, weil die
+// Messung sie trägt (`npm run bewegung`: 12 gratis, 4 Paint, 0 Layout). Die
+// Einstellung ist ein VENTIL für das alte Telefon, keine Entschuldigung
+// dafür, teure Bewegung einzubauen.
+//
+//   voll     — alles. Vorgabe.
+//   sparsam  — nur Compositor-Bewegung (transform/opacity). Weg fallen die
+//              Paint-Sachen (Leuchten, Schatten-Übergänge) und laufende
+//              Bilder: GIFs stehen still, statt Bild für Bild dekodiert zu
+//              werden. ⚠️ Das ist der Punkt, an dem die Reaktions-GIFs
+//              (`reactions.js`) später hängen — ein GIF kostet mehr als jede
+//              CSS-Animation in dieser App, weil der Browser jedes Einzelbild
+//              neu dekodiert.
+//   aus      — dasselbe wie „Bewegung reduzieren" am Gerät.
+//
+// ⚠️ NICHT umgekehrt wirksam: wer am GERÄT „Bewegung reduzieren" eingestellt
+// hat, bekommt sie auch bei „voll" nicht zurück. Diese Einstellung kann nur
+// WENIGER erlauben, nie mehr — eine App, die eine Bedienungshilfe des
+// Betriebssystems überstimmt, ist kaputt, nicht flexibel.
+export const BEWEGUNG_STUFEN = ["voll", "sparsam", "aus"];
+export const BEWEGUNG_LABEL = {
+  voll: "Voll",
+  sparsam: "Sparsam",
+  aus: "Aus",
+};
+export const BEWEGUNG_HINWEIS = {
+  voll: "Übergänge, Leuchten und laufende Bilder. Die Vorgabe.",
+  sparsam: "Nur Ein- und Ausblenden. Kein Leuchten, Bilder stehen still.",
+  aus: "Keine Bewegung. Alles ist sofort da.",
+};
+
 export const DEFAULT_PREFS = {
   abrechnung: "voll", vorschau: "voll", zwischenabrechnung: "voll",
-  startScreen: "menu", vergleich: {},
+  startScreen: "menu", vergleich: {}, bewegung: "voll",
 };
 
 // Nur intern: `sanitizePrefs`, `toggleVergleich` und `vergleichFuer` benutzen
@@ -108,5 +145,6 @@ export function sanitizePrefs(p = {}) {
     zwischenabrechnung: pick(src.zwischenabrechnung, DEFAULT_PREFS.zwischenabrechnung),
     vergleich: sanitizeVergleich(src.vergleich),
     startScreen: START_SCREENS.includes(src.startScreen) ? src.startScreen : DEFAULT_PREFS.startScreen,
+    bewegung: BEWEGUNG_STUFEN.includes(src.bewegung) ? src.bewegung : DEFAULT_PREFS.bewegung,
   };
 }

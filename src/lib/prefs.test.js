@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { sanitizePrefs, DEFAULT_PREFS, LEVELS, START_SCREENS } from "./prefs";
+import {
+  sanitizePrefs, DEFAULT_PREFS, LEVELS, START_SCREENS,
+  BEWEGUNG_STUFEN, BEWEGUNG_LABEL, BEWEGUNG_HINWEIS,
+} from "./prefs";
 
 describe("sanitizePrefs", () => {
   it("leeres/kaputtes Objekt ergibt Defaults", () => {
@@ -11,7 +14,7 @@ describe("sanitizePrefs", () => {
   it("gültige Stufen bleiben erhalten", () => {
     for (const lv of LEVELS) {
       expect(sanitizePrefs({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv }))
-        .toEqual({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu", vergleich: {} });
+        .toEqual({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu", vergleich: {}, bewegung: "voll" });
     }
   });
 
@@ -41,5 +44,34 @@ describe("sanitizePrefs", () => {
     expect(sanitizePrefs({}).startScreen).toBe("menu");
     expect(sanitizePrefs({ startScreen: "quatsch" }).startScreen).toBe("menu");
     for (const s of START_SCREENS) expect(sanitizePrefs({ startScreen: s }).startScreen).toBe(s);
+  });
+});
+
+// 🔴 Andi, 25.08.2026: „kann man auch in den account einstellungen verfügbar
+// machen, dass jeder individuell solche performanceteuren sachen ausstellen
+// kann… aber im normalfall sollts schon klappen."
+describe("Bewegungs-Stufe", () => {
+  it("die Vorgabe ist VOLL — die Einstellung ist ein Ventil, keine Warnung", () => {
+    expect(DEFAULT_PREFS.bewegung).toBe("voll");
+    expect(sanitizePrefs({}).bewegung).toBe("voll");
+  });
+
+  it("alle drei Stufen kommen durch", () => {
+    for (const b of BEWEGUNG_STUFEN) {
+      expect(sanitizePrefs({ bewegung: b }).bewegung, b).toBe(b);
+    }
+  });
+
+  it("Unsinn fällt auf die Vorgabe zurück, statt die App lahmzulegen", () => {
+    for (const x of ["irgendwas", 42, null, undefined, {}]) {
+      expect(sanitizePrefs({ bewegung: x }).bewegung, String(x)).toBe("voll");
+    }
+  });
+
+  it("jede Stufe hat eine Beschriftung und einen Hinweis", () => {
+    for (const b of BEWEGUNG_STUFEN) {
+      expect(BEWEGUNG_LABEL[b], b).toBeTruthy();
+      expect(BEWEGUNG_HINWEIS[b]?.length ?? 0, b).toBeGreaterThan(20);
+    }
   });
 });

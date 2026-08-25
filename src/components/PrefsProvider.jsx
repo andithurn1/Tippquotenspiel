@@ -65,5 +65,27 @@ export default function PrefsProvider({ children }) {
       return next;
     });
 
+  // 🔴 Die Bewegungs-Stufe ins DOKUMENT schreiben (Andi, 25.08.2026).
+  // Dieselbe Bauart wie `schreibeCssVariablen()` bei den Fanfarben und aus
+  // demselben Grund: das Stylesheet kann keine React-Zustände lesen, und eine
+  // Komponente, die die Stufe durchreicht, müsste sie an JEDE Stelle
+  // durchreichen, an der etwas animiert ist.
+  //
+  // ⚠️ Ein Attribut am `<html>`, nicht am Provider-`<div>`: Rückmeldungen und
+  // Übergänge hängen an einer Ebene DARÜBER (`Rueckmeldung` liegt in
+  // `layout.js` ganz außen), die ein Attribut weiter innen nicht sähe.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const wurzel = document.documentElement;
+    if (prefs.bewegung && prefs.bewegung !== "voll") {
+      wurzel.setAttribute("data-bewegung", prefs.bewegung);
+    } else {
+      // Bei „voll" das Attribut ENTFERNEN statt auf "voll" zu setzen: so
+      // greift ausschließlich der `prefers-reduced-motion`-Block, und die
+      // Geräte-Einstellung bleibt unangetastet.
+      wurzel.removeAttribute("data-bewegung");
+    }
+  }, [prefs.bewegung]);
+
   return <Ctx.Provider value={{ prefs, setPref, ready }}>{children}</Ctx.Provider>;
 }
