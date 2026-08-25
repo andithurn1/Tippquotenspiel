@@ -5,7 +5,7 @@
 // Ausgefüllt am 27.07.2026 — diese Angaben sind gesetzlich verpflichtend und
 // erscheinen öffentlich in Impressum und Datenschutzerklärung.
 export const LEGAL = {
-  appName: "Tippquotenspiel",
+  appName: "QuotenTippspiel",
   betreiber: "Andreas Thurn",
   anschrift: "Regina-Ullmann-Straße 10, 85622 Feldkirchen",
   email: "andi.thurn@yahoo.de",

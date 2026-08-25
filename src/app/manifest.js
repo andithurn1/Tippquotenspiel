@@ -2,8 +2,8 @@
 // „zum Homescreen hinzufügbar" und im Standalone-Modus lauffähig.
 export default function manifest() {
   return {
-    name: "Tippquotenspiel",
-    short_name: "Tippquoten",
+    name: "QuotenTippspiel",
+    short_name: "QuotenTipp",
     description:
       "Quoten-gewichtetes Tippspiel unter Freunden — mutige Tipps über echte Quoten statt fester Punkte.",
     start_url: "/",

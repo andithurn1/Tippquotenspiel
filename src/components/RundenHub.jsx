@@ -95,7 +95,7 @@ export default function RundenHub() {
       <div style={{ width: "100%", maxWidth: "var(--tqs-schirm-breite)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <span style={{ fontFamily: MONO, fontSize: "0.75rem", letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>
-            Tippquotenspiel
+            QuotenTippspiel
           </span>
           <Link href="/menu" style={{ ...TAPZIEL, display: "inline-flex", alignItems: "center", fontFamily: MONO, fontSize: "0.75rem", color: C.mint, textDecoration: "none", paddingLeft: 10 }}>
             Alle Tippspiele →

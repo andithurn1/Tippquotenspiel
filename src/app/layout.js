@@ -12,13 +12,13 @@ import Zwischenabrechnung from "@/components/Zwischenabrechnung";
 import Platzkulisse from "@/components/Platzkulisse";
 
 export const metadata = {
-  title: "Tippquotenspiel",
+  title: "QuotenTippspiel",
   description:
     "Quoten-gewichtetes Tippspiel unter Freunden — mutige Tipps über echte Quoten statt fester Punkte.",
-  applicationName: "Tippquotenspiel",
+  applicationName: "QuotenTippspiel",
   appleWebApp: {
     capable: true,
-    title: "Tippquoten",
+    title: "QuotenTipp",
     // 🔴 `default` statt `black-translucent` (09.08.2026, Andi gemeldet:
     // „auf dem Homebildschirm ist die Schrift unsichtbar").
     //
