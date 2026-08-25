@@ -13,7 +13,7 @@
 //  Bundesliga hört um 17:30 auf.
 // ============================================================
 
-import { baueLiga, findeDerby, alsQuotenQuelle, NAMENSPOOLS } from "./ligaGenerator";
+import { baueLiga, NAMENSPOOLS } from "./ligaGenerator";
 import { QUOTEN } from "./quoten";
 import { SPIELPLAENE } from "./spielplaene";
 
@@ -54,9 +54,12 @@ export const PD_DERBYS = [
   { a: "FC Valencia",       b: "UD Levante",         label: "Derbi Valenciano" },
 ];
 
-export function findPdDerby(home, away) {
-  return findeDerby(PD_DERBYS, home, away);
-}
+// ⚠️ `findPdDerby(home, away)` stand hier bis zum 25.08.2026 — ein zweiter Weg
+// zu einer Frage, die der Generator längst am Spiel beantwortet: `baueLiga`
+// schreibt `snapshot.derby` (ligaGenerator.js), und genau das liest die
+// Wertung. Niemand rief die Funktion auf; ein Aufrufer hätte nur die
+// Chance eröffnet, dass beide Wege auseinanderlaufen. `PD_DERBYS` bleibt —
+// die Liste IST die Quelle, sie geht unten als `derbys:` in den Generator.
 
 // Saisonstart Fr. 14.08.2026 — Slot 0 ist der Freitagabend.
 const SEASON_START = Date.UTC(2026, 7, 14);
@@ -93,6 +96,3 @@ export function getLaLigaMatches() {
   return _cache;
 }
 
-export function createLaLigaOddsSource() {
-  return alsQuotenQuelle(getLaLigaMatches());
-}

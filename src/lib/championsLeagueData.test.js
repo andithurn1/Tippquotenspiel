@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getChampionsLeagueMatches, CL_TEAM_RATINGS, createChampionsLeagueOddsSource } from "./championsLeagueData";
+import { getChampionsLeagueMatches, CL_TEAM_RATINGS } from "./championsLeagueData";
 import { TEAM_RATINGS as BL_RATINGS } from "./bundesligaData";
 import { scoreTip, DEFAULT_RULES } from "./engine";
 import { istKo } from "./wettbewerbe";
@@ -83,11 +83,5 @@ describe("Champions League — Konsistenz mit dem Rest der App", () => {
       const r = scoreTip({ home: 1, away: 1, goals: { home: [], away: [] } }, m.result, m.snapshot, DEFAULT_RULES);
       expect(Number.isFinite(r.total)).toBe(true);
     }
-  });
-
-  it("Quoten-Quelle liefert Snapshot/Ergebnis für bekannte, null für unbekannte Ids", () => {
-    const source = createChampionsLeagueOddsSource();
-    expect(source.getSnapshot(matches[0].matchId).home).toBe(matches[0].home);
-    expect(source.getResult("gibts-nicht")).toBeNull();
   });
 });

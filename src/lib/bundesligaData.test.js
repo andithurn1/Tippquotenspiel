@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getBundesligaMatches, createBundesligaOddsSource, TEAM_RATINGS } from "./bundesligaData";
+import { getBundesligaMatches, TEAM_RATINGS } from "./bundesligaData";
 import { scoreTip, DEFAULT_RULES } from "./engine";
 
 describe("Bundesliga-Fixtures — Integrität der vollen Saison (34 Spieltage)", () => {
@@ -62,17 +62,6 @@ describe("Bundesliga-Fixtures — Integrität der vollen Saison (34 Spieltage)",
       expect(known.has(m.home)).toBe(true);
       expect(known.has(m.away)).toBe(true);
     }
-  });
-});
-
-describe("createBundesligaOddsSource — gleiche Schnittstelle wie createMockOddsSource", () => {
-  it("liefert Snapshot & Ergebnis für bekannte Matches, null für unbekannte", () => {
-    const source = createBundesligaOddsSource();
-    const [first] = getBundesligaMatches();
-    expect(source.getSnapshot(first.matchId).home).toBe(first.home);
-    expect(source.getResult(first.matchId)).toEqual(first.result);
-    expect(source.getSnapshot("nicht-vorhanden")).toBeNull();
-    expect(source.getResult("nicht-vorhanden")).toBeNull();
   });
 });
 

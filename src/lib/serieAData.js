@@ -13,7 +13,7 @@
 //  La Liga, was die wettbewerbsübergreifende Runde erst interessant macht.
 // ============================================================
 
-import { baueLiga, findeDerby, alsQuotenQuelle, NAMENSPOOLS } from "./ligaGenerator";
+import { baueLiga, NAMENSPOOLS } from "./ligaGenerator";
 import { QUOTEN } from "./quoten";
 import { SPIELPLAENE } from "./spielplaene";
 
@@ -52,9 +52,12 @@ export const SA_DERBYS = [
   { a: "SSC Neapel",     b: "AS Rom",       label: "Derby del Sole" },
 ];
 
-export function findSaDerby(home, away) {
-  return findeDerby(SA_DERBYS, home, away);
-}
+// ⚠️ `findSaDerby(home, away)` stand hier bis zum 25.08.2026 — ein zweiter Weg
+// zu einer Frage, die der Generator längst am Spiel beantwortet: `baueLiga`
+// schreibt `snapshot.derby` (ligaGenerator.js), und genau das liest die
+// Wertung. Niemand rief die Funktion auf; ein Aufrufer hätte nur die
+// Chance eröffnet, dass beide Wege auseinanderlaufen. `SA_DERBYS` bleibt —
+// die Liste IST die Quelle, sie geht unten als `derbys:` in den Generator.
 
 // Saisonstart Sa. 22.08.2026 — eine Woche vor der Bundesliga.
 const SEASON_START = Date.UTC(2026, 7, 22);
@@ -90,6 +93,3 @@ export function getSerieAMatches() {
   return _cache;
 }
 
-export function createSerieAOddsSource() {
-  return alsQuotenQuelle(getSerieAMatches());
-}

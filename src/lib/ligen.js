@@ -17,6 +17,7 @@ import { getSerieAMatches, SA_TEAM_RATINGS } from "./serieAData";
 import { getChampionsLeagueMatches, CL_TEAM_RATINGS } from "./championsLeagueData";
 import { getMlsMatches, MLS_TEAM_RATINGS } from "./mlsData";
 import { getZweiteLigaMatches, BL2_TEAM_RATINGS } from "./zweiteLigaData";
+import { alsQuotenQuelle } from "./ligaGenerator";
 
 // Reihenfolge = Anzeigereihenfolge. Die Champions League steht hinten, weil sie
 // keine eigene Klub-Heimat ist, sondern Teams aus den Ligen zusammenzieht.
@@ -38,6 +39,25 @@ export const LIGEN = [
 // Alle Spiele aller Wettbewerbe in EINEM Katalog — so, wie der Store sie hält.
 export function alleMatches() {
   return LIGEN.flatMap((l) => l.matches());
+}
+
+// 🔴 DIE Quoten-Quelle des Katalogs — gleiche Schnittstelle wie
+// `createMockOddsSource()` (engine.js), also die eine Stelle, die gegen die
+// echte API getauscht wird (Architektur-Regel 2).
+//
+// ⚠️ Bis zum 25.08.2026 stand sie SIEBENMAL da, je einmal pro Liga
+// (`createBundesligaOddsSource` und sechs Geschwister). Alle sieben waren
+// derselbe Einzeiler über `alsQuotenQuelle`, alle sieben hatte nie jemand
+// aufgerufen — `npm run tot` führte sie als eigene Gruppe. Und hätte sie
+// jemand aufgerufen, wäre es der falsche Griff gewesen: eine Runde mischt
+// Wettbewerbe (das ist der Sinn des Vereins-Filters), eine Bundesliga-Quelle
+// hätte für das CL-Spiel derselben Runde `null` geliefert. Eine Quelle über
+// `alleMatches()` kann das nicht falsch machen.
+let _quelle = null;
+export function quotenQuelle() {
+  // Gemerkt wie die Ligen selbst: der Katalog ändert sich im Prozess nicht.
+  if (!_quelle) _quelle = alsQuotenQuelle(alleMatches());
+  return _quelle;
 }
 
 // Welche Wettbewerbe laufen nach einem ECHTEN Spielplan? ABGELEITET, nicht

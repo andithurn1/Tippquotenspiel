@@ -17,7 +17,7 @@
 //  gar keine.
 // ============================================================
 
-import { baueLiga, findeDerby, alsQuotenQuelle } from "./ligaGenerator";
+import { baueLiga } from "./ligaGenerator";
 import { SPIELPLAENE } from "./spielplaene";
 import { QUOTEN } from "./quoten";
 
@@ -62,11 +62,12 @@ export const DERBYS = [
   { a: "FC Bayern München",        b: "FC Augsburg",              label: "Bayerisches Derby" },
 ];
 
-// Ist diese Begegnung ein Derby? Richtungsunabhängig. Gibt den Eintrag zurück
-// (mit Label, für die Anzeige) oder null.
-export function findDerby(home, away) {
-  return findeDerby(DERBYS, home, away);
-}
+// ⚠️ `findDerby(home, away)` stand hier bis zum 25.08.2026 — ein zweiter Weg
+// zu einer Frage, die der Generator längst am Spiel beantwortet: `baueLiga`
+// schreibt `snapshot.derby` (ligaGenerator.js), und genau das liest die
+// Wertung. Niemand rief die Funktion auf; ein Aufrufer hätte nur die
+// Chance eröffnet, dass beide Wege auseinanderlaufen. `DERBYS` bleibt —
+// die Liste IST die Quelle, sie geht unten als `derbys:` in den Generator.
 
 // Anstöße: Spieltag 1 am 28.08.2026, danach im Wochentakt; innerhalb eines
 // Spieltags Fr/Sa/So gestaffelt (Ortszeit, MESZ = UTC+2). Alles in der Zukunft
@@ -102,8 +103,3 @@ export function getBundesligaMatches() {
   return _cache;
 }
 
-// Gleiche Schnittstelle wie createMockOddsSource() (engine.js) — austauschbare
-// Quoten-Quelle, nur mit der ganzen simulierten Saison statt einem Match.
-export function createBundesligaOddsSource() {
-  return alsQuotenQuelle(getBundesligaMatches());
-}

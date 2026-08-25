@@ -191,11 +191,3 @@ export function getChampionsLeagueMatches() {
   return _cache;
 }
 
-// Gleiche Schnittstelle wie die übrigen Quoten-Quellen.
-export function createChampionsLeagueOddsSource() {
-  const byId = new Map(getChampionsLeagueMatches().map((m) => [m.matchId, m]));
-  return {
-    getSnapshot: (id) => byId.get(id)?.snapshot ?? null,
-    getResult: (id) => byId.get(id)?.result ?? null,
-  };
-}

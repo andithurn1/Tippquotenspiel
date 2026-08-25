@@ -28,7 +28,7 @@
 //  weiter listet. Das ist für eine Test-Liga richtig so.
 // ============================================================
 
-import { baueLiga, alsQuotenQuelle } from "./ligaGenerator";
+import { baueLiga } from "./ligaGenerator";
 import { SPIELPLAENE } from "./spielplaene";
 import { QUOTEN } from "./quoten";
 import { KADER } from "./kader/index";
@@ -104,6 +104,3 @@ export function getMlsMatches() {
   return _cache;
 }
 
-export function createMlsOddsSource() {
-  return alsQuotenQuelle(getMlsMatches());
-}

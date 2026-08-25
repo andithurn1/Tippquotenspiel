@@ -15,7 +15,7 @@
 //  samstags 13:30 deutscher Zeit spielt nur England.
 // ============================================================
 
-import { baueLiga, findeDerby, alsQuotenQuelle, NAMENSPOOLS } from "./ligaGenerator";
+import { baueLiga, NAMENSPOOLS } from "./ligaGenerator";
 import { QUOTEN } from "./quoten";
 import { SPIELPLAENE } from "./spielplaene";
 
@@ -57,9 +57,12 @@ export const PL_DERBYS = [
   { a: "FC Liverpool",      b: "Manchester United", label: "Nordwest-Duell" },
 ];
 
-export function findPlDerby(home, away) {
-  return findeDerby(PL_DERBYS, home, away);
-}
+// ⚠️ `findPlDerby(home, away)` stand hier bis zum 25.08.2026 — ein zweiter Weg
+// zu einer Frage, die der Generator längst am Spiel beantwortet: `baueLiga`
+// schreibt `snapshot.derby` (ligaGenerator.js), und genau das liest die
+// Wertung. Niemand rief die Funktion auf; ein Aufrufer hätte nur die
+// Chance eröffnet, dass beide Wege auseinanderlaufen. `PL_DERBYS` bleibt —
+// die Liste IST die Quelle, sie geht unten als `derbys:` in den Generator.
 
 // Saisonstart Sa. 15.08.2026 — zwei Wochen vor der Bundesliga, wie üblich.
 const SEASON_START = Date.UTC(2026, 7, 15);
@@ -94,6 +97,3 @@ export function getPremierLeagueMatches() {
   return _cache;
 }
 
-export function createPremierLeagueOddsSource() {
-  return alsQuotenQuelle(getPremierLeagueMatches());
-}

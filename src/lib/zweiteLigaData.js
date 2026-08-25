@@ -25,7 +25,7 @@
 //  — und sie macht die Quoten enger, was das Tippen dort schwerer macht.
 // ============================================================
 
-import { baueLiga, findeDerby, alsQuotenQuelle } from "./ligaGenerator";
+import { baueLiga } from "./ligaGenerator";
 import { SPIELPLAENE } from "./spielplaene";
 import { QUOTEN } from "./quoten";
 
@@ -80,9 +80,12 @@ export const BL2_DERBYS = [
   { a: "Karlsruher SC",          b: "1. FC Heidenheim 1846", label: "Süddeutsches Duell" },
 ];
 
-export function findBl2Derby(home, away) {
-  return findeDerby(BL2_DERBYS, home, away);
-}
+// ⚠️ `findBl2Derby(home, away)` stand hier bis zum 25.08.2026 — ein zweiter Weg
+// zu einer Frage, die der Generator längst am Spiel beantwortet: `baueLiga`
+// schreibt `snapshot.derby` (ligaGenerator.js), und genau das liest die
+// Wertung. Niemand rief die Funktion auf; ein Aufrufer hätte nur die
+// Chance eröffnet, dass beide Wege auseinanderlaufen. `BL2_DERBYS` bleibt —
+// die Liste IST die Quelle, sie geht unten als `derbys:` in den Generator.
 
 // Anstöße: dieselbe Woche wie die Bundesliga, aber auf die klassischen
 // Zweitliga-Termine gelegt (Fr 18:30, Sa 13:00, So 13:30). Ortszeit,
@@ -117,7 +120,3 @@ export function getZweiteLigaMatches() {
   return _cache;
 }
 
-// Gleiche Schnittstelle wie createMockOddsSource() — austauschbare Quelle.
-export function createZweiteLigaOddsSource() {
-  return alsQuotenQuelle(getZweiteLigaMatches());
-}

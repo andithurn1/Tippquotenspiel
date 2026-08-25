@@ -88,7 +88,7 @@ export const SPUREN = {
   bigGame: ["bigGame", "bigGameAufschlag"],
   tabellenBonus: ["tabellenBonus", "mod-tabelle", "Außenseiter nach Tabelle"],
   wettbewerbe: ["wettbewerbe", "wettbewerbGewicht", "anteile"],
-  teamMods: ["teamMods", "derby", "findDerby"],
+  teamMods: ["teamMods", "derby", "derbyFaktor"],
   tippfenster: ["tippfenster", "tippStatus"],
   spiele: ["spiele", "spielauswahl"],
   zeitachse: ["zeitachse", "rundenSpieltag"],

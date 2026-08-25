@@ -40,6 +40,16 @@ const GEDULDET = {
   createMockStore:
     "Dito — die eine Stelle, an der Mock gegen Supabase getauscht wird.",
 
+  // ── Am 25.08.2026 geprüft und stehen gelassen ─────────
+  quotenQuelle:
+    "🔴 DIE austauschbare Quoten-Quelle des Katalogs (Architektur-Regel 2) "
+    + "— gleiche Schnittstelle wie `createMockOddsSource()`, aber über ALLE "
+    + "Wettbewerbe. Vorbereitet, nicht angeschlossen: der Mock-Store trägt die "
+    + "Snapshots heute schon am Match, gebraucht wird sie beim Umstieg auf die "
+    + "echte API. ⚠️ Sie ersetzt SIEBEN Fabriken (eine je Liga), die alle "
+    + "denselben Einzeiler waren und alle in dieser Liste standen — und von "
+    + "denen keine eine Runde bedienen konnte, die Wettbewerbe mischt.",
+
   // ── Am 24.08.2026 geprüft und stehen gelassen ─────────────
   vergissBesuch:
     "Stellt den Erstkontakt (G5) wieder auf „noch nie da gewesen“. Bewusst "
