@@ -94,28 +94,18 @@ export function alterAm(datum, heute) {
   return alter >= 0 ? alter : null;
 }
 
-// 🔴 Die Jahresliste, und hier steckt Andis eigentliche Anforderung drin:
-// sie BEGINNT bei 1995 und läuft von dort in BEIDE Richtungen abwechselnd
-// nach außen — 1995, 1994, 1996, 1993, 1997 … So steht der wahrscheinlichste
-// Jahrgang oben, und trotzdem ist jeder andere zwei Wischer entfernt, statt
-// dreißig.
+// ⛔ `jahresListe()` stand hier bis zum 25.08.2026 — eine ZICKZACK-Liste
+// (1995, 1994, 1996, 1993, 1997 …), die von Andis Startjahr abwechselnd nach
+// außen läuft. Der Gedanke war richtig, die Bauform falsch: in einem
+// Auswahlfeld ist eine Liste, die nicht der Reihe nach läuft, unbenutzbar —
+// niemand sucht 2003 zwischen 1993 und 1997. Sie hätte ein Rad gebraucht, das
+// es nicht gibt. `npm run tot` hat sie als exportiert-und-ungefragt gemeldet,
+// bevor daraus eine zweite Wahrheit werden konnte.
 //
-// ⚠️ Eine Liste, die einfach bei 1995 anfängt und abwärts läuft, wäre die
-// naheliegende Lesart — sie macht aber jeden JÜNGEREN Jahrgang unerreichbar,
-// und die sind es, die dazukommen sollen.
-export function jahresListe({ start = START_JAHR, grenzen = JAHR_GRENZEN } = {}) {
-  const out = [];
-  const mittig = Math.min(Math.max(start, grenzen.min), grenzen.max);
-  out.push(mittig);
-  for (let d = 1; out.length < grenzen.max - grenzen.min + 1; d++) {
-    const runter = mittig - d;
-    const hoch = mittig + d;
-    if (runter >= grenzen.min) out.push(runter);
-    if (hoch <= grenzen.max) out.push(hoch);
-    if (runter < grenzen.min && hoch > grenzen.max) break;
-  }
-  return out;
-}
+// 🔴 Andis Anforderung erfüllt die Fassung darunter genauso, nur anders: die
+// Liste läuft der Reihe nach, und sie SCHLÄGT BEI 1995 AUF — der Browser
+// rollt zum gewählten Eintrag, und der Anfangswert ist 1995. Niemand scrollt
+// von heute nach unten, und jeder Jahrgang steht dort, wo man ihn sucht.
 
 // Dieselbe Liste, aber in Kalender-Reihenfolge — für eine Darstellung, die
 // scrollt statt zu blättern. `startIndex` sagt, wo sie aufschlagen soll.

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { getStore } from "@/lib/store";
+import { namensHinweis, gleicherName } from "@/lib/benutzername";
+import { jahrVon } from "@/lib/geburtsdatum";
 import { useAuth } from "@/components/AuthProvider";
 import BackLink from "@/components/BackLink";
 import {
@@ -10,6 +12,8 @@ import {
 } from "@/lib/avatars";
 import { isPremium } from "@/lib/premium";
 import { C, SCHRIFT, RUND } from "@/lib/theme";
+import { TAPZIEL } from "@/lib/tapziel";
+import Link from "next/link";
 
 
 // Avatar-Kreis — eine Stelle, damit Profil, Leaderboard & Co. gleich aussehen.
@@ -32,7 +36,13 @@ export default function Profil() {
   const [avatar, setAvatar] = useState(DEFAULT_AVATAR);
   const [status, setStatus] = useState("laden");   // laden | bereit | speichern | ok | fehler
   const [geladen, setGeladen] = useState(false);
+  const [gespeicherterName, setGespeicherterName] = useState("");
   const [premium, setPremium] = useState(false);
+  // 🔴 KT10: Namen sind einzigartig. Der Screen fragt den Store, ob der
+  // Wunschname frei ist — er entscheidet es nicht selbst (Runden-Schicht).
+  const [belegt, setBelegt] = useState([]);        // fremde Namen, für Vorschläge
+  const [frei, setFrei] = useState(null);          // null = noch nicht geprüft
+  const [geburtsjahr, setGeburtsjahr] = useState(null);
 
   useEffect(() => {
     if (!user) { setStatus("bereit"); return; }
@@ -41,8 +51,11 @@ export default function Profil() {
       .then((p) => {
         if (!live) return;
         setName(p?.display_name ?? user.name ?? "");
+        setGespeicherterName(p?.display_name ?? "");
         setAvatar(p?.avatar ?? DEFAULT_AVATAR);
         setPremium(isPremium(p));
+        // Das Geburtsjahr entscheidet, ob „Andi95" unter den Vorschlägen ist.
+        setGeburtsjahr(jahrVon(p?.geburtsdatum));
         setGeladen(true);
         setStatus("bereit");
       })
@@ -51,9 +64,38 @@ export default function Profil() {
   }, [user]);
 
   const nameOk = sanitizeDisplayName(name) !== null;
+  // Der eigene, gespeicherte Name gilt immer als frei — sonst meldete das
+  // Feld beim Öffnen sofort „schon vergeben", nämlich an einen selbst.
+  const eigener = gleicherName(name, gespeicherterName);
+
+  // 🔴 Freiheit prüfen — im Store, nicht hier. ⚠️ Entprellt: bei jedem
+  // Tastendruck eine Abfrage wären bei „Sebastian" neun Runden zur Datenbank.
+  useEffect(() => {
+    if (!user || !nameOk || eigener) { setFrei(null); return; }
+    let live = true;
+    const t = setTimeout(async () => {
+      try {
+        const ok = await getStore().nameFrei({ name, ausserUserId: user.id });
+        if (!live) return;
+        setFrei(ok);
+        // Für die Vorschläge werden die BELEGTEN gebraucht. Der eigene
+        // Wunschname reicht als Ausgangspunkt — mehr weiß der Screen nicht,
+        // und mehr braucht `namensVorschlaege` auch nicht.
+        setBelegt(ok ? [] : [name]);
+      } catch { if (live) setFrei(null); }
+    }, 350);
+    return () => { live = false; clearTimeout(t); };
+  }, [name, nameOk, eigener, user]);
+
+  const hinweis = !nameOk || eigener || frei === null
+    ? null
+    : namensHinweis(name, belegt, { geburtsjahr, anzahl: 3 });
 
   const speichern = async () => {
-    if (!user || !nameOk) return;
+    // ⛔ Nicht speichern, wenn der Name nachweislich vergeben ist. Die
+    // Datenbank weist es ohnehin ab (Eindeutigkeits-Index) — aber ein Fehler
+    // NACH dem Klick ist eine schlechtere Auskunft als ein grauer Knopf.
+    if (!user || !nameOk || frei === false) return;
     setStatus("speichern");
     try {
       await getStore().updateProfile(user.id, { displayName: name, avatar });
@@ -145,6 +187,47 @@ export default function Profil() {
                   ? `${NAME_LIMITS.min}–${NAME_LIMITS.max} Zeichen.`
                   : `Mindestens ${NAME_LIMITS.min} Zeichen.`}
               </div>
+
+              {/* 🔴 KT10: „wenn einer schon vergeben ist, wird eben
+                  vorgeschlagen welche Zahl vom Geburtsdatum oder sonstiger
+                  Nachcode noch frei ist" (Andi, 25.08.2026).
+                  ⚠️ Die Vorschläge sind ANKLICKBAR. Einen Namen vorzuschlagen
+                  und ihn dann abtippen zu lassen, ist die halbe Hilfe. */}
+              {frei === true && !eigener && (
+                <div className="tqs-haken" style={{ fontSize: "0.75rem", color: C.mint, marginTop: 6 }}>
+                  „{name}" ist frei.
+                </div>
+              )}
+              {hinweis && !hinweis.frei && (
+                <div style={{
+                  marginTop: 8, background: `${C.bernstein}14`,
+                  border: `1px solid ${C.bernstein}44`, borderRadius: RUND.karte,
+                  padding: "9px 11px",
+                }}>
+                  <div style={{ fontSize: "0.75rem", color: C.bernstein }}>
+                    „{name}" ist schon vergeben.
+                  </div>
+                  {hinweis.vorschlaege.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 7 }}>
+                      {hinweis.vorschlaege.map((v) => (
+                        <button key={v} className="tqs-aktion" onClick={() => setName(v)} style={{
+                          ...TAPZIEL, background: C.surface, color: C.text,
+                          border: `1px solid ${C.line}`, borderRadius: RUND.pille,
+                          padding: "6px 13px", fontSize: "0.8125rem",
+                          fontFamily: "inherit", cursor: "pointer",
+                        }}>{v}</button>
+                      ))}
+                    </div>
+                  )}
+                  {!geburtsjahr && (
+                    <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 7, lineHeight: 1.45 }}>
+                      Mit Geburtsdatum im{" "}
+                      <Link href="/account" style={{ color: C.akzent }}>Account</Link>
+                      {" "}kommt auch dein Jahrgang als Zusatz dazu.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Avatar-Auswahl */}

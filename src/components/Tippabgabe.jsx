@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   DEFAULT_RULES, projectTip, weightUsageForMatchday,
   einsatzPlanung, invalidEinsatzMatchdays, spieltagKey,
 } from "@/lib/engine";
 import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
+import { tippStatus } from "@/lib/tippfenster";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
 import { zeitachse, rundenSchluessel, rundenSpieltagVon, verlaufNachRundenSpieltag, bespielteSpieltage } from "@/lib/zeitachse";
@@ -38,6 +39,7 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import NaheErgebnisse from "@/components/NaheErgebnisse";
 import ErgebnisMatrix from "@/components/ErgebnisMatrix";
+import SpielBlaettern from "@/components/SpielBlaettern";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 // ⚠️ Der SPIELER bekam hier gerundete Joker-Faktoren zu sehen: bei einem
 // eingestellten ×1,15 stand „×1.2" auf dem Knopf. Seit die Faktoren auf dem
@@ -211,6 +213,11 @@ export default function Tippabgabe({ matchId }) {
   const [tagesPunkte, setTagesPunkte] = useState([]);
   const [votes, setVotes] = useState([]);   // Joker-Abstimmung der Runde
   const [alleMatches, setAlleMatches] = useState([]);  // für die Zeitachse der Runde
+  // 🔴 Der Umschlag, an dem die Wischgeste hängt (KT5). Der Ref steht HIER
+  // oben bei den anderen Hooks — unter dem Lade-Zweig `if (!match) return`
+  // würde er im ersten Rendern übersprungen und der Screen stürzte beim
+  // zweiten mit „change in the order of Hooks" ab (CLAUDE.md).
+  const umschlagRef = useRef(null);
   // Tabellenstand der Runde — für die `wer`-Modi `abPlatz`/`abRueckstand`
   // aus jokerBasis.js (design/kontaktstellen.md Abschnitt 5 Punkt 1).
   const [board, setBoard] = useState([]);
@@ -1142,7 +1149,7 @@ export default function Tippabgabe({ matchId }) {
   };
 
   return (
-    <div style={{
+    <div ref={umschlagRef} style={{
       minHeight: "100vh", background: C.ink, color: C.text,
       fontFamily: SCHRIFT,
       padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center",
@@ -1822,6 +1829,31 @@ export default function Tippabgabe({ matchId }) {
             onEdit={() => { setSaveState("idle"); setDone(false); }}
           />
         )}
+      </div>
+
+      {/* 🔴 Blättern zwischen den Spielen DIESER Runde (Andi, KT5).
+          ⚠️ `alleMatches` ist `listRoundMatches(roundId)` — nicht der Katalog.
+          Mit `listMatches()` stünde nach dem Bundesliga-Spiel die MLS daneben
+          (Runden-Schicht, Frage 1 in CLAUDE.md).
+          Der Filter lässt nur tippbare Spiele zu; das aktuelle bleibt immer
+          drin, sonst verschwände der Balken beim Anpfiff unter der Hand. */}
+      <div style={{ width: "100%", maxWidth: "var(--tqs-schirm-breite)" }}>
+        <SpielBlaettern
+          spiele={alleMatches}
+          matchId={match.matchId ?? match.id}
+          umschlagRef={umschlagRef}
+          // ⚠️ Gefiltert wird mit dem RUNDEN-Regelwerk, nicht mit dem
+          // spielgenauen `RULES`: letzteres gilt für DIESES Spiel, und ein
+          // Beschluss, der nur hier greift, dürfte nicht darüber entscheiden,
+          // welche anderen Spiele blätterbar sind. Für die Frage „ist das
+          // Tippfenster offen?" ist die Runde die richtige Ebene.
+          filter={(m) => {
+            const st = beschlussLage?.regelnFuer?.({
+              wettbewerb: wettbewerbVon(m), matchday: m.matchday ?? null,
+            }) ?? rundenRegeln;
+            return tippStatus(m, st).offen;
+          }}
+        />
       </div>
     </div>
   );
