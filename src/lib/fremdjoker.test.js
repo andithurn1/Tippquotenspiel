@@ -4,6 +4,7 @@ import {
   zulaessigeZiele, trefferWahrscheinlichkeit, tippGetroffen, gegenwetteVorschau,
   fremdEinsaetze, eingriffFenster, offeneEingriffe, zieleJeArt, sperrGrund,
   losZiele, meinLos, geschuetzteSpiele, schutzStand, konflikte, zweiPhasenHinweis,
+  tippSperre,
 } from "@/lib/fremdjoker";
 import { DEFAULT_EINGRIFFE } from "@/lib/eingriffe";
 import { DEFAULT_DUELL, applyDuellJoker } from "@/lib/duellJoker";
@@ -906,5 +907,74 @@ describe("fremdEinsaetze — auf welchem Spieltag ein Einsatz landet", () => {
     };
     expect(wirktAn(2)).toBe(1);
     expect(wirktAn(4)).toBe(3);
+  });
+});
+
+
+// ============================================================
+//  tippSperre â die EINE Antwort auf âdarf ich dieses Spiel tippen?"
+//
+//  ð´ Andi, 25.08.2026: âBlockiert = mach einstellbar was hier passiert."
+//  Steht die Runde auf `block.wirkung: "gesperrt"`, ist ein geblocktes Spiel
+//  nicht mehr tippbar â eine Sperre in der EINGABE, nicht in der Wertung.
+//
+//  â ï¸ Warum das eine Funktion ist und keine PrÃ¼fung im Screen: die Tippabgabe
+//  fragt sie beim Anzeigen UND beim Speichern. Zwei getrennte PrÃ¼fungen wÃ¤ren
+//  die zweite Wahrheit â und hier besonders teuer: eine OberflÃ¤che, die
+//  sperrt, wÃ¤hrend das Speichern durchlÃ¤sst, ist von einem Fehler nicht zu
+//  unterscheiden.
+// ============================================================
+describe("tippSperre", () => {
+  const einsatz = (extra = {}) => ({
+    typ: "block", vonUserId: "a", aufUserId: "b", matchId: "M1", vonName: "Anna", ...extra,
+  });
+  const regeln = (block = {}, an = true) => ({
+    duell: {
+      ...DEFAULT_DUELL, enabled: an, typen: ["block"],
+      block: { ...DEFAULT_DUELL.block, wirkung: "gesperrt", ...block },
+    },
+  });
+  const frage = (r, e) => tippSperre(e, r, { userId: "b", matchId: "M1" });
+
+  it("sperrt das geblockte Spiel des Getroffenen", () => {
+    const t = frage(regeln(), [einsatz()]);
+    expect(t).toBeTruthy();
+    expect(t.vonName).toBe("Anna");
+  });
+
+  it("sperrt NICHT, solange die Wirkung auf „punkte“ steht", () => {
+    // Die Vorgabe. Wer sie fÃ¤hrt, tippt normal und merkt den Block erst in
+    // der Abrechnung â das ist der Sinn der Einstellung.
+    expect(frage(regeln({ wirkung: "punkte" }), [einsatz()])).toBeNull();
+  });
+
+  it("sperrt nur DAS Spiel, nicht den ganzen Spieltag", () => {
+    expect(tippSperre([einsatz()], regeln(), { userId: "b", matchId: "M2" })).toBeNull();
+  });
+
+  it("sperrt nur den Getroffenen, nicht den Blockenden", () => {
+    expect(tippSperre([einsatz()], regeln(), { userId: "a", matchId: "M1" })).toBeNull();
+  });
+
+  it("befolgt den Schutz (JK14) — wie die Wertung auch", () => {
+    // â ï¸ Ohne diese Zeile hÃ¤tte der Schutz in der Wertung gegolten und in der
+    // Eingabe nicht: das Spiel wÃ¤re gesperrt gewesen, ohne dass der Block je
+    // Punkte gekostet hÃ¤tte.
+    expect(frage(regeln(), [einsatz({ geschuetzt: true })])).toBeNull();
+  });
+
+  it("sperrt nicht, wenn die Familie aus ist", () => {
+    expect(frage(regeln({}, false), [einsatz()])).toBeNull();
+  });
+
+  it("reicht `verfaellt` durch, damit der Screen den richtigen Satz zeigt", () => {
+    expect(frage(regeln({ verfaellt: true }), [einsatz()]).verfaellt).toBe(true);
+    expect(frage(regeln({ verfaellt: false }), [einsatz()]).verfaellt).toBe(false);
+  });
+
+  it("vertrÃ¤gt fehlende Angaben, statt abzustÃ¼rzen", () => {
+    expect(tippSperre([], regeln(), {})).toBeNull();
+    expect(tippSperre(null, regeln(), { userId: "b", matchId: "M1" })).toBeNull();
+    expect(tippSperre([einsatz()], {}, { userId: "b", matchId: "M1" })).toBeNull();
   });
 });

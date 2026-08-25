@@ -26,7 +26,7 @@ import { duellPlan } from "@/lib/duellJoker";
 // Fassung die Sperrfrist je Ziel (JK5) durchreicht.
 import {
   aktiveArten, familieAn, zulaessigeZiele, gegenwetteVorschau, zieleJeArt, sperrGrund,
-  meinLos, schutzStand, fremdEinsaetze,
+  meinLos, schutzStand, fremdEinsaetze, tippSperre,
 } from "@/lib/fremdjoker";
 import { FREMDJOKER_ARTEN, jokerArtVon, sanitizeSchutz } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
@@ -710,6 +710,14 @@ export default function Tippabgabe({ matchId }) {
   // zum 23.08.2026 auf der STORE-Seite — dort stand der Liga-Spieltag, und
   // beide Seiten verglichen zwei verschiedene Skalen miteinander.
   const bisherigeDuellEinsaetze = fremdEinsaetze(alleTippsRunde, RULES);
+  // 🔴 Steht die Runde auf `block.wirkung: "gesperrt"` (Andi, 25.08.2026), ist
+  // ein geblocktes Spiel nicht mehr tippbar. Die Antwort kommt aus `tippSperre`
+  // und wird hier NICHT nachgebaut: dasselbe `submit` unten fragt sie noch
+  // einmal, und eine Oberfläche, die anders entscheidet als das Speichern,
+  // ist von einem Fehler nicht zu unterscheiden.
+  const sperre = tippSperre(bisherigeDuellEinsaetze, RULES, {
+    userId: user?.id, matchId: SNAP.matchId,
+  });
   // 🔴 Seit die Sperrfrist JE FREMDJOKER steht (JK5, Ebene 2), ist „ist Kemal
   // ein erlaubtes Ziel?" ohne die Art nicht mehr beantwortbar: der Block kann
   // gesperrt sein, während der Trittbrettfahrer frei ist.
@@ -871,6 +879,10 @@ export default function Tippabgabe({ matchId }) {
     setSaveState("saving");
     try {
       if (!user) { setSaveState("guest"); return; }
+      // 🔴 Die Sperre gilt auch hier — die Oberfläche ist NICHT die
+      // Durchsetzung (dieselbe Haltung wie bei `applyEntitlements`). Ein
+      // veralteter Screen oder ein zweites Fenster käme sonst vorbei.
+      if (sperre) { setSaveState("gesperrt"); return; }
       // Einsatz-Modus: der Spieltag darf nach `invalidEinsatzMatchdays` nicht
       // regelwidrig werden — anders als beim Ranking-Regler (der belegte
       // Gewichte schon beim Klicken sperrt) lässt sich eine Unterdeckung beim
@@ -1137,6 +1149,36 @@ export default function Tippabgabe({ matchId }) {
             <div style={{ marginTop: 6, fontSize: "1.25rem", fontWeight: 700 }}>
               {SNAP.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {SNAP.away}
             </div>
+
+            {/* 🔴 GESPERRT — ganz oben, weil alles darunter sinnlos wird.
+                Andi, 25.08.2026: der Admin entscheidet, was ein Block tut;
+                steht die Runde auf „Spiel sperren", ist hier Schluss.
+                ⚠️ Der NAME steht dabei. Der ganze Zweck der Fremdjoker ist,
+                dass man weiß, wen man ansprechen kann — „jemand hat dich
+                geblockt" erfüllt ihn nicht (siehe `offeneEingriffe`). */}
+            {sperre && (
+              <div style={{
+                marginTop: 12, background: `${C.coral}14`, border: `1px solid ${C.coral}55`,
+                borderRadius: RUND.karte, padding: "12px 14px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span aria-hidden style={{ fontSize: "1rem", lineHeight: 1 }}>🚫</span>
+                  <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: C.coral }}>
+                    {/* ⚠️ Der Name kommt aus `board` — dieselbe Auflösung wie
+                        beim Los ein paar Zeilen weiter unten, kein zweiter Weg.
+                        `tippSperre` selbst kennt keine Namen und soll auch
+                        keine kennen: sie ist Logik, nicht Anzeige. */}
+                    Geblockt von {board.find((b) => b.userId === sperre.vonUserId)?.name
+                      ?? sperre.vonName ?? "einem Mitspieler"}
+                  </span>
+                </div>
+                <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 5, lineHeight: 1.5 }}>
+                  {sperre.verfaellt
+                    ? "Dieses Spiel zählt für dich nicht mehr — auch ein schon abgegebener Tipp verfällt."
+                    : "Dieses Spiel lässt sich nicht mehr tippen. Ein schon abgegebener Tipp bleibt stehen."}
+                </div>
+              </div>
+            )}
 
             {/* Spiel des Spieltags — hier gehört es hin, weil hier die
                 Entscheidung fällt. Der Aufschlag kommt aus der Schwelle DIESER
@@ -1732,12 +1774,19 @@ export default function Tippabgabe({ matchId }) {
               <span style={{ color: C.akzent }}>◆</span>
               <span>Snapshot-Quote: alle Mitspieler bekommen dieselbe Quote, egal wann sie tippen. Gilt bis Anpfiff.</span>
             </div>
-            <button onClick={submit} style={{
-              marginTop: 14, width: "100%", cursor: "pointer",
-              background: C.akzent, color: C.ink, fontWeight: 700, fontSize: "0.9375rem",
-              border: "none", borderRadius: RUND.karte, padding: "14px 0",
+            {/* ⚠️ Bei einer Sperre bleibt der Knopf STEHEN und wird nur
+                unbenutzbar — ein verschwundener Knopf sieht aus wie ein
+                Ladefehler, ein grauer sagt „hier ist etwas, aber nicht für
+                dich". Die Begründung steht oben im 🚫-Kasten. */}
+            <button onClick={submit} disabled={Boolean(sperre)} style={{
+              marginTop: 14, width: "100%", cursor: sperre ? "not-allowed" : "pointer",
+              background: sperre ? C.surface : C.akzent,
+              color: sperre ? C.muted : C.ink,
+              fontWeight: 700, fontSize: "0.9375rem",
+              border: sperre ? `1px solid ${C.line}` : "none",
+              borderRadius: RUND.karte, padding: "14px 0",
             }}>
-              Tipp abgeben & Quote einfrieren
+              {sperre ? "Geblockt — kein Tipp möglich" : "Tipp abgeben & Quote einfrieren"}
             </button>
           </div>
         ) : (
@@ -1814,6 +1863,7 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
 
 const SAVE_HINT = {
   saving: { text: "wird gespeichert …", col: C.muted },
+  gesperrt: { text: "Dieses Spiel wurde dir geblockt — es lässt sich nicht mehr tippen.", col: C.coral },
   guest:  { text: "nicht eingeloggt — lokal eingefroren, aber nicht gespeichert", col: C.akzent },
   error:  { text: "Speichern fehlgeschlagen — später erneut versuchen", col: C.coral },
 };

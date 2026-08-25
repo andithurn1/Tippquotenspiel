@@ -865,3 +865,81 @@ describe("applyDuellJoker — das Dach (JK7) und die Arten-Prüfung", () => {
     expect(applyDuellJoker(VERLAUF(), nurBlock, einsatz)).toEqual(VERLAUF());
   });
 });
+
+// ============================================================
+//  BLOCK-WIRKUNG â was ein Block TUT, entscheidet der Admin
+//
+//  ð´ Andi am 25.08.2026: âBlockiert = mach einstellbar was hier passiert, das
+//  soll der Admin selbst wÃ¤hlen kÃ¶nnen â¦ kannst dir auch denken, dass eben die
+//  Wirkung unterschiedlich ausfallen kann."
+//
+//  â ï¸ Die beiden Wirkungen sind wirklich VERSCHIEDEN und nicht zwei Zahlen
+//  derselben Sache: âPunkte dÃ¤mpfen" merkt man in der Abrechnung, âgesperrt"
+//  merkt man beim Tippen. Deshalb prÃ¼ft dieser Block die WERTUNG â die
+//  Eingabe-Sperre steht in `fremdjoker.test.js` bei `tippSperre`.
+// ============================================================
+describe("Block-Wirkung", () => {
+  // Derselbe Verlaufs-Zuschnitt wie in den PflichtfÃ¤llen oben: kumulative
+  // StÃ¤nde je Spieltag, nicht flache Punktzeilen.
+  const verlaufFuer = () => ([
+    { wettbewerb: "BL", matchday: 1, board: [
+      { userId: "a", name: "A", total: 100 },
+      { userId: "b", name: "B", total: 200 },
+    ] },
+  ]);
+  const regelnMit = (block) => ({
+    duell: {
+      ...DEFAULT_DUELL, enabled: true, typen: ["block"],
+      block: { ...DEFAULT_DUELL.block, ...block },
+    },
+  });
+  const einsatz = [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "block" }];
+  const punkteVon = (r, id) => r[0].board.find((z) => z.userId === id).total;
+
+  it("Vorgabe ist „punkte“ — das bisherige Verhalten bleibt", () => {
+    // ð´ Wichtig, weil eine andere Vorgabe jede BESTEHENDE Runde rÃ¼ckwirkend
+    // umgeschrieben hÃ¤tte: derselbe Creator-Code, plÃ¶tzlich anderes Spiel.
+    expect(DEFAULT_DUELL.block.wirkung).toBe("punkte");
+  });
+
+  it("„punkte“ dämpft auf den Restanteil", () => {
+    const r = applyDuellJoker(verlaufFuer(), regelnMit({ wirkung: "punkte", restanteil: 0.5 }), einsatz);
+    expect(punkteVon(r, "b")).toBe(100);   // 200 â die HÃ¤lfte
+  });
+
+  it("„gesperrt“ nimmt das Spiel ganz weg, wenn der Tipp verfällt", () => {
+    const r = applyDuellJoker(verlaufFuer(), regelnMit({ wirkung: "gesperrt", verfaellt: true }), einsatz);
+    expect(punkteVon(r, "b")).toBe(0);
+  });
+
+  it("„gesperrt“ mit `verfaellt: false` lässt einen abgegebenen Tipp stehen", () => {
+    // Die Sperre galt nur fÃ¼r das, was noch nicht getippt war â wer schneller
+    // war, behÃ¤lt seine Punkte. Der Block lohnt sich dann nur frÃ¼h.
+    const r = applyDuellJoker(verlaufFuer(), regelnMit({ wirkung: "gesperrt", verfaellt: false }), einsatz);
+    expect(punkteVon(r, "b")).toBe(200);
+  });
+
+  it("Sperren ist kein Beutezug — der Blockende bekommt nichts", () => {
+    // â ï¸ Auch dann nicht, wenn `beute` gesetzt ist: âbeute" gehÃ¶rt zum
+    // DÃ¤mpfen. Wer sperrt, nimmt die Gelegenheit, nicht die Punkte.
+    const r = applyDuellJoker(verlaufFuer(),
+      regelnMit({ wirkung: "gesperrt", verfaellt: true, beute: 0.5 }), einsatz);
+    expect(punkteVon(r, "a")).toBe(100);   // unverÃ¤ndert
+  });
+
+  it("nimmt auch beim Sperren nichts aus einem Minus", () => {
+    const verlauf = [
+      { wettbewerb: "BL", matchday: 1, board: [
+        { userId: "a", name: "A", total: 100 },
+        { userId: "b", name: "B", total: -50 },
+      ] },
+    ];
+    const r = applyDuellJoker(verlauf, regelnMit({ wirkung: "gesperrt", verfaellt: true }), einsatz);
+    expect(punkteVon(r, "b")).toBe(-50);
+  });
+
+  it("verwirft eine unbekannte Wirkung auf die Vorgabe", () => {
+    const g = sanitizeDuellJoker({ ...DEFAULT_DUELL, block: { ...DEFAULT_DUELL.block, wirkung: "erfunden" } });
+    expect(g.block.wirkung).toBe("punkte");
+  });
+});

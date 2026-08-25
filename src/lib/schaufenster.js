@@ -87,7 +87,13 @@ export function schaufensterRegeln() {
       klau: { anteil: 0.5, modus: "mitverdienen" },
       // `nurGewinn: false` heißt: der Block greift auch, wenn beim Ziel gar
       // nichts zu holen war. Das ist die weitere der beiden Auslegungen.
-      block: { restanteil: 0.4, nurGewinn: false, beute: 0.1 },
+      // 🔴 `wirkung` seit 25.08.2026 einstellbar. Das Schaufenster fährt die
+      // VORGABE ("punkte") — und zwar mit Absicht, obwohl es sonst überall
+      // abweicht: bei "gesperrt" wären die drei Zahlen darunter wirkungslos,
+      // und drei Regler ohne Wirkung vorzuführen ist das Gegenteil des Zwecks.
+      // `verfaellt` weicht dafür ab, damit auch dieses Feld einen zweiten Wert
+      // gesehen hat.
+      block: { wirkung: "punkte", verfaellt: false, restanteil: 0.4, nurGewinn: false, beute: 0.1 },
       sichtbarkeit: "verdeckt",
       konter: true,
       // ⚠️ `kosten: "frei"` bleibt: „stattJoker" verbraucht einen Joker aus
@@ -404,6 +410,7 @@ export const SCHAU_AUSGENOMMEN = {
   "zeitachse.modus": "„woche“ ersetzt die ganze Anker-Einteilung, auf die hier Duell-Fenster, Joker-Fenster und Spieltagsgrenzen abgestimmt sind.",
   "zeitachse.tage": "Nur im Wochen-Modus wirksam — folgt der Zeile darüber.",
   "duell.kosten": "„stattJoker“ verbraucht einen Joker aus demselben Vorrat; dann setzt im Schaufenster niemand mehr einen Fremdjoker ein.",
+  "duell.block.wirkung": "„gesperrt“ macht die drei Zahlen darunter (restanteil · nurGewinn · beute) wirkungslos — und drei Regler ohne Wirkung vorzuführen ist das Gegenteil des Zwecks. Das Schaufenster zeigt deshalb „punkte“ samt Zahlen; die Sperre selbst deckt `greift` ab.",
 };
 
 

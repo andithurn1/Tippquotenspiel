@@ -564,6 +564,46 @@ export function fremdEinsaetze(tipps = [], rules = {}, { spieltagVon = null, run
 // unter den laufenden Arten: unter-versprechen ist die harmlose Richtung,
 // über-versprechen wäre eine Zusage, die das Speichern gleich wieder kassiert
 // (dieselbe Wahl wie `duellBasis` bei der Abklingzeit).
+// ── Ist DIESES Spiel für DIESEN Spieler gesperrt? ───────────
+//
+// 🔴 Andi, 25.08.2026: „Blockiert = mach einstellbar was hier passiert, das
+// soll der Admin selbst wählen können." Steht die Runde auf
+// `duell.block.wirkung: "gesperrt"`, ist ein geblocktes Spiel nicht mehr
+// tippbar — das ist eine Sperre in der EINGABE, nicht in der Wertung.
+//
+// ⚠️ **Diese Funktion ist die EINE Antwort darauf.** Der Screen fragt sie, und
+// das Speichern fragt sie auch. Zwei getrennte Prüfungen wären genau die
+// zweite Wahrheit, vor der CLAUDE.md warnt — und hier besonders teuer: eine
+// Oberfläche, die sperrt, während das Speichern durchlässt (oder umgekehrt),
+// ist von einem Fehler nicht zu unterscheiden.
+//
+// ⚠️ Ein GESCHÜTZTES Spiel (JK14) ist unantastbar — dieselbe Marke, die auch
+// `applyDuellJoker` befolgt. Ohne diese Zeile hätte der Schutz in der Wertung
+// gegolten und in der Eingabe nicht.
+//
+// `einsaetze` ist die Liste aus `fremdEinsaetze`.
+export function tippSperre(einsaetze = [], rules = {}, { userId, matchId } = {}) {
+  const cfg = rules?.duell;
+  if (!cfg?.enabled || cfg?.block?.wirkung !== "gesperrt") return null;
+  if (!aktiveArten(rules).includes("block")) return null;
+  if (userId == null || matchId == null) return null;
+
+  const treffer = (Array.isArray(einsaetze) ? einsaetze : []).find((e) => (
+    e.typ === "block" && e.aufUserId === userId && e.matchId === matchId && !e.geschuetzt
+  ));
+  if (!treffer) return null;
+
+  // Der Name kommt MIT: „jemand hat dich geblockt" hilft niemandem — der
+  // ganze Zweck der Fremdjoker ist, dass man weiß, wen man ansprechen kann
+  // (siehe `offeneEingriffe`).
+  return {
+    vonUserId: treffer.vonUserId,
+    vonName: treffer.vonName ?? null,
+    // Ob ein SCHON abgegebener Tipp trotzdem zählt, entscheidet der Admin.
+    verfaellt: cfg.block.verfaellt !== false,
+  };
+}
+
 export function eingriffFenster(match, rules, jetzt = Date.now(), starts = null, art = null) {
   const eg = sanitizeEingriffe(rules?.eingriffe);
   const st = tippStatus(match, rules, jetzt, starts);

@@ -2,11 +2,12 @@
 
 import { C, MONO, RUND } from "@/lib/theme";
 import {
-  DUELL_TYPEN, ZIELWAHL, PHASEN, DUELL_LIMITS, EMPFEHLUNG,
+  DUELL_TYPEN, ZIELWAHL, PHASEN, DUELL_LIMITS, EMPFEHLUNG, BLOCK_WIRKUNGEN,
   sanitizeDuellJoker, beschreibeDuell,
 } from "@/lib/duellJoker";
 import { Zahl } from "@/components/Eingaben";
 import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
+import Feinheiten from "@/components/Feinheiten";
 
 // ── Der Duell-Joker: der einzige Baustein, bei dem man einem ANDEREN etwas
 //    wegnimmt ──────────────────────────────────────────────────
@@ -207,22 +208,63 @@ export default function DuellJoker({ rules, onChange }) {
           )}
 
           {hatBlock && (
-            <Block titel="Block-Joker: wie stark?"
-              hinweis={d.block.nurGewinn
-                ? "Nur Gewinne werden gedämpft — ein Minus bleibt unberührt. Sonst würde ein Block dem Ziel im Zweifel helfen."
-                : "⚠️ Auch ein MINUS wird gedämpft. Dann hilft dein Block dem Ziel, wenn es einen schlechten Spieltag hat."}>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
-                <Zahl label="Rest für das Ziel" wert={d.block.restanteil} limits={DUELL_LIMITS.blockRestanteil}
-                  breite={130} onChange={(v) => setzeBlock({ restanteil: v })} />
-                <Zahl label="Beute für dich" wert={d.block.beute} limits={DUELL_LIMITS.blockBeute}
-                  breite={120} onChange={(v) => setzeBlock({ beute: v })} />
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {knopf(d.block.nurGewinn, "nur Gewinne",
-                    () => setzeBlock({ nurGewinn: true }), "ng")}
-                  {knopf(!d.block.nurGewinn, "auch Minus",
-                    () => setzeBlock({ nurGewinn: false }), "am")}
-                </div>
+            <Block titel="Block-Joker: was passiert?"
+              hinweis={BLOCK_WIRKUNGEN.find((w) => w.key === d.block.wirkung)?.desc ?? ""}>
+              {/* 🔴 Andi, 25.08.2026: „Blockiert = mach einstellbar was hier
+                  passiert, das soll der Admin selbst wählen können."
+                  Die WIRKUNG steht oben, weil sie die Frage beantwortet, die
+                  jeder Admin hat. Die Zahlen darunter sind Feinheiten und
+                  hängen davon ab, welche Wirkung gewählt ist (SA6). */}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {BLOCK_WIRKUNGEN.map((w) => knopf(d.block.wirkung === w.key, w.label,
+                  () => setzeBlock({ wirkung: w.key }), w.key, w.desc))}
               </div>
+
+              {d.block.wirkung === "gesperrt" ? (
+                <Feinheiten
+                  titel="Feinheiten: was mit einem schon abgegebenen Tipp passiert"
+                  zusammenfassung={d.block.verfaellt ? "verfällt" : "bleibt stehen"}
+                  abweichend={!d.block.verfaellt}
+                >
+                  <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+                    Wer vor dem Block getippt hat, ist der interessante Fall — die
+                    Sperre kam für ihn zu spät.
+                  </p>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {knopf(d.block.verfaellt, "Tipp verfällt",
+                      () => setzeBlock({ verfaellt: true }), "vf-an",
+                      "Das Spiel zählt für ihn gar nicht mehr — der Block trifft immer.")}
+                    {knopf(!d.block.verfaellt, "Tipp bleibt stehen",
+                      () => setzeBlock({ verfaellt: false }), "vf-aus",
+                      "Wer schneller war, behält seine Punkte. Der Block lohnt sich nur früh.")}
+                  </div>
+                </Feinheiten>
+              ) : (
+                <Feinheiten
+                  titel="Feinheiten: wie stark gedämpft wird"
+                  zusammenfassung={`Rest ${Math.round(d.block.restanteil * 100)} %`}
+                  abweichend={d.block.restanteil !== 0.5 || d.block.beute > 0 || !d.block.nurGewinn}
+                  unvollstaendig={!d.block.nurGewinn}
+                >
+                  <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+                    {d.block.nurGewinn
+                      ? "Nur Gewinne werden gedämpft — ein Minus bleibt unberührt. Sonst würde ein Block dem Ziel im Zweifel helfen."
+                      : "⚠️ Auch ein MINUS wird gedämpft. Dann hilft dein Block dem Ziel, wenn es einen schlechten Spieltag hat."}
+                  </p>
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+                    <Zahl label="Rest für das Ziel" wert={d.block.restanteil} limits={DUELL_LIMITS.blockRestanteil}
+                      breite={130} onChange={(v) => setzeBlock({ restanteil: v })} />
+                    <Zahl label="Beute für dich" wert={d.block.beute} limits={DUELL_LIMITS.blockBeute}
+                      breite={120} onChange={(v) => setzeBlock({ beute: v })} />
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {knopf(d.block.nurGewinn, "nur Gewinne",
+                        () => setzeBlock({ nurGewinn: true }), "ng")}
+                      {knopf(!d.block.nurGewinn, "auch Minus",
+                        () => setzeBlock({ nurGewinn: false }), "am")}
+                    </div>
+                  </div>
+                </Feinheiten>
+              )}
             </Block>
           )}
 

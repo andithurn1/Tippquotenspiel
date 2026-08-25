@@ -166,6 +166,28 @@ export const DUELL_LIMITS = {
   immun: { min: 0, max: 4, step: 1 },
 };
 
+// ── Was ein Block TUT ───────────────────────────────────────
+// 🔴 Andi, 25.08.2026: „mach einstellbar was hier passiert, das soll der Admin
+// selbst wählen können … kannst dir auch denken, dass eben die Wirkung
+// unterschiedlich ausfallen kann."
+//
+// ⚠️ Die beiden sind wirklich VERSCHIEDEN und nicht zwei Zahlen derselben
+// Sache: „Punkte dämpfen" merkt man in der Abrechnung, „gesperrt" merkt man
+// beim Tippen. Das eine ist eine Wertungsregel, das andere eine Sperre in der
+// Eingabe — deshalb ein Modus und kein weiterer Regler.
+export const BLOCK_WIRKUNGEN = [
+  {
+    key: "punkte",
+    label: "Punkte dämpfen",
+    desc: "Getippt wird normal — von der Wertung dieses Spiels bleibt nur ein Teil übrig.",
+  },
+  {
+    key: "gesperrt",
+    label: "Spiel sperren",
+    desc: "Das Spiel lässt sich nicht mehr tippen. Wer zuschlägt, nimmt dem anderen die Gelegenheit, nicht die Punkte.",
+  },
+];
+
 export const DEFAULT_DUELL = {
   enabled: false,
   typen: ["klau"],
@@ -178,7 +200,11 @@ export const DEFAULT_DUELL = {
   sichtbarkeit: "offen",   // anders als beim normalen Joker bewusst OFFEN,
                            // siehe Kopfkommentar in duell-joker.md Abschnitt 5.B
   klau: { anteil: 0.35, modus: "nullsumme" },
-  block: { restanteil: 0.5, nurGewinn: true, beute: 0 },
+  // 🔴 `wirkung` seit 25.08.2026 (Andi: „Blockiert = mach einstellbar was hier
+  // passiert, das soll der Admin selbst wählen können"). Vorgabe ist das
+  // bisherige Verhalten — eine Vorgabe, die bestehende Runden umschreibt,
+  // wäre ein rückwirkender Regelwechsel.
+  block: { wirkung: "punkte", verfaellt: true, restanteil: 0.5, nurGewinn: true, beute: 0 },
   maxProSaison: 60,
   zielWahl: "nurVorne",
   maxProZiel: 2,
@@ -251,6 +277,11 @@ export function sanitizeDuellJoker(partial = {}) {
       modus: pk.modus === "mitverdienen" ? "mitverdienen" : "nullsumme",
     },
     block: {
+      wirkung: BLOCK_WIRKUNGEN.some((w) => w.key === pb.wirkung) ? pb.wirkung : DEFAULT_DUELL.block.wirkung,
+      // Gilt nur bei `wirkung: "gesperrt"` — verfällt ein SCHON abgegebener
+      // Tipp, oder sperrt der Block nur das, was noch nicht getippt ist?
+      // Nur ein ausdrückliches `false` schaltet ab.
+      verfaellt: pb.verfaellt !== false,
       restanteil: +clamp(pb.restanteil, DUELL_LIMITS.blockRestanteil, DEFAULT_DUELL.block.restanteil).toFixed(2),
       // Nur ein ausdrückliches `false` schaltet ab — siehe Kopfkommentar.
       nurGewinn: pb.nurGewinn !== false,
@@ -795,12 +826,32 @@ export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = [], sammel
       if (zielPunkte <= 0) continue;
       transfer = zielPunkte * cfg.klau.anteil;
     } else if (e.typ === "block") {
-      // Die Falle aus dem Kopfkommentar: ohne `nurGewinn` würde ein Block auf
-      // einen Spieltag im Minus den Verlust halbieren statt ihn zu treffen.
-      const wirkt = cfg.block.nurGewinn ? zielPunkte > 0 : true;
-      if (!wirkt) continue;
-      abzug = zielPunkte * (1 - cfg.block.restanteil);
-      transfer = abzug * cfg.block.beute;
+      // 🔴 Zwei Wirkungen, seit 25.08.2026 einstellbar (`BLOCK_WIRKUNGEN`).
+      //
+      // "gesperrt": die Sperre passiert BEIM TIPPEN, nicht in der Wertung.
+      // Hier ist deshalb zweierlei möglich — und beides ist eine Aussage,
+      // kein Rundungsfehler:
+      //   `verfaellt: true`  ein trotzdem vorhandener Tipp zählt gar nicht
+      //                      (der Normalfall: der Block kam vor der Abgabe).
+      //   `verfaellt: false` ein SCHON abgegebener Tipp bleibt stehen — die
+      //                      Sperre galt nur für das, was noch nicht getippt war.
+      //
+      // ⚠️ Auch bei "gesperrt" wird der Einsatz NICHT übersprungen, bevor er
+      // gezählt wurde: er verbraucht das Kontingent, sonst wäre die Sperre
+      // gratis und man könnte beliebig viele setzen.
+      if (cfg.block.wirkung === "gesperrt") {
+        if (!cfg.block.verfaellt) continue;
+        if (zielPunkte <= 0) continue;   // aus einem Minus nichts nehmen
+        abzug = zielPunkte;              // das Spiel zählt gar nicht
+        transfer = 0;                    // Sperren ist kein Beutezug
+      } else {
+        // Die Falle aus dem Kopfkommentar: ohne `nurGewinn` würde ein Block auf
+        // einen Spieltag im Minus den Verlust halbieren statt ihn zu treffen.
+        const wirkt = cfg.block.nurGewinn ? zielPunkte > 0 : true;
+        if (!wirkt) continue;
+        abzug = zielPunkte * (1 - cfg.block.restanteil);
+        transfer = abzug * cfg.block.beute;
+      }
     } else if (e.typ === "trittbrett") {
       // 🔴 TRITTBRETTFAHRER (J4, „Andis Wunsch"): man hängt sich an einen
       // fremden Tipp und bekommt einen Anteil dessen, was er bringt.
