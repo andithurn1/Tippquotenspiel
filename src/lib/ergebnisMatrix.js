@@ -236,13 +236,23 @@ export function matrixFelder(snap, rules = DEFAULT_RULES, masse = null, tip = nu
 export function beschreibeMatrix(snap, stufeKey = DEFAULT_MATRIX_STUFE) {
   const m = matrixMasse(snap, stufeKey);
   const felder = (m.maxHeim + 1) * (m.maxGast + 1);
-  const prozent = Math.round(m.abgedeckt * 100);
+  // ⚠️ NICHT `Math.round`: 99,6 % rundete auf „100 % aller Ausgänge" auf —
+  // und behauptete damit Vollständigkeit, die das Raster nicht hat. Genau das,
+  // was der Nutzer beim Griff nach einem hohen Endstand widerlegt. 100 steht
+  // erst, wenn auch die erste Nachkommastelle voll ist.
+  const prozent = m.abgedeckt >= 0.9995 ? 100 : Math.min(99, Math.round(m.abgedeckt * 100));
   const teile = [`${m.maxHeim + 1}×${m.maxGast + 1} Felder, ${prozent} % aller Ausgänge`];
   if (m.maxHeim !== m.maxGast) {
     teile.push(`ungleich zugeschnitten — die eine Seite trifft häufiger hoch als die andere`);
   }
   if (m.begrenztVomRaster) {
-    teile.push("größer geht nicht: für höhere Endstände liefert die Quotenquelle keine Quote");
+    // ⚠️ Der Satz hier hieß bis zum 25.08.2026 „für höhere Endstände liefert
+    // die Quotenquelle keine Quote". Das stimmt seit `randquoten.js`
+    // (22.08.2026) nicht mehr: höhere Endstände bekommen eine
+    // fortgeschriebene Quote und ZAHLEN auch. Das Raster endet hier, die
+    // Wertung nicht — und ein Nutzer, der das Gegenteil gelesen hat, tippt
+    // hoch und hält die Auszahlung für einen Fehler.
+    teile.push("größer geht nicht: darüber endet das Quoten-Raster — tippen lässt sich höher, die Quote wird dann geschätzt");
   }
   return { text: teile.join(" · "), felder, prozent };
 }

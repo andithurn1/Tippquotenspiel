@@ -146,7 +146,7 @@ describe("Feste Stufen", () => {
     const m = matrixMasse(klein, "5");
     expect(m.maxHeim).toBe(3);
     expect(m.begrenztVomRaster).toBe(true);
-    expect(beschreibeMatrix(klein, "5").text).toMatch(/keine Quote/);
+    expect(beschreibeMatrix(klein, "5").text).toMatch(/größer geht nicht/);
   });
 });
 
@@ -199,5 +199,36 @@ describe("Klartext", () => {
   it("die Abdeckung stimmt mit `abdeckungVon` überein — eine Quelle", () => {
     const m = matrixMasse(AUSGEGLICHEN, "4");
     expect(m.abgedeckt).toBe(abdeckungVon(AUSGEGLICHEN, 4, 4));
+  });
+});
+
+// ⚠️ Zwei Aussagen der Matrix-Beschriftung, die beide zu viel versprachen —
+// gefunden am 25.08.2026 im Browser, beim Tipp auf 9:1.
+describe("beschreibeMatrix sagt nicht mehr, als das Raster hält", () => {
+  it("rundet nicht auf 100 % auf, solange etwas fehlt", () => {
+    for (const stufe of MATRIX_STUFEN) {
+      const m = matrixMasse(FAVORIT, stufe.key);
+      const b = beschreibeMatrix(FAVORIT, stufe.key);
+      if (m.abgedeckt < 0.9995) expect(b.prozent, stufe.key).toBeLessThan(100);
+    }
+  });
+
+  it("100 steht nur bei voller Abdeckung", () => {
+    for (const stufe of MATRIX_STUFEN) {
+      const m = matrixMasse(AUSGEGLICHEN, stufe.key);
+      const b = beschreibeMatrix(AUSGEGLICHEN, stufe.key);
+      if (b.prozent === 100) expect(m.abgedeckt, stufe.key).toBeGreaterThanOrEqual(0.9995);
+    }
+  });
+
+  // 🔴 Der Satz behauptete, es gebe für höhere Endstände keine Quote. Seit
+  // `randquoten.js` (22.08.2026) gibt es sie — und sie zahlt.
+  it("behauptet am Rasterrand nicht mehr, es gebe dort keine Quote", () => {
+    for (const snap of [FAVORIT, AUSGEGLICHEN]) {
+      for (const stufe of MATRIX_STUFEN) {
+        const b = beschreibeMatrix(snap, stufe.key);
+        expect(b.text).not.toContain("keine Quote");
+      }
+    }
   });
 });
