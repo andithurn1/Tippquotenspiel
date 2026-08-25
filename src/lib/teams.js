@@ -158,13 +158,39 @@ export function pruefeAufteilung(teams = [], mitglieder = [], rules) {
 // ── Die Teamrangliste ───────────────────────────────────────
 // Gebaut AUS der fertigen Einzelrangliste — kein zweiter Scoring-Weg, sonst
 // liefen Einzel- und Teamwertung irgendwann auseinander.
-//  `board`: [{ userId, name, total, tips, gewertet }] (aus scoreLeaderboard)
-//  `teams`: [{ id, name, mitglieder: [userId] }]
-// Für `bester` reicht das Board nicht — dort zählt der beste Tipp JE SPIEL,
-// dafür braucht es die Einzeltipps (siehe `teamLeaderboardBester`).
-export function teamLeaderboard(board = [], teams = [], rules) {
+//  `board`:       [{ userId, name, total, tips, gewertet }] (aus scoreLeaderboard)
+//  `teams`:       [{ id, name, mitglieder: [userId] }]
+//  `spielPunkte`: [{ userId, matchId, wert }] (aus `punkteJeSpiel`, engine.js)
+//                 — NUR für die Wertungsart „bester" nötig, siehe unten.
+//
+// 🔴 Der Fund vom 25.08.2026: `bester` fiel hier still auf `summe` durch.
+// Die Wertungsart stand in `WERTUNGEN` zur Auswahl, ihr Hinweistext versprach
+// „je Spiel zählt das beste Ergebnis im Team" — gerechnet wurde die Summe
+// aller Mitglieder. Der Kommentar an dieser Stelle verwies auf ein
+// `teamLeaderboardBester`, das nie geschrieben wurde. Ein falsches Ergebnis
+// ist teurer als ein fehlendes: eine Wertungsart, die etwas anderes tut, als
+// ihr eigener Hinweistext sagt, fällt niemandem auf.
+//
+// ⚠️ `bester` braucht `spielPunkte`, weil „je Spiel" im Board nicht mehr
+// steht — dort ist längst aufsummiert. Fehlt die Liste, wird NICHT still
+// weitergerechnet: die Zeile trägt dann `unvollstaendig: true`, damit eine
+// Oberfläche das sagen kann, statt eine falsche Zahl zu zeigen.
+export function teamLeaderboard(board = [], teams = [], rules, spielPunkte = null) {
   const cfg = sanitizeTeams(rules?.teams);
   const proUser = new Map(board.map((b) => [b.userId, b]));
+
+  // Für „bester": je Spiel den besten Wert im Team. Einmal vorsortiert,
+  // damit die Schleife unten nicht je Team über alle Punkte läuft.
+  const proUserUndSpiel = new Map();
+  for (const sp of Array.isArray(spielPunkte) ? spielPunkte : []) {
+    if (!sp || sp.matchId == null) continue;
+    proUserUndSpiel.set(`${sp.userId}#${sp.matchId}`, sp.wert ?? 0);
+  }
+  const spiele = [...new Set(
+    (Array.isArray(spielPunkte) ? spielPunkte : [])
+      .filter((sp) => sp && sp.matchId != null)
+      .map((sp) => sp.matchId),
+  )];
 
   const zeilen = teams.map((t) => {
     const drin = (t.mitglieder || []).map((m) => proUser.get(m)).filter(Boolean);
@@ -174,11 +200,29 @@ export function teamLeaderboard(board = [], teams = [], rules) {
     // schon getippt haben — sonst verbesserte ein untätiges Mitglied den
     // Schnitt seines Teams, indem es nichts tut.
     const groesse = Math.max(1, (t.mitglieder || []).length);
-    const total = cfg.wertung === "schnitt" ? +(summe / groesse).toFixed(1) : summe;
+
+    // „Bester": je Spiel zählt nur der beste Tipp des Teams. Wer im selben
+    // Spiel schlechter liegt, zählt gar nicht — deshalb lohnt es sich,
+    // verschieden zu tippen (genau das verspricht der Hinweistext).
+    let bester = 0;
+    for (const matchId of spiele) {
+      let max = null;
+      for (const m of t.mitglieder || []) {
+        const w = proUserUndSpiel.get(`${m}#${matchId}`);
+        if (w == null) continue;
+        if (max == null || w > max) max = w;
+      }
+      if (max != null) bester += max;
+    }
+    const unvollstaendig = cfg.wertung === "bester" && !spiele.length;
+
+    const total = cfg.wertung === "schnitt" ? +(summe / groesse).toFixed(1)
+      : cfg.wertung === "bester" ? +bester.toFixed(1)
+      : summe;
 
     return {
       teamId: t.id, name: t.name ?? String(t.id),
-      total, summe, groesse, tips,
+      total, summe, groesse, tips, unvollstaendig,
       mitglieder: drin
         .sort((a, b) => (b.total ?? 0) - (a.total ?? 0))
         .map((b) => ({ userId: b.userId, name: b.name, total: b.total ?? 0 })),

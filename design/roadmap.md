@@ -3,6 +3,72 @@
 Offene Feature-Ideen, grob nach Aufwand. Gebaut wird in einzelnen, testbaren
 Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 
+## 🔴🔴 DER MANNSCHAFTS-MODUS EXISTIERT NUR IN `teams.js` (25.08.2026)
+
+**Der größte Einzelfund aus `npm run tot` — und er ist kein Rechenfehler,
+sondern ein Modul ohne Anschluss.** `src/lib/teams.js` ist fertig gebaut,
+kommentiert und von `teams.test.js` abgesichert: `TEAM_LIMITS`, `WERTUNGEN`
+(Summe · Schnitt · Bester), `sanitizeTeams`, `pruefeAufteilung` (mit
+Korrekturvorschlägen), `teamLeaderboard`, `beschreibeTeams`. Sechs seiner
+acht Exporte standen in der `tot`-Liste als „nur Test".
+
+**GEMESSEN, nicht vermutet** — `sanitizeRules` mit einem gesetzten
+`teams`-Block gefüttert:
+
+```
+teams nach sanitizeRules: undefined
+teams in DEFAULT_RULES:   undefined
+```
+
+Der Block ist also nicht bloß unerreichbar, **er existiert im Regelwerk gar
+nicht**. Ein Admin, der ihn setzte, verlöre ihn beim Speichern — genau die
+Sorte „EINSTELLUNG VERWORFEN", vor der `npm run greift` warnt. Deshalb taucht
+`teams` auch in `npm run stufen` NICHT als Lücke auf: `stufen` zählt Felder
+des Regelwerks, und dieses Feld gibt es nicht.
+
+**Was alles fehlt, in der Reihenfolge, in der es gebaut werden müsste:**
+
+| Schicht | Stand |
+|---|---|
+| Wertung (`teams.js`) | ✅ fertig + getestet |
+| `DEFAULT_RULES.teams` + `sanitizeRules` | ⛔ fehlt ganz |
+| Store: wer ist in welcher Mannschaft | ⛔ fehlt ganz (keine Tabelle, keine Methode) |
+| Admin-Oberfläche (Aufteilung, Wertungsart) | ⛔ fehlt ganz |
+| Anzeige der Mannschafts-Rangliste | ⛔ fehlt ganz |
+| Wertungsart „Bester Tipp zählt" | ✅ **am 25.08.2026 nachgebaut** — sie fiel vorher still auf „Summe" durch |
+
+⚠️ **Die letzte Zeile war der verräterische Fund und ist erledigt.** Der
+Kommentar über `teamLeaderboard` verwies auf ein `teamLeaderboardBester` „für
+die Wertungsart Bester" — geschrieben wurde es nie, und `bester` fiel im Code
+still auf `summe` durch. Die Wertungsart stand also zur Auswahl, ihr
+Hinweistext versprach „je Spiel zählt das beste Ergebnis im Team", und
+gerechnet wurde die Summe aller Mitglieder.
+
+Jetzt nimmt `teamLeaderboard` ein viertes Argument `spielPunkte` (aus
+`punkteJeSpiel`, engine.js — dieselbe Quelle, die auch die Fremdjoker
+benutzen) und rechnet je Spiel den besten Wert des Teams. Fehlt die Liste,
+wird NICHT still weitergerechnet: die Zeile trägt `unvollstaendig: true`.
+Fünf Tests halten das fest, darunter der, der den Fehler benennt („ist NICHT
+dasselbe wie die Summe").
+
+🔴 **Warum das trotz Bau-Stopp richtig war:** eine Wertungsart, die etwas
+anderes tut als ihr eigener Hinweistext, ist ein Fehler in der MECHANIK — und
+Mechanik ist ausdrücklich erlaubt („Mechanik ja, Platzierung nein"). Ein
+falsches Ergebnis ist teurer als ein fehlendes; wäre der Modus später
+angeschlossen worden, hätte niemand nachgesehen, ob `bester` auch rechnet,
+was draufsteht.
+
+🔴 **NICHT JETZT GEBAUT — und das ist eine Regel, keine Bequemlichkeit.**
+Alles außer der ersten Zeile ist Platzierung, und dafür gilt Andis Ansage vom
+21.08.2026: erst die Masterdatei, dann wird eingebaut („Mechanik ja,
+Platzierung nein"). Wer den Regelblock jetzt in `DEFAULT_RULES` schiebt,
+macht außerdem `npm run stufen` rot und müsste die Lücke mit genau der
+Oberfläche schließen, die noch nicht platziert werden darf.
+
+**Wenn es drankommt, ist die Reihenfolge:** Regelblock ins Regelwerk
+(`DEFAULT_RULES` + `sanitizeRules`) → Store-Mitgliedschaft → Oberfläche →
+Rangliste. Die Wertung selbst ist fertig und braucht nichts mehr.
+
 ## 🆕 Zwischenabrechnung nach Spielende (Nutzer-Wunsch, 07.08.2026, gebaut)
 
 **Der Wunsch:** abgerechnet wird nach JEDEM einzelnen Spiel, zeitgesteuert; der

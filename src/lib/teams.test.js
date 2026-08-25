@@ -173,3 +173,61 @@ describe("Beschreibung", () => {
     expect(beschreibeTeams(AN())).toContain(WERTUNG.schnitt.label);
   });
 });
+
+// 🔴 Der Fund vom 25.08.2026: die Wertungsart "bester" fiel still auf "summe"
+// durch. Sie stand zur Auswahl, ihr Hinweistext versprach "je Spiel zählt das
+// beste Ergebnis im Team" — gerechnet wurde die Summe aller Mitglieder.
+describe("Wertungsart bester — je Spiel nur der beste Tipp", () => {
+  const TEAMS = [
+    { id: "t1", name: "Rot", mitglieder: ["a", "b"] },
+    { id: "t2", name: "Blau", mitglieder: ["c", "d"] },
+  ];
+  const BOARD = [
+    { userId: "a", name: "A", total: 100, tips: 2 },
+    { userId: "b", name: "B", total: 60, tips: 2 },
+    { userId: "c", name: "C", total: 80, tips: 2 },
+    { userId: "d", name: "D", total: 80, tips: 2 },
+  ];
+  // Rot:  m1 40/10 → 40 · m2 60/50 → 60  = 100
+  // Blau: m1 30/30 → 30 · m2 50/50 → 50  =  80
+  const SPIELPUNKTE = [
+    { userId: "a", matchId: "m1", wert: 40 }, { userId: "b", matchId: "m1", wert: 10 },
+    { userId: "a", matchId: "m2", wert: 60 }, { userId: "b", matchId: "m2", wert: 50 },
+    { userId: "c", matchId: "m1", wert: 30 }, { userId: "d", matchId: "m1", wert: 30 },
+    { userId: "c", matchId: "m2", wert: 50 }, { userId: "d", matchId: "m2", wert: 50 },
+  ];
+  const regeln = { teams: { enabled: true, wertung: "bester", minGroesse: 2 } };
+
+  it("zählt je Spiel nur den besten Wert des Teams", () => {
+    const [erst, zweit] = teamLeaderboard(BOARD, TEAMS, regeln, SPIELPUNKTE);
+    expect(erst.name).toBe("Rot");
+    expect(erst.total).toBe(100);
+    expect(zweit.total).toBe(80);
+  });
+
+  it("ist NICHT dasselbe wie die Summe — genau das war der Fehler", () => {
+    const [rot] = teamLeaderboard(BOARD, TEAMS, regeln, SPIELPUNKTE);
+    expect(rot.summe).toBe(160);      // 100 + 60
+    expect(rot.total).toBe(100);      // vorher stand hier 160
+  });
+
+  it("doppelt getippte Spiele bringen dem Team nichts extra", () => {
+    // Blau tippt zweimal identisch: 30/30 und 50/50 — zählt wie einer.
+    const [, blau] = teamLeaderboard(BOARD, TEAMS, regeln, SPIELPUNKTE);
+    expect(blau.total).toBe(80);
+    expect(blau.summe).toBe(160);
+  });
+
+  it("ohne Spielpunkte wird nicht still weitergerechnet, sondern markiert", () => {
+    const zeilen = teamLeaderboard(BOARD, TEAMS, regeln, null);
+    for (const z of zeilen) expect(z.unvollstaendig).toBe(true);
+  });
+
+  it("summe und schnitt brauchen die Spielpunkte nicht", () => {
+    const su = teamLeaderboard(BOARD, TEAMS, { teams: { enabled: true, wertung: "summe", minGroesse: 2 } });
+    expect(su[0].total).toBe(160);
+    expect(su[0].unvollstaendig).toBe(false);
+    const sc = teamLeaderboard(BOARD, TEAMS, { teams: { enabled: true, wertung: "schnitt", minGroesse: 2 } });
+    expect(sc[0].total).toBe(80);
+  });
+});
