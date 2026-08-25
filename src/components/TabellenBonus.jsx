@@ -3,7 +3,8 @@
 import { C, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import { Zahl } from "@/components/Eingaben";
-import { sanitizeTabellenBonus, beschreibeTabellenBonus } from "@/lib/tabellenBonus";
+import Feinheiten from "@/components/Feinheiten";
+import { sanitizeTabellenBonus, beschreibeTabellenBonus, DEFAULT_TABELLENBONUS } from "@/lib/tabellenBonus";
 
 // ============================================================
 //  TABELLEN-BONUS — Oberfläche (Profi-Ansicht)
@@ -56,6 +57,18 @@ function Wahl({ label, wert, optionen, onChange }) {
 
 export default function TabellenBonus({ rules, onChange }) {
   const cfg = sanitizeTabellenBonus(rules?.tabellenBonus);
+
+  // Was hinter der Feinheiten-Klappe von der Vorgabe abweicht. ⚠️ Gegen
+  // `DEFAULT_TABELLENBONUS` geprüft und nicht gegen einen hier notierten Wert:
+  // eine zweite Fassung der Vorgabe wäre die zweite Wahrheit, und sie ginge
+  // beim nächsten Vorgaben-Wechsel lautlos auseinander.
+  const D = DEFAULT_TABELLENBONUS;
+  const feinAbweichend = [
+    cfg.nurWennRichtig !== D.nurWennRichtig ? "Geltung" : null,
+    cfg.richtung !== D.richtung ? "Richtung" : null,
+    cfg.fallback !== D.fallback ? "Ersatzweg" : null,
+    cfg.fallback === "quote" && cfg.fallbackQuote !== D.fallbackQuote ? "Schwelle" : null,
+  ].filter(Boolean);
   const setze = (teil) => onChange({ tabellenBonus: { ...cfg, ...teil } });
   const punkte = cfg.bezug === "punkte";
 
@@ -105,56 +118,76 @@ export default function TabellenBonus({ rules, onChange }) {
           />
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+            {/* 🔴 `wert` + `limits`, NICHT `value` + `min`/`max` (24.08.2026).
+                Der ganze Block hat beim Einschalten die Seite zerlegt —
+                „Cannot read properties of undefined (reading 'min')", weil
+                `Zahl` aus `Eingaben.jsx` ein `limits`-Objekt erwartet.
+                ⚠️ Kein Test und kein Lint konnte das sehen: `no-undef` prüft
+                Variablen, keine Props, und für Screens gibt es keine Tests.
+                Gefunden erst beim Durchklicken im Browser. */}
             <Zahl
               label={punkte ? "ab Punkten Abstand" : "ab Plätzen Abstand"}
-              value={cfg.abAbstand} min={punkte ? 3 : 1} max={punkte ? 60 : 25}
+              wert={cfg.abAbstand} limits={{ min: punkte ? 3 : 1, max: punkte ? 60 : 25, step: 1 }}
               onChange={(v) => setze({ abAbstand: v })}
             />
-            <Zahl label="ab Spieltag" value={cfg.abSpieltag} min={1} max={20}
+            <Zahl label="ab Spieltag" wert={cfg.abSpieltag} limits={{ min: 1, max: 20, step: 1 }}
               onChange={(v) => setze({ abSpieltag: v })} />
-            <Zahl label="Aufschlag %" value={Math.round(cfg.aufschlag * 100)} min={0} max={150}
+            <Zahl label="Aufschlag %" wert={Math.round(cfg.aufschlag * 100)} limits={{ min: 0, max: 150, step: 1 }}
               onChange={(v) => setze({ aufschlag: v / 100 })} />
           </div>
 
-          <Wahl
-            label="Wann er zählt"
-            wert={cfg.nurWennRichtig ? "richtig" : "immer"}
-            onChange={(k) => setze({ nurWennRichtig: k === "richtig" })}
-            optionen={[
-              { key: "richtig", label: "nur bei richtigem Tipp", hint: "Belohnung für eingelösten Mut" },
-              { key: "immer", label: "als Spielgewicht", hint: "das Spiel zählt generell mehr" },
-            ]}
-          />
+          {/* 🔴 Andis Detail-Regel (SA6, 24.08.2026): oben steht, was fast
+              jeder verstellt — WORAN gemessen wird und wie stark. Was darunter
+              liegt, beantwortet Fragen, die sich erst beim zweiten Hinsehen
+              stellen: ob der Bonus auch ohne richtigen Tipp zählt, ob der
+              Favorit gedämpft wird, was vor dem ersten Tabellenstand gilt.
+              ⚠️ Die Zusammenfassung sagt, ob dahinter etwas VERSTELLT ist —
+              sonst sieht eine wirksame Sonderregel aus wie eine unbenutzte. */}
+          <Feinheiten
+            titel="Feinheiten: Geltung, Richtung, Ersatzweg"
+            zusammenfassung={feinAbweichend.length ? feinAbweichend.join(" · ") : "Vorgabe"}
+            abweichend={feinAbweichend.length > 0}
+          >
+            <Wahl
+              label="Wann er zählt"
+              wert={cfg.nurWennRichtig ? "richtig" : "immer"}
+              onChange={(k) => setze({ nurWennRichtig: k === "richtig" })}
+              optionen={[
+                { key: "richtig", label: "nur bei richtigem Tipp", hint: "Belohnung für eingelösten Mut" },
+                { key: "immer", label: "als Spielgewicht", hint: "das Spiel zählt generell mehr" },
+              ]}
+            />
 
-          <Wahl
-            label="Richtung"
-            wert={cfg.richtung}
-            onChange={(richtung) => setze({ richtung })}
-            optionen={[
-              { key: "nurAussenseiter", label: "nur Außenseiter", hint: "kein Abzug für den Favoriten" },
-              { key: "auchFavorit", label: "auch Favoriten-Dämpfer", hint: "erwartbare Siege zählen weniger" },
-            ]}
-          />
+            <Wahl
+              label="Richtung"
+              wert={cfg.richtung}
+              onChange={(richtung) => setze({ richtung })}
+              optionen={[
+                { key: "nurAussenseiter", label: "nur Außenseiter", hint: "kein Abzug für den Favoriten" },
+                { key: "auchFavorit", label: "auch Favoriten-Dämpfer", hint: "erwartbare Siege zählen weniger" },
+              ]}
+            />
 
-          <Wahl
-            label="Solange keine Tabelle vorliegt"
-            wert={cfg.fallback}
-            onChange={(fallback) => setze({ fallback })}
-            optionen={[
-              { key: "quote", label: "Quote benutzen", hint: "greift ab dem 1. Spieltag" },
-              { key: "aus", label: "gar nicht", hint: "greift erst mit der Tabelle" },
-            ]}
-          />
+            <Wahl
+              label="Solange keine Tabelle vorliegt"
+              wert={cfg.fallback}
+              onChange={(fallback) => setze({ fallback })}
+              optionen={[
+                { key: "quote", label: "Quote benutzen", hint: "greift ab dem 1. Spieltag" },
+                { key: "aus", label: "gar nicht", hint: "greift erst mit der Tabelle" },
+              ]}
+            />
 
-          {/* Nur sichtbar, wenn der Ersatzweg überhaupt benutzt wird — ein
-              Regler, der gerade nichts tut, ist schlimmer als keiner. */}
-          {cfg.fallback === "quote" && (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-              <Zahl label="Ersatzweg: ab Quotenverhältnis" value={cfg.fallbackQuote}
-                min={1.2} max={20} step={0.1}
-                onChange={(v) => setze({ fallbackQuote: v })} />
-            </div>
-          )}
+            {/* Nur sichtbar, wenn der Ersatzweg überhaupt benutzt wird — ein
+                Regler, der gerade nichts tut, ist schlimmer als keiner. */}
+            {cfg.fallback === "quote" && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                <Zahl label="Ersatzweg: ab Quotenverhältnis" wert={cfg.fallbackQuote}
+                  limits={{ min: 1.2, max: 20, step: 0.1 }}
+                  onChange={(v) => setze({ fallbackQuote: v })} />
+              </div>
+            )}
+          </Feinheiten>
           <p style={{ fontSize: "0.6875rem", color: C.akzent, margin: "6px 0 0", lineHeight: 1.45 }}>
             Die Tabelle rechnen wir aus den eigenen Ergebnissen und frieren sie beim Öffnen
             des Spieltags ein — wer Freitag tippt, sieht dieselben Plätze wie wer Sonntag

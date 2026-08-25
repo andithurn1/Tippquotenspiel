@@ -167,8 +167,32 @@ export function GrosseZeile({ icon, titel, unter, wert, offen, onClick, children
 //  pauschal für alle Aufrufstellen beantworten lässt. Jede Aufrufstelle
 //  entscheidet das einzeln über `leerErlaubt`.
 // ============================================================
+// 🔴 **Zwei Nachbarn in DIESER Datei, zwei gegensätzliche Prop-Namen** — und
+// genau daraus sind am 24.08.2026 zwei abstürzende Screens entstanden:
+//
+//     <Slider value={…} min={…} max={…} step={…} />     ← lose Grenzen
+//     <Zahl   wert={…}  limits={{ min, max, step }} />  ← Grenzen im Objekt
+//
+// Wer eben einen `Slider` geschrieben hat und dann eine `Zahl` daneben setzt,
+// schreibt `value`/`min`/`max` weiter. `limits` war dann `undefined`, und
+// `limits.min` zerlegte die ganze Seite: „Außenseiter nach Tabelle"
+// einschalten → weißer Screen; eine Abstiegs-Zone anlegen → dasselbe.
+//
+// ⚠️ Weder Test noch Lint konnten das sehen: `no-undef` prüft Variablen, keine
+// Props, und für Screens gibt es keine Tests. Gefunden erst beim Durchklicken.
+//
+// **Zwei Vorkehrungen statt einer:**
+//   1. `limits = {}` hier — ein falscher Aufruf verliert die Grenzen, aber
+//      zerlegt nicht mehr den Screen. Ein Eingabefeld ohne Maximum ist ein
+//      Schönheitsfehler, eine weiße Seite ist ein Ausfall.
+//   2. `eingaben.test.js` hält die richtige Form fest, damit Vorkehrung 1
+//      nicht zur Ausrede wird, den Fehler stehenzulassen.
+//
+// ⚠️ Die Namen NICHT vereinheitlicht: das wären ~40 Aufrufstellen in einem
+// Zug, mitten in laufender Arbeit an denselben Dateien. Steht als Befund in
+// `design/roadmap.md`.
 export function Zahl({
-  label, wert, limits, onChange,
+  label, wert, limits = {}, onChange,
   leerErlaubt = false, leerText = "keine", breite = 130, marginTop = 0,
 }) {
   return (

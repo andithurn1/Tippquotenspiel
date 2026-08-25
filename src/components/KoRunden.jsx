@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { C, MONO, RUND } from "@/lib/theme";
 import { PHASEN, wettbewerbVon, wettbewerbLabel, phaseVon } from "@/lib/wettbewerbe";
-import { TAPZIEL } from "@/lib/tapziel";
 import { filterSpiele } from "@/lib/spielauswahl";
+import Feinheiten from "@/components/Feinheiten";
 
 // ============================================================
 //  K.-O.-RUNDEN je Wettbewerb — „ab welcher Runde wird getippt?"
@@ -211,46 +211,37 @@ export default function KoRunden({ spiele, alle = [], onChange }) {
                 ))}
               </div>
 
-              {/* 🔴 Andis Regel: gängigstes oben, Feinheiten hinter einem Klick. */}
-              <button onClick={() => setDetailOffen(offen ? null : w)} style={{
-                marginTop: 6, cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-                background: "transparent", border: "none", padding: 0,
-                fontSize: "0.8125rem", color: C.sky, ...TAPZIEL,
-              }}>
-                {offen ? "▾" : "▸"} Nur wenn bestimmte Vereine dabei sind
-                {gewaehlteVereine.length > 0 && (
-                  <span style={{
-                    fontFamily: MONO, fontSize: "0.6875rem", marginLeft: 6,
-                    color: gewaehlteVereine.length >= 2 ? C.muted : C.coral,
-                  }}>
-                    {/* ⚠️ Bei genau einem Verein steht dort NICHT „1 gewählt",
-                        sondern was fehlt — sonst sieht eine Einstellung, die
-                        noch nicht greift, aus wie eine, die greift. */}
-                    {gewaehlteVereine.length >= 2
-                      ? `${gewaehlteVereine.length} gewählt`
-                      : "noch einer fehlt"}
-                  </span>
-                )}
-              </button>
-
-              {offen && (
-                <div style={{
-                  marginTop: 6, background: C.ink, border: `1px solid ${C.line}`,
-                  borderRadius: RUND.karte, padding: "10px 11px",
-                }}>
-                  <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
-                    Mindestens 2 Vereine — die Runde zählt dann nur, wenn einer von
-                    ihnen beteiligt ist. Bei Pokalen ohne Auslosung ist die Zahl
-                    darüber deshalb eine Schätzung.
-                  </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                    {[...(vereineJe.get(w) ?? [])].sort().map((v) => (
-                      <Stufe key={v} an={gewaehlteVereine.includes(v)} label={v}
-                        onClick={() => setzeVerein(w, v)} />
-                    ))}
-                  </div>
+              {/* 🔴 Andis Regel: gängigstes oben, Feinheiten hinter einem Klick.
+                  Seit dem 24.08.2026 über das GEMEINSAME Bauteil — vorher stand
+                  hier eine eigene Aufklapp-Mechanik, und genau daraus entsteht
+                  der Wildwuchs, den `npm run detail` jetzt misst. */}
+              <Feinheiten
+                titel="Nur wenn bestimmte Vereine dabei sind"
+                // Gesteuert, damit immer nur EINE Vereinsliste offen ist —
+                // Begründung an `detailOffen` oben.
+                offen={offen}
+                onUmschalten={(auf) => setDetailOffen(auf ? w : null)}
+                // ⚠️ Bei genau einem Verein steht dort NICHT „1 gewählt",
+                // sondern was fehlt — sonst sieht eine Einstellung, die noch
+                // nicht greift, aus wie eine, die greift.
+                zusammenfassung={gewaehlteVereine.length
+                  ? (gewaehlteVereine.length >= 2 ? `${gewaehlteVereine.length} gewählt` : "noch einer fehlt")
+                  : null}
+                abweichend={gewaehlteVereine.length >= 2}
+                unvollstaendig={gewaehlteVereine.length === 1}
+              >
+                <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+                  Mindestens 2 Vereine — die Runde zählt dann nur, wenn einer von
+                  ihnen beteiligt ist. Bei Pokalen ohne Auslosung ist die Zahl
+                  darüber deshalb eine Schätzung.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {[...(vereineJe.get(w) ?? [])].sort().map((v) => (
+                    <Stufe key={v} an={gewaehlteVereine.includes(v)} label={v}
+                      onClick={() => setzeVerein(w, v)} />
+                  ))}
                 </div>
-              )}
+              </Feinheiten>
             </div>
           );
         })}

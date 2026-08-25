@@ -74,6 +74,99 @@ nicht dasselbe sind.
 
 ---
 
+## 🔴 ZWEI SCREENS STÜRZTEN AB — `Zahl` und `Slider` widersprechen sich (25.08.2026)
+
+**Gefunden beim Durchklicken, nicht von einem Test.** Zwei Stellen der
+Spielerstellung zerlegten die Seite, sobald man sie benutzte:
+
+| Wo | Was man tut | Was passierte |
+|---|---|---|
+| Modifikatoren → „Außenseiter nach Tabelle" | einschalten | weißer Screen |
+| Wettbewerbe → Sonderregeln → Tabellenzone | eine Zone anlegen | derselbe |
+
+Beide Male dieselbe Meldung: `Cannot read properties of undefined (reading 'min')`.
+
+🔴 **Die Ursache ist keine Schlamperei, sondern eine Falle im eigenen Haus.**
+`Zahl` und `Slider` stehen in DERSELBEN Datei (`Eingaben.jsx`) und benutzen
+**gegensätzliche Prop-Namen**:
+
+```
+<Slider value={…} min={…} max={…} step={…} />     ← lose Grenzen
+<Zahl   wert={…}  limits={{ min, max, step }} />  ← Grenzen im Objekt
+```
+
+Wer eben einen `Slider` geschrieben hat und daneben eine `Zahl` setzt,
+schreibt `value`/`min`/`max` weiter. `limits` ist dann `undefined`, und
+`limits.min` reißt den Render mit.
+
+⚠️ **Weder Test noch Lint konnten das sehen.** `no-undef` prüft Variablen,
+keine Props; für Screens gibt es keine Render-Tests. `npm run build` war
+grün, alle Tests waren grün, und der Screen war trotzdem weiß — genau der
+Fall, für den `npm run lint` einmal eingeführt wurde, nur eine Ebene tiefer.
+
+**Drei Dinge gemacht:**
+
+1. **Beide Stellen berichtigt** (`TabellenBonus.jsx`, `LigaSonderregeln.jsx`),
+   im Browser nachgeprüft: einschalten und Zone anlegen laufen ohne Fehler.
+2. **`Zahl` fällt nicht mehr um:** `limits = {}` als Vorgabe. Ein falscher
+   Aufruf verliert die Grenzen, aber zerlegt nicht den Screen — ein
+   Eingabefeld ohne Maximum ist ein Schönheitsfehler, eine weiße Seite ein
+   Ausfall.
+3. **`src/components/eingaben.test.js`** hält die richtige Form fest, damit
+   Punkt 2 nicht zur Ausrede wird. Alle 77 `<Zahl>`- und 27
+   `<Slider>`-Aufrufe werden geprüft.
+
+⏳ **Offen: die Namen vereinheitlichen.** Das wären ~104 Aufrufstellen in
+einem Zug, mitten in laufender Arbeit an denselben Dateien — deshalb jetzt
+der Test statt des Umbaus. **Wenn, dann `Zahl` auf `value`/`min`/`max`
+umstellen**, nicht umgekehrt: `Slider` ist häufiger und `min={…}` liest sich
+im JSX besser als ein Objektliteral.
+
+---
+
+## 🧩 Andis Detail-Regel bekommt ein Bauteil und eine Messung (25.08.2026)
+
+Seine Ansage vom 24.08. (SA6), ausdrücklich als Dauerregel: *„erstmal die
+gängigsten sachen einstellbar und mit einem Detailfenster sogar noch
+Feinheiten bzw. maximales Detail einstellbar, was du so bitte auch wirklich
+auf alle anderen Einstellbarkeiten anwendest."*
+
+**Nachgesehen statt angenommen:** die Regel war an mehreren Stellen befolgt —
+und **jede Stelle hatte ihre eigene Fassung gebaut**. Anderer Pfeil, andere
+Farbe, andere Schriftgröße, mal mit Zusammenfassung, mal ohne, mal mit
+`aria-expanded`, mal ohne. Genau der Verlauf, den die Eckenradien schon
+genommen haben (`rund.test.js`): niemand macht etwas falsch, jede Stelle ist
+für sich plausibel, und am Ende sind es acht Varianten.
+
+**Gebaut:** `src/components/Feinheiten.jsx` — ein Titel, eine
+Zusammenfassung, ein Klick. Von außen steuerbar, wenn ein Elternteil „immer
+nur eines offen" durchsetzen muss.
+
+⚠️ **`zusammenfassung` ist der wichtigste Teil:** eine zugeklappte Feinheit
+muss sagen, ob dahinter etwas VERSTELLT ist. Ohne das sieht eine wirksame
+Sonderregel aus wie eine unbenutzte — und ein Admin sucht später, warum
+seine Runde anders rechnet, als oben steht.
+
+⛔ **Kein `<details>`-Element** (öffnet ohne Übergang, kaum gestaltbar) und
+**kein Modal**: Andis Wort „Detailfenster" meint „mehr Tiefe hinter einem
+Klick". Ein Modal reißt den Bezug zur Einstellung ab, um die es geht.
+
+**Gemessen:** `npm run detail` — 85 Dateien, 52 sind keine Regel-Oberfläche,
+13 ausdrücklich begründet. Stand nach diesem Durchgang: **4 über das
+gemeinsame Bauteil** (`KoRunden`, `TabellenBonus`, `Zeitachse`, `Fremdjoker`),
+**0 mit eigener Mechanik**, **16 ohne zweite Ebene**.
+
+⚠️ Die 16 sind ein BEFUND, kein Fehler — dieselbe Haltung wie bei `greift`
+und `tot`. Sie sollen schrumpfen, nicht sofort leer sein. Für jede gilt:
+Feinheit ergänzen oder mit einem Satz in `OHNE_DETAIL` eintragen.
+
+⚠️ **Der Erkenner brauchte drei Anläufe**, und das gehört dazu: `onChange(`
+im Rumpf fand 34 Dateien (jedes Eingabefeld der App hat eins), `patch(` im
+Rumpf verlor die echten Regel-Bausteine (sie patchen nicht selbst, sie
+reichen nach oben). Tragfähig ist erst die SIGNATUR: `({ rules, onChange })`.
+
+---
+
 ## 🔔 Rückmeldung: die App sagte nie, dass etwas gespeichert ist (24.08.2026)
 
 **Andis Ansage:** „ich will wirklich das ganze dann in ne richtig professionell

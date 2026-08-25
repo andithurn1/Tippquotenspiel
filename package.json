@@ -15,6 +15,7 @@
     "greift": "vite-node scripts/greift-durchgang.mjs",
     "stufen": "vite-node scripts/stufen-durchgang.mjs",
     "tot": "vite-node scripts/tot-durchgang.mjs",
+    "detail": "node scripts/detail-durchgang.mjs",
     "sicht": "vite-node scripts/sicht-durchgang.mjs",
     "gleich": "vite-node scripts/gleich-durchgang.mjs",
     "einstellbar": "vite-node scripts/einstellbar-durchgang.mjs",

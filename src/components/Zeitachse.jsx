@@ -9,6 +9,7 @@ import {
 import { wettbewerbeIn, wettbewerbLabel } from "@/lib/wettbewerbe";
 import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
+import Feinheiten from "@/components/Feinheiten";
 
 // ── Zeitachse einstellen ────────────────────────────────────
 // Die Frage, die dieser Block beantwortet: was ist „Spieltag 5" in einer Runde
@@ -22,6 +23,13 @@ import { TAPZIEL } from "@/lib/tapziel";
 export default function Zeitachse({ zeitachse: cfg, onChange }) {
   const [matches, setMatches] = useState(null);
   const z = sanitizeZeitachse(cfg ?? DEFAULT_ZEITACHSE);
+
+  // Was hinter der Klappe von der Vorgabe abweicht — gegen
+  // `DEFAULT_ZEITACHSE` geprüft, nicht gegen hier notierte Werte.
+  const feinAbweichend = [
+    z.buendeln !== DEFAULT_ZEITACHSE.buendeln ? `${z.buendeln}er-Bündel` : null,
+    z.pause !== DEFAULT_ZEITACHSE.pause ? "Pause" : null,
+  ].filter(Boolean);
 
   useEffect(() => {
     let live = true;
@@ -93,33 +101,43 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
             Ohne Vorgabe nimmt die Runde die Liga, die zuerst anfängt. Spiele, die
             noch davor liegen, fallen in Spieltag 1 — sie gehen nie verloren.
           </div>
-          <Regler label="Zusammenfassen" wert={z.buendeln} limits={ZEITACHSE_LIMITS.buendeln}
-            einheit={z.buendeln === 1 ? "Spieltag des Taktgebers = 1 Runden-Spieltag" : "Spieltage des Taktgebers = 1 Runden-Spieltag"}
-            onChange={(v) => patch({ buendeln: v })} />
+          {/* 🔴 Andis Detail-Regel (SA6): oben bleibt, WER den Takt gibt — die
+              Frage, die jede Runde beantwortet. Bündeln und Pausen-Verhalten
+              stellt fast niemand um, sind aber genau dann wichtig, wenn eine
+              Runde über mehrere Ligen läuft. */}
+          <Feinheiten
+            titel="Feinheiten: Bündeln und Pausen"
+            zusammenfassung={feinAbweichend.length ? feinAbweichend.join(" · ") : "Vorgabe"}
+            abweichend={feinAbweichend.length > 0}
+          >
+            <Regler label="Zusammenfassen" wert={z.buendeln} limits={ZEITACHSE_LIMITS.buendeln}
+              einheit={z.buendeln === 1 ? "Spieltag des Taktgebers = 1 Runden-Spieltag" : "Spieltage des Taktgebers = 1 Runden-Spieltag"}
+              onChange={(v) => patch({ buendeln: v })} />
 
-          {/* Winterpause & Länderspielpause: der Taktgeber setzt aus, die
-              anderen Ligen spielen weiter. Ohne Antwort würde EIN Spieltag über
-              die ganze Pause laufen — und ein Joker darin wäre etwas völlig
-              anderes wert als in einer normalen Woche. */}
-          <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 10, marginBottom: 5 }}>
-            Wenn der Taktgeber pausiert
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {PAUSEN_MODI.map((m) => {
-              const an = z.pause === m.key;
-              return (
-                <button key={m.key} title={m.hint} onClick={() => patch({ pause: m.key })} style={{
-                  ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "7px 6px",
-                  borderRadius: RUND.karte, fontSize: "0.75rem", fontWeight: 700,
-                  background: an ? `${C.mint}22` : C.surface, color: an ? C.mint : C.muted,
-                  border: `1px solid ${an ? C.mint + "66" : C.line}`,
-                }}>{m.label}</button>
-              );
-            })}
-          </div>
-          <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
-            {PAUSEN_MODI.find((m) => m.key === z.pause)?.hint}
-          </div>
+            {/* Winterpause & Länderspielpause: der Taktgeber setzt aus, die
+                anderen Ligen spielen weiter. Ohne Antwort würde EIN Spieltag über
+                die ganze Pause laufen — und ein Joker darin wäre etwas völlig
+                anderes wert als in einer normalen Woche. */}
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 10, marginBottom: 5 }}>
+              Wenn der Taktgeber pausiert
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {PAUSEN_MODI.map((m) => {
+                const an = z.pause === m.key;
+                return (
+                  <button key={m.key} title={m.hint} onClick={() => patch({ pause: m.key })} style={{
+                    ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "7px 6px",
+                    borderRadius: RUND.karte, fontSize: "0.75rem", fontWeight: 700,
+                    background: an ? `${C.mint}22` : C.surface, color: an ? C.mint : C.muted,
+                    border: `1px solid ${an ? C.mint + "66" : C.line}`,
+                  }}>{m.label}</button>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 5, lineHeight: 1.45 }}>
+              {PAUSEN_MODI.find((m) => m.key === z.pause)?.hint}
+            </div>
+          </Feinheiten>
         </>
       ) : (
         <Regler label="Fensterlänge" wert={z.tage} limits={ZEITACHSE_LIMITS.tage}

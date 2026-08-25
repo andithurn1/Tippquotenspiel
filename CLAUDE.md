@@ -390,6 +390,8 @@ entstanden, den die beiden anderen nicht gesehen haben.
 | `npm run lint` | **Gibt es die Variable überhaupt?** Nur ZWEI Regeln: `no-undef` und `react-hooks/rules-of-hooks`. | Beim Umbau fiel `gestartet` weg und stand weiter im JSX — Build grün, 2019 Tests grün, Screen im Browser weiß |
 | `npm run einstellbar` | **Nimmt das Feld überhaupt einen anderen Wert an — und überlebt er das Teilen?** Geht JEDES Blatt des Regelwerks durch, nicht eine Auswahl. Kandidaten werden aus Presets, Charakteren, Regler-Stufen und der Schaufenster-Runde GEERNTET, nicht von Hand gepflegt. | Zwei Blöcke standen in `greift` Teil 3 jahrelang ohne Messfall, weil dessen Liste von Hand gepflegt ist |
 | `npm run tot` | **Ruft die gebaute Funktion überhaupt jemand auf?** Ein Export, den außerhalb seiner Datei und ihrer Tests niemand nennt. Sortiert nach Risiko: Funktionen in `rules.*`-Modulen zuerst. | An EINEM Tag sechs Mechaniken, die fertig, getestet und einstellbar waren — und niemand fragte sie |
+| `npm run schrift` | **Skaliert die Schrift mit der Geräte-Einstellung?** Verbietet die nackte px-Schriftgröße; die Leiter steht als `TEXT` in `theme.js`. | 1 210 Fundstellen in px, 0 in `rem` — auf iOS ein bekannter Ablehnungsgrund im App-Review |
+| `npm run detail` | **Gilt Andis Regel „gängigstes oben, Feinheiten hinter einem Klick" überall?** Zählt je Regel-Oberfläche, ob es eine zweite Ebene gibt — und ob sie über das gemeinsame `Feinheiten`-Bauteil läuft. | Die Regel WAR mehrfach befolgt, aber jede Stelle hatte ihre eigene Fassung gebaut — derselbe Verlauf wie bei den acht Eckenradien |
 
 🔴 **Der gemeinsame Nenner aller sechs Funde vom 06.08.:** ein grüner Test
 beweist, dass eine Funktion RICHTIG rechnet — nicht, dass sie jemand fragt.

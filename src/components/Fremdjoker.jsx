@@ -19,6 +19,7 @@ import { basisFuer, WIDERRUF } from "@/lib/jokerBasis";
 import { Zahl } from "@/components/Eingaben";
 import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
 import DuellJoker from "@/components/DuellJoker";
+import Feinheiten from "@/components/Feinheiten";
 
 // ── FREMDJOKER — das DACH über den vier Arten, die in einen FREMDEN Tipp
 //    greifen: Block · Klau · Trittbrettfahrer · Gegenwette ─────
@@ -109,6 +110,11 @@ export default function Fremdjoker({ rules, onChange }) {
   };
 
   const arten = aktiveArten(rules);
+  // Welche Arten eine EIGENE Sperrfrist tragen — für die Zusammenfassung an
+  // der Klappe. ⚠️ `undefined` heißt „folgt dem Standard": nur ein gesetzter
+  // Wert zählt als Abweichung, sonst meldete die Klappe eine Sonderregel, wo
+  // gar keine ist.
+  const eigeneSperren = arten.filter((k) => karte[k]?.spieltage !== undefined);
   const an = familieAn(rules);
   const hinweis = zweiPhasenHinweis(rules);
   const streit = konflikte(rules);
@@ -308,21 +314,20 @@ export default function Fremdjoker({ rules, onChange }) {
                 breite={150} onChange={(v) => setzeSperre(null, { spieltage: v })} />
             </div>
 
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-              {knopf(tiefer === "arten", "Je Fremdjoker einzeln…",
-                () => setTiefer(tiefer === "arten" ? null : "arten"), "tf-arten",
-                "Eine eigene Sperrfrist je Art — der Block darf strenger sein als der Trittbrettfahrer.")}
-              {knopf(tiefer === "verhalten", "Wie die Sperre wirkt…",
-                () => setTiefer(tiefer === "verhalten" ? null : "verhalten"), "tf-verh",
-                "Festes Verbot, oder kein Verbot und dafür ein wachsender Cooldown.")}
-            </div>
-
-            {/* ── Ebene 2: je Fremdjoker eine eigene Zahl ── */}
-            {tiefer === "arten" && (
-              <div style={{
-                marginTop: 8, paddingLeft: 10, borderLeft: `1px solid ${C.line}`,
-                display: "flex", flexDirection: "column", gap: 8,
-              }}>
+            {/* 🔴 Seit dem 24.08.2026 über das GEMEINSAME Bauteil (`Feinheiten`).
+                Vorher waren es zwei selbstgebaute Knöpfe mit eigenem Zustand —
+                dieselbe Sache, aber in einer eigenen Fassung, und genau daraus
+                entsteht der Wildwuchs, den `npm run detail` jetzt misst.
+                `offen`/`onUmschalten` erhalten das gewollte Verhalten: immer
+                nur EINE der beiden Ebenen offen. */}
+            <Feinheiten
+              titel="Je Fremdjoker einzeln"
+              zusammenfassung={eigeneSperren.length ? `${eigeneSperren.length} abweichend` : null}
+              abweichend={eigeneSperren.length > 0}
+              offen={tiefer === "arten"}
+              onUmschalten={(auf) => setTiefer(auf ? "arten" : null)}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ fontSize: "0.6875rem", color: C.muted, lineHeight: 1.45 }}>
                   Leer heißt: diese Art folgt der Zahl oben. Gespeichert wird nur, was abweicht.
                 </div>
@@ -341,17 +346,21 @@ export default function Fremdjoker({ rules, onChange }) {
                   );
                 })}
               </div>
-            )}
+            </Feinheiten>
 
             {/* ── Ebene 3: wie die Sperre sich VERHÄLT ──
                 🔴 Genau Andis Beispiel: „es gibt nicht das Verbot, das doppelt
                 hintereinander einzusetzen, aber der Cooldown verändert sich
                 dadurch eben." Kein eigenes Modus-Feld — der Aufschlag SAGT es
                 schon: 0 heißt fest, alles darüber heißt wachsend. */}
-            {tiefer === "verhalten" && (
-              <div style={{
-                marginTop: 8, paddingLeft: 10, borderLeft: `1px solid ${C.line}`,
-              }}>
+            <Feinheiten
+              titel="Wie die Sperre wirkt"
+              zusammenfassung={karte.standard.aufschlag > 0 ? "wachsend" : "festes Verbot"}
+              abweichend={karte.standard.aufschlag > 0}
+              offen={tiefer === "verhalten"}
+              onUmschalten={(auf) => setTiefer(auf ? "verhalten" : null)}
+            >
+              <div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {knopf(karte.standard.aufschlag === 0, "Festes Verbot",
                     () => setzeSperre(null, { aufschlag: 0 }), "vh-fest",
@@ -372,7 +381,7 @@ export default function Fremdjoker({ rules, onChange }) {
                   {verlaufText(sperreFuer(null, rules?.eingriffe))}
                 </div>
               </div>
-            )}
+            </Feinheiten>
           </Block>
 
           {/* ── 7b) JK12: das ausgeloste Ziel ──

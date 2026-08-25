@@ -126,6 +126,67 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-25 (XVII) · 🔴 **Zwei Screens stürzten ab** — plus ein Bauteil für Andis Detail-Regel
+
+🔴 **Wenn du an einem Screen mit Eingabefeldern arbeitest, lies das hier zuerst.**
+
+`Zahl` und `Slider` stehen in DERSELBEN Datei (`Eingaben.jsx`) und benutzen
+**gegensätzliche Prop-Namen**:
+
+```
+<Slider value={…} min={…} max={…} step={…} />     ← lose Grenzen
+<Zahl   wert={…}  limits={{ min, max, step }} />  ← Grenzen im Objekt
+```
+
+Wer eben einen `Slider` geschrieben hat und daneben eine `Zahl` setzt, schreibt
+`value`/`min`/`max` weiter. `limits` ist dann `undefined`, `limits.min` reißt
+den Render mit — **weißer Screen**. Zwei Stellen hat es erwischt:
+„Außenseiter nach Tabelle" einschalten, und in den Liga-Sonderregeln eine
+Tabellenzone anlegen.
+
+⚠️ **Build grün, alle Tests grün, Lint grün.** `no-undef` prüft Variablen,
+keine Props; für Screens gibt es keine Render-Tests. Gefunden erst beim
+Durchklicken.
+
+Berichtigt, `Zahl` fällt mit `limits = {}` nicht mehr um, und
+**`src/components/eingaben.test.js`** prüft jetzt alle 77 `<Zahl>`- und
+27 `<Slider>`-Aufrufe.
+
+⏳ Offen und in `design/roadmap.md` notiert: die Namen vereinheitlichen. Wenn,
+dann `Zahl` auf `value`/`min`/`max` umstellen — nicht umgekehrt.
+
+---
+
+🧩 **Andis Detail-Regel (SA6) hat jetzt ein Bauteil:**
+`src/components/Feinheiten.jsx`.
+
+**Bitte kein eigenes Aufklappen mehr bauen** — genau daraus ist der Wildwuchs
+entstanden, den `npm run detail` misst. Anwendung:
+
+```jsx
+<Feinheiten titel="…" zusammenfassung={abweichend ? "…" : "Vorgabe"} abweichend={…}>
+  …die selteneren Einstellungen…
+</Feinheiten>
+```
+
+`offen` + `onUmschalten` machen es steuerbar, wenn immer nur EINES offen sein
+soll (so macht es `KoRunden`).
+
+**Stand:** 4 über das Bauteil · 0 mit eigener Mechanik · 16 ohne zweite Ebene.
+Die 16 sind ein Befund, kein Fehler.
+
+---
+
+**Zwei neue Abnahmen in `CLAUDE.md` eingetragen:** `npm run schrift`
+(nackte px-Schriftgrößen) und `npm run detail`.
+
+**Sonst in diesem Durchgang:** Seitenübergänge über `src/app/template.js`
+(nicht `layout.js` — ein Layout bleibt beim Navigieren stehen), Leerzustände
+auf einer frischen Runde durchgemessen (alle in Ordnung bis auf die
+Abrechnung, die ein Demo-Beispiel als echten Tipp ausgab — jetzt gekennzeichnet),
+und drei geteilte Regelwerke im Mock geseedet, damit „beliebteste Auswahl"
+im Demo überhaupt sichtbar ist.
+
 ### 2026-08-24 (XVI) · **Eine neue SCHICHT: Rückmeldung** — plus `listPresets` und drei App-Befunde erledigt
 
 ⚠️ **Für dich relevant, wenn du irgendwo etwas speicherst:** ab jetzt gibt es

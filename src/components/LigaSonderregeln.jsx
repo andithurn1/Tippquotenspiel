@@ -210,11 +210,16 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
           {zonen.map((z, i) => (
             <div key={`${z.von}-${z.bis}-${i}`}
               style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 8 }}>
-              <Zahl label="Platz ab" value={z.von}
-                min={AUSWAHL_LIMITS.platz.min} max={AUSWAHL_LIMITS.platz.max}
+              {/* 🔴 `wert` + `limits` (24.08.2026). Mit `value`/`min`/`max`
+                  zerlegte die Zone die Seite, sobald jemand eine anlegte —
+                  `Zahl` aus `Eingaben.jsx` liest `limits.min`. Derselbe Fehler
+                  stand in `TabellenBonus`; beide gefunden beim Durchklicken,
+                  von keinem Test und keinem Lint. */}
+              <Zahl label="Platz ab" wert={z.von}
+                limits={AUSWAHL_LIMITS.platz}
                 onChange={(v) => setzeZonen(zonen.map((alt, k) => (k === i ? { ...alt, von: v } : alt)))} />
-              <Zahl label="bis Platz" value={z.bis}
-                min={AUSWAHL_LIMITS.platz.min} max={AUSWAHL_LIMITS.platz.max}
+              <Zahl label="bis Platz" wert={z.bis}
+                limits={AUSWAHL_LIMITS.platz}
                 onChange={(v) => setzeZonen(zonen.map((alt, k) => (k === i ? { ...alt, bis: v } : alt)))} />
               <button
                 type="button"
@@ -243,8 +248,8 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
           </button>
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
-            <Zahl label="ab Spieltag" value={ab?.spieltagVon ?? ABSTIEGSKAMPF.abSpieltag}
-              min={AUSWAHL_LIMITS.spieltag.min} max={AUSWAHL_LIMITS.spieltag.max}
+            <Zahl label="ab Spieltag" wert={ab?.spieltagVon ?? ABSTIEGSKAMPF.abSpieltag}
+              limits={AUSWAHL_LIMITS.spieltag}
               onChange={(v) => setzeAb({ spieltagVon: v })} />
           </div>
 
