@@ -339,7 +339,7 @@ Nutzungsminuten ne 20-Sek-Werbung schalten — wie bringen wir des noch rein?"*
 | Nr | Ansage | Stand | Beleg / was fehlt |
 |---|---|---|---|
 | O1 | Tailwind: „ich denke wir sollten dennoch zum professionellen tool rüberwechseln“ | ⏳ | Recherche fehlt: Tailwind v4 mit Next 15.3, und ob die Fanfarben zur Laufzeit dynamisch bleiben |
-| O2 | Eigener Mailversand (Brevo + Domain) | 👤 | einziger echter Blocker, bevor Mitspieler dazukommen |
+| O2 | Eigener Mailversand (Brevo + Domain) | 🔨 **fast durch** | ✅ **Erledigt (Andi, 25.08.2026):** Brevo-Konto steht · Absender `QuotenTippspiel <andi.thurn1@gmail.com>` **verifiziert** · Custom SMTP in Supabase eingetragen (`smtp-relay.brevo.com:587`) · Rate-Limit auf **100/Stunde**. ⏳ **Was zum ✅ noch fehlt, und nur das:** EINE Zustellung an eine Adresse, die NICHT Andi gehört. Bis dahin ist es unbewiesen — der eingebaute Versand ließ genau das nicht zu („Email address not authorized“), und deshalb ist dieser Test der ganze Punkt der Übung. ⚠️ **Zwei Warnungen bei Brevo bleiben stehen und sind echt:** DKIM „Standard“ (signiert wird mit Brevos Domain) und DMARC „Freemail-Domain wird nicht empfohlen“. Für den Hinrunden-Test tragbar, ein Teil der Post landet im Spam. Beide verschwinden erst mit **eigener Domain** — die Entscheidung dafür steht seit 09.08.2026 |
 | O3 | Echte Spielpläne live schalten (`seed-matches-pl/pd/sa.sql`) | 👤 | — |
 
 ---
