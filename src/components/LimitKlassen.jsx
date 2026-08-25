@@ -10,6 +10,7 @@ import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { EREIGNIS_TYPEN } from "@/lib/ereignisse";
 import { Zahl } from "@/components/Eingaben";
 import { TAPZIEL } from "@/lib/tapziel";
+import Feinheiten from "@/components/Feinheiten";
 
 const SPIELTAGE = 34;
 
@@ -198,6 +199,18 @@ function KlasseZeile({
     ? klasse.aktivierung : { typ: "immer" };
   const beschreibung = beschreibeKlasse(klasse, SPIELTAGE);
 
+  // Was hinter der Klappe von der Vorgabe abweicht. ⚠️ Die Vorgaben stehen
+  // hier als Rückfall („saison", „immer") an genau denselben zwei Stellen wie
+  // oben im Zugriff — eine dritte Fassung wäre die, die auseinanderläuft.
+  const zeitraum = klasse.proZeitraum ?? "saison";
+  const teile = [
+    zeitraum !== "saison" ? PRO_ZEITRAUM.find((p) => p.key === zeitraum)?.label ?? zeitraum : null,
+    aktivierung.typ !== "immer"
+      ? AKTIVIERUNG_TYPEN.find((t) => t.key === aktivierung.typ)?.label ?? aktivierung.typ : null,
+  ].filter(Boolean);
+  const feinAbweichend = teile.length > 0;
+  const feinText = feinAbweichend ? teile.join(" · ") : "ganze Saison, immer";
+
   return (
     <div style={{
       background: C.surface, border: `1px solid ${verworfenGrund ? C.coral + "66" : C.line}`,
@@ -251,6 +264,16 @@ function KlasseZeile({
           onChange={(v) => onPatch({ max: v })} />
       </div>
 
+      {/* 🔴 Andis Detail-Regel (SA6): oben steht, WORAUF die Klasse zielt und
+          WIE VIEL sie erlaubt — die zwei Angaben, ohne die eine Klasse gar
+          nichts bedeutet. Zeitraum und Aktivierung beantworten „ab wann und
+          wie lange": mächtig, wenn man sie braucht, und für die meisten
+          Klassen genügt die Vorgabe. */}
+      <Feinheiten
+        titel="Feinheiten: Zeitraum und Aktivierung"
+        zusammenfassung={feinText}
+        abweichend={feinAbweichend}
+      >
       {/* Zeitraum */}
       <div style={{ marginTop: 9 }}>
         <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 5 }}>Zeitraum</div>
@@ -347,7 +370,10 @@ function KlasseZeile({
           </div>
         )}
       </div>
+      </Feinheiten>
 
+      {/* ⚠️ Der Klartext-Satz bleibt AUSSERHALB der Klappe — er sagt, was die
+          Klasse tatsächlich tut, auch für den, der sie nie aufmacht. */}
       {beschreibung && (
         <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 9, lineHeight: 1.4 }}>{beschreibung}</div>
       )}

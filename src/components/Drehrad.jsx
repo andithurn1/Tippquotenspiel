@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { C, MONO, SERIES, readableInk, RUND } from "@/lib/theme";
 import {
-  BELOHNUNGS_TYPEN, DREHRAD_LIMITS,
+  BELOHNUNGS_TYPEN, DREHRAD_LIMITS, DEFAULT_DREHRAD,
   sanitizeDrehrad, pruefeFelder, wahrscheinlichkeiten, drehradPlan, beschreibeDrehrad,
 } from "@/lib/drehrad";
 import { PHASEN } from "@/lib/duellJoker";
@@ -11,6 +11,7 @@ import Gluecksrad from "@/components/Gluecksrad";
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { WER } from "@/lib/jokerBasis";
 import { Zahl } from "@/components/Eingaben";
+import Feinheiten from "@/components/Feinheiten";
 import { TAPZIEL } from "@/lib/tapziel";
 
 const SPIELTAGE = 34;
@@ -282,6 +283,16 @@ export default function Drehrad({ rules, onChange }) {
             von={plan.von} bis={plan.bis} gedimmt />
         )}
 
+        {/* 🔴 Andis Detail-Regel (SA6): oben steht, WANN und WIE OFT gedreht
+            wird — die Frage, die jede Runde beantwortet. In WELCHEM Teil der
+            Saison das Rad überhaupt läuft, stellt fast niemand um, und die
+            Vorgabe („letztes Drittel") ist die begründete: ein Rad, das die
+            ganze Saison läuft, entwertet den Schlussspurt. */}
+        <Feinheiten
+          titel="Feinheiten: in welchem Teil der Saison"
+          zusammenfassung={PHASEN.find((p) => p.key === cfg.phase)?.label ?? cfg.phase}
+          abweichend={cfg.phase !== DEFAULT_DREHRAD.phase}
+        >
         <div style={{ marginTop: 14 }}>
           <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 6 }}>Saison-Fenster</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -315,6 +326,7 @@ export default function Drehrad({ rules, onChange }) {
             </div>
           )}
         </div>
+        </Feinheiten>
       </div>
 
       {/* ── Wer darf drehen ── */}

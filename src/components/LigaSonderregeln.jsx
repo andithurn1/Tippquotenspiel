@@ -32,6 +32,7 @@ import { C, MONO, RUND } from "@/lib/theme";
 import { getStore } from "@/lib/store";
 import { AUSWAHL_LIMITS, TEAM_MODI } from "@/lib/spielauswahl";
 import { TAPZIEL } from "@/lib/tapziel";
+import Feinheiten from "@/components/Feinheiten";
 
 // Unsere Voreinstellung für den Abstiegskampf. Keine Balance-Aussage — eine
 // Bequemlichkeit: die Zahlen sind sofort verstellbar.
@@ -247,11 +248,26 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
             + eigene Zone
           </button>
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
-            <Zahl label="ab Spieltag" wert={ab?.spieltagVon ?? ABSTIEGSKAMPF.abSpieltag}
-              limits={AUSWAHL_LIMITS.spieltag}
-              onChange={(v) => setzeAb({ spieltagVon: v })} />
-          </div>
+          {/* 🔴 Andis Detail-Regel (SA6): die vier Zonen-Knöpfe oben decken
+              ab, was fast jeder will („nur der Abstiegskampf"). Ab WELCHEM
+              Spieltag die Tabelle zählt, stellt fast niemand um — und die
+              Vorgabe 30 ist die begründete (vorher ist die Tabelle noch nicht
+              aussagekräftig). */}
+          <Feinheiten
+            titel="Feinheiten: ab welchem Spieltag die Tabelle zählt"
+            zusammenfassung={`ab Spieltag ${ab?.spieltagVon ?? ABSTIEGSKAMPF.abSpieltag}`}
+            abweichend={(ab?.spieltagVon ?? ABSTIEGSKAMPF.abSpieltag) !== ABSTIEGSKAMPF.abSpieltag}
+          >
+            <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "0 0 8px", lineHeight: 1.45 }}>
+              Früher als Spieltag {ABSTIEGSKAMPF.abSpieltag} sagt eine Tabelle wenig —
+              nach fünf Spieltagen steht ein Aufsteiger schon mal auf Platz 3.
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Zahl label="ab Spieltag" wert={ab?.spieltagVon ?? ABSTIEGSKAMPF.abSpieltag}
+                limits={AUSWAHL_LIMITS.spieltag}
+                onChange={(v) => setzeAb({ spieltagVon: v })} />
+            </div>
+          </Feinheiten>
 
           {/* Die Betreuung, die eine nackte Zahl nicht leistet — dieselbe
               Rolle wie `anteile()` bei den Wettbewerbs-Gewichten. */}

@@ -11,6 +11,7 @@ import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { WETTBEWERBE, PHASEN } from "@/lib/wettbewerbe";
 import { Zahl as ZahlInput } from "@/components/Eingaben";
 import { TAPZIEL } from "@/lib/tapziel";
+import Feinheiten from "@/components/Feinheiten";
 
 // ============================================================
 //  JOKER-GRUNDFORM — der Editor für die EINE Karte, die jeder Joker teilt
@@ -249,6 +250,22 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
     onPatchBedingung({ phasen: naechste });
   };
 
+  // Wie viele der gefalteten Felder von der Vorgabe abweichen. ⚠️ Gegen
+  // `DEFAULT_BASIS` gezählt, nicht gegen hier notierte Werte — und als ZAHL
+  // statt als Liste, weil sechs Feldnamen in der Kopfzeile niemand liest.
+  const feinZahl = [
+    ["stapeln"], ["symmetrie"], ["bestand"], ["kasseSichtbar"], ["abklingzeit"],
+    ["umfang"], ["spieleProEinsatz"], ["wahl"],
+  ].filter(([f]) => {
+    const ist = wert(f);
+    return ist !== undefined && ist !== DEFAULT_BASIS[f];
+  }).length
+    // Die Bedingung zählt als EIN abweichendes Feld, egal wie viele ihrer
+    // vier Teile gesetzt sind — sonst stünde dort schnell „5 abweichend"
+    // für eine einzige Entscheidung.
+    + (["minQuote", "maxQuote"].some((f) => bedWert(f) != null)
+      || ["wettbewerbe", "phasen"].some((f) => (bedWert(f) ?? []).length > 0) ? 1 : 0);
+
   return (
     <div>
       <Feldgruppe titel="Wer darf einsetzen">
@@ -277,6 +294,16 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
         )}
       </Feldgruppe>
 
+      {/* 🔴 Andis Detail-Regel (SA6): oben bleiben die vier Fragen, die jede
+          Runde beantwortet — wer einsetzen darf, wer den Einsatz wann sieht,
+          was mit einem ungenutzten Joker geschieht, bis wann man ihn ändern
+          kann. Die sechs darunter sind Feinheiten: mächtig, wenn man sie
+          braucht, und für die meisten Runden bleibt die Vorgabe stehen. */}
+      <Feinheiten
+        titel="Feinheiten: Stapeln, Bestand, Abklingzeit, Umfang, Bedingung"
+        zusammenfassung={feinZahl > 0 ? `${feinZahl} abweichend` : "Vorgabe"}
+        abweichend={feinZahl > 0}
+      >
       <Feldgruppe titel="Stapeln — wie viele Joker höchstens auf dasselbe Spiel (über alle Arten hinweg)">
         <ZahlInput label="Höchstens" wert={wert("stapeln")} limits={BASIS_LIMITS.stapeln} breite={150}
           onChange={(v) => onPatch({ stapeln: v })} />
@@ -349,6 +376,7 @@ function BasisFelder({ basisRoh, effektiv, onPatch, onPatchBedingung }) {
           </div>
         </div>
       </Feldgruppe>
+      </Feinheiten>
     </div>
   );
 }

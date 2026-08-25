@@ -9,8 +9,9 @@ import {
 import { Zahl } from "@/components/Eingaben";
 import { trefferAnteil } from "@/lib/auswahl";
 import { TAPZIEL } from "@/lib/tapziel";
+import Feinheiten from "@/components/Feinheiten";
 import {
-  AUSWERTBARE_WIRKUNGEN, WIRKUNG, WIRKUNG_LIMITS,
+  AUSWERTBARE_WIRKUNGEN, WIRKUNG, WIRKUNG_LIMITS, DEFAULT_WIRKUNG,
   sanitizeWirkung, beschreibeWirkung, konflikte as wirkungsKonflikte,
 } from "@/lib/wirkung";
 import {
@@ -446,6 +447,22 @@ export default function Ereignisse({ rules, onChange }) {
                         limits={EREIGNIS_LIMITS.abQuote} breite={110}
                         onChange={(v) => setzeFeld(t.key, "abQuote", v)} />
                     )}
+                    {/* 🔴 Andis Detail-Regel (SA6). Der Schnitt steht schon im
+                        Kommentar darüber: „der Joker-Regler bleibt der Weg für
+                        den Normalfall … sonst müsste jeder, der nur ,ein
+                        Joker' will, erst durch einen Katalog." Genau das ist
+                        die Klappe — oben die Zahl, dahinter die vier Achsen.
+
+                        ⚠️ `width: 100%`, weil die Karte darüber ein
+                        `flex-wrap`-Streifen ist: ohne das säße die Klappe
+                        neben den Zahlen statt darunter. */}
+                    <div style={{ width: "100%" }}>
+                    <Feinheiten
+                      titel="Feinheiten: wen es trifft, was genau, wie lange"
+                      zusammenfassung={WIRKUNG[(wert(t.key, "wirkung") ?? DEFAULT_WIRKUNG).typ]?.label
+                        ?? DEFAULT_WIRKUNG.typ}
+                      abweichend={(wert(t.key, "wirkung") ?? DEFAULT_WIRKUNG).typ !== DEFAULT_WIRKUNG.typ}
+                    >
                     {/* 🔴 Die WEN-Achse (`auswahl.js`). Derselbe Eintrag ist
                         Trost-Joker ODER Spieltags-Krone — der Unterschied ist
                         eine Einstellung, kein zweiter Ereignis-Typ. */}
@@ -523,6 +540,8 @@ export default function Ereignisse({ rules, onChange }) {
                     <Geltungsfeld wert={wert(t.key, "geltung")}
                       wirkung={wert(t.key, "wirkung")}
                       onChange={(v) => setzeFeld(t.key, "geltung", v)} />
+                    </Feinheiten>
+                    </div>
                   </div>
                 )}
               </div>
