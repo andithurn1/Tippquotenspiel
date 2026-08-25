@@ -23,6 +23,7 @@ import { PRESETS } from "./presets";
 import { alleMatches } from "./ligen";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { namensSchluessel } from "./benutzername";
+import { sanitizeGeburtsdatum } from "./geburtsdatum";
 import { isPremium, applyEntitlements } from "./premium";
 import { spieltagOeffnen } from "./spieltagOeffnen";
 import { withSaisonPunkte } from "./saisonBoard";
@@ -482,11 +483,17 @@ export function createMockStore() {
     },
     // Nur die übergebenen Felder ändern; beide werden gesäubert, damit weder
     // ein leerer Name noch eine unbekannte Avatar-id im Profil landet.
-    async updateProfile(userId, { displayName, avatar } = {}) {
+    async updateProfile(userId, { displayName, avatar, geburtsdatum } = {}) {
       const vorher = profiles.get(userId) ?? { id: userId, display_name: userId, avatar: DEFAULT_AVATAR };
       const name = displayName === undefined ? vorher.display_name : (sanitizeDisplayName(displayName) ?? vorher.display_name);
       const bild = avatar === undefined ? vorher.avatar : sanitizeAvatar(avatar);
-      const neu = { ...vorher, display_name: name, avatar: bild };
+      // ⛔ Kein Pflichtfeld (KT9): `null` ist ein gueltiger Wert und muss
+      // durchgehen — sonst liesse sich eine einmal gemachte Angabe nie wieder
+      // entfernen. Deshalb `=== undefined` als Pruefung, nicht `!geburtsdatum`.
+      const geb = geburtsdatum === undefined
+        ? (vorher.geburtsdatum ?? null)
+        : sanitizeGeburtsdatum(geburtsdatum);
+      const neu = { ...vorher, display_name: name, avatar: bild, geburtsdatum: geb };
       profiles.set(userId, neu);
       // Mitglieder-Liste mitziehen, damit Leaderboard/Runde sofort stimmen.
       for (const m of members) if (m.user_id === userId) { m.name = name; m.avatar = bild; }

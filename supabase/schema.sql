@@ -32,6 +32,45 @@ create table if not exists public.profiles (
 alter table public.profiles add column if not exists avatar text;
 alter table public.profiles add column if not exists premium_until timestamptz;
 
+-- ============================================================
+--  PRIVATE Profildaten (KT9, Andi 25.08.2026)
+--
+--  🔴 WARUM EINE EIGENE TABELLE und nicht eine Spalte in `profiles`:
+--  `profiles` ist fuer JEDEN Eingeloggten lesbar (`profiles_read` weiter
+--  unten) — und das MUSS so sein, sonst saehe das Leaderboard die Namen und
+--  Sinnbilder der Mitspieler nicht. Postgres kann RLS aber nur pro ZEILE,
+--  nicht pro SPALTE: eine Spalte `geburtsdatum` in `profiles` waere damit
+--  fuer alle Mitspieler mitlesbar gewesen.
+--
+--  ⚠️ Beim ersten Bau stand sie genau dort. Im Code sah nichts danach aus —
+--  aufgefallen ist es erst beim Nachsehen der Policies.
+--
+--  Hier gehoert auch alles Weitere hin, was personenbezogen ist und
+--  niemanden sonst angeht: die Geschlechtsangabe aus M6 zum Beispiel.
+--  Faustregel: braucht es das Leaderboard, gehoert es nach `profiles` —
+--  sonst hierher.
+--
+--  ⛔ Kein Pflichtfeld. Wer nichts angibt, hat keine Zeile oder eine leere,
+--  verliert genau eine Sorte Namensvorschlag („Andi95") und sonst nichts.
+--  ⚠️ `date`, nicht `timestamptz`: ein Geburtstag hat keine Uhrzeit und keine
+--  Zeitzone. Mit timestamptz waere der 27.08. fuer manche der 26.08.
+-- ============================================================
+create table if not exists public.profile_privat (
+  id           uuid primary key references auth.users on delete cascade,
+  geburtsdatum date,
+  updated_at   timestamptz not null default now()
+);
+
+
+-- Geburtsdatum (KT9, Andi 25.08.2026). ⛔ Bewusst NULLABLE: kein Pflichtfeld.
+-- Wer es nicht angibt, verliert genau eine Sorte Namensvorschlag („Andi95")
+-- und sonst nichts. Ein Tippspiel unter Freunden, das nach dem Geburtsdatum
+-- verlangt, bevor man mitspielen darf, verliert Mitspieler an einer Stelle,
+-- an der nichts davon abhaengt.
+-- ⚠️ `date`, nicht `timestamptz`: ein Geburtstag hat keine Uhrzeit und keine
+-- Zeitzone. Mit timestamptz waere der 27.08. fuer manche der 26.08.
+alter table public.profiles add column if not exists geburtsdatum date;
+
 -- ── Matches (das, worauf getippt wird) ──────────────────────
 -- snapshot = eingefrorene Quoten (Form der Engine-Quoten-Quelle),
 -- result   = null bis angepfiffen/ausgewertet.
@@ -375,6 +414,7 @@ create trigger on_auth_user_created
 --  Row Level Security — nur eingeloggte Nutzer, faire Sicht
 -- ============================================================
 alter table public.profiles      enable row level security;
+alter table public.profile_privat enable row level security;
 alter table public.matches       enable row level security;
 alter table public.rounds        enable row level security;
 alter table public.round_members enable row level security;
@@ -387,6 +427,16 @@ alter table public.rule_proposal_votes enable row level security;
 alter table public.admin_freigaben     enable row level security;
 
 -- Profile: jeder Eingeloggte darf lesen; eigenes Profil schreiben.
+-- 🔴 Private Profildaten: NUR die eigene Zeile, und zwar in jeder Richtung.
+-- Kein `using (true)` wie bei `profiles` darunter — das ist der ganze Zweck
+-- der Trennung. Wer hier eine Lesepolicy aufweicht, macht sie zunichte.
+drop policy if exists "profil_privat_read"   on public.profile_privat;
+drop policy if exists "profil_privat_insert" on public.profile_privat;
+drop policy if exists "profil_privat_update" on public.profile_privat;
+create policy "profil_privat_read"   on public.profile_privat for select to authenticated using (id = auth.uid());
+create policy "profil_privat_insert" on public.profile_privat for insert to authenticated with check (id = auth.uid());
+create policy "profil_privat_update" on public.profile_privat for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+
 drop policy if exists "profiles_read"        on public.profiles;
 drop policy if exists "profiles_insert_self" on public.profiles;
 drop policy if exists "profiles_update_self" on public.profiles;

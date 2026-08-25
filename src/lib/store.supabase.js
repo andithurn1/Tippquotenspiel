@@ -13,6 +13,7 @@ import { verlaufPositionen } from "./spieltag";
 import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
+import { sanitizeGeburtsdatum } from "./geburtsdatum";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
 import { scoreSaison } from "./saisonwetten";
@@ -152,7 +153,17 @@ export function createSupabaseStore() {
     async getProfile(userId) {
       const data = orThrow(await sb
         .from("profiles").select("id, display_name, avatar, premium_until").eq("id", userId).maybeSingle());
-      return data ? { ...data, avatar: sanitizeAvatar(data.avatar) } : null;
+      if (!data) return null;
+      // ⚠️ Zweite Abfrage statt eines Joins: `profile_privat` gibt per RLS nur
+      // die EIGENE Zeile heraus. Fuer einen fremden Nutzer kommt hier nichts
+      // zurueck — und genau das ist gewollt, kein Fehler.
+      const privat = orThrow(await sb
+        .from("profile_privat").select("geburtsdatum").eq("id", userId).maybeSingle());
+      return {
+        ...data,
+        avatar: sanitizeAvatar(data.avatar),
+        geburtsdatum: privat?.geburtsdatum ?? null,
+      };
     },
     // 🔴 Ist dieser Anzeigename noch frei? (KT10, Andi 25.08.2026)
     // Gegenstück zum Mock. ⚠️ `ilike` statt `eq`, weil der Eindeutigkeits-
@@ -171,16 +182,29 @@ export function createSupabaseStore() {
 
     // Nur übergebene Felder ändern. Gesäubert wird auch hier — die DB-Policy
     // erlaubt zwar nur das eigene Profil, prüft aber keine Inhalte.
-    async updateProfile(userId, { displayName, avatar } = {}) {
+    async updateProfile(userId, { displayName, avatar, geburtsdatum } = {}) {
       const patch = {};
       if (displayName !== undefined) {
         const name = sanitizeDisplayName(displayName);
         if (name) patch.display_name = name;
       }
       if (avatar !== undefined) patch.avatar = sanitizeAvatar(avatar);
+      // ⛔ Kein Pflichtfeld (KT9): `null` muss durchgehen, damit sich eine
+      // einmal gemachte Angabe wieder entfernen laesst.
+      // 🔴 Das Geburtsdatum liegt in `profile_privat`, NICHT in `profiles` —
+      // letztere ist fuer alle Eingeloggten lesbar (Leaderboard braucht Name
+      // und Sinnbild), und Postgres kann RLS nur pro Zeile, nicht pro Spalte.
+      if (geburtsdatum !== undefined) {
+        orThrow(await sb.from("profile_privat").upsert({
+          id: userId,
+          geburtsdatum: sanitizeGeburtsdatum(geburtsdatum),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "id" }));
+      }
       if (!Object.keys(patch).length) return this.getProfile(userId);
       const data = orThrow(await sb
-        .from("profiles").update(patch).eq("id", userId).select("id, display_name, avatar").maybeSingle());
+        .from("profiles").update(patch).eq("id", userId)
+        .select("id, display_name, avatar").maybeSingle());
       return data ? { ...data, avatar: sanitizeAvatar(data.avatar) } : null;
     },
     async listRoundsForUser(userId) {
