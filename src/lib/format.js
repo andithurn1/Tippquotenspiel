@@ -38,3 +38,42 @@ export function fmtFaktor(x) {
 export function fmtFaktorOderAus(x) {
   return Number(x) === 1 ? "aus" : fmtFaktor(x);
 }
+
+// ── „Dein Tipp" — EINE Formulierung (Andi, KT6, 25.08.2026) ──
+//
+// 🔴 Der Anlass: die Spielwahl schrieb an jedes getippte Spiel nur „✓ getippt".
+// Andis Ansage dazu: „natürlich gibts auch ne Gesamtübersicht wo die einzelnen
+// zu tippenden Spiele ausgewählt werden sollen auch um bisher eingetragenes
+// noch anzupassen" — dafür muss man sehen, WAS eingetragen ist, sonst muss man
+// jedes Spiel einzeln öffnen, um es zu erfahren.
+//
+// ⚠️ Warum hier und nicht im Screen: `{t.home}:{t.away}` stand am 25.08.2026
+// an SECHS Stellen ausgeschrieben. Solange es nur eine Zahl ist, geht das gut;
+// sobald „mit Torschützen" oder „Joker gesetzt" dazukommt, laufen sie
+// auseinander — und niemand merkt es, weil jede Stelle für sich stimmt.
+// Dieselbe Lehre wie bei `exaktText` in der Tippabgabe.
+export function tippKurz(tip) {
+  const h = Number(tip?.home), a = Number(tip?.away);
+  if (!Number.isInteger(h) || !Number.isInteger(a) || h < 0 || a < 0) return null;
+  return `${h}:${a}`;
+}
+
+// Wie viele Torschützen stehen im Tipp? ⚠️ Beide Mannschaften zusammen, und
+// leere Plätze zählen nicht mit: `goals` trägt Lücken, wenn jemand nur einen
+// von drei Plätzen gefüllt hat.
+export function tippSchuetzen(tip) {
+  const seiten = [tip?.goals?.home, tip?.goals?.away];
+  return seiten.reduce(
+    (s, liste) => s + (Array.isArray(liste) ? liste.filter(Boolean).length : 0),
+    0,
+  );
+}
+
+// Der ganze Satz: „2:1 · 2 Torschützen". Ohne Torschützen bleibt es bei der
+// Zahl — ein „· 0 Torschützen" wäre eine Aussage über nichts.
+export function tippLang(tip) {
+  const kurz = tippKurz(tip);
+  if (!kurz) return null;
+  const n = tippSchuetzen(tip);
+  return n > 0 ? `${kurz} · ${n} Torschütze${n === 1 ? "" : "n"}` : kurz;
+}

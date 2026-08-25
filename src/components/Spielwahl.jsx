@@ -11,6 +11,7 @@ import { DEFAULT_RULES, weightUsageForMatchday } from "@/lib/engine";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon, phaseVon, wettbewerbLabel, phasenLabel, istKo, wettbewerbeIn } from "@/lib/wettbewerbe";
 import { tippStatus, uebersicht, naechsteOeffnung, beschreibeTippfenster, formatZeitpunkt, spieltagStarts } from "@/lib/tippfenster";
+import { tippKurz, tippLang, tippSchuetzen } from "@/lib/format";
 import { bigGameAufschlag } from "@/lib/bigGame";
 import { istGeoeffnet } from "@/lib/spieltagOeffnen";
 import { zeitachse, rundenSpieltagVon, achsenLabel, rundenSchluessel } from "@/lib/zeitachse";
@@ -38,6 +39,8 @@ export default function Spielwahl() {
   // Beschluss-Lage der Runde — siehe `regelnVon` weiter unten.
   const [beschlussLage, setBeschlussLage] = useState(null);
   const [meineTips, setMeineTips] = useState([]);   // { match_id, wettbewerb, matchday, gewicht }
+  // Was steht in meinem Tipp? Je matchId (KT6).
+  const [tippVon, setTippVon] = useState(new Map());
   const [votes, setVotes] = useState([]);           // Joker-Abstimmung der Runde
   const [adminId, setAdminId] = useState(null);     // wer darf einen Spieltag öffnen
   const [oeffnet, setOeffnet] = useState(null);     // Gruppen-Key, der gerade öffnet
@@ -89,7 +92,14 @@ export default function Spielwahl() {
         matchday: infoOf.get(t.match_id)?.matchday ?? null,
         wettbewerb: infoOf.get(t.match_id)?.wettbewerb ?? null,
         gewicht: t.tip?.gewicht,
+        // 🔴 KT6: der TIPP selbst, nicht nur seine Id. Vorher stand an jedem
+        // getippten Spiel „✓ getippt" — man musste es öffnen, um zu erfahren,
+        // WAS drinsteht. Andi: „auch um bisher eingetragenes noch anzupassen".
+        // ⚠️ Durchgereicht, nicht nachgebaut: der Screen zeigt, was der Store
+        // gespeichert hat (Runden-Schicht).
+        tip: t.tip ?? null,
       })));
+      setTippVon(new Map(eigene.map((t) => [t.match_id, t.tip ?? null])));
     });
     return () => { live = false; };
   }, [roundId, user]);
@@ -366,7 +376,8 @@ export default function Spielwahl() {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {g.spiele.map((m) => (
                   <MatchRow key={m.id} match={m} status={tippStatus(m, regelnVon(m), now, starts)}
-                    tipped={tippedIds.has(m.id)} gewicht={gewichtVon(m.id)} rules={regelnVon(m)} />
+                    tipped={tippedIds.has(m.id)} gewicht={gewichtVon(m.id)} rules={regelnVon(m)}
+                    tip={tippVon.get(m.id)} />
                 ))}
               </div>
             </div>
@@ -380,7 +391,7 @@ export default function Spielwahl() {
 // `status` kommt aus tippfenster.js und ist dreiwertig: „noch nicht", „offen",
 // „vorbei". Ein Boolean würde die ersten beiden zusammenwerfen — für den
 // Spieler sind das aber zwei völlig verschiedene Nachrichten.
-function MatchRow({ match, status, tipped, gewicht, rules }) {
+function MatchRow({ match, status, tipped, gewicht, rules, tip = null }) {
   const open = status?.offen === true;
   const gewichtet = Number.isFinite(gewicht) && gewicht > 1;
   // Big Game: NICHT am Snapshot-Häkchen ablesen, sondern über den Aufschlag
@@ -408,6 +419,19 @@ function MatchRow({ match, status, tipped, gewicht, rules }) {
             {match.snapshot.bigGameGrund}
           </div>
         )}
+        {/* Der eigene Tipp im Klartext (KT6).
+            ⚠️ NICHT doppelt: bei einem OFFENEN Spiel steht der Endstand schon
+            rechts im Schildchen („✓ 4:1"), hier kommen dann nur noch die
+            Torschützen dazu. Erst wenn es kein Schildchen gibt — angepfiffen
+            oder noch zu —, trägt diese Zeile die ganze Aussage. Beides
+            zugleich stand hier kurz und las sich wie ein Fehler. */}
+        {tipped && tippKurz(tip) && (
+          <div style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.mint, marginTop: 4 }}>
+            {open
+              ? (tippSchuetzen(tip) > 0 ? `+ ${tippSchuetzen(tip)} Torschütze${tippSchuetzen(tip) === 1 ? "" : "n"}` : null)
+              : `dein Tipp: ${tippLang(tip)}`}
+          </div>
+        )}
         {/* Orientierung: die lohnendsten Endstände dieses Spiels */}
         {open && <ErgebnisUebersicht snap={match.snapshot} />}
       </div>
@@ -416,7 +440,9 @@ function MatchRow({ match, status, tipped, gewicht, rules }) {
         {gewichtet && <Tag tone={C.akzent}>×{gewicht.toFixed(1)}</Tag>}
         {open ? (
           tipped
-            ? <Tag tone={C.mint}>✓ getippt</Tag>
+            // 🔴 KT6: WAS getippt ist, nicht nur DASS. Vorher musste man jedes
+            // Spiel öffnen, um den eigenen Endstand zu erfahren.
+            ? <Tag tone={C.mint}>✓ {tippKurz(tip) ?? "getippt"}</Tag>
             : <Tag tone={C.akzent}>{status.text}</Tag>
         ) : status?.zustand === "zu" ? (
           <Tag tone={C.sky}>{status.text}</Tag>

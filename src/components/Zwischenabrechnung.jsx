@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
+import { tippKurz } from "@/lib/format";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -139,7 +140,9 @@ export default function Zwischenabrechnung() {
                       {s.home} – {s.away}
                     </div>
                     <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 2 }}>
-                      dein Tipp {s.tip.home}:{s.tip.away} · Ergebnis {s.result.home}:{s.result.away}
+                      {/* ⚠️ Über `tippKurz` — derselbe Satz wie in der Spielwahl.
+                          Ausgeschrieben stand er am 25.08.2026 an sechs Stellen. */}
+                      dein Tipp {tippKurz(s.tip)} · Ergebnis {tippKurz(s.result)}
                       {s.exakt && <span style={{ color: C.akzent }}> · exakt</span>}
                     </div>
                   </div>
