@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   DEFAULT_NOTIFY, sanitizeNotify, inRuhezeit, dueNotifications, summarize,
-  VORLAUF_OPTIONEN, NOTIFY_LIMITS,
+  VORLAUF_OPTIONEN, NOTIFY_LIMITS, KANAELE, KANAL_META,
 } from "@/lib/notify";
 
 const H = 3600000;
@@ -184,6 +184,98 @@ describe("summarize", () => {
   });
 
   it("warnt, wenn alles abgewählt ist", () => {
-    expect(summarize({ ...AN, neuerSpieltag: false, erinnerung: false })).toContain("Nichts");
+    // ⚠️ Über KANAELE statt über eine Aufzählung: als ZP5 drei Arten ergänzte,
+    // schlug dieser Test an, weil er nur die zwei alten abwählte — und das war
+    // ein echter Fund, kein Testproblem. So bleibt er beim nächsten Kanal heil.
+    const alleAus = Object.fromEntries(KANAELE.map((k) => [k, false]));
+    expect(summarize({ ...AN, ...alleAus })).toContain("Nichts");
+  });
+});
+
+// 🔴 ZP5 (Andi, 25.08.2026): jeder Benachrichtigungstyp einzeln an- und
+// abwählbar. Der alte Vorbehalt — „bei zwei Arten wäre das Untermenü fast
+// leer" — ist mit diesen drei entfallen.
+describe("Die drei neuen Arten (ZP5)", () => {
+  const AN_ALLE = { ...DEFAULT_NOTIFY, enabled: true, ueberholt: true };
+  const MITTAG = new Date("2026-08-28T12:00:00Z").getTime();
+  const SPIEL = { id: "m1", home: "Bochum", away: "Osnabrück", matchday: 3,
+    wettbewerb: "bl2", kickoff: new Date(MITTAG + 50 * H).toISOString() };
+
+  it("Sperre: kommt an, und nur beim BETROFFENEN", () => {
+    const eingriffe = [
+      { aufUserId: "ich", vonUserId: "kemal", vonName: "Kemal", matchId: "m1" },
+      { aufUserId: "wer-anders", vonUserId: "ich", matchId: "m1" },
+    ];
+    const out = dueNotifications({ matches: [SPIEL], userId: "ich", prefs: AN_ALLE, jetzt: MITTAG, eingriffe });
+    const g = out.filter((n) => n.art === "geblockt");
+    expect(g).toHaveLength(1);
+    expect(g[0].titel).toContain("Bochum");
+    expect(g[0].text).toContain("Kemal");
+  });
+
+  // 🔴 Der Grund, warum die Sperre `stunden: -1` trägt: sie betrifft eine
+  // FRIST. Wer nicht weiß, dass sein Spiel gesperrt ist, steht kurz vor
+  // Anpfiff vor einem grauen Knopf. Sie darf nicht als Erste aus der
+  // Tages-Obergrenze fallen.
+  it("Sperre steht ganz vorn, auch bei knapper Obergrenze", () => {
+    const viele = Array.from({ length: 6 }, (_, i) => ({
+      id: `x${i}`, home: `A${i}`, away: `B${i}`, matchday: 3, wettbewerb: "bl2",
+      kickoff: new Date(MITTAG + 2 * H).toISOString(),
+    }));
+    const out = dueNotifications({
+      matches: [...viele, SPIEL], userId: "ich",
+      prefs: { ...AN_ALLE, maxProTag: 2 }, jetzt: MITTAG,
+      eingriffe: [{ aufUserId: "ich", vonUserId: "k", vonName: "Kemal", matchId: "m1" }],
+    });
+    expect(out[0].art).toBe("geblockt");
+  });
+
+  it("Abrechnung: einmal je Wettbewerb und Spieltag", () => {
+    const out = dueNotifications({
+      matches: [SPIEL], userId: "ich", prefs: AN_ALLE, jetzt: MITTAG,
+      abrechnungen: [{ wettbewerb: "bl2", matchday: 3, punkte: 412.4 }],
+    });
+    const a = out.filter((n) => n.art === "abgerechnet");
+    expect(a).toHaveLength(1);
+    expect(a[0].text).toContain("412");
+  });
+
+  it("Überholt kommt nur, wenn eingeschaltet — Vorgabe ist AUS", () => {
+    expect(DEFAULT_NOTIFY.ueberholt).toBe(false);
+    const args = {
+      matches: [SPIEL], userId: "ich", jetzt: MITTAG,
+      ueberholungen: [{ name: "Kemal", vonUserId: "k", rang: 4 }],
+    };
+    const aus = dueNotifications({ ...args, prefs: { ...DEFAULT_NOTIFY, enabled: true } });
+    expect(aus.some((n) => n.art === "ueberholt")).toBe(false);
+    const an = dueNotifications({ ...args, prefs: AN_ALLE });
+    expect(an.some((n) => n.art === "ueberholt")).toBe(true);
+  });
+
+  // ⚠️ `ueberholt: false` als Vorgabe heißt: `sanitizeNotify` darf aus
+  // „nicht gesetzt" kein „an" machen. Bei den anderen ist es umgekehrt.
+  it("sanitize dreht die Vorgabe nicht um", () => {
+    expect(sanitizeNotify({}).ueberholt).toBe(false);
+    expect(sanitizeNotify({ ueberholt: true }).ueberholt).toBe(true);
+    expect(sanitizeNotify({}).geblockt).toBe(true);
+    expect(sanitizeNotify({ geblockt: false }).geblockt).toBe(false);
+  });
+
+  it("jede Art hat Titel und Hinweis im Untermenü", () => {
+    for (const k of KANAELE) {
+      expect(KANAL_META[k]?.title, k).toBeTruthy();
+      expect(KANAL_META[k]?.hint?.length ?? 0, k).toBeGreaterThan(20);
+    }
+  });
+
+  it("nichts kommt doppelt, was schon gesehen wurde", () => {
+    const args = {
+      matches: [SPIEL], userId: "ich", prefs: AN_ALLE, jetzt: MITTAG,
+      eingriffe: [{ aufUserId: "ich", vonUserId: "k", vonName: "Kemal", matchId: "m1" }],
+      abrechnungen: [{ wettbewerb: "bl2", matchday: 3, punkte: 10 }],
+    };
+    const erst = dueNotifications(args);
+    const zweit = dueNotifications({ ...args, gesehen: erst.map((n) => ({ key: n.key })) });
+    expect(zweit.some((n) => ["geblockt", "abgerechnet"].includes(n.art))).toBe(false);
   });
 });

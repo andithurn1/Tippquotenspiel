@@ -3,6 +3,54 @@
 Offene Feature-Ideen, grob nach Aufwand. Gebaut wird in einzelnen, testbaren
 Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 
+## 🔔 ZP5: fünf Benachrichtigungsarten — zwei davon liefern noch nichts (25.08.2026)
+
+Andis Zusage beim Fremdjoker-Gespräch: *„wir machen noch ein Untermenü wo
+jeder Benachrichtigungstyp einzeln an und abgewählt werden kann"*.
+
+Der alte Vorbehalt im Auftragsbuch war richtig — **bei zwei Arten wäre das
+Untermenü fast leer** — und er nannte auch die Bedingung, unter der er
+entfällt: „sobald mehr dazukommen". Die drei sind jetzt da:
+
+| Art | Vorgabe | liefert heute |
+|---|---|---|
+| Neuer Spieltag tippbar | an | ✅ |
+| Erinnerung vor Anpfiff | an | ✅ |
+| **Jemand hat dir ein Spiel gesperrt** | an | ✅ über `getFremdEingriffe(roundId)` |
+| **Spieltag abgerechnet** | an | ⏳ **noch nichts** |
+| **Jemand ist an dir vorbei** | **aus** | ⏳ **noch nichts** |
+
+🔴 **Warum „Sperre" die wichtigste der drei ist:** sie betrifft eine FRIST.
+Wer nicht weiß, dass sein Spiel gesperrt wurde, versucht kurz vor Anpfiff zu
+tippen und steht vor einem grauen Knopf. Deshalb trägt sie in der Sortierung
+`stunden: -1` und fällt als Letzte aus der Tages-Obergrenze — durch einen
+Test festgehalten.
+
+⛔ **Warum „Überholt" als einziges AUS ist:** sie kann an einem Spieltag
+mehrfach kommen und ist reine Unterhaltung. Eine Benachrichtigung, die nur
+kribbelt, schaltet man nach der dritten ganz ab — und dann sind auch die
+wichtigen weg.
+
+### ⏳ Was den zwei offenen fehlt, und es ist dasselbe
+
+Beide brauchen einen **Vergleich mit dem Stand von vorhin**, und den hält
+heute niemand:
+
+- **Abgerechnet** — „ein Spieltag ist FERTIG geworden" heißt: er war beim
+  letzten Blick noch offen. Der Store liefert den aktuellen Stand, nicht die
+  Veränderung. Die Zwischenabrechnung (`Zwischenabrechnung.jsx`) löst
+  dieselbe Frage bereits über den letzten Besuch — dort liegt der Anschluss.
+- **Überholt** — braucht den eigenen Rang von vorhin. `getLeaderboardHistory`
+  hat die Daten; was fehlt, ist die Stelle, die „mein Rang beim letzten Mal"
+  festhält.
+
+⚠️ **Die Schalter sind trotzdem schon gebaut und WIRKEN** — sie liefern nur
+noch nichts. Das ist bewusst, damit die Reihenfolge stimmt: erst die
+Einstellung, dann die Quelle. Wer den Anschluss baut, muss nichts an der
+Oberfläche anfassen. **Nicht** vergessen: solange sie leer laufen, ist das
+genau die Sorte Halbfertigkeit, die `npm run tot` und `npm run greift`
+suchen — deshalb steht es hier und nicht nur im Code.
+
 ## 🔴🔴 DER MANNSCHAFTS-MODUS EXISTIERT NUR IN `teams.js` (25.08.2026)
 
 **Der größte Einzelfund aus `npm run tot` — und er ist kein Rechenfehler,

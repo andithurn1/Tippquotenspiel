@@ -60,13 +60,34 @@ export default function NotifyRunner() {
         // Genau das ist der Punkt: die Regel „welche Spiele gehören zur Runde"
         // hat EINE Stelle (Runden-Schicht, Frage 1). Wächst sie dort, wächst
         // sie hier mit; nachgebaut bliebe sie still auf dem alten Stand.
-        const [matches, tips] = await Promise.all([
+        // 🔴 ZP5 (25.08.2026): die drei neuen Arten brauchen Angaben, die
+        // `notify.js` nicht selbst holen darf — sie ist store-frei. Geholt
+        // wird hier, wo die Runden-Frage schon beantwortet ist.
+        //
+        // ⚠️ NUR was der Nutzer eingeschaltet hat: wer „Sperren" abwählt,
+        // soll dafür auch keine Abfrage auslösen. Sonst kostet eine
+        // abgeschaltete Meldung trotzdem eine Runde zur Datenbank.
+        const [matches, tips, eingriffe] = await Promise.all([
           getStore().listRoundMatches(roundId),
           getStore().listTips({ roundId }),
+          prefs.geblockt
+            ? (getStore().getFremdEingriffe?.(roundId) ?? Promise.resolve([]))
+            : Promise.resolve([]),
         ]);
 
         const gesehen = pruneZustellungen(lies(GESEHEN_KEY, []));
-        const faellig = dueNotifications({ matches, tips, userId: user.id, prefs, gesehen });
+        const faellig = dueNotifications({
+          matches, tips, userId: user.id, prefs, gesehen,
+          eingriffe,
+          // ⏳ `abrechnungen` und `ueberholungen` bleiben vorerst leer: beide
+          // brauchen einen Vergleich mit dem STAND VON VORHIN, und den hält
+          // heute niemand. Die Schalter sind trotzdem schon da und wirken —
+          // sie liefern nur noch nichts. ⚠️ Das ist bewusst so und steht in
+          // `design/roadmap.md`; ein Schalter ohne Wirkung wäre sonst genau
+          // die Lücke, die `npm run greift` sucht.
+          abrechnungen: [],
+          ueberholungen: [],
+        });
         const raus = zustellbar({ faellig, gesehen, prefs });
         if (!raus.length) return;
 

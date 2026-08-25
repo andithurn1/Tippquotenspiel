@@ -18,7 +18,24 @@
 
 import { wettbewerbLabel, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 
-export const KANAELE = ["neuerSpieltag", "erinnerung"];
+// 🔴 ZP5 (Andi, 25.08.2026): „wir machen noch ein Untermenü wo jeder
+// Benachrichtigungstyp einzeln an und abgewählt werden kann."
+//
+// Bis heute gab es ZWEI Arten. Der Vorbehalt im Auftragsbuch war richtig —
+// ein Untermenü mit zwei Zeilen ist keines — und er sagte auch, wann er
+// entfällt: „sobald mehr dazukommen, und die kommen". Sie sind jetzt da, und
+// zwar genau die drei, die beim Testbetrieb mit Freunden zählen:
+//
+//   geblockt   — jemand hat mir ein Spiel gesperrt (Fremdjoker, KT7). Ohne
+//                Hinweis merkt man es erst beim Tippen, und dann ist die Zeit
+//                vielleicht schon um.
+//   abgerechnet — ein Spieltag ist fertig gewertet.
+//   ueberholt  — jemand ist in der Rangliste an mir vorbeigezogen.
+//
+// ⚠️ Die Reihenfolge hier ist die ANZEIGE-Reihenfolge im Untermenü: was am
+// dringendsten ist, steht oben. „Überholt" ist Unterhaltung und steht unten —
+// und ist als einziges standardmäßig AUS (siehe `DEFAULT_NOTIFY`).
+export const KANAELE = ["neuerSpieltag", "erinnerung", "geblockt", "abgerechnet", "ueberholt"];
 
 export const KANAL_META = {
   neuerSpieltag: {
@@ -29,6 +46,18 @@ export const KANAL_META = {
     title: "Erinnerung vor Anpfiff",
     hint: "Nur für Spiele, die du noch NICHT getippt hast — sonst nie.",
   },
+  geblockt: {
+    title: "Jemand hat dir ein Spiel gesperrt",
+    hint: "Sofort, wenn ein Mitspieler einen Fremdjoker auf dich setzt. Sonst merkst du es erst beim Tippen.",
+  },
+  abgerechnet: {
+    title: "Spieltag abgerechnet",
+    hint: "Einmal, wenn alle Spiele eines Spieltags gewertet sind.",
+  },
+  ueberholt: {
+    title: "Jemand ist an dir vorbei",
+    hint: "Wenn dich ein Mitspieler in der Rangliste überholt. Standardmäßig aus.",
+  },
 };
 
 // Vorwarnzeiten in Stunden. Mehrere gleichzeitig sind erlaubt („24 h und 2 h").
@@ -38,6 +67,13 @@ export const DEFAULT_NOTIFY = {
   enabled: false,              // erst nach bewusster Zustimmung
   neuerSpieltag: true,
   erinnerung: true,
+  geblockt: true,          // betrifft die Frist — gehört an
+  abgerechnet: true,
+  // ⛔ Als einziges AUS: „jemand ist an dir vorbei" kann an einem Spieltag
+  // mehrfach kommen und ist reine Unterhaltung. Eine Benachrichtigung, die
+  // nur kribbelt, schaltet man nach der dritten ganz ab — und dann sind auch
+  // die wichtigen weg.
+  ueberholt: false,
   vorlaufStunden: [24, 3],     // einmal am Vortag, einmal kurz davor
   nurUngetippte: true,         // Erinnerungen nur für offene eigene Tipps
   ruhezeit: { von: 22, bis: 8 }, // nachts nichts (Ortszeit des Geräts)
@@ -59,6 +95,11 @@ export function sanitizeNotify(partial = {}) {
     enabled: p.enabled === true,
     neuerSpieltag: p.neuerSpieltag !== false,
     erinnerung: p.erinnerung !== false,
+    geblockt: p.geblockt !== false,
+    abgerechnet: p.abgerechnet !== false,
+    // ⚠️ Umgekehrt geprüft, weil die Vorgabe AUS ist: `!== false` machte aus
+    // „nicht gesetzt" ein „an" und der Kanal wäre entgegen der Vorgabe aktiv.
+    ueberholt: p.ueberholt === true,
     vorlaufStunden: vorlauf.length ? vorlauf : DEFAULT_NOTIFY.vorlaufStunden,
     nurUngetippte: p.nurUngetippte !== false,
     ruhezeit: {
@@ -89,6 +130,12 @@ export function inRuhezeit(date, ruhezeit = DEFAULT_NOTIFY.ruhezeit) {
 export function dueNotifications({
   matches = [], tips = [], userId, prefs = DEFAULT_NOTIFY,
   jetzt = Date.now(), gesehen = [],
+  // 🔴 Die drei neuen Arten (ZP5) brauchen Angaben, die diese Datei nicht
+  // selbst holen darf — sie ist store-frei, und „welche Spiele gehören zur
+  // Runde" ist eine Frage der Runden-Schicht. Wer füttert, hat sie beantwortet.
+  eingriffe = [],        // aus `getFremdEingriffe(roundId)`
+  abrechnungen = [],     // [{ wettbewerb, matchday, punkte }]
+  ueberholungen = [],    // [{ name, vonUserId, rang }]
 }) {
   const p = sanitizeNotify(prefs);
   if (!p.enabled) return [];
@@ -158,6 +205,63 @@ export function dueNotifications({
     }
   }
 
+  // 3) Fremdjoker: jemand hat mir ein Spiel gesperrt (KT7).
+  //
+  // 🔴 Die Meldung betrifft eine FRIST, nicht die Unterhaltung: wer nicht
+  // weiß, dass sein Spiel gesperrt ist, versucht kurz vor Anpfiff zu tippen
+  // und steht vor einem grauen Knopf. Deshalb steht sie in der Sortierung
+  // unten ganz vorn (`stunden: -1`) — sie darf nicht als Erste aus der
+  // Tages-Obergrenze fallen.
+  //
+  // ⚠️ `eingriffe` kommt von AUSSEN herein, nicht aus einem eigenen Aufruf:
+  // diese Datei bleibt store-frei, und wer sie füttert, hat die Runden-Frage
+  // schon beantwortet (`getFremdEingriffe(roundId)`).
+  if (p.geblockt) {
+    for (const e of eingriffe) {
+      if ((e.aufUserId ?? e.auf_user_id) !== userId) continue;
+      const id = e.matchId ?? e.match_id ?? null;
+      const key = `geblockt:${id ?? "spieltag"}:${e.vonUserId ?? e.von_user_id ?? "?"}`;
+      if (schon.has(key)) continue;
+      const spiel = matches.find((m) => (m.id ?? m.matchId) === id);
+      out.push({
+        art: "geblockt", key, matchId: id, stunden: -1,
+        titel: spiel ? `Gesperrt: ${spiel.home} – ${spiel.away}` : "Ein Spiel wurde dir gesperrt",
+        text: `${e.vonName ?? "Ein Mitspieler"} hat einen Fremdjoker auf dich gesetzt.`,
+      });
+    }
+  }
+
+  // 4) Spieltag abgerechnet — einmal je Wettbewerb und Spieltag.
+  if (p.abgerechnet) {
+    for (const a of abrechnungen) {
+      const w = a.wettbewerb ?? DEFAULT_WETTBEWERB;
+      const md = a.matchday ?? 0;
+      if (!md) continue;
+      const key = `abgerechnet:${w}:${md}`;
+      if (schon.has(key)) continue;
+      out.push({
+        art: "abgerechnet", key, matchday: md, wettbewerb: w, stunden: 0,
+        titel: `${wettbewerbLabel(w)} · Spieltag ${md} ist gewertet`,
+        text: Number.isFinite(a.punkte)
+          ? `Du hast ${Math.round(a.punkte)} Punkte geholt.`
+          : "Die Punkte stehen fest.",
+      });
+    }
+  }
+
+  // 5) Überholt — Unterhaltung, deshalb ganz hinten in der Sortierung.
+  if (p.ueberholt) {
+    for (const u of ueberholungen) {
+      const key = `ueberholt:${u.vonUserId ?? u.name ?? "?"}:${u.rang ?? "?"}`;
+      if (schon.has(key)) continue;
+      out.push({
+        art: "ueberholt", key, stunden: 98,
+        titel: `${u.name ?? "Ein Mitspieler"} ist an dir vorbei`,
+        text: Number.isFinite(u.rang) ? `Du stehst jetzt auf Rang ${u.rang}.` : "Die Rangliste hat sich geändert.",
+      });
+    }
+  }
+
   // Tages-Obergrenze: das Dringendste zuerst (kleinste Restzeit), Rest fällt weg.
   out.sort((a, b) => (a.stunden ?? 99) - (b.stunden ?? 99));
   return out.slice(0, p.maxProTag);
@@ -171,6 +275,9 @@ export function summarize(prefs = DEFAULT_NOTIFY) {
   const teile = [];
   if (p.neuerSpieltag) teile.push("neuer Spieltag");
   if (p.erinnerung) teile.push(`Erinnerung ${p.vorlaufStunden.join(" h / ")} h vorher`);
+  if (p.geblockt) teile.push("Sperren");
+  if (p.abgerechnet) teile.push("Abrechnung");
+  if (p.ueberholt) teile.push("Überholungen");
   if (!teile.length) return "Nichts ausgewählt — es kommt nichts an.";
   return `${teile.join(" · ")} · höchstens ${p.maxProTag} am Tag · Ruhe ${p.ruhezeit.von}–${p.ruhezeit.bis} Uhr.`;
 }
