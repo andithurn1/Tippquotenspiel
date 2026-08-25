@@ -314,8 +314,12 @@ create unique index if not exists profiles_display_name_key
 --  fehlgeschlagen: ein Freund, der sich nicht anmelden kann und keinen Grund
 --  sieht. Sperre und Ausweichname gehoeren deshalb zusammen.
 --
---  Gesucht wird der naechste freie Name in derselben Reihenfolge wie in
---  `namensVorschlaege()`: laufende Zahl am gekuerzten Stamm. Der
+--  Gesucht wird der naechste freie Name ueber die laufende Zahl am
+--  gekuerzten Stamm — also die RUECKFALL-Spielart aus `namensVorschlaege()`,
+--  nicht deren ganze Rangfolge. Das ist Absicht: Trikotnummer, Geburtsjahr
+--  und Vereinskuerzel sind Vorschlaege fuer einen MENSCHEN, der auswaehlt.
+--  Hier waehlt niemand aus, hier muss nur eine Registrierung durchgehen —
+--  und der Trigger kennt weder Geburtsjahr noch Lieblingsverein. Der
 --  `exception`-Zweig faengt zusaetzlich das Rennen zweier gleichzeitiger
 --  Anmeldungen ab, das eine reine Vorab-Pruefung nicht sehen kann.
 -- ============================================================

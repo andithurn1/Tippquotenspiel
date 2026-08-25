@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   namensSchluessel, gleicherName, istFrei, jahresZusatz,
-  namensVorschlaege, namensHinweis,
+  namensVorschlaege, namensHinweis, vereinsKuerzel,
 } from "@/lib/benutzername";
 import { NAME_LIMITS } from "@/lib/avatars";
 
@@ -68,10 +68,38 @@ describe("Vorschläge", () => {
     expect(v[0]).toBe("Andi95");
   });
 
-  // ⚠️ Pflicht, nicht Zierde: KT9 (Geburtsdatum) gibt es noch gar nicht.
-  it("ohne Geburtsjahr kommt die laufende Zahl", () => {
-    const v = namensVorschlaege("Andi", belegt);
-    expect(v[0]).toBe("Andi4");     // 2 und 3 sind belegt
+  // 🔴 Andi, 25.08.2026: „werden noch paar mehr Zahlen oder Abwandlungen
+  // brauchen". Vorher kam hier „Andi4" — die laufende Zahl liest sich wie
+  // eine Fehlermeldung. Jetzt steht eine TRIKOTNUMMER vorn.
+  it("ohne Geburtsjahr kommt eine Trikotnummer, nicht die laufende Zahl", () => {
+    const v = namensVorschlaege("Andi", belegt, { anzahl: 3 });
+    expect(v[0]).toBe("Andi10");    // die 10, nicht die 4
+    for (const n of v) expect(n).toMatch(/^Andi\d+$/);
+    // Der alte Bau hätte hier Andi4, Andi5, Andi6 geliefert.
+    expect(v).not.toContain("Andi4");
+  });
+
+  it("der Verein kommt als Kürzel dazu, wenn er bekannt ist", () => {
+    const v = namensVorschlaege("Andi", belegt, { geburtsjahr: 1995, verein: "1. FC Köln", anzahl: 4 });
+    expect(v).toContain("AndiFCK");
+    expect(v[0]).toBe("Andi95");    // das Geburtsjahr bleibt vorn
+  });
+
+  // 🔴 Der Fund beim Bau, gemessen statt vermutet: als alle Spielarten
+  // gleichberechtigt reihum liefen, stand der Zufalls-Nachcode schon an
+  // dritter Stelle („Andi_10 · DerAndi · Andi-rder"), obwohl Andi7 frei war.
+  it("der Zufalls-Nachcode kommt NICHT, solange etwas Sinnvolles frei ist", () => {
+    const v = namensVorschlaege("Andi", belegt, { anzahl: 8 });
+    for (const n of v) expect(n, n).not.toMatch(/-[a-z0-9]{4}$/);
+  });
+
+  it("erst wenn wirklich nichts mehr frei ist, greift der Notnagel", () => {
+    // Alle Trikotnummern, alle Trennzeichen-Varianten und 999 laufende Zahlen.
+    const alle = new Set(["Andi"]);
+    for (const kandidat of namensVorschlaege("Andi", [], { anzahl: 2000 })) alle.add(kandidat);
+    const v = namensVorschlaege("Andi", [...alle], { anzahl: 1 });
+    expect(v.length).toBe(1);
+    expect(istFrei(v[0], [...alle])).toBe(true);
   });
 
   it("schlägt NIE etwas vor, das schon vergeben ist", () => {
@@ -120,5 +148,23 @@ describe("Ein Satz für die Oberfläche", () => {
     expect(h.frei).toBe(false);
     expect(h.ton).toBe("fehler");
     expect(h.vorschlaege).toEqual([]);
+  });
+});
+
+describe("Vereinskürzel", () => {
+  it("bildet gängige Kürzel", () => {
+    expect(vereinsKuerzel("1. FC Köln")).toBe("FCK");
+    expect(vereinsKuerzel("Bayern München")).toBe("BM");
+    expect(vereinsKuerzel("Borussia Dortmund")).toBe("BD");
+  });
+
+  it("wirft reine Zahlenteile weg", () => {
+    expect(vereinsKuerzel("1. FC Köln")).not.toContain("1");
+  });
+
+  it("kommt mit Unsinn klar, statt zu raten", () => {
+    for (const x of [null, undefined, "", "   ", "1. 2. 3."]) {
+      expect(vereinsKuerzel(x), String(x)).toBeNull();
+    }
   });
 });
