@@ -482,37 +482,65 @@ Werbefreiheit — und vor allem eine **Belohnung** (M8/M9).
 
 ---
 
-## 🕸️ Der Moat — Andis Befund stimmt, das Mittel nur halb (25.08.2026)
+## 🕸️ Der Moat — zweimal besprochen, hier der Stand (25.08.2026)
 
-Andi: *„ist das halt son Netzwerkaufbau-Kampagne um Nachahmer direkt zu
-verhindern, weil der Moat bei so ner App echt nich groß ist."*
+Andi: *„der Moat bei so ner App ist echt nich groß … ist das halt son
+Netzwerkaufbau-Kampagne um Nachahmer direkt zu verhindern."*
 
-**Der Befund stimmt.** Ein Tippspiel ist in vier Wochen nachgebaut.
+Auf meinen Einwand hin präzisiert: *„der Moat ist, dass ich bereits so groß
+bin nach kurzer Zeit mit dem Konzept und dass die App so vollständig ist,
+keinerlei Wünsche offen lässt, dass es für Nachahmer schlichtweg keinen Sinn
+macht einen Klon zu bauen, auch wenn sie vielleicht höhere Ressourcen als ich
+haben."*
 
-⚠️ **Aber der Netzwerkeffekt eines Tippspiels ist LOKAL, nicht global.** Eine
-Runde mit zehn Freunden hat nichts davon, dass es hunderttausend andere
-Nutzer gibt — anders als bei einem Marktplatz, wo jeder neue Teilnehmer allen
-anderen nützt. Ein Nachahmer muss deshalb nicht gegen die Gesamtzahl
-antreten, sondern nur **eine Gruppe nach der anderen** abwerben. Reine
-Nutzerzahlen verteidigen hier also weniger, als es aussieht.
+🔴 **Damit hat er recht, und mein erster Einwand war zu eng.** Vollständigkeit
+IST ein Graben, und zwar gerade gegen die mit mehr Ressourcen: ein großer
+Anbieter klont keine Nischen-App mit 199 Einstellungen — der Aufwand steht in
+keinem Verhältnis zum Markt. Das ist der klassische Graben eines Kleinen.
 
-🔴 **Was in DIESER App wirklich verteidigt — und alle drei sind schon halb
-gebaut:**
+⚠️ **Was ich trotzdem danebenstelle, weil es ändert, wofür Geld ausgegeben
+wird:** „alle anderen sind schlechter, es gibt keinen Grund zu wechseln" ist
+**Produktüberlegenheit plus Wechselkosten**, nicht ein Netzwerkeffekt. Der
+Unterschied ist kein Wortstreit, sondern ein anderer Verteidigungsplan:
 
-1. **Die Regelwerk-Bibliothek.** Geteilte Codes mit gezählten Übernahmen sind
-   Inhalt, der sich anhäuft. Ein Nachahmer kann die App kopieren, nicht die
-   Bibliothek. Seit dem 24.08.2026 zählt `merkePresetNutzung` das mit.
-2. **Die gespielte Geschichte.** Verlauf, Rekorde und Auszeichnungen einer
-   Runde wachsen mit jedem Spieltag — und mit ihnen die Wechselkosten. Wer
-   eine halbe Saison gespielt hat, wechselt nicht mehr.
-3. **Die Tiefe selbst.** 199 einstellbare Felder baut niemand in einem
-   Quartal nach. Ein Nachahmer liefert die einfache Fassung schnell — und
-   steht dann vor demselben Berg.
+| | verteidigt man mit | wer kann das? |
+|---|---|---|
+| Netzwerkeffekt | **Wachstum** — Reichweite, Kampagne, Geld | der mit dem größeren Budget |
+| Überlegenheit | **Vorsprung** — weiterbauen, schneller sein | ein Einzelner |
 
-⚠️ **Folge für die Reihenfolge:** Bibliothek und Historie sind
-**Moat-Arbeit**, nicht Beiwerk. Sie gehören nicht ans Ende der Liste.
+Andi hat selbst geschrieben, dass man so etwas heute schnell kopieren kann.
+Dann ist „schnell groß werden" ein Rennen, das der mit mehr Geld gewinnt —
+und der **Vorsprung** ist der Teil, der ihm gehört.
 
 ---
+
+### 🔴 Der Punkt, der daraus für die Bauarbeit folgt
+
+**Der Moat wird gerade nicht von Nachahmern angeknabbert, sondern von innen.**
+
+„Keine Wünsche offen" gilt nur für das, was ein Nutzer auch FINDET. Allein am
+24./25.08.2026 gemessen:
+
+| Fund | was er heißt |
+|---|---|
+| **16 Regel-Oberflächen ohne zweite Ebene** (`npm run detail`) | Tiefe da, nicht erreichbar |
+| **16 Avatare + `AvatarKreis`** — ausdrücklich fürs Leaderboard geschrieben, dort nie benutzt | gebaut, nie gefragt |
+| **Zwei Screens, die beim Anklicken abstürzten** | Build grün, Tests grün, Lint grün — Screen weiß |
+| historisch: `autoTip.js`, die WEN-Achse, `spieltagsPunkte` | dasselbe Muster, sechsmal an EINEM Tag |
+
+Das ist alles Vollständigkeit, die bezahlt und nicht bekommen wurde. **Ein
+Nachahmer, der die einfache Fassung sauber ausliefert, schlägt eine tiefe
+Fassung, in der die Tiefe nicht ankommt.**
+
+🔴 **Deshalb sind `npm run tot`, `npm run detail` und `npm run greift` keine
+Hygiene, sondern Moat-Arbeit.** Jeder Fund dort ist Vorsprung, der schon
+bezahlt ist und nur noch angeschlossen werden muss — die billigste Form von
+Vorsprung, die es gibt.
+
+⚠️ Und die drei aus der ersten Fassung dieses Abschnitts bleiben gültig, sie
+sind nur nicht mehr der Widerspruch, sondern die Ergänzung: die
+**Regelwerk-Bibliothek** (Inhalt, der sich anhäuft), die **gespielte
+Geschichte** (Wechselkosten) und die **Tiefe** selbst.
 
 ## ⛔ ENDPHASE — hier steht, was ERST GANZ AM SCHLUSS drankommt
 
