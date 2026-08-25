@@ -775,8 +775,16 @@ export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = [], sammel
   // joker-sondermenue.md, JK15). Ein stiller Wechsel der Rechengrundlage wäre
   // schlimmer als der benannte Übergang.
   const grundwertVon = new Map();   // `${userId}#${matchId}` -> Grundwert
+  // Wer überhaupt Einzelspiel-Werte mitbringt. Das unterscheidet zwei Fälle,
+  // die sonst gleich aussehen: „für diesen Spieler liegen gar keine
+  // Spielwerte vor" (der benannte Übergang) gegen „liegen vor, aber nicht für
+  // dieses Spiel" (das Ziel hat dort nicht getippt).
+  const hatSpielwerte = new Set();
   for (const sp of Array.isArray(spielPunkte) ? spielPunkte : []) {
-    if (sp && sp.matchId != null) grundwertVon.set(`${sp.userId}#${sp.matchId}`, sp.grundwert);
+    if (sp && sp.matchId != null) {
+      grundwertVon.set(`${sp.userId}#${sp.matchId}`, sp.grundwert);
+      hatSpielwerte.add(sp.userId);
+    }
   }
 
   // Chronologisch anwenden, damit `maxProSaison` die SPÄTEREN Einsätze
@@ -804,11 +812,45 @@ export function applyDuellJoker(verlauf = [], rules = {}, einsaetze = [], sammel
     //   3. die Spieltagspunkte (Übergang, solange kein Spiel benannt ist).
     // Der spätere ABZUG wirkt in allen drei Fällen auf `zielVoll` — die
     // Grundlage bestimmt, WORAUF gerechnet wird, nicht WO abgezogen wird.
-    const ausSpiel = e.matchId != null
+    const hatSpiel = e.matchId != null;
+    const ausSpiel = hatSpiel
       ? grundwertVon.get(`${e.aufUserId}#${e.matchId}`)
       : undefined;
     const zielPunkte = Number.isFinite(e.basis) ? e.basis
       : Number.isFinite(ausSpiel) ? ausSpiel
+      // 🔴 GEFUNDEN AM 25.08.2026, aus Andis Frage heraus: „wenn ich nem
+      // anderen ein Spiel sperren will, muss ich noch nicht unbedingt gesehen
+      // haben ob der das betippt hat."
+      //
+      // Genau dieser Fall fiel bis hierher auf `zielVoll` durch — den GANZEN
+      // Spieltag. Gemessen: ein Block auf ein ungetipptes Spiel halbierte die
+      // komplette Spieltagswertung (200 → 100), unter „gesperrt" löschte er
+      // sie (200 → 0). Ein Blindschuss traf also ungleich härter als ein
+      // gezielter Treffer.
+      //
+      // ⚠️ Der Rückfall auf `zielVoll` war für Einsätze OHNE `matchId` gedacht
+      // (der benannte Übergangszustand darüber) — er galt aber auch, wenn ein
+      // Spiel BENANNT war und das Ziel dort nur nichts hatte. Zwei sehr
+      // verschiedene Fälle, dieselbe Zeile.
+      //
+      // Richtig ist 0: der Einsatz galt einem bestimmten Spiel, und dieses
+      // Spiel hat dem Ziel nichts gebracht. Der Joker ist damit verbraucht und
+      // wirkungslos — das ist das Risiko des blinden Einsatzes, und es macht
+      // ihn zu einer Wette statt zu einem Freifahrtschein.
+      //
+      // ⚠️ **Hier stand vorher ausdrücklich das Gegenteil**, mit der
+      // Begründung „sonst verschluckte ein Tippfehler in der Spiel-Id den
+      // Einsatz stumm". Die Abwägung hat sich gedreht, nicht die Sorge: seit
+      // blind gesetzt werden DARF, ist „Ziel hat dort nicht getippt" der
+      // NORMALFALL und nicht mehr der Ausnahmefall eines Tippfehlers. Und ein
+      // Fehlgriff, der den ganzen Spieltag löscht, ist als Fehlermeldung
+      // ohnehin untauglich — niemand liest ihn als Tippfehler, alle lesen ihn
+      // als Regel.
+      //
+      // ⚠️ Der Übergang bleibt trotzdem stehen: liegen für das Ziel GAR KEINE
+      // Einzelspiel-Werte vor, gibt es kein Spiel, auf das man rechnen könnte
+      // — dann gilt weiter der Spieltag.
+      : hatSpiel && hatSpielwerte.has(e.aufUserId) ? 0
       : zielVoll;
 
     if (!an[e.typ]) continue;

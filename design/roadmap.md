@@ -74,6 +74,64 @@ nicht dasselbe sind.
 
 ---
 
+## 🔴 EIN BLINDSCHUSS LÖSCHTE DEN GANZEN SPIELTAG (25.08.2026)
+
+**Aus einer Frage von Andi heraus gefunden, nicht aus einem Test:**
+
+*„wenn ich nem anderen ein Spiel sperren will oder ein Fremdjoker mache, muss
+ich noch nicht unbedingt gesehen haben ob der des betippt hat, also is nich
+unbedingt Voraussetzung Pflicht, weil will nicht so nen engen Zeitplan bei
+Tippabgabe und Jokereinsatz verpflichtend machen."*
+
+Die Frage war, ob das Sinn ergibt. Beim Nachmessen kam etwas anderes heraus:
+
+| Fremdjoker auf ein Spiel, das das Ziel **nicht getippt** hat | vorher |
+|---|---|
+| `wirkung: "punkte"`, Restanteil 0,5 | 200 → **100** |
+| `wirkung: "gesperrt"` | 200 → **0** |
+
+Es traf nicht das Spiel, sondern **den ganzen Spieltag**. Ein Blindschuss war
+damit ungleich härter als ein gezielter Treffer — und genau der Blindschuss
+soll nach Andis Ansage der Normalfall sein dürfen.
+
+🔴 **Die Ursache war eine Zeile, die zwei sehr verschiedene Fälle gleich
+behandelte:**
+
+```js
+const zielPunkte = … : Number.isFinite(ausSpiel) ? ausSpiel : zielVoll;
+```
+
+`zielVoll` (der ganze Spieltag) war als **Übergang** gedacht — für Einsätze
+ganz OHNE `matchId`, solange die Store-Anbindung fehlte. Er griff aber auch,
+wenn ein Spiel BENANNT war und das Ziel dort nur nichts hatte.
+
+⚠️ **Und es gab einen Test, der das ausdrücklich festhielt**, mit der
+Begründung „sonst verschluckte ein Tippfehler in der Spiel-Id den Einsatz
+stumm". Die Sorge war berechtigt — **die Abwägung hat sich gedreht**, nicht
+die Sorge:
+
+- Seit blind gesetzt werden darf, ist „Ziel hat dort nicht getippt" der
+  **Normalfall**, nicht der Ausnahmefall eines Tippfehlers.
+- Und als Fehlermeldung taugte der Rückfall ohnehin nicht: **niemand liest
+  einen gelöschten Spieltag als Tippfehler**, alle lesen ihn als Regel.
+
+**Behoben, und zwar unterschieden statt pauschal:**
+
+| Lage | jetzt |
+|---|---|
+| Ziel hat Einzelspiel-Werte, aber nicht für DIESES Spiel | **0** — der Joker ist verbraucht und wirkungslos |
+| Ziel hat GAR KEINE Einzelspiel-Werte | **Spieltag** — der benannte Übergang bleibt |
+
+⚠️ Ohne diese Unterscheidung hätte der Fix den Übergang stillschweigend
+mitgekippt. Beide Fälle stehen jetzt als Test.
+
+🔴 **Nebenwirkung, die Andis Entwurf trägt:** der blinde Einsatz wird damit zu
+einer **Wette** statt zu einem Freifahrtschein. Wer ohne Kenntnis blockt,
+riskiert, den Joker zu verschwenden — genau das macht den lockeren Zeitplan
+erst spielbar.
+
+---
+
 ## 🔴 ZWEI SCREENS STÜRZTEN AB — `Zahl` und `Slider` widersprechen sich (25.08.2026)
 
 **Gefunden beim Durchklicken, nicht von einem Test.** Zwei Stellen der

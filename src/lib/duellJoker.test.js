@@ -713,13 +713,40 @@ describe("Fremdjoker: Einzelspiel statt Spieltag", () => {
     expect(r[0].board.find((z) => z.userId === "a").total).toBe(20);
   });
 
-  it("ein Spiel, das das Ziel gar nicht getippt hat, fällt auf den Spieltag zurück", () => {
-    // Sonst verschluckte ein Tippfehler in der Spiel-Id den Einsatz stumm.
+  // 🔴 UMGEDREHT AM 25.08.2026. Hier stand: „fällt auf den Spieltag zurück",
+  // begründet mit „sonst verschluckte ein Tippfehler in der Spiel-Id den
+  // Einsatz stumm".
+  //
+  // Die Abwägung hat sich gedreht, nicht die Sorge. Andi am 25.08.2026: „wenn
+  // ich nem anderen ein Spiel sperren will, muss ich noch nicht unbedingt
+  // gesehen haben ob der des betippt hat." Damit ist „das Ziel hat dort nicht
+  // getippt" der NORMALFALL — und der Rückfall traf dann den ganzen Spieltag:
+  // gemessen wurden 200 → 100 beim Dämpfen und 200 → 0 beim Sperren. Ein
+  // Blindschuss traf ungleich härter als ein gezielter Treffer.
+  //
+  // ⚠️ Und als Fehlermeldung taugte der Rückfall ohnehin nicht: niemand liest
+  // einen gelöschten Spieltag als Tippfehler, alle lesen ihn als Regel.
+  it("ein Spiel, das das Ziel nicht getippt hat, trifft NICHTS", () => {
     const spielPunkte = [
       { userId: "b", key: "bl#1", matchId: "m1", wert: 200, grundwert: 200, ersatz: false },
     ];
     const r = applyDuellJoker(verlauf, rules, [
       { spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "klau", matchId: "gibtsnicht" },
+    ], null, spielPunkte);
+    // `a` startet in diesem Block bei 0 — ein wirkungsloser Klau lässt ihn dort.
+    expect(r[0].board.find((z) => z.userId === "a").total).toBe(0);
+  });
+
+  // ⚠️ Die Gegenprobe zum Test darüber: der benannte Übergang bleibt. Liegen
+  // für das Ziel GAR KEINE Einzelspiel-Werte vor, gibt es kein Spiel, auf das
+  // man rechnen könnte — dann gilt weiter der Spieltag. Ohne diese
+  // Unterscheidung hätte der Fix oben den Übergang stillschweigend mitgekippt.
+  it("ohne jede Spielwertung für das Ziel gilt weiter der Spieltag", () => {
+    const spielPunkte = [
+      { userId: "c", key: "bl#1", matchId: "m1", wert: 200, grundwert: 200, ersatz: false },
+    ];
+    const r = applyDuellJoker(verlauf, rules, [
+      { spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "klau", matchId: "m1" },
     ], null, spielPunkte);
     expect(r[0].board.find((z) => z.userId === "a").total).toBe(150);
   });
@@ -941,5 +968,67 @@ describe("Block-Wirkung", () => {
   it("verwirft eine unbekannte Wirkung auf die Vorgabe", () => {
     const g = sanitizeDuellJoker({ ...DEFAULT_DUELL, block: { ...DEFAULT_DUELL.block, wirkung: "erfunden" } });
     expect(g.block.wirkung).toBe("punkte");
+  });
+});
+
+// ============================================================
+//  BLIND GESETZT â ein Fremdjoker auf ein Spiel ohne Tipp des Ziels
+//
+//  ð´ Andi, 25.08.2026: âwenn ich nem anderen ein Spiel sperren will oder ein
+//  Fremdjoker mache, muss ich noch nicht unbedingt gesehen haben ob der des
+//  betippt hat â¦ will nicht so nen engen Zeitplan bei Tippabgabe und
+//  Jokereinsatz verpflichtend machen."
+//
+//  Aus dieser Frage heraus GEMESSEN â und es war ein schwerer Fund: der Fall
+//  fiel auf den GANZEN SPIELTAG durch. Ein Block auf ein ungetipptes Spiel
+//  halbierte die komplette Spieltagswertung, unter âgesperrt" lÃ¶schte er sie.
+//  Ein Blindschuss traf also ungleich hÃ¤rter als ein gezielter Treffer.
+//
+//  â ï¸ Diese Tests halten den Fall fest, damit die Zeile nicht wieder
+//  zusammenfÃ¤llt: âkein Spiel benannt" und âSpiel benannt, aber nichts da"
+//  sind zwei verschiedene Sachen.
+// ============================================================
+describe("Blind gesetzter Fremdjoker", () => {
+  const verlauf = () => ([
+    { wettbewerb: "BL", matchday: 1, board: [
+      { userId: "a", name: "A", total: 100 },
+      { userId: "b", name: "B", total: 200 },
+    ] },
+  ]);
+  const regeln = (block = {}, typen = ["block"]) => ({
+    duell: { ...DEFAULT_DUELL, enabled: true, typen,
+      block: { ...DEFAULT_DUELL.block, ...block } },
+  });
+  const punkteVon = (r, id) => r[0].board.find((z) => z.userId === id).total;
+  // `M9`: b hat dort keinen Tipp, also auch keinen Grundwert.
+  const blind = [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "block", matchId: "M9" }];
+  // ⚠️ b HAT Einzelspiel-Werte, nur eben nicht für M9. Genau das unterscheidet
+  // diesen Fall vom benannten Übergang (kein einziger Spielwert vorhanden) —
+  // ohne diese Zeile misst der Block hier den Übergang statt den Blindschuss.
+  const spielPunkte = [
+    { userId: "b", key: "bl#1", matchId: "M1", wert: 200, grundwert: 200, ersatz: false },
+  ];
+
+  it("trifft beim Daempfen nichts — nicht den ganzen Spieltag", () => {
+    const r = applyDuellJoker(verlauf(), regeln({ wirkung: "punkte", restanteil: 0.5 }), blind, null, spielPunkte);
+    expect(punkteVon(r, "b")).toBe(200);
+  });
+
+  it("trifft beim Sperren nichts — nicht den ganzen Spieltag", () => {
+    const r = applyDuellJoker(verlauf(), regeln({ wirkung: "gesperrt", verfaellt: true }), blind, null, spielPunkte);
+    expect(punkteVon(r, "b")).toBe(200);
+  });
+
+  it("nimmt dem Blockenden auch nichts", () => {
+    const r = applyDuellJoker(verlauf(), regeln({ wirkung: "punkte", beute: 0.5 }), blind, null, spielPunkte);
+    expect(punkteVon(r, "a")).toBe(100);
+  });
+
+  it("lässt einen Einsatz OHNE Spiel weiter auf den Spieltag rechnen", () => {
+    // â ï¸ Der benannte Ãbergangszustand â er darf NICHT mitgefixt werden.
+    // Ohne `matchId` gibt es kein Spiel, auf das man rechnen kÃ¶nnte.
+    const ohneSpiel = [{ spieltag: 1, vonUserId: "a", aufUserId: "b", typ: "block" }];
+    const r = applyDuellJoker(verlauf(), regeln({ wirkung: "punkte", restanteil: 0.5 }), ohneSpiel);
+    expect(punkteVon(r, "b")).toBe(100);
   });
 });
