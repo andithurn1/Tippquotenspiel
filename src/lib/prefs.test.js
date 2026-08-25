@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   sanitizePrefs, DEFAULT_PREFS, LEVELS, START_SCREENS,
   BEWEGUNG_STUFEN, BEWEGUNG_LABEL, BEWEGUNG_HINWEIS,
+  RASTER_WEITEN, RASTER_WEITE_LABEL, RASTER_WEITE_HINWEIS,
 } from "./prefs";
 
 describe("sanitizePrefs", () => {
@@ -14,7 +15,7 @@ describe("sanitizePrefs", () => {
   it("gültige Stufen bleiben erhalten", () => {
     for (const lv of LEVELS) {
       expect(sanitizePrefs({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv }))
-        .toEqual({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu", vergleich: {}, bewegung: "voll" });
+        .toEqual({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu", vergleich: {}, bewegung: "voll", rasterWeite: "raster" });
     }
   });
 
@@ -72,6 +73,34 @@ describe("Bewegungs-Stufe", () => {
     for (const b of BEWEGUNG_STUFEN) {
       expect(BEWEGUNG_LABEL[b], b).toBeTruthy();
       expect(BEWEGUNG_HINWEIS[b]?.length ?? 0, b).toBeGreaterThan(20);
+    }
+  });
+});
+
+// 🔴 Andi, 25.08.2026: „können wir die option zu 1 einstellbar machen? vllt
+// auch im account unter den ganzen persönlichen anzeigemöglichkeiten".
+describe("Weite des Ergebnis-Rasters", () => {
+  it("die Vorgabe bleibt beim Quoten-Raster", () => {
+    expect(DEFAULT_PREFS.rasterWeite).toBe("raster");
+    expect(sanitizePrefs({}).rasterWeite).toBe("raster");
+  });
+
+  it("beide Weiten kommen durch", () => {
+    for (const w of RASTER_WEITEN) {
+      expect(sanitizePrefs({ rasterWeite: w }).rasterWeite, w).toBe(w);
+    }
+  });
+
+  it("Unsinn fällt auf die Vorgabe zurück", () => {
+    for (const x of ["breit", 9, null, {}]) {
+      expect(sanitizePrefs({ rasterWeite: x }).rasterWeite, String(x)).toBe("raster");
+    }
+  });
+
+  it("jede Weite hat Beschriftung und Hinweis", () => {
+    for (const w of RASTER_WEITEN) {
+      expect(RASTER_WEITE_LABEL[w], w).toBeTruthy();
+      expect(RASTER_WEITE_HINWEIS[w]?.length ?? 0, w).toBeGreaterThan(20);
     }
   });
 });

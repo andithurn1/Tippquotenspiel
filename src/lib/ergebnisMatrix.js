@@ -56,6 +56,8 @@
 // ============================================================
 
 import { scoreTip, DEFAULT_RULES } from "./engine";
+import { MAX_TIPP } from "./nearResults";
+import { ergebnisQuote } from "./randquoten";
 
 // Die Stufen aus Andis Folie, soweit die Daten sie hergeben (siehe Kopf).
 // `auto` zieht jede Seite einzeln auf, die Zahlen sind feste Quadrate — beides
@@ -119,15 +121,34 @@ export function wahrscheinlichkeiten(snap, { ohneDeckel = false } = {}) {
 // bilden, dann von 0 an aufsummieren, bis die Abdeckung steht. Genau das ist
 // der Unterschied zum Quadrat: beim klaren Favoriten endet die schwache Seite
 // früh und die starke spät.
-export function matrixMasse(snap, stufeKey = DEFAULT_MATRIX_STUFE) {
-  const grenzen = rasterMasse(snap);
+// 🔴 `bisTipp` (Andi, 25.08.2026): das Raster darf über die Quotenquelle
+// hinausgehen, bis zur Grenze des Steppers (0…9).
+//
+// Der Anlass ist sein Befund: „einmal das Grid direkt wo man direkt sieht
+// welches Ergebnis wie viel auszahlt wenns direkt getroffen wird" — und
+// gemessen reichte genau dieses Raster nur bis 0…4/0…5, während sich 0…9
+// tippen lässt. Wer 6:0 tippen wollte, fand die Zelle nicht.
+//
+// ⚠️ Es bleibt eine EINSTELLUNG und wird nicht die Vorgabe. Der Grund steht
+// oben bei `ohneDeckel`: außerhalb des Rasters schreibt `randquoten.js` fort,
+// und fortgeschriebene Zellen laufen alle in den Deckel. Ein Raster, in dem
+// die halbe Fläche auf demselben Höchstwert steht, ist als ORIENTIERUNG
+// wertlos — auch wenn jede einzelne Zahl stimmt. Wer es trotzdem sehen will,
+// weiß dann, wonach er sucht.
+export function matrixMasse(snap, stufeKey = DEFAULT_MATRIX_STUFE, { bisTipp = false } = {}) {
+  const rohGrenzen = rasterMasse(snap);
+  // Bei „voll" zählt der Stepper als Grenze, nicht die Quotenquelle.
+  const grenzen = bisTipp
+    ? { maxHeim: Math.max(rohGrenzen.maxHeim, MAX_TIPP), maxGast: Math.max(rohGrenzen.maxGast, MAX_TIPP) }
+    : rohGrenzen;
   const st = stufeVon(stufeKey);
   if (st.feste != null) {
     return {
       maxHeim: Math.min(st.feste, grenzen.maxHeim),
       maxGast: Math.min(st.feste, grenzen.maxGast),
       abgedeckt: abdeckungVon(snap, Math.min(st.feste, grenzen.maxHeim), Math.min(st.feste, grenzen.maxGast)),
-      begrenztVomRaster: st.feste > grenzen.maxHeim || st.feste > grenzen.maxGast,
+      begrenztVomRaster: !bisTipp && (st.feste > grenzen.maxHeim || st.feste > grenzen.maxGast),
+      ueberRaster: bisTipp && (grenzen.maxHeim > rohGrenzen.maxHeim || grenzen.maxGast > rohGrenzen.maxGast),
     };
   }
 
@@ -176,13 +197,28 @@ export function matrixMasse(snap, stufeKey = DEFAULT_MATRIX_STUFE) {
     }
     return max;
   };
-  // Mindestens 0–2 je Seite: eine Matrix, die nur 0:0 und 1:0 anbietet, ist keine.
-  const maxHeim = Math.min(grenzen.maxHeim, Math.max(2, bis(randHeim, grenzen.maxHeim)));
-  const maxGast = Math.min(grenzen.maxGast, Math.max(2, bis(randGast, grenzen.maxGast)));
+  // 🔴 `bisTipp` schlägt die automatische Beschneidung, und das war der Fund
+  // beim Prüfen im Browser: die Einstellung „volles Raster" wirkte in der
+  // Stufe „automatisch" GAR NICHT. Der Grund ist unscheinbar — die
+  // Randverteilung `randHeim` ist so lang wie das RASTER, nicht wie die neue
+  // Grenze. Jenseits davon steht `undefined`, die Summe wächst nicht mehr,
+  // und `bis()` gibt die Rasterkante zurück. Die Einstellung sah aus wie
+  // gesetzt und tat nichts.
+  //
+  // Wer „bis 9:9" einschaltet, will 9:9 sehen — nicht das, was 97 % der
+  // Wahrscheinlichkeit abdeckt. Der automatische Zuschnitt ist genau die
+  // Frage, die er damit abwählt.
+  const maxHeim = bisTipp
+    ? grenzen.maxHeim
+    : Math.min(grenzen.maxHeim, Math.max(2, bis(randHeim, grenzen.maxHeim)));
+  const maxGast = bisTipp
+    ? grenzen.maxGast
+    : Math.min(grenzen.maxGast, Math.max(2, bis(randGast, grenzen.maxGast)));
   return {
     maxHeim, maxGast,
     abgedeckt: abdeckungVon(snap, maxHeim, maxGast),
     begrenztVomRaster: false,
+    ueberRaster: bisTipp && (maxHeim > rohGrenzen.maxHeim || maxGast > rohGrenzen.maxGast),
   };
 }
 
@@ -212,7 +248,12 @@ export function matrixFelder(snap, rules = DEFAULT_RULES, masse = null, tip = nu
   const out = [];
   for (let h = 0; h <= m.maxHeim; h++) {
     for (let a = 0; a <= m.maxGast; a++) {
-      const quote = Number(snap.correctScore?.[h]?.[a]);
+      // ⚠️ Über `ergebnisQuote`, nicht direkt aus dem Raster: außerhalb
+      // schreibt `randquoten.js` fort, und die WERTUNG zahlt das auch. Ein
+      // leeres Feld neben einer Punktzahl wäre die zweite Wahrheit, die heute
+      // früh schon in der Tippabgabe stand.
+      const eq = ergebnisQuote(snap, h, a);
+      const quote = Number(eq.quote);
       // Der Tipp AUF dieses Feld, wenn genau dieses Feld eintritt: die
       // ehrliche Frage „was bringt mir dieser Endstand?". Ohne Torschützen
       // (Kopfkommentar) — deshalb `goals` bewusst leer.
@@ -222,6 +263,10 @@ export function matrixFelder(snap, rules = DEFAULT_RULES, masse = null, tip = nu
       out.push({
         home: h, away: a,
         quote: Number.isFinite(quote) ? quote : null,
+        // Fortgeschrieben statt quotiert? Wird drangeschrieben (Leitplanke 1
+        // in `randquoten.js`) — eine Schätzung, die wie ein Marktpreis
+        // aussieht, ist schlimmer als keine.
+        geschaetzt: eq.geschaetzt === true,
         wahrscheinlichkeit: +(p[h]?.[a] ?? 0).toFixed(4),
         punkte: s.total,
       });
@@ -233,8 +278,8 @@ export function matrixFelder(snap, rules = DEFAULT_RULES, masse = null, tip = nu
 // Ein Satz für die Oberfläche: was der gewählte Ausschnitt abdeckt und was er
 // kostet. Dieselbe Rolle wie `anteilHinweis()` bei den Wettbewerbs-Gewichten —
 // eine Prozentzahl allein sagt niemandem, ob sie gut ist.
-export function beschreibeMatrix(snap, stufeKey = DEFAULT_MATRIX_STUFE) {
-  const m = matrixMasse(snap, stufeKey);
+export function beschreibeMatrix(snap, stufeKey = DEFAULT_MATRIX_STUFE, optionen = {}) {
+  const m = matrixMasse(snap, stufeKey, optionen);
   const felder = (m.maxHeim + 1) * (m.maxGast + 1);
   // ⚠️ NICHT `Math.round`: 99,6 % rundete auf „100 % aller Ausgänge" auf —
   // und behauptete damit Vollständigkeit, die das Raster nicht hat. Genau das,
@@ -253,6 +298,12 @@ export function beschreibeMatrix(snap, stufeKey = DEFAULT_MATRIX_STUFE) {
     // Wertung nicht — und ein Nutzer, der das Gegenteil gelesen hat, tippt
     // hoch und hält die Auszahlung für einen Fehler.
     teile.push("größer geht nicht: darüber endet das Quoten-Raster — tippen lässt sich höher, die Quote wird dann geschätzt");
+  }
+  // 🔴 Bei „volles Raster" (Andi, 25.08.2026) steht die Erweiterung DRAN.
+  // Ohne den Satz sähen fortgeschriebene Zellen wie Marktpreise aus, und die
+  // vielen gleichen Höchstwerte am Rand wie ein Fehler statt wie der Deckel.
+  if (m.ueberRaster) {
+    teile.push("über dem Quoten-Raster geschätzt — die hohen Endstände laufen alle in denselben Deckel");
   }
   return { text: teile.join(" · "), felder, prozent };
 }

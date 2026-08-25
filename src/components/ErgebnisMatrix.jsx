@@ -6,6 +6,7 @@ import {
 } from "@/lib/ergebnisMatrix";
 import { C, MONO, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
+import { usePrefs } from "@/components/PrefsProvider";
 
 // ── Die Ergebnis-Matrix: jedes Feld sagt, was es bringt ──────
 //
@@ -24,10 +25,15 @@ import { TAPZIEL } from "@/lib/tapziel";
 // oben rechnet die Schützen mit) und keine Erklärung dafür hat.
 export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = false }) {
   const [stufe, setStufe] = useState(DEFAULT_MATRIX_STUFE);
+  // 🔴 Wie weit das Raster reicht, ist eine PERSÖNLICHE Anzeige-Einstellung
+  // (Andi, 25.08.2026) — nicht eine Regel der Runde. Sie steht bei „Meine
+  // Anzeige", erreichbar über den Account.
+  const { prefs } = usePrefs();
+  const bisTipp = prefs?.rasterWeite === "voll";
 
-  const masse = useMemo(() => matrixMasse(snap, stufe), [snap, stufe]);
+  const masse = useMemo(() => matrixMasse(snap, stufe, { bisTipp }), [snap, stufe, bisTipp]);
   const felder = useMemo(() => matrixFelder(snap, rules, masse, tip), [snap, rules, masse, tip]);
-  const info = useMemo(() => beschreibeMatrix(snap, stufe), [snap, stufe]);
+  const info = useMemo(() => beschreibeMatrix(snap, stufe, { bisTipp }), [snap, stufe, bisTipp]);
 
   if (!felder.length) return null;
 
@@ -117,7 +123,9 @@ function FeldZeile({ h, spalten, feldVon, maxPunkte, tip, onWahl, gesperrt }) {
         return (
           <button key={`f${h}-${a}`} disabled={gesperrt}
             onClick={() => onWahl?.(h, a)}
-            title={f.quote ? `Quote ${f.quote.toFixed(1)} · ${Math.round(f.wahrscheinlichkeit * 100)} %` : undefined}
+            title={f.quote
+              ? `Quote ${f.quote.toFixed(1)}${f.geschaetzt ? " (geschätzt)" : ""} · ${Math.round(f.wahrscheinlichkeit * 100)} %`
+              : undefined}
             style={{
               minHeight: 44, boxSizing: "border-box", cursor: gesperrt ? "default" : "pointer",
               fontFamily: "inherit", padding: "5px 3px", borderRadius: RUND.karte,

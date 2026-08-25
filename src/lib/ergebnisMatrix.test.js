@@ -232,3 +232,57 @@ describe("beschreibeMatrix sagt nicht mehr, als das Raster hält", () => {
     }
   });
 });
+
+// 🔴 Andi, 25.08.2026: „können wir die option zu 1 einstellbar machen?" —
+// das Raster darf über die Quotenquelle hinaus, bis zur Grenze des Steppers.
+describe("Volles Raster bis zum Stepper (bisTipp)", () => {
+  it("ohne die Option bleibt alles beim Alten", () => {
+    const a = matrixMasse(FAVORIT, "auto");
+    const b = matrixMasse(FAVORIT, "auto", { bisTipp: false });
+    expect(b).toEqual(a);
+  });
+
+  // 🔴 DER FUND beim Prüfen im Browser: in der Stufe „automatisch" wirkte die
+  // Option zuerst GAR NICHT. Die Randverteilung ist so lang wie das RASTER;
+  // jenseits davon steht `undefined`, die Summe wächst nicht mehr, und der
+  // Zuschnitt gab die Rasterkante zurück. Die Einstellung sah gesetzt aus und
+  // tat nichts.
+  it("mit der Option reicht auch die Stufe automatisch bis 9", () => {
+    const m = matrixMasse(FAVORIT, "auto", { bisTipp: true });
+    expect(m.maxHeim).toBe(9);
+    expect(m.maxGast).toBe(9);
+    expect(m.ueberRaster).toBe(true);
+  });
+
+  it("die festen Stufen bleiben feste Quadrate", () => {
+    const m = matrixMasse(FAVORIT, "5", { bisTipp: true });
+    expect(m.maxHeim).toBe(5);
+    expect(m.maxGast).toBe(5);
+  });
+
+  it("jenseits des Rasters kommt eine markierte Quote statt gar keiner", () => {
+    const masse = matrixMasse(FAVORIT, "auto", { bisTipp: true });
+    const felder = matrixFelder(FAVORIT, DEFAULT_RULES, masse);
+    const weit = felder.find((f) => f.home === 8 && f.away === 0);
+    expect(weit).toBeTruthy();
+    expect(weit.quote).toBeGreaterThan(0);
+    expect(weit.geschaetzt).toBe(true);
+    expect(weit.punkte).toBeGreaterThan(0);
+  });
+
+  it("innerhalb des Rasters bleibt die Quote unmarkiert", () => {
+    const masse = matrixMasse(FAVORIT, "auto", { bisTipp: true });
+    const felder = matrixFelder(FAVORIT, DEFAULT_RULES, masse);
+    const nah = felder.find((f) => f.home === 1 && f.away === 1);
+    expect(nah.geschaetzt).toBe(false);
+  });
+
+  // ⚠️ Ohne den Satz sähen die vielen gleichen Höchstwerte am Rand wie ein
+  // Fehler aus statt wie der Deckel.
+  it("die Beschriftung sagt, dass geschätzt wird", () => {
+    const text = beschreibeMatrix(FAVORIT, "auto", { bisTipp: true }).text;
+    expect(text).toMatch(/geschätzt/);
+    expect(text).toMatch(/Deckel/);
+    expect(beschreibeMatrix(FAVORIT, "auto").text).not.toMatch(/Deckel/);
+  });
+});

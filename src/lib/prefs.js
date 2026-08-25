@@ -63,9 +63,37 @@ export const BEWEGUNG_HINWEIS = {
   aus: "Keine Bewegung. Alles ist sofort da.",
 };
 
+// ── Wie weit reicht das Ergebnis-Raster? (Andi, 25.08.2026) ──
+// „können wir die option zu 1 einstellbar machen? vllt auch im account unter
+//  den ganzen persönlichen anzeigemöglichkeiten einstellbar"
+//
+// 🔴 Eine ANZEIGE-Einstellung, keine Regel der Runde: wie weit ich das Raster
+// sehen will, geht den Admin nichts an, und zwei Spieler derselben Runde
+// dürfen es verschieden halten. Deshalb hier bei den Stufen und nicht in
+// `rules` — dieselbe Trennung wie bei den Vergleichs-Mitspielern oben.
+//
+//   raster — nur so weit, wie die Quotenquelle reicht. Vorgabe.
+//   voll   — bis zur Grenze des Steppers (0…9).
+//
+// ⚠️ Warum „raster" die Vorgabe bleibt, obwohl „voll" mehr zeigt: außerhalb
+// des Rasters schreibt `randquoten.js` fort, und fortgeschriebene Zellen
+// laufen alle in denselben Deckel. Gemessen an FC Bayern – VfB Stuttgart
+// stehen im vollen 9×9 **48 von 81 Zellen** auf demselben Höchstwert. Als
+// Orientierung ist so ein Raster wertlos — auch wenn jede einzelne Zahl
+// stimmt. Wer es einschaltet, weiß dann, wonach er sucht.
+export const RASTER_WEITEN = ["raster", "voll"];
+export const RASTER_WEITE_LABEL = {
+  raster: "So weit die Quoten reichen",
+  voll: "Volles Raster bis 9:9",
+};
+export const RASTER_WEITE_HINWEIS = {
+  raster: "Nur Endstände, für die es eine echte Quote gibt. Die Vorgabe.",
+  voll: "Auch seltene Endstände wie 6:0. Deren Quote wird geschätzt, und die höchsten laufen alle in denselben Deckel.",
+};
+
 export const DEFAULT_PREFS = {
   abrechnung: "voll", vorschau: "voll", zwischenabrechnung: "voll",
-  startScreen: "menu", vergleich: {}, bewegung: "voll",
+  startScreen: "menu", vergleich: {}, bewegung: "voll", rasterWeite: "raster",
 };
 
 // Nur intern: `sanitizePrefs`, `toggleVergleich` und `vergleichFuer` benutzen
@@ -146,5 +174,6 @@ export function sanitizePrefs(p = {}) {
     vergleich: sanitizeVergleich(src.vergleich),
     startScreen: START_SCREENS.includes(src.startScreen) ? src.startScreen : DEFAULT_PREFS.startScreen,
     bewegung: BEWEGUNG_STUFEN.includes(src.bewegung) ? src.bewegung : DEFAULT_PREFS.bewegung,
+    rasterWeite: RASTER_WEITEN.includes(src.rasterWeite) ? src.rasterWeite : DEFAULT_PREFS.rasterWeite,
   };
 }

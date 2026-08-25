@@ -7,6 +7,7 @@ import { getStore } from "@/lib/store";
 import { useCurrentRound } from "@/components/RoundProvider";
 import {
   PREF_META, LEVELS, LEVEL_LABEL, START_SCREENS, START_SCREEN_LABEL,
+  RASTER_WEITEN, RASTER_WEITE_LABEL, RASTER_WEITE_HINWEIS,
   MAX_VERGLEICH, toggleVergleich, vergleichFuer,
 } from "@/lib/prefs";
 import { useAuth } from "@/components/AuthProvider";
@@ -145,6 +146,35 @@ export default function Einstellungen() {
               {gewaehlteFreunde.length === 0
                 ? "Niemand ausgewählt — es stehen nur deine eigenen Zahlen da."
                 : `${gewaehlteFreunde.length} von ${MAX_VERGLEICH} ausgewählt.`}
+            </div>
+          </div>
+
+          <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
+
+          {/* 🔴 Andi, 25.08.2026: „können wir die option zu 1 einstellbar
+              machen? vllt auch im account unter den ganzen persönlichen
+              anzeigemöglichkeiten einstellbar" — also hier, bei den
+              Anzeige-Stufen, und nicht im Regelwerk der Runde. Wie weit ich
+              das Raster sehen will, geht den Admin nichts an. */}
+          <div>
+            <div style={{ fontSize: "0.9375rem", fontWeight: 700 }}>Ergebnis-Raster</div>
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+              Wie weit die Tabelle reicht, in der jedes Ergebnis mit seinen
+              Punkten steht.
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+              {RASTER_WEITEN.map((w) => (
+                <button key={w} className="tqs-aktion" onClick={() => setPref("rasterWeite", w)} style={{
+                  ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: "0.8125rem", fontWeight: 700,
+                  padding: "9px 8px", borderRadius: RUND.karte, lineHeight: 1.3,
+                  background: prefs.rasterWeite === w ? C.akzent : C.surface,
+                  color: prefs.rasterWeite === w ? C.ink : C.muted,
+                  border: `1px solid ${prefs.rasterWeite === w ? C.akzent : C.line}`, fontFamily: "inherit",
+                }}>{RASTER_WEITE_LABEL[w]}</button>
+              ))}
+            </div>
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+              {RASTER_WEITE_HINWEIS[prefs.rasterWeite ?? "raster"]}
             </div>
           </div>
 
