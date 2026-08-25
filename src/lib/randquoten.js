@@ -139,9 +139,8 @@ export function ergebnisQuote(snap, heim, gast) {
   return { quote: +Math.min(grenze, quote).toFixed(2), geschaetzt: true };
 }
 
-// Trägt dieser Snapshot einen Endstand, der nur geschätzt ist? Für die
-// Oberfläche — sie soll „geschätzt" dranschreiben können, ohne selbst zu
-// rechnen.
-export function istGeschaetzt(snap, heim, gast) {
-  return ergebnisQuote(snap, heim, gast).geschaetzt;
-}
+// ⛔ `istGeschaetzt(snap, h, a)` stand hier bis zum 25.08.2026 — als bequeme
+// Abkürzung für die Oberfläche. Gelöscht, nicht angeschlossen: jede der drei
+// Stellen, die die Markierung braucht, braucht auch die QUOTE, und die
+// bekommt sie nur von `ergebnisQuote`. Eine zweite Formulierung derselben
+// Frage hätte nur eine zweite Wahrheit werden können.

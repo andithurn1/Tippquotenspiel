@@ -30,6 +30,7 @@ import {
 } from "@/lib/fremdjoker";
 import { FREMDJOKER_ARTEN, jokerArtVon, sanitizeSchutz } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
+import { ergebnisQuote } from "@/lib/randquoten";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -52,6 +53,16 @@ import { useRueckmeldung } from "@/components/Rueckmeldung";
 // oder picksPerTeam auf 1, ändert sich die Oberfläche mit.
 // Regelwerk kommt aus der aktiven Runde (Fallback: Default) — vorher war es hier
 // hart verdrahtet, dadurch wirkten Admin-Einstellungen beim Tippen gar nicht.
+
+// ⚠️ EINE Formulierung für alle drei Stellen, an denen die Exakt-Quote
+// steht (Vorschau-Zeile, Potenzial-Block, Bestätigung). Vorher stand der
+// Text dreimal ausgeschrieben da — genau die Sorte Auseinanderlaufen, die
+// `npm run anzeige` misst.
+const exaktText = (quote, geschaetzt, kopf = "") => {
+  if (quote == null) return "seltenes Ergebnis";
+  const kern = kopf ? `${kopf} ${quote.toFixed(1)}` : quote.toFixed(1);
+  return geschaetzt ? `${kern} · geschätzt` : kern;
+};
 
 const risk = (q) =>
   q == null ? { label: "—", col: C.muted }
@@ -483,7 +494,19 @@ export default function Tippabgabe({ matchId }) {
     weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
   }).format(new Date(SNAP.kickoff));
 
-  const csQuote = SNAP.correctScore[h]?.[a] ?? null;
+  // 🔴 NICHT `SNAP.correctScore[h]?.[a]` — das war eine zweite Wahrheit.
+  // Das Raster im Katalog ist 6×6, der Stepper lässt 0…9 zu: gemessen tragen
+  // 36 962 von 194 300 erreichbaren Endständen (19,0 %) keine Rasterquote.
+  // Für die schreibt `randquoten.js` den Rand fort — die WERTUNG zahlt sie
+  // (engine.js, `ergebnisQuote`), der Screen schrieb daneben „seltenes
+  // Ergebnis“ und die Risiko-Pille stand auf „—“. Ein 0:7 zahlte 133,2 und
+  // sah aus wie nichts. Jetzt fragt der Screen dieselbe Quelle wie die
+  // Wertung (Runden-Schicht-Regel: der Screen rechnet nicht nach, er fragt).
+  const csErgebnis = ergebnisQuote(SNAP, h, a);
+  const csQuote = csErgebnis.quote;
+  // Fortgeschrieben statt quotiert? Wird drangeschrieben — eine Schätzung,
+  // die wie ein Marktpreis aussieht, ist schlimmer als keine (Leitplanke 1).
+  const csGeschaetzt = csErgebnis.geschaetzt;
   const winner = h > a ? SNAP.home : h < a ? SNAP.away : "Unentschieden";
   const r = risk(csQuote);
   // Zählt der eingefrorene Spannungswert für DIESE Runde als Big Game? Das
@@ -1227,7 +1250,7 @@ export default function Tippabgabe({ matchId }) {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.akzent }}>
-                      {csQuote ? `Exakt ${csQuote.toFixed(1)}` : "seltenes Ergebnis"}
+                      {exaktText(csQuote, csGeschaetzt, "Exakt")}
                     </span>
                     <span style={{
                       fontSize: "0.6875rem", color: r.col, border: `1px solid ${r.col}55`,
@@ -1365,7 +1388,7 @@ export default function Tippabgabe({ matchId }) {
                 <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: "0.6875rem", color: r.col, border: `1px solid ${r.col}55`, borderRadius: RUND.pille, padding: "2px 8px" }}>{r.label}</span>
                   <span style={{ fontSize: "0.75rem", color: C.muted }}>
-                    {csQuote ? `Exakt-Quote ${csQuote.toFixed(1)}` : "seltenes Ergebnis"}
+                    {exaktText(csQuote, csGeschaetzt, "Exakt-Quote")}
                   </span>
                 </div>
                 {prefs.vorschau === "voll" && (
@@ -1791,7 +1814,7 @@ export default function Tippabgabe({ matchId }) {
           </div>
         ) : (
           <Confirmation
-            snap={SNAP} h={h} a={a} winner={winner} csQuote={csQuote}
+            snap={SNAP} h={h} a={a} winner={winner} csQuote={csQuote} csGeschaetzt={csGeschaetzt}
             kickoffLabel={kickoffLabel} picks={picks} teams={teams} saveState={saveState}
             einsatzGrund={einsatzGrund} jokerGrund={jokerGrund} narrenGrund={narrenGrund}
             klasseGrund={klasseGrund} widerrufGrund={widerrufGrund}
@@ -1869,7 +1892,7 @@ const SAVE_HINT = {
 };
 
 function Confirmation({
-  snap, h, a, winner, csQuote, kickoffLabel, picks, teams, saveState,
+  snap, h, a, winner, csQuote, csGeschaetzt, kickoffLabel, picks, teams, saveState,
   einsatzGrund, jokerGrund, narrenGrund, klasseGrund, widerrufGrund, roundName, onEdit,
 }) {
   // Einsatz-Modus: nicht gespeichert, weil der Spieltag die Einsatz-Regeln
@@ -1916,7 +1939,7 @@ function Confirmation({
       <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: 16, marginTop: 20 }}>
         <Row label="Endstand" value={`${h}:${a}`} accent={C.akzent} mono />
         <Row label="Sieger" value={winner} />
-        <Row label="Exakt-Quote" value={csQuote ? csQuote.toFixed(1) : "seltenes Ergebnis"} mono />
+        <Row label="Exakt-Quote" value={exaktText(csQuote, csGeschaetzt)} mono />
         <div style={{ height: 1, background: C.line, margin: "10px 0" }} />
         {teams.map((team, ti) => (
           <div key={team.side} style={{ marginBottom: 6 }}>

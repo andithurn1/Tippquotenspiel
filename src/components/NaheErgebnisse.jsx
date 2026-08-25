@@ -75,7 +75,7 @@ function Zeile({ r, best }) {
       </span>
       {r.quote != null && (
         <span style={{ position: "relative", fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>
-          Quote {r.quote.toFixed(1)}
+          Quote {r.quote.toFixed(1)}{r.geschaetzt ? " · gesch." : ""}
         </span>
       )}
       <span style={{

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { CAP, zerfallAusQuoten, reihenQuote, ergebnisQuote, istGeschaetzt } from "@/lib/randquoten";
+import { CAP, zerfallAusQuoten, reihenQuote, ergebnisQuote } from "@/lib/randquoten";
 import { scoreTip, DEFAULT_RULES } from "@/lib/engine";
 
 // Ein 6×6-Raster, wie es aus dem MARKT kommt — dort bleibt es klein, weil kein
@@ -68,7 +68,6 @@ describe("Eine Reihe fortschreiben (Team-Tore, Abstand)", () => {
 describe("Das Ergebnis-Raster fortschreiben", () => {
   it("innerhalb des Rasters ändert sich NICHTS", () => {
     expect(ergebnisQuote(MARKT, 2, 1)).toEqual({ quote: 15, geschaetzt: false });
-    expect(istGeschaetzt(MARKT, 2, 1)).toBe(false);
   });
 
   it("außerhalb kommt eine markierte Quote statt gar keiner", () => {

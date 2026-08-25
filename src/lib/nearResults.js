@@ -17,11 +17,31 @@
 // ============================================================
 
 import { scoreTip, DEFAULT_RULES } from "./engine";
+import { ergebnisQuote } from "./randquoten";
 
-// Quoten-Raster ist 6×6 (0…5 Tore) — außerhalb gibt es keine Quote.
+// 🔴 ZWEI Grenzen, und sie sind nicht dieselbe — bis zum 25.08.2026 gab es
+// hier nur EINE, und die beantwortete beides zugleich:
+//
+//  • `MAX_GOALS` — wie weit das QUOTEN-RASTER reicht (Katalog: 6×6, also
+//    0…5). Sie begrenzt `topScorelines`/`likelyScorelines`, die aufzählen,
+//    „womit ist zu rechnen": außerhalb des Rasters ist per Definition nichts
+//    zu erwarten, und eine fortgeschriebene 9:9 stünde sonst in JEDEM Spiel
+//    ganz oben und machte die Liste wertlos.
+//
+//  • `MAX_TIPP` — wie weit der STEPPER der Tippabgabe reicht (0…9,
+//    `Tippabgabe.jsx`). Sie begrenzt die Nachbarschaft: solange ein Tipp
+//    abgegeben werden KANN, muss auch seine Nachbarschaft existieren.
+//
+// Der Fehler daraus: wer 6:0 tippte, bekam von `nearScorelines` gar keine
+// Zeile zurück (auch nicht die eigene) — `NaheErgebnisse` rendert dann `null`,
+// und der ganze Block „wenn es knapp anders ausgeht" verschwand wortlos. Und
+// wer 5:1 tippte, sah 4:1 und 5:0, aber nie 6:1. Seit `randquoten.js`
+// (22.08.2026) ZAHLT die Wertung außerhalb des Rasters — nur diese Datei
+// wusste es nicht.
 export const MAX_GOALS = 5;
+export const MAX_TIPP = 9;
 
-const inGrid = (h, a) => h >= 0 && a >= 0 && h <= MAX_GOALS && a <= MAX_GOALS;
+const inGrid = (h, a) => h >= 0 && a >= 0 && h <= MAX_TIPP && a <= MAX_TIPP;
 const key = (h, a) => `${h}:${a}`;
 
 // Die Nachbar-Endstände rund um einen getippten Endstand.
@@ -50,7 +70,7 @@ export function nearScorelines(tip) {
 }
 
 // Für jeden Nachbar-Endstand: was zahlt DIESER Tipp, wenn es so ausgeht?
-// Rückgabe je Zeile: { home, away, kind, points, quote, ebene, isTip }
+// Rückgabe je Zeile: { home, away, kind, points, quote, geschaetzt, ebene, isTip }
 // `points` in Anzeige-Skala (wie überall in der UI), `quote` = Exakt-Quote des
 // jeweiligen Endstands (nicht des Tipps) — dieselbe Zahl, die die Auszahlung trägt.
 export function nearPayouts(tip, snap, rules = DEFAULT_RULES) {
@@ -58,10 +78,15 @@ export function nearPayouts(tip, snap, rules = DEFAULT_RULES) {
   return nearScorelines(tip).map((sl) => {
     const actual = { home: sl.home, away: sl.away, playerGoals: null };
     const s = scoreTip(tip, actual, snap, rules);
+    const eq = ergebnisQuote(snap, sl.home, sl.away);
     return {
       ...sl,
       points: s.total,
-      quote: snap.correctScore?.[sl.home]?.[sl.away] ?? null,
+      // ⚠️ NICHT `snap.correctScore[h][a]` — dieselbe Quelle wie die Wertung
+      // (engine.js liest `ergebnisQuote`), sonst steht hier „—" neben einer
+      // Punktzahl, die sehr wohl aus einer Quote kommt.
+      quote: eq.quote,
+      geschaetzt: eq.geschaetzt,
       ebene: s.ebene,
       isTip: sl.kind === "exakt",
     };
@@ -72,6 +97,9 @@ export function nearPayouts(tip, snap, rules = DEFAULT_RULES) {
 // eines Spiels — was würde ein exakter Tipp darauf zahlen? Ohne eigenen Tipp,
 // rein als Orientierung „wo liegt bei diesem Spiel überhaupt Geld".
 // Sortiert nach Auszahlung absteigend, `limit` Zeilen.
+// ⚠️ Bleibt bewusst bei `MAX_GOALS` (Raster), nicht bei `MAX_TIPP`: mit
+// Fortschreibung gewönne der höchste Endstand immer, in jedem Spiel dieselbe
+// Zeile. Diese Liste soll orientieren, nicht die Kante vorführen.
 export function topScorelines(snap, rules = DEFAULT_RULES, limit = 3) {
   if (!snap?.correctScore) return [];
   const rows = [];
