@@ -41,6 +41,94 @@ const GEDULDET = {
     "Dito — die eine Stelle, an der Mock gegen Supabase getauscht wird.",
 
   // ── Am 25.08.2026 geprüft und stehen gelassen ─────────
+  //
+  // 🔴 Der Durchgang an diesem Tag hat NICHT sortiert, sondern entschieden:
+  // was eine zweite Antwort auf eine schon beantwortete Frage war, ist
+  // gelöscht (13 Exporte — sieben Quoten-Quellen, fünf Derby-Sucher,
+  // `getCurrentUser`), der Rest steht hier mit Grund. Die Trennlinie war
+  // jedes Mal dieselbe Frage: *könnte ein Aufrufer dieser Funktion etwas
+  // anderes bekommen als der Weg, den die App schon geht?* Wo ja: weg.
+  //
+  // ── Prüf-Umkehrungen: existieren, damit ein Test etwas ZEIGEN kann ──
+  istWiderspruechlich:
+    "Zusicherung für die Anzeige: Sieger-Boden und Favoriten-Reinfall können "
+    + "nie zugleich auftreten. Steht so schon im Kommentar der Funktion — sie "
+    + "ist für den Test gebaut, nicht für einen Screen. Ein Aufrufer in der "
+    + "Oberfläche wäre sogar falsch: die Liste soll nie widersprüchlich SEIN, "
+    + "nicht sich dafür entschuldigen.",
+  segmentUnterZeiger:
+    "Die Umkehrung von `zielWinkel` — gebraucht nicht zum Zeichnen, sondern "
+    + "zum Beweisen, dass das Rad auf das GEZOGENE Feld zeigt und nicht auf "
+    + "den Nachbarn. Ohne sie ließe sich ein vertauschtes Vorzeichen erst am "
+    + "Widerspruch zwischen Bild und Auszahlung bemerken.",
+
+  // ── Andockpunkte: die Gegenseite gibt es noch nicht ──
+  matchDrama:
+    "Braucht eine Spiel-Timeline (Tore mit Minute), die keine Quelle heute "
+    + "liefert; `MATCH_DRAMA` ist deshalb leer. Beides steht so im Kopf von "
+    + "`reactions.js`. ⚠️ NICHT löschen: die Datei ist genau darum so gebaut, "
+    + "dass ein neues Szenario eine Regel plus eine GIF-Datei ist und kein "
+    + "UI-Umbau.",
+  uploadedAvatarUrl:
+    "Eigenes Bild statt eines der 16 Sinnbilder. Der Upload-Weg (Storage-"
+    + "Bucket, Zuschnitt, Moderation) ist nicht gebaut — die Funktion allein "
+    + "reicht dafür nicht, sie bildet nur den Pfad.",
+  getSupabaseServiceClient:
+    "Der service_role-Zugang. Absichtlich ohne Aufrufer: er darf NUR "
+    + "serverseitig laufen (Architektur-Regel 2), und die erste API-Route, "
+    + "die ihn braucht, gibt es noch nicht. ⚠️ Ein Aufrufer im Frontend wäre "
+    + "kein Aufräumen, sondern ein Schlüssel im Browser.",
+
+  // ── Stillgelegt per Entscheidung ──
+  printBalanceReport:
+    "⛔ Balance ist Endphase (CLAUDE.md, Andi mehrfach). Die Datei bleibt, wie "
+    + "sie ist — kein Anschließen, kein Nachrüsten.",
+  isLocked:
+    "Seit der Entscheidung gegen jede Bezahlschranke (M1, 25.08.2026) eine "
+    + "Durchreiche, die immer `false` sagt. Steht mit Begründung im Kopf von "
+    + "`premium.js`; sie bleibt, damit ein späteres Premium-Merkmal eine "
+    + "Stelle hat statt einer neuen.",
+
+  // ── Ein Satz für eine Oberfläche, die noch nicht platziert ist ──
+  // ⚠️ Diese fünf sind KEINE Doppelungen — nachgesehen, nicht angenommen:
+  // jeder zugehörige Screen zeigt heute etwas anderes (Kacheln statt Satz,
+  // Auswahl statt Zusammenfassung), keiner baut den Satz selbst nach. Sie
+  // warten auf eine Stelle, und Stellen entscheidet die Masterdatei.
+  beschreibeAufwand:
+    "Einzeiler-Form der Angaben, die `AufwandPanel` als Kacheln zeigt — "
+    + "gedacht für Listen und Karten, wo kein Panel hinpasst.",
+  beschreibeMix:
+    "Zusammenfassung „was kommt am Ende woher“ für die Bestätigung. "
+    + "`PresetMischen` zeigt die AUSWAHL (beide Seiten als Knöpfe), nicht das "
+    + "Ergebnis — zwei verschiedene Sätze, keiner doppelt.",
+  beschreibeTeilCode:
+    "„Aspekt, N abweichende Felder“ — was ein Teil-Code mitbringt, BEVOR man "
+    + "ihn anwendet. `TeilCodeFeld` prüft heute nur, ob der Code zum Aspekt "
+    + "passt.",
+  beschreibeKombination:
+    "Ein Satz zu einer Joker-Kombination samt Neigung, Dichte und Schärfe.",
+  bildeCode:
+    "Die Hin-Richtung zu `zerlegeCode`. Kein Aufrufer, weil Codes heute "
+    + "entstehen, wo beide Teile ohnehin danebenstehen. ⚠️ Sie bleibt als "
+    + "Gegenstück: wer das Schema ändert, ändert es an einer Stelle.",
+  ersatzStand:
+    "„2 von 3 Ersatz-Tipps verbraucht“ — die Zahl, die ein Spieler sucht. Das "
+    + "Ranking zeigt heute nur, was die Kulanz GEBRACHT hat (`ersatz`, "
+    + "`ersatzPunkte` aus der Wertung), nicht, was davon noch übrig ist. "
+    + "Fehlende Anzeige, keine zweite Wahrheit.",
+
+  // ── Ein ganzes Modul ohne Anschluss ──
+  // 🔴 Langtext samt Schichtentabelle steht ganz oben in `design/roadmap.md`.
+  teamLeaderboard:
+    "Der Mannschafts-Modus hängt vollständig in der Luft: `sanitizeRules` "
+    + "liefert für `teams` `undefined`, den Regelblock gibt es im Regelwerk "
+    + "gar nicht. Die WERTUNG ist fertig und getestet (die Wertungsart "
+    + "„bester“ am 25.08.2026 nachgebaut, sie fiel vorher still auf „summe“ "
+    + "durch). Was fehlt, ist Regelblock, Store-Mitgliedschaft, Oberfläche "
+    + "und Rangliste — alles Platzierung, und die wartet auf die Masterdatei.",
+  beschreibeTeams:
+    "Dito — der Satz zum Modus, den es in der Oberfläche noch nicht gibt.",
+
   quotenQuelle:
     "🔴 DIE austauschbare Quoten-Quelle des Katalogs (Architektur-Regel 2) "
     + "— gleiche Schnittstelle wie `createMockOddsSource()`, aber über ALLE "

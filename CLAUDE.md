@@ -4,48 +4,52 @@ Quoten-gewichtetes Fußball-Tippspiel unter Freunden. Kein Echtgeld (bewusste
 Glücksspiel-Abgrenzung — wichtig für App-Store-Zulassung). Details zur
 Strategie: `README.md`.
 
-## 🗓️ NEUER ZEITRAHMEN: BIS ZUR RÜCKRUNDE (Andi, 25.08.2026)
+## 🗓️ ZEITRAHMEN: HINRUNDE = TESTBETRIEB, KEINE FRIST (Andi, 25.08.2026)
 
-Wörtlich: *„Wir haben jetz ruhig bis vor Beginn der Rückrunde Zeit…"* — und
-der Grund dazu, im selben Satz: *„erwarte mir da wie gesagt eben mehr
-Flüssigkeit und Professionalität, bevor ich diese Idee halbfertig in die
-Öffentlichkeit bringe und anderen ne Einladung zur verbesserten Nachahmung
-gebe."*
+⚠️ **Dieser Block stand einen halben Tag lang falsch hier und ist korrigiert.**
+Aus *„wir haben jetz ruhig bis vor Beginn der Rückrunde Zeit"* hatte ich eine
+**Frist zum 09.01.2027** gemacht und geschrieben, die Hinrunde sei
+abgeschrieben. Beides hat Andi umgehend richtiggestellt:
 
-**Was das ändert:** der Block darunter („kein Termindruck", 20.08.2026) gilt
-unverändert weiter — er bekommt nur ein Ende. Aus „kein Datum, eine
-Reihenfolge" wird „eine Reihenfolge, und danach ein Fenster".
+> *„mit frist neu hab ich nur gemeint es eilt überhaupt nicht und ich will
+> eher die hinrunde für Testing mit mir und Freunden als Menschen nutzen"*
 
-⚠️ **Die stille Folge, die man leicht überliest: die HINRUNDE ist damit
-abgeschrieben.** Bis zum 20.08. las sich alles so, als ginge die erste echte
-Runde zum Saisonstart los. Tut sie nicht. Wer im Repo „vor dem Saisonstart"
-liest, liest ab jetzt „vor der Rückrunde".
+**Was also gilt:**
 
-📅 **GEMESSEN am echten Spielplan im Repo** (`bl-2026.js`, OpenLigaDB), nicht
-geschätzt:
+- ⛔ **Der 09.01.2027 ist KEINE Frist.** „Es eilt überhaupt nicht" ist die
+  Aussage, nicht „bis dahin fertig". Der Block darunter (kein Termindruck)
+  gilt unverändert und ohne Ende.
+- ✅ **Die Hinrunde ist nicht abgeschrieben, sondern der TESTBETRIEB** — mit
+  Andi und Freunden, echte Menschen, echte Spiele, kleiner Kreis.
+- ✅ **Die Rückrunde ist das, worauf hin gebaut wird**, nicht der Tag, an dem
+  etwas fertig sein muss.
+
+🔴 **Die Folge, und sie ist die wichtige an diesem ganzen Block:** „vor der
+ersten echten Runde MIT MITSPIELERN" heißt ab jetzt **Hinrunde**, nicht
+Rückrunde. Der einzige echte Blocker — **der eigene Mailversand** — steht
+damit nicht in vier Monaten an, sondern jetzt: ohne ihn kann sich außer Andi
+niemand anmelden, und ohne Anmeldung gibt es keinen Test mit Freunden.
+
+📅 **Zum Nachschlagen, am echten Spielplan gemessen** (`bl-2026.js`,
+OpenLigaDB) — Daten, keine Termine:
 
 | | Datum | |
 |---|---|---|
-| Letzter Spieltag vor der Winterpause | **19.12.2026** | Spieltag 14 |
-| **Erster Spieltag danach** | **09.01.2027** | Spieltag 15 — 21 Tage Pause |
-| Rückrunde im engen Sinn (2. Halbserie) | 23.01.2027 | Spieltag 18 |
+| Saisonstart (1. Spieltag) | 28.08.2026 | Beginn des Testbetriebs |
+| Letzter Spieltag vor der Winterpause | 19.12.2026 | Spieltag 14 |
+| Erster Spieltag danach | 09.01.2027 | Spieltag 15 — 21 Tage Pause |
+| Rückrunde im engen Sinn | 23.01.2027 | Spieltag 18 |
 
-🔴 **Als Frist gilt der 09.01.2027**, nicht der 23.01. Wer zum Wiederanpfiff
-nicht dasteht, verliert den Anlauf: eine Tipprunde, die mitten in einer
-laufenden Halbserie beginnt, hat drei Spieltage weniger und keinen
-natürlichen Startpunkt.
-
-⚠️ Das ist ein **Fenster, kein Endspurt.** Die Regeln des Blocks darunter
-bleiben Wort für Wort in Kraft — insbesondere: keine Abkürzung mit der
-Begründung „vor dem Launch", und Gestaltung darf Zeit kosten. Vier Monate
-sind reichlich; sie werden knapp, sobald jemand anfängt, sie zu verwalten
-statt zu benutzen.
+⚠️ **Und die Lehre aus dem Fehlgriff selbst, weil sie wiederkommt:** aus einer
+beiläufigen Zeitangabe wurde hier eine Frist samt Begründung, warum sie
+einzuhalten sei. Wo Andi *entspannt* formuliert, ist das die Aussage — nicht
+der Anlass, eine Deadline zu rekonstruieren. **Im Zweifel nachfragen, nicht
+ableiten.**
 
 ## ⏳ KEIN TERMINDRUCK MEHR (Andi, 20.08.2026)
 
-⚠️ *Gilt weiter, mit dem Zeitrahmen darüber gelesen: kein Termindruck heißt
-seit dem 25.08.2026 nicht mehr „gar kein Datum", sondern „Zeit bis zum
-09.01.2027".*
+⚠️ *Gilt unverändert weiter — der Zeitrahmen darüber nimmt nichts davon
+zurück, er sagt nur, wofür die Hinrunde da ist.*
 
 **Der 28.08.2026 ist KEIN Launch-Termin mehr.** Andi wörtlich: „launch ist
 nicht so wichtig, gerne gutes top design“ und „wir planen eh nicht mehr
