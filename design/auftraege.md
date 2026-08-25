@@ -26,6 +26,13 @@ Erlaubte Stände, und jeder verlangt einen Beleg:
 
 ---
 
+## Zeitrahmen (25.08.2026)
+
+| Nr | Ansage | Stand | Beleg / was fehlt |
+|---|---|---|---|
+| ZR1 | 🗓️ **„Wir haben jetz ruhig bis vor Beginn der Rückrunde Zeit…"** — mit Begründung: *„erwarte mir da wie gesagt eben mehr Flüssigkeit und Professionalität, bevor ich diese Idee halbfertig in die Öffentlichkeit bringe und anderen ne Einladung zur verbesserten Nachahmung gebe"* | ✅ **eingetragen** | Steht als eigener Block ganz oben in `CLAUDE.md`. 📅 **Am echten Spielplan gemessen** (`bl-2026.js`, OpenLigaDB), nicht geschätzt: letzter Spieltag vor der Winterpause **19.12.2026** (ST 14) · erster danach **09.01.2027** (ST 15, 21 Tage Pause) · Rückrunde im engen Sinn 23.01.2027 (ST 18). 🔴 **Als Frist gilt der 09.01.2027** — eine Runde, die mitten in einer laufenden Halbserie beginnt, hat drei Spieltage weniger und keinen natürlichen Startpunkt |
+| ZR2 | ⚠️ *Folge daraus, die Andi nicht ausgesprochen hat — hier festgehalten, damit sie nicht als Missverständnis zurückkommt* | ✅ **eingetragen** | **Die HINRUNDE ist damit abgeschrieben.** Bis zum 20.08. las sich alles im Repo so, als ginge die erste echte Runde zum Saisonstart (28.08.2026) los. Tut sie nicht. Wer im Repo „vor dem Saisonstart" liest, liest ab jetzt „vor der Rückrunde". ⚠️ Die Daten selbst bleiben echt — der 28.08.2026 ist weiter der Bundesliga-Start, nur keine Frist für uns |
+
 ## Gestaltung — Andis sechs Ansagen (09.08.2026, noch alle offen)
 
 | Nr | Ansage (seine Worte) | Stand | Beleg / was fehlt |

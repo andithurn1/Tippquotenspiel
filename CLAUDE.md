@@ -4,7 +4,48 @@ Quoten-gewichtetes Fußball-Tippspiel unter Freunden. Kein Echtgeld (bewusste
 Glücksspiel-Abgrenzung — wichtig für App-Store-Zulassung). Details zur
 Strategie: `README.md`.
 
+## 🗓️ NEUER ZEITRAHMEN: BIS ZUR RÜCKRUNDE (Andi, 25.08.2026)
+
+Wörtlich: *„Wir haben jetz ruhig bis vor Beginn der Rückrunde Zeit…"* — und
+der Grund dazu, im selben Satz: *„erwarte mir da wie gesagt eben mehr
+Flüssigkeit und Professionalität, bevor ich diese Idee halbfertig in die
+Öffentlichkeit bringe und anderen ne Einladung zur verbesserten Nachahmung
+gebe."*
+
+**Was das ändert:** der Block darunter („kein Termindruck", 20.08.2026) gilt
+unverändert weiter — er bekommt nur ein Ende. Aus „kein Datum, eine
+Reihenfolge" wird „eine Reihenfolge, und danach ein Fenster".
+
+⚠️ **Die stille Folge, die man leicht überliest: die HINRUNDE ist damit
+abgeschrieben.** Bis zum 20.08. las sich alles so, als ginge die erste echte
+Runde zum Saisonstart los. Tut sie nicht. Wer im Repo „vor dem Saisonstart"
+liest, liest ab jetzt „vor der Rückrunde".
+
+📅 **GEMESSEN am echten Spielplan im Repo** (`bl-2026.js`, OpenLigaDB), nicht
+geschätzt:
+
+| | Datum | |
+|---|---|---|
+| Letzter Spieltag vor der Winterpause | **19.12.2026** | Spieltag 14 |
+| **Erster Spieltag danach** | **09.01.2027** | Spieltag 15 — 21 Tage Pause |
+| Rückrunde im engen Sinn (2. Halbserie) | 23.01.2027 | Spieltag 18 |
+
+🔴 **Als Frist gilt der 09.01.2027**, nicht der 23.01. Wer zum Wiederanpfiff
+nicht dasteht, verliert den Anlauf: eine Tipprunde, die mitten in einer
+laufenden Halbserie beginnt, hat drei Spieltage weniger und keinen
+natürlichen Startpunkt.
+
+⚠️ Das ist ein **Fenster, kein Endspurt.** Die Regeln des Blocks darunter
+bleiben Wort für Wort in Kraft — insbesondere: keine Abkürzung mit der
+Begründung „vor dem Launch", und Gestaltung darf Zeit kosten. Vier Monate
+sind reichlich; sie werden knapp, sobald jemand anfängt, sie zu verwalten
+statt zu benutzen.
+
 ## ⏳ KEIN TERMINDRUCK MEHR (Andi, 20.08.2026)
+
+⚠️ *Gilt weiter, mit dem Zeitrahmen darüber gelesen: kein Termindruck heißt
+seit dem 25.08.2026 nicht mehr „gar kein Datum", sondern „Zeit bis zum
+09.01.2027".*
 
 **Der 28.08.2026 ist KEIN Launch-Termin mehr.** Andi wörtlich: „launch ist
 nicht so wichtig, gerne gutes top design“ und „wir planen eh nicht mehr
