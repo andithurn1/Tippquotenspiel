@@ -428,8 +428,11 @@ export function createSupabaseStore() {
     },
 
     async getLeaderboard(roundId) {
-      const { board, rules, kontext, spieltage, nameOf, bespielt } = await this.standVorDemRad(roundId);
-      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext, bespielt });
+      const { board, rules, kontext, spieltage, nameOf, avatarOf, bespielt } = await this.standVorDemRad(roundId);
+      const fertig = await withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext, bespielt });
+      // Siehe Mock: erst NACH der Wertung angehängt, das Sinnbild ist
+      // Beschriftung und geht die Rechnung nichts an.
+      return (fertig ?? []).map((b) => ({ ...b, avatar: avatarOf(b.userId) }));
     },
 
     // 🔴 Die Ziehungen, die das Leaderboard tatsächlich verrechnet hat —
@@ -459,6 +462,9 @@ export function createSupabaseStore() {
       const antraege = await this.listAntraege({ roundId });
       const freigaben = await this.listAdminFreigaben({ roundId });
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
+      // Gegenstück zu `avatarOf` im Mock — `listMembers` liest den Avatar
+      // ohnehin schon aus `profiles` mit, er kam nur nie am Leaderboard an.
+      const avatarOf = (id) => members.find((m) => m.user_id === id)?.avatar ?? null;
       const matchOf = (mid) => matches.find((m) => m.id === mid) ?? null;
       const rules = round?.rules ?? DEFAULT_RULES;
       // ⚠️ Über die Spiele DIESER Runde — siehe `listRoundMatches`.
@@ -551,7 +557,7 @@ export function createSupabaseStore() {
       // Einträgen rechnen wie das Leaderboard. `verlauf` ist `null`, wenn keine
       // Regel ihn braucht — dann baut ihn der Aufrufer aus `entries` nach.
       return {
-        board, rules, kontext, nameOf, matchOf, entries, regelnFuer, verlauf, tips,
+        board, rules, kontext, nameOf, avatarOf, matchOf, entries, regelnFuer, verlauf, tips,
         spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse),
         // 🔴 Die Position IM VERLAUF, nicht der Liga-Spieltag und auch nicht die
         // Zeitachse — die Begründung steht bei `verlaufPositionen` (spieltag.js).

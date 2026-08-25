@@ -181,6 +181,17 @@ export function createMockStore() {
   const seasonTips = [];   // Saison-Wetten: { round_id, user_id, wetten_id, wert }
 
   const nameOf = (userId) => members.find((m) => m.user_id === userId)?.name ?? userId;
+  // 🔴 Das Sinnbild gehört ZUM Leaderboard, nicht in den Screen (25.08.2026).
+  // Andi: „Auswahl an Icons für ne schnelle Übersicht im Tippduellranking."
+  // Die 16 Avatare gab es längst — nur trug die Rangliste kein Feld dafür, und
+  // `AvatarKreis` (Kommentar: „damit Profil, LEADERBOARD & Co. gleich
+  // aussehen") wurde nirgends abgefragt. Genau der Fall, den `npm run tot`
+  // sucht: gebaut, richtig, und von niemandem gefragt.
+  //
+  // ⚠️ Hier und nicht in der Engine: die Engine ist UI-frei. Ein Avatar ist
+  // dasselbe wie der Name — eine Angabe ÜBER den Spieler, die der Store kennt
+  // und die Wertung nichts angeht.
+  const avatarOf = (userId) => members.find((m) => m.user_id === userId)?.avatar ?? null;
 
   // Ein Tipp → der Roh-Eintrag, aus dem die Engine rechnet. EINE Stelle, weil
   // Leaderboard, Verlauf und Rekorde exakt dieselben Felder brauchen — vorher
@@ -749,7 +760,11 @@ export function createMockStore() {
     // den Endstand nehmen — scoreLeaderboardHistory wendet applyCatchup an.
     async getLeaderboard(roundId) {
       const { board, rules, kontext, spieltage, bespielt } = await standVorDemRad(roundId);
-      return withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext, bespielt });
+      const fertig = await withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext, bespielt });
+      // ⚠️ Erst NACH der Wertung angehängt: die Reihenfolge kommt aus der
+      // Engine, das Sinnbild ist reine Beschriftung. Vorher angehängt würde es
+      // durch jede Rechenstufe mitgeschleift, ohne dort etwas zu tun.
+      return (fertig ?? []).map((b) => ({ ...b, avatar: avatarOf(b.userId) }));
     },
 
     // 🔴 Die Ziehungen, die das Leaderboard tatsächlich verrechnet hat.

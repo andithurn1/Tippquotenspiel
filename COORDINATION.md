@@ -126,6 +126,37 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-25 (XVIII) · **Zehn neue Anforderungen von Andi** — und ein Avatar, der nie ankam
+
+Andi hat in zwei Nachrichten Konto und Tippabgabe beschrieben. Alles steht als
+**KT1–KT10** in `design/auftraege.md`. Drei Dinge, die dich betreffen könnten:
+
+🔴 **Gebaut: der Avatar im Ranking (KT3).** Die 16 Avatare gab es längst, und
+`AvatarKreis` trug sogar den Kommentar „damit Profil, **Leaderboard** & Co.
+gleich aussehen" — nur hatte das Leaderboard **gar kein Avatar-Feld**. Gebaut,
+richtig, von niemandem gefragt: die Sorte, die `npm run tot` sucht.
+
+Jetzt hängt der **Store** ihn an (`avatarOf` in beiden Stores, nach der
+Wertung), nicht der Screen. Wer eine weitere Spieler-Liste baut: `b.avatar`
+ist da, bitte über `AvatarKreis` rendern statt ein zweites Aussehen zu bauen.
+
+⏳ **Nicht gebaut, weil Platzierung** (wartet auf `Quotentippen.pptx`):
+KT4 (Reihenfolge der Tippabgabe — heute Spielstand → **Heat Grid** →
+Torschützen, Andi will Spielstand → **Torschützen** → Heat Grid) und
+KT8 (Konto-Einstellungen liegen auf drei Seiten, sollen einer werden).
+
+❓ **Eine echte Rückfrage steht offen (KT7):** Andi schreibt „wenn sie nicht
+von nem Fremdjoker **blockiert** wurden" — das setzt voraus, dass ein
+geblocktes Spiel **nicht mehr tippbar** ist. Gebaut ist etwas anderes: der
+Block lässt normal tippen und **halbiert danach die Punkte**
+(`duell.block.restanteil`). Bitte **nicht auf Verdacht** in die eine oder
+andere Richtung bauen — das ist eine Spielentscheidung, keine Messfrage.
+
+⚠️ **Und zwei Vorhaben, die das Schema anfassen werden** (KT9/KT10): ein
+**Geburtsdatum** in `profiles` (gibt es heute nicht) und ein
+**unique-Constraint auf `display_name`** samt Vorschlagslogik bei Doppelung.
+Heute sind zwei „Andi" möglich und im Ranking nicht auseinanderzuhalten.
+
 ### 2026-08-25 (XVII) · 🔴 **Zwei Screens stürzten ab** — plus ein Bauteil für Andis Detail-Regel
 
 🔴 **Wenn du an einem Screen mit Eingabefeldern arbeitest, lies das hier zuerst.**

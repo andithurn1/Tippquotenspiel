@@ -8,6 +8,7 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import BackLink from "@/components/BackLink";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
+import { AvatarKreis } from "@/components/Profil";
 
 // Schlankes, echtes Ranking für die aktive Runde — im Unterschied zu
 // Abrechnung.jsx (feste JOR-ESP-Demo-Choreographie) funktioniert das hier für
@@ -77,6 +78,17 @@ export default function Ranking() {
                 borderTop: i === 0 ? "none" : `1px solid ${C.line}`,
               }}>
                 <span style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted, width: 20 }}>{b.rank}</span>
+                {/* 🔴 Andi, 25.08.2026: „Auswahl an Icons für ne schnelle
+                    Übersicht im Tippduellranking." Die 16 Avatare und
+                    `AvatarKreis` gab es längst — der Kreis trägt sogar den
+                    Kommentar „damit Profil, LEADERBOARD & Co. gleich aussehen"
+                    — nur kam das Feld nie am Leaderboard an. Jetzt hängt der
+                    Store es an (`avatarOf`), der Screen rechnet nichts nach.
+                    ⚠️ 26 px statt 44: in einer Zeile neben Rang und Name ist
+                    der volle Kreis ein Klotz. Die Größe ist der einzige
+                    Unterschied zum Profil — Farbe und Rand bleiben gleich,
+                    sonst wären es zwei Aussehen für dieselbe Sache. */}
+                <AvatarKreis id={b.avatar} size={26} />
                 <span style={{ flex: 1, fontSize: "0.9375rem", color: b.userId === meId ? C.akzent : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
                   {b.name}
                   {b.userId === meId && <span style={{ color: C.coral, fontSize: "0.6875rem", marginLeft: 6 }}>● du</span>}
