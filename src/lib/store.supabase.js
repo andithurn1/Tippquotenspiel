@@ -154,6 +154,21 @@ export function createSupabaseStore() {
         .from("profiles").select("id, display_name, avatar, premium_until").eq("id", userId).maybeSingle());
       return data ? { ...data, avatar: sanitizeAvatar(data.avatar) } : null;
     },
+    // 🔴 Ist dieser Anzeigename noch frei? (KT10, Andi 25.08.2026)
+    // Gegenstück zum Mock. ⚠️ `ilike` statt `eq`, weil der Eindeutigkeits-
+    // Index in `schema.sql` auf `lower(display_name)` liegt — mit `eq` sagte
+    // die App „frei" und die Datenbank verweigerte danach das Speichern.
+    // `ausserUserId` = der eigene Nutzer, sonst meldet das Feld den eigenen
+    // unveränderten Namen als vergeben.
+    async nameFrei({ name, ausserUserId = null } = {}) {
+      const sauber = String(name ?? "").replace(/\s+/g, " ").trim();
+      if (!sauber) return false;
+      let q = sb.from("profiles").select("id").ilike("display_name", sauber);
+      if (ausserUserId) q = q.neq("id", ausserUserId);
+      const data = orThrow(await q.limit(1));
+      return (data ?? []).length === 0;
+    },
+
     // Nur übergebene Felder ändern. Gesäubert wird auch hier — die DB-Policy
     // erlaubt zwar nur das eigene Profil, prüft aber keine Inhalte.
     async updateProfile(userId, { displayName, avatar } = {}) {

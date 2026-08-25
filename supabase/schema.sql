@@ -263,16 +263,99 @@ alter table public.rounds alter column admin_id drop not null;
 
 
 -- ============================================================
+--  Anzeigenamen sind EINDEUTIG (KT10, Andi 25.08.2026)
+--  „es gibt einzigartige Benutzernamen und wenn einer schon vergeben ist,
+--   wird eben vorgeschlagen welche Zahl vom Geburtsdatum oder sonstiger
+--   Nachcode noch frei ist."
+--
+--  Verglichen wird KLEINGESCHRIEBEN: „Andi" und „andi" sind derselbe Name.
+--  ⚠️ Muss zu `namensSchluessel()` in src/lib/benutzername.js passen — laeuft
+--  eine Seite anders, sagt die App „frei" und die DB verweigert das Speichern.
+--
+--  ⚠️ ZUERST entdoppeln, dann sperren. Auf einer Bestands-Datenbank koennen
+--  schon zwei gleiche Namen stehen; ohne diesen Schritt scheitert das Anlegen
+--  des Index, und damit das ganze Skript — obwohl es idempotent sein soll.
+--  Der aelteste Eintrag behaelt den Namen, die spaeteren bekommen eine Zahl.
+-- ============================================================
+do $$
+declare r record; n int; kandidat text;
+begin
+  for r in
+    select id, display_name,
+           row_number() over (partition by lower(display_name) order by created_at, id) as platz
+    from public.profiles
+  loop
+    if r.platz > 1 then
+      n := r.platz;
+      loop
+        kandidat := left(r.display_name, greatest(1, 24 - length(n::text))) || n::text;
+        exit when not exists (
+          select 1 from public.profiles where lower(display_name) = lower(kandidat)
+        );
+        n := n + 1;
+      end loop;
+      update public.profiles set display_name = kandidat where id = r.id;
+    end if;
+  end loop;
+end $$;
+
+create unique index if not exists profiles_display_name_key
+  on public.profiles (lower(display_name));
+
+
+-- ============================================================
 --  Profil automatisch anlegen, sobald sich jemand registriert
+--
+--  🔴 DIE STELLE, an der der erste Freundes-Test geknallt waere. Der Name
+--  wird aus der Mailadresse abgeleitet — zwei Freunde mit `andi@gmail.com`
+--  und `andi@web.de` bekommen daraus BEIDE „andi". Mit dem Index oben waere
+--  der zweite `insert` gescheitert, und weil dieser Trigger am
+--  `insert on auth.users` haengt, waere damit die REGISTRIERUNG
+--  fehlgeschlagen: ein Freund, der sich nicht anmelden kann und keinen Grund
+--  sieht. Sperre und Ausweichname gehoeren deshalb zusammen.
+--
+--  Gesucht wird der naechste freie Name in derselben Reihenfolge wie in
+--  `namensVorschlaege()`: laufende Zahl am gekuerzten Stamm. Der
+--  `exception`-Zweig faengt zusaetzlich das Rennen zweier gleichzeitiger
+--  Anmeldungen ab, das eine reine Vorab-Pruefung nicht sehen kann.
 -- ============================================================
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
+declare
+  basis    text;
+  kandidat text;
+  n        int := 1;
 begin
+  basis := coalesce(
+    nullif(trim(new.raw_user_meta_data->>'display_name'), ''),
+    nullif(split_part(new.email, '@', 1), ''),
+    'Spieler');
+  basis := left(basis, 24);
+  kandidat := basis;
+
+  for i in 1..50 loop
+    begin
+      insert into public.profiles (id, display_name) values (new.id, kandidat);
+      return new;
+    exception
+      when unique_violation then
+        -- Gibt es die ZEILE schon, ist nichts zu tun (Trigger doppelt gefeuert).
+        if exists (select 1 from public.profiles where id = new.id) then
+          return new;
+        end if;
+        -- Sonst war der NAME belegt: naechsten Kandidaten bilden.
+        n := n + 1;
+        kandidat := left(basis, greatest(1, 24 - length(n::text))) || n::text;
+    end;
+  end loop;
+
+  -- Notnagel nach 50 Versuchen: garantiert eindeutig, weil die id es ist.
+  -- ⚠️ Lieber ein haesslicher Name als eine gescheiterte Registrierung.
   insert into public.profiles (id, display_name)
-  values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)))
+  values (new.id, left(basis, 15) || '-' || substr(replace(new.id::text, '-', ''), 1, 8))
   on conflict (id) do nothing;
   return new;
 end;

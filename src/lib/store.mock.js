@@ -22,6 +22,7 @@ import { generateJoinCode } from "./joinCode";
 import { PRESETS } from "./presets";
 import { alleMatches } from "./ligen";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
+import { namensSchluessel } from "./benutzername";
 import { isPremium, applyEntitlements } from "./premium";
 import { spieltagOeffnen } from "./spieltagOeffnen";
 import { withSaisonPunkte } from "./saisonBoard";
@@ -462,6 +463,22 @@ export function createMockStore() {
     // ── Profil (Anzeigename + Avatar) ───────────────────────
     async getProfile(userId) {
       return profiles.get(userId) ?? null;
+    },
+
+    // 🔴 Ist dieser Anzeigename noch frei? (KT10, Andi 25.08.2026)
+    // `ausserUserId` = der eigene Nutzer — sonst meldete das Feld beim
+    // Speichern des UNVERÄNDERTEN Namens „schon vergeben", nämlich an einen
+    // selbst. Genau die Sorte Sperre, die man erst im Betrieb bemerkt.
+    // ⚠️ Verglichen wird über `namensSchluessel` — dieselbe Normalisierung
+    // wie der Index `lower(display_name)` in `schema.sql`.
+    async nameFrei({ name, ausserUserId = null } = {}) {
+      const k = namensSchluessel(name);
+      if (!k) return false;
+      for (const p of profiles.values()) {
+        if (ausserUserId && p.id === ausserUserId) continue;
+        if (namensSchluessel(p.display_name) === k) return false;
+      }
+      return true;
     },
     // Nur die übergebenen Felder ändern; beide werden gesäubert, damit weder
     // ein leerer Name noch eine unbekannte Avatar-id im Profil landet.
