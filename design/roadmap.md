@@ -452,6 +452,39 @@ beide waren beim Nachsehen keine.
    BERECHNET, kann erst eine laufende Saison zeigen (die simulierte beginnt am
    28.08.2026, vorher ist die Tabelle leer). Steht als `hinweis` am Messfall.
 
+## 💰 Monetarisierung — der Konflikt, der zuerst entschieden werden muss (25.08.2026)
+
+Andi hat am 25.08.2026 Werbung und Premium beschrieben. Alles steht als
+**M1–M7** in `design/auftraege.md`. Hier nur der eine Punkt, der Bauarbeit
+blockiert, damit ihn niemand übersieht:
+
+🔴 **Es gibt bereits ein Premium-Modell, und es ist ein ANDERES.**
+
+| | heute (`premium.js`) | Andi, 25.08.2026 |
+|---|---|---|
+| Wofür zahlt man? | **Joker + Joker-Abstimmung** freischalten | **keine Werbung** |
+| Was hat der Gratis-Nutzer? | Spiel **ohne Joker** | volles Spiel, mit Werbung |
+| Wer muss zahlen? | **der Admin**, die Runde profitiert mit | **jeder für sich** |
+
+`applyEntitlements` setzt ohne Premium `joker.enabled = false`. Eine kostenlose
+Runde verliert damit ihren Joker — und der Joker ist keine Zusatzfunktion,
+sondern tragende Mechanik.
+
+⚠️ **Beides zusammen wäre die schlechteste Fassung:** der Gratis-Nutzer sähe
+Werbung UND hätte keinen Joker. Genau das Gegenteil von Andis „soll auch
+kostenlos gut nutzbar sein".
+
+⚠️ **Und der Nebeneffekt, den man leicht übersieht:** der Satz im Code, „es
+reicht, wenn der ADMIN Premium hat — die ganze Runde profitiert", war das
+Verkaufsargument des heutigen Modells. **Bei Werbefreiheit trägt er nicht
+mehr**: Werbung sieht jeder für sich. Wer umstellt, verliert dieses Argument
+und braucht ein neues.
+
+**Nicht entschieden, nicht gebaut.** Bis Andi das Modell festlegt, bleibt
+`premium.js` wie es ist.
+
+---
+
 ## ⛔ ENDPHASE — hier steht, was ERST GANZ AM SCHLUSS drankommt
 
 - ⚠️ **Die Balance-Ampel sagt „Nicht mitgerechnet: Duell-Joker (Klau und
