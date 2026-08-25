@@ -28,33 +28,38 @@ describe("isPremium", () => {
   });
 });
 
-describe("applyEntitlements", () => {
-  it("neutralisiert den Joker ohne Premium", () => {
-    const gestutzt = applyEntitlements(MIT_JOKER, { premium: false });
-    expect(gestutzt.joker.enabled).toBe(false);
+// 🔴 UMGESCHRIEBEN AM 25.08.2026. Diese Tests hielten vorher die
+// Bezahlschranke fest („neutralisiert den Joker ohne Premium"). Andi hat sie
+// abgeschafft: „ich will keine Funktionen am Gesamten Spiel hinter ner
+// Bezahlschranke, ich bin darauf aus auf maximale Verbreitung."
+//
+// ⚠️ Sie sind nicht gelöscht, sondern **umgedreht** — sie sichern jetzt, dass
+// die Schranke WEG BLEIBT. Ein gelöschter Test hätte nichts gesichert, und
+// genau so schleicht sich eine Sperre in einem halben Jahr wieder ein.
+describe("applyEntitlements sperrt nichts mehr", () => {
+  it("lässt den Joker stehen, auch ohne Premium", () => {
+    expect(applyEntitlements(MIT_JOKER, { premium: false }).joker.enabled).toBe(true);
   });
 
-  it("lässt mit Premium alles unverändert", () => {
+  it("gibt dasselbe Regelwerk zurück, nicht eine Kopie", () => {
+    // Dieselbe Referenz: die Funktion reicht durch, sie stutzt nicht mehr.
+    expect(applyEntitlements(MIT_JOKER, { premium: false })).toBe(MIT_JOKER);
     expect(applyEntitlements(MIT_JOKER, { premium: true })).toBe(MIT_JOKER);
   });
 
-  it("behält die Einstellungen, statt sie zu löschen — sie greifen nur nicht", () => {
-    const gestutzt = applyEntitlements(MIT_JOKER, { premium: false });
-    expect(gestutzt.joker.faktor).toBe(MIT_JOKER.joker.faktor);
-    expect(gestutzt.joker.modus).toBe(MIT_JOKER.joker.modus);
-    // Nach dem Freischalten wirken sie wieder, ohne neu eingestellt zu werden.
-    expect(applyEntitlements(gestutzt, { premium: true }).joker.faktor).toBe(2);
-  });
-
-  it("verändert ein Regelwerk ohne Premium-Anteile nicht", () => {
+  it("verändert auch ein schlichtes Regelwerk nicht", () => {
     const schlicht = sanitizeRules(DEFAULT_RULES);
     expect(applyEntitlements(schlicht, { premium: false })).toBe(schlicht);
   });
 });
 
 describe("isLocked", () => {
-  it("meldet Premium-Funktionen nur ohne Berechtigung als gesperrt", () => {
-    expect(isLocked("joker", { premium: false })).toBe(true);
+  // 🔴 Der Wächter über Andis Entscheidung: sobald jemand einen Eintrag in
+  // `PREMIUM_FEATURES` schreibt, steht wieder eine Funktion hinter der
+  // Bezahlschranke — und dieser Test schlägt an.
+  it("sperrt nichts, weil es keine gesperrten Funktionen gibt", () => {
+    expect(PREMIUM_FEATURES).toEqual([]);
+    expect(isLocked("joker", { premium: false })).toBe(false);
     expect(isLocked("joker", { premium: true })).toBe(false);
     expect(isLocked("gibts-nicht", { premium: false })).toBe(false);
   });
@@ -69,10 +74,11 @@ describe("isLocked", () => {
 });
 
 describe("Durchsetzung beim Anlegen einer Runde", () => {
-  it("Admin ohne Premium bekommt den Joker abgeschaltet", async () => {
+  it("Admin OHNE Premium bekommt den Joker trotzdem", async () => {
     const store = createMockStore();
     const round = await store.createRound({ name: "Ohne", adminId: "u-lena", rules: MIT_JOKER });
-    expect(round.rules.joker.enabled).toBe(false);
+    expect(round.rules.joker.enabled).toBe(true);
+    expect(round.rules.joker.faktor).toBe(2);
   });
 
   it("Admin mit Premium behält den Joker", async () => {
@@ -82,10 +88,12 @@ describe("Durchsetzung beim Anlegen einer Runde", () => {
     expect(round.rules.joker.faktor).toBe(2);
   });
 
-  it("unbekannter Admin gilt nicht als Premium", async () => {
+  it("auch ein unbekannter Admin bekommt ein vollständiges Regelwerk", async () => {
+    // ⚠️ Der Fall, der vorher am meisten wehtat: wer ohne Konto eine Runde
+    // anlegte, bekam eine Runde ohne Joker — und erfuhr es nirgends.
     const store = createMockStore();
     const round = await store.createRound({ name: "Fremd", adminId: "u-niemand", rules: MIT_JOKER });
-    expect(round.rules.joker.enabled).toBe(false);
+    expect(round.rules.joker.enabled).toBe(true);
   });
 
   it("das Profil verrät die Berechtigung, ohne dass sie setzbar wäre", async () => {

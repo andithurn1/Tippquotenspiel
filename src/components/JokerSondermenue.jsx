@@ -206,23 +206,15 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
       <GrosseZeile icon="🃏" titel="Welche Joker gibt es?" unter="Arten und Wirkprinzipien"
         wert={standA} offen={karte === "A"} onClick={() => auf("A")}>
 
-        {!premium ? (
-          <div style={{
-            background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`,
-            borderRadius: RUND.karte, padding: "13px 15px", marginBottom: 8,
-          }}>
-            <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
-            <p style={{ fontSize: "0.75rem", color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
-              Es genügt, wenn <strong>du als Admin</strong> Premium hast — die ganze
-              Runde kann dann gewichten. Alle anderen Regler bleiben frei nutzbar.
-            </p>
-          </div>
-        ) : (
-          <Toggle label="Gewichtung erlauben" on={j.enabled}
-            onChange={(on) => setzeJoker({ enabled: on })} />
-        )}
+        {/* 🔴 Bis zum 25.08.2026 stand hier eine Bezahlschranke („🔒
+            Premium-Funktion"). Andi: „ich will keine Funktionen am Gesamten
+            Spiel hinter ner Bezahlschranke, ich bin darauf aus auf maximale
+            Verbreitung." Der Joker ist keine Zusatzfunktion, sondern tragende
+            Mechanik — eine Runde ohne ihn spielt ein anderes Spiel. */}
+        <Toggle label="Gewichtung erlauben" on={j.enabled}
+          onChange={(on) => setzeJoker({ enabled: on })} />
 
-        {premium && j.enabled && (
+        {j.enabled && (
           <>
             <Field label="Modus">
               <div style={{ display: "flex", gap: 6 }}>
@@ -284,7 +276,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
       <GrosseZeile icon="📈" titel="Wie stark wirken sie?" unter="Faktoren und Einsätze"
         wert={standB} offen={karte === "B"} onClick={() => auf("B")}>
 
-        {!premium || !j.enabled ? (
+        {!j.enabled ? (
           <p style={{ fontSize: "0.75rem", color: C.muted, margin: "4px 0", lineHeight: 1.5 }}>
             Die Gewichtung ist aus — es gibt nichts zu stärken. Einschalten in
             <strong> Welche Joker gibt es?</strong>

@@ -86,19 +86,9 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
     onChange({ teamMods: { ...tm, teams } });
   };
 
-  if (!premium) {
-    return (
-      <div style={{
-        background: `${C.akzent}12`, border: `1px solid ${C.akzent}44`,
-        borderRadius: RUND.karte, padding: "13px 15px",
-      }}>
-        <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: C.akzent }}>🔒 Premium-Funktion</div>
-        <p style={{ fontSize: "0.75rem", color: C.muted, margin: "7px 0 0", lineHeight: 1.5 }}>
-          Es genügt, wenn <strong>du als Admin</strong> Premium hast.
-        </p>
-      </div>
-    );
-  }
+  // 🔴 Bis zum 25.08.2026 kehrte diese Funktion hier mit einer Bezahlschranke
+  // um („🔒 Premium-Funktion") — der ganze Modifikatoren-Block war für
+  // kostenlose Runden zu. Weg, siehe `premium.js` (Andi, 25.08.2026).
 
   const teamStand = tm.derbyFaktor > 1 || Object.keys(tmTeams).length > 0
     ? [tm.derbyFaktor > 1 ? fmtFaktor(tm.derbyFaktor) : null,

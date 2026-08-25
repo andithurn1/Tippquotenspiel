@@ -126,6 +126,49 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-25 (XIX) · 🔴 **Die Bezahlschranke ist WEG** — Premium sperrt keine Spielfunktion mehr
+
+🔴 **Wenn du irgendwo `premium` abfragst: hör damit auf.**
+
+Andi hat am 25.08.2026 entschieden: *„ich will keine Funktionen am Gesamten
+Spiel hinter ner Bezahlschranke, ich bin darauf aus auf maximale
+Verbreitung."*
+
+Abgeräumt an fünf Stellen: `PREMIUM_FEATURES` ist **leer**,
+`applyEntitlements` **reicht nur noch durch**, die 🔒-Kästen in
+`JokerSondermenue` und `ModifikatorenSondermenue` sind weg, die
+`premium: true`-Marken an den Presets „Joker" und „Rangliste" sind weg, und
+`Profil.jsx` sagt jetzt, was Premium IST statt was fehlt.
+
+⚠️ **`isPremium` und `premium_until` bleiben** — Premium verschwindet nicht,
+es bekommt einen anderen Inhalt (später Werbefreiheit, vor allem aber eine
+Belohnung für geworbene Mitspieler). Wer die Berechtigung braucht, fragt
+weiter `isPremium`. Wer eine FUNKTION daran hängt, macht Andis Entscheidung
+rückgängig.
+
+🔴 **Die vier Tests, die die Schranke festhielten, sind UMGEDREHT statt
+gelöscht** (`premium.test.js`). Sie prüfen jetzt, dass `PREMIUM_FEATURES` leer
+ist und der Joker auch ohne Premium steht. Wer einen Eintrag dort hineinschreibt,
+bricht sie — absichtlich.
+
+---
+
+**Alles Weitere zur Monetarisierung steht als M1–M10 in
+`design/auftraege.md`**, der Moat-Teil zusätzlich in `design/roadmap.md`.
+Zwei Punkte, die Bauarbeit betreffen könnten:
+
+⚠️ **M8 (Premium als Belohnung):** die Daten liegen schon vollständig vor —
+`createRound` hält den `adminId`, `round_members` ein `joined_at`, `listTips`
+die Tipps je Nutzer. „Zehn Leute, die je X Spieltage getippt haben" ist heute
+berechenbar, **ohne ein neues Feld**. Was fehlt, ist die Zahl für „aktiv".
+
+⚠️ **M10 (Moat):** der Netzwerkeffekt eines Tippspiels ist **lokal, nicht
+global** — eine Runde mit zehn Freunden hat nichts von hunderttausend anderen
+Nutzern. Was wirklich verteidigt, ist die **Regelwerk-Bibliothek** (Inhalt,
+der sich anhäuft), die **gespielte Geschichte** (Wechselkosten) und die
+**Tiefe** (199 Felder). Alle drei sind halb gebaut. **Sie sind Moat-Arbeit,
+nicht Beiwerk** — sie gehören nicht ans Ende der Liste.
+
 ### 2026-08-25 (XVIII) · **Zehn neue Anforderungen von Andi** — und ein Avatar, der nie ankam
 
 Andi hat in zwei Nachrichten Konto und Tippabgabe beschrieben. Alles steht als

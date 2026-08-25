@@ -8,7 +8,7 @@ import {
   AVATARS, DEFAULT_AVATAR, NAME_LIMITS,
   getAvatar, avatarColor, sanitizeDisplayName,
 } from "@/lib/avatars";
-import { isPremium, PREMIUM_FEATURES } from "@/lib/premium";
+import { isPremium } from "@/lib/premium";
 import { C, SCHRIFT, RUND } from "@/lib/theme";
 
 
@@ -114,18 +114,17 @@ export default function Profil() {
               <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: premium ? C.mint : C.text }}>
                 {premium ? "✓ Premium aktiv" : "Premium nicht aktiv"}
               </div>
+              {/* 🔴 Hier stand bis zum 25.08.2026 „Legst du eine Runde als
+                  Admin an, sind diese Funktionen gesperrt:" mit einer Liste.
+                  Es gibt keine gesperrten Funktionen mehr (Andi: „ich will
+                  keine Funktionen am Gesamten Spiel hinter ner
+                  Bezahlschranke"). Der Satz sagt jetzt, was Premium IST —
+                  und solange es noch nichts tut, sagt er auch das. */}
               <p style={{ fontSize: "0.75rem", color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
                 {premium
-                  ? "In Runden, die du als Admin anlegst, stehen die Zusatzfunktionen bereit."
-                  : "Legst du eine Runde als Admin an, sind diese Funktionen gesperrt:"}
+                  ? "Danke — du unterstützt das Spiel. Am Spiel selbst ändert Premium nichts: alle Regeln, Joker und Modifikatoren stehen jeder Runde offen."
+                  : "Alle Spielfunktionen sind frei — Joker, Modifikatoren, jedes Regelwerk. Premium wird später die Werbefreiheit sein und ist nichts, was dir im Spiel fehlt."}
               </p>
-              {!premium && (
-                <ul style={{ margin: "7px 0 0", paddingLeft: 18, fontSize: "0.75rem", color: C.muted, lineHeight: 1.6 }}>
-                  {PREMIUM_FEATURES.map((f) => (
-                    <li key={f.key}><strong style={{ color: C.text }}>{f.label}</strong> — {f.desc}</li>
-                  ))}
-                </ul>
-              )}
             </div>
 
             {/* Anzeigename */}

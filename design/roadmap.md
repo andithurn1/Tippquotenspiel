@@ -452,36 +452,65 @@ beide waren beim Nachsehen keine.
    BERECHNET, kann erst eine laufende Saison zeigen (die simulierte beginnt am
    28.08.2026, vorher ist die Tabelle leer). Steht als `hinweis` am Messfall.
 
-## 💰 Monetarisierung — der Konflikt, der zuerst entschieden werden muss (25.08.2026)
+## 💰 Monetarisierung — entschieden am 25.08.2026
 
-Andi hat am 25.08.2026 Werbung und Premium beschrieben. Alles steht als
-**M1–M7** in `design/auftraege.md`. Hier nur der eine Punkt, der Bauarbeit
-blockiert, damit ihn niemand übersieht:
+**Andi hat den Konflikt entschieden, und zwar in die weite Richtung:**
+*„ich will keine Funktionen am Gesamten Spiel hinter ner Bezahlschranke, ich
+bin darauf aus auf maximale Verbreitung."*
 
-🔴 **Es gibt bereits ein Premium-Modell, und es ist ein ANDERES.**
+Das alte Modell (Premium schaltet Joker + Joker-Abstimmung frei,
+`applyEntitlements` setzte ohne Premium `joker.enabled = false`) ist damit
+**abgeräumt** — an fünf Stellen:
 
-| | heute (`premium.js`) | Andi, 25.08.2026 |
+| Wo | Was war | Was ist |
 |---|---|---|
-| Wofür zahlt man? | **Joker + Joker-Abstimmung** freischalten | **keine Werbung** |
-| Was hat der Gratis-Nutzer? | Spiel **ohne Joker** | volles Spiel, mit Werbung |
-| Wer muss zahlen? | **der Admin**, die Runde profitiert mit | **jeder für sich** |
+| `premium.js` | `PREMIUM_FEATURES` mit zwei Einträgen | leer |
+| `premium.js` | `applyEntitlements` stutzte den Joker | reicht durch |
+| `JokerSondermenue.jsx` | 🔒-Kasten statt des Schalters | Schalter |
+| `ModifikatorenSondermenue.jsx` | 🔒-Kasten statt des ganzen Blocks | Block |
+| `presets.js` · `Spielerstellung.jsx` | `premium: true` an „Joker" und „Rangliste", 🔒 an der Karte | weg |
+| `Profil.jsx` | „diese Funktionen sind gesperrt:" + Liste | sagt, was Premium IST |
 
-`applyEntitlements` setzt ohne Premium `joker.enabled = false`. Eine kostenlose
-Runde verliert damit ihren Joker — und der Joker ist keine Zusatzfunktion,
-sondern tragende Mechanik.
+🔴 **Die vier Tests, die die Schranke festhielten, sind UMGEDREHT statt
+gelöscht.** Sie sichern jetzt, dass sie weg bleibt — `PREMIUM_FEATURES` muss
+leer sein, sonst schlagen sie an. Ein gelöschter Test hätte nichts gesichert,
+und genau so schleicht sich eine Sperre in einem halben Jahr wieder ein.
 
-⚠️ **Beides zusammen wäre die schlechteste Fassung:** der Gratis-Nutzer sähe
-Werbung UND hätte keinen Joker. Genau das Gegenteil von Andis „soll auch
-kostenlos gut nutzbar sein".
+⚠️ **`isPremium` und `premium_until` bleiben unverändert.** Premium
+verschwindet nicht, es bekommt einen anderen Inhalt: später die
+Werbefreiheit — und vor allem eine **Belohnung** (M8/M9).
 
-⚠️ **Und der Nebeneffekt, den man leicht übersieht:** der Satz im Code, „es
-reicht, wenn der ADMIN Premium hat — die ganze Runde profitiert", war das
-Verkaufsargument des heutigen Modells. **Bei Werbefreiheit trägt er nicht
-mehr**: Werbung sieht jeder für sich. Wer umstellt, verliert dieses Argument
-und braucht ein neues.
+---
 
-**Nicht entschieden, nicht gebaut.** Bis Andi das Modell festlegt, bleibt
-`premium.js` wie es ist.
+## 🕸️ Der Moat — Andis Befund stimmt, das Mittel nur halb (25.08.2026)
+
+Andi: *„ist das halt son Netzwerkaufbau-Kampagne um Nachahmer direkt zu
+verhindern, weil der Moat bei so ner App echt nich groß ist."*
+
+**Der Befund stimmt.** Ein Tippspiel ist in vier Wochen nachgebaut.
+
+⚠️ **Aber der Netzwerkeffekt eines Tippspiels ist LOKAL, nicht global.** Eine
+Runde mit zehn Freunden hat nichts davon, dass es hunderttausend andere
+Nutzer gibt — anders als bei einem Marktplatz, wo jeder neue Teilnehmer allen
+anderen nützt. Ein Nachahmer muss deshalb nicht gegen die Gesamtzahl
+antreten, sondern nur **eine Gruppe nach der anderen** abwerben. Reine
+Nutzerzahlen verteidigen hier also weniger, als es aussieht.
+
+🔴 **Was in DIESER App wirklich verteidigt — und alle drei sind schon halb
+gebaut:**
+
+1. **Die Regelwerk-Bibliothek.** Geteilte Codes mit gezählten Übernahmen sind
+   Inhalt, der sich anhäuft. Ein Nachahmer kann die App kopieren, nicht die
+   Bibliothek. Seit dem 24.08.2026 zählt `merkePresetNutzung` das mit.
+2. **Die gespielte Geschichte.** Verlauf, Rekorde und Auszeichnungen einer
+   Runde wachsen mit jedem Spieltag — und mit ihnen die Wechselkosten. Wer
+   eine halbe Saison gespielt hat, wechselt nicht mehr.
+3. **Die Tiefe selbst.** 199 einstellbare Felder baut niemand in einem
+   Quartal nach. Ein Nachahmer liefert die einfache Fassung schnell — und
+   steht dann vor demselben Berg.
+
+⚠️ **Folge für die Reihenfolge:** Bibliothek und Historie sind
+**Moat-Arbeit**, nicht Beiwerk. Sie gehören nicht ans Ende der Liste.
 
 ---
 

@@ -999,11 +999,10 @@ export default function Spielerstellung() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: "0.9375rem", fontWeight: 700 }}>
                       {p.label}
-                      {/* Ohne Premium greift der Joker-Anteil nicht — das gehört
-                          sichtbar an den Preset, nicht erst in eine Fehlermeldung. */}
-                      {p.premium && !premium && (
-                        <span style={{ fontSize: "0.75rem", color: C.akzent, marginLeft: 6 }} title="Premium-Funktion">🔒</span>
-                      )}
+                      {/* 🔴 Hier hing bis zum 25.08.2026 ein 🔒 an den Presets
+                          „Joker" und „Rangliste": ohne Premium griff ihr
+                          Joker-Anteil nicht. Beides ist weg — kein Regelwerk
+                          ist mehr halb wirksam, je nachdem wer es anlegt. */}
                     </span>
                     {active && (
                       <span style={{
