@@ -100,7 +100,7 @@ export function sanitizeSperre(partial = {}) {
 // wahrscheinlichste Ausgang. Wer hier absteigend sortiert, sperrt genau die
 // Außenseiter, die das Spiel interessant machen — der Fehler wäre in der
 // Oberfläche nicht zu sehen, weil gesperrt ja gesperrt aussieht.
-function entscheide(optionen, { anzahl, modus, mindestQuote, mindestensOffen }) {
+function entscheide(optionen, { anzahl, modus, mindestQuote, mindestensOffen, grundText = null }) {
   const gueltig = optionen.filter((o) => Number.isFinite(o.quote) && o.quote > 0);
   const sortiert = [...gueltig].sort((a, b) => a.quote - b.quote);
 
@@ -120,34 +120,63 @@ function entscheide(optionen, { anzahl, modus, mindestQuote, mindestensOffen }) 
     return {
       ...o,
       gesperrt: true,
-      grund: modus === "quote"
+      grund: grundText ?? (modus === "quote"
         ? `gesperrt: Quote unter ${String(mindestQuote).replace(".", ",")}`
-        : `gesperrt: zu wahrscheinlich`,
+        : `gesperrt: zu wahrscheinlich`),
     };
   });
+}
+
+// ── Der persönliche Eingriff — ZWEITER Durchgang ────────────
+// 🔴 Andi, 26.08.2026: „mach generell solche mechaniken auch als Ereignis
+// verfügbar und als Joker". Ein Ereignis kann EINEN Spieler für EINEN Spieltag
+// zusätzlich sperren (`wirkung.js`, Typ `sperre`).
+//
+// ⚠️ Warum ein zweiter Durchgang und kein größerer erster: die Runde kann im
+// Modus `quote` laufen, der Eingriff zählt aber immer im Rang („die nächsten
+// zwei"). In EINEM Durchgang ließen sich beide Bauarten nicht sauber
+// verrechnen — und eine Zahl, die zwei Regeln zugleich meint, ist genau die
+// zweite Wahrheit, vor der die Runden-Schicht warnt.
+//
+// ⚠️ Der zweite Durchgang läuft über die noch OFFENEN Optionen. Dadurch
+// verschärft der Eingriff immer und lockert nie, und `mindestensOffen` gilt
+// weiter für das Gesamtergebnis: was der Runden-Durchgang schon gesperrt hat,
+// zählt nicht mehr als Spielraum.
+function persoenlich(eintraege, cfg, anzahl) {
+  if (!anzahl) return eintraege;
+  const offen = eintraege.filter((o) => !o.gesperrt);
+  const zweite = entscheide(offen, {
+    anzahl, modus: "rang",
+    mindestQuote: cfg.mindestQuote, mindestensOffen: cfg.mindestensOffen,
+    grundText: "gesperrt: für dich, wegen eines Ereignisses",
+  });
+  const nach = new Map(zweite.map((o) => [o.id, o]));
+  return eintraege.map((o) => nach.get(o.id) ?? o);
 }
 
 // ── Torschützen ─────────────────────────────────────────────
 // `snap.players` liegt als `{ home: {...}, away: {...} }` vor. Gesperrt wird
 // über BEIDE Mannschaften hinweg, nicht je Team: der wahrscheinlichste
 // Torschütze des Spiels ist einer, nicht zwei.
-export function schuetzenSperre(snap, rules) {
+export function schuetzenSperre(snap, rules, eingriff = null) {
   const cfg = sanitizeSperre(rules?.sperre);
   const alle = [
     ...Object.entries(snap?.players?.home ?? {}).map(([name, q]) => ({ id: name, seite: "home", quote: q?.anytime })),
     ...Object.entries(snap?.players?.away ?? {}).map(([name, q]) => ({ id: name, seite: "away", quote: q?.anytime })),
   ];
-  if (!cfg.enabled || !cfg.schuetzen) return alle.map((o) => ({ ...o, gesperrt: false, grund: null }));
-  return entscheide(alle, {
-    anzahl: cfg.schuetzen, modus: cfg.modus,
-    mindestQuote: cfg.mindestQuote, mindestensOffen: cfg.mindestensOffen,
-  });
+  const runde = (!cfg.enabled || !cfg.schuetzen)
+    ? alle.map((o) => ({ ...o, gesperrt: false, grund: null }))
+    : entscheide(alle, {
+      anzahl: cfg.schuetzen, modus: cfg.modus,
+      mindestQuote: cfg.mindestQuote, mindestensOffen: cfg.mindestensOffen,
+    });
+  return persoenlich(runde, cfg, eingriff?.schuetzen);
 }
 
 // ── Ergebnisse (Spielstand) ─────────────────────────────────
 // `snap.correctScore` ist ein Raster [heim][auswärts]. Die Id ist „h:a" —
 // dieselbe Schreibweise, die die Oberfläche ohnehin benutzt.
-export function ergebnisSperre(snap, rules) {
+export function ergebnisSperre(snap, rules, eingriff = null) {
   const cfg = sanitizeSperre(rules?.sperre);
   const raster = Array.isArray(snap?.correctScore) ? snap.correctScore : [];
   const alle = [];
@@ -155,21 +184,25 @@ export function ergebnisSperre(snap, rules) {
     const zeile = Array.isArray(raster[h]) ? raster[h] : [];
     for (let a = 0; a < zeile.length; a++) alle.push({ id: `${h}:${a}`, home: h, away: a, quote: zeile[a] });
   }
-  if (!cfg.enabled || !cfg.ergebnisse) return alle.map((o) => ({ ...o, gesperrt: false, grund: null }));
-  return entscheide(alle, {
-    anzahl: cfg.ergebnisse, modus: cfg.modus,
-    mindestQuote: cfg.mindestQuote, mindestensOffen: cfg.mindestensOffen,
-  });
+  const runde = (!cfg.enabled || !cfg.ergebnisse)
+    ? alle.map((o) => ({ ...o, gesperrt: false, grund: null }))
+    : entscheide(alle, {
+      anzahl: cfg.ergebnisse, modus: cfg.modus,
+      mindestQuote: cfg.mindestQuote, mindestensOffen: cfg.mindestensOffen,
+    });
+  return persoenlich(runde, cfg, eingriff?.ergebnisse);
 }
 
 // ── Zwei Nachschlage-Helfer für die Oberfläche ──────────────
 // Damit ein Screen nicht selbst über die Liste laufen muss (und dabei eine
 // zweite Fassung der Regel baut — die Runden-Schicht in CLAUDE.md).
-export function istSchuetzeGesperrt(snap, rules, name) {
-  return schuetzenSperre(snap, rules).find((o) => o.id === name) ?? { gesperrt: false, grund: null };
+export function istSchuetzeGesperrt(snap, rules, name, eingriff = null) {
+  return schuetzenSperre(snap, rules, eingriff).find((o) => o.id === name)
+    ?? { gesperrt: false, grund: null };
 }
-export function istErgebnisGesperrt(snap, rules, home, away) {
-  return ergebnisSperre(snap, rules).find((o) => o.id === `${home}:${away}`) ?? { gesperrt: false, grund: null };
+export function istErgebnisGesperrt(snap, rules, home, away, eingriff = null) {
+  return ergebnisSperre(snap, rules, eingriff).find((o) => o.id === `${home}:${away}`)
+    ?? { gesperrt: false, grund: null };
 }
 
 // Ein Satz für den Admin: was bewirkt die Einstellung an DIESEM Spiel?

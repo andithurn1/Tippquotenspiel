@@ -33,6 +33,8 @@ import { FREMDJOKER_ARTEN, jokerArtVon, sanitizeSchutz } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
 import { ergebnisQuote } from "@/lib/randquoten";
 import { schuetzenSperre, istSchuetzeGesperrt, istErgebnisGesperrt } from "@/lib/favoritenSperre";
+import { sperrenFuer, beschreibeEingriff } from "@/lib/sperrEingriff";
+import { wirkungsVorgaenge } from "@/lib/ereignisse";
 import { startErgebnis, FESTER_START } from "@/lib/vorbelegung";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
@@ -519,6 +521,32 @@ export default function Tippabgabe({ matchId }) {
     },
     [meineEintraege, alleEintraege, tagesPunkte, RULES, radBelohnungen, user, achse, schluessel]);
 
+  // 🔴 Meine persönlichen Sperren dieses Spieltags (Andi, 26.08.2026: „mach
+  // generell solche mechaniken auch als Ereignis verfügbar und als Joker").
+  //
+  // Ein Ereignis mit der Wirkung `sperre` hält EINEM Spieler an EINEM Spieltag
+  // zusätzlich etwas zu. Der Weg dorthin ist derselbe wie bei den erspielten
+  // Jokern eine Ebene höher — nur landet das Ergebnis nicht im Kontingent,
+  // sondern in der Auswahl.
+  //
+  // ⚠️ Umgerechnet auf den RUNDEN-Spieltag, genau wie die Gutschriften
+  // darüber: `wirkungsVorgaenge` gibt den Liga-Spieltag zurück, und über fünf
+  // Wettbewerbe gäbe es „Spieltag 5" fünfmal (CLAUDE.md, die vier Fragen).
+  const meinEingriff = useMemo(() => {
+    if (!match || !user) return null;
+    const vorgaenge = wirkungsVorgaenge({
+      alleEintraege, ereignisse: RULES.ereignisse, spieltagsPunkte: tagesPunkte,
+      schluessel, rundenId: roundId ?? "",
+    }).map((v) => {
+      const runde = rundenSpieltagVon(achse, { wettbewerb: v.wettbewerb, matchday: v.matchday });
+      return runde == null ? v : { ...v, matchday: runde };
+    });
+    const meinTag = rundenSpieltagVon(achse, {
+      wettbewerb: wettbewerbVon(match), matchday: match.matchday ?? null,
+    }) ?? match.matchday ?? null;
+    return sperrenFuer(vorgaenge, { userId: user.id, matchday: meinTag });
+  }, [match, user, alleEintraege, RULES, tagesPunkte, schluessel, roundId, achse]);
+
   // 🔴 Die Favoriten-Sperre, EINMAL gefragt statt an fünf Stellen nachgebaut
   // (Andi, 26.08.2026: „mach dann auch bei der Tippabgabe einsehbar für die
   // nutzer, dass halt bspw. kane wegen der einstellung gesperrt ist mit
@@ -527,12 +555,14 @@ export default function Tippabgabe({ matchId }) {
   const schuetzenZu = useMemo(() => {
     const m = new Map();
     if (!match) return m;
-    for (const o of schuetzenSperre(match.snapshot, RULES)) if (o.gesperrt) m.set(o.id, o.grund);
+    for (const o of schuetzenSperre(match.snapshot, RULES, meinEingriff)) {
+      if (o.gesperrt) m.set(o.id, o.grund);
+    }
     return m;
-  }, [match, RULES]);
+  }, [match, RULES, meinEingriff]);
   const standZu = useMemo(
-    () => (match ? istErgebnisGesperrt(match.snapshot, RULES, h, a).grund : null),
-    [match, RULES, h, a]);
+    () => (match ? istErgebnisGesperrt(match.snapshot, RULES, h, a, meinEingriff).grund : null),
+    [match, RULES, h, a, meinEingriff]);
 
   // 🔴 Der Startwert des Steppers (Andi, 26.08.2026). Ein Effekt und kein
   // `useState`-Initialwert: beim ersten Rendern ist der Schnappschuss noch
@@ -543,10 +573,10 @@ export default function Tippabgabe({ matchId }) {
   // stürzte beim zweiten mit „change in the order of Hooks" ab (CLAUDE.md).
   useEffect(() => {
     if (!match || standBeruehrt) return;
-    const start = startErgebnis(match.snapshot, RULES, prefs?.vorbelegung);
+    const start = startErgebnis(match.snapshot, RULES, prefs?.vorbelegung, meinEingriff);
     setH(start.home);
     setA(start.away);
-  }, [match, RULES, prefs?.vorbelegung, standBeruehrt]);
+  }, [match, RULES, prefs?.vorbelegung, standBeruehrt, meinEingriff]);
 
   // Neues Spiel → die Vorbelegung gilt wieder. Ohne das behielte das zweite
   // Spiel den Stand des ersten, sobald man dort einmal gesteppt hat.
@@ -999,7 +1029,7 @@ export default function Tippabgabe({ matchId }) {
       //
       // ⚠️ Geprüft wird gegen dieselben Funktionen, die auch ausgrauen — nicht
       // gegen eine zweite Fassung der Regel (Runden-Schicht, CLAUDE.md).
-      const standGesperrt = istErgebnisGesperrt(SNAP, RULES, h, a);
+      const standGesperrt = istErgebnisGesperrt(SNAP, RULES, h, a, meinEingriff);
       if (RULES.markets.result && standGesperrt.gesperrt) {
         setSperrGrund(`${h}:${a} ist nicht wählbar — ${standGesperrt.grund.replace(/^gesperrt: /, "")}`);
         setSaveState("sperrUngueltig");
@@ -1008,7 +1038,7 @@ export default function Tippabgabe({ matchId }) {
       if (scorer.enabled) {
         const getroffen = (picks ?? []).flat()
           .flatMap((pk) => [pk.main, pk.backup])
-          .filter((n) => n && istSchuetzeGesperrt(SNAP, RULES, n).gesperrt);
+          .filter((n) => n && istSchuetzeGesperrt(SNAP, RULES, n, meinEingriff).gesperrt);
         if (getroffen.length) {
           setSperrGrund(`${[...new Set(getroffen)].join(", ")} ist für diese Runde gesperrt — bitte einen anderen Torschützen wählen`);
           setSaveState("sperrUngueltig");
@@ -1341,6 +1371,23 @@ export default function Tippabgabe({ matchId }) {
               </div>
             )}
 
+            {/* 🔴 Eine Sperre, die NUR MICH trifft, braucht ihren eigenen Satz —
+                und zwar über dem Tippen, nicht neben einem einzelnen Feld. Sonst
+                sieht der Spieler an drei Stellen „gesperrt" und hält es für die
+                Regel der Runde, unter der alle anderen genauso tippen. */}
+            {meinEingriff && (
+              <div style={{
+                fontSize: "0.8125rem", lineHeight: 1.45, color: C.text, marginBottom: 12,
+                padding: "10px 12px", borderRadius: RUND.karte,
+                background: `${C.coral}14`, border: `1px solid ${C.coral}55`,
+              }}>
+                🔒 {beschreibeEingriff(meinEingriff)}{" "}
+                <span style={{ color: C.muted }}>
+                  Gilt nur für dich und nur an diesem Spieltag.
+                </span>
+              </div>
+            )}
+
             {/* Ergebnis-Eingabe */}
             {RULES.markets.result && (
               <Section title="Endstand">
@@ -1389,7 +1436,7 @@ export default function Tippabgabe({ matchId }) {
                 )}
 
                 <ErgebnisMatrix snap={SNAP} rules={RULES} tip={{ home: h, away: a }}
-                  gesperrt={gesperrt}
+                  gesperrt={gesperrt} eingriff={meinEingriff}
                   onWahl={(hh, aa) => { setStandBeruehrt(true); setH(hh); setA(aa); }} />
               </Section>
             )}

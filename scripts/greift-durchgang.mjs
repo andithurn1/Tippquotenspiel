@@ -516,6 +516,13 @@ const OHNE_MESSFALL = {
   regelAbstimmung: "Wie `verfassung` — Mitbestimmung, keine Wertung.",
   oddsMode: "Woher die Quoten kommen. Im Mock gibt es nur eine Quelle.",
   reglerFeinheit: "Eine Einstellung der Profi-Ansicht selbst, kein Spielwert.",
+  sperre:
+    "Nimmt Optionen aus der AUSWAHL und verrechnet nichts — ein Leaderboard-"
+    + "Vergleich bewegt sich hier zwangsläufig um null. Gemessen wird sie "
+    + "stattdessen dort, wo sie wirkt: `favoritenSperre.test.js` (trifft sie "
+    + "den Favoriten oder den Außenseiter?), `sperrEingriff.test.js` (kommt "
+    + "der Eingriff in der Auswahl an?) und `autoTip.test.js` (hält sich der "
+    + "Ersatz-Tipp daran?).",
 };
 
 const faelleQuelle = (() => {

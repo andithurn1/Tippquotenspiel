@@ -61,8 +61,8 @@ export const VORBELEGUNG_HINWEIS = {
 // ⚠️ Nicht exportiert: von außen fragt man `startErgebnis`, sonst gäbe es zwei
 // Wege zum selben Wert — und `npm run tot` hätte den zweiten prompt als
 // Export gemeldet, den außer den Tests niemand aufruft.
-function wahrscheinlichsterEndstand(snap, rules) {
-  const offen = ergebnisSperre(snap, rules)
+function wahrscheinlichsterEndstand(snap, rules, eingriff) {
+  const offen = ergebnisSperre(snap, rules, eingriff)
     .filter((o) => !o.gesperrt && Number.isFinite(o.quote) && o.quote > 0);
   if (!offen.length) return null;
   return offen.reduce((a, b) => (b.quote < a.quote ? b : a));
@@ -74,9 +74,13 @@ function wahrscheinlichsterEndstand(snap, rules) {
 //
 //   fest   — der Vorgabe-Stand (2:1)
 //   quote  — aus dem Raster gelesen
-export function startErgebnis(snap, rules, stufe = DEFAULT_VORBELEGUNG) {
+// `eingriff` = die persönlichen Sperren dieses Spielers (`sperrEingriff.js`).
+// ⚠️ Er gehört hierher und nicht nur in die Anzeige: eine Vorbelegung, die auf
+// einem Feld landet, das AUSGERECHNET diesem Spieler zugehalten ist, schlägt
+// ihm etwas vor, das sein eigenes Speichern ablehnt.
+export function startErgebnis(snap, rules, stufe = DEFAULT_VORBELEGUNG, eingriff = null) {
   if (stufe !== "wahrscheinlich") return { ...FESTER_START, quelle: "fest" };
-  const beste = wahrscheinlichsterEndstand(snap, rules);
+  const beste = wahrscheinlichsterEndstand(snap, rules, eingriff);
   // Kein Raster (oder alles gesperrt) → der feste Stand. Ein Spiel ohne
   // Ergebnis-Quoten gibt es: Saison-Wetten und frisch angelegte Spiele haben
   // keins, und ein `undefined` im Stepper wäre ein weißer Screen.

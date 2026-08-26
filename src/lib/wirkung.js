@@ -77,7 +77,39 @@ export const RICHTUNGEN = ["positiv", "neutral", "negativ"];
 
 // Was eine Wirkung an Infrastruktur voraussetzt. Alles, was hier über
 // `spieltagspunkte` hinausgeht, existiert noch nicht.
-export const VERFUEGBARE_MITTEL = ["joker", "punkte", "faktor", "spieltagspunkte"];
+// 🔴 „auswahl" ist seit dem 26.08.2026 dabei, und zwar erst seit die
+// Favoriten-Sperre (`favoritenSperre.js`) wirklich in der Tippabgabe steht.
+// Vorher war das Mittel genau das, wovor der Absatz „Jede Wirkung deklariert,
+// was sie braucht" warnt: ein Schalter für etwas, das es nicht gibt.
+//
+// ⚠️ Es heißt „auswahl" und NICHT „tippabgabe", obwohl beides in demselben
+// Screen landet. Der Unterschied ist der Grund, warum `pflicht` („du musst
+// gegen den Favoriten tippen") weiter nicht auswertbar ist: die Sperre nimmt
+// etwas aus der AUSWAHL — das kann sie, seit es `rules.sperre` gibt. Eine
+// Pflicht prüft beim ABSENDEN, ob der abgegebene Tipp eine Bedingung erfüllt,
+// und dafür gibt es bis heute nichts. Ein gemeinsames Mittel für beide hätte
+// `pflicht` stillschweigend mit scharf geschaltet.
+export const VERFUEGBARE_MITTEL = ["joker", "punkte", "faktor", "spieltagspunkte", "auswahl"];
+
+// ── Was eine Sperre zuhält ──────────────────────────────────
+// Andi, 26.08.2026: „mach generell solche mechaniken auch als Ereignis
+// verfügbar und als Joker". Die Mechanik ist dieselbe wie im Regelwerk
+// (`rules.sperre`), nur trifft sie hier EINE Person für EINEN Spieltag.
+//
+// ⚠️ Sie VERSCHÄRFT immer und lockert nie: eine Ereignis-Sperre kann die
+// Sperre der Runde nicht unterlaufen, sie legt nur nach. Eine Wirkung, die
+// dem Getroffenen mehr erlaubt als allen anderen, wäre eine Belohnung mit
+// negativem Vorzeichen — genau die Sorte Widerspruch, die `konflikte()`
+// sonst meldet.
+export const SPERR_ZIELE = [
+  { key: "favoriten", label: "Favoriten", text: "der wahrscheinlichste Torschütze UND der wahrscheinlichste Endstand" },
+  { key: "schuetzen", label: "Torschützen", text: "der wahrscheinlichste Torschütze" },
+  { key: "ergebnisse", label: "Endstände", text: "der wahrscheinlichste Endstand" },
+];
+// ⚠️ Nur intern: von außen geht der Weg über `SPERR_ZIELE` (die Liste). Ein
+// zweiter exportierter Zugang zu demselben Katalog wäre ein toter Export —
+// `npm run tot` hat ihn prompt gemeldet.
+const SPERR_ZIEL = Object.fromEntries(SPERR_ZIELE.map((z) => [z.key, z]));
 
 export const WIRKUNG_TYPEN = [
   // ── Positiv ──
@@ -148,11 +180,22 @@ export const WIRKUNG_TYPEN = [
     topf: "Offen — hängt am Sonderspiel.",
   },
   {
+    // 🔴 Diese Wirkung stand hier seit dem 07.08.2026 als VORBEREITUNG, mit
+    // `standard: { was: "joker" }` und dem Satz „Diesen Spieltag kein Joker —
+    // oder nur Tendenz statt Ergebnis". Auswertbar war sie nie, weil es nichts
+    // gab, worauf sie hätte greifen können.
+    //
+    // Seit dem 26.08.2026 gibt es die Favoriten-Sperre, und damit ist die
+    // Wirkung an DER Stelle scharf, an der sie eine Grundlage hat. Der
+    // Joker-Entzug für einen Spieltag ist NICHT stillschweigend mitgewandert:
+    // er ist eine andere Mechanik (Kontingent statt Auswahl) und steht als
+    // offene Frage in `design/ideen.md`. Ein Parameterwert, der nichts tut,
+    // wäre genau der Schalter, den der Kopf dieser Datei ausschließt.
     key: "sperre", label: "Sperre", richtung: "negativ",
-    braucht: ["tippabgabe"], parameter: ["was"],
-    standard: { was: "joker" },
-    text: "Diesen Spieltag kein Joker — oder nur Tendenz statt Ergebnis.",
-    topf: "Keiner — greift vor der Wertung.",
+    braucht: ["auswahl"], parameter: ["was", "n"],
+    standard: { was: "favoriten", n: 1 },
+    text: "Die naheliegendsten Tipps sind für dich diesen Spieltag nicht wählbar.",
+    topf: "Keiner — greift VOR der Wertung, in der Auswahl.",
   },
   {
     key: "handicap", label: "Handicap", richtung: "negativ",
@@ -229,6 +272,11 @@ export function sanitizeWirkung(partial = {}, standard = DEFAULT_WIRKUNG) {
   if (w.parameter.includes("prozent")) {
     out.prozent = Math.round(clamp(p.prozent, WIRKUNG_LIMITS.prozent, std.prozent));
   }
+  // Was die Sperre zuhält. Unbekannt → die Vorgabe des Typs, nie ein
+  // erfundener Wert: `SPERR_ZIELE` ist die eine Quelle.
+  if (w.parameter.includes("was")) {
+    out.was = SPERR_ZIEL[p.was] ? p.was : std.was;
+  }
   // Nur bei `punkte` — der eigene Deckel gehört zur Wirkung, nicht zum
   // Ereignis: dieselbe Wirkung in zwei Regeln soll nicht zwei Deckel haben.
   if (typ === "punkte") {
@@ -256,6 +304,12 @@ export function beschreibeWirkung(wirkung) {
       return w.n === 1 ? "ein Joker verfällt" : `${w.n} Joker verfallen`;
     case "umverteilung":
       return `${w.prozent} % der Spieltagspunkte gehen an die übrigen Mitspieler`;
+    case "sperre": {
+      const ziel = SPERR_ZIEL[w.was] ?? SPERR_ZIEL.favoriten;
+      return w.n === 1
+        ? `gesperrt: ${ziel.text}`
+        : `gesperrt: die ${w.n} wahrscheinlichsten ${ziel.label}`;
+    }
     case "nichts":
       return "nur eine Auszeichnung";
     default:
@@ -293,7 +347,10 @@ export function wendeAn({
 } = {}) {
   const w = sanitizeWirkung(wirkung);
   const wer = [...new Set(betroffene.filter((id) => id != null))];
-  const neutral = (userId, extra) => ({ userId, joker: 0, punkte: 0, faktor: 1, ...extra });
+  // ⚠️ `sperre: null` gehört zu den neutralen Feldern wie `joker: 0` und
+  // `faktor: 1` — dieselbe „nie halb gesetzt"-Regel: ein Aufrufer soll nicht
+  // raten müssen, ob das Feld fehlt oder leer ist.
+  const neutral = (userId, extra) => ({ userId, joker: 0, punkte: 0, faktor: 1, sperre: null, ...extra });
   if (!wer.length) return [];
 
   switch (w.typ) {
@@ -355,6 +412,19 @@ export function wendeAn({
         ...geber,
         ...empfaenger.map((id) => neutral(id, { punkte: jeder, text: "Anteil aus der Umverteilung" })),
       ];
+    }
+
+    // 🔴 Die Sperre erzeugt KEINE Punkte und keinen Faktor — sie reicht einen
+    // Bauplan durch, den die Tippabgabe auf das Regelwerk legt
+    // (`sperrEingriff.js`). Deshalb bleibt der Vorgang in allen drei
+    // Zahlfeldern neutral: er darf in der Wertung nichts bewegen.
+    case "sperre": {
+      const ziel = SPERR_ZIEL[w.was] ?? SPERR_ZIEL.favoriten;
+      const bauplan = {
+        schuetzen: ziel.key === "ergebnisse" ? 0 : w.n,
+        ergebnisse: ziel.key === "schuetzen" ? 0 : w.n,
+      };
+      return wer.map((id) => neutral(id, { sperre: bauplan, text: beschreibeWirkung(w) }));
     }
 
     case "nichts":

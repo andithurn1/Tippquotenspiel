@@ -29,7 +29,7 @@ import { usePrefs } from "@/components/PrefsProvider";
 // Vorschau in den Anzeige-Einstellungen, die JEDE Stufe zeigen muss, nicht
 // die gerade gewählte. Ohne den Ausweg ließe sich eine Stufe nur vorführen,
 // indem man sie einschaltet.
-export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = false, weite = null }) {
+export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = false, weite = null, eingriff = null }) {
   const [stufe, setStufe] = useState(DEFAULT_MATRIX_STUFE);
   // 🔴 Wie weit das Raster reicht, ist eine PERSÖNLICHE Anzeige-Einstellung
   // (Andi, 25.08.2026) — nicht eine Regel der Runde. Sie steht bei „Meine
@@ -55,9 +55,9 @@ export default function ErgebnisMatrix({ snap, rules, tip, onWahl, gesperrt = fa
   // und das ist in diesem Projekt schon 17-mal an einem Tag passiert.
   const sperren = useMemo(() => {
     const m = new Map();
-    for (const o of ergebnisSperre(snap, rules)) if (o.gesperrt) m.set(o.id, o.grund);
+    for (const o of ergebnisSperre(snap, rules, eingriff)) if (o.gesperrt) m.set(o.id, o.grund);
     return m;
-  }, [snap, rules]);
+  }, [snap, rules, eingriff]);
 
   if (!felder.length) return null;
 

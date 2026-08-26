@@ -37,7 +37,13 @@ describe("Katalog", () => {
     expect(istAuswertbar("umverteilung")).toBe(true);
     expect(istAuswertbar("rolle")).toBe(false);
     expect(istAuswertbar("sonderspiel")).toBe(false);
-    expect(istAuswertbar("sperre")).toBe(false);
+    // 🔴 26.08.2026: `sperre` ist auswertbar geworden — seit die
+    // Favoriten-Sperre in der Tippabgabe steht, hat sie eine Grundlage.
+    expect(istAuswertbar("sperre")).toBe(true);
+    // ⚠️ `pflicht` NICHT, obwohl es im selben Screen landet: eine Pflicht
+    // prüft beim Absenden, und dafür gibt es bis heute nichts. Genau dafür
+    // heißt das neue Mittel „auswahl" und nicht „tippabgabe".
+    expect(istAuswertbar("pflicht")).toBe(false);
     expect(istAuswertbar("gibtsNicht")).toBe(false);
     expect(AUSWERTBARE_WIRKUNGEN.length).toBeLessThan(WIRKUNG_TYPEN.length);
   });
