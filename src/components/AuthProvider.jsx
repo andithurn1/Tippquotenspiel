@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { apiPfad } from "@/lib/apiBasis";
 import { hasSupabaseEnv, getSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { getStore } from "@/lib/store";
 import { DEMO_ROUND_ID } from "@/lib/constants";
@@ -203,7 +204,7 @@ export default function AuthProvider({ children }) {
     const { data: { session } } = await sb.auth.getSession();
     const token = session?.access_token;
     if (!token) throw new Error("Keine gültige Sitzung.");
-    const res = await fetch("/api/account/delete", {
+    const res = await fetch(apiPfad("/api/account/delete"), {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     });

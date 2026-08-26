@@ -27,7 +27,8 @@
     "seed:delta": "vite-node scripts/seed-delta.mjs",
     "seed:bundesliga": "vite-node scripts/seed-matches.mjs",
     "schrift": "vitest run src/lib/schriftmass.test.js",
-    "bewegung": "vite-node scripts/bewegung-durchgang.mjs"
+    "bewegung": "vite-node scripts/bewegung-durchgang.mjs",
+    "build:app": "node scripts/app-build.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",

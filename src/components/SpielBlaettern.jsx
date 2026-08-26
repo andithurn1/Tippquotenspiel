@@ -96,7 +96,9 @@ export default function SpielBlaettern({
   const gehe = useRef({ vorher, nachher });
   gehe.current = { vorher, nachher };
 
-  const zu = (m) => { if (m) router.push(`${basis}/${m.matchId ?? m.id}`); };
+  // ⚠️ Suchparameter statt Pfad (26.08.2026): eine dynamische Route wuerde
+  // den statischen Export fuer die native App blockieren.
+  const zu = (m) => { if (m) router.push(`${basis}?spiel=${m.matchId ?? m.id}`); };
 
   useWischen(umschlagRef, {
     onLinks: () => zu(gehe.current.vorher),

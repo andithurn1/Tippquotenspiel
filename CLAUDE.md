@@ -26,16 +26,34 @@ abgeschrieben. Beides hat Andi umgehend richtiggestellt:
 
 🔴 **Die Folge, und sie ist die wichtige an diesem ganzen Block:** „vor der
 ersten echten Runde MIT MITSPIELERN" heißt ab jetzt **Hinrunde**, nicht
-Rückrunde. Der einzige echte Blocker — **der eigene Mailversand** — steht
-damit nicht in vier Monaten an, sondern jetzt: ohne ihn kann sich außer Andi
-niemand anmelden, und ohne Anmeldung gibt es keinen Test mit Freunden.
+Rückrunde. Der einzige echte Blocker bleibt der **eigene Mailversand** —
+ohne ihn kann sich außer Andi niemand anmelden, und ohne Anmeldung gibt es
+keinen Test mit Freunden.
+
+⚠️ **DRITTE Richtigstellung zum selben Thema, 26.08.2026 — und sie steht hier,
+weil der Fehler dreimal derselbe war.** Aus „die Hinrunde ist der Testbetrieb"
+hatte ich gemacht, der Test beginne mit dem Saisonstart am 28.08.2026, und
+daraus wieder eine Dringlichkeit („in zwei Tagen"). Andi dazu:
+
+> *„wieso testbetrieb mit freunden in 2 tagen? testbetrieb hat erstmal Zeit"*
+
+⛔ **Der Saisonstart ist KEIN Startschuss für den Testbetrieb.** Die Hinrunde
+ist das FENSTER, in dem getestet wird — nicht ihr erster Tag. Wann innerhalb
+dieses Fensters begonnen wird, entscheidet Andi, und es eilt nicht.
+
+🔴 **Die Lehre, ausgeschrieben, weil sie sich dreimal wiederholt hat:** ich
+lese aus Zeitangaben Fristen heraus, die niemand gesetzt hat — erst „Frist
+09.01.2027", dann „Hinrunde abgeschrieben", jetzt „in zwei Tagen". Jedes Mal
+war die Angabe ENTSPANNT gemeint. **Ein Datum im Kalender ist keine Frist,
+solange Andi es nicht als Frist bezeichnet.** Im Zweifel nachfragen, nie
+ableiten.
 
 📅 **Zum Nachschlagen, am echten Spielplan gemessen** (`bl-2026.js`,
 OpenLigaDB) — Daten, keine Termine:
 
 | | Datum | |
 |---|---|---|
-| Saisonstart (1. Spieltag) | 28.08.2026 | Beginn des Testbetriebs |
+| Saisonstart (1. Spieltag) | 28.08.2026 | ⚠️ Beginn des FENSTERS, nicht des Tests |
 | Letzter Spieltag vor der Winterpause | 19.12.2026 | Spieltag 14 |
 | Erster Spieltag danach | 09.01.2027 | Spieltag 15 — 21 Tage Pause |
 | Rückrunde im engen Sinn | 23.01.2027 | Spieltag 18 |

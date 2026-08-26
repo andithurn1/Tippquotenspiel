@@ -13,7 +13,25 @@ ist hier nicht die Entscheidung, sondern die **Messung**: was in DIESEM Code
 dem im Weg steht. Capacitor braucht einen statischen Export
 (`output: "export"` → `out/`), und den verhindern heute genau zwei Dinge.
 
-### ⛔ Blocker 1 — eine dynamische Route ohne Liste
+### ✅ Schritt 1–3 sind am 26.08.2026 gebaut
+
+`npm run build:app` erzeugt `out/` — 31 HTML-Seiten, 4,9 MB, ohne API-Routen.
+`npm run build` bleibt unverändert und behält alle vier.
+
+🔴 **Zwei Blocker kamen erst beim Ausprobieren heraus, nicht beim Lesen:**
+
+1. **Die API-Routen brechen den Export ab**, auch ohne Aufruf — schon ihr
+   Vorhandensein genügt (`export const dynamic … not configured on route
+   /api/odds`). `force-static` ist keine Lösung: sie BRAUCHEN einen Server.
+   Also legt `scripts/app-build.mjs` den Ordner für die Dauer des Builds
+   beiseite. ⚠️ Ein Eingriff in den Arbeitsbaum — deshalb `finally` UND ein
+   Signal-Fänger, **im Abbruch geprobt**: nach `SIGINT` mitten im Build ist
+   `src/app/api` wieder da.
+2. **`manifest.js` ist auch eine Route** (`/manifest.webmanifest`) und
+   brauchte `force-static`. Für den Web-Build ändert das nichts — es schreibt
+   nur auf, was ohnehin gilt.
+
+### ⛔ Blocker 1 (gelöst) — eine dynamische Route ohne Liste
 
 `/tippen/[matchId]` ist die einzige. Ohne `generateStaticParams` bricht der
 Export ab; MIT ihr entstünden **1 943 HTML-Dateien**, eine je Spiel im
@@ -84,9 +102,12 @@ einmalig 25 $**.
 
 ### Reihenfolge, wenn es losgeht
 
-1. `/tippen/[matchId]` → Suchparameter, alte Adressen umleiten.
-2. `NEXT_PUBLIC_API_BASIS` einführen, die zwei `fetch("/api/…")` umstellen.
-3. `output: "export"` einschalten und prüfen, dass `out/` vollständig ist.
+1. ✅ **`/tippen/[matchId]` → Suchparameter** (26.08.2026). `/tippen?spiel=<id>`,
+   alte Adressen leitet `netlify.toml` um.
+2. ✅ **`NEXT_PUBLIC_API_BASIS`** (`src/lib/apiBasis.js`), die zwei
+   `fetch("/api/…")` umgestellt. Im Web bleibt die Variable leer, dann ändert
+   sich nichts.
+3. ✅ **`npm run build:app` läuft durch** — 31 HTML-Seiten, 4,9 MB in `out/`.
 4. Capacitor aufsetzen, Android zuerst (kein Mac nötig).
 5. Deep Link + Supabase-Redirect für die Anmeldung.
 6. APNs/FCM für die Benachrichtigungen.

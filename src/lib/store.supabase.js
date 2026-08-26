@@ -4,6 +4,7 @@
 //    nur Rohdaten geladen/geschrieben.
 
 import { DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules, brauchtVerlauf } from "./engine";
+import { apiPfad } from "./apiBasis";
 // Beschlossene Regeländerungen wirken ab IHREM Spieltag (Schritt 5 von
 // design/abstimmung-verfassung.md) — dieselbe Anbindung wie im Mock-Store.
 import { regelnFuerSpieltag } from "./beschluss";
@@ -112,7 +113,7 @@ export function createSupabaseStore() {
     async openMatchday(roundId, matchday, wettbewerb = DEFAULT_WETTBEWERB) {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) throw new Error("Nicht angemeldet.");
-      const res = await fetch("/api/matchday/open", {
+      const res = await fetch(apiPfad("/api/matchday/open"), {
         method: "POST",
         headers: {
           "content-type": "application/json",

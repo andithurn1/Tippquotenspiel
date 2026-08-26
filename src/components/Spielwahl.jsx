@@ -453,7 +453,7 @@ function MatchRow({ match, status, tipped, gewicht, rules, tip = null }) {
     </div>
   );
   return open
-    ? <Link href={`/tippen/${match.id}`} style={{ textDecoration: "none", color: "inherit" }}>{content}</Link>
+    ? <Link href={`/tippen?spiel=${match.id}`} style={{ textDecoration: "none", color: "inherit" }}>{content}</Link>
     : <div>{content}</div>;
 }
 

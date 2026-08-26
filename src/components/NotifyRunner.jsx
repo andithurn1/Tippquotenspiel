@@ -125,7 +125,7 @@ export default function NotifyRunner() {
           // Erst zustellen, dann verbuchen: was nicht angezeigt wurde, darf
           // nicht als erledigt gelten, sonst verschwindet die Meldung für immer.
           const angezeigt = await kanal.zeige(eintrag, {
-            url: eintrag.matchId ? `/tippen/${eintrag.matchId}` : "/tippen",
+            url: eintrag.matchId ? `/tippen?spiel=${eintrag.matchId}` : "/tippen",
           });
           if (angezeigt) stand = merkeZustellung(stand, eintrag, Date.now());
         }

@@ -1,30 +1,26 @@
+
 # Abhängigkeiten
-/node_modules
-
-# Next.js Build
-/.next
-/out
-
-# Produktion
-/build
-
-# Sonstiges
-.DS_Store
-*.pem
-npm-debug.log*
-
+# Delta-SQL ist eine Wegwerf-Datei (npm run seed:delta) — nach dem
 # Lokale Env-Dateien (API-Keys gehören NIE ins Repo)
+# Next.js Build
+# Persönliche Claude-Code-Einstellungen (nicht teamweit)
+# Produktion
+# Sonstiges
+# Vercel
+# naechsten odds:holen veraltet und dann gefaehrlich. Nie einchecken.
+*.pem
+.DS_Store
+.api-waehrend-app-build/
+.claude/launch.json
+.claude/settings.local.json
 .env
 .env*.local
-
-# Vercel
 .vercel
-
-# Persönliche Claude-Code-Einstellungen (nicht teamweit)
-.claude/settings.local.json
-.claude/launch.json
+/.next
+/build
+/node_modules
+/out
+npm-debug.log*
+out/
 scratch/
-
-# Delta-SQL ist eine Wegwerf-Datei (npm run seed:delta) — nach dem
-# naechsten odds:holen veraltet und dann gefaehrlich. Nie einchecken.
 supabase/_quoten-update.sql

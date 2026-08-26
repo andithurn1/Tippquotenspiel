@@ -31,3 +31,18 @@
 # die still ausbleibt, ist schwerer zu finden als eine Zeile zu viel.
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# ── Alte Tipp-Adressen umleiten (26.08.2026) ────────────────
+# 🔴 `/tippen/[matchId]` gibt es nicht mehr: eine dynamische Route ohne
+# Vorab-Liste blockiert den statischen Export, den die native App (Capacitor)
+# braucht. Mit Vorab-Liste wären es 1 943 HTML-Dateien — gemessen, eine je
+# Spiel im Katalog.
+#
+# Die Route ist durch `/tippen?spiel=<id>` ersetzt. Diese Umleitung fängt
+# Adressen ab, die jemand geteilt oder als Lesezeichen hat.
+# ⚠️ `force = false`: sie greift nur, wenn es keine echte Seite gibt.
+[[redirects]]
+  from = "/tippen/*"
+  to = "/tippen?spiel=:splat"
+  status = 301
+  force = false
