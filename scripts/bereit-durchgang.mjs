@@ -107,7 +107,15 @@ const kuer = [
 for (const [name, wert, wozu, offen] of pflicht) {
   console.log(`\n  ${wert ? OK : FEHLT} ${name}`);
   console.log(`     ${wert ? (offen ? wert : maske(wert)) : "NICHT GESETZT"} · ${wozu}`);
-  if (!wert) schritte.push(`${name} setzen — in Netlify unter „Site configuration → Environment variables", lokal in \`.env.local\`.`);
+  // ⚠️ Der Rat richtet sich danach, WO gerade geprüft wird. Am 26.08.2026
+  // meldete der Durchgang „setzen — in Netlify", obwohl er gerade auf Andis
+  // Rechner lief und die `.env.local` sogar schon gelesen hatte. Ein Hinweis,
+  // der auf den falschen Ort zeigt, kostet einen ganzen Anlauf.
+  if (!wert) {
+    schritte.push(dateien.length
+      ? `${name} in \`${dateien[0]}\` ergänzen — die Datei gibt es schon, es fehlt nur diese Zeile. (Für die LIVE-Seite zusätzlich in Netlify unter „Site configuration → Environment variables".)`
+      : `${name} setzen — lokal in einer Datei \`.env.local\` im Projektordner, für die Live-Seite in Netlify unter „Site configuration → Environment variables".`);
+  }
 }
 for (const [name, wert, wozu, offen] of kuer) {
   console.log(`\n  ${wert ? OK : WARN}${wert ? " " : ""}${name}`);
