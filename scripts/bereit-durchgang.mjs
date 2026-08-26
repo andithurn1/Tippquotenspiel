@@ -131,6 +131,24 @@ for (const [name, wert, wozu, offen] of kuer) {
   console.log(`     ${wert ? (offen ? wert : maske(wert)) : "nicht gesetzt"} · ${wozu}`);
 }
 
+// ⚠️ Und der zweite Griff daneben, direkt danach passiert: die Adresse MIT
+// Pfad kopiert (`https://…supabase.co/rest/v1/`). Genau die steht in der
+// Konsole zum Kopieren bereit, ist aber nicht die, die hier hingehört —
+// `supabase-js` hängt `/rest/v1` selbst an und fragt dann `/rest/v1/rest/v1/…`.
+//
+// 🔴 Bewusst nur MELDEN, nicht stillschweigend abschneiden: der Durchgang soll
+// sagen, was die APP tun wird, nicht was er selbst reparieren kann. Repariert
+// er es nur für sich, meldet er grün und die App bleibt kaputt — genau die
+// zweite Wahrheit, gegen die das halbe Repo geschrieben ist.
+if (istAdresse(URL_) && /\/rest\/v1\/?$/i.test(URL_)) {
+  const knapp = URL_.replace(/\/rest\/v1\/?$/i, "");
+  console.log(`\n  ${FEHLT} NEXT_PUBLIC_SUPABASE_URL trägt einen Pfad zu viel.`);
+  console.log("     `/rest/v1` gehört NICHT dazu — die App hängt es selbst an und");
+  console.log("     fragt sonst `/rest/v1/rest/v1/…`. Richtig ist nur:");
+  console.log(`       ${knapp}`);
+  schritte.unshift(`NEXT_PUBLIC_SUPABASE_URL auf \`${knapp}\` kürzen — ohne \`/rest/v1\` am Ende.`);
+}
+
 // 🔴 Steht in der URL-Zeile in Wahrheit ein Schlüssel? Das ist kein
 // theoretischer Fall — siehe den Kommentar oben. Ohne diese Prüfung meldet der
 // Durchgang brav „✅ gesetzt", scheitert zwei Abschnitte später an einem
