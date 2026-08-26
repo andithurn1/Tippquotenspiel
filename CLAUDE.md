@@ -460,6 +460,7 @@ entstanden, den die beiden anderen nicht gesehen haben.
 | `npm run tot` | **Ruft die gebaute Funktion überhaupt jemand auf?** Ein Export, den außerhalb seiner Datei und ihrer Tests niemand nennt. Sortiert nach Risiko: Funktionen in `rules.*`-Modulen zuerst. | An EINEM Tag sechs Mechaniken, die fertig, getestet und einstellbar waren — und niemand fragte sie |
 | `npm run schrift` | **Skaliert die Schrift mit der Geräte-Einstellung?** Verbietet die nackte px-Schriftgröße; die Leiter steht als `TEXT` in `theme.js`. | 1 210 Fundstellen in px, 0 in `rem` — auf iOS ein bekannter Ablehnungsgrund im App-Review |
 | `npm run detail` | **Gilt Andis Regel „gängigstes oben, Feinheiten hinter einem Klick" überall?** Zählt je Regel-Oberfläche, ob es eine zweite Ebene gibt — und ob sie über das gemeinsame `Feinheiten`-Bauteil läuft. | Die Regel WAR mehrfach befolgt, aber jede Stelle hatte ihre eigene Fassung gebaut — derselbe Verlauf wie bei den acht Eckenradien |
+| `npm run bereit` | 👤 **Kann sich außer Andi überhaupt jemand anmelden?** Fragt Env-Variablen, Datenbank, Schema und Spielplan an EINER Stelle ab und gibt aus, was zu tun ist. ⚠️ Für ANDI, nicht für die Sitzung: er braucht die echten Schlüssel, die hier niemand hat. | Der einzige echte Blocker des Testbetriebs hängt an fünf Dingen, die einzeln in Ordnung aussehen — verteilt über Supabase, Netlify und Brevo |
 
 🔴 **Der gemeinsame Nenner aller sechs Funde vom 06.08.:** ein grüner Test
 beweist, dass eine Funktion RICHTIG rechnet — nicht, dass sie jemand fragt.

@@ -19,6 +19,7 @@
     "sicht": "vite-node scripts/sicht-durchgang.mjs",
     "gleich": "vite-node scripts/gleich-durchgang.mjs",
     "einstellbar": "vite-node scripts/einstellbar-durchgang.mjs",
+    "bereit": "node scripts/bereit-durchgang.mjs",
     "rund": "vitest run src/lib/rund.test.js",
     "import:spielplan": "vite-node scripts/import-spielplan.mjs",
     "odds:pruefen": "vite-node scripts/fetch-odds.mjs -- --pruefen",

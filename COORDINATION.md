@@ -126,6 +126,55 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-26 (XXV) · 🔌 **`npm run bereit`** — der Durchgang, der Andi gehört
+
+**Neu und für dich vermutlich nicht ausführbar:** `npm run bereit` fragt die
+LIVE-Umgebung ab und braucht dafür die echten Schlüssel. In dieser Sitzung hat
+sie niemand. Er ist für **Andi** gebaut, nicht für uns.
+
+**Warum es ihn gibt:** `CLAUDE.md` nennt genau einen echten Blocker für den
+Testbetrieb — den eigenen Mailversand. Daran hängen aber fünf Dinge, die
+einzeln in Ordnung aussehen und zusammen trotzdem nicht funktionieren:
+Env-Variablen, Erreichbarkeit, Schema, Policies, Spielplan. Bisher war das nur
+einzeln zu prüfen, verteilt über Supabase-Konsole, Netlify und Brevo. Wer dabei
+einen Punkt übersieht, merkt es erst, wenn ein Freund schreibt „bei mir kommt
+keine Mail".
+
+🔴 **Der Punkt, an dem so ein Werkzeug sonst falsch liegt:** PostgREST antwortet
+auf eine **fehlende** Tabelle mit `PGRST205`, auf eine **durch RLS geschützte**
+mit 401. Das zweite ist bei diesem Schema der NORMALFALL — `tips`, `votes`,
+`profiles` sind ohne Anmeldung zu Recht dicht. Wer beides gleich behandelt,
+meldet ein gesundes Schema als kaputt. **An einem nachgebauten PostgREST
+gegengeprobt** (fehlende, gesperrte und lesbare Tabellen gemischt): 10 von 12
+erkannt, die 2 fehlenden gemeldet, die 5 gesperrten NICHT als Fehler.
+
+⚠️ **Er gibt nie einen Schlüssel aus** — nur die ersten sechs und letzten vier
+Zeichen plus die Länge. Genug, um zwei Schlüssel auseinanderzuhalten, zu wenig,
+um einen zu benutzen. **Ausnahme mit Absicht: die URL steht offen da.** Sie ist
+kein Geheimnis, und der häufigste Fehler ist ein Tippfehler darin — eine
+maskierte URL kann man nicht gegenlesen.
+
+🔴 **Und ein Fund, den er nebenbei macht:** ein geheimer Schlüssel mit
+`NEXT_PUBLIC_` davor landet im Browser-Bundle (Architektur-Regel 2). Findet er
+so einen, steht der Schritt „entfernen UND neu erzeugen" ganz oben in der
+Liste — vor allem anderen.
+
+**Dazu ein neuer Wächter, den du sehr wohl laufen lassen kannst:**
+`src/lib/schemaTabellen.test.js`. Er prüft ohne Datenbank, ob jede per
+`.from("…")` abgefragte Tabelle in `supabase/schema.sql` auch angelegt wird —
+und die Gegenrichtung.
+
+⚠️ **Warum das nötig war:** kein Test dieses Projekts läuft gegen die echte
+Datenbank. Ein `.from("profil_privat")` — ein Buchstabe daneben — ist im Mock
+unsichtbar, im Build unsichtbar, im Lint unsichtbar. Live gibt es dafür
+`PGRST205`, und zwar erst dem ersten Menschen, der den Screen öffnet.
+**Gegengeprobt**: einen falsch geschriebenen Tabellennamen eingesetzt, der Test
+fällt sofort auf.
+
+Stand: 12 Tabellen im Schema, 12 im Code, keine auf einer Seite allein.
+
+Belegt: `npm test` 2 708 grün · `lint` grün.
+
 ### 2026-08-26 (XXIV) · ⏱️ **Die Standzeit der Meldung war eine Behauptung** — 916 ms statt 2 200
 
 **Wenn du irgendwo eine Standzeit, ein Einblenden oder einen Selbst-Schließer
