@@ -126,6 +126,57 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-26 (XXIX) · 💡 **Neue Idee von Andi: Favoriten sperren** — und ein Sicherheits-Befund
+
+**Die Idee steht als `❓` in `design/ideen.md`, NICHT im Code.** Bitte nicht
+anfangen zu bauen — es sind sechs Fragen offen, und eine davon entscheidet die
+ganze Bauart.
+
+Andi wörtlich: *„dass der admin einstellen kann, dass bspw. die
+wahrscheinlichsten quoten bei Torschützen und Spielstand nicht ausgewählt
+werden können … find halt immer harry kane nehmen boringo"*
+
+🔴 **Ebene 5 (AUSWAHL), nicht Ebene 1 oder 2.** Es wird nichts umgewertet, es
+wird etwas WEGGENOMMEN. Deshalb darf die Mechanik gebaut werden, bevor
+Balancing dran ist — die SCHWELLE ist dagegen eine Zahl und gehört ans Ende.
+
+⚠️ **Drei Folgen, die beim Bauen mitmüssen** und die man beim Wort „Filter"
+nicht sieht:
+
+* **`autoTip.js`** (Ersatz-Tipp bei Versäumnis) wählt heute frei. Er darf keine
+  gesperrte Option ziehen — sonst bekommt der Verpasser, was dem Anwesenden
+  verwehrt war.
+* **`ergebnisMatrix.js` / `NaheErgebnisse`** zeigen jede Zelle mit Punkten.
+  Gesperrte Zellen müssen als gesperrt erkennbar sein, sonst rechnet jemand mit
+  einer Zahl, die er nicht bekommen kann.
+* **Die Nähe-Belohnung** zahlt für „knapp daneben". Ist 2:1 gesperrt und 2:0
+  nicht, kommt man über die Nähe womöglich doch an die gesperrte Zelle. Steht
+  als ❓6 im Eintrag.
+
+⚠️ **Die entscheidende offene Frage ist ❓2:** feste Quotenschwelle oder
+relativer Rang („die 2 wahrscheinlichsten gesperrt"). Der relative Rang löst
+Andis eigene Klammer („in Abhängigkeit der betippten Mannschaften und pro
+Wettbewerb") von selbst auf — mit einer festen Schwelle bräuchte es je
+Wettbewerb einen eigenen Wert.
+
+---
+
+### ⚠️ Und ein Sicherheits-Befund, beim Nachlesen der Policies gefunden (LV4)
+
+**`join_code` steht als Spalte in `rounds`, und `rounds_read` gilt
+`to authenticated using (true)`.** Jeder Angemeldete kann damit alle Runden
+samt Beitritts-Code lesen — und jeder Runde beitreten.
+
+🔴 **Der Schema-Kommentar behauptet das Gegenteil:** „der Code selbst ist die
+Zugangsschranke, nicht die Sichtbarkeit". Eine Schranke, deren Schlüssel offen
+daneben liegt, ist keine.
+
+Für den Testbetrieb mit Freunden folgenlos. Sobald sich Fremde anmelden können,
+nicht mehr. ⚠️ **Nicht mit einer Policy allein zu lösen** — RLS filtert Zeilen,
+nicht Spalten. Drei Wege stehen in `design/auftraege.md` unter LV4; der
+sauberste ist ein Beitritt über eine Server-Route, weil dann auch niemand Codes
+durchprobieren kann.
+
 ### 2026-08-26 (XXVIII) · 🔴 **Der Hub holte den Spielplan DREIMAL** — und drei Screens hingen für immer in „lädt …"
 
 **Wenn du im Supabase-Store etwas anfasst: `listMatches()` und fünf Lese-
