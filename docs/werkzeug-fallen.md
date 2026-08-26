@@ -133,3 +133,23 @@ Frage des ORTES, nicht der Gültigkeit.
   Beides ist folgenlos, solange der Lauf VOR dem ersten Anpfiff des Spieltags
   liegt, und 03:00 UTC liegt davor.
   ℹ️ Wer je wieder Pro hat, DARF auf `0 * * * *` zurück — muss aber nicht.
+
+## 📱 Capacitor / Android (seit 26.08.2026)
+
+- **Nach einem frischen `git clone` bricht der Gradle-Sync ab** mit
+  „project ':capacitor-cordova-android-plugins' not found". Das Repo ist NICHT
+  kaputt: der Ordner ist Build-Ausgabe und steht in Capacitors `.gitignore`.
+  **Behebung:** `npm run app:sync`. Dasselbe gilt für
+  `android/app/src/main/assets/public` und die dortige `capacitor.config.json`.
+- **`npm run build:app` verschiebt `src/app/api` für die Dauer des Builds.**
+  Bricht jemand hart ab (Fenster zu, Strom weg), liegt `.api-waehrend-app-build`
+  noch da — das Skript weigert sich dann beim nächsten Lauf und sagt, wie es
+  zurückgeschoben wird. **Nicht von Hand löschen**, sonst sind die vier
+  API-Routen weg.
+- **Ein App-Build ohne `NEXT_PUBLIC_API_BASIS` sieht völlig normal aus** und
+  scheitert erst später an Konto-Löschen und Spieltag-Öffnen — mit einem
+  blanken Netzwerkfehler. Das Skript warnt am ENDE des Builds; die Warnung
+  steht dort, damit sie nicht weggescrollt ist.
+- **Die App-ID `de.quotentippspiel.app` ist nach dem ersten Play-Store-Upload
+  unveränderlich.** Eine andere ID ist dort eine andere App — mit null
+  Installationen und null Bewertungen.

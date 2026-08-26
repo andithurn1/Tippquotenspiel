@@ -108,15 +108,21 @@ einmalig 25 $**.
    `fetch("/api/…")` umgestellt. Im Web bleibt die Variable leer, dann ändert
    sich nichts.
 3. ✅ **`npm run build:app` läuft durch** — 31 HTML-Seiten, 4,9 MB in `out/`.
-4. Capacitor aufsetzen, Android zuerst (kein Mac nötig).
+4. ✅ **Capacitor + Android-Hülle** (26.08.2026). Capacitor 8.5.0,
+   `capacitor.config.json`, Ordner `android/`, App-ID `de.quotentippspiel.app`.
+   Handgriffe und offene Punkte: `docs/native-app.md`.
 5. Deep Link + Supabase-Redirect für die Anmeldung.
 6. APNs/FCM für die Benachrichtigungen.
 7. iOS-Build über einen der drei Wege oben.
 
-⛔ **Nicht vor der Hinrunde.** Schritt 1–3 sind harmlos und könnten jederzeit
-laufen; 5 und 6 sind Umbauten an Anmeldung und Benachrichtigungen — also
-genau an dem, was der Testbetrieb mit Freunden gerade braucht. Erst laufen
-lassen, dann verpacken.
+⛔ **Nicht vor der Hinrunde — gemeint sind 5 und 6.** Das sind Umbauten an
+Anmeldung und Benachrichtigungen, also genau an dem, was der Testbetrieb mit
+Freunden gerade braucht. Erst laufen lassen, dann verpacken.
+
+✅ **Schritt 1–4 sind dagegen folgenlos** und deshalb gemacht: sie legen einen
+zweiten Build daneben. `npm run build`, `npm run dev` und die Netlify-Seite
+verhalten sich danach Zeile für Zeile wie vorher — nachgemessen, beide Builds
+laufen grün, 2 672 Tests grün.
 
 ## 💰 Was kostet es, NACH dem Umstieg noch Funktionen zu bauen? (26.08.2026)
 
@@ -193,6 +199,37 @@ für Leute, deren App drei Versionen alt ist. Das ist keine Capacitor-Frage,
 sondern eine des Regelwerks — und dieses Projekt ist dafür gut aufgestellt,
 weil die Regeln je Runde eingefroren werden (`getRegelnFuer`). Aber es
 gehört gewusst, bevor es auffällt.
+
+### 🔴 Und WÄHREND der Entwicklung? Gar nichts. (26.08.2026)
+
+Andis Rückfrage, weil die Antwort oben von der Zeit NACH dem Store handelte:
+*„ich meine nicht ändern die app, wenn sie schon auf dem markt und im app
+store ist, sondern während unserer entwicklung hier?"*
+
+**Antwort: in der Entwicklung ändert sich nichts. Kein Handgriff, kein
+Umweg, keine Wartezeit.**
+
+| | vorher | ab heute |
+|---|---|---|
+| Arbeiten | `npm run dev`, Browser | **unverändert** |
+| Speichern → sehen | sofort | **unverändert** |
+| Abnahmen (`test`, `lint`, `greift` …) | wie gehabt | **unverändert** |
+| Netlify-Deploy | pushen, fertig | **unverändert** |
+| Store | — | **kommt gar nicht vor** |
+
+Der Store spielt in der Entwicklung überhaupt keine Rolle. Eine App auf dem
+eigenen Handy geht per Kabel drauf, an jedem Laden vorbei — und selbst für
+einen Test mit Freunden gibt es Wege ohne Prüfung: Google „Interner Test"
+(bis 100 Leute, sofort verfügbar) und Apple TestFlight.
+
+⚠️ **Der einzige neue Handgriff, und er ist freiwillig:** wer den Stand auf
+einem echten Handy sehen will, tippt `npm run app:sync` — rund eine Minute.
+Wer im Browser arbeitet, braucht ihn nie.
+
+🔴 **Die Folge für die Reihenfolge**, weil sie die eigentliche Frage dahinter
+war: Layout und UX müssen NICHT auf die native Hülle warten. Sie warten auf
+die Masterdatei (`Quotentippen.pptx`), wie bisher. Die Hülle steht jetzt
+daneben und kostet nichts, solange sie niemand anfasst.
 
 ## 🔔 ZP5: fünf Benachrichtigungsarten — zwei davon liefern noch nichts (25.08.2026)
 

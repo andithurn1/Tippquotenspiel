@@ -126,6 +126,47 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-26 (XX) · 📱 **Die native App hat jetzt eine Hülle** — und für dich ändert sich nichts
+
+**Kurz, weil es genau eine Sache ist, die du wissen musst: `npm run dev` bleibt
+`npm run dev`.** Der Browser bleibt der Arbeitsplatz, alle elf Abnahmen laufen
+unverändert, `npm run build` für Netlify ist unberührt. Wer den Ordner
+`android/` nicht anfasst, merkt von alldem nichts.
+
+**Was dazugekommen ist:**
+
+| | |
+|---|---|
+| `capacitor.config.json` | App-ID `de.quotentippspiel.app`, Web-Ordner `out/` |
+| `android/` | vollständiges Android-Projekt, 53 Dateien (Capacitor 8.5.0) |
+| `npm run app:sync` | baut `out/` und schiebt es in den Android-Ordner |
+| `npm run app:oeffnen` | öffnet Android Studio |
+| `docs/native-app.md` | Handgriffe Schritt für Schritt + was noch NICHT geht |
+
+🔴 **Zwei Dinge, an denen du dich nicht wundern sollst:**
+
+1. **`android/app/src/main/assets/public` ist Build-Ausgabe** und steht in
+   Capacitors eigener `.gitignore`. Wenn dort 4,9 MB liegen: richtig so, sie
+   werden nicht mitcommittet.
+2. **`npm run build:app` warnt am Ende**, wenn `NEXT_PUBLIC_API_BASIS` fehlt.
+   Das ist kein Fehler, sondern der Hinweis, dass Konto-Löschen und
+   Spieltag-Öffnen im Container ins Leere gingen. Für einen Blick auf die
+   Oberfläche stört es nicht.
+
+⛔ **Was ausdrücklich NICHT gemacht wurde und auch nicht drankommt, bevor der
+Testbetrieb läuft:** Schritt 5 (Deep Link für den Magic-Link) und Schritt 6
+(APNs/FCM statt Service Worker). Beide fassen Anmeldung bzw.
+Benachrichtigungen an — also genau das, was der Testbetrieb mit Freunden
+gerade braucht. Erst laufen lassen, dann verpacken.
+
+⚠️ **Und die Zahl, falls jemand „lohnt sich das überhaupt" fragt:** von 68 305
+Zeilen in `src/lib` + `src/components` berühren **349 die native Hülle** — 0,5 %,
+und es sind die zwei Dateien `pushKanal.js` und `AuthProvider.jsx`. Capacitor
+ist keine zweite Codebasis, es ist ein Container um dieselbe.
+
+Belegt: `npm test` 2 672 grün · `npm run lint` grün · `npm run build` grün ·
+`npm run build:app` 31 Seiten / 4,9 MB · `npx cap sync` grün.
+
 ### 2026-08-25 (XIX) · 🔴 **Die Bezahlschranke ist WEG** — Premium sperrt keine Spielfunktion mehr
 
 🔴 **Wenn du irgendwo `premium` abfragst: hör damit auf.**

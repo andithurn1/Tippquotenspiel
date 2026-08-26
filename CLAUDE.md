@@ -378,7 +378,12 @@ Die zwei, die am häufigsten zuschlagen, bleiben hier stehen:
   austauschbarer Store (Mock ↔ Supabase); Live-Anbindung braucht nur ein
   Supabase-Projekt + Env-Vars. Details: `docs/BACKEND.md`.
 - **Geplant, noch nicht gebaut:** UI an den Store hängen (Login + echte Daten),
-  Quoten-API-Proxy als Next.js-API-Route, Capacitor für App-Stores.
+  Quoten-API-Proxy als Next.js-API-Route.
+- 📱 **Capacitor steht seit 26.08.2026** — Ordner `android/`, App-ID
+  `de.quotentippspiel.app`, `npm run app:sync`. **Für die tägliche Arbeit
+  ändert sich nichts:** `npm run dev` im Browser bleibt der Arbeitsplatz,
+  `npm run build` für Netlify ist unberührt. Handgriffe und die noch
+  offenen Schritte (Deep Link, Push, iOS): `docs/native-app.md`.
 
 ## Struktur
 

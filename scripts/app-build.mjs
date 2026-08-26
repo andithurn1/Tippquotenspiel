@@ -25,6 +25,7 @@ const API = "src/app/api";
 const BEISEITE = ".api-waehrend-app-build";
 
 let verschoben = false;
+let ohneApiBasis = false;
 
 const zurueck = () => {
   if (!verschoben) return;
@@ -55,6 +56,13 @@ try {
   rmSync(".next", { recursive: true, force: true });
   rmSync("out", { recursive: true, force: true });
 
+  // ⚠️ Siehe `src/lib/apiBasis.js`: im Container zeigt ein relativer Pfad ins
+  // Nichts. Fehlt die Variable, funktioniert die App zwar — aber Konto-Löschen
+  // und das Öffnen eines Spieltags scheitern mit einem blanken Netzwerkfehler,
+  // den niemand mit diesem Build in Verbindung bringt.
+  // Kein Abbruch: für einen ersten Blick auf die Oberfläche stört es nicht.
+  ohneApiBasis = !(process.env.NEXT_PUBLIC_API_BASIS ?? "").trim();
+
   const r = spawnSync("npx", ["next", "build"], {
     stdio: "inherit",
     env: { ...process.env, TQS_APP_BUILD: "1" },
@@ -63,4 +71,13 @@ try {
 } finally {
   zurueck();
   console.log(`← ${API} ist wieder da`);
+  if (ohneApiBasis) {
+    console.log("");
+    console.log("⚠️  NEXT_PUBLIC_API_BASIS war nicht gesetzt.");
+    console.log("   Die App läuft, aber jeder eigene API-Aufruf geht ins Leere:");
+    console.log("   Konto löschen und Spieltag öffnen scheitern stumm.");
+    console.log("   Für einen Build, der das kann:");
+    console.log("   NEXT_PUBLIC_API_BASIS=https://<netlify-adresse> npm run build:app");
+    console.log("");
+  }
 }

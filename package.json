@@ -28,15 +28,20 @@
     "seed:bundesliga": "vite-node scripts/seed-matches.mjs",
     "schrift": "vitest run src/lib/schriftmass.test.js",
     "bewegung": "vite-node scripts/bewegung-durchgang.mjs",
-    "build:app": "node scripts/app-build.mjs"
+    "build:app": "node scripts/app-build.mjs",
+    "app:sync": "npm run build:app && npx cap sync android",
+    "app:oeffnen": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.0",
+    "@capacitor/core": "8.5.0",
     "@supabase/supabase-js": "^2.110.8",
     "next": "^15.3.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.0",
     "@eslint/js": "^9.39.5",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^7.1.1",
