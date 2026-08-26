@@ -228,69 +228,75 @@ if (!URL_ || !ANON) {
 } else {
   let erreichbar = true;
   try {
-    const probe = await fetch(`${URL_}/rest/v1/`, { headers: { apikey: ANON } });
-    console.log(`\n  ${probe.ok || probe.status === 404 ? OK : WARN} erreichbar · HTTP ${probe.status} · ${URL_}`);
+    // 🔴 GEPRÜFT WIRD EINE ECHTE TABELLE, NICHT DIE WURZEL.
+    //
+    // Hier stand bis zum 26.08.2026 `/rest/v1/` — die Wurzel der
+    // REST-Schnittstelle — als „Lebenszeichen". Das war falsch, und zwar auf
+    // die teuerste Art: sie antwortet einem ÖFFENTLICHEN Schlüssel immer mit
+    //
+    //     sb-error-code: UNAUTHORIZED_INVALID_API_KEY_TYPE
+    //     {"message":"Secret API key required",
+    //      "hint":"Only secret API keys can be used for this endpoint."}
+    //
+    // Der Durchgang meldete daraufhin „Der Schlüssel wird abgelehnt", brach ab
+    // und ließ Andi eine halbe Stunde nach einem Fehler suchen, den es nicht
+    // gab: Adresse, Schlüssel und Projekt waren die ganze Zeit richtig.
+    //
+    // ⚠️ Die Lehre, und sie gilt für jedes Prüfwerkzeug: ein Lebenszeichen
+    // muss über den Weg laufen, den die APP auch geht. Die App fragt Tabellen,
+    // nie die Wurzel — also fragt der Durchgang eine Tabelle.
+    const probe = await fetch(`${URL_}/rest/v1/rounds?select=id&limit=1`, {
+      headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
+    });
+    const abgelehnt = probe.status === 401 || probe.status === 403;
+    console.log(`\n  ${abgelehnt ? WARN : OK} erreichbar · HTTP ${probe.status} · ${URL_}`);
 
     // ── Gehören Adresse und Schlüssel zum selben Projekt? ────
-    // 🔴 Am 26.08.2026 stand diese Frage zweimal im Raum und war beide Male
-    // nicht zu beantworten — der Durchgang konnte sie nur STELLEN. Für die
-    // alten JWT-Schlüssel geht es aber: sie tragen die Projekt-Kennung als
-    // `ref` im Mittelteil, und der lässt sich ohne Geheimnis auslesen.
-    //
-    // ⚠️ Ein JWT ist NICHT verschlüsselt, nur signiert — der Mittelteil ist
-    // Base64 und öffentlich lesbar. Hier wird nichts geknackt und nichts
-    // ausgegeben außer der Kennung, die ohnehin in der Adresse steht.
-    //
-    // ⚠️ Die neuen `sb_publishable_`-Schlüssel tragen keine Kennung. Dort
-    // bleibt nur der Vergleich von Hand, und dafür steht die Kennung jetzt da.
+    // 🔴 Supabase beantwortet das selbst: `sb-project-ref` steht im Antwort-
+    // Kopf, auch bei einem Fehler. Das ist die verlässlichste Auskunft — sie
+    // kommt vom Server, nicht aus einer Ableitung.
     const kennung = URL_.match(/^https?:\/\/([a-z0-9]+)\.supabase\./i)?.[1] ?? null;
-    if (kennung) console.log(`     Projekt-Kennung der Adresse: ${kennung}`);
+    const gemeldet = probe.headers.get("sb-project-ref");
+    if (kennung || gemeldet) {
+      console.log(`     Projekt: ${gemeldet ?? kennung}${gemeldet && kennung && gemeldet !== kennung ? `  ⛔ Adresse sagt „${kennung}“` : ""}`);
+    }
+    // ⚠️ Die alten JWT-Schlüssel tragen die Kennung zusätzlich in sich. Ein JWT
+    // ist nicht verschlüsselt, nur signiert — der Mittelteil ist öffentlich
+    // lesbar. Hier wird nichts geknackt; ausgegeben wird nur die Kennung, die
+    // ohnehin in der Adresse steht.
     if (kennung && /^eyJ/.test(ANON)) {
       try {
         const mitte = JSON.parse(Buffer.from(ANON.split(".")[1], "base64url").toString("utf8"));
         if (mitte.ref && mitte.ref !== kennung) {
           console.log(`  ${FEHLT} Der Schlüssel gehört zu Projekt „${mitte.ref}“, die Adresse zu „${kennung}“.`);
           schritte.unshift(`Schlüssel und Adresse gehören zu VERSCHIEDENEN Projekten (\`${mitte.ref}\` gegen \`${kennung}\`) — beide aus demselben Projekt kopieren.`);
-        } else if (mitte.ref) {
-          console.log(`     Schlüssel gehört zu demselben Projekt ✅`);
         }
       } catch { /* kein lesbarer JWT — dann sagt der Rest schon genug */ }
     }
-    // ⚠️ 403 zählt wie 401. Am 26.08.2026 gemessen: ein ungültiger Schlüssel
-    // gegen ein echtes Projekt bringt 403, nicht 401 — und der Durchgang lief
-    // munter weiter.
-    if (probe.status === 401 || probe.status === 403) {
+
+    if (abgelehnt) {
       erreichbar = false;
-      // 🔴 Zwei Ursachen, und die zweite ist die, an die niemand denkt.
-      // Gemessen am 26.08.2026: Adresse richtig, Projekt erreichbar, Schlüssel
-      // abgelehnt — und der Schlüssel war ein gültiger JWT (`eyJ…`) aus
-      // demselben Projekt. Supabase hat die Schlüssel umgestellt; neue
-      // Projekte geben `sb_publishable_…` aus, und die alten JWT-Schlüssel
-      // lassen sich abschalten. Wer dann den JWT aus einer älteren Anleitung
-      // nimmt, bekommt 401 und sucht beim falschen Projekt.
-      // 🔴 DEN TEXT ZEIGEN, nicht nur den Code. Am 26.08.2026 stand ein 401
-      // eine halbe Stunde lang im Raum, und es wurde geraten — dabei schreibt
-      // Supabase in den Antwort-Körper hinein, was es stört („Invalid API
-      // key“, „No API key found in request“, ein Hinweis auf abgeschaltete
-      // Legacy-Schlüssel). Ein Durchgang, der die Antwort wegwirft und dann
-      // Vermutungen auflistet, macht aus einer Auskunft ein Rätsel.
+      // 🔴 DEN TEXT ZEIGEN, nicht nur den Code. Supabase schreibt in den
+      // Antwort-Körper und in `sb-error-code` hinein, WAS es stört. Ein
+      // Durchgang, der die Antwort wegwirft und dann Vermutungen auflistet,
+      // macht aus einer Auskunft ein Rätsel — genau das ist am 26.08.2026
+      // passiert.
+      const code = probe.headers.get("sb-error-code");
       let grund = "";
-      try { grund = (await probe.clone().text()).slice(0, 300).replace(/\s+/g, " ").trim(); } catch { /* leerer Körper */ }
+      try { grund = (await probe.text()).slice(0, 300).replace(/\s+/g, " ").trim(); } catch { /* leerer Körper */ }
+      if (code) console.log(`     sb-error-code: ${code}`);
       if (grund) console.log(`     Antwort des Servers: ${grund}`);
-      console.log(`  ${FEHLT} Der Schlüssel wird abgelehnt. Mögliche Gründe:`);
+      console.log(`  ${FEHLT} Der Schlüssel wird für die Tabellen abgelehnt.`);
       if (/^eyJ/.test(ANON)) {
-        console.log("     ① Dein Schlüssel fängt mit `eyJ` an — das ist die ALTE Bauart.");
-        console.log("       Neuere Projekte geben stattdessen einen aus, der mit");
-        console.log("       `sb_publishable_` anfängt, und schalten die alten ab.");
-        console.log("       In Supabase: „Project Settings → API Keys“, den unter");
-        console.log("       „Publishable key“ nehmen.");
+        console.log("     Dein Schlüssel fängt mit `eyJ` an — das ist die alte Bauart.");
+        console.log("     Steht in „Project Settings → API Keys“ ein „Publishable key“,");
+        console.log("     nimm den.");
+        schritte.push("Den `Publishable key` (beginnt mit `sb_publishable_`) eintragen — Supabase → Project Settings → API Keys.");
       } else {
-        console.log("     ① Der Schlüssel ist abgelaufen oder wurde neu erzeugt.");
+        console.log("     Prüfe in „Project Settings → API Keys“, ob der Schlüssel noch gilt");
+        console.log("     und ob er zu genau diesem Projekt gehört.");
+        schritte.push("Anon-/Publishable-Key aus DEMSELBEN Supabase-Projekt neu kopieren.");
       }
-      console.log("     ② URL und Schlüssel stammen aus VERSCHIEDENEN Projekten.");
-      schritte.push(/^eyJ/.test(ANON)
-        ? "Den `Publishable key` (beginnt mit `sb_publishable_`) statt des alten `eyJ…`-Schlüssels eintragen — Supabase → Project Settings → API Keys."
-        : "Anon-/Publishable-Key aus DEMSELBEN Supabase-Projekt kopieren wie die URL.");
     }
   } catch (e) {
     erreichbar = false;
