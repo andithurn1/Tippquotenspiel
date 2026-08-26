@@ -268,7 +268,16 @@ if (!URL_ || !ANON) {
       // Projekte geben `sb_publishable_…` aus, und die alten JWT-Schlüssel
       // lassen sich abschalten. Wer dann den JWT aus einer älteren Anleitung
       // nimmt, bekommt 401 und sucht beim falschen Projekt.
-      console.log(`  ${FEHLT} Der Schlüssel wird abgelehnt. Zwei mögliche Gründe:`);
+      // 🔴 DEN TEXT ZEIGEN, nicht nur den Code. Am 26.08.2026 stand ein 401
+      // eine halbe Stunde lang im Raum, und es wurde geraten — dabei schreibt
+      // Supabase in den Antwort-Körper hinein, was es stört („Invalid API
+      // key“, „No API key found in request“, ein Hinweis auf abgeschaltete
+      // Legacy-Schlüssel). Ein Durchgang, der die Antwort wegwirft und dann
+      // Vermutungen auflistet, macht aus einer Auskunft ein Rätsel.
+      let grund = "";
+      try { grund = (await probe.clone().text()).slice(0, 300).replace(/\s+/g, " ").trim(); } catch { /* leerer Körper */ }
+      if (grund) console.log(`     Antwort des Servers: ${grund}`);
+      console.log(`  ${FEHLT} Der Schlüssel wird abgelehnt. Mögliche Gründe:`);
       if (/^eyJ/.test(ANON)) {
         console.log("     ① Dein Schlüssel fängt mit `eyJ` an — das ist die ALTE Bauart.");
         console.log("       Neuere Projekte geben stattdessen einen aus, der mit");
