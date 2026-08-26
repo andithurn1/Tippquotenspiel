@@ -9,6 +9,7 @@ import {
   PREF_META, LEVELS, LEVEL_LABEL, START_SCREENS, START_SCREEN_LABEL,
   RASTER_WEITEN, RASTER_WEITE_LABEL, RASTER_WEITE_HINWEIS,
   HAPTIK_STUFEN, HAPTIK_LABEL, HAPTIK_HINWEIS,
+  VORBELEGUNGEN, VORBELEGUNG_LABEL, VORBELEGUNG_HINWEIS,
   MAX_VERGLEICH, toggleVergleich, vergleichFuer,
 } from "@/lib/prefs";
 import { istMoeglich, spuere } from "@/lib/haptik";
@@ -185,6 +186,36 @@ export default function Einstellungen() {
               {RASTER_WEITE_HINWEIS[prefs.rasterWeite ?? "raster"]}
             </div>
             <AnzeigeVorschau art="rasterWeite" stufe={prefs.rasterWeite ?? "raster"} />
+          </div>
+
+          <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
+
+          {/* 🔴 Andi, 26.08.2026: „dass bei jeder tippabgabe als option zur
+              verfügung steht immer die Ergebnisse als bereits eingestellte
+              Auswahl zu haben die am Wahrscheinlichsten ist … Also bei bayern
+              st. pauli beginnt nicht bei 0:0 sondern direkt bei 3:1" — also
+              hier bei den Anzeige-Stufen, denn womit MEIN Stepper anfängt,
+              geht den Admin nichts an. */}
+          <div>
+            <div style={{ fontSize: "0.9375rem", fontWeight: 700 }}>Tipp-Start</div>
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+              Welcher Endstand beim Öffnen eines Spiels schon eingestellt ist.
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+              {VORBELEGUNGEN.map((v) => (
+                <button key={v} className="tqs-aktion" onClick={() => setPref("vorbelegung", v)} style={{
+                  ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: "0.8125rem", fontWeight: 700,
+                  padding: "9px 8px", borderRadius: RUND.karte, lineHeight: 1.3,
+                  background: prefs.vorbelegung === v ? C.akzent : C.surface,
+                  color: prefs.vorbelegung === v ? C.ink : C.muted,
+                  border: `1px solid ${prefs.vorbelegung === v ? C.akzent : C.line}`, fontFamily: "inherit",
+                }}>{VORBELEGUNG_LABEL[v]}</button>
+              ))}
+            </div>
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+              {VORBELEGUNG_HINWEIS[prefs.vorbelegung ?? "fest"]}
+            </div>
+            <AnzeigeVorschau art="vorbelegung" stufe={prefs.vorbelegung ?? "fest"} />
           </div>
 
           <div style={{ height: 1, background: C.line, margin: "22px 0" }} />

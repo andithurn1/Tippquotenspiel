@@ -7,6 +7,7 @@ import NaheErgebnisse from "@/components/NaheErgebnisse";
 import ErgebnisMatrix from "@/components/ErgebnisMatrix";
 import { breakdown } from "@/lib/breakdown";
 import { tippKurz } from "@/lib/format";
+import { startErgebnis } from "@/lib/vorbelegung";
 
 // ============================================================
 //  VORSCHAU DER ANZEIGE-STUFEN (Andi, 25.08.2026)
@@ -185,6 +186,26 @@ export default function AnzeigeVorschau({ art, stufe }) {
             eingestellten (`weite`-Ausweg in `ErgebnisMatrix`). */}
         <ErgebnisMatrix snap={snap} rules={DEFAULT_RULES} tip={BEISPIEL_TIPP_OFFEN}
           weite={stufe} gesperrt />
+      </Rahmen>
+    );
+  }
+
+  if (art === "vorbelegung") {
+    // 🔴 Wieder das ECHTE Raster statt einer Zeichnung — nur mit dem Tipp, auf
+    // dem der Stepper STARTEN würde. Man sieht damit sofort, welches Feld die
+    // Einstellung anspringt, und die Punkte daneben stehen schon dort.
+    const start = startErgebnis(snap, DEFAULT_RULES, stufe);
+    return (
+      <Rahmen>
+        <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 6, lineHeight: 1.5 }}>
+          Der Stepper startet bei <strong style={{ color: C.ink }}>{start.home}:{start.away}</strong>
+          {start.quelle === "quote" && start.quote
+            ? ` — dem Endstand mit der niedrigsten Quote (${start.quote.toFixed(1)}).`
+            : " — unabhängig vom Spiel."}
+        </div>
+        <ErgebnisMatrix snap={snap} rules={DEFAULT_RULES}
+          tip={{ ...BEISPIEL_TIPP_OFFEN, home: start.home, away: start.away }}
+          weite="raster" gesperrt />
       </Rahmen>
     );
   }

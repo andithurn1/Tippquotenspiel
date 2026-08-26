@@ -24,6 +24,7 @@ import RegelVorschau from "@/components/RegelVorschau";
 import PresetRating from "@/components/PresetRating";
 import PresetMischen from "@/components/PresetMischen";
 import WettbewerbGewichte from "@/components/WettbewerbGewichte";
+import FavoritenSperre from "@/components/FavoritenSperre";
 import EinfacheRegler from "@/components/EinfacheRegler";
 import { CHARAKTERE } from "@/lib/charaktere";
 import BalanceAmpel from "@/components/BalanceAmpel";
@@ -1251,6 +1252,18 @@ export default function Spielerstellung() {
           <SectionTitle>Wettbewerbe gewichten</SectionTitle>
           <WettbewerbGewichte rules={rules}
             onChange={(wettbewerbe) => { touched(); setRules((r) => ({ ...r, wettbewerbe })); }} />
+
+          {/* 🔴 Favoriten-Sperre (Andi, 26.08.2026: „find halt immer harry kane
+              nehmen boringo"). Sie steht hier unten bei den Wettbewerbs-
+              Gewichten, weil beide dieselbe Sorte Frage sind: sie ändern nicht
+              die Wertung, sondern den Rahmen, in dem getippt wird.
+
+              ⚠️ Die PLATZIERUNG ist vorläufig — wo ein Regler endgültig sitzt,
+              entscheidet die Masterdatei (CLAUDE.md: „Mechanik ja, Platzierung
+              nein"). Die Mechanik dahinter überlebt jeden Umbau. */}
+          <SectionTitle>Favoriten sperren</SectionTitle>
+          <FavoritenSperre rules={rules}
+            onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
 
 
           {/* Runde erstellen */}

@@ -6,6 +6,7 @@ import {
   VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LIMITS,
 } from "@/lib/autoTip";
 import { likelyScorelines } from "@/lib/nearResults";
+import { ergebnisSperre, schuetzenSperre } from "@/lib/favoritenSperre";
 
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
@@ -224,5 +225,86 @@ describe("autoTip im Torschützen-Modus proSpiel", () => {
     const t = buildAutoTip(snap, r, { strategie: "wahrscheinlich" });
     expect(t.goals.home.length).toBeLessThanOrEqual(2);
     expect(t.goals.away.length).toBeLessThanOrEqual(2);
+  });
+});
+
+// ============================================================
+//  Der Ersatz-Tipp darf die Favoriten-Sperre nicht brechen
+//
+//  🔴 Andi, 26.08.2026 — die Sperre nimmt dem Spieler den Favoriten weg. Ein
+//  Auto-Tipp, der ihn trotzdem benennt, wäre der einzige Tipp der Runde, der
+//  die Regel bricht: der Versäumte bekäme, was der Anwesende nicht darf.
+//
+//  ⚠️ Dieselbe Sorte Fund wie am 06.08.2026: `autoTip.js` war fertig,
+//  getestet und einstellbar — und von niemandem aufgerufen. Eine Rechnung
+//  stimmt nicht dadurch, dass sie jemand fragt.
+// ============================================================
+describe("Favoriten-Sperre im Ersatz-Tipp", () => {
+  // ⚠️ Der ECHTE Mock-Schnappschuss und kein selbst gebauter: `likelyScorelines`
+  // liest auch die 1X2-Quoten (`snap.odds`), und ein handgeschriebenes Objekt
+  // ohne sie stürzt ab — dann prüfte der Test nur noch sich selbst.
+  const SNAP = createMockOddsSource().getSnapshot("JOR-ESP");
+  const mitSperre = (teil) => sanitizeRules({
+    ...DEFAULT_RULES,
+    markets: { ...DEFAULT_RULES.markets, goals: { ...DEFAULT_RULES.markets.goals, enabled: true, picksPerTeam: 1 } },
+    sperre: { enabled: true, modus: "rang", mindestensOffen: 2, ...teil },
+  });
+
+  it("benennt keinen gesperrten Torschützen", () => {
+    const ohne = buildAutoTip(SNAP, mitSperre({ schuetzen: 0 }));
+    const mit = buildAutoTip(SNAP, mitSperre({ schuetzen: 2 }));
+    const zu = schuetzenSperre(SNAP, mitSperre({ schuetzen: 2 }))
+      .filter((o) => o.gesperrt).map((o) => o.id);
+    expect(zu.length).toBe(2);
+    // Gegenprobe: ohne Sperre steht mindestens einer der beiden im Tipp.
+    const ohneNamen = [...ohne.goals.home, ...ohne.goals.away];
+    expect(ohneNamen.some((n) => zu.includes(n))).toBe(true);
+    // Mit Sperre keiner — und gleich viele Namen wie vorher.
+    const mitNamen = [...mit.goals.home, ...mit.goals.away];
+    expect(mitNamen.some((n) => zu.includes(n))).toBe(false);
+    expect(mitNamen.length).toBe(ohneNamen.length);
+  });
+
+  it("tippt keinen gesperrten Endstand", () => {
+    const rules = mitSperre({ ergebnisse: 1, mindestensOffen: 1 });
+    const zu = ergebnisSperre(SNAP, rules).filter((o) => o.gesperrt).map((o) => o.id);
+    expect(zu.length).toBe(1);
+    const ohne = buildAutoTip(SNAP, sanitizeRules(DEFAULT_RULES));
+    // Gegenprobe: ohne Sperre ist genau dieser Stand der Ersatz-Tipp.
+    expect(zu).toContain(`${ohne.home}:${ohne.away}`);
+    const t = buildAutoTip(SNAP, rules);
+    expect(zu).not.toContain(`${t.home}:${t.away}`);
+  });
+
+  it("auch die Strategie Zufall bleibt innerhalb der Sperre", () => {
+    const rules = mitSperre({ ergebnisse: 3, mindestensOffen: 1 });
+    const zu = new Set(ergebnisSperre(SNAP, rules).filter((o) => o.gesperrt).map((o) => o.id));
+    expect(zu.size).toBe(3);
+    // Über viele Seeds: kein einziger Wurf darf in einem gesperrten Feld landen.
+    for (let i = 0; i < 40; i++) {
+      const t = buildAutoTip(SNAP, rules, { strategie: "zufall", seed: `s${i}` });
+      expect(zu.has(`${t.home}:${t.away}`), `seed s${i}`).toBe(false);
+    }
+  });
+
+  it("auch der Schnitt der Mitspieler weicht einem gesperrten Feld aus", () => {
+    const rules = mitSperre({ ergebnisse: 1, mindestensOffen: 1 });
+    const [gesperrt] = ergebnisSperre(SNAP, rules).filter((o) => o.gesperrt);
+    // Drei identische Tipps auf genau den gesperrten Stand — ihr Mittelwert
+    // ist er selbst.
+    const fremdeTipps = Array.from({ length: 3 }, () => ({ home: gesperrt.home, away: gesperrt.away }));
+    const t = buildAutoTip(SNAP, rules, { strategie: "schnitt", fremdeTipps });
+    expect(`${t.home}:${t.away}`).not.toBe(gesperrt.id);
+  });
+
+  it("ohne Sperre ändert sich am Ersatz-Tipp gar nichts", () => {
+    // Die Gegenprobe zu allen vieren: sonst wäre nicht zu unterscheiden, ob die
+    // Sperre wirkt oder der Auto-Tipp einfach anders geworden ist.
+    // ⚠️ Gegen DASSELBE Regelwerk mit ausgeschalteter Sperre verglichen, nicht
+    // gegen die nackte Vorgabe: `mitSperre` setzt auch die Zahl der Schützen,
+    // und der Unterschied käme dann von dort statt von der Sperre.
+    const a = buildAutoTip(SNAP, sanitizeRules({ ...mitSperre({}), sperre: { enabled: false } }));
+    const b = buildAutoTip(SNAP, mitSperre({ schuetzen: 0, ergebnisse: 0 }));
+    expect(b).toEqual(a);
   });
 });

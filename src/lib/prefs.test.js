@@ -4,6 +4,7 @@ import {
   BEWEGUNG_STUFEN, BEWEGUNG_LABEL, BEWEGUNG_HINWEIS,
   RASTER_WEITEN, RASTER_WEITE_LABEL, RASTER_WEITE_HINWEIS,
   HAPTIK_STUFEN, HAPTIK_LABEL, HAPTIK_HINWEIS,
+  VORBELEGUNGEN, VORBELEGUNG_LABEL, VORBELEGUNG_HINWEIS,
 } from "./prefs";
 
 describe("sanitizePrefs", () => {
@@ -16,7 +17,11 @@ describe("sanitizePrefs", () => {
   it("gültige Stufen bleiben erhalten", () => {
     for (const lv of LEVELS) {
       expect(sanitizePrefs({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv }))
-        .toEqual({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu", vergleich: {}, bewegung: "voll", rasterWeite: "raster", haptik: "an" });
+        .toEqual({
+          abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu",
+          vergleich: {}, bewegung: "voll", rasterWeite: "raster", haptik: "an",
+          vorbelegung: "fest",
+        });
     }
   });
 
@@ -140,6 +145,36 @@ describe("Weite des Ergebnis-Rasters", () => {
     for (const w of RASTER_WEITEN) {
       expect(RASTER_WEITE_LABEL[w], w).toBeTruthy();
       expect(RASTER_WEITE_HINWEIS[w]?.length ?? 0, w).toBeGreaterThan(20);
+    }
+  });
+});
+
+// 🔴 Andi, 26.08.2026: „dass bei jeder tippabgabe als option zur verfügung
+// steht immer die Ergebnisse als bereits eingestellte Auswahl zu haben die am
+// Wahrscheinlichsten ist … bei bayern st. pauli beginnt nicht bei 0:0 sondern
+// direkt bei 3:1".
+describe("Tipp-Start", () => {
+  it("die Vorgabe bleibt der feste Stand — er hat „als option“ gesagt", () => {
+    expect(DEFAULT_PREFS.vorbelegung).toBe("fest");
+    expect(sanitizePrefs({}).vorbelegung).toBe("fest");
+  });
+
+  it("beide Stufen kommen durch", () => {
+    for (const v of VORBELEGUNGEN) {
+      expect(sanitizePrefs({ vorbelegung: v }).vorbelegung, v).toBe(v);
+    }
+  });
+
+  it("Unsinn fällt auf die Vorgabe zurück", () => {
+    for (const x of ["schlau", 3, null, {}]) {
+      expect(sanitizePrefs({ vorbelegung: x }).vorbelegung, String(x)).toBe("fest");
+    }
+  });
+
+  it("jede Stufe hat Beschriftung und Hinweis", () => {
+    for (const v of VORBELEGUNGEN) {
+      expect(VORBELEGUNG_LABEL[v], v).toBeTruthy();
+      expect(VORBELEGUNG_HINWEIS[v]?.length ?? 0, v).toBeGreaterThan(20);
     }
   });
 });

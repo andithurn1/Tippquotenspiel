@@ -272,6 +272,48 @@ export const REGLER = [
     ],
   },
   {
+    // ── Stufe 2 für die Favoriten-Sperre (`favoritenSperre.js`) ──
+    //
+    // 🔴 Andi, 26.08.2026: „find halt immer harry kane nehmen boringo". Die
+    // Frage dahinter ist eine der wenigen, die ein Admin OHNE Vorwissen
+    // beantworten kann — „soll der Naheliegende wählbar sein?" — und gehört
+    // deshalb auf Stufe 2 und nicht in die Profi-Ansicht.
+    //
+    // ⚠️ Die Stufen setzen den Modus `rang` und keine Quotenschwelle. Das ist
+    // kein Geschmack, sondern der Grund, warum es zwei Bauarten gibt: eine
+    // feste Schwelle („alles unter 2,0") sperrt in einer schwachen Liga nichts
+    // und bei Bayern gegen einen Aufsteiger fast alles. Der Rang gilt relativ
+    // zu DIESEM Spiel und braucht deshalb keinen Wert je Wettbewerb — genau
+    // Andis Klammer „in abhängigkeit der betippten Mannschaften und pro
+    // Wettbewerb". Wer lieber mit einer festen Schwelle arbeitet, findet sie
+    // in der Profi-Ansicht.
+    //
+    // ⚠️ Die ZAHLEN darin sind bewusst klein und keine Balance-Aussage: eine
+    // gesperrte Option nimmt nichts weg und gibt nichts dazu, sie verschiebt
+    // nur die Auswahl. `mindestensOffen` bleibt auf 4 bzw. 6, damit auch die
+    // strenge Stufe an keinem Spiel die Auswahl leerräumt.
+    key: "favoriten",
+    label: "Ist der Naheliegende wählbar?",
+    hint: "Ob der wahrscheinlichste Torschütze und der wahrscheinlichste Endstand getippt werden dürfen.",
+    stufen: [
+      {
+        key: "alle", label: "Ja, alles ist wählbar",
+        beschreibung: "Jeder Torschütze, jeder Endstand. Die Vorgabe.",
+        werte: { sperre: { enabled: false } },
+      },
+      {
+        key: "favorit", label: "Der Favorit ist gesperrt",
+        beschreibung: "Der wahrscheinlichste Torschütze und der wahrscheinlichste Endstand fallen weg — man muss sich für etwas entscheiden.",
+        werte: { sperre: { enabled: true, modus: "rang", schuetzen: 1, ergebnisse: 1, mindestensOffen: 4 } },
+      },
+      {
+        key: "streng", label: "Die drei Naheliegendsten sind gesperrt",
+        beschreibung: "Die drei wahrscheinlichsten Torschützen und Endstände fallen weg. Deutlich mehr Mut nötig — und deutlich mehr Streuung im Feld.",
+        werte: { sperre: { enabled: true, modus: "rang", schuetzen: 3, ergebnisse: 3, mindestensOffen: 6 } },
+      },
+    ],
+  },
+  {
     // Stufe 2 für die Mitbestimmung (`design/abstimmung-verfassung.md`). Die
     // Profi-Ebene hat dort ein ganzes Gehäuse — Verfassung, Quorum, Mehrheit,
     // Fristen. Die Frage, die ein Spieler wirklich stellt, ist aber eine

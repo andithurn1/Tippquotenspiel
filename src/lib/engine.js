@@ -45,6 +45,7 @@ import {
 // bekommt exakt dieselbe Liste, die auch der Store liefert.
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { sanitizeWettbewerbe, DEFAULT_WETTBEWERBE, wettbewerbAufschlag, maxWettbewerbAufschlag } from "./wettbewerbGewicht";
+import { sanitizeSperre, DEFAULT_SPERRE } from "./favoritenSperre";
 import { sanitizeTippfenster, DEFAULT_TIPPFENSTER } from "./tippfenster";
 import { sanitizeZeitachse, DEFAULT_ZEITACHSE } from "./zeitachse";
 // Spieltags-Identität liegt in einem eigenen, importfreien Modul — sonst gäbe
@@ -289,6 +290,13 @@ export const DEFAULT_RULES = {
   // ist wichtiger, für alle gleich". Katalog + Anteils-Rechnung in
   // wettbewerbGewicht.js. Standard aus.
   wettbewerbe: { ...DEFAULT_WETTBEWERBE },
+
+  // ── Favoriten-Sperre: der wahrscheinlichste Ausgang ist NICHT wählbar ──
+  // Andi, 26.08.2026: „find halt immer harry kane nehmen boringo“. Ebene 5
+  // (Auswahl) — es wird nichts umgewertet, es wird etwas weggenommen.
+  // Katalog, beide Bauarten und die Sicherung `mindestensOffen` stehen in
+  // favoritenSperre.js. Standard aus.
+  sperre: { ...DEFAULT_SPERRE },
 
   // ── Tipp-Fenster: wie lange vor Anpfiff ein Spiel tippbar wird ──
   // Quoten erscheinen erst einige Tage vorher; wie früh eine Runde tippt, ist
@@ -631,6 +639,7 @@ export function sanitizeRules(partial = {}) {
     alleinstellung: sanitizeAlleinstellung(src.alleinstellung),
     ereignisse: sanitizeEreignisse(src.ereignisse),
     wettbewerbe: sanitizeWettbewerbe(src.wettbewerbe),
+    sperre: sanitizeSperre(src.sperre),
     tippfenster: sanitizeTippfenster(src.tippfenster),
     zeitachse: sanitizeZeitachse(src.zeitachse),
     // Duell-Joker, Budget, Limitierungsklassen, Joker-Grundform und Drehrad

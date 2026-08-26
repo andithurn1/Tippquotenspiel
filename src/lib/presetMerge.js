@@ -132,7 +132,10 @@ export const ASPEKTE = [
     hint: "Worauf überhaupt getippt wird (Ergebnis, Torschützen, Anzahl der Tipps).",
     // `tippEinfluss` gehört hierher, weil es beantwortet, WORAUS die Quote
     // entsteht — also zur selben Frage wie `oddsMode`, nicht zur Fairness.
-    keys: ["markets", "oddsMode", "tippEinfluss"],
+    // Die Favoriten-Sperre gehört ebenfalls hierher: sie entscheidet, WAS
+    // wählbar ist — dieselbe Frage wie „welche Märkte gibt es überhaupt".
+    // Nicht zur Fairness: sie verrechnet nichts, sie nimmt etwas weg.
+    keys: ["markets", "oddsMode", "tippEinfluss", "sperre"],
   },
   {
     key: "anzeige",

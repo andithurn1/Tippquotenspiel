@@ -1,3 +1,5 @@
+import { VORBELEGUNGEN as _VORBELEGUNGEN, DEFAULT_VORBELEGUNG } from "./vorbelegung";
+
 // ── Persönliche Anzeige-Einstellungen (pro Nutzer/Browser) ──
 // UNABHÄNGIG vom Regelwerk der Runde: das Regelwerk bestimmt die Fairness/
 // Punkte (Admin), DIESE Einstellung nur, wie viel vom „Hintergrund" jeder
@@ -113,10 +115,27 @@ export const HAPTIK_HINWEIS = {
   aus: "Kein Spüren. Die Meldung steht weiterhin da.",
 };
 
+// ── Womit die Tippabgabe startet? (Andi, 26.08.2026) ──
+// „dass bei jeder tippabgabe als option zur verfügung steht immer die
+//  Ergebnisse als bereits eingestellte Auswahl zu haben die am
+//  Wahrscheinlichsten ist … Also bei bayern st. pauli beginnt nicht bei 0:0
+//  sondern direkt bei 3:1"
+//
+// 🔴 Wieder eine PERSÖNLICHE Einstellung und keine Regel der Runde —
+// dieselbe Trennung wie bei `rasterWeite` darüber. Der Startwert des Steppers
+// ändert nichts an Punkten oder Fairness; er spart Klicks.
+//
+// Katalog, Texte und die Rechnung stehen in `vorbelegung.js` — hier nur der
+// Anschluss, damit die Stufe wie jede andere über `sanitizePrefs` läuft.
+//
+// ⚠️ `fest` bleibt die Vorgabe: ein vorgeschlagener Endstand ist ein
+// Vorschlag, und wer schnell tippt, nimmt ihn. Andi hat „als option" gesagt.
+export { VORBELEGUNGEN, VORBELEGUNG_LABEL, VORBELEGUNG_HINWEIS } from "./vorbelegung";
+
 export const DEFAULT_PREFS = {
   abrechnung: "voll", vorschau: "voll", zwischenabrechnung: "voll",
   startScreen: "menu", vergleich: {}, bewegung: "voll", rasterWeite: "raster",
-  haptik: "an",
+  haptik: "an", vorbelegung: DEFAULT_VORBELEGUNG,
 };
 
 // Nur intern: `sanitizePrefs`, `toggleVergleich` und `vergleichFuer` benutzen
@@ -199,5 +218,6 @@ export function sanitizePrefs(p = {}) {
     bewegung: BEWEGUNG_STUFEN.includes(src.bewegung) ? src.bewegung : DEFAULT_PREFS.bewegung,
     rasterWeite: RASTER_WEITEN.includes(src.rasterWeite) ? src.rasterWeite : DEFAULT_PREFS.rasterWeite,
     haptik: HAPTIK_STUFEN.includes(src.haptik) ? src.haptik : DEFAULT_PREFS.haptik,
+    vorbelegung: _VORBELEGUNGEN.includes(src.vorbelegung) ? src.vorbelegung : DEFAULT_PREFS.vorbelegung,
   };
 }

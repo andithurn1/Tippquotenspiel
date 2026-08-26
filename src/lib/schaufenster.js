@@ -49,6 +49,16 @@ export function schaufensterRegeln() {
     // „Spieltag 1", und dann ist beim Nachsehen nie klar, welcher gemeint ist.
     spiele: { ...DEFAULT_RULES.spiele, modus: "alle", wettbewerbe: ["bl"] },
 
+    // ── Favoriten-Sperre ──
+    // 🔴 Bewusst im Modus `quote` und nicht `rang`: die Regler-Stufen von
+    // Stufe 2 führen den Rang-Modus schon vor. Was hier zu sehen sein soll,
+    // ist die ANDERE Bauart — sonst bliebe eine von zweien in der
+    // Schaufenster-Runde ungezeigt, und genau dafür gibt es sie.
+    //
+    // ⚠️ 2,5 ist ein Vorführ-Wert und keine Empfehlung. Was eine gute Schwelle
+    // ist, wird am Ende festgelegt (CLAUDE.md, Balancing ist Endphase).
+    sperre: { enabled: true, modus: "quote", mindestQuote: 2.5, mindestensOffen: 5 },
+
     tippfenster: TIPPFENSTER,
 
     // ── Die FREMDJOKER-Familie, vollständig ──

@@ -21,6 +21,7 @@
 
 import { likelyScorelines } from "./nearResults";
 import { seeded } from "./seeded";
+import { schuetzenSperre, ergebnisSperre } from "./favoritenSperre";
 import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules } from "./engine";
 
 // ── Was passiert bei einem Versäumnis? Der ADMIN entscheidet ──
@@ -67,11 +68,18 @@ export function malusFaktor(versaeumnis = DEFAULT_VERSAEUMNIS) {
 }
 
 // Die n wahrscheinlichsten Torschützen einer Seite (kleinste anytime-Quote).
-function likelyScorers(snap, side, n) {
+//
+// 🔴 OHNE die von der Favoriten-Sperre zugehaltenen Namen (26.08.2026). Sonst
+// benennt ausgerechnet der Ersatz-Tipp den Spieler, den kein Mensch dieser
+// Runde tippen darf — und der Versäumnis-Tipp wäre der einzige, der die Regel
+// bricht. Das ist derselbe Fund wie am 06.08.: die Rechnung stimmte, gefragt
+// hat sie niemand.
+function likelyScorers(snap, side, n, rules) {
   const players = snap?.players?.[side];
   if (!players || n <= 0) return [];
+  const zu = new Set(schuetzenSperre(snap, rules).filter((o) => o.gesperrt).map((o) => o.id));
   return Object.entries(players)
-    .filter(([, p]) => typeof p?.anytime === "number")
+    .filter(([name, p]) => typeof p?.anytime === "number" && !zu.has(name))
     .sort((a, b) => a[1].anytime - b[1].anytime)
     .slice(0, n)
     .map(([name]) => name);
@@ -84,23 +92,35 @@ function likelyScorers(snap, side, n) {
 //  jokerPlan, autoTip und auswahl.)
 
 // Endstand nach gewählter Strategie.
+// Ist DIESER Endstand für die Runde gesperrt? (Favoriten-Sperre, 26.08.2026)
+const standZu = (snap, rules, stand) => !!stand
+  && ergebnisSperre(snap, rules).some((o) => o.gesperrt && o.id === `${stand.home}:${stand.away}`);
+
+// ⚠️ Der Mittelwert der Mitspieler-Tipps („schnitt") kann auf einem gesperrten
+// Stand landen, obwohl kein einziger Mitspieler ihn getippt hat — Rundung. Dann
+// gilt derselbe Ausweg wie überall hier: der wahrscheinlichste OFFENE Stand.
 function pickScoreline(snap, rules, strategie, { fremdeTipps = [], seed = "" } = {}) {
+  const offen = (stand) => (standZu(snap, rules, stand) ? null : stand);
   if (strategie === "schnitt" && fremdeTipps.length > 0) {
     // Mittelwert der Mitspieler-Tipps, kaufmännisch gerundet.
     const n = fremdeTipps.length;
     const home = Math.round(fremdeTipps.reduce((s, t) => s + (Number(t?.home) || 0), 0) / n);
     const away = Math.round(fremdeTipps.reduce((s, t) => s + (Number(t?.away) || 0), 0) / n);
-    return { home, away };
+    const schnitt = offen({ home, away });
+    if (schnitt) return schnitt;
   }
   if (strategie === "zufall") {
     // Aus den fünf plausibelsten Endständen einen ziehen — nie ein Freilos,
     // aber mehr Abwechslung als immer derselbe Standard.
-    const kandidaten = likelyScorelines(snap, rules, 5);
+    // ⚠️ Gesperrte fallen VOR der Ziehung weg, nicht danach: nachträglich
+    // aussortieren hieße, dass ein und derselbe Seed je nach Regelwerk einen
+    // anderen Stand zieht — reproduzierbar wäre der Auto-Tipp dann nicht mehr.
+    const kandidaten = likelyScorelines(snap, rules, 8).filter((k) => !standZu(snap, rules, k));
     if (kandidaten.length) return kandidaten[Math.floor(seeded(seed) * kandidaten.length)];
   }
   // Fallback für alle Fälle (auch „schnitt" ohne fremde Tipps): das
-  // wahrscheinlichste Ergebnis.
-  const [best] = likelyScorelines(snap, rules, 1);
+  // wahrscheinlichste Ergebnis, das die Runde auch zulässt.
+  const best = likelyScorelines(snap, rules, 12).find((k) => !standZu(snap, rules, k));
   return best ?? null;
 }
 
@@ -141,8 +161,8 @@ export function buildAutoTip(snap, rules = DEFAULT_RULES, opts = {}) {
     home: best.home,
     away: best.away,
     goals: {
-      home: likelyScorers(snap, "home", homeN),
-      away: likelyScorers(snap, "away", awayN),
+      home: likelyScorers(snap, "home", homeN, rules),
+      away: likelyScorers(snap, "away", awayN, rules),
     },
     auto: true, // Kennzeichen für UI/Abrechnung: nicht selbst getippt
   };

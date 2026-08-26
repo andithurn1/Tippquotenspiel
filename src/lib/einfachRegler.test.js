@@ -67,7 +67,18 @@ describe("Katalog", () => {
     // NICHT, obwohl beide in denselben additiven Topf zahlen: dort geht es um
     // EIN Spiel innerhalb eines Spieltags, hier um den ganzen Wettbewerb.
     // Zusammengelegt wären es zwölf Stufen unter einer Frage.
-    expect(REGLER.length).toBeLessThanOrEqual(11);
+    //
+    // 26.08.2026: 11 → 12 für „Ist der Naheliegende wählbar?" (`sperre`).
+    // Anlass ist Andis Ansage vom selben Tag („find halt immer harry kane
+    // nehmen boringo") plus derselbe Befund wie eine Zeile darüber: ohne diese
+    // Stufe wäre `sperre` die einzige Lücke in `npm run stufen`.
+    //
+    // Die Probe gegen den nächstliegenden Kandidaten ist gemacht, hier gegen
+    // „Worauf wird getippt?" (die Märkte): dorthin gehört sie NICHT. Die
+    // Märkte entscheiden, OB es Torschützen und Endstände überhaupt gibt —
+    // diese Frage, WELCHE davon wählbar sind. Wer den Markt abschaltet, hat
+    // keine Auswahl mehr; wer hier sperrt, hat eine kleinere. Zwei Fragen.
+    expect(REGLER.length).toBeLessThanOrEqual(12);
   });
 
   it("keine Stufe holt sich eine Warnung, die die Vorgabe nicht schon hat", () => {

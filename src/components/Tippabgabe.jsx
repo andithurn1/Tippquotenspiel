@@ -32,6 +32,8 @@ import {
 import { FREMDJOKER_ARTEN, jokerArtVon, sanitizeSchutz } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
 import { ergebnisQuote } from "@/lib/randquoten";
+import { schuetzenSperre, istSchuetzeGesperrt, istErgebnisGesperrt } from "@/lib/favoritenSperre";
+import { startErgebnis, FESTER_START } from "@/lib/vorbelegung";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
@@ -90,9 +92,20 @@ const SPIELTAGE = 34;
 //   proSpiel — EIN Block mit `picksProSpiel` Slots aus allen Spielern
 // Beide liefern dieselbe Struktur (Array von Slot-Listen), damit der Rest des
 // Screens sich nicht um den Modus kümmern muss.
-const initialPicks = (snap, scorer, teams) => {
+// ⚠️ `rules` ist seit der Favoriten-Sperre (26.08.2026) Pflicht: die Vorbelegung
+// darf keinen GESPERRTEN Namen setzen. Vorher stand dort schlicht der erste
+// Name der Liste — und das ist bei einem Favoriten-Filter genau der, der nicht
+// mehr geht. Der Spieler hätte einen Tipp gesehen, den das Speichern ablehnt.
+const initialPicks = (snap, scorer, teams, rules) => {
+  const zu = new Set(schuetzenSperre(snap, rules).filter((o) => o.gesperrt).map((o) => o.id));
+  const offen = (namen) => {
+    const frei = namen.filter((n) => !zu.has(n));
+    // Bleibt nichts übrig (kann `mindestensOffen` eigentlich nicht zulassen),
+    // gilt die volle Liste — ein leeres Auswahlfeld wäre schlimmer.
+    return frei.length ? frei : namen;
+  };
   if (scorer.modus === "proSpiel") {
-    const namen = Object.keys(alleSpieler(snap));
+    const namen = offen(Object.keys(alleSpieler(snap)));
     return [Array.from({ length: scorer.picksProSpiel }, (_, i) => ({
       // Verschiedene Vorbelegungen: zweimal derselbe Name wäre sonst als
       // Doppelpack gewertet, ohne dass der Spieler das wollte.
@@ -100,7 +113,7 @@ const initialPicks = (snap, scorer, teams) => {
     }))];
   }
   return teams.map((t) => Array.from({ length: scorer.picksPerTeam }, () => ({
-    main: Object.keys(snap.players[t.side])[0], backup: "",
+    main: offen(Object.keys(snap.players[t.side]))[0], backup: "",
   })));
 };
 
@@ -122,8 +135,23 @@ export default function Tippabgabe({ matchId }) {
   const { prefs } = usePrefs();
   const { roundId } = useCurrentRound();
   const [match, setMatch] = useState(null);
-  const [h, setH] = useState(2);
-  const [a, setA] = useState(1);
+  // 🔴 Womit der Stepper startet, ist eine PERSÖNLICHE Einstellung
+  // (Andi, 26.08.2026 — „bei bayern st. pauli beginnt nicht bei 0:0 sondern
+  // direkt bei 3:1"). Die 2 und die 1 standen vorher hier eingetippt und
+  // nirgends erklärt; sie heißen jetzt `FESTER_START` und liegen in
+  // `vorbelegung.js`, damit es sie nur einmal gibt.
+  //
+  // ⚠️ Der ERSTE Wert muss der feste bleiben: der Schnappschuss ist beim
+  // ersten Rendern noch nicht da. Der Sprung auf den wahrscheinlichsten
+  // Endstand passiert unten im Effekt, sobald das Spiel geladen ist.
+  const [h, setH] = useState(FESTER_START.home);
+  const [a, setA] = useState(FESTER_START.away);
+  // Hat der Spieler den Endstand selbst angefasst? Solange nicht, folgt der
+  // Stepper der Vorbelegung — und zwar dem FRISCHESTEN Stand: Regelwerk und
+  // Beschlusslage kommen asynchron nach, und die Favoriten-Sperre hängt an
+  // ihnen. Ohne diese Klinke gäbe es die Wahl zwischen „einmal setzen und
+  // veraltet bleiben" und „bei jedem Rendern zurückspringen, unbedienbar".
+  const [standBeruehrt, setStandBeruehrt] = useState(false);
   const [roundName, setRoundName] = useState(null);
   // 🔴 Das Regelwerk DIESES Spieltags, nicht das der Runde.
   //
@@ -146,10 +174,12 @@ export default function Tippabgabe({ matchId }) {
     }) ?? rundenRegeln;
   }, [beschlussLage, match, rundenRegeln]);
   const scorer = RULES.markets.goals;
+  // Stabile Kennung der Favoriten-Sperre — siehe die Deps des Match-Effekts.
+  const sperrSchluessel = JSON.stringify(RULES.sperre ?? null);
   const [picks, setPicks] = useState(null);
   const [done, setDone] = useState(false);
   // idle | saving | saved | guest | error | einsatzUngueltig | jokerUngueltig
-  // | narrenUngueltig | klasseUngueltig | widerrufUngueltig
+  // | narrenUngueltig | klasseUngueltig | widerrufUngueltig | sperrUngueltig
   const [saveState, setSaveState] = useState("idle");
   // 🔴 Andi, 24.08.2026: „feedback dass … abgespeichert ist". Der Screen
   // wechselt zwar auf die Bestätigungs-Ansicht, aber ein Wechsel ist keine
@@ -175,6 +205,10 @@ export default function Tippabgabe({ matchId }) {
   // Punkt 5, jokerBasis.js) das Entfernen/Verändern eines zuvor gesetzten
   // Jokers oder Duells abgelehnt hat.
   const [widerrufGrund, setWiderrufGrund] = useState("");
+  // Nur befüllt, wenn `saveState === "sperrUngueltig"` — welcher Endstand oder
+  // welcher Torschütze wegen der Favoriten-Sperre (`favoritenSperre.js`) nicht
+  // geht. Derselbe Aufbau wie die fünf Gründe darüber.
+  const [sperrGrund, setSperrGrund] = useState("");
   // Gewichtung dieses Spiels: Flag (Modus „einzel") bzw. Faktor (Modus „ranking").
   const [joker, setJoker] = useState(false);
   const [gewicht, setGewicht] = useState(1);
@@ -239,13 +273,19 @@ export default function Tippabgabe({ matchId }) {
       if (!live || !m) return;
       setMatch(m);
       const teams = [{ side: "home", name: m.snapshot.home }, { side: "away", name: m.snapshot.away }];
-      setPicks(initialPicks(m.snapshot, scorer, teams));
+      setPicks(initialPicks(m.snapshot, scorer, teams, RULES));
     });
     return () => { live = false; };
     // Picks hängen an der Pick-Anzahl des Regelwerks — kommt es später aus der
     // Runde nach, werden sie einmal neu aufgebaut.
+    //
+    // ⚠️ `sperrSchluessel` und nicht `RULES`: das Regelwerk ist bei jedem
+    // Rendern ein neues Objekt, die Picks würden also unablässig
+    // zurückgesetzt. Der Schlüssel ändert sich nur, wenn die Favoriten-Sperre
+    // TATSÄCHLICH anders eingestellt ist — und dann MÜSSEN die Picks neu
+    // gebaut werden, weil ein vorbelegter Name inzwischen gesperrt sein kann.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId, scorer.picksPerTeam, scorer.picksProSpiel, scorer.modus]);
+  }, [matchId, scorer.picksPerTeam, scorer.picksProSpiel, scorer.modus, sperrSchluessel]);
 
   useEffect(() => {
     let live = true;
@@ -478,6 +518,39 @@ export default function Tippabgabe({ matchId }) {
       return [...ereignis, ...radBelohnungen.joker.filter((g) => g.userId === user?.id)];
     },
     [meineEintraege, alleEintraege, tagesPunkte, RULES, radBelohnungen, user, achse, schluessel]);
+
+  // 🔴 Die Favoriten-Sperre, EINMAL gefragt statt an fünf Stellen nachgebaut
+  // (Andi, 26.08.2026: „mach dann auch bei der Tippabgabe einsehbar für die
+  // nutzer, dass halt bspw. kane wegen der einstellung gesperrt ist mit
+  // knapper begründung"). Die Ergebnisse fragt `ErgebnisMatrix` selbst — hier
+  // stehen die Torschützen und der aktuell eingestellte Endstand.
+  const schuetzenZu = useMemo(() => {
+    const m = new Map();
+    if (!match) return m;
+    for (const o of schuetzenSperre(match.snapshot, RULES)) if (o.gesperrt) m.set(o.id, o.grund);
+    return m;
+  }, [match, RULES]);
+  const standZu = useMemo(
+    () => (match ? istErgebnisGesperrt(match.snapshot, RULES, h, a).grund : null),
+    [match, RULES, h, a]);
+
+  // 🔴 Der Startwert des Steppers (Andi, 26.08.2026). Ein Effekt und kein
+  // `useState`-Initialwert: beim ersten Rendern ist der Schnappschuss noch
+  // nicht da, und die Vorbelegung braucht ihn.
+  //
+  // ⚠️ Er steht HIER, vor dem Lade-Zweig darunter — ein Hook unter einem
+  // frühen `return` wird im ersten Rendern übersprungen und der Screen
+  // stürzte beim zweiten mit „change in the order of Hooks" ab (CLAUDE.md).
+  useEffect(() => {
+    if (!match || standBeruehrt) return;
+    const start = startErgebnis(match.snapshot, RULES, prefs?.vorbelegung);
+    setH(start.home);
+    setA(start.away);
+  }, [match, RULES, prefs?.vorbelegung, standBeruehrt]);
+
+  // Neues Spiel → die Vorbelegung gilt wieder. Ohne das behielte das zweite
+  // Spiel den Stand des ersten, sobald man dort einmal gesteppt hat.
+  useEffect(() => { setStandBeruehrt(false); }, [matchId]);
 
   if (!match || !picks) {
     return (
@@ -901,7 +974,13 @@ export default function Tippabgabe({ matchId }) {
     setPicks((prev) => prev.map((team, i) =>
       i !== ti ? team : team.map((p, j) => (j !== pi ? p : { ...p, [field]: val }))));
 
-  const step = (setter, val, d) => setter(Math.max(0, Math.min(9, val + d)));
+  const step = (setter, val, d) => {
+    // ⚠️ Ab dem ersten Antippen gehört der Stand dem Spieler — die Vorbelegung
+    // darf ihn danach nicht mehr überschreiben, auch wenn das Regelwerk noch
+    // nachlädt.
+    setStandBeruehrt(true);
+    setter(Math.max(0, Math.min(9, val + d)));
+  };
 
   // Tipp abgeben: Snapshot-Quote einfrieren + über den Store persistieren.
   const submit = async () => {
@@ -913,6 +992,29 @@ export default function Tippabgabe({ matchId }) {
       // Durchsetzung (dieselbe Haltung wie bei `applyEntitlements`). Ein
       // veralteter Screen oder ein zweites Fenster käme sonst vorbei.
       if (sperre) { setSaveState("gesperrt"); return; }
+      // 🔴 Favoriten-Sperre — dieselbe Haltung wie eine Zeile darüber: die
+      // Oberfläche graut aus, aber sie SETZT NICHTS DURCH. Ein Screen, der
+      // offen lag, während der Admin die Regel geändert hat, hätte den
+      // gesperrten Stand sonst durchgereicht.
+      //
+      // ⚠️ Geprüft wird gegen dieselben Funktionen, die auch ausgrauen — nicht
+      // gegen eine zweite Fassung der Regel (Runden-Schicht, CLAUDE.md).
+      const standGesperrt = istErgebnisGesperrt(SNAP, RULES, h, a);
+      if (RULES.markets.result && standGesperrt.gesperrt) {
+        setSperrGrund(`${h}:${a} ist nicht wählbar — ${standGesperrt.grund.replace(/^gesperrt: /, "")}`);
+        setSaveState("sperrUngueltig");
+        return;
+      }
+      if (scorer.enabled) {
+        const getroffen = (picks ?? []).flat()
+          .flatMap((pk) => [pk.main, pk.backup])
+          .filter((n) => n && istSchuetzeGesperrt(SNAP, RULES, n).gesperrt);
+        if (getroffen.length) {
+          setSperrGrund(`${[...new Set(getroffen)].join(", ")} ist für diese Runde gesperrt — bitte einen anderen Torschützen wählen`);
+          setSaveState("sperrUngueltig");
+          return;
+        }
+      }
       // Einsatz-Modus: der Spieltag darf nach `invalidEinsatzMatchdays` nicht
       // regelwidrig werden — anders als beim Ranking-Regler (der belegte
       // Gewichte schon beim Klicken sperrt) lässt sich eine Unterdeckung beim
@@ -1272,9 +1374,23 @@ export default function Tippabgabe({ matchId }) {
                     er tippen will, ist mit zwei Antippern am Stepper schneller
                     als mit dem Suchen im Raster. Derselbe Gedanke wie Regler
                     UND Zahlenfeld im Baukasten-Grundsatz — Wahl statt Ersatz. */}
+                {/* 🔴 Der eingestellte Stand ist gesperrt — und zwar sichtbar,
+                    nicht erst beim Absenden. Ein Speichern-Knopf, der ohne
+                    Vorwarnung ablehnt, ist die schlechteste Reihenfolge. */}
+                {standZu && (
+                  <div style={{
+                    marginTop: 10, fontSize: "0.8125rem", lineHeight: 1.45, color: C.coral,
+                    background: `${C.coral}14`, border: `1px solid ${C.coral}55`,
+                    borderRadius: RUND.karte, padding: "9px 12px",
+                  }}>
+                    🔒 <strong>{h}:{a} ist nicht wählbar</strong> — {standZu.replace(/^gesperrt: /, "")}.
+                    So hat der Admin die Runde eingestellt; wähle einen anderen Endstand.
+                  </div>
+                )}
+
                 <ErgebnisMatrix snap={SNAP} rules={RULES} tip={{ home: h, away: a }}
                   gesperrt={gesperrt}
-                  onWahl={(hh, aa) => { setH(hh); setA(aa); }} />
+                  onWahl={(hh, aa) => { setStandBeruehrt(true); setH(hh); setA(aa); }} />
               </Section>
             )}
 
@@ -1312,14 +1428,14 @@ export default function Tippabgabe({ matchId }) {
                     <PlayerSelect
                       flex={1.4} label={`Wahl ${pi + 1}`} value={p.main}
                       quote={alleSpieler(SNAP)[p.main]?.anytime}
-                      players={alleSpieler(SNAP)}
+                      players={alleSpieler(SNAP)} sperren={schuetzenZu}
                       onChange={(v) => setPick(0, pi, "main", v)}
                     />
                     {scorer.allowBackups && (
                       <PlayerSelect
                         flex={1} label="Backup" value={p.backup} dim
                         quote={p.backup ? alleSpieler(SNAP)[p.backup]?.anytime : null}
-                        players={alleSpieler(SNAP)} allowEmpty
+                        players={alleSpieler(SNAP)} sperren={schuetzenZu} allowEmpty
                         onChange={(v) => setPick(0, pi, "backup", v)}
                       />
                     )}
@@ -1344,14 +1460,14 @@ export default function Tippabgabe({ matchId }) {
                         <PlayerSelect
                           flex={1.4} label={`Wahl ${pi + 1}`} value={p.main}
                           quote={SNAP.players[team.side][p.main]?.anytime}
-                          players={SNAP.players[team.side]}
+                          players={SNAP.players[team.side]} sperren={schuetzenZu}
                           onChange={(v) => setPick(ti, pi, "main", v)}
                         />
                         {scorer.allowBackups && (
                           <PlayerSelect
                             flex={1} label="Backup" value={p.backup} dim
                             quote={p.backup ? SNAP.players[team.side][p.backup]?.anytime : null}
-                            players={SNAP.players[team.side]} allowEmpty
+                            players={SNAP.players[team.side]} sperren={schuetzenZu} allowEmpty
                             onChange={(v) => setPick(ti, pi, "backup", v)}
                           />
                         )}
@@ -1824,7 +1940,7 @@ export default function Tippabgabe({ matchId }) {
             snap={SNAP} h={h} a={a} winner={winner} csQuote={csQuote} csGeschaetzt={csGeschaetzt}
             kickoffLabel={kickoffLabel} picks={picks} teams={teams} saveState={saveState}
             einsatzGrund={einsatzGrund} jokerGrund={jokerGrund} narrenGrund={narrenGrund}
-            klasseGrund={klasseGrund} widerrufGrund={widerrufGrund}
+            klasseGrund={klasseGrund} widerrufGrund={widerrufGrund} sperrGrund={sperrGrund}
             roundName={roundName}
             onEdit={() => { setSaveState("idle"); setDone(false); }}
           />
@@ -1891,7 +2007,14 @@ function Stepper({ value, onStep }) {
   );
 }
 
-function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim, flex }) {
+// `sperren` ist eine Map Name → Grund (Favoriten-Sperre, 26.08.2026).
+//
+// 🔴 Die gesperrten Namen bleiben in der Liste STEHEN und werden dort als
+// gesperrt bezeichnet, statt zu verschwinden. Andis Ansage war „einsehbar …
+// mit knapper begründung" — und ein Name, der fehlt, ist nicht einsehbar: der
+// Spieler suchte Kane und hielte die Kaderliste für kaputt.
+function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim, flex, sperren }) {
+  const grund = sperren?.get?.(value) ?? null;
   return (
     <div style={{ flex }}>
       <div style={{
@@ -1907,11 +2030,23 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
           border: "none", fontSize: "0.9375rem", outline: "none", fontFamily: "inherit",
         }}>
           {allowEmpty && <option value="" style={{ color: "#000" }}>– keiner –</option>}
-          {Object.keys(players).map((p) => (
-            <option key={p} value={p} style={{ color: "#000" }}>{p}</option>
-          ))}
+          {Object.keys(players).map((p) => {
+            const zu = sperren?.get?.(p) ?? null;
+            return (
+              <option key={p} value={p} disabled={!!zu} style={{ color: "#000" }}>
+                {zu ? `🔒 ${p} — gesperrt` : p}
+              </option>
+            );
+          })}
         </select>
       </div>
+      {/* Der Grund steht unter dem Feld und nicht in einem Tooltip: auf einem
+          Telefon gibt es kein Überfahren mit der Maus. */}
+      {grund && (
+        <div style={{ fontSize: "0.6875rem", lineHeight: 1.4, color: C.coral, marginTop: 4 }}>
+          🔒 {grund.replace(/^gesperrt: /, "")} — bitte einen anderen wählen.
+        </div>
+      )}
     </div>
   );
 }
@@ -1925,7 +2060,7 @@ const SAVE_HINT = {
 
 function Confirmation({
   snap, h, a, winner, csQuote, csGeschaetzt, kickoffLabel, picks, teams, saveState,
-  einsatzGrund, jokerGrund, narrenGrund, klasseGrund, widerrufGrund, roundName, onEdit,
+  einsatzGrund, jokerGrund, narrenGrund, klasseGrund, widerrufGrund, sperrGrund, roundName, onEdit,
 }) {
   // Einsatz-Modus: nicht gespeichert, weil der Spieltag die Einsatz-Regeln
   // verletzt (design/einsatz-joker.md 3.2). Der GRUND wird beim Absenden
@@ -1947,6 +2082,8 @@ function Confirmation({
     ? { text: `nicht gespeichert — ${narrenGrund}`, col: C.coral }
     : saveState === "klasseUngueltig"
     ? { text: `nicht gespeichert — ${klasseGrund}`, col: C.coral }
+    : saveState === "sperrUngueltig"
+    ? { text: `nicht gespeichert — ${sperrGrund}`, col: C.coral }
     : saveState === "widerrufUngueltig"
     ? { text: `nicht gespeichert — ${widerrufGrund}`, col: C.coral }
     : SAVE_HINT[saveState];
