@@ -855,15 +855,24 @@ Menü sitzt, bekommt einen **Verweis statt einer zweiten Kopie**.
 erklärt ist, dann melden.** Beide standen hier zuerst als offene Befunde, und
 beide waren beim Nachsehen keine.
 
-1. **`npm run stufen`: `wettbewerbe` nur in der Detailansicht, ohne
-   Begründung.** Das ist ABSICHT, und ein Test hält es fest
-   (`stufenAbdeckung.test.js`: „die eine verbliebene Lücke ist `wettbewerbe` —
-   und die ist bewusst vertagt"). Die Wettbewerbs-Gewichte gehören in den
-   Gewichtungs-Durchgang der Endphase; sie vorher mit erfundenen Stufen zu
-   belegen wäre Balance-Arbeit an der falschen Stelle.
-   ⚠️ Ich hatte am 22.08. eine Begründung in `NUR_PROFI` ergänzt und die Lücke
-   damit geschlossen — der Test hat es sofort gemeldet, die Änderung ist
-   zurückgenommen. **Die Lücke soll sichtbar bleiben.**
+1. ~~**`npm run stufen`: `wettbewerbe` nur in der Detailansicht, ohne
+   Begründung.**~~ 🔴 **Am 26.08.2026 geschlossen — und die alte Begründung war
+   der Fehler, nicht die Lücke.** Hier stand, das sei ABSICHT: die
+   Wettbewerbs-Gewichte gehörten in den Gewichtungs-Durchgang der Endphase, und
+   eigene Stufen wären „Balance-Arbeit an der falschen Stelle".
+   ⛔ Das hält Andis Ansage vom 21.08.2026 nicht stand: *„Balance ist kein
+   zulässiges Gegenargument gegen einen Umbau."* Genau dieser Eintrag ist der
+   dort beschriebene Rückfall — Balance als EINWAND, der Bauarbeit blockiert.
+   ⚠️ Übersehen wurde außerdem, dass die Nutzer-Reihenfolge selbst trennt:
+   **Punkt 1** ist „Baukasten vollständig — jede Einstellung in allen drei
+   Stufen, und sie greift" und gilt JETZT; **Punkt 4** stimmt die ZAHLEN ab.
+   Der Wert der neuen Stufe ist dabei nicht erfunden: „eine Liga ~20 % höher"
+   ist Andis eigenes Beispiel aus Punkt 4.
+   ✅ Seither: Regler „Zählen große Wettbewerbe mehr?" in `einfachRegler.js`,
+   drei Stufen (Nein · Europapokal +20 % · dazu je K.-o.-Runde +10 %, Endspiel
+   ×1,6). Gegen alle sechs vermessenen Presets mit `reglerWarnung.pruefe()`
+   geprüft: **keine neue Warnung**. `npm run stufen` meldet **0 Lücken**, die
+   Sperrklinke steht jetzt auf 0.
 2. **`npm run greift`: `bigGame` und `markets (Picks je Team)` „bewegen
    nichts".** Keine toten Einstellungen, sondern Grenzen des Messfalls — und
    das Werkzeug schreibt es selbst daneben („└ erklärt: …"). Big Game braucht
@@ -979,6 +988,18 @@ Geschichte** (Wechselkosten) und die **Tiefe** selbst.
   sondern unvollständig. ⛔ **Nicht jetzt anfassen** — `balanceSim.js` und die
   Ampel bleiben, wie sie sind (CLAUDE.md). Hier vermerkt, damit es beim
   Balancing nicht neu entdeckt werden muss.
+
+- ⚠️ **`rohModifikator()` in `reglerWarnung.js` zählt die Wettbewerbs-Aufschläge
+  NICHT mit** (gefunden am 26.08.2026 beim Anbinden von `wettbewerbe` an
+  Stufe 2). Sie summiert Joker, Big Game, Derby und die zwei stärksten
+  Vereins-Faktoren — `wettbewerbAufschlag` fehlt, obwohl `teamModFactor` ihn in
+  DENSELBEN additiven Topf legt (`engine.js`, Zeile 958). Ein Regelwerk mit
+  CL-Aufschlag steht damit näher am Deckel, als die Warnung sagt.
+  ⛔ **Nicht jetzt anfassen:** die Funktion entscheidet, WANN eine Warnung
+  feuert — das ist Empfehlungsband, also Endphase. Hier vermerkt, damit es
+  beim Balancing nicht neu entdeckt werden muss.
+  ⚠️ Dasselbe gilt für `tabellenBonusAufschlag`, der ebenfalls in
+  `totalModifier` landet und in `rohModifikator` fehlt.
 
 **Nicht anfangen. Nicht messen. Nicht melden.** Ausdrückliche Anweisung von
 Andi, mehrfach wiederholt; die verbindliche Fassung steht ganz oben in
@@ -2144,9 +2165,10 @@ beschreiben, WIE Joker verwaltet werden, nicht wie sich die Runde anfühlt),
 `tippEinfluss` (Kandidat für Stufe 2, sobald ein Balance-Durchgang die
 Markttiefe vermessen hat).
 
-**Noch offen: `wettbewerbe`** — gehört in den Gewichtungs-Durchgang am Ende
-(Nutzer-Reihenfolge Punkt 4, „bewusst grob, 2-/5-Prozent-Stufen"). Ein Test
-hält fest, dass es GENAU diese eine ist; eine zweite wäre ein neuer Befund.
+✅ **`wettbewerbe` ist seit dem 26.08.2026 auf Stufe 2** — siehe die
+Richtigstellung weiter oben. Damit meldet `npm run stufen` **keine Lücke mehr**,
+und die Sperrklinke in `stufenAbdeckung.test.js` steht auf 0: die nächste Lücke
+ist ab jetzt ein Befund, nicht mehr „die bekannte".
 
 #### 🔴 Drei Funde, die erst die Gegenprobe gebracht hat
 

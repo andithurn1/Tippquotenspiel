@@ -126,6 +126,65 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-26 (XXI) · 🔴 **`npm run stufen` meldet 0 Lücken** — und die letzte war eine Fehl-Begründung
+
+**Wenn du `stufenAbdeckung.test.js` kennst: die Zeile „die eine verbliebene
+Lücke ist `wettbewerbe` — und die ist bewusst vertagt" gibt es nicht mehr.**
+
+Sie stand seit dem 21.08.2026 dort mit der Begründung, die Wettbewerbs-Gewichte
+gehörten in den Gewichtungs-Durchgang der Endphase, und eigene Stufe-2-Stufen
+wären „Balance-Arbeit an der falschen Stelle".
+
+⛔ **Das hält Andis Ansage vom selben Tag nicht stand:** *„Balance ist kein
+zulässiges Gegenargument gegen einen Umbau"* (CLAUDE.md). Der Eintrag WAR der
+dort beschriebene Rückfall — Balance als Einwand, der Bauarbeit blockiert.
+
+⚠️ **Und die Trennung, die dabei übersehen wurde**, weil sie beim nächsten Mal
+wieder greift: die Nutzer-Reihenfolge trennt selbst. **Punkt 1** heißt
+„Baukasten vollständig — jede Einstellung in allen drei Stufen, und sie greift"
+und gilt JETZT. **Punkt 4** stimmt die ZAHLEN ab. Erreichbarkeit ist nicht
+Gewichtung.
+
+**Gebaut:** ein elfter Regler in `einfachRegler.js` —
+**„Zählen große Wettbewerbe mehr?"**
+
+| Stufe | Wirkung |
+|---|---|
+| Nein | CL zählt wie ein Ligaspiel |
+| Der Europapokal zählt mehr | CL +20 %, flach über alle Runden |
+| Und je weiter, desto mehr | dazu +10 % je K.-o.-Runde — Endspiel ×1,60 |
+
+🔴 **Die Zahl ist nicht erfunden:** „eine Liga ~20 % höher" ist Andis eigenes
+Beispiel aus Punkt 4 derselben Reihenfolge.
+
+**Gemessen, nicht behauptet:** gegen alle sechs vermessenen Presets mit
+`reglerWarnung.pruefe()` — **keine neue Warnung** bei keiner Stufe.
+`teamModFactor` liefert BL ×1,00 · CL-Liga ×1,20 · Achtelfinale ×1,30 ·
+Finale ×1,60. Jede Stufe wird von `erkenneStufe` wiedererkannt.
+
+**Zwei Sperrklinken sind mitgewandert** — bitte nicht zurückdrehen:
+
+* `stufenAbdeckung.test.js`: `LUECKEN_BEI_EINFUEHRUNG` **1 → 0**. Ab jetzt ist
+  JEDE Lücke ein Befund, nicht mehr „die bekannte".
+* `einstellbarkeit.test.js`: Abdeckung **188 → 189** (von 201). `unerklaert`
+  bleibt 0.
+* `einfachRegler.test.js`: `REGLER.length` **≤ 10 → ≤ 11**, mit der Probe
+  gegen den nächstliegenden Kandidaten im Kommentar.
+
+⛔ **Ein Befund daneben, den ich NICHT angefasst habe:** `rohModifikator()` in
+`reglerWarnung.js` zählt die Wettbewerbs-Aufschläge nicht mit, obwohl
+`teamModFactor` sie in denselben additiven Topf legt (`engine.js:958`) —
+dasselbe gilt für den Tabellen-Bonus. Die Funktion entscheidet, WANN eine
+Warnung feuert; das ist Empfehlungsband und damit Endphase. Steht in
+`design/roadmap.md` unter „ENDPHASE".
+
+Außerdem: `store.js` `usingSupabase` ist **gelöscht** — eine zweite Antwort auf
+eine Frage, die `isMock` aus `useAuth()` schon beantwortet. Damit ist Gruppe 1
+von `npm run tot` (die riskante) **leer**.
+
+Belegt: `npm test` 2 675 grün · `lint` grün · `stufen` 0 Lücken · `einstellbar`
+0 Funde / 0 unerklärt · `greift` grün · `tot` Gruppe 1 leer · `detail` grün.
+
 ### 2026-08-26 (XX) · 📱 **Die native App hat jetzt eine Hülle** — und für dich ändert sich nichts
 
 **Kurz, weil es genau eine Sache ist, die du wissen musst: `npm run dev` bleibt

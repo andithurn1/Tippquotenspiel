@@ -15,11 +15,14 @@ import {
 // Regler sie je erwähnte. Weder `npm run greift` noch `npm run anzeige` können
 // das sehen; beide fragen etwas anderes.
 
-// Der Stand bei Einführung der Messung (06.08.2026). Die Zahl steht hier als
-// SPERRKLINKE: sie darf sinken, aber nicht steigen. Ein neuer Regelblock, der
-// nur in der Profi-Ansicht landet, lässt diesen Test auffallen — genau das war
-// bei `ereignisse` monatelang niemandem aufgefallen.
-const LUECKEN_BEI_EINFUEHRUNG = 1;
+// Der Stand bei Einführung der Messung (06.08.2026) war 1. Die Zahl steht hier
+// als SPERRKLINKE: sie darf sinken, aber nicht steigen. Ein neuer Regelblock,
+// der nur in der Profi-Ansicht landet, lässt diesen Test auffallen — genau das
+// war bei `ereignisse` monatelang niemandem aufgefallen.
+//
+// 🔴 Seit dem 26.08.2026 steht sie auf 0, und damit ist die Klinke von jetzt an
+// scharf: JEDE Lücke ist ab hier ein Befund, nicht mehr „die bekannte".
+const LUECKEN_BEI_EINFUEHRUNG = 0;
 
 describe("Stufen-Abdeckung", () => {
   it("jedes Regel-Feld taucht genau einmal auf", () => {
@@ -33,13 +36,27 @@ describe("Stufen-Abdeckung", () => {
     expect(offen.length).toBeLessThanOrEqual(LUECKEN_BEI_EINFUEHRUNG);
   });
 
-  it("die eine verbliebene Lücke ist `wettbewerbe` — und die ist bewusst vertagt", () => {
-    // Die Wettbewerbs-Gewichte gehören in den Gewichtungs-Durchgang am Ende
-    // (Nutzer-Reihenfolge Punkt 4, „bewusst grob, 2-/5-Prozent-Stufen"). Sie
-    // hier vorher mit erfundenen Stufen zu belegen, hiesse Balance-Arbeit an
-    // der falschen Stelle. Der Test hält fest, dass es GENAU diese eine ist —
-    // eine zweite wäre ein neuer Befund.
-    expect(luecken()).toEqual(["wettbewerbe"]);
+  it("es gibt keine Lücke mehr", () => {
+    // 🔴 Hier stand bis zum 26.08.2026 das Gegenteil: `wettbewerbe` sei „bewusst
+    // vertagt", weil die Gewichte in den Gewichtungs-Durchgang am Ende gehören
+    // (Nutzer-Reihenfolge Punkt 4) und eigene Stufen dafür „Balance-Arbeit an
+    // der falschen Stelle" wären.
+    //
+    // ⛔ Die Begründung hält Andis Ansage vom selben Tag nicht stand: *„Balance
+    // ist kein zulässiges Gegenargument gegen einen Umbau"* (CLAUDE.md,
+    // 21.08.2026). Genau dieser Eintrag war der beschriebene Rückfall — Balance
+    // als EINWAND, der Bauarbeit blockiert, statt sie zu ordnen.
+    //
+    // ⚠️ Und die Trennung, die dabei übersehen wurde: Punkt 1 derselben
+    // Reihenfolge lautet „Baukasten vollständig — jede Einstellung in allen drei
+    // Stufen, und sie greift", und der ist JETZT dran. Punkt 4 stimmt die ZAHLEN
+    // ab, nicht die Erreichbarkeit. Der Wert, den die Stufe heute setzt, ist
+    // dabei nicht einmal erfunden: „eine Liga ~20 % höher" ist Andis eigenes
+    // Beispiel aus Punkt 4.
+    //
+    // Der Test hält jetzt die andere Richtung fest: keine Lücke mehr, und die
+    // nächste ist eine neue.
+    expect(luecken()).toEqual([]);
   });
 
   it("keine Begründung ist überholt", () => {

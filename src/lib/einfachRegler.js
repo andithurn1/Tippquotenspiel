@@ -222,6 +222,56 @@ export const REGLER = [
     ],
   },
   {
+    // ── Stufe 2 für die Wettbewerbs-Gewichte (`wettbewerbGewicht.js`) ──
+    //
+    // 🔴 Der Anlass: `npm run stufen` meldete `wettbewerbe` als EINZIGE Lücke —
+    // wirksam, im Creator-Code, in der Profi-Ansicht, und auf Stufe 1/2 gab es
+    // sie nicht. Genau die Sorte, die `ereignisse` bis zum 06.08.2026 war.
+    //
+    // ⚠️ Warum sie NICHT unter „Zählen manche Spiele mehr als andere?" gehört,
+    // obwohl beide in denselben additiven Topf zahlen: dort geht es um EIN
+    // Spiel INNERHALB eines Spieltags (Derby, Topspiel), hier um den ganzen
+    // Wettbewerb. Zusammengelegt entstünde ein Regler mit zwölf Stufen, und
+    // die Frage „welches Spiel des Samstags?" hat mit „zählt der
+    // Champions-League-Abend mehr?" nichts zu tun. Sie treffen sich selten
+    // auf demselben Spiel; wo doch, deckelt `modCap`.
+    //
+    // ⚠️ Dass hier ein Wettbewerbs-Schlüssel („cl") steht, ist KEIN Bruch von
+    // Architektur-Regel 3: die Engine bleibt ligen-blind, sie liest nur den
+    // fertigen Aufschlag. Ein Regler-Katalog darf Namen kennen — die Presets
+    // nennen längst Vereine.
+    //
+    // ⚠️ Wirkung nur, wenn die Runde MEHRERE Wettbewerbe umfasst: ein
+    // Aufschlag, den jedes Spiel bekommt, verschiebt nichts. Deshalb steht es
+    // im Hinweis, statt dass jemand den Regler für kaputt hält.
+    //
+    // Die Zahlen kommen nicht aus dem Bauch: Andi hat die Größenordnung am
+    // 21.08.2026 gesetzt — milde Aufwertungen „bis etwa +20 %" für Dauerhaftes,
+    // mehr nur für Seltenes. +0,20 für den ganzen Wettbewerb liegt genau dort;
+    // die K.-o.-Stufe steigt darüber hinaus, trifft aber je Saison eine
+    // Handvoll Spiele.
+    key: "wettbewerbe",
+    label: "Zählen große Wettbewerbe mehr?",
+    hint: "Nur wirksam, wenn die Runde mehrere Wettbewerbe umfasst oder K.-o.-Runden enthält.",
+    stufen: [
+      {
+        key: "aus", label: "Nein",
+        beschreibung: "Ein Champions-League-Abend zählt so viel wie ein Ligaspiel.",
+        werte: { wettbewerbe: { enabled: false } },
+      },
+      {
+        key: "europa", label: "Der Europapokal zählt mehr",
+        beschreibung: "Champions-League-Spiele bringen ein Fünftel mehr — jede Runde gleich viel.",
+        werte: { wettbewerbe: { enabled: true, aufschlaege: { cl: 0.2 }, phasenStufe: 0 } },
+      },
+      {
+        key: "ko", label: "Und je weiter, desto mehr",
+        beschreibung: "Dazu steigt jede K.-o.-Runde: Achtelfinale, Viertelfinale, Halbfinale, Finale — das Endspiel zählt gut anderthalbfach.",
+        werte: { wettbewerbe: { enabled: true, aufschlaege: { cl: 0.2 }, phasenStufe: 0.1 } },
+      },
+    ],
+  },
+  {
     // Stufe 2 für die Mitbestimmung (`design/abstimmung-verfassung.md`). Die
     // Profi-Ebene hat dort ein ganzes Gehäuse — Verfassung, Quorum, Mehrheit,
     // Fristen. Die Frage, die ein Spieler wirklich stellt, ist aber eine

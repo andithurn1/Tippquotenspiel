@@ -279,8 +279,8 @@ Dateien sind lang:
 `DEMO` („Freundeskreis") fährt die Vorgabe und hat fast alles AUS — richtig für
 den ersten Eindruck, unbrauchbar zum Prüfen. `ALLES` („Schaufenster") schaltet
 an, was man sehen soll, und hat Tipps, die es auslösen (`src/lib/schaufenster.js`)
-— seit dem 23.08.2026 mit **188 von 199** Einstellungen auf einem anderen Wert
-als der Vorgabe, gemessen von `npm run einstellbar`. Die 11 übrigen tragen je
+— seit dem 23.08.2026 mit **189 von 201** Einstellungen auf einem anderen Wert
+als der Vorgabe, gemessen von `npm run einstellbar`. Die 12 übrigen tragen je
 einen Satz (`SCHAU_AUSGENOMMEN` bzw. `GEKOPPELT`); die Zahl, die 0 sein muss,
 heißt `unerklaert`.
 ⛔ Die Zahlen darin sind DEMO-Werte, keine Empfehlung — nichts davon gehört in

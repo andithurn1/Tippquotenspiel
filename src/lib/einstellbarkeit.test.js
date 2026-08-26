@@ -57,15 +57,18 @@ describe("Einstellbarkeit — die Abdeckung", () => {
   // Sinkt sie, hat jemand ein Preset, einen Charakter, eine Regler-Stufe oder
   // das Schaufenster ausgedünnt — und eine Einstellung wird seither nirgends
   // mehr vorgeführt.
-  const ABDECKUNG_BEI_EINFUEHRUNG = 188;
+  // 26.08.2026: 188 → 189. Der neue Stufe-2-Regler „Zählen große Wettbewerbe
+  // mehr?" führt `wettbewerbe.aufschlaege` vor, das vorher nirgends im Projekt
+  // mit einem anderen Wert als der Vorgabe vorkam.
+  const ABDECKUNG_BEI_EINFUEHRUNG = 189;
 
   it("die Zahl der im Projekt vorgeführten Felder sinkt NICHT", () => {
     expect(abdeckung().ausProjekt).toBeGreaterThanOrEqual(ABDECKUNG_BEI_EINFUEHRUNG);
   });
 
   // 🔴 Die eigentliche Prüf-Zahl zu Andis Auftrag („alle Einstellbarkeiten
-  // abdecken“). `ausProjekt` allein sagt es nicht: 188 von 199 liest sich wie
-  // ein Rest von 11, dabei trägt jeder der elf einen Satz. UNERKLÄRT ist ein
+  // abdecken“). `ausProjekt` allein sagt es nicht: 189 von 201 liest sich wie
+  // ein Rest von 12, dabei trägt jeder davon einen Satz. UNERKLÄRT ist ein
   // Feld, das nirgends vorgeführt wird UND für das niemand einen geschrieben
   // hat — und davon darf es keines geben.
   it("kein Feld bleibt unerklärt — vorgeführt, ausgenommen oder gekoppelt", () => {

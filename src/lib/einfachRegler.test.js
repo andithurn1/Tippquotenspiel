@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   REGLER, REGLER_KEY, anwenden, erkenneStufe, beispiele, naeheSatz,
 } from "@/lib/einfachRegler";
-import { DEFAULT_RULES, sanitizeRules, RULE_LIMITS } from "@/lib/engine";
+import { DEFAULT_RULES, sanitizeRules, RULE_LIMITS, teamModFactor } from "@/lib/engine";
 import { simulateBalance } from "@/lib/balanceSim";
 import { PRESETS } from "@/lib/presets";
 import { konflikte } from "@/lib/regelAbstimmung";
@@ -57,7 +57,17 @@ describe("Katalog", () => {
     // wäre. Genau darin liegt der Unterschied zwischen „zwei Profi-Werte
     // unter einer Frage" (richtig) und „zwei Fragen unter einem Regler"
     // (falsch).
-    expect(REGLER.length).toBeLessThanOrEqual(10);
+    //
+    // 26.08.2026: 10 → 11 für „Zählen große Wettbewerbe mehr?"
+    // (`wettbewerbe`). Anlass war kein Wunsch, sondern ein Befund: `npm run
+    // stufen` meldete das Feld als EINZIGE verbliebene Lücke — wirksam, im
+    // Creator-Code, in der Profi-Ansicht, auf Stufe 1/2 nicht vorhanden.
+    // Die Probe gegen den nächstliegenden Kandidaten ist gemacht, und zwar
+    // gegen „Zählen manche Spiele mehr als andere?" — dorthin gehört sie
+    // NICHT, obwohl beide in denselben additiven Topf zahlen: dort geht es um
+    // EIN Spiel innerhalb eines Spieltags, hier um den ganzen Wettbewerb.
+    // Zusammengelegt wären es zwölf Stufen unter einer Frage.
+    expect(REGLER.length).toBeLessThanOrEqual(11);
   });
 
   it("keine Stufe holt sich eine Warnung, die die Vorgabe nicht schon hat", () => {
@@ -213,6 +223,53 @@ describe("Die Stufen tun wirklich etwas", () => {
     const spuerbar = anwenden(DEFAULT_RULES, "saison", "spuerbar");
     expect(spuerbar.saison.wetten.length).toBeGreaterThan(wuerze.saison.wetten.length);
     expect(spuerbar.saison.gewicht).toBeGreaterThan(wuerze.saison.gewicht);
+  });
+
+  // 🔴 Baukasten-Grundsatz, dritte Anwendung: `wettbewerbe` war am 26.08.2026
+  // die EINZIGE Lücke, die `npm run stufen` noch meldete — wirksam, im
+  // Creator-Code, in der Profi-Ansicht, und auf Stufe 1/2 nicht vorhanden.
+  //
+  // ⚠️ Die drei Tests hier messen nicht den Regler, sondern seine WIRKUNG am
+  // Faktor eines Spiels. Genau das ist der Unterschied, an dem `autoTip.js`
+  // aufgefallen ist: dass eine Stufe einen Wert setzt, beweist nicht, dass er
+  // irgendwo ankommt.
+  const clFaktor = (rules, phase) => teamModFactor({ wettbewerb: "cl", phase }, rules);
+  const blFaktor = (rules) => teamModFactor({ wettbewerb: "bl", phase: "liga" }, rules);
+
+  it("„Nein“ lässt Champions League und Bundesliga gleich zählen", () => {
+    const aus = anwenden(BASIS, "wettbewerbe", "aus");
+    expect(aus.wettbewerbe.enabled).toBe(false);
+    expect(clFaktor(aus, "finale")).toBe(blFaktor(aus));
+  });
+
+  it("die Beschreibungen sind nachgerechnet, nicht behauptet", () => {
+    // „ein Fünftel mehr" und „gut anderthalbfach" stehen als Text in den
+    // Stufen. Wer die Zahlen ändert, ändert damit auch den Satz — und dieser
+    // Test sagt es ihm.
+    const europa = anwenden(BASIS, "wettbewerbe", "europa");
+    expect(clFaktor(europa, "liga")).toBeCloseTo(1.2, 3);
+    expect(clFaktor(europa, "finale")).toBeCloseTo(1.2, 3);   // ohne K.-o.-Stufe flach
+    expect(blFaktor(europa)).toBe(1);
+
+    const ko = anwenden(BASIS, "wettbewerbe", "ko");
+    expect(clFaktor(ko, "liga")).toBeCloseTo(1.2, 3);
+    expect(clFaktor(ko, "achtelfinale")).toBeCloseTo(1.3, 3);
+    expect(clFaktor(ko, "finale")).toBeCloseTo(1.6, 3);
+    // Und die Ligaspiele bleiben unberührt — der Aufschlag ist kein Faktor
+    // auf alles, sonst verschöbe er gar nichts.
+    expect(blFaktor(ko)).toBe(1);
+  });
+
+  it("jede Stufe wird wiedererkannt und bleibt im Empfehlungsband", () => {
+    for (const stufe of REGLER_KEY.wettbewerbe.stufen) {
+      const r = anwenden(BASIS, "wettbewerbe", stufe.key);
+      // Ohne diese Zeile springt die Auswahl beim Öffnen der Ansicht zurück.
+      expect(erkenneStufe(r, "wettbewerbe"), stufe.key).toBe(stufe.key);
+      // ⚠️ Die Gegenprobe aus CLAUDE.md: neue Voreinstellungen gegen
+      // `reglerWarnung` laufen lassen. Sie hat am 06.08. dreimal an einem Tag
+      // etwas gefunden, was kein Test gesehen hat.
+      expect(pruefe(r).length, stufe.key).toBe(pruefe(BASIS).length);
+    }
   });
 });
 

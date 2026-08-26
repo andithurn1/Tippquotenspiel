@@ -31,4 +31,12 @@ export function getStore() {
 
 // Für Tests/SSR: expliziter Zugriff ohne Singleton.
 export { createMockStore, createSupabaseStore };
-export const usingSupabase = hasSupabaseEnv;
+
+// ⛔ Hier stand `export const usingSupabase = hasSupabaseEnv;` — gelöscht am
+// 26.08.2026, weil es eine ZWEITE Antwort auf eine schon beantwortete Frage
+// war und nie jemand danach fragte (`npm run tot`, Gruppe 1).
+// Die eine Antwort auf „Mock oder echte Datenbank?" heißt `isMock` und kommt
+// aus `useAuth()` — benutzt von `AuthBar`, `Konto` und `ThemeProvider`.
+// Wer sie serverseitig braucht, nimmt `hasSupabaseEnv` direkt aus
+// `supabaseClient.js`. Zwei Namen für denselben Wert laufen irgendwann
+// auseinander; genau dieses Muster hat am 05.08. siebzehn Funde erzeugt.
