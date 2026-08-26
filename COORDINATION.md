@@ -126,6 +126,51 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-26 (XXVII) · 🔌 **Store-Parität geht jetzt bis in die Parameter**
+
+**Kurz: `storeParitaet.test.js` verglich bisher METHODENNAMEN. Ab jetzt auch
+die Felder, die sie entgegennehmen.**
+
+🔴 **Warum das nicht theoretisch ist:** `saveTip` bekommt `snapshot` übergeben
+— die eingefrorenen Quoten. Fiele das Feld auf der Supabase-Seite aus der
+Destrukturierung, würde jeder Tipp OHNE seine Quoten gespeichert. Die App
+liefe weiter, kein Test schlüge an, und auffallen würde es beim **ersten
+abgerechneten Spieltag des Testbetriebs**. Gegengeprobt: `snapshot` aus der
+Signatur entfernt → zwei Tests fallen sofort auf.
+
+⚠️ **Erst gemessen, dann gebaut:** 39 Methoden verglichen, **2** Unterschiede.
+Eine Prüfung, die dreißig Treffer meldet, wird beim dritten Mal überblättert.
+Beide stehen jetzt mit Grund in `NUR_MOCK_PARAM`:
+
+| | |
+|---|---|
+| `joinRound.name` | der Mock hat keine Profil-Tabelle; live kommt der Name aus dem Join auf `profiles` |
+| `createRound.adminName` | dieselbe Sache beim Anlegen |
+
+⚠️ Gelesen wird auf beiden Seiten der QUELLTEXT der Parameterliste — beim Mock
+über `fn.toString()`, bei Supabase über die Datei. `createSupabaseStore()`
+wirft ohne Env-Variablen, ein Objekt gibt es dort also nicht zu befragen.
+
+---
+
+### 🔴 Und eine Lehre aus dem `bereit`-Durchgang, die für JEDES Prüfwerkzeug gilt
+
+Der Durchgang nahm `/rest/v1/` als Lebenszeichen. Diese Adresse verlangt einen
+**geheimen** Schlüssel und weist einen öffentlichen grundsätzlich ab —
+`sb-error-code: UNAUTHORIZED_INVALID_API_KEY_TYPE`. Das Werkzeug meldete
+„Schlüssel wird abgelehnt", brach ab und schickte Andi eine halbe Stunde auf
+die Suche nach einem Fehler, den es nicht gab.
+
+**Ein Lebenszeichen muss über den Weg laufen, den die APP auch geht.** Die App
+fragt Tabellen, nie die Wurzel. Jetzt fragt der Durchgang `rounds`.
+
+⚠️ Zwei weitere Funde aus derselben Antwort, beide eingebaut: `sb-project-ref`
+steht im Antwort-Kopf (Supabase beantwortet „gehören Adresse und Schlüssel
+zusammen?" also selbst), und `sb-error-code` sagt, WELCHE Ablehnung vorliegt.
+Beides steht jetzt vor jeder Vermutung.
+
+Belegt: `npm test` 2 718 grün · `lint` grün.
+
 ### 2026-08-26 (XXVI) · 🗓️ **Der Einstieg ist ein REGLER, kein Termin** — und Saison-Wetten wissen das nicht
 
 **Wenn du irgendwo „Saisonstart" liest: es gibt keinen.** Andi am 26.08.2026:

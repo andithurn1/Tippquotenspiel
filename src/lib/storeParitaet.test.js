@@ -72,3 +72,109 @@ describe("Store-Parität Mock ↔ Supabase", () => {
     }
   });
 });
+
+// ============================================================
+//  ZWEITE EBENE: haben die Methoden auch DIESELBEN PARAMETER?
+//
+//  🔴 Der Test oben vergleicht NAMEN. Das fängt die fehlende Methode, aber
+//  nicht den Fall, der live teurer ist: dieselbe Methode auf beiden Seiten,
+//  nur nimmt die eine ein Feld entgegen, das die andere still wegwirft.
+//
+//  ⚠️ Warum das kein erfundenes Risiko ist: `saveTip` bekommt `snapshot`
+//  übergeben — die eingefrorenen Quoten. Fiele das Feld auf der Supabase-Seite
+//  aus der Destrukturierung, würde jeder Tipp OHNE seine Quoten gespeichert.
+//  Die App liefe weiter, kein Test schlüge an, und auffallen würde es beim
+//  ersten abgerechneten Spieltag des Testbetriebs.
+//
+//  ⚠️ Gemessen, bevor dieser Test gebaut wurde: 39 Methoden verglichen, 2
+//  Unterschiede — beide erklärbar. Eine Prüfung, die dreißig Treffer meldet,
+//  wird beim dritten Mal überblättert; diese hier meldet zwei, und beide
+//  stehen unten mit Grund.
+//
+//  Gelesen wird auf beiden Seiten der QUELLTEXT der Parameterliste: beim Mock
+//  über `fn.toString()`, bei Supabase über die Datei (der Store lässt sich
+//  ohne Env-Variablen nicht erzeugen).
+// ============================================================
+
+// Felder, die es NUR im Mock gibt — mit Grund. Schlüssel: „methode.feld".
+const NUR_MOCK_PARAM = {
+  "joinRound.name":
+    "Der Mock hat keine Profil-Tabelle und muss den Anzeigenamen übergeben "
+    + "bekommen. Live kommt er aus dem Join auf `profiles` (`listMembers`), "
+    + "also wäre der Parameter dort eine zweite Wahrheit über denselben Namen.",
+  "createRound.adminName":
+    "Dieselbe Sache beim Anlegen: der Mock schreibt den Namen des Admins in "
+    + "seine Mitgliederliste, live steht er in `profiles` und wird von dort "
+    + "gelesen. Ein übergebener Name könnte vom echten abweichen.",
+};
+
+// Parameterliste ab der öffnenden Klammer, Klammern zählend — ein simples
+// `match` bräche bei `({ a = { b: 1 } })`.
+function paramText(text, ab) {
+  let tiefe = 0, i = ab;
+  for (; i < text.length; i++) {
+    const c = text[i];
+    if (c === "(") tiefe++;
+    else if (c === ")") { tiefe--; if (tiefe === 0) break; }
+  }
+  return text.slice(ab + 1, i);
+}
+
+const felderVon = (p) => {
+  const t = p.match(/\{([^}]*)\}/)?.[1] ?? "";
+  return t.split(",").map((s) => s.split(/[:=]/)[0].trim()).filter(Boolean).sort();
+};
+
+const supabaseParams = new Map();
+for (const m of quelltext.matchAll(/^\s{2,4}(?:async\s+)?([a-zA-Z_$][\w$]*)\s*\(/gm)) {
+  supabaseParams.set(m[1], paramText(quelltext, m.index + m[0].length - 1));
+}
+
+// Alle Unterschiede EINMAL berechnen — die Tests darunter lesen nur noch.
+const unterschiede = [];
+const mockStore = createMockStore();
+for (const [name, fn] of Object.entries(mockStore)) {
+  if (typeof fn !== "function") continue;
+  const sb = supabaseParams.get(name);
+  if (sb === undefined) continue;                 // fehlende Methode: Test oben
+  const mp = paramText(fn.toString(), fn.toString().indexOf("("));
+  const mf = felderVon(mp), sf = felderVon(sb);
+  for (const feld of mf) if (!sf.includes(feld)) unterschiede.push({ name, feld, seite: "mock" });
+  for (const feld of sf) if (!mf.includes(feld)) unterschiede.push({ name, feld, seite: "supabase" });
+}
+
+describe("Store-Parität: die Parameter", () => {
+  it("der Scan liest auf beiden Seiten wirklich Parameter aus", () => {
+    // 🔴 Ohne diese Zeile wäre ein kaputtes Muster ein GRÜNER Test: zwei leere
+    // Mengen sind immer deckungsgleich.
+    expect(supabaseParams.size).toBeGreaterThan(30);
+    expect(felderVon(supabaseParams.get("saveTip") ?? "")).toContain("snapshot");
+  });
+
+  it("kein Feld fällt auf einer Seite still weg", () => {
+    const offen = unterschiede
+      .filter((u) => !NUR_MOCK_PARAM[`${u.name}.${u.feld}`])
+      .map((u) => `${u.name}.${u.feld} (nur ${u.seite})`);
+    expect(
+      offen,
+      "Diese Felder gibt es nur auf einer Seite. Live heißt das: der Aufrufer "
+      + "übergibt sie, und der Store wirft sie weg — ohne Fehler.\n" + offen.join("\n")
+    ).toEqual([]);
+  });
+
+  it("jede Ausnahme trägt einen Begründungssatz", () => {
+    for (const [k, grund] of Object.entries(NUR_MOCK_PARAM)) {
+      expect(typeof grund, k).toBe("string");
+      expect(grund.length, k).toBeGreaterThan(60);
+    }
+  });
+
+  it("keine Ausnahme ist überholt", () => {
+    // Dieselbe Gegenprobe wie bei `NUR_MOCK`: eine Begründung, die einen
+    // Zustand beschreibt, den es nicht mehr gibt, wird beim nächsten Durchgang
+    // geglaubt.
+    const bekannt = new Set(unterschiede.map((u) => `${u.name}.${u.feld}`));
+    const ueberholt = Object.keys(NUR_MOCK_PARAM).filter((k) => !bekannt.has(k));
+    expect(ueberholt, `Ausnahme zeigt ins Leere: ${ueberholt.join(", ")}`).toEqual([]);
+  });
+});
