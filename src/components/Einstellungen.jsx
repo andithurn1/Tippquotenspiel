@@ -8,8 +8,10 @@ import { useCurrentRound } from "@/components/RoundProvider";
 import {
   PREF_META, LEVELS, LEVEL_LABEL, START_SCREENS, START_SCREEN_LABEL,
   RASTER_WEITEN, RASTER_WEITE_LABEL, RASTER_WEITE_HINWEIS,
+  HAPTIK_STUFEN, HAPTIK_LABEL, HAPTIK_HINWEIS,
   MAX_VERGLEICH, toggleVergleich, vergleichFuer,
 } from "@/lib/prefs";
+import { istMoeglich, spuere } from "@/lib/haptik";
 import { useAuth } from "@/components/AuthProvider";
 import BackLink from "@/components/BackLink";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
@@ -52,6 +54,14 @@ export default function Einstellungen() {
   }, [roundId]);
 
   const gewaehlteFreunde = vergleichFuer(prefs, roundId);
+
+  // ⚠️ Erst NACH dem Mounten fragen: serverseitig gibt es kein `navigator`,
+  // und ein Text, der beim ersten Rendern anders ausfällt als beim zweiten,
+  // ist ein Hydrations-Fehler. Anfangswert `true` heißt: es steht erst nichts
+  // Entmutigendes da, und wenn das Gerät wirklich nicht kann, sagt es das
+  // einen Wimpernschlag später.
+  const [kannSpueren, setKannSpueren] = useState(true);
+  useEffect(() => { setKannSpueren(istMoeglich()); }, []);
 
   // ⛔ `ME`, `PROJ` und `ABR` standen hier bis zum 25.08.2026 — sie speisten
   // zwei NACHGEZEICHNETE Vorschauen (`AbrechnungPreview`, `VorschauPreview`).
@@ -175,6 +185,66 @@ export default function Einstellungen() {
               {RASTER_WEITE_HINWEIS[prefs.rasterWeite ?? "raster"]}
             </div>
             <AnzeigeVorschau art="rasterWeite" stufe={prefs.rasterWeite ?? "raster"} />
+          </div>
+
+          <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
+
+          {/* 🔴 Haptik — UX10 („was ‚professionell' noch fehlt") stand seit dem
+              24.08.2026 mit dem Vermerk „braucht Capacitor" offen. Seit dem
+              26.08.2026 steht die Hülle, also ist der Punkt dran.
+              Ausdrücklich NEBEN der Bewegung und nicht darin: Bewegung ist das
+              Auge, Haptik ist die Hand. */}
+          <div>
+            <div style={{ fontSize: "0.9375rem", fontWeight: 700 }}>Spüren</div>
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
+              Ob das Telefon kurz stößt, wenn etwas gespeichert ist.
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+              {HAPTIK_STUFEN.map((h) => (
+                <button key={h} className="tqs-aktion" onClick={() => setPref("haptik", h)} style={{
+                  ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: "0.8125rem", fontWeight: 700,
+                  padding: "9px 8px", borderRadius: RUND.karte, lineHeight: 1.3,
+                  background: prefs.haptik === h ? C.akzent : C.surface,
+                  color: prefs.haptik === h ? C.ink : C.muted,
+                  border: `1px solid ${prefs.haptik === h ? C.akzent : C.line}`, fontFamily: "inherit",
+                }}>{HAPTIK_LABEL[h]}</button>
+              ))}
+            </div>
+            <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+              {HAPTIK_HINWEIS[prefs.haptik ?? "an"]}
+            </div>
+
+            {/* 🔴 Die Vorschau zu einer Einstellung, die man nicht SEHEN kann,
+                ist eine Probe. Andi am 25.08.2026: „können wir bei den
+                anzeigeeinstellungen beim account auch jeweils eine vorschau
+                erstellen wie das dann praktisch später aussehen wird" — bei
+                den anderen Stufen rendert `AnzeigeVorschau` das echte Bauteil,
+                hier ist das echte Bauteil ein Stoß im Daumen. */}
+            {kannSpueren ? (
+              <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                {["gespeichert", "fehler"].map((art) => (
+                  <button key={art} className="tqs-aktion"
+                    onClick={() => spuere(art, { an: true })}
+                    disabled={prefs.haptik === "aus"}
+                    style={{
+                      ...TAPZIEL, flex: 1, cursor: prefs.haptik === "aus" ? "not-allowed" : "pointer",
+                      fontSize: "0.75rem", fontWeight: 600, padding: "8px", borderRadius: RUND.karte,
+                      background: "transparent", color: prefs.haptik === "aus" ? C.ghost : C.text,
+                      border: `1px dashed ${C.line}`, fontFamily: "inherit", opacity: prefs.haptik === "aus" ? 0.5 : 1,
+                    }}>
+                    {art === "gespeichert" ? "Probe: gespeichert" : "Probe: Fehler"}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              // ⚠️ Kein stiller Knopf, der ins Leere greift. Wer hier nichts
+              // spürt, soll wissen, dass es am Gerät liegt und nicht an ihm.
+              <div style={{ fontSize: "0.75rem", color: C.ghost, marginTop: 10, lineHeight: 1.5 }}>
+                Dieses Gerät kann nicht vibrieren — auf dem iPhone gibt es die
+                Schnittstelle im Browser nicht. Die Einstellung bleibt trotzdem
+                stehen: sie gilt, sobald die App als native App läuft.
+              </div>
+            )}
           </div>
 
           <div style={{ height: 1, background: C.line, margin: "22px 0" }} />

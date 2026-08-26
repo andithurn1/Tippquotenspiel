@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AMPEL, C, MONO, RUND, TEXT } from "@/lib/theme";
+import { spuere } from "@/lib/haptik";
 
 // ============================================================
 //  RÜCKMELDUNG — die Antwort der App auf eine Handlung
@@ -71,6 +72,16 @@ export function RueckmeldungProvider({ children }) {
     const sauber = String(text ?? "").trim();
     if (!sauber) return null;
     const id = ++laufendeId;
+    // 🔴 DIE EINE Stelle, an der die App etwas spüren lässt (`haptik.js`).
+    // Sie hängt bewusst hier und nicht an den Knöpfen: dadurch gibt es keine
+    // Handlung, die eine Meldung zeigt und nichts spüren lässt — und keine,
+    // die vibriert, ohne dass etwas dasteht. Dieselbe Begründung wie für die
+    // Meldungs-Schicht selbst, eine Ebene tiefer.
+    //
+    // ⚠️ Auch bei einer WIEDERHOLTEN Meldung: der Streifen erneuert sich dann
+    // nur (siehe unten), und ohne das Spüren sähe ein zweiter Klick auf
+    // „Speichern" wie ein verschluckter aus.
+    spuere(art);
     setMeldungen((m) => {
       // ⚠️ Dieselbe Meldung zweimal hintereinander (Doppelklick auf
       // „Speichern") stapelt sich nicht, sie erneuert sich. Zwei identische

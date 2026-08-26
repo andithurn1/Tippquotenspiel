@@ -3,6 +3,7 @@ import {
   sanitizePrefs, DEFAULT_PREFS, LEVELS, START_SCREENS,
   BEWEGUNG_STUFEN, BEWEGUNG_LABEL, BEWEGUNG_HINWEIS,
   RASTER_WEITEN, RASTER_WEITE_LABEL, RASTER_WEITE_HINWEIS,
+  HAPTIK_STUFEN, HAPTIK_LABEL, HAPTIK_HINWEIS,
 } from "./prefs";
 
 describe("sanitizePrefs", () => {
@@ -15,7 +16,7 @@ describe("sanitizePrefs", () => {
   it("gültige Stufen bleiben erhalten", () => {
     for (const lv of LEVELS) {
       expect(sanitizePrefs({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv }))
-        .toEqual({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu", vergleich: {}, bewegung: "voll", rasterWeite: "raster" });
+        .toEqual({ abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu", vergleich: {}, bewegung: "voll", rasterWeite: "raster", haptik: "an" });
     }
   });
 
@@ -74,6 +75,44 @@ describe("Bewegungs-Stufe", () => {
       expect(BEWEGUNG_LABEL[b], b).toBeTruthy();
       expect(BEWEGUNG_HINWEIS[b]?.length ?? 0, b).toBeGreaterThan(20);
     }
+  });
+});
+
+// 🔴 UX10 führte „haptische Rückmeldung" seit dem 24.08.2026 als offen mit dem
+// Vermerk „braucht Capacitor". Seit dem 26.08.2026 steht die Hülle.
+describe("Haptik", () => {
+  it("die Vorgabe ist AN", () => {
+    // Nicht Geschmack: der Meldungs-Streifen steht unten und ist beim Tippen
+    // genau der Bereich, den der eigene Daumen verdeckt. Das Spüren TRÄGT die
+    // Rückmeldung dort, es schmückt sie nicht.
+    expect(DEFAULT_PREFS.haptik).toBe("an");
+    expect(sanitizePrefs({}).haptik).toBe("an");
+  });
+
+  it("beide Stufen kommen durch", () => {
+    for (const h of HAPTIK_STUFEN) {
+      expect(sanitizePrefs({ haptik: h }).haptik, h).toBe(h);
+    }
+  });
+
+  it("Unsinn fällt auf die Vorgabe zurück", () => {
+    for (const x of ["stark", 1, true, null, {}]) {
+      expect(sanitizePrefs({ haptik: x }).haptik, String(x)).toBe("an");
+    }
+  });
+
+  it("jede Stufe hat Beschriftung und Hinweis", () => {
+    for (const h of HAPTIK_STUFEN) {
+      expect(HAPTIK_LABEL[h], h).toBeTruthy();
+      expect(HAPTIK_HINWEIS[h]?.length ?? 0, h).toBeGreaterThan(20);
+    }
+  });
+
+  it("hängt NICHT an der Bewegungs-Stufe", () => {
+    // Zwei Sinne, zwei Schalter: wer Animationen abschaltet, weil ihm das
+    // Telefon zu langsam ist, verliert deshalb nicht die Bestätigung im Daumen.
+    expect(sanitizePrefs({ bewegung: "aus" }).haptik).toBe("an");
+    expect(sanitizePrefs({ haptik: "aus" }).bewegung).toBe("voll");
   });
 });
 

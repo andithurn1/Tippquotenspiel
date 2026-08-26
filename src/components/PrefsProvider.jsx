@@ -87,5 +87,18 @@ export default function PrefsProvider({ children }) {
     }
   }, [prefs.bewegung]);
 
+  // Dieselbe Bauart für die Haptik, und aus demselben Grund: `haptik.js` wird
+  // von `Rueckmeldung.jsx` aufgerufen, und das liegt in `layout.js` eine Ebene
+  // ÜBER diesem Provider — ein `usePrefs()` gäbe es dort nicht.
+  //
+  // ⚠️ Wieder das Attribut ENTFERNEN statt auf „an" zu setzen: die Vorgabe soll
+  // schon vor der Hydration gelten, nicht erst nach dem ersten Effekt.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const wurzel = document.documentElement;
+    if (prefs.haptik === "aus") wurzel.setAttribute("data-haptik", "aus");
+    else wurzel.removeAttribute("data-haptik");
+  }, [prefs.haptik]);
+
   return <Ctx.Provider value={{ prefs, setPref, ready }}>{children}</Ctx.Provider>;
 }

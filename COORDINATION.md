@@ -126,6 +126,69 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-26 (XXII) · 🤚 **Haptik: `src/lib/haptik.js` ist die EINE Stelle** — bitte kein `navigator.vibrate` daneben
+
+**Kurz: wenn du willst, dass die App etwas spüren lässt, rufst du nichts auf.**
+Es hängt an der Meldungs-Schicht: wer `rueck.gespeichert("…")` sagt, bekommt
+den Stoß automatisch dazu.
+
+🔴 **Genau ein Aufruf im ganzen Projekt** (`Rueckmeldung.jsx`, in `melde`).
+Dieselbe Begründung wie bei `getStore()` und der Quoten-Quelle: wenn das
+später über `@capacitor/haptics` läuft statt über die Browser-Schnittstelle,
+ändert sich eine Datei. Ein `navigator.vibrate` in fünfzehn Komponenten wären
+fünfzehn Stellen — und in vierzehn davon hätte niemand an die Einstellung
+gedacht.
+
+| Art | Muster |
+|---|---|
+| `gespeichert` | `[12]` — ein Tick |
+| `fehler` | `[26, 70, 26]` — doppelt und länger |
+| `info` | `[8]` |
+
+Der Fehler ist länger, und das ist dieselbe Aussage wie die Standzeit im
+Streifen: „gespeichert" darf man verpassen, „nicht gespeichert" nicht.
+
+⛔ **Was heute NICHT geht, damit es niemand für kaputt hält:**
+`navigator.vibrate` gibt es auf **Android**, auf **iOS nicht** — weder in
+Safari noch in einer WKWebView. Auf einem iPhone passiert also nichts, und
+`istMoeglich()` meldet dort `false`. Die Einstellungs-Seite sagt es an Ort und
+Stelle, statt einen Probe-Knopf zu zeigen, der ins Leere greift. Der Handgriff
+für später steht in `docs/native-app.md`.
+
+⚠️ **Zwei Dinge, die beim Nachbauen leicht falsch laufen:**
+
+1. **`prefs.haptik` wird NICHT über `usePrefs()` gelesen.**
+   `RueckmeldungProvider` liegt in `layout.js` GANZ AUSSEN, außerhalb von
+   `PrefsProvider` — dort gäbe es den Hook gar nicht. Also derselbe Weg wie bei
+   `prefs.bewegung`: `PrefsProvider` schreibt `data-haptik` ans `<html>`,
+   `haptik.js` liest es von dort. Ein zweiter Zugriff auf den localStorage wäre
+   eine zweite Wahrheit über dieselbe Einstellung.
+2. **`an` ist das FEHLEN des Attributs**, nicht `data-haptik="an"` — sonst wäre
+   die Vorgabe vor der Hydration für einen Moment falsch.
+
+⚠️ **Und die Trennung, die Absicht ist:** Haptik hängt NICHT an
+`prefs.bewegung`. Bewegung ist das Auge, Haptik ist die Hand — wer Animationen
+abschaltet, weil ihm das Telefon zu langsam ist, will deshalb nicht auf die
+Bestätigung im Daumen verzichten. Zwei Sinne, zwei Schalter.
+
+🔴 **Der wichtigste Test der neuen Datei** (`haptik.test.js`, 13 Tests): ein
+`vibrate`, das WIRFT, reißt nichts mit. Browser lehnen den Aufruf ab, wenn er
+nicht aus einer echten Berührung kommt — manche mit einem geworfenen Fehler.
+Ohne das `try/catch` risse die Bestätigung den Speichern-Vorgang mit, der sie
+ausgelöst hat.
+
+**Im Browser belegt** (Pixel 5, `navigator.vibrate` mitgeschnitten): Probe
+„gespeichert" → `[12]` · Probe „Fehler" → `[26,70,26]` · ein echter Tipp über
+„Tipp abgeben & Quote einfrieren" → `[12]` · „Aus" setzt das Attribut,
+deaktiviert die Proben und überlebt ein Neuladen · keine Seitenfehler.
+
+Nebenbei nachgeführt: **ZP5 stand in `design/auftraege.md` noch auf ⏳**,
+obwohl die fünf Benachrichtigungsarten seit dem 25.08. stehen und drei davon
+angeschlossen sind. Jetzt ✅ mit Beleg.
+
+Belegt: `npm test` 2 693 grün · `lint` grün · `build` grün · `tot` Gruppe 1
+leer · `bewegung` 0 Layout · `schrift`/`rund` grün.
+
 ### 2026-08-26 (XXI) · 🔴 **`npm run stufen` meldet 0 Lücken** — und die letzte war eine Fehl-Begründung
 
 **Wenn du `stufenAbdeckung.test.js` kennst: die Zeile „die eine verbliebene

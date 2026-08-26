@@ -91,9 +91,32 @@ export const RASTER_WEITE_HINWEIS = {
   voll: "Auch seltene Endstände wie 6:0. Deren Quote wird geschätzt, und die höchsten laufen alle in denselben Deckel.",
 };
 
+// ── Haptik: das kurze Spüren, wenn etwas durchgegangen ist ──
+// Gehört in dieselbe Familie wie `bewegung` — eine persönliche Einstellung,
+// die den Admin nichts angeht. Sie hängt aber ausdrücklich NICHT an ihm:
+// Bewegung ist das Auge, Haptik ist die Hand. Wer Animationen abschaltet, weil
+// ihm das Telefon zu langsam ist, will deshalb nicht auf die Bestätigung im
+// Daumen verzichten. Zwei Sinne, zwei Schalter.
+//
+// 🔴 „an" ist die Vorgabe, weil das Spüren die Rückmeldung TRÄGT, nicht
+// schmückt: der Meldungs-Streifen steht unten und ist beim Tippen genau der
+// Bereich, den der eigene Daumen verdeckt.
+//
+// ⚠️ Auf einem iPhone passiert heute trotzdem nichts — `navigator.vibrate`
+// gibt es dort nicht. Der Grund und der Handgriff stehen in `haptik.js`;
+// die Einstellungs-Seite sagt es an Ort und Stelle, statt einen Schalter zu
+// zeigen, der ins Leere greift.
+export const HAPTIK_STUFEN = ["an", "aus"];
+export const HAPTIK_LABEL = { an: "An", aus: "Aus" };
+export const HAPTIK_HINWEIS = {
+  an: "Ein kurzer Stoß, wenn etwas gespeichert ist — ein doppelter, wenn nicht. Die Vorgabe.",
+  aus: "Kein Spüren. Die Meldung steht weiterhin da.",
+};
+
 export const DEFAULT_PREFS = {
   abrechnung: "voll", vorschau: "voll", zwischenabrechnung: "voll",
   startScreen: "menu", vergleich: {}, bewegung: "voll", rasterWeite: "raster",
+  haptik: "an",
 };
 
 // Nur intern: `sanitizePrefs`, `toggleVergleich` und `vergleichFuer` benutzen
@@ -175,5 +198,6 @@ export function sanitizePrefs(p = {}) {
     startScreen: START_SCREENS.includes(src.startScreen) ? src.startScreen : DEFAULT_PREFS.startScreen,
     bewegung: BEWEGUNG_STUFEN.includes(src.bewegung) ? src.bewegung : DEFAULT_PREFS.bewegung,
     rasterWeite: RASTER_WEITEN.includes(src.rasterWeite) ? src.rasterWeite : DEFAULT_PREFS.rasterWeite,
+    haptik: HAPTIK_STUFEN.includes(src.haptik) ? src.haptik : DEFAULT_PREFS.haptik,
   };
 }

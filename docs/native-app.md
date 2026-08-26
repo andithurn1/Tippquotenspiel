@@ -92,6 +92,7 @@ statt entschieden wird:
 | **Push-Benachrichtigungen** | Die fünf Kanäle aus `notify.js` laufen bisher nur, solange die App offen ist. Echtes Push braucht Firebase. | Schritt 6 |
 | **Eigenes App-Symbol** | Es steht noch das grüne Capacitor-Standardsymbol drin. | mit dem finalen Design |
 | **Startbild (Splash)** | Capacitors Standardbild (480×320, elf Auflösungen unter `android/app/src/main/res/drawable-*`). Es ist also nicht leer — nur fremd. | mit dem finalen Design |
+| **Spüren (Haptik) auf dem iPhone** | Die Mechanik steht (`src/lib/haptik.js`, Schalter im Konto), läuft aber über `navigator.vibrate` — die gibt es auf **Android**, auf **iOS nicht**, weder in Safari noch in einer WKWebView. Dort passiert bis dahin nichts, und die Einstellungs-Seite sagt es. | ein Handgriff, siehe unten |
 | **iOS** | Braucht einen Mac für den Build. Der Code ist fertig dafür — `capacitor.config.json` trägt den `ios`-Block bereits. | wenn ein Mac da ist |
 
 ---
@@ -127,3 +128,23 @@ not found" ab, und das liest sich wie ein kaputtes Repo.
 Dasselbe gilt für `android/app/src/main/assets/public` (die 4,9 MB Web-Ausgabe)
 und für `android/app/src/main/assets/capacitor.config.json` — alle drei sind
 Build-Ausgabe, keiner davon gehört ins Repo.
+
+---
+
+## Der eine Handgriff für die Haptik auf dem iPhone
+
+Wenn iOS drankommt, ist es genau eine Datei — `src/lib/haptik.js` ist als die
+EINE Stelle gebaut, an der die App etwas spüren lässt (dieselbe Bauart wie
+`getStore()` und die Quoten-Quelle).
+
+1. Öffne die Eingabeaufforderung im Projektordner.
+2. Tippe `npm install @capacitor/haptics` und drücke Enter.
+3. Öffne `src/lib/haptik.js`.
+4. Ersetze in `spuere()` den Aufruf `navigator.vibrate(...)` durch
+   `Haptics.impact({ style: … })` bzw. `Haptics.notification({ type: … })`.
+5. Passe `istMoeglich()` an: nativ ist es immer `true`.
+6. Tippe `npm run app:sync` und drücke Enter.
+
+⚠️ Erst ab diesem Schritt braucht die App eine **Store-Prüfung** — ein neues
+Capacitor-Plugin ist einer der wenigen Fälle, in denen ein Live Update nicht
+reicht (siehe `design/roadmap.md`, „Was kostet es NACH dem Umstieg").
