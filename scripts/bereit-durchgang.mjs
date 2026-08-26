@@ -131,6 +131,33 @@ for (const [name, wert, wozu, offen] of kuer) {
   console.log(`     ${wert ? (offen ? wert : maske(wert)) : "nicht gesetzt"} · ${wozu}`);
 }
 
+// 🔴 Die dritte Variante desselben Fehlers, am 26.08.2026 gemessen: der Wert
+// trägt den VARIABLENNAMEN nochmal in sich —
+// `NEXT_PUBLIC_SUPABASE_URL=NEXT_PUBLIC_SUPABASE_URL=https://…`. Das passiert,
+// wenn man eine fertige `NAME=wert`-Zeile hinter ein schon vorhandenes `=`
+// setzt, und es ist in einer Textdatei ohne Farben praktisch unsichtbar.
+//
+// ⚠️ Diese Prüfung läuft über ALLE gelesenen Variablen, nicht nur über die
+// Supabase-Adresse: der Griff ist unabhängig davon, welche Zeile gerade
+// bearbeitet wird.
+// ⚠️ Gemerkt, weil es die Folge-Meldungen unterdrückt: eine Namensdopplung
+// erklärt AUCH, warum die Adresse nicht mit `https://` anfängt. Beide Befunde
+// nebeneinander sind zwei Meldungen für eine Ursache — und die Folge stünde
+// obendrein zuerst da. Ein Durchgang, der dreimal dasselbe sagt, wird beim
+// dritten Mal überblättert.
+let namensDopplung = false;
+for (const [name] of [...pflicht, ...kuer]) {
+  const w = process.env[name] ?? "";
+  if (!w.startsWith(`${name}=`)) continue;
+  namensDopplung = true;
+  const knapp = w.slice(name.length + 1);
+  console.log(`\n  ${FEHLT} ${name} trägt den eigenen Namen im Wert.`);
+  console.log("     Da steht `NAME=NAME=wert` statt `NAME=wert` — eine fertige Zeile");
+  console.log("     ist hinter ein schon vorhandenes `=` geraten. Richtig ist nur:");
+  console.log(`       ${name}=${istAdresse(knapp) ? knapp : maske(knapp)}`);
+  schritte.unshift(`In \`${dateien[0] ?? ".env.local"}\` das doppelte \`${name}=\` entfernen — der Wert fängt direkt hinter dem ERSTEN Gleichheitszeichen an.`);
+}
+
 // ⚠️ Und der zweite Griff daneben, direkt danach passiert: die Adresse MIT
 // Pfad kopiert (`https://…supabase.co/rest/v1/`). Genau die steht in der
 // Konsole zum Kopieren bereit, ist aber nicht die, die hier hingehört —
@@ -140,7 +167,7 @@ for (const [name, wert, wozu, offen] of kuer) {
 // sagen, was die APP tun wird, nicht was er selbst reparieren kann. Repariert
 // er es nur für sich, meldet er grün und die App bleibt kaputt — genau die
 // zweite Wahrheit, gegen die das halbe Repo geschrieben ist.
-if (istAdresse(URL_) && /\/rest\/v1\/?$/i.test(URL_)) {
+if (!namensDopplung && istAdresse(URL_) && /\/rest\/v1\/?$/i.test(URL_)) {
   const knapp = URL_.replace(/\/rest\/v1\/?$/i, "");
   console.log(`\n  ${FEHLT} NEXT_PUBLIC_SUPABASE_URL trägt einen Pfad zu viel.`);
   console.log("     `/rest/v1` gehört NICHT dazu — die App hängt es selbst an und");
@@ -153,7 +180,7 @@ if (istAdresse(URL_) && /\/rest\/v1\/?$/i.test(URL_)) {
 // theoretischer Fall — siehe den Kommentar oben. Ohne diese Prüfung meldet der
 // Durchgang brav „✅ gesetzt", scheitert zwei Abschnitte später an einem
 // Netzwerkfehler und lässt den Leser die Ursache suchen.
-if (URL_ && !istAdresse(URL_)) {
+if (!namensDopplung && URL_ && !istAdresse(URL_)) {
   console.log(`\n  ${FEHLT} NEXT_PUBLIC_SUPABASE_URL ist keine Adresse.`);
   console.log("     Dort steht etwas, das nicht mit `https://` anfängt —");
   console.log(`     ${/^sb_(publishable|secret)_|^eyJ/.test(URL_) ? "das sieht nach einem SCHLÜSSEL aus." : "vermutlich ein Tippfehler."}`);
