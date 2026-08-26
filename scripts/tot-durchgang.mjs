@@ -40,6 +40,21 @@ const GEDULDET = {
   createMockStore:
     "Dito — die eine Stelle, an der Mock gegen Supabase getauscht wird.",
 
+  // ── Am 26.08.2026 geprüft und stehen gelassen ─────────
+  // 🔴 Premium als Belohnung (M8). Die RECHNUNG steht und ist gemessen; was
+  // fehlt, ist eine Entscheidung von Andi — und zwar eine, die man nicht
+  // erraten kann.
+  empfehlungsStand:
+    "Rechnet den Stand einer Werbe-Belohnung aus (M8): wie viele geworbene "
+    + "Mitspieler sind aktiv? ⏳ Kein Screen, weil zwei Fragen offen sind, die "
+    + "Andi beantworten muss: was „für ne gewisse Zeit aktiv“ heißt (die "
+    + "Vorgabe „3 Spieltage“ ist ein VORSCHLAG von mir, keine Ansage von ihm), "
+    + "und ob die Belohnung überhaupt vor M7 kommt. Ein Screen, der eine "
+    + "geratene Schwelle anzeigt, verspricht etwas Falsches.",
+  beschreibeEmpfehlung:
+    "Der Satz dazu — dieselbe Begründung. Beide sind gemessen (an der "
+    + "Demo-Runde durchgerechnet) und warten nur auf die Zahl.",
+
   // ── Am 25.08.2026 geprüft und stehen gelassen ─────────
   //
   // 🔴 Der Durchgang an diesem Tag hat NICHT sortiert, sondern entschieden:
