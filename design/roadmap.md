@@ -3,6 +3,100 @@
 Offene Feature-Ideen, grob nach Aufwand. Gebaut wird in einzelnen, testbaren
 Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 
+## 📱 DIE NATIVE APP: was wirklich im Weg steht (26.08.2026, GEMESSEN)
+
+Andis Frage: *„wir müssen uns ja eh mal um die native app kümmern, wie
+kriegen wir die hin?"*
+
+**Der Weg ist Capacitor**, und das steht seit Langem so in `CLAUDE.md`. Neu
+ist hier nicht die Entscheidung, sondern die **Messung**: was in DIESEM Code
+dem im Weg steht. Capacitor braucht einen statischen Export
+(`output: "export"` → `out/`), und den verhindern heute genau zwei Dinge.
+
+### ⛔ Blocker 1 — eine dynamische Route ohne Liste
+
+`/tippen/[matchId]` ist die einzige. Ohne `generateStaticParams` bricht der
+Export ab; MIT ihr entstünden **1 943 HTML-Dateien**, eine je Spiel im
+Katalog — und bei jedem neuen Spielplan neu.
+
+✅ **Der bessere Weg: aus der Route einen Suchparameter machen** —
+`/tippen?spiel=bl26-md1-fcb-vfb` statt `/tippen/bl26-md1-fcb-vfb`. Eine
+Seite, kein Vorab-Rendern, und das Blättern aus KT5 funktioniert unverändert
+(es schiebt ohnehin nur die Adresse um). ⚠️ Alte Links müssen umgeleitet
+werden, sonst laufen geteilte Adressen ins Leere.
+
+### ⛔ Blocker 2 — vier API-Routen, die es weiterhin geben MUSS
+
+`/api/account/delete` · `/api/odds` · `/api/matchday/open` ·
+`/api/matchday/auto`. Alle vier brauchen den **service_role-Key** bzw. den
+Quoten-Schlüssel, und der darf nie ins Frontend (Architektur-Regel 2).
+
+🔴 **Sie können nicht mitwandern — und das ist kein Problem, sondern die
+richtige Aufteilung:** sie bleiben auf Netlify, die App ruft sie über HTTPS.
+⚠️ **Was dafür geändert werden muss:** heute rufen zwei Stellen sie mit einer
+RELATIVEN Adresse auf (`fetch("/api/…")` in `AuthProvider.jsx:206` und
+`store.supabase.js:115`). In der App ist der Ursprung `capacitor://localhost`
+— relative Adressen zeigen dann ins Nichts. Es braucht eine konfigurierbare
+Basis-Adresse (`NEXT_PUBLIC_API_BASIS`), die im Web leer bleibt.
+
+### 🔴 Der eigentliche Brocken: Anmeldung und Benachrichtigungen
+
+Beides funktioniert heute über Web-Mechanismen, die es in der App so nicht
+gibt:
+
+| | heute | in der App |
+|---|---|---|
+| **Anmeldung** | Magic-Link auf `window.location.origin` | Der Ursprung ist `capacitor://localhost`. Es braucht einen **Deep Link** (App Link / Universal Link) und den Eintrag in Supabase → URL Configuration |
+| **Benachrichtigungen** | Service Worker `/sw.js` + Web Push | Service Worker greifen im Capacitor-Container nicht. Es braucht `@capacitor/push-notifications`, also **APNs (Apple)** und **FCM (Google)** — beides mit eigener Einrichtung |
+
+⚠️ **Das ist die Arbeit, nicht das Verpacken.** Capacitor selbst
+draufzusetzen ist ein Nachmittag; diese beiden Naht­stellen sind je ein
+eigener Bau. Die fünf Benachrichtigungsarten aus ZP5 bleiben dabei
+unverändert — `dueNotifications` ist kanalfrei, nur `pushKanal.js` bekommt
+einen zweiten Weg neben dem Web-Kanal.
+
+### ⚠️ Und der Blocker, der nichts mit Code zu tun hat
+
+**Für iOS braucht es einen Mac.** Xcode läuft nicht unter Windows, und Andi
+arbeitet auf `C:\Dev\`. Drei Wege, in aufsteigender Bequemlichkeit:
+
+1. **GitHub Actions mit macOS-Runner** — kostet nichts extra bei privatem
+   Repo im Rahmen der Freiminuten, aber jede Fehlersuche dauert einen
+   Durchlauf.
+2. **Ein Cloud-Build-Dienst** (Codemagic, Ionic Appflow) — bequemer, kostet
+   monatlich.
+3. **Ein gebrauchter Mac mini** — einmalig, dafür lokal debuggbar.
+
+Dazu die Konten: **Apple Developer Program 99 $/Jahr**, **Google Play
+einmalig 25 $**.
+
+### ✅ Was schon passt
+
+* **42 Stellen `localStorage`** laufen in Capacitor unverändert. ⚠️ Auf iOS
+  kann der Speicher bei Platzmangel geleert werden — für Anzeige-Stufen
+  tragbar, `@capacitor/preferences` wäre der saubere Ersatz. Kein Blocker.
+* **`manifest.js`, Symbole, Splash** sind da (die PWA-Vorarbeit zahlt hier
+  ein).
+* **Keine serverseitigen Seiten**: nur eine `export const dynamic`-Zeile, und
+  die steht in einer API-Route, die ohnehin bleibt.
+* **Die Bewegungs-Ebene** (`globals.css`) und die Tippziele ≥ 44 px sind
+  bereits auf App-Maßstab gebaut.
+
+### Reihenfolge, wenn es losgeht
+
+1. `/tippen/[matchId]` → Suchparameter, alte Adressen umleiten.
+2. `NEXT_PUBLIC_API_BASIS` einführen, die zwei `fetch("/api/…")` umstellen.
+3. `output: "export"` einschalten und prüfen, dass `out/` vollständig ist.
+4. Capacitor aufsetzen, Android zuerst (kein Mac nötig).
+5. Deep Link + Supabase-Redirect für die Anmeldung.
+6. APNs/FCM für die Benachrichtigungen.
+7. iOS-Build über einen der drei Wege oben.
+
+⛔ **Nicht vor der Hinrunde.** Schritt 1–3 sind harmlos und könnten jederzeit
+laufen; 5 und 6 sind Umbauten an Anmeldung und Benachrichtigungen — also
+genau an dem, was der Testbetrieb mit Freunden gerade braucht. Erst laufen
+lassen, dann verpacken.
+
 ## 🔔 ZP5: fünf Benachrichtigungsarten — zwei davon liefern noch nichts (25.08.2026)
 
 Andis Zusage beim Fremdjoker-Gespräch: *„wir machen noch ein Untermenü wo
