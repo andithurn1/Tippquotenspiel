@@ -230,7 +230,36 @@ if (!URL_ || !ANON) {
   try {
     const probe = await fetch(`${URL_}/rest/v1/`, { headers: { apikey: ANON } });
     console.log(`\n  ${probe.ok || probe.status === 404 ? OK : WARN} erreichbar · HTTP ${probe.status} · ${URL_}`);
-    if (probe.status === 401) {
+
+    // ── Gehören Adresse und Schlüssel zum selben Projekt? ────
+    // 🔴 Am 26.08.2026 stand diese Frage zweimal im Raum und war beide Male
+    // nicht zu beantworten — der Durchgang konnte sie nur STELLEN. Für die
+    // alten JWT-Schlüssel geht es aber: sie tragen die Projekt-Kennung als
+    // `ref` im Mittelteil, und der lässt sich ohne Geheimnis auslesen.
+    //
+    // ⚠️ Ein JWT ist NICHT verschlüsselt, nur signiert — der Mittelteil ist
+    // Base64 und öffentlich lesbar. Hier wird nichts geknackt und nichts
+    // ausgegeben außer der Kennung, die ohnehin in der Adresse steht.
+    //
+    // ⚠️ Die neuen `sb_publishable_`-Schlüssel tragen keine Kennung. Dort
+    // bleibt nur der Vergleich von Hand, und dafür steht die Kennung jetzt da.
+    const kennung = URL_.match(/^https?:\/\/([a-z0-9]+)\.supabase\./i)?.[1] ?? null;
+    if (kennung) console.log(`     Projekt-Kennung der Adresse: ${kennung}`);
+    if (kennung && /^eyJ/.test(ANON)) {
+      try {
+        const mitte = JSON.parse(Buffer.from(ANON.split(".")[1], "base64url").toString("utf8"));
+        if (mitte.ref && mitte.ref !== kennung) {
+          console.log(`  ${FEHLT} Der Schlüssel gehört zu Projekt „${mitte.ref}“, die Adresse zu „${kennung}“.`);
+          schritte.unshift(`Schlüssel und Adresse gehören zu VERSCHIEDENEN Projekten (\`${mitte.ref}\` gegen \`${kennung}\`) — beide aus demselben Projekt kopieren.`);
+        } else if (mitte.ref) {
+          console.log(`     Schlüssel gehört zu demselben Projekt ✅`);
+        }
+      } catch { /* kein lesbarer JWT — dann sagt der Rest schon genug */ }
+    }
+    // ⚠️ 403 zählt wie 401. Am 26.08.2026 gemessen: ein ungültiger Schlüssel
+    // gegen ein echtes Projekt bringt 403, nicht 401 — und der Durchgang lief
+    // munter weiter.
+    if (probe.status === 401 || probe.status === 403) {
       erreichbar = false;
       // 🔴 Zwei Ursachen, und die zweite ist die, an die niemand denkt.
       // Gemessen am 26.08.2026: Adresse richtig, Projekt erreichbar, Schlüssel
@@ -262,6 +291,10 @@ if (!URL_ || !ANON) {
 
   if (erreichbar) {
     const fehlend = [], gesperrt = [], da = [];
+    // Gesetzt, wenn KEINE Tabelle antwortet — siehe die Begründung unten.
+    // ⚠️ Ein Flag statt eines `return`: dieser Block steht auf Modul-Ebene,
+    // dort gibt es keine Funktion, aus der man zurückspringen könnte.
+    let alleDicht = false;
     for (const t of TABELLEN) {
       try {
         const { status, leib } = await frage(t, ANON);
@@ -277,6 +310,25 @@ if (!URL_ || !ANON) {
         fehlend.push(`${t} (Anfrage fehlgeschlagen)`);
       }
     }
+    // 🔴 DER FUND, der diesen ganzen Block fast wertlos gemacht hätte, und er
+    // stammt aus einer Probe gegen ein ECHTES Projekt mit einem absichtlich
+    // falschen Schlüssel: dann antwortet JEDE Tabelle mit 403 — und das ist
+    // von „vorhanden, aber durch RLS geschützt" nicht zu unterscheiden. Der
+    // Durchgang meldete „✅ 12 von 12 vorhanden", obwohl er nichts geprüft
+    // hatte. Ein Prüfwerkzeug, das bei kaputtem Zugang grün meldet, ist
+    // schlimmer als keins.
+    //
+    // Die Unterscheidung ist einfach: kommt von KEINER Tabelle eine Antwort
+    // durch, war der Schlüssel das Problem, nicht das Schema.
+    if (!da.length && gesperrt.length === TABELLEN.length) {
+      console.log(`\n  ${FEHLT} Nicht prüfbar: ALLE ${TABELLEN.length} Tabellen antworten mit „kein Zugriff“.`);
+      console.log("     Das sieht genauso aus wie ein abgelehnter Schlüssel — und ist es");
+      console.log("     hier auch. Ob das Schema steht, sagt dieser Durchgang erst, wenn");
+      console.log("     wenigstens eine Tabelle antwortet.");
+      schritte.push("Erst den Schlüssel in Ordnung bringen — solange er abgelehnt wird, lässt sich über das Schema nichts sagen.");
+      alleDicht = true;
+    }
+    if (!alleDicht) {
     console.log(`\n  ${fehlend.length ? FEHLT : OK} Tabellen: ${da.length + gesperrt.length} von ${TABELLEN.length} vorhanden`);
     if (da.length) console.log(`     lesbar:   ${da.join(", ")}`);
     if (gesperrt.length) {
@@ -303,6 +355,7 @@ if (!URL_ || !ANON) {
         console.log(`\n  ${FRAGE} Zahl der Spiele nicht ablesbar (HTTP ${antwort.status}) — vermutlich schützt RLS die Tabelle.`);
       }
     } catch { /* schon oben gemeldet */ }
+    }
   }
 }
 
