@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { sanitizeNotify, dueNotifications, DEFAULT_NOTIFY } from "@/lib/notify";
 import { fertigeSpieltage } from "@/lib/zwischenabrechnung";
+import { ueberholungen } from "@/lib/ueberholung";
 import { zustellbar, merkeZustellung, pruneZustellungen } from "@/lib/zustellung";
 import { waehleKanal, STATUS } from "@/lib/pushKanal";
 
@@ -75,7 +76,7 @@ export default function NotifyRunner() {
         // ⚠️ NUR was der Nutzer eingeschaltet hat: wer „Sperren" abwählt,
         // soll dafür auch keine Abfrage auslösen. Sonst kostet eine
         // abgeschaltete Meldung trotzdem eine Runde zur Datenbank.
-        const [matches, tips, eingriffe, eintraege] = await Promise.all([
+        const [matches, tips, eingriffe, eintraege, verlauf] = await Promise.all([
           getStore().listRoundMatches(roundId),
           getStore().listTips({ roundId }),
           prefs.geblockt
@@ -83,6 +84,9 @@ export default function NotifyRunner() {
             : Promise.resolve([]),
           prefs.abgerechnet
             ? (getStore().getRoundEntries?.(roundId) ?? Promise.resolve([]))
+            : Promise.resolve([]),
+          prefs.ueberholt
+            ? (getStore().getLeaderboardHistory?.(roundId) ?? Promise.resolve([]))
             : Promise.resolve([]),
         ]);
 
@@ -107,10 +111,11 @@ export default function NotifyRunner() {
               seit: (() => { try { return Number(localStorage.getItem(ABRECHNUNG_KEY)) || null; } catch { return null; } })(),
             })
             : [],
-          // ⏳ `ueberholungen` bleibt vorerst leer: dafür fehlt der eigene
-          // RANG von vorhin, und den hält heute niemand. Der Schalter steht
-          // schon (Vorgabe: aus) — siehe `design/roadmap.md`.
-          ueberholungen: [],
+          // 🔴 Der eigene Rang von vorhin steht im VERLAUF — es braucht keine
+          // gespeicherte Marke. Eine Marke im localStorage hinge am Gerät und
+          // am Hinsehen; der Verlauf gibt auf jedem Gerät dieselbe Antwort.
+          // Begründung ausgeschrieben im Kopf von `ueberholung.js`.
+          ueberholungen: prefs.ueberholt ? ueberholungen(verlauf, user.id) : [],
         });
         const raus = zustellbar({ faellig, gesehen, prefs });
         if (!raus.length) return;

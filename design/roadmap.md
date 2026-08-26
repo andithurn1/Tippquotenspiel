@@ -18,7 +18,7 @@ entfällt: „sobald mehr dazukommen". Die drei sind jetzt da:
 | Erinnerung vor Anpfiff | an | ✅ |
 | **Jemand hat dir ein Spiel gesperrt** | an | ✅ über `getFremdEingriffe(roundId)` |
 | **Spieltag abgerechnet** | an | ✅ **26.08.2026 angeschlossen** |
-| **Jemand ist an dir vorbei** | **aus** | ⏳ **noch nichts** |
+| **Jemand ist an dir vorbei** | **aus** | ✅ **26.08.2026 angeschlossen** |
 
 🔴 **Warum „Sperre" die wichtigste der drei ist:** sie betrifft eine FRIST.
 Wer nicht weiß, dass sein Spiel gesperrt wurde, versucht kurz vor Anpfiff zu
@@ -31,10 +31,11 @@ mehrfach kommen und ist reine Unterhaltung. Eine Benachrichtigung, die nur
 kribbelt, schaltet man nach der dritten ganz ab — und dann sind auch die
 wichtigen weg.
 
-### ⏳ Was den zwei offenen fehlt, und es ist dasselbe
+### ✅ Beide offenen sind am 26.08.2026 zugegangen
 
-Beide brauchen einen **Vergleich mit dem Stand von vorhin**, und den hält
-heute niemand:
+Beide brauchten einen **Vergleich mit dem Stand von vorhin**. Bei beiden lag
+die Antwort in Daten, die es längst gab — keine neue Marke, kein neuer
+Zustand:
 
 - ✅ **Abgerechnet — am 26.08.2026 angeschlossen.** Der Anschluss lag genau
   dort, wo er vermutet wurde: die Zwischenabrechnungs-Einblendung führt schon
@@ -54,9 +55,23 @@ heute niemand:
   die eine Seite, was die andere längst gezeigt hat. Geschrieben wird sie
   weiterhin nur dort, wo der Nutzer die Einblendung wegklickt — eine
   Benachrichtigung ist kein „gesehen".
-- **Überholt** — braucht den eigenen Rang von vorhin. `getLeaderboardHistory`
-  hat die Daten; was fehlt, ist die Stelle, die „mein Rang beim letzten Mal"
-  festhält.
+- ✅ **Überholt — am 26.08.2026 angeschlossen**, und zwar OHNE die Marke, die
+  hier noch als fehlend stand. `src/lib/ueberholung.js`.
+
+  🔴 „Mein Rang beim letzten Mal" im localStorage festzuhalten wäre die
+  naheliegende Lösung gewesen — und die falsche, aus zwei Gründen, die beide
+  erst im Betrieb auffallen: sie hinge am **Gerät** (wer am Telefon nachsieht
+  und dann am Rechner, bekommt die Meldung zweimal oder gar nicht) und am
+  **Hinsehen** (wer eine Woche nicht hineinschaut, wird überschüttet oder
+  bekommt nichts).
+
+  Der Verlauf beantwortet es ohne jeden gespeicherten Zustand: er trägt je
+  Spieltag eine vollständige Rangliste. „Vorbeigezogen" heißt dann schlicht:
+  im vorletzten Board stand ich davor, im letzten dahinter. Auf jedem Gerät
+  dieselbe Antwort, unabhängig davon, wann man hinsieht.
+
+  ⚠️ Gleichstand zählt NICHT als Überholen — sonst käme die Meldung bei jedem
+  Remis-Spieltag.
 
 ⚠️ **Die Schalter sind trotzdem schon gebaut und WIRKEN** — sie liefern nur
 noch nichts. Das ist bewusst, damit die Reihenfolge stimmt: erst die
