@@ -126,6 +126,67 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-26 (XXIII) · 🤚 **Haptik geht jetzt über das Betriebssystem** — `@capacitor/haptics` statt `navigator.vibrate`
+
+**Wenn du gestern den Eintrag XXII gelesen hast: der Browser-Weg ist nicht
+weg, er ist nur noch der ZWEITE.** Aufrufer merken davon nichts —
+`src/lib/haptik.js` wurde komplett umgebaut, ohne dass eine einzige andere
+Datei angefasst werden musste. Das ist der Beweis, dass die eine Stelle
+richtig war.
+
+🔴 **Der Unterschied ist nicht „geht / geht nicht", und das war mein Fehler
+von gestern.** Ich hatte es als iOS-Lücke beschrieben. Es ist mehr:
+
+| | Browser (Netlify) | App (Capacitor) |
+|---|---|---|
+| Schnittstelle | `navigator.vibrate` | `Haptics.notification` / `impact` |
+| Was man sagt | „Motor an für 26 ms" | „das war ein Fehler" |
+| Stärke | gar nicht einstellbar | das Gerät entscheidet |
+| Android | ✅ grober Summer | ✅ `VibrationEffect`, MIT Amplitude |
+| iPhone | ⛔ gibt es nicht | ✅ Taptic Engine |
+
+⚠️ **Die App ist damit auch auf ANDROID besser**, nicht nur auf dem iPhone.
+Ein `vibrate([26,70,26])` ist ein Summen mit Pause; ein
+`NotificationType.Error` ist das Muster, das der Nutzer aus jeder anderen App
+seines Telefons kennt.
+
+**Die Zuordnung** (`NATIV` in `haptik.js`):
+
+| Art | nativ |
+|---|---|
+| `gespeichert` | `NotificationType.Success` |
+| `fehler` | `NotificationType.Error` |
+| `info` | `ImpactStyle.Light` |
+
+⚠️ **`info` ist ein IMPACT und keine Notification**, und das ist kein
+Flüchtigkeitsfehler: eine Benachrichtigung beantwortet „ist es gut
+ausgegangen?", ein Impact „etwas hat sich bewegt". Ein `NotificationType` für
+ein beiläufiges „ist passiert" fühlte sich an wie eine Warnung ohne Warnung.
+
+🔴 **Die Falle beim nativen Weg, und sie ist neu:** er ist **asynchron**. Ein
+abgelehntes Promise, das niemand fängt, ist in Node ein harter Abbruch und im
+Browser eine rote Konsole — für eine Bestätigung, die niemand gebraucht hätte.
+`spuere()` verschluckt es ausdrücklich, aus demselben Grund wie das `try/catch`
+um `vibrate`. Ein Test hält es fest.
+
+⚠️ **Der Rückgabewert heißt jetzt „ist losgeschickt", nicht „hat gewackelt"** —
+auf ein Promise zu warten, nur um eine Bestätigung zu fühlen, hielte den
+Aufrufer auf.
+
+⚠️ **Und ein Punkt fürs Ausliefern:** ab jetzt braucht ein Release eine
+**Store-Prüfung**, wenn das Plugin dazukommt oder wechselt. Ein neues
+Capacitor-Plugin ist einer der wenigen Fälle, in denen ein Live Update nicht
+reicht. Für die Entwicklung ändert sich nichts.
+
+**Zum Nachsehen:** `npm run app:sync` meldet jetzt
+`Found 1 Capacitor plugin for android: @capacitor/haptics@8.0.2` — steht das
+da nicht, ist das Plugin nicht mit im Bau.
+
+Belegt: `npm test` 2 700 grün (20 in `haptik.test.js`, beide Wege getrennt) ·
+`lint` grün · `build` grün · `build:app` + `cap sync` grün · im Browser
+(Pixel 5) unverändert: Proben `[12]` / `[26,70,26]`, echter Tipp `[12]`,
+keine Seitenfehler.
+
 ### 2026-08-26 (XXII) · 🤚 **Haptik: `src/lib/haptik.js` ist die EINE Stelle** — bitte kein `navigator.vibrate` daneben
 
 **Kurz: wenn du willst, dass die App etwas spüren lässt, rufst du nichts auf.**

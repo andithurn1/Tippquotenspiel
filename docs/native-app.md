@@ -92,7 +92,6 @@ statt entschieden wird:
 | **Push-Benachrichtigungen** | Die fünf Kanäle aus `notify.js` laufen bisher nur, solange die App offen ist. Echtes Push braucht Firebase. | Schritt 6 |
 | **Eigenes App-Symbol** | Es steht noch das grüne Capacitor-Standardsymbol drin. | mit dem finalen Design |
 | **Startbild (Splash)** | Capacitors Standardbild (480×320, elf Auflösungen unter `android/app/src/main/res/drawable-*`). Es ist also nicht leer — nur fremd. | mit dem finalen Design |
-| **Spüren (Haptik) auf dem iPhone** | Die Mechanik steht (`src/lib/haptik.js`, Schalter im Konto), läuft aber über `navigator.vibrate` — die gibt es auf **Android**, auf **iOS nicht**, weder in Safari noch in einer WKWebView. Dort passiert bis dahin nichts, und die Einstellungs-Seite sagt es. | ein Handgriff, siehe unten |
 | **iOS** | Braucht einen Mac für den Build. Der Code ist fertig dafür — `capacitor.config.json` trägt den `ios`-Block bereits. | wenn ein Mac da ist |
 
 ---
@@ -131,20 +130,34 @@ Build-Ausgabe, keiner davon gehört ins Repo.
 
 ---
 
-## Der eine Handgriff für die Haptik auf dem iPhone
+## ✅ Das Spüren (Haptik) — was in der App anders ist als im Browser
 
-Wenn iOS drankommt, ist es genau eine Datei — `src/lib/haptik.js` ist als die
-EINE Stelle gebaut, an der die App etwas spüren lässt (dieselbe Bauart wie
-`getStore()` und die Quoten-Quelle).
+**Gebaut am 26.08.2026, `@capacitor/haptics@8.0.2`.** Es gibt zwei Wege durch
+dieselbe Funktion (`src/lib/haptik.js`), und der Unterschied ist nicht
+„geht / geht nicht":
 
-1. Öffne die Eingabeaufforderung im Projektordner.
-2. Tippe `npm install @capacitor/haptics` und drücke Enter.
-3. Öffne `src/lib/haptik.js`.
-4. Ersetze in `spuere()` den Aufruf `navigator.vibrate(...)` durch
-   `Haptics.impact({ style: … })` bzw. `Haptics.notification({ type: … })`.
-5. Passe `istMoeglich()` an: nativ ist es immer `true`.
-6. Tippe `npm run app:sync` und drücke Enter.
+| | Browser (Netlify) | App (Capacitor) |
+|---|---|---|
+| Schnittstelle | `navigator.vibrate` | `Haptics.notification` / `Haptics.impact` |
+| Was man sagt | „Motor an für 26 ms" | „das war ein Fehler" |
+| Wie stark | gar nicht einstellbar | das Gerät entscheidet |
+| Android | ✅ grober Summer | ✅ `VibrationEffect`, mit Stärke |
+| iPhone | ⛔ gibt es nicht | ✅ Taptic Engine |
 
-⚠️ Erst ab diesem Schritt braucht die App eine **Store-Prüfung** — ein neues
-Capacitor-Plugin ist einer der wenigen Fälle, in denen ein Live Update nicht
-reicht (siehe `design/roadmap.md`, „Was kostet es NACH dem Umstieg").
+🔴 **Die App ist damit auch auf ANDROID besser, nicht nur auf dem iPhone.**
+Ein `vibrate([26,70,26])` ist ein Summen mit Pause; ein `NotificationType.Error`
+ist das Muster, das der Nutzer aus jeder anderen App seines Telefons kennt.
+
+⚠️ **Auf der Netlify-Seite bleibt es beim groben Weg**, und das ist richtig so:
+dort gibt es kein Betriebssystem, das man fragen könnte. Wer im iPhone-Browser
+nichts spürt, liest das auf der Einstellungs-Seite — samt dem Hinweis, dass es
+in der App funktioniert.
+
+⚠️ **Ab jetzt braucht ein Release eine Store-Prüfung**, sobald das Plugin
+dazukommt oder wechselt — ein neues Capacitor-Plugin ist einer der wenigen
+Fälle, in denen ein Live Update nicht reicht (siehe `design/roadmap.md`,
+„Was kostet es NACH dem Umstieg"). Für die Entwicklung ändert das nichts.
+
+**Zum Nachsehen auf dem Handy:** `npm run app:sync` meldet jetzt
+`Found 1 Capacitor plugin for android: @capacitor/haptics` — steht das da
+nicht, ist das Plugin nicht mit im Bau.

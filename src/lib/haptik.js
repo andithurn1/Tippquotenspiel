@@ -8,19 +8,30 @@
 //  ── Warum das hier ein eigenes Modul ist und kein `navigator.vibrate(10)` ──
 //  Dieselbe Begründung wie bei `getStore()` und der Quoten-Quelle
 //  (Architektur-Regel 2): es gibt GENAU EINE Stelle, an der die Haptik
-//  ausgelöst wird, und wenn sie später über ein Capacitor-Plugin läuft statt
-//  über die Browser-Schnittstelle, ändert sich nur diese Datei. Ein
-//  `navigator.vibrate` in fünfzehn Komponenten wäre fünfzehn Stellen — und in
-//  vierzehn davon hätte niemand an die Einstellung gedacht.
+//  ausgelöst wird. Ein `navigator.vibrate` in fünfzehn Komponenten wäre
+//  fünfzehn Stellen — und in vierzehn davon hätte niemand an die Einstellung
+//  gedacht. Dass diese Datei am 26.08.2026 einmal komplett umgebaut wurde,
+//  ohne dass ein einziger Aufrufer davon etwas gemerkt hat, ist der Beweis,
+//  dass die Trennung richtig war.
 //
-//  ── 🔴 Was heute NICHT geht, und das gehört gesagt ──
-//  `navigator.vibrate` gibt es auf **Android** (Chrome, WebView) — auf
-//  **iOS nicht**, weder in Safari noch in einer WKWebView. Auf einem iPhone
-//  passiert also bis auf Weiteres GAR NICHTS, und zwar lautlos: `istMoeglich()`
-//  meldet dort `false`. Das ist kein Fehler, sondern der Stand.
-//  Die Behebung ist ein Handgriff und steht in `docs/native-app.md`:
-//  `@capacitor/haptics` einbinden und in `spuere()` statt `navigator.vibrate`
-//  aufrufen. Alles andere in dieser Datei bleibt, wie es ist.
+//  ── 🔴 ZWEI WEGE, und der Unterschied ist nicht „geht / geht nicht" ──
+//
+//  **Im Browser:** `navigator.vibrate` — die Vibration-API. Sie kann genau
+//  eine Sache: den Vibrationsmotor für N Millisekunden EINSCHALTEN. Kein
+//  Muster mit Stärke, kein Gefühl, nur an/aus. Das ist der grobe Summer, den
+//  auch ein Wecker benutzt. Es gibt sie auf **Android** (Chrome, WebView) —
+//  auf **iOS gar nicht**, weder in Safari noch in einer WKWebView.
+//
+//  **In der App (Capacitor):** `@capacitor/haptics`. Das ist NICHT dieselbe
+//  Sache in anders — es sind die Haptik-Bausteine des Betriebssystems:
+//  `Haptics.notification({ type })` und `Haptics.impact({ style })`. Android
+//  spielt sie über `VibrationEffect` (seit Android 8 mit Amplitude, also mit
+//  einer Stärke statt nur Dauer), iOS über die Taptic Engine.
+//
+//  ⚠️ **Damit ist die App auch auf ANDROID besser als der Browser**, nicht
+//  nur auf iOS. Ein `navigator.vibrate([26,70,26])` ist ein Summen mit Pause;
+//  ein `NotificationType.Error` ist das Muster, das der Nutzer aus jeder
+//  anderen App seines Telefons kennt. Wer nur an iOS denkt, verschenkt das.
 //
 //  ── Die drei Muster folgen den drei Arten der Rückmeldung ──
 //  `Rueckmeldung.jsx` kennt genau drei Arten (gespeichert · fehler · info),
@@ -28,24 +39,40 @@
 //  die eine Meldung zeigt, aber nichts spüren lässt — und keine, die vibriert,
 //  ohne dass etwas dasteht.
 //
-//  ⚠️ Die Zahlen sind Konventionen, keine Messung: ein kurzer Tick für
-//  „ist durch", ein doppelter, kräftigerer Stoß für „ist NICHT durch". Wer sie
-//  ändert, ändert nichts an der Mechanik.
+//  ⚠️ Die Millisekunden im Browser-Weg sind Konventionen, keine Messung: ein
+//  kurzer Tick für „ist durch", ein doppelter, kräftigerer Stoß für „ist NICHT
+//  durch". Der native Weg braucht sie gar nicht — dort sagt man dem System,
+//  WAS es bedeutet, und das System weiß, wie sich das anfühlt.
 //
 //  ── Was diese Datei bewusst NICHT tut ──
 //  Sie hängt NICHT an `prefs.bewegung`. Bewegung ist das Auge, Haptik ist die
 //  Hand — wer Animationen abschaltet, weil ihm das Telefon zu langsam ist,
 //  will deshalb nicht auf die Bestätigung im Daumen verzichten. Zwei Sinne,
 //  zwei Schalter (`prefs.haptik`).
-//
-//  Reine Funktionen bis auf `spuere()`, das als einziges die Außenwelt anfasst.
 // ============================================================
 
-// Dauer in Millisekunden; ein Array ist ein Wechsel aus Stoß und Pause.
+import { Capacitor } from "@capacitor/core";
+import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
+
+// ── Weg 1: der Browser. Dauer in Millisekunden; ein Array ist ein Wechsel
+// aus Stoß und Pause. Mehr kann die Vibration-API nicht.
 export const MUSTER = {
   gespeichert: [12],
   fehler: [26, 70, 26],
   info: [8],
+};
+
+// ── Weg 2: das Betriebssystem. Hier steht keine Dauer, sondern eine
+// BEDEUTUNG — wie sie sich anfühlt, entscheidet das Gerät.
+//
+// ⚠️ `info` ist ein `impact` und keine `notification`: eine Benachrichtigung
+// ist die Antwort auf „ist es gut ausgegangen?", ein Impact die auf „etwas hat
+// sich bewegt". Ein `NotificationType` für ein beiläufiges „ist passiert"
+// fühlte sich an wie eine Warnung ohne Warnung.
+export const NATIV = {
+  gespeichert: { art: "notification", wert: NotificationType.Success },
+  fehler: { art: "notification", wert: NotificationType.Error },
+  info: { art: "impact", wert: ImpactStyle.Light },
 };
 
 // Fällt eine unbekannte Art an, wird sie wie `info` behandelt — dieselbe
@@ -54,9 +81,23 @@ export const MUSTER = {
 export function musterFuer(art) {
   return MUSTER[art] ?? MUSTER.info;
 }
+export function nativFuer(art) {
+  return NATIV[art] ?? NATIV.info;
+}
 
-// Kann dieses Gerät überhaupt vibrieren? Serverseitig (SSR) und auf iOS: nein.
+// Läuft die App gerade in der nativen Hülle? Serverseitig (SSR) und auf der
+// Netlify-Seite: nein.
+export function istNativ() {
+  try { return Capacitor.isNativePlatform(); } catch { return false; }
+}
+
+// Kann dieses Gerät überhaupt etwas spüren lassen?
+//
+// 🔴 Nativ IMMER — dort geht der Weg über das Betriebssystem, und das kann es
+// auf jedem Telefon. Im Browser nur mit `navigator.vibrate`, also auf Android
+// ja und auf einem iPhone nein.
 export function istMoeglich() {
+  if (istNativ()) return true;
   return typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
 }
 
@@ -87,12 +128,26 @@ export function istEingeschaltet() {
 // Beiwerk, die schlimmer ist als gar keins (siehe `Rueckmeldung.jsx`,
 // „die Meldung ist BEIWERK").
 //
-// Gibt zurück, ob wirklich etwas passiert ist — dadurch kann die
-// Einstellungs-Seite eine Probe anbieten, die ehrlich sagt „hier tut sich
-// nichts", statt einen Knopf zu zeigen, der ins Leere greift.
+// ⚠️ Der native Weg ist ASYNCHRON, der Browser-Weg nicht. Der Rückgabewert
+// sagt deshalb „ist losgeschickt", nicht „hat gewackelt" — auf ein Promise zu
+// warten, nur um eine Bestätigung zu fühlen, hielte den Aufrufer auf.
+// Das abgelehnte Promise wird ausdrücklich verschluckt, aus demselben Grund
+// wie das `try/catch`.
 export function spuere(art = "info", { an } = {}) {
   if (!(an ?? istEingeschaltet())) return false;
-  if (!istMoeglich()) return false;
+  if (istNativ()) {
+    const n = nativFuer(art);
+    try {
+      const p = n.art === "notification"
+        ? Haptics.notification({ type: n.wert })
+        : Haptics.impact({ style: n.wert });
+      p?.catch?.(() => {});
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return false;
   try {
     return navigator.vibrate(musterFuer(art)) === true;
   } catch {

@@ -1,10 +1,36 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { MUSTER, musterFuer, istMoeglich, istEingeschaltet, spuere } from "@/lib/haptik";
 
 // 🔴 Diese Tests prüfen keine Rechnung, sondern ein VERSPRECHEN: dass die
 // Haptik unter keinen Umständen etwas kaputt macht. Sie ist Beiwerk — genau
 // wie der Meldungs-Streifen, an dem sie hängt —, und Beiwerk, das den
 // Speichern-Vorgang mitreisst, ist schlimmer als gar keins.
+//
+// ⚠️ Die beiden Wege werden GETRENNT geprüft. Bis zum 26.08.2026 gab es nur
+// den Browser-Weg; wer den nativen dazubaut und nur den alten Test laufen
+// lässt, misst genau die Hälfte.
+
+const H = vi.hoisted(() => ({ nativ: false, aufrufe: [], wirft: false, lehntAb: false }));
+
+vi.mock("@capacitor/core", () => ({
+  Capacitor: { isNativePlatform: () => H.nativ },
+}));
+
+// Nur die AUFRUFE werden ersetzt — die Kataloge (`ImpactStyle`,
+// `NotificationType`) kommen echt aus dem Plugin. Sonst prüfte der Test seine
+// eigenen erfundenen Werte gegen sich selbst.
+vi.mock("@capacitor/haptics", async (echtes) => {
+  const echt = await echtes();
+  const merke = (art) => (o) => {
+    if (H.wirft) throw new Error("Plugin not implemented");
+    H.aufrufe.push([art, o.type ?? o.style]);
+    return H.lehntAb ? Promise.reject(new Error("nicht verfügbar")) : Promise.resolve();
+  };
+  return { ...echt, Haptics: { notification: merke("notification"), impact: merke("impact") } };
+});
+
+const { MUSTER, NATIV, musterFuer, nativFuer, istNativ, istMoeglich, istEingeschaltet, spuere } =
+  await import("@/lib/haptik");
+const { ImpactStyle, NotificationType } = await import("@capacitor/haptics");
 
 const alterNavigator = globalThis.navigator;
 const altesDocument = globalThis.document;
@@ -18,31 +44,45 @@ function setzeNavigator(vibrate) {
 
 function setzeAttribut(wert) {
   Object.defineProperty(globalThis, "document", {
-    value: {
-      documentElement: {
-        getAttribute: (name) => (name === "data-haptik" ? wert : null),
-      },
-    },
+    value: { documentElement: { getAttribute: (n) => (n === "data-haptik" ? wert : null) } },
     configurable: true, writable: true,
   });
 }
+
+beforeEach(() => {
+  H.nativ = false; H.aufrufe = []; H.wirft = false; H.lehntAb = false;
+  setzeAttribut(null);
+});
 
 afterEach(() => {
   Object.defineProperty(globalThis, "navigator", { value: alterNavigator, configurable: true, writable: true });
   Object.defineProperty(globalThis, "document", { value: altesDocument, configurable: true, writable: true });
 });
 
-describe("Muster", () => {
-  it("jede Art der Rückmeldung hat eins", () => {
+describe("Die zwei Wege", () => {
+  it("jede Art der Rückmeldung hat BEIDE Fassungen", () => {
     // Die drei Arten stehen in `Rueckmeldung.jsx`. Kommt dort eine vierte
     // dazu, fällt sie hier NICHT durch — sie bekommt `info`. Das ist Absicht:
     // eine neue Art soll unauffällig sein, nicht kaputt.
     for (const art of ["gespeichert", "fehler", "info"]) {
       expect(MUSTER[art], art).toBeDefined();
+      expect(NATIV[art], art).toBeDefined();
       expect(musterFuer(art)).toBe(MUSTER[art]);
+      expect(nativFuer(art)).toBe(NATIV[art]);
     }
     expect(musterFuer("gibtsnicht")).toBe(MUSTER.info);
-    expect(musterFuer(undefined)).toBe(MUSTER.info);
+    expect(nativFuer("gibtsnicht")).toBe(NATIV.info);
+  });
+
+  it("die native Fassung sagt die BEDEUTUNG, nicht die Dauer", () => {
+    // 🔴 Genau darin liegt der Unterschied zur Vibration-API: dort schaltet
+    // man einen Motor für N Millisekunden ein, hier sagt man dem System, was
+    // gemeint ist. Wie es sich anfühlt, entscheidet das Gerät.
+    expect(NATIV.gespeichert).toEqual({ art: "notification", wert: NotificationType.Success });
+    expect(NATIV.fehler).toEqual({ art: "notification", wert: NotificationType.Error });
+    // `info` ist ein Impact und keine Notification: „etwas hat sich bewegt"
+    // ist nicht dieselbe Frage wie „ist es gut ausgegangen?".
+    expect(NATIV.info).toEqual({ art: "impact", wert: ImpactStyle.Light });
   });
 
   it("ein Fehler ist länger und doppelt — ein Erfolg ein einzelner Tick", () => {
@@ -62,13 +102,23 @@ describe("Muster", () => {
 });
 
 describe("istMoeglich", () => {
-  it("ohne `navigator.vibrate` — also auf jedem iPhone — ist es false", () => {
+  it("im Browser ohne `navigator.vibrate` — also auf jedem iPhone — false", () => {
     setzeNavigator(undefined);
+    expect(istNativ()).toBe(false);
     expect(istMoeglich()).toBe(false);
   });
 
-  it("mit der Schnittstelle ist es true", () => {
+  it("im Browser mit der Schnittstelle — also auf Android — true", () => {
     setzeNavigator(() => true);
+    expect(istMoeglich()).toBe(true);
+  });
+
+  it("🔴 NATIV immer true, auch ohne `navigator.vibrate`", () => {
+    // Das ist der ganze Punkt des Umbaus: in der App geht der Weg über das
+    // Betriebssystem, und das kann es auf jedem Telefon — auch auf dem, wo
+    // der Browser es nicht kann.
+    H.nativ = true;
+    setzeNavigator(undefined);
     expect(istMoeglich()).toBe(true);
   });
 });
@@ -87,9 +137,7 @@ describe("istEingeschaltet — die Vorgabe ist das FEHLEN des Attributs", () => 
   });
 });
 
-describe("spuere", () => {
-  beforeEach(() => setzeAttribut(null));
-
+describe("spuere — im Browser", () => {
   it("löst mit dem Muster der Art aus", () => {
     const vibrate = vi.fn(() => true);
     setzeNavigator(vibrate);
@@ -132,5 +180,52 @@ describe("spuere", () => {
   it("meldet false, wenn der Browser die Bitte ablehnt", () => {
     setzeNavigator(() => false);
     expect(spuere("info")).toBe(false);
+  });
+});
+
+describe("spuere — in der App", () => {
+  beforeEach(() => { H.nativ = true; setzeNavigator(undefined); });
+
+  it("geht über das Betriebssystem, nicht über die Vibration-API", () => {
+    const vibrate = vi.fn(() => true);
+    setzeNavigator(vibrate);
+    expect(spuere("gespeichert")).toBe(true);
+    expect(H.aufrufe).toEqual([["notification", NotificationType.Success]]);
+    // ⚠️ Und zwar AUSSCHLIESSLICH: zweimal spüren für einen Klick wäre
+    // schlimmer als gar nicht.
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+
+  it("jede Art landet beim richtigen Baustein", () => {
+    spuere("fehler");
+    spuere("info");
+    expect(H.aufrufe).toEqual([
+      ["notification", NotificationType.Error],
+      ["impact", ImpactStyle.Light],
+    ]);
+  });
+
+  it("die Einstellung gilt auch hier", () => {
+    setzeAttribut("aus");
+    expect(spuere("gespeichert")).toBe(false);
+    expect(H.aufrufe).toEqual([]);
+  });
+
+  it("ein werfendes Plugin reisst nichts mit", () => {
+    H.wirft = true;
+    expect(() => spuere("gespeichert")).not.toThrow();
+    expect(spuere("gespeichert")).toBe(false);
+  });
+
+  // 🔴 Dieselbe Falle wie das werfende `vibrate`, nur eine Ebene später: der
+  // native Weg ist ASYNCHRON. Ein abgelehntes Promise, das niemand fängt, ist
+  // in Node ein harter Abbruch und im Browser eine rote Konsole — beides für
+  // eine Bestätigung, die niemand gebraucht hätte.
+  it("ein abgelehntes Promise wird verschluckt", async () => {
+    H.lehntAb = true;
+    expect(spuere("fehler")).toBe(true);
+    // Ein Tick warten, damit die Ablehnung wirklich durchläuft.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(H.aufrufe).toEqual([["notification", NotificationType.Error]]);
   });
 });

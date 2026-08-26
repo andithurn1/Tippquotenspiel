@@ -238,11 +238,14 @@ export default function Einstellungen() {
               </div>
             ) : (
               // ⚠️ Kein stiller Knopf, der ins Leere greift. Wer hier nichts
-              // spürt, soll wissen, dass es am Gerät liegt und nicht an ihm.
+              // spürt, soll wissen, dass es am Browser liegt und nicht an ihm
+              // — und dass es in der App anders ist.
               <div style={{ fontSize: "0.75rem", color: C.ghost, marginTop: 10, lineHeight: 1.5 }}>
-                Dieses Gerät kann nicht vibrieren — auf dem iPhone gibt es die
-                Schnittstelle im Browser nicht. Die Einstellung bleibt trotzdem
-                stehen: sie gilt, sobald die App als native App läuft.
+                In diesem Browser geht es nicht — Safari auf dem iPhone kennt
+                die Schnittstelle nicht. Die Einstellung bleibt trotzdem
+                stehen: <strong style={{ color: C.muted }}>in der App
+                funktioniert sie</strong>, dort läuft das Spüren über das
+                Betriebssystem statt über den Browser.
               </div>
             )}
           </div>
