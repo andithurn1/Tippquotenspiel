@@ -345,7 +345,7 @@ if (!URL_ || !ANON) {
     }
     if (!alleDicht) {
     console.log(`\n  ${fehlend.length ? FEHLT : OK} Tabellen: ${da.length + gesperrt.length} von ${TABELLEN.length} vorhanden`);
-    if (da.length) console.log(`     lesbar:   ${da.join(", ")}`);
+    if (da.length) console.log(`     vorhanden: ${da.join(", ")}`);
     if (gesperrt.length) {
       console.log(`     geschützt: ${gesperrt.join(", ")}`);
       console.log("     (Row Level Security greift — ohne Anmeldung richtig so)");
@@ -355,19 +355,46 @@ if (!URL_ || !ANON) {
       schritte.push("`supabase/schema.sql` im SQL-Editor KOMPLETT ausführen — die Datei ist idempotent, mehrfach ausführen schadet nicht.");
     }
 
-    // Spielplan: ohne Spiele gibt es nichts zu tippen.
+    // ── Der Spielplan: ohne Spiele gibt es nichts zu tippen ──
+    //
+    // 🔴 DER FUND VOM 26.08.2026, und er ist derselbe Fehler wie bei der
+    // REST-Wurzel: der Durchgang meldete „Spiele im Katalog: 0" und riet, den
+    // Seed auszuführen — dabei konnte er die Zahl gar nicht kennen.
+    //
+    //     create policy "matches_read" on public.matches
+    //       for select to authenticated using (true);
+    //
+    // Er fragt OHNE Anmeldung. Row Level Security wirft dann keinen Fehler,
+    // sondern liefert eine LEERE LISTE: HTTP 200, Anzahl 0. Eine volle Tabelle
+    // und eine leere sehen von hier aus identisch aus.
+    //
+    // ⚠️ Die Lehre, dieselbe wie eine Stunde vorher: ein Prüfwerkzeug darf
+    // nichts BEHAUPTEN, was es nicht sehen kann. Lieber „nicht zählbar" mit
+    // Grund als eine Zahl, an der ein falscher Rat hängt.
+    //
+    // Zählen lässt es sich trotzdem — mit dem DIENST-Schlüssel, der RLS
+    // umgeht. Der liegt nur lokal und geht nie in den Browser
+    // (Architektur-Regel 2), also ist genau hier sein Platz.
     try {
+      const zaehlKey = DIENST || ANON;
       const antwort = await fetch(`${URL_}/rest/v1/matches?select=id&limit=1`, {
-        headers: { apikey: ANON, Authorization: `Bearer ${ANON}`, Prefer: "count=exact" },
+        headers: { apikey: zaehlKey, Authorization: `Bearer ${zaehlKey}`, Prefer: "count=exact" },
       });
-      const bereich = antwort.headers.get("content-range");     // z. B. "0-0/1943"
+      const bereich = antwort.headers.get("content-range");     // z. B. „0-0/1943"
       const anzahl = bereich?.includes("/") ? bereich.split("/")[1] : null;
-      if (anzahl && anzahl !== "*") {
-        const n = Number(anzahl);
-        console.log(`\n  ${n > 0 ? OK : FEHLT} Spiele im Katalog: ${n}`);
-        if (n === 0) schritte.push("`supabase/seed.sql` ausführen — ohne Spiele gibt es nichts zu tippen.");
+      const n = anzahl && anzahl !== "*" ? Number(anzahl) : null;
+
+      if (!DIENST) {
+        console.log(`\n  ${FRAGE} Spiele im Katalog: nicht zählbar.`);
+        console.log("     `matches_read` gilt nur `to authenticated` — ohne Anmeldung liefert");
+        console.log("     die Datenbank eine leere Liste, egal wie voll die Tabelle ist.");
+        console.log("     Setz `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`, dann wird gezählt.");
+        console.log("     (Der Schlüssel bleibt lokal — er darf nie ins Frontend.)");
+      } else if (n === null) {
+        console.log(`\n  ${FRAGE} Spiele im Katalog: nicht ablesbar (HTTP ${antwort.status}).`);
       } else {
-        console.log(`\n  ${FRAGE} Zahl der Spiele nicht ablesbar (HTTP ${antwort.status}) — vermutlich schützt RLS die Tabelle.`);
+        console.log(`\n  ${n > 0 ? OK : FEHLT} Spiele im Katalog: ${n}`);
+        if (n === 0) schritte.push("Spielplan einspielen — `supabase/seed.sql` im SQL-Editor, danach `npm run seed:bundesliga` für den echten Spielplan.");
       }
     } catch { /* schon oben gemeldet */ }
     }
