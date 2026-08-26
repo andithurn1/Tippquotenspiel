@@ -32,8 +32,8 @@ import {
 import { FREMDJOKER_ARTEN, jokerArtVon, sanitizeSchutz } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
 import { ergebnisQuote } from "@/lib/randquoten";
-import { schuetzenSperre, istSchuetzeGesperrt, istErgebnisGesperrt } from "@/lib/favoritenSperre";
-import { sperrenFuer, beschreibeEingriff } from "@/lib/sperrEingriff";
+import { schuetzenSperre, istSchuetzeGesperrt, istErgebnisGesperrt, sanitizeSperre } from "@/lib/favoritenSperre";
+import { sperrenFuer, beschreibeEingriff, freischaltStand } from "@/lib/sperrEingriff";
 import { wirkungsVorgaenge } from "@/lib/ereignisse";
 import { startErgebnis, FESTER_START } from "@/lib/vorbelegung";
 import { getStore } from "@/lib/store";
@@ -222,6 +222,10 @@ export default function Tippabgabe({ matchId }) {
   // 🔴 JK14: das eine Spiel, an dem der Abend hängt. Gehört dem SPIELER —
   // der Admin stellt nur die Anzahl (`eingriffe.schutz.proSpieltag`).
   const [geschuetzt, setGeschuetzt] = useState(false);
+  // 🔴 Der Freischalt-Joker (Andi, 26.08.2026: „... und als Joker"). Er nimmt
+  // MIR die Sperre für DIESES eine Spiel. Dieselbe Bauart wie `geschuetzt`
+  // darüber: der Admin stellt die Anzahl, der Spieler trifft die Auswahl.
+  const [freigeschaltet, setFreigeschaltet] = useState(false);
   // Schnappschuss dessen, was beim Laden BEREITS gespeichert war — Grundlage
   // für `darfWiderrufen` (design/kontaktstellen.md Abschnitt 5 Punkt 5,
   // jokerBasis.js): nur ein VORHER gesetzter Joker/Duell, der jetzt entfernt
@@ -547,6 +551,13 @@ export default function Tippabgabe({ matchId }) {
     return sperrenFuer(vorgaenge, { userId: user.id, matchday: meinTag });
   }, [match, user, alleEintraege, RULES, tagesPunkte, schluessel, roundId, achse]);
 
+  // ⚠️ Die Freischaltung kommt NACH den Ereignis-Sperren dazu und nicht statt
+  // ihrer: sie hebt beide Richtungen auf (`favoritenSperre.js`), und der
+  // Spieler soll trotzdem lesen können, was er da gerade aufhebt.
+  const eingriffMitJoker = useMemo(
+    () => (freigeschaltet ? { ...(meinEingriff ?? {}), frei: true } : meinEingriff),
+    [meinEingriff, freigeschaltet]);
+
   // 🔴 Die Favoriten-Sperre, EINMAL gefragt statt an fünf Stellen nachgebaut
   // (Andi, 26.08.2026: „mach dann auch bei der Tippabgabe einsehbar für die
   // nutzer, dass halt bspw. kane wegen der einstellung gesperrt ist mit
@@ -555,14 +566,14 @@ export default function Tippabgabe({ matchId }) {
   const schuetzenZu = useMemo(() => {
     const m = new Map();
     if (!match) return m;
-    for (const o of schuetzenSperre(match.snapshot, RULES, meinEingriff)) {
+    for (const o of schuetzenSperre(match.snapshot, RULES, eingriffMitJoker)) {
       if (o.gesperrt) m.set(o.id, o.grund);
     }
     return m;
-  }, [match, RULES, meinEingriff]);
+  }, [match, RULES, eingriffMitJoker]);
   const standZu = useMemo(
-    () => (match ? istErgebnisGesperrt(match.snapshot, RULES, h, a, meinEingriff).grund : null),
-    [match, RULES, h, a, meinEingriff]);
+    () => (match ? istErgebnisGesperrt(match.snapshot, RULES, h, a, eingriffMitJoker).grund : null),
+    [match, RULES, h, a, eingriffMitJoker]);
 
   // 🔴 Der Startwert des Steppers (Andi, 26.08.2026). Ein Effekt und kein
   // `useState`-Initialwert: beim ersten Rendern ist der Schnappschuss noch
@@ -573,10 +584,10 @@ export default function Tippabgabe({ matchId }) {
   // stürzte beim zweiten mit „change in the order of Hooks" ab (CLAUDE.md).
   useEffect(() => {
     if (!match || standBeruehrt) return;
-    const start = startErgebnis(match.snapshot, RULES, prefs?.vorbelegung, meinEingriff);
+    const start = startErgebnis(match.snapshot, RULES, prefs?.vorbelegung, eingriffMitJoker);
     setH(start.home);
     setA(start.away);
-  }, [match, RULES, prefs?.vorbelegung, standBeruehrt, meinEingriff]);
+  }, [match, RULES, prefs?.vorbelegung, standBeruehrt, eingriffMitJoker]);
 
   // Neues Spiel → die Vorbelegung gilt wieder. Ohne das behielte das zweite
   // Spiel den Stand des ersten, sobald man dort einmal gesteppt hat.
@@ -883,6 +894,22 @@ export default function Tippabgabe({ matchId }) {
       .map((t) => ({ ...t, userId: user?.id, matchId: t.match_id ?? t.matchId })),
     RULES, { userId: user?.id, spieltag: meinSpieltagRunde },
   );
+  // 🔴 Der Freischalt-Joker: wie viele habe ich an diesem Spieltag noch?
+  // Gezählt aus den schon abgegebenen Tipps desselben RUNDEN-Spieltags — der
+  // aktuelle ist ausgenommen, sonst zählte man sich selbst mit.
+  const sperrRegel = sanitizeSperre(RULES.sperre);
+  const freiLage = freischaltStand(
+    meineTipsRunde
+      .filter((t) => (t.match_id ?? t.matchId) !== matchId)
+      .map((t) => ({ ...t, userId: user?.id, matchId: t.match_id ?? t.matchId })),
+    sperrRegel, { userId: user?.id, spieltag: meinSpieltagRunde },
+  );
+  // Anbieten nur, wenn es überhaupt etwas aufzuheben gibt: ein Knopf, der eine
+  // Sperre aufhebt, die es nicht gibt, verbraucht ein Kontingent für nichts.
+  const etwasZu = schuetzenZu.size > 0 || !!standZu || freigeschaltet;
+  const freiMoeglich = sperrRegel.enabled && freiLage.erlaubt > 0
+    && (freiLage.frei > 0 || freigeschaltet);
+
   // Schützen darf ich, wenn die Runde es kennt, Fremdjoker überhaupt laufen
   // und noch etwas frei ist (oder dieses Spiel schon geschützt IST).
   const schutzMoeglich = schutzRegel.proSpieltag > 0 && familieAn(RULES)
@@ -1029,7 +1056,7 @@ export default function Tippabgabe({ matchId }) {
       //
       // ⚠️ Geprüft wird gegen dieselben Funktionen, die auch ausgrauen — nicht
       // gegen eine zweite Fassung der Regel (Runden-Schicht, CLAUDE.md).
-      const standGesperrt = istErgebnisGesperrt(SNAP, RULES, h, a, meinEingriff);
+      const standGesperrt = istErgebnisGesperrt(SNAP, RULES, h, a, eingriffMitJoker);
       if (RULES.markets.result && standGesperrt.gesperrt) {
         setSperrGrund(`${h}:${a} ist nicht wählbar — ${standGesperrt.grund.replace(/^gesperrt: /, "")}`);
         setSaveState("sperrUngueltig");
@@ -1038,7 +1065,7 @@ export default function Tippabgabe({ matchId }) {
       if (scorer.enabled) {
         const getroffen = (picks ?? []).flat()
           .flatMap((pk) => [pk.main, pk.backup])
-          .filter((n) => n && istSchuetzeGesperrt(SNAP, RULES, n, meinEingriff).gesperrt);
+          .filter((n) => n && istSchuetzeGesperrt(SNAP, RULES, n, eingriffMitJoker).gesperrt);
         if (getroffen.length) {
           setSperrGrund(`${[...new Set(getroffen)].join(", ")} ist für diese Runde gesperrt — bitte einen anderen Torschützen wählen`);
           setSaveState("sperrUngueltig");
@@ -1266,6 +1293,11 @@ export default function Tippabgabe({ matchId }) {
           // und noch ein Kontingent frei ist. Eine Markierung, die die Wertung
           // ohnehin verwirft, gehört nicht in die Datenbank.
           ...(geschuetzt && schutzMoeglich ? { schutz: true } : {}),
+          // Der Freischalt-Joker — dieselbe Regel wie beim Schutz darüber: nur
+          // mitschicken, wenn die Runde ihn kennt und noch Kontingent frei
+          // ist. Eine Markierung, die ohnehin verworfen würde, gehört nicht
+          // in die Datenbank.
+          ...(freigeschaltet && freiMoeglich ? { frei: true } : {}),
         },
         snapshot: SNAP,
       });
@@ -1388,6 +1420,47 @@ export default function Tippabgabe({ matchId }) {
               </div>
             )}
 
+            {/* 🔴 Der Freischalt-Joker (Andi, 26.08.2026: „... und als Joker").
+                Er steht bei der SPERRE und nicht bei den anderen Jokern weiter
+                unten: er beantwortet die Frage, die man genau hier stellt —
+                „und wenn ich Kane doch tippen will?". Ein Joker, den man erst
+                nach dem Tippen findet, wird nicht benutzt.
+
+                ⚠️ Nur sichtbar, wenn es etwas aufzuheben GIBT. Ein Knopf, der
+                eine Sperre aufhebt, die an diesem Spiel gar nicht greift,
+                verbraucht ein Kontingent für nichts. */}
+            {freiMoeglich && etwasZu && (
+              <div style={{
+                marginBottom: 12, padding: "11px 13px", borderRadius: RUND.karte,
+                background: C.surface,
+                border: `1px solid ${freigeschaltet ? C.mint + "77" : C.line}`,
+              }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <button type="button" disabled={gesperrt}
+                    onClick={() => setFreigeschaltet((v) => !v)}
+                    title="Hebt die Favoriten-Sperre für dieses eine Spiel auf."
+                    style={{
+                      ...TAPZIEL_QUADRAT, cursor: gesperrt ? "default" : "pointer",
+                      fontFamily: "inherit", fontSize: "0.8125rem", fontWeight: 700,
+                      padding: "8px 14px", borderRadius: RUND.pille, opacity: gesperrt ? 0.5 : 1,
+                      background: freigeschaltet ? `${C.mint}22` : "transparent",
+                      color: freigeschaltet ? C.mint : C.muted,
+                      border: `1px solid ${freigeschaltet ? C.mint + "77" : C.line}`,
+                    }}>
+                    {freigeschaltet ? "🔓 Sperre aufgehoben" : "🔓 Sperre für dieses Spiel aufheben"}
+                  </button>
+                  <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>
+                    {freiLage.frei} von {freiLage.erlaubt} frei
+                  </span>
+                </div>
+                <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
+                  {freigeschaltet
+                    ? "Alle Torschützen und Endstände sind wieder wählbar — für dieses eine Spiel."
+                    : "Für das eine Spiel, bei dem du den Naheliegenden trotzdem willst."}
+                </p>
+              </div>
+            )}
+
             {/* Ergebnis-Eingabe */}
             {RULES.markets.result && (
               <Section title="Endstand">
@@ -1436,7 +1509,7 @@ export default function Tippabgabe({ matchId }) {
                 )}
 
                 <ErgebnisMatrix snap={SNAP} rules={RULES} tip={{ home: h, away: a }}
-                  gesperrt={gesperrt} eingriff={meinEingriff}
+                  gesperrt={gesperrt} eingriff={eingriffMitJoker}
                   onWahl={(hh, aa) => { setStandBeruehrt(true); setH(hh); setA(aa); }} />
               </Section>
             )}

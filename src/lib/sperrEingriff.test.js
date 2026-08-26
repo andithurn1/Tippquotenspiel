@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sperrenFuer, beschreibeEingriff } from "./sperrEingriff";
+import { sperrenFuer, beschreibeEingriff, freischaltStand } from "./sperrEingriff";
 
 // „kein Eingriff" ist `null` und kein eigener Export — von außen prüft man auf
 // falsy, und ein zweiter Name dafür wäre toter Code.
@@ -147,5 +147,53 @@ describe("beschreibeEingriff", () => {
 
   it("ohne Eingriff steht da nichts", () => {
     expect(beschreibeEingriff(null)).toBe("");
+  });
+});
+
+// ============================================================
+//  Der Joker dazu: die Freischaltung
+//
+//  🔴 Andi, 26.08.2026: „... und als Joker". Gebaut ist die Richtung, die
+//  immer aufgeht: sie erweitert die EIGENE Auswahl vor dem EIGENEN Tipp.
+//  Die andere Richtung (ich lege DIR eine Sperre auf) steht als offene Frage
+//  in `design/ideen.md` -- sie kann einen abgegebenen Tipp nachtraeglich
+//  ungueltig machen.
+// ============================================================
+describe("Freischaltung", () => {
+  const T = (userId, matchId, matchday, frei) => ({ userId, matchId, matchday, tip: { frei } });
+
+  it("ohne Kontingent gibt es sie nicht", () => {
+    expect(freischaltStand([], {}, { userId: "a", spieltag: 5 }))
+      .toMatchObject({ erlaubt: 0, frei: 0 });
+  });
+
+  it("zaehlt nur die eigenen, nur diesen Spieltag, nur die benutzten", () => {
+    const tipps = [
+      T("a", "m1", 5, true),
+      T("a", "m2", 5, false),   // getippt, aber nicht freigeschaltet
+      T("a", "m3", 6, true),    // anderer Spieltag
+      T("b", "m4", 5, true),    // anderer Spieler
+    ];
+    const stand = freischaltStand(tipps, { freischaltungen: 2 }, { userId: "a", spieltag: 5 });
+    expect(stand).toMatchObject({ erlaubt: 2, vergeben: 1, frei: 1 });
+    expect(stand.spiele).toEqual(["m1"]);
+  });
+
+  it("geht nie ins Minus", () => {
+    const tipps = [T("a", "m1", 5, true), T("a", "m2", 5, true)];
+    expect(freischaltStand(tipps, { freischaltungen: 1 }, { userId: "a", spieltag: 5 }).frei).toBe(0);
+  });
+
+  it("hebt in der Auswahl BEIDE Richtungen auf -- Runde und Ereignis", () => {
+    const SNAP = {
+      players: { home: { Kane: { anytime: 1.6 }, Musiala: { anytime: 2.4 } }, away: { Saad: { anytime: 6.5 } } },
+      correctScore: [[26, 34], [15, 18]],
+    };
+    const rules = { sperre: { enabled: true, modus: "rang", schuetzen: 1, ergebnisse: 1, mindestensOffen: 1 } };
+    // Runde sperrt einen, das Ereignis noch einen.
+    expect(schuetzenSperre(SNAP, rules, { schuetzen: 1 }).filter((o) => o.gesperrt)).toHaveLength(2);
+    // Mit Freischaltung ist nichts mehr zu.
+    expect(schuetzenSperre(SNAP, rules, { schuetzen: 1, frei: true }).filter((o) => o.gesperrt)).toHaveLength(0);
+    expect(ergebnisSperre(SNAP, rules, { ergebnisse: 1, frei: true }).filter((o) => o.gesperrt)).toHaveLength(0);
   });
 });

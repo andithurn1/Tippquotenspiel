@@ -77,6 +77,28 @@ export function sperrenFuer(vorgaenge = [], { userId = null, matchday = null } =
   return { schuetzen, ergebnisse, gruende };
 }
 
+// ── Der Joker: wie viele Freischaltungen habe ich noch? ────
+// 🔴 Wörtlich dieselbe Bauart wie `schutzStand` (JK14, fremdjoker.js), und aus
+// demselben Grund: der Admin stellt die ANZAHL, der Spieler trifft die
+// AUSWAHL bei der Tippabgabe. Gezählt wird aus den schon abgegebenen Tipps
+// desselben Spieltags — die Markierung reist im Tipp mit (`tip.frei`), es
+// braucht also keine zweite Tabelle.
+//
+// ⚠️ `spieltag` ist der RUNDEN-Spieltag. Mit dem Liga-Spieltag hätte man in
+// einer Runde über fünf Wettbewerbe fünfmal so viele Freischaltungen pro
+// Woche — dieselbe Skalen-Falle, an der schon der Joker-Plan hing.
+export function freischaltStand(tipps = [], cfg = {}, { userId = null, spieltag = null } = {}) {
+  const erlaubt = Math.max(0, Number(cfg?.freischaltungen) || 0);
+  const meine = (Array.isArray(tipps) ? tipps : []).filter(
+    (t) => t?.userId === userId && t?.matchday === spieltag && t?.tip?.frei === true);
+  return {
+    erlaubt,
+    vergeben: meine.length,
+    frei: Math.max(0, erlaubt - meine.length),
+    spiele: meine.map((t) => t.matchId),
+  };
+}
+
 // ── Ein Satz für die Tippabgabe ─────────────────────────────
 // ⚠️ Er nennt den ANLASS, nicht nur die Zahl. „Ein Torschütze weniger" ohne
 // das „weil" ist die Sorte Meldung, die man für einen Fehler hält — genau

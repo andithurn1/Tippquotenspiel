@@ -78,7 +78,8 @@ function satz(cfg) {
     if (cfg.schuetzen) teile.push(`${cfg.schuetzen} Torschütze${cfg.schuetzen === 1 ? "" : "n"}`);
     if (cfg.ergebnisse) teile.push(`${cfg.ergebnisse} Ergebnis${cfg.ergebnisse === 1 ? "" : "se"}`);
   }
-  return `${teile.join(" · ")} gesperrt, mindestens ${cfg.mindestensOffen} bleiben offen`;
+  const joker = cfg.freischaltungen > 0 ? ` · ${cfg.freischaltungen}× aufhebbar` : "";
+  return `${teile.join(" · ")} gesperrt, mindestens ${cfg.mindestensOffen} bleiben offen${joker}`;
 }
 
 export default function FavoritenSperre({ rules, onChange }) {
@@ -154,6 +155,21 @@ export default function FavoritenSperre({ rules, onChange }) {
                 onChange={(v) => setze({ mindestQuote: v })} />
             </div>
           )}
+
+          {/* 🔴 Der Joker zur Sperre (Andi, 26.08.2026: „mach generell solche
+              mechaniken auch als Ereignis verfügbar und als Joker"). Er steht
+              oben und nicht in den Feinheiten: ob es einen Ausweg gibt, ist
+              die zweite Frage, die ein Admin zu dieser Regel stellt — gleich
+              nach „wie viel wird gesperrt". */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+            <Zahl label="Freischaltungen je Spieltag" wert={cfg.freischaltungen}
+              limits={L.freischaltungen} onChange={(v) => setze({ freischaltungen: v })} />
+          </div>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
+            {cfg.freischaltungen > 0
+              ? `Jeder darf die Sperre ${cfg.freischaltungen === 1 ? "an einem Spiel" : `an ${cfg.freischaltungen} Spielen`} je Spieltag selbst aufheben — er wählt bei der Tippabgabe, an welchem.`
+              : "Kein Ausweg: die Sperre gilt an jedem Spiel."}
+          </p>
 
           {/* 🔴 Andis Detail-Regel (SA6): oben das, was fast jeder verstellt —
               wie viel gesperrt wird. Dahinter die Sicherung, die man erst

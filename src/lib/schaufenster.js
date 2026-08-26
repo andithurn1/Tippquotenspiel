@@ -57,7 +57,7 @@ export function schaufensterRegeln() {
     //
     // ⚠️ 2,5 ist ein Vorführ-Wert und keine Empfehlung. Was eine gute Schwelle
     // ist, wird am Ende festgelegt (CLAUDE.md, Balancing ist Endphase).
-    sperre: { enabled: true, modus: "quote", mindestQuote: 2.5, mindestensOffen: 5 },
+    sperre: { enabled: true, modus: "quote", mindestQuote: 2.5, mindestensOffen: 5, freischaltungen: 1 },
 
     tippfenster: TIPPFENSTER,
 

@@ -53,6 +53,7 @@ export const SPERRE_LIMITS = {
   ergebnisse: { min: 0, max: 8, step: 1 },
   mindestQuote: { min: 1, max: 15, step: 0.1 },
   mindestensOffen: { min: 1, max: 20, step: 1 },
+  freischaltungen: { min: 0, max: 5, step: 1 },
 };
 
 // ⛔ AUS als Vorgabe, und die Zahlen darin sind Platzhalter. Was eine gute
@@ -65,6 +66,21 @@ export const DEFAULT_SPERRE = {
   ergebnisse: 1,
   mindestQuote: 2,     // im Modus `quote`: alles darunter ist gesperrt
   mindestensOffen: 4,  // so viele Optionen bleiben IMMER wählbar
+  // 🔴 Der JOKER dazu (Andi, 26.08.2026: „mach generell solche mechaniken auch
+  // als Ereignis verfügbar und als Joker"). 0 = es gibt ihn nicht.
+  //
+  // Er steht HIER und nicht bei den Fremdjokern, und das ist die Antwort auf
+  // Andis Rückfrage nach den Bedenken: ein Joker, der MIR eine Sperre nimmt,
+  // geht immer auf — er erweitert nur meine eigene Auswahl, vor meinem
+  // eigenen Tipp. Ein Joker, der DIR eine Sperre auflegt, ginge es nicht so
+  // ohne Weiteres: du hast womöglich längst getippt, und eine Sperre, die
+  // einen abgegebenen Tipp nachträglich ungültig macht, ist dieselbe Falle
+  // wie ein nachträglich geänderter Quoten-Schnappschuss. Die Richtung steht
+  // deshalb als offene Frage in `design/ideen.md` — hier steht die, die trägt.
+  //
+  // ⚠️ Die Anzahl stellt der ADMIN, die Auswahl trifft der SPIELER bei der
+  // Tippabgabe — wörtlich dieselbe Bauart wie `eingriffe.schutz` (JK14).
+  freischaltungen: 0,
 };
 
 const zahl = (v, { min, max }, ersatz) => {
@@ -80,6 +96,7 @@ export function sanitizeSperre(partial = {}) {
   const ergebnisse = Math.round(zahl(p.ergebnisse, L.ergebnisse, DEFAULT_SPERRE.ergebnisse));
   const mindestQuote = +zahl(p.mindestQuote, L.mindestQuote, DEFAULT_SPERRE.mindestQuote).toFixed(1);
   const mindestensOffen = Math.round(zahl(p.mindestensOffen, L.mindestensOffen, DEFAULT_SPERRE.mindestensOffen));
+  const freischaltungen = Math.round(zahl(p.freischaltungen, L.freischaltungen, DEFAULT_SPERRE.freischaltungen));
   return {
     // ⚠️ Dieselbe Bauart wie `sanitizeWettbewerbe`: eingeschaltet ist sie nur,
     // wenn sie auch etwas TUT. Im Rang-Modus mit 0 und 0 gesperrten Optionen
@@ -87,7 +104,7 @@ export function sanitizeSperre(partial = {}) {
     // Oberfläche zeigte einen aktiven Schalter ohne Wirkung.
     enabled: p.enabled === true
       && (modus === "quote" ? mindestQuote > 1 : schuetzen > 0 || ergebnisse > 0),
-    modus, schuetzen, ergebnisse, mindestQuote, mindestensOffen,
+    modus, schuetzen, ergebnisse, mindestQuote, mindestensOffen, freischaltungen,
   };
 }
 
@@ -142,6 +159,10 @@ function entscheide(optionen, { anzahl, modus, mindestQuote, mindestensOffen, gr
 // verschärft der Eingriff immer und lockert nie, und `mindestensOffen` gilt
 // weiter für das Gesamtergebnis: was der Runden-Durchgang schon gesperrt hat,
 // zählt nicht mehr als Spielraum.
+// ⚠️ `eingriff.frei` (die Freischaltung, oben) hebt BEIDE Richtungen auf — die
+// Sperre der Runde UND eine persönliche aus einem Ereignis. Alles andere wäre
+// nicht erklärbar: „aufgehoben, aber nicht ganz" ist keine Aussage, die auf
+// einen Knopf passt.
 function persoenlich(eintraege, cfg, anzahl) {
   if (!anzahl) return eintraege;
   const offen = eintraege.filter((o) => !o.gesperrt);
@@ -164,6 +185,7 @@ export function schuetzenSperre(snap, rules, eingriff = null) {
     ...Object.entries(snap?.players?.home ?? {}).map(([name, q]) => ({ id: name, seite: "home", quote: q?.anytime })),
     ...Object.entries(snap?.players?.away ?? {}).map(([name, q]) => ({ id: name, seite: "away", quote: q?.anytime })),
   ];
+  if (eingriff?.frei) return alle.map((o) => ({ ...o, gesperrt: false, grund: null }));
   const runde = (!cfg.enabled || !cfg.schuetzen)
     ? alle.map((o) => ({ ...o, gesperrt: false, grund: null }))
     : entscheide(alle, {
@@ -184,6 +206,7 @@ export function ergebnisSperre(snap, rules, eingriff = null) {
     const zeile = Array.isArray(raster[h]) ? raster[h] : [];
     for (let a = 0; a < zeile.length; a++) alle.push({ id: `${h}:${a}`, home: h, away: a, quote: zeile[a] });
   }
+  if (eingriff?.frei) return alle.map((o) => ({ ...o, gesperrt: false, grund: null }));
   const runde = (!cfg.enabled || !cfg.ergebnisse)
     ? alle.map((o) => ({ ...o, gesperrt: false, grund: null }))
     : entscheide(alle, {

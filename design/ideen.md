@@ -69,7 +69,7 @@ sonst nicht mehr, wenn das Fenster zu ist.
 
 # Offen
 
-## ❓ Favoriten sperren — „immer Harry Kane nehmen, boring"
+## ✅ Favoriten sperren — „immer Harry Kane nehmen, boring" · GEBAUT 26.08.2026
 
 *Andi, 26.08.2026, wörtlich:* „notier noch als auswahl, dass der admin
 einstellen kann, dass bspw. die wahrscheinlichsten quoten bei Torschützen und
@@ -80,6 +80,21 @@ erreichen … find halt immer harry kane nehmen boringo"
 **Der Kern in einem Satz:** die naheliegendste Wahl soll nicht immer offen
 stehen. Wer den Torschützenkönig nimmt, weil er der Torschützenkönig ist, tippt
 nicht — er wählt aus.
+
+### 🔴 Stand: gebaut. Was aus den sechs Fragen geworden ist
+
+| | Frage | Antwort im Code |
+|---|---|---|
+| ❓1 | Sperren oder dämpfen? | **Sperren.** Dämpfen wäre Ebene 2 und damit Balance. Das Kontingent aus deiner dritten Möglichkeit gibt es trotzdem — als **Freischalt-Joker** (`sperre.freischaltungen`). |
+| ❓2 | Quote oder Rang? | **Beides, umschaltbar** (`sperre.modus`). Deine Antwort ist damit eine Voreinstellung und keine Architektur-Entscheidung. Vorgabe ist `rang`, weil er deine Klammer von selbst auflöst. |
+| ❓3 | Torschütze und Endstand getrennt? | **Getrennt** — `schuetzen` und `ergebnisse` sind zwei Zahlen. |
+| ❓4 | Was, wenn nichts übrig bleibt? | **`mindestensOffen`.** Gesperrt wird nur so weit, wie danach noch genug Auswahl bleibt. Vorgabe 4. |
+| ❓5 | Welche Stufe? | **Stufe 2**, als Klartext-Frage „Ist der Naheliegende wählbar?" (12. Regler). |
+| ❓6 | Nähe über eine gesperrte Zelle? | **NOCH OFFEN** — siehe unten. Das ist die einzige Frage, die noch auf dich wartet. |
+
+⚠️ **Alles darunter ist die ursprüngliche Notiz** und bleibt stehen, weil sie
+zeigt, woher die Antworten kommen. Wo sie fragt, ist die Frage beantwortet —
+außer bei ❓6.
 
 ### Vorlage ausgefüllt (`design/vokabular.md`)
 
@@ -171,6 +186,68 @@ auch Kane genommen" (`alleinstellung.js` rechnet das bereits aus). Beides
 zusammen ginge auch.
 
 → Deine Entscheidung. Ich baue, was du sagst.
+
+---
+
+## ❓ Sperre als Ereignis und als Joker — die zweite Richtung
+
+*Andi, 26.08.2026, wörtlich:* „mach generell solche mechaniken auch als Ereignis
+verfügbar und als Joker (oder gibts da Bedenken dass es nicht aufgeht, )"
+
+### ✅ Gebaut ist beides — in der Richtung, die trägt
+
+- **Als Ereignis:** die Wirkung `sperre` in `wirkung.js` ist auswertbar
+  geworden. Ein Ereignis kann EINEM Spieler an EINEM Spieltag zusätzlich
+  Torschützen und/oder Endstände zuhalten (`sperrEingriff.js`). Sie stand seit
+  dem 07.08.2026 als Vorbereitung im Katalog und hatte bis heute nichts, worauf
+  sie greifen konnte.
+- **Als Joker:** `sperre.freischaltungen` — der Spieler hebt die Sperre an
+  einem Spiel je Spieltag selbst auf. Bauart wörtlich wie `eingriffe.schutz`
+  (JK14): Anzahl vom Admin, Auswahl vom Spieler bei der Tippabgabe.
+
+### 🔴 Die Bedenken, nach denen du gefragt hast
+
+Es sind drei, und die ersten beiden sind der Grund für genau diesen Zuschnitt.
+
+**1 · Rückwirkend geht es nicht.** Eine Sperre auf einem Spieltag, an dem schon
+getippt wurde, macht abgegebene Tipps nachträglich ungültig — dieselbe Falle wie
+ein nachträglich geänderter Quoten-Schnappschuss. Die Ereignis-Sperre greift
+deshalb über den RUNDEN-Spieltag und nicht über die Uhrzeit.
+
+**2 · Zwei Sperren zusammen können die Auswahl leerräumen.** Runden-Sperre plus
+Ereignis-Sperre sind einzeln harmlos und zusammen womöglich nicht.
+`mindestensOffen` gilt deshalb für BEIDE zusammen, an einer Stelle.
+
+**3 · Sie verrechnet nichts.** Der Vorgang bleibt in Punkten, Jokern und Faktor
+neutral. Damit fällt die ganze Mechanik nicht unter Balancing — sie verschiebt
+die Auswahl, nicht die Punkte.
+
+### ❓ Die eine Richtung, die ich NICHT gebaut habe — bitte entscheiden
+
+**❓ Soll man einem MITSPIELER eine Sperre auflegen können?** („du darfst diesen
+Spieltag den Favoriten nicht nehmen")
+
+Das wäre ein Fremdjoker wie Block und Klau — und es ist die Richtung, bei der
+Bedenken 1 wirklich zuschlägt: die Fremdjoker-Familie setzt voraus, dass der
+Getroffene schon getippt hat (Trittbrett und Gegenwette brauchen seinen Tipp).
+Eine Sperre braucht das Gegenteil: sie muss VOR seinem Tipp da sein, sonst ist
+sie wirkungslos oder sie nimmt ihm einen abgegebenen Tipp weg.
+
+Zwei Auswege, beide baubar:
+
+| | |
+|---|---|
+| **auf den NÄCHSTEN Spieltag** | Der Getroffene hat dort noch nicht getippt. Sauber, aber die Wirkung kommt spät und fühlt sich entkoppelt an. |
+| **nur bis zum eigenen Tipp-Schluss** | Wer früh tippt, ist geschützt; wer spät tippt, wird getroffen. Das belohnt frühes Tippen — womöglich sogar erwünscht, aber es ist eine Nebenwirkung, keine Absicht. |
+
+→ Deine Entscheidung. Ohne sie baue ich sie nicht: eine Mechanik, die einem
+Mitspieler etwas wegnimmt, will man nicht auf gut Glück einführen.
+
+**❓ Und die kleinere Frage nebenbei:** die Wirkung `sperre` hieß bis heute „kein
+Joker an diesem Spieltag". Diese Bedeutung ist NICHT mitgewandert — sie ist eine
+andere Mechanik (Kontingent statt Auswahl). Soll es sie zusätzlich geben?
+
+---
 
 ## 🆕 Joker-Ökonomie — neue Einfälle
 

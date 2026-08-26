@@ -3,6 +3,55 @@
 Offene Feature-Ideen, grob nach Aufwand. Gebaut wird in einzelnen, testbaren
 Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 
+## ✅ EBENE 5 IST ANGESCHLOSSEN — die Favoriten-Sperre (26.08.2026)
+
+Bis heute hat dieses Spiel an genau einer Stelle **nichts verboten**: der
+Auswahl. Jeder durfte jeden Torschützen und jeden Endstand nehmen; alles, was
+eine Regel bewirkte, bewirkte sie über die WERTUNG. Seit dem 26.08.2026 gibt es
+die Gegenrichtung — `rules.sperre` nimmt Optionen aus der Auswahl, ohne eine
+einzige Zahl zu verrechnen.
+
+**Was daran für die Roadmap zählt, ist nicht die Mechanik, sondern die Ebene.**
+Sie hat drei Anschlüsse gebraucht, und alle drei waren Stellen, an denen eine
+neue Regel sonst still gebrochen worden wäre:
+
+| Anschluss | was ohne ihn passiert wäre |
+|---|---|
+| `initialPicks` (Tippabgabe) | belegte den Slot mit dem ERSTEN Namen der Liste — bei einem Favoriten-Filter genau dem gesperrten |
+| `autoTip.js` | der Versäumte hätte bekommen, was der Anwesende nicht darf |
+| das Speichern | die Oberfläche graut aus, sie SETZT NICHTS DURCH — ein offener Screen hätte den gesperrten Stand durchgereicht |
+
+🔴 **Die Lehre, und sie gilt für jede weitere Ebene-5-Idee:** wer die Auswahl
+einschränkt, muss JEDE Stelle finden, die eine Auswahl trifft, ohne einen
+Menschen zu fragen. Es waren drei, und keine davon fällt bei einem Test auf,
+der nur die Rechnung prüft.
+
+**Was sie heute kann:** zwei Bauarten (`rang` relativ zum Spiel · `quote` als
+feste Schwelle), getrennt für Torschützen und Endstände, mit `mindestensOffen`
+als Sicherung. Als **Ereignis** (`wirkung.js`, Typ `sperre`) trifft sie einen
+Spieler an einem Spieltag; als **Joker** (`sperre.freischaltungen`) hebt ein
+Spieler sie an einem Spiel selbst auf.
+
+⏳ **Was offen ist:**
+
+- **Nähe über eine gesperrte Zelle** (Andis ❓6, `design/ideen.md`): 2:1 gesperrt,
+  getippt 2:0, es endet 2:1 — zahlt die Nähe? Heute ja, wie immer. Andis
+  Entscheidung.
+- **Sperre gegen einen MITSPIELER** (Fremdjoker-Richtung): baubar, aber sie
+  kollidiert mit der Fremdjoker-Familie, die einen schon abgegebenen Tipp
+  voraussetzt. Zwei Auswege stehen in `design/ideen.md`.
+- **Joker-Sperre für einen Spieltag** („diesen Spieltag kein Joker") — die
+  ursprüngliche Bedeutung der Wirkung `sperre`, bewusst NICHT mitgewandert:
+  das ist Kontingent, nicht Auswahl.
+
+### Endphase (Balancing — NICHT jetzt anfassen)
+
+- Wie viele Optionen eine Sperre nehmen darf, ohne dass eine Runde zäh wird.
+  Die heutigen Zahlen (`DEFAULT_SPERRE`, die drei Regler-Stufen, die
+  Schaufenster-Runde) sind ausdrücklich Platzhalter bzw. Vorführwerte.
+
+---
+
 ## 📱 DIE NATIVE APP: was wirklich im Weg steht (26.08.2026, GEMESSEN)
 
 Andis Frage: *„wir müssen uns ja eh mal um die native app kümmern, wie
