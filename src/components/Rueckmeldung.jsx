@@ -91,9 +91,43 @@ export function RueckmeldungProvider({ children }) {
       // um den es eigentlich geht.
       return [...ohneGleiche, { id, text: sauber, art }].slice(-3);
     });
-    timer.current.set(id, setTimeout(() => weg(id), STANDZEIT[art] ?? STANDZEIT.info));
     return id;
-  }, [weg]);
+  }, []);
+
+  // 🔴 DIE UHR LÄUFT ERST, WENN DIE MELDUNG DA IST — nicht, wenn sie bestellt
+  // wurde. Bis zum 26.08.2026 stand das `setTimeout` oben in `melde`, direkt
+  // neben dem `setMeldungen`. Das sieht richtig aus und ist es nicht:
+  //
+  // ⚠️ Gemessen an einer echten Tippabgabe (Pixel 5, Entwicklungs-Server):
+  //     5450 ms  Uhr gestartet (2 200 ms)
+  //     6758 ms  Streifen erscheint    ← 1 308 ms später
+  //     7674 ms  Streifen verschwindet ← die Uhr war ja schon gelaufen
+  //   Sichtbar: 916 ms statt 2 200. Ein „Tipp gespeichert", das man verpasst,
+  //   weil man in dem Moment noch auf den Knopf gesehen hat.
+  //
+  // Der Grund ist kein Fehler in React: der Zustand ändert sich sofort, aber
+  // GEZEICHNET wird erst, wenn der Hauptthread wieder Luft hat — und genau in
+  // dem Moment hat er sie nicht, weil derselbe Klick gerade gespeichert hat.
+  // Auf einem alten Telefon ist der Abstand größer, nicht kleiner.
+  //
+  // `useEffect` läuft nach dem Zeichnen. Damit misst die Standzeit das, was
+  // sie behauptet zu messen: wie lange die Meldung ZU SEHEN ist.
+  useEffect(() => {
+    const offen = timer.current;
+    for (const m of meldungen) {
+      if (offen.has(m.id)) continue;
+      offen.set(m.id, setTimeout(() => weg(m.id), STANDZEIT[m.art] ?? STANDZEIT.info));
+    }
+    // ⚠️ Und die Gegenrichtung, die vorher fehlte: eine Meldung kann
+    // verschwinden, OHNE dass ihre Uhr abgelaufen ist — verdrängt von einer
+    // gleichlautenden oder vom Dreier-Deckel. Deren Timer lief bisher weiter
+    // und rief `weg` auf eine Id, die es nicht mehr gibt. Folgenlos, aber es
+    // sammelt sich.
+    const noch = new Set(meldungen.map((m) => m.id));
+    for (const [id, t] of offen) {
+      if (!noch.has(id)) { clearTimeout(t); offen.delete(id); }
+    }
+  }, [meldungen, weg]);
 
   useEffect(() => {
     const offen = timer.current;

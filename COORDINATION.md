@@ -126,6 +126,53 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-26 (XXIV) · ⏱️ **Die Standzeit der Meldung war eine Behauptung** — 916 ms statt 2 200
+
+**Wenn du irgendwo eine Standzeit, ein Einblenden oder einen Selbst-Schließer
+baust: die Uhr gehört in einen `useEffect`, nicht neben das `setState`.**
+
+Gefunden beim Nachmessen der Haptik, nicht gesucht. `STANDZEIT.gespeichert`
+steht auf 2 200 ms. An einer echten Tippabgabe gemessen (Pixel 5,
+Entwicklungs-Server):
+
+```
+5 450 ms   Uhr gestartet (2 200 ms)
+6 758 ms   Streifen erscheint       ← 1 308 ms später
+7 674 ms   Streifen verschwindet    ← die Uhr war ja schon gelaufen
+```
+
+**Sichtbar: 916 ms.** Ein „Tipp gespeichert", das man verpasst, weil man in
+dem Moment noch auf den Knopf gesehen hat.
+
+🔴 **Der Grund ist kein Fehler in React, und deshalb ist er tückisch:** der
+Zustand ändert sich sofort, GEZEICHNET wird erst, wenn der Hauptthread wieder
+Luft hat — und genau in dem Moment hat er sie nicht, weil derselbe Klick
+gerade gespeichert hat. **Auf einem alten Telefon ist der Abstand größer,
+nicht kleiner.** Wer die Meldung im Entwicklungs-Server einmal sieht, hält es
+für richtig.
+
+**Behoben:** das `setTimeout` ist aus `melde()` heraus in einen `useEffect` auf
+`meldungen` gewandert. `useEffect` läuft nach dem Zeichnen, also misst die
+Standzeit jetzt das, was sie behauptet zu messen.
+
+Dreimal nachgemessen: Versatz **28 / 36 / 24 ms**, sichtbar
+**2 185 / 2 190 / 2 203 ms**.
+
+⚠️ **Ein zweiter, kleinerer Fund fiel dabei ab:** eine Meldung kann
+verschwinden, OHNE dass ihre Uhr abgelaufen ist — verdrängt von einer
+gleichlautenden oder vom Dreier-Deckel. Deren Timer lief weiter und rief `weg`
+auf eine Id, die es nicht mehr gibt. Folgenlos, aber es sammelt sich; der
+Effekt räumt sie jetzt mit ab.
+
+**Der Wächter dazu:** `src/lib/rueckmeldungUhr.test.js`. Ein echter
+Render-Test bräuchte jsdom und eine Testbibliothek — für eine Regel, die man
+am Quelltext ablesen kann. Also eine Textprüfung, dieselbe Bauart wie
+`rund.test.js`: sie verbietet nicht das `setTimeout`, sondern die STELLE.
+**Gegengeprobt** — das alte `setTimeout` wieder eingesetzt, der Test fällt
+sofort auf, mit der Messung in der Fehlermeldung.
+
+Belegt: `npm test` 2 703 grün · `lint` grün · `build` grün.
+
 ### 2026-08-26 (XXIII) · 🤚 **Haptik geht jetzt über das Betriebssystem** — `@capacitor/haptics` statt `navigator.vibrate`
 
 **Wenn du gestern den Eintrag XXII gelesen hast: der Browser-Weg ist nicht
