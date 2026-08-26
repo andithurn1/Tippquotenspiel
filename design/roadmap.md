@@ -17,7 +17,7 @@ entfällt: „sobald mehr dazukommen". Die drei sind jetzt da:
 | Neuer Spieltag tippbar | an | ✅ |
 | Erinnerung vor Anpfiff | an | ✅ |
 | **Jemand hat dir ein Spiel gesperrt** | an | ✅ über `getFremdEingriffe(roundId)` |
-| **Spieltag abgerechnet** | an | ⏳ **noch nichts** |
+| **Spieltag abgerechnet** | an | ✅ **26.08.2026 angeschlossen** |
 | **Jemand ist an dir vorbei** | **aus** | ⏳ **noch nichts** |
 
 🔴 **Warum „Sperre" die wichtigste der drei ist:** sie betrifft eine FRIST.
@@ -36,10 +36,24 @@ wichtigen weg.
 Beide brauchen einen **Vergleich mit dem Stand von vorhin**, und den hält
 heute niemand:
 
-- **Abgerechnet** — „ein Spieltag ist FERTIG geworden" heißt: er war beim
-  letzten Blick noch offen. Der Store liefert den aktuellen Stand, nicht die
-  Veränderung. Die Zwischenabrechnung (`Zwischenabrechnung.jsx`) löst
-  dieselbe Frage bereits über den letzten Besuch — dort liegt der Anschluss.
+- ✅ **Abgerechnet — am 26.08.2026 angeschlossen.** Der Anschluss lag genau
+  dort, wo er vermutet wurde: die Zwischenabrechnungs-Einblendung führt schon
+  eine Marke „bis hierhin gesehen" (`tqs.abrechnung.gesehen.v1`). Neu ist
+  `fertigeSpieltage()` in `zwischenabrechnung.js`.
+
+  🔴 **Es ist eine andere Aussage als die Einblendung darüber:** die erzählt
+  SPIELE („Bochum – Osnabrück, 156 Punkte"), die Benachrichtigung meldet einen
+  SPIELTAG. Ein Spieltag, von dem drei von neun Spielen fertig sind, ist nicht
+  abgerechnet — und eine Meldung je Spiel wären neun Meldungen für ein
+  Ereignis. `neueAbrechnungen` reicht deshalb NICHT als Quelle: sie liefert
+  die seit dem letzten Blick fertigen Spiele, nicht die Frage, ob der Spieltag
+  damit vollständig ist.
+
+  ⚠️ **Die Marke wird MITGELESEN, nicht ein zweites Mal geführt.** Zwei Marken
+  für „bis hierhin gesehen" liefen unweigerlich auseinander, und dann meldet
+  die eine Seite, was die andere längst gezeigt hat. Geschrieben wird sie
+  weiterhin nur dort, wo der Nutzer die Einblendung wegklickt — eine
+  Benachrichtigung ist kein „gesehen".
 - **Überholt** — braucht den eigenen Rang von vorhin. `getLeaderboardHistory`
   hat die Daten; was fehlt, ist die Stelle, die „mein Rang beim letzten Mal"
   festhält.

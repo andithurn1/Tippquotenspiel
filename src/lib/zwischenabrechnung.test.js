@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   SPIELDAUER_MIN, abrechnungsZeit, neueAbrechnungen, zusammenfassung, gesehenBis,
+  fertigeSpieltage,
 } from "@/lib/zwischenabrechnung";
 import {
   DEFAULT_PREFS, sanitizePrefs, PREF_META,
@@ -240,5 +241,64 @@ describe("Die Vergleichs-Einstellung", () => {
     expect(s.vergleich[""]).toBeUndefined();
     // Und stabil: zweimal säubern ändert nichts mehr.
     expect(sanitizePrefs(s)).toEqual(s);
+  });
+});
+
+// 🔴 ZP5 (25.08.2026): die Benachrichtigung „Spieltag abgerechnet" ist eine
+// andere Aussage als die Einblendung — die erzählt SPIELE, diese meldet einen
+// SPIELTAG.
+describe("Fertige Spieltage", () => {
+  const T = (tage) => new Date(`2026-08-${String(20 + tage).padStart(2, "0")}T18:00:00Z`).getTime();
+  const spiel = (id, w, md, fertigTag, mitTipp = true) => ({
+    matchId: id, wettbewerb: w, matchday: md,
+    kickoff: new Date(T(fertigTag) - 2 * 3600000).toISOString(),
+    snapshot: SNAP, result: { home: 5, away: 1, playerGoals: {} },
+    tip: mitTipp ? { home: 5, away: 1, goals: { home: [], away: [] } } : null,
+  });
+  const JETZT = T(9);
+
+  it("meldet einen Spieltag erst, wenn ALLE seine Spiele fertig sind", () => {
+    const halb = [spiel("a", "bl", 3, 1), { ...spiel("b", "bl", 3, 1), result: null }];
+    expect(fertigeSpieltage({ eintraege: halb, seit: T(0), jetzt: JETZT })).toEqual([]);
+  });
+
+  it("meldet ihn, sobald das letzte Spiel durch ist", () => {
+    const ganz = [spiel("a", "bl", 3, 1), spiel("b", "bl", 3, 2)];
+    const out = fertigeSpieltage({ eintraege: ganz, seit: T(0), jetzt: JETZT });
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ wettbewerb: "bl", matchday: 3, spiele: 2 });
+    expect(out[0].punkte).toBeGreaterThan(0);
+  });
+
+  // 🔴 „Spieltag 3" gibt es in jeder Liga einmal. Ohne Wettbewerb im
+  // Schlüssel fielen sieben Spieltage zu einem zusammen.
+  it("hält Wettbewerbe auseinander", () => {
+    const beide = [spiel("a", "bl", 3, 1), spiel("b", "pl", 3, 2)];
+    const out = fertigeSpieltage({ eintraege: beide, seit: T(0), jetzt: JETZT });
+    expect(out).toHaveLength(2);
+    expect(new Set(out.map((x) => x.wettbewerb))).toEqual(new Set(["bl", "pl"]));
+  });
+
+  it("meldet nichts, was vor der Marke fertig wurde", () => {
+    const alt = [spiel("a", "bl", 3, 1), spiel("b", "bl", 3, 2)];
+    expect(fertigeSpieltage({ eintraege: alt, seit: T(5), jetzt: JETZT })).toEqual([]);
+  });
+
+  it("ohne Marke passiert nichts — sonst käme beim ersten Start alles auf einmal", () => {
+    const alle = [spiel("a", "bl", 3, 1)];
+    expect(fertigeSpieltage({ eintraege: alle, seit: null, jetzt: JETZT })).toEqual([]);
+  });
+
+  it("Spiele ohne Spieltag fallen weg statt eine null-Gruppe zu bilden", () => {
+    const ohne = [{ ...spiel("a", "bl", 3, 1), matchday: null }];
+    expect(fertigeSpieltage({ eintraege: ohne, seit: T(0), jetzt: JETZT })).toEqual([]);
+  });
+
+  it("zählt nur eigene abgegebene Tipps in die Punkte", () => {
+    const gemischt = [spiel("a", "bl", 3, 1), spiel("b", "bl", 3, 2, false)];
+    const [g] = fertigeSpieltage({ eintraege: gemischt, seit: T(0), jetzt: JETZT });
+    const [nur] = fertigeSpieltage({ eintraege: [spiel("a", "bl", 3, 1)], seit: T(0), jetzt: JETZT });
+    expect(g.punkte).toBeCloseTo(nur.punkte, 5);
+    expect(g.spiele).toBe(2);
   });
 });

@@ -166,3 +166,56 @@ export function gesehenBis(liste = [], vorher = null) {
   const alt = Number(vorher) || 0;
   return Math.max(alt, letzte);
 }
+
+// ── Welche SPIELTAGE sind fertig geworden? (ZP5, 25.08.2026) ────
+//
+// 🔴 Die Benachrichtigung „Spieltag abgerechnet" ist eine andere Aussage als
+// die Einblendung darüber: die erzählt SPIELE („Bochum – Osnabrück, 156
+// Punkte"), diese meldet einen SPIELTAG. Ein Spieltag, von dem drei von neun
+// Spielen fertig sind, ist nicht abgerechnet — und eine Meldung je Spiel
+// wären neun Meldungen für ein Ereignis.
+//
+// ⚠️ Deshalb reicht `neueAbrechnungen` NICHT als Quelle: sie liefert genau
+// die Spiele, die seit dem letzten Blick fertig wurden. Ob der SPIELTAG damit
+// vollständig ist, weiß nur, wer auch die anderen Spiele kennt. Beides muss
+// herein — `fertigeSpieltage` bekommt deshalb die ganze Liste UND die Marke.
+//
+// 🔴 Gruppiert wird nach WETTBEWERB + Spieltag, nie nach der nackten Zahl.
+// „Spieltag 3" gibt es in jeder Liga einmal; ohne den Wettbewerb im Schlüssel
+// fielen sieben verschiedene Spieltage zu einem zusammen — derselbe Fehler
+// wie seinerzeit beim Joker und bei den Benachrichtigungen.
+export function fertigeSpieltage({
+  eintraege = [], seit = null, jetzt = Date.now(), rules = DEFAULT_RULES,
+} = {}) {
+  if (seit == null) return [];
+  const grenze = zeit(seit) ?? Number(seit);
+  if (!Number.isFinite(grenze)) return [];
+
+  const gruppen = new Map();
+  for (const e of eintraege) {
+    const md = e.matchday ?? null;
+    if (md == null) continue;
+    const w = e.wettbewerb ?? "?";
+    const key = `${w}|${md}`;
+    if (!gruppen.has(key)) gruppen.set(key, { wettbewerb: w, matchday: md, spiele: [] });
+    gruppen.get(key).spiele.push(e);
+  }
+
+  const out = [];
+  for (const g of gruppen.values()) {
+    const zeiten = g.spiele.map((e) => abrechnungsZeit(e, jetzt));
+    // Ein Spieltag ist erst fertig, wenn JEDES seiner Spiele fertig ist.
+    if (zeiten.some((t) => t == null)) continue;
+    const zuletzt = Math.max(...zeiten);
+    // Und er ist NEU, wenn sein letztes Spiel nach der Marke fertig wurde.
+    if (zuletzt <= grenze) continue;
+    // Punkte nur aus den eigenen, tatsächlich abgegebenen Tipps.
+    let punkte = 0;
+    for (const e of g.spiele) {
+      if (!e.tip || !e.snapshot || !e.result) continue;
+      punkte += scoreTip(e.tip, e.result, e.snapshot, e.rules ?? rules).total;
+    }
+    out.push({ wettbewerb: g.wettbewerb, matchday: g.matchday, fertig: zuletzt, punkte, spiele: g.spiele.length });
+  }
+  return out.sort((a, b) => a.fertig - b.fertig);
+}

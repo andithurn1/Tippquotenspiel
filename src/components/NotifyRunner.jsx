@@ -5,6 +5,7 @@ import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { sanitizeNotify, dueNotifications, DEFAULT_NOTIFY } from "@/lib/notify";
+import { fertigeSpieltage } from "@/lib/zwischenabrechnung";
 import { zustellbar, merkeZustellung, pruneZustellungen } from "@/lib/zustellung";
 import { waehleKanal, STATUS } from "@/lib/pushKanal";
 
@@ -24,6 +25,13 @@ import { waehleKanal, STATUS } from "@/lib/pushKanal";
 
 const PREFS_KEY = "tqs.notify.v1";
 const GESEHEN_KEY = "tqs.notify.gesehen.v1";
+// 🔴 DIESELBE Marke, die die Zwischenabrechnungs-Einblendung führt
+// (`Zwischenabrechnung.jsx`) — mitgelesen, nicht ein zweites Mal geführt.
+// Zwei Marken für „bis hierhin gesehen" liefen unweigerlich auseinander, und
+// dann meldet die eine Seite etwas, das die andere längst gezeigt hat.
+// ⚠️ Nur LESEN: geschrieben wird sie dort, wo der Nutzer die Einblendung
+// wegklickt. Eine Benachrichtigung ist kein „gesehen".
+const ABRECHNUNG_KEY = "tqs.abrechnung.gesehen.v1";
 const INTERVALL_MS = 5 * 60 * 1000;
 
 const lies = (key, fallback) => {
@@ -67,11 +75,14 @@ export default function NotifyRunner() {
         // ⚠️ NUR was der Nutzer eingeschaltet hat: wer „Sperren" abwählt,
         // soll dafür auch keine Abfrage auslösen. Sonst kostet eine
         // abgeschaltete Meldung trotzdem eine Runde zur Datenbank.
-        const [matches, tips, eingriffe] = await Promise.all([
+        const [matches, tips, eingriffe, eintraege] = await Promise.all([
           getStore().listRoundMatches(roundId),
           getStore().listTips({ roundId }),
           prefs.geblockt
             ? (getStore().getFremdEingriffe?.(roundId) ?? Promise.resolve([]))
+            : Promise.resolve([]),
+          prefs.abgerechnet
+            ? (getStore().getRoundEntries?.(roundId) ?? Promise.resolve([]))
             : Promise.resolve([]),
         ]);
 
@@ -79,13 +90,26 @@ export default function NotifyRunner() {
         const faellig = dueNotifications({
           matches, tips, userId: user.id, prefs, gesehen,
           eingriffe,
-          // ⏳ `abrechnungen` und `ueberholungen` bleiben vorerst leer: beide
-          // brauchen einen Vergleich mit dem STAND VON VORHIN, und den hält
-          // heute niemand. Die Schalter sind trotzdem schon da und wirken —
-          // sie liefern nur noch nichts. ⚠️ Das ist bewusst so und steht in
-          // `design/roadmap.md`; ein Schalter ohne Wirkung wäre sonst genau
-          // die Lücke, die `npm run greift` sucht.
-          abrechnungen: [],
+          // 🔴 „Spieltag abgerechnet" braucht den Vergleich mit dem STAND VON
+          // VORHIN. Genau die Marke hält die Zwischenabrechnungs-Einblendung
+          // schon (`tqs.abrechnung.gesehen.v1`) — hier wird sie MITGELESEN,
+          // nicht ein zweites Mal geführt. Zwei Marken für „bis hierhin
+          // gesehen" liefen unweigerlich auseinander, und dann meldet die eine
+          // Seite etwas, das die andere längst gezeigt hat.
+          //
+          // ⚠️ Nur die EIGENEN Einträge zählen: `getRoundEntries` liefert die
+          // der ganzen Runde.
+          abrechnungen: prefs.abgerechnet
+            ? fertigeSpieltage({
+              eintraege: (eintraege ?? []).filter((x) => x.userId === user.id),
+              // ⚠️ Die Marke ist eine nackte Zahl, kein JSON — `lies` würde
+              // sie zwar parsen, aber ein leerer Wert ergäbe `null` statt 0.
+              seit: (() => { try { return Number(localStorage.getItem(ABRECHNUNG_KEY)) || null; } catch { return null; } })(),
+            })
+            : [],
+          // ⏳ `ueberholungen` bleibt vorerst leer: dafür fehlt der eigene
+          // RANG von vorhin, und den hält heute niemand. Der Schalter steht
+          // schon (Vorgabe: aus) — siehe `design/roadmap.md`.
           ueberholungen: [],
         });
         const raus = zustellbar({ faellig, gesehen, prefs });
