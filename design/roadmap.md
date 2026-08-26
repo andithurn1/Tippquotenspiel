@@ -118,6 +118,82 @@ laufen; 5 und 6 sind Umbauten an Anmeldung und Benachrichtigungen — also
 genau an dem, was der Testbetrieb mit Freunden gerade braucht. Erst laufen
 lassen, dann verpacken.
 
+## 💰 Was kostet es, NACH dem Umstieg noch Funktionen zu bauen? (26.08.2026)
+
+Andis Frage: *„können wir dann auch noch bissche Funktionen hinzufügen? wie
+viel aufwand wird das dann sein?"*
+
+**Antwort: genauso viel wie heute.** Und das ist keine Beruhigung, sondern
+gemessen.
+
+### 🔴 Die Zahl
+
+| | Zeilen |
+|---|---|
+| Engine + Logik (`src/lib`) | 45 668 |
+| Oberfläche (`src/components`) | 22 637 |
+| **zusammen** | **68 305** |
+| davon an nativen Nahtstellen | **349** |
+
+**99,5 % des Codes berührt die native Hülle überhaupt nicht.** Das ist der
+ganze Unterschied zwischen Capacitor und React Native: es ist DIESELBE
+Web-App in einem Container, kein zweiter Code.
+
+Die 349 Zeilen sind zwei Dateien: `pushKanal.js` (Benachrichtigungs-Zustellung)
+und `AuthProvider.jsx` (Anmelde-Weiterleitung). Genau die zwei, die schon als
+Schritt 5 und 6 im Plan stehen.
+
+⚠️ **Und was NICHT dazugehört, obwohl es nach nativ klingt:** Zwischenablage
+(`navigator.clipboard`, 5 Stellen) und Teilen (`navigator.share`, 3 Stellen)
+deckt Capacitor mit eigenen Bausteinen ab — dieselbe Zeile funktioniert im
+Container weiter, im Zweifel mit einem Ein-Zeilen-Tausch.
+
+### ⚠️ Was TEURER wird, und es ist genau eine Sache
+
+Nicht das Bauen — das **Ausliefern**. Heute: pushen, Netlify baut, live.
+Mit App: Store-Prüfung, Tage statt Minuten.
+
+🔴 **Die Ausnahme ist der entscheidende Punkt:** Capacitor kann die
+Web-Schicht (HTML, CSS, JavaScript, Bilder) **ohne Store-Prüfung**
+aktualisieren — „Live Updates" bzw. OTA. Apple und Google erlauben das
+ausdrücklich, solange nur die Web-Schicht getauscht wird, nicht der native
+Teil. Anbieter: Capgo, Capawesome Cloud, Codemagic.
+
+**Was das praktisch heißt:**
+
+| Änderung | Store-Prüfung? |
+|---|---|
+| Neue Regel, neuer Joker, neues Preset | ❌ nein — Live Update |
+| Layout, Texte, Farben, Animationen | ❌ nein |
+| Fehlerbehebung in der Wertung | ❌ nein |
+| Neue Benachrichtigungsart | ❌ nein (`dueNotifications` ist Web) |
+| Neues Capacitor-Plugin (Kamera, Biometrie …) | ✅ ja |
+| Symbol, App-Name, Berechtigungen | ✅ ja |
+
+**Also: alles, was dieses Projekt bisher gebaut hat, wäre ein Live Update
+gewesen.** Kein einziger der Commits dieser Woche hätte eine Store-Prüfung
+gebraucht.
+
+### Die ehrliche Gegenrechnung
+
+Was den Umstieg trotzdem kostet — einmalig, nicht je Funktion:
+
+* **Schritt 4** (Capacitor + Android-Hülle): ein Nachmittag.
+* **Schritt 5** (Deep Link für die Anmeldung): ein Tag, plus Supabase-Eintrag.
+* **Schritt 6** (APNs + FCM statt Service Worker): der größte Posten, weil
+  zwei Anbieter mit je eigener Einrichtung dranhängen.
+* **iOS-Bauweg** (Mac, Cloud-Dienst oder GitHub Actions) + Konten
+  (Apple 99 $/Jahr, Google einmalig 25 $).
+* **Laufend:** ein Live-Update-Dienst, wenn man nicht bei jeder Textänderung
+  auf eine Store-Prüfung warten will.
+
+⚠️ **Der Posten, den man beim Schätzen vergisst:** ab dem ersten
+Store-Release gibt es ALTE Installationen. Wer eine Regel ändert, ändert sie
+für Leute, deren App drei Versionen alt ist. Das ist keine Capacitor-Frage,
+sondern eine des Regelwerks — und dieses Projekt ist dafür gut aufgestellt,
+weil die Regeln je Runde eingefroren werden (`getRegelnFuer`). Aber es
+gehört gewusst, bevor es auffällt.
+
 ## 🔔 ZP5: fünf Benachrichtigungsarten — zwei davon liefern noch nichts (25.08.2026)
 
 Andis Zusage beim Fremdjoker-Gespräch: *„wir machen noch ein Untermenü wo
