@@ -286,6 +286,50 @@ const KOMBINATIONEN = [
     korrektur: (r) => ({ ...r, modCap: Math.min(RULE_LIMITS.modCap.max, +rohModifikator(r).toFixed(2)) }),
   },
   {
+    // 🔴 Andi, 26.08.2026, wörtlich: „ich werde halt während der saison
+    // einsteigen lassen mit … als Spieltagsbeginn … vorsaison wetten gibts
+    // halt dann noch nicht."
+    //
+    // ⚠️ Und genau das weiß die App bisher NICHT. Gemessen an einer Runde,
+    // die bei Spieltag 5 beginnt: `saisonLage` meldet `gestartet: false` —
+    // richtig, denn das erste Spiel DIESER RUNDE ist noch nicht angepfiffen —
+    // und alle fensterlosen Saison-Wetten stehen offen. „Wer wird Meister?"
+    // ist damit im Oktober abgebbar, mit vier gelaufenen Spieltagen im Rücken.
+    //
+    // 🔴 Warum das trotzdem KEIN Fehler in `saisonFenster.js` ist und die
+    // Antwort deshalb hierher gehört: FAIR ist es, alle Mitspieler haben
+    // denselben Wissensstand. Falsch ist die PUNKTZAHL — der Admin hat sie
+    // vergeben, als wäre es eine Vorsaison-Wette, und nach vier Spieltagen
+    // ist dieselbe Frage deutlich leichter.
+    //
+    // ⛔ Deshalb ein Hinweis und kein Verbot: will ein Admin das, soll er es
+    // haben (Baukasten-Grundsatz). Er soll es nur nicht aus Versehen tun.
+    id: "saisonwetten-mitten-drin",
+    stufe: "hinweis",
+    titel: "Saison-Wetten in einer Runde, die mitten im Spielbetrieb beginnt",
+    gilt: (r) => {
+      const von = r?.spiele?.spieltagVon;
+      return Boolean(r?.saison?.enabled)
+        && (r?.saison?.wetten?.length ?? 0) > 0
+        && Number.isFinite(von) && von > 1;
+    },
+    text: (r) => {
+      const von = r.spiele.spieltagVon;
+      const vorher = von - 1;
+      return `Deine Runde beginnt an Spieltag ${von} — ${vorher} Spieltag${vorher === 1 ? "" : "e"} ` +
+        `${vorher === 1 ? "ist" : "sind"} dann schon gelaufen. Die ${r.saison.wetten.length} Saison-Wetten ` +
+        "sind trotzdem offen, denn für DEINE Runde hat die Saison noch nicht angefangen. " +
+        "Fair ist das — alle wissen gleich viel. Aber „Wer wird Meister?“ ist mit " +
+        `${vorher} bekannten Spieltag${vorher === 1 ? "" : "en"} keine Vorsaison-Wette mehr, ` +
+        "und die Punkte dafür stehen noch auf Vorsaison.";
+    },
+    fix: "Saison-Wetten abschalten",
+    // ⚠️ Die Korrektur schaltet ab und senkt KEINE Punkte: was eine leichtere
+    // Wette wert sein soll, ist eine Zahl — und Zahlen legt Andi zuletzt fest
+    // (CLAUDE.md, Balancing ist Endphase). Ein Vorschlag hier wäre geraten.
+    korrektur: (r) => ({ ...r, saison: { ...r.saison, enabled: false } }),
+  },
+  {
     id: "kein-unterschied",
     stufe: "hinweis",
     titel: "Exakt und ungefähr zahlen fast gleich",

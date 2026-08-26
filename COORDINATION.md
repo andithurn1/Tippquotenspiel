@@ -126,6 +126,61 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-26 (XXVI) · 🗓️ **Der Einstieg ist ein REGLER, kein Termin** — und Saison-Wetten wissen das nicht
+
+**Wenn du irgendwo „Saisonstart" liest: es gibt keinen.** Andi am 26.08.2026:
+*„ich werde halt während der saison einsteigen lassen mit … als
+Spieltagsbeginn"* und *„angenommen Marktstart ist eben wirklich erst zur 2.
+Saisonhälfte dann wirds auch ne Einstellbarkeit brauchen ab welchem Spieltag
+eben mitgemacht wird."*
+
+Eine Runde fängt an, wann ihr Admin sie anfangen lässt. Das ist
+`spiele.spieltagVon` — **es gibt die Einstellung längst**, im Erstellen-Screen
+unter *Saison & Zeitraum*, je Wettbewerb sogar abweichend
+(`LigaSonderregeln.jsx`), und `npm run greift` misst sie seit Langem.
+
+🔴 **Der Fund liegt woanders, und er ist echt.** An einer Runde ab Spieltag 5
+gemessen:
+
+```
+saisonLage: gestartet = false     ← für DIESE Runde stimmt das
+alle 3 Saison-Wetten:  ✅ offen   ← „jederzeit abgebbar"
+```
+
+„Wer wird Meister?" ist damit im Oktober abzugeben, mit vier gelaufenen
+Spieltagen im Rücken — zu Vorsaison-Punkten.
+
+⚠️ **Und das ist KEIN Fehler in `saisonFenster.js`**, sondern der Grund, warum
+die Antwort woanders hingehört: **fair** ist es, alle Mitspieler wissen gleich
+viel. Falsch ist die **Punktzahl**, denn der Admin hat sie vergeben, als wäre
+es eine Vorsaison-Wette.
+
+**Gebaut:** ein Hinweis in `reglerWarnung.js` (`saisonwetten-mitten-drin`),
+der ab Spieltag 2 greift und die Zahl der gelaufenen Spieltage nennt — richtig
+gebeugt („1 Spieltag ist", „17 Spieltage sind").
+
+⛔ **Hinweis, kein Verbot** — Baukasten-Grundsatz: will ein Admin das, soll er
+es haben, er soll es nur nicht aus Versehen tun. ⛔ **Und die Korrektur
+schaltet ab, statt Punkte zu raten:** was eine leichtere Wette wert sein soll,
+ist eine Zahl, und Zahlen legt Andi zuletzt fest.
+
+**Gegenprobe:** keine der sechs vermessenen Presets schlägt an, 6 Tests.
+
+---
+
+**Nebenbei aus dem „Weg eines Fremden"-Durchgang** (frischer Browser, kein
+localStorage, Beitritt per Code `DEMO`, erster Tipp, alle 14 Screens):
+
+* Beitritt ✅ · Rückmeldung „Beigetreten: Freundeskreis" ✅ · Tipp ✅
+* **Kein Seitenfehler auf keinem der 14 Screens.**
+* Zwei 404 auf `/abrechnung` — **beim Nachsehen KEIN Fund**:
+  `/reactions/sieger.mp4` fehlt noch, und `ReactionGif.jsx` fängt das
+  ausdrücklich ab („solange die Datei fehlt, erscheint ein sauberer
+  Emoji-Platzhalter"). Bisher liegt nur `hauchduenn.mp4` im Ordner. Erst
+  melden, wenn die Clips da sind und trotzdem 404 kommt.
+
+Belegt: `npm test` 2 714 grün · `lint` grün · `stufen` 0 Lücken.
+
 ### 2026-08-26 (XXV) · 🔌 **`npm run bereit`** — der Durchgang, der Andi gehört
 
 **Neu und für dich vermutlich nicht ausführbar:** `npm run bereit` fragt die

@@ -6,6 +6,7 @@ import { DEFAULT_RULES, sanitizeRules, RULE_LIMITS, maxTotalModifier } from "@/l
 import { PRESETS } from "@/lib/presets";
 import { CHARAKTERE } from "@/lib/charaktere";
 import { schaufensterRegeln } from "@/lib/schaufenster";
+import { SAISON_PRESETS } from "@/lib/saisonwetten";
 
 const BASIS = PRESETS[0].rules;
 
@@ -288,5 +289,70 @@ describe("Fremdjoker: Kombinationen, die eine Runde kippen", () => {
     expect(raus).not.toContain("fremdjoker-ohne-schutz");
     expect(raus).not.toContain("fremdjoker-rudel");
     expect(raus).not.toContain("sperrfrist-waechst-unbegrenzt");
+  });
+});
+
+// ============================================================
+//  MITTEN IN DER SAISON EINSTEIGEN (Andi, 26.08.2026)
+//
+//  Wörtlich: „ich werde halt während der saison einsteigen lassen mit … als
+//  Spieltagsbeginn … vorsaison wetten gibts halt dann noch nicht." Und, einen
+//  Satz später: „angenommen Marktstart ist eben wirklich erst zur 2.
+//  Saisonhälfte dann wirds auch ne Einstellbarkeit brauchen ab welchem
+//  Spieltag eben mitgemacht wird."
+//
+//  🔴 Die Einstellbarkeit GIBT es (`spiele.spieltagVon`, je Wettbewerb sogar
+//  abweichend). Was fehlte, war die Aufklärung: gemessen an einer Runde ab
+//  Spieltag 5 meldet `saisonLage` `gestartet: false` — für DIESE Runde hat die
+//  Saison ja noch nicht angefangen — und alle fensterlosen Saison-Wetten
+//  stehen offen. „Wer wird Meister?" ist dann mit vier bekannten Spieltagen
+//  abzugeben, zu Vorsaison-Punkten.
+//
+//  ⚠️ Kein Verbot, ein Hinweis: fair ist es (alle wissen gleich viel), nur die
+//  PUNKTZAHL passt nicht mehr. Will ein Admin das, soll er es haben.
+// ============================================================
+describe("Saison-Wetten in einer Runde, die mitten im Spielbetrieb beginnt", () => {
+  const mitWetten = SAISON_PRESETS.find((p) => (p.saison?.wetten?.length ?? 0) > 0);
+  const basis = sanitizeRules({ ...BASIS, saison: mitWetten.saison });
+  const abSpieltag = (n) => sanitizeRules({ ...basis, spiele: { ...basis.spiele, spieltagVon: n } });
+  const treffer = (r) => pruefe(r).filter((w) => w.id === "saisonwetten-mitten-drin");
+
+  it("schweigt, wenn die Runde die ganze Saison umfasst", () => {
+    expect(treffer(basis)).toEqual([]);
+    expect(treffer(abSpieltag(1))).toEqual([]);
+  });
+
+  it("meldet sich ab dem zweiten Spieltag", () => {
+    // 🔴 Ab ZWEI, nicht ab drei oder fünf: schon ein gelaufener Spieltag ist
+    // Wissen, das eine Vorsaison-Wette nicht hat.
+    expect(treffer(abSpieltag(2))).toHaveLength(1);
+    expect(treffer(abSpieltag(18))).toHaveLength(1);
+  });
+
+  it("nennt die Zahl der bereits gelaufenen Spieltage — richtig gebeugt", () => {
+    // Ein Hinweis, in dem „1 Spieltage sind gelaufen" steht, wird nicht
+    // gelesen, sondern belächelt.
+    expect(treffer(abSpieltag(2))[0].text).toContain("1 Spieltag ist");
+    expect(treffer(abSpieltag(18))[0].text).toContain("17 Spieltage sind");
+  });
+
+  it("schweigt, wenn es gar keine Saison-Wetten gibt", () => {
+    const ohne = sanitizeRules({ ...abSpieltag(18), saison: { ...basis.saison, enabled: false } });
+    expect(treffer(ohne)).toEqual([]);
+  });
+
+  it("ist ein Hinweis, keine Warnung — und die Korrektur rät keine Zahl", () => {
+    const w = treffer(abSpieltag(18))[0];
+    expect(w.stufe).toBe("hinweis");
+    // ⛔ Die Korrektur schaltet ab und senkt KEINE Punkte: was eine leichtere
+    // Wette wert sein soll, ist eine Zahl — und Zahlen legt Andi zuletzt fest.
+    const nachher = korrigieren(abSpieltag(18), "saisonwetten-mitten-drin");
+    expect(nachher.saison.enabled).toBe(false);
+    expect(nachher.saison.gewicht).toBe(abSpieltag(18).saison.gewicht);
+    expect(treffer(nachher)).toEqual([]);
+  });
+
+  it("erzeugt bei keinem der sechs vermessenen Regelwerke Rauschen", () => {
+    for (const p of PRESETS) expect(treffer(p.rules), p.key).toEqual([]);
   });
 });

@@ -48,6 +48,25 @@ war die Angabe ENTSPANNT gemeint. **Ein Datum im Kalender ist keine Frist,
 solange Andi es nicht als Frist bezeichnet.** Im Zweifel nachfragen, nie
 ableiten.
 
+⚠️ **VIERTE Richtigstellung, 26.08.2026 — und diesmal ohne Kalenderblatt.**
+Ich hatte geschrieben, „in zwei Wochen laufen echte Menschen diesen Weg".
+Niemand hat das gesagt; ich hatte es aus dem Spielplan abgeleitet. Andi:
+
+> *„ich weiss nich wieso von dir immer kommt in zwei wochen, ich werde halt
+> während der saison einsteigen lassen mit … als Spieltagsbeginn"*
+
+🔴 **Was daraus folgt, und es ist mehr als eine Terminkorrektur:** der Einstieg
+ist **kein Datum, sondern eine EINSTELLUNG** — `spiele.spieltagVon`. Eine Runde
+fängt an, wann ihr Admin sie anfangen lässt, und das kann jeder Spieltag der
+Saison sein. Wer nach dem „Starttermin" fragt, stellt schon die falsche Frage.
+
+⚠️ Andi hat den Fall gleich weitergedacht: *„angenommen Marktstart ist eben
+wirklich erst zur 2. Saisonhälfte dann wirds auch ne Einstellbarkeit brauchen
+ab welchem Spieltag eben mitgemacht wird."* Die gibt es
+(`spiele.spieltagVon`/`spieltagBis`, je Wettbewerb sogar abweichend) — und
+seit dem 26.08.2026 sagt `reglerWarnung.js` auch, was sie für die
+Saison-Wetten bedeutet.
+
 📅 **Zum Nachschlagen, am echten Spielplan gemessen** (`bl-2026.js`,
 OpenLigaDB) — Daten, keine Termine:
 
