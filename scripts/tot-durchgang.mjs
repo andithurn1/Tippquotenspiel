@@ -45,12 +45,21 @@ const GEDULDET = {
   // fehlt, ist eine Entscheidung von Andi — und zwar eine, die man nicht
   // erraten kann.
   empfehlungsStand:
-    "Rechnet den Stand einer Werbe-Belohnung aus (M8): wie viele geworbene "
-    + "Mitspieler sind aktiv? ⏳ Kein Screen, weil zwei Fragen offen sind, die "
-    + "Andi beantworten muss: was „für ne gewisse Zeit aktiv“ heißt (die "
-    + "Vorgabe „3 Spieltage“ ist ein VORSCHLAG von mir, keine Ansage von ihm), "
-    + "und ob die Belohnung überhaupt vor M7 kommt. Ein Screen, der eine "
-    + "geratene Schwelle anzeigt, verspricht etwas Falsches.",
+    "Rechnet den Stand einer gestaffelten Werbe-Belohnung aus (M8). ⛔ Kein "
+    + "Screen, und das ist Andis Ansage vom 26.08.2026: „die zahl ab wann "
+    + "aktiv, machen wir erst sehr als letztes, muss eh in nem business "
+    + "kontext besprochen werden sobald das durchgerechnet ist.“ Der "
+    + "MECHANISMUS ist fertig und geprüft; die Zahlen in `DEFAULT_STAFFEL` "
+    + "sind lauffähige Platzhalter. Eine Oberfläche mit geratener Schwelle "
+    + "verspricht etwas Falsches.",
+  stufeFuer:
+    "Teil desselben Mechanismus — die höchste erreichte Stufe. Wartet auf "
+    + "dieselbe Entscheidung wie `empfehlungsStand`.",
+  naechsteStufe:
+    "Dito — die nächste noch zu holende Stufe, damit die Staffel nach der "
+    + "ersten Stufe nicht aufhört zu wirken.",
+  sanitizeStaffel:
+    "Dito — säubert die Staffel und hebt eine sinkende Stufe an.",
   beschreibeEmpfehlung:
     "Der Satz dazu — dieselbe Begründung. Beide sind gemessen (an der "
     + "Demo-Runde durchgerechnet) und warten nur auf die Zahl.",

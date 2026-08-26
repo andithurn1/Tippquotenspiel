@@ -42,26 +42,90 @@ export const EMPFEHLUNG_LIMITS = {
   praemieMonate: { min: 1, max: 24, step: 1 },
 };
 
-// ⚠️ VORSCHLAG, keine Entscheidung. Andis Satz nennt nur zwei der drei Zahlen
-// („10 Leute", „6 Monate"); die dritte — was „aktiv" heißt — fehlt noch.
+// 🔴 GESTAFFELT, nicht eine Schwelle (Andi, 26.08.2026):
+// „will das ja eh staffeln, wenn man ne runde mit 20 aktiven aufmacht gibts
+//  eben 12 monate, aber wie genau legen wir noch nicht fest nur der
+//  mechanismus".
+//
+// ⛔ DIE ZAHLEN SIND AUSDRÜCKLICH NICHT ENTSCHIEDEN. Andi wörtlich: „die zahl
+// ab wann aktiv, machen wir erst sehr als letztes, muss eh in nem business
+// kontext besprochen werden sobald das durchgerechnet ist." Was hier steht,
+// ist ein lauffähiger PLATZHALTER, damit der Mechanismus geprüft werden kann
+// — keine Empfehlung und kein Vorschlag zur Übernahme.
+//
+// ⚠️ Die Staffel ist ABSTEIGEND zu lesen: es gilt die höchste Stufe, deren
+// Bedingung erfüllt ist. Wer 25 aktive Mitspieler hat, bekommt die 20er-Stufe
+// — nicht die Summe aller Stufen. Eine Belohnung, die sich addiert, ist mit
+// Scheinkonten beliebig hoch zu treiben.
+export const DEFAULT_STAFFEL = [
+  { mitspieler: 10, praemieMonate: 6 },   // Andis Beispiel
+  { mitspieler: 20, praemieMonate: 12 },  // Andis Beispiel
+];
+
+// ⚠️ VORSCHLAG, keine Entscheidung: was „für ne gewisse Zeit aktiv" heißt,
+// ist die Zahl, die Andi zuletzt festlegt.
 export const DEFAULT_EMPFEHLUNG = {
-  mitspieler: 10,     // Andis Zahl
-  spieltage: 3,       // ⏳ offen: Andi hat keine genannt
-  praemieMonate: 6,   // Andis Zahl
+  spieltage: 3,                  // ⏳ offen, Platzhalter
+  staffel: DEFAULT_STAFFEL,
 };
+
+const zahl = (wert, vorgabe, grenzen) => {
+  const n = Math.round(Number(wert));
+  if (!Number.isFinite(n)) return vorgabe;
+  return Math.min(grenzen.max, Math.max(grenzen.min, n));
+};
+
+// 🔴 Die Staffel säubern: Stufen aufsteigend nach Mitspielerzahl, jede Zahl in
+// ihren Grenzen, Dubletten weg.
+//
+// ⚠️ Und eine Regel, die keine Kosmetik ist: die Prämie muss mit der
+// Mitspielerzahl STEIGEN. Eine Staffel, bei der 20 Mitspieler weniger bringen
+// als 10, ist kein Tippfehler mit Folgen für die Optik — sie bestraft den
+// Erfolgreicheren, und niemand würde den Fehler in einer Tabelle bemerken.
+// Sinkt eine Stufe, wird sie auf die vorige angehoben.
+export function sanitizeStaffel(roh) {
+  const liste = Array.isArray(roh) ? roh : DEFAULT_STAFFEL;
+  const sauber = liste
+    .filter((st) => st && typeof st === "object")
+    .map((st) => ({
+      mitspieler: zahl(st.mitspieler, DEFAULT_STAFFEL[0].mitspieler, EMPFEHLUNG_LIMITS.mitspieler),
+      praemieMonate: zahl(st.praemieMonate, DEFAULT_STAFFEL[0].praemieMonate, EMPFEHLUNG_LIMITS.praemieMonate),
+    }))
+    .sort((a, b) => a.mitspieler - b.mitspieler);
+
+  const out = [];
+  for (const st of sauber) {
+    const vorige = out[out.length - 1];
+    if (vorige && vorige.mitspieler === st.mitspieler) continue;   // Dublette
+    if (vorige && st.praemieMonate < vorige.praemieMonate) {
+      out.push({ ...st, praemieMonate: vorige.praemieMonate });
+      continue;
+    }
+    out.push(st);
+  }
+  return out.length ? out : [...DEFAULT_STAFFEL];
+}
 
 export function sanitizeEmpfehlung(partial = {}) {
   const p = partial && typeof partial === "object" ? partial : {};
-  const zahl = (wert, vorgabe, grenzen) => {
-    const n = Math.round(Number(wert));
-    if (!Number.isFinite(n)) return vorgabe;
-    return Math.min(grenzen.max, Math.max(grenzen.min, n));
-  };
   return {
-    mitspieler: zahl(p.mitspieler, DEFAULT_EMPFEHLUNG.mitspieler, EMPFEHLUNG_LIMITS.mitspieler),
     spieltage: zahl(p.spieltage, DEFAULT_EMPFEHLUNG.spieltage, EMPFEHLUNG_LIMITS.spieltage),
-    praemieMonate: zahl(p.praemieMonate, DEFAULT_EMPFEHLUNG.praemieMonate, EMPFEHLUNG_LIMITS.praemieMonate),
+    staffel: sanitizeStaffel(p.staffel),
   };
+}
+
+// Welche Stufe ist mit `aktive` Mitspielern erreicht? Die HÖCHSTE, deren
+// Bedingung erfüllt ist — nie die Summe.
+export function stufeFuer(aktive, staffel = DEFAULT_STAFFEL) {
+  const s = sanitizeStaffel(staffel);
+  let treffer = null;
+  for (const st of s) if (aktive >= st.mitspieler) treffer = st;
+  return treffer;
+}
+
+// Und die nächste, die noch zu holen ist — für „noch 4 bis 12 Monate".
+export function naechsteStufe(aktive, staffel = DEFAULT_STAFFEL) {
+  return sanitizeStaffel(staffel).find((st) => aktive < st.mitspieler) ?? null;
 }
 
 // An wie vielen verschiedenen Spieltagen hat jemand getippt?
@@ -111,12 +175,18 @@ export function empfehlungsStand({
   }).sort((a, b) => b.spieltage - a.spieltage);
 
   const aktive = zeilen.filter((z) => z.aktiv).length;
+  const erreicht = stufeFuer(aktive, s.staffel);
+  const naechste = naechsteStufe(aktive, s.staffel);
   return {
     schwellen: s,
     geworben: zeilen.length,
     aktive,
-    fehlen: Math.max(0, s.mitspieler - aktive),
-    erfuellt: aktive >= s.mitspieler,
+    // Die höchste erreichte Stufe (oder null) und die nächste, die noch geht.
+    erreicht,
+    naechste,
+    fehlen: naechste ? Math.max(0, naechste.mitspieler - aktive) : 0,
+    erfuellt: erreicht != null,
+    praemieMonate: erreicht?.praemieMonate ?? 0,
     zeilen,
   };
 }
@@ -124,16 +194,24 @@ export function empfehlungsStand({
 // Ein Satz für die Oberfläche — eine Fassung, nicht drei.
 export function beschreibeEmpfehlung(stand) {
   if (!stand) return "";
-  const { aktive, fehlen, erfuellt, schwellen, geworben } = stand;
-  if (erfuellt) {
-    return `Geschafft: ${aktive} aktive Mitspieler — ${schwellen.praemieMonate} Monate Premium.`;
-  }
-  if (geworben === 0) return "Noch niemand in deiner Runde außer dir.";
+  const { aktive, fehlen, erreicht, naechste, schwellen, geworben } = stand;
   // ⚠️ Einzahl: „an 1 verschiedenen Spieltagen" stand hier kurz und liest
   // sich wie ein Platzhalter, den jemand vergessen hat.
   const tage = schwellen.spieltage === 1
     ? "an einem Spieltag"
     : `an ${schwellen.spieltage} verschiedenen Spieltagen`;
-  return `${aktive} von ${schwellen.mitspieler} aktiv · noch ${fehlen}. `
-    + `Aktiv heißt: ${tage} getippt.`;
+
+  if (erreicht) {
+    const jetzt = `Geschafft: ${aktive} aktive Mitspieler — ${erreicht.praemieMonate} Monate Premium.`;
+    // 🔴 Die nächste Stufe gehört DAZU, sonst hört die Staffel nach der
+    // ersten Stufe auf zu wirken: wer sie erreicht hat, sieht nicht, dass es
+    // weitergeht, und hört auf zu werben.
+    return naechste
+      ? `${jetzt} Noch ${fehlen} bis ${naechste.praemieMonate} Monate.`
+      : jetzt;
+  }
+  if (geworben === 0) return "Noch niemand in deiner Runde außer dir.";
+  const ziel = naechste ?? schwellen.staffel[0];
+  return `${aktive} von ${ziel.mitspieler} aktiv · noch ${fehlen} für `
+    + `${ziel.praemieMonate} Monate Premium. Aktiv heißt: ${tage} getippt.`;
 }
