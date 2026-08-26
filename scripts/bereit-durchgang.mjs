@@ -232,8 +232,27 @@ if (!URL_ || !ANON) {
     console.log(`\n  ${probe.ok || probe.status === 404 ? OK : WARN} erreichbar · HTTP ${probe.status} · ${URL_}`);
     if (probe.status === 401) {
       erreichbar = false;
-      console.log(`  ${FEHLT} Der Schlüssel wird abgelehnt. URL und Schlüssel gehören zu verschiedenen Projekten?`);
-      schritte.push("Anon-/Publishable-Key aus DEMSELBEN Supabase-Projekt kopieren wie die URL.");
+      // 🔴 Zwei Ursachen, und die zweite ist die, an die niemand denkt.
+      // Gemessen am 26.08.2026: Adresse richtig, Projekt erreichbar, Schlüssel
+      // abgelehnt — und der Schlüssel war ein gültiger JWT (`eyJ…`) aus
+      // demselben Projekt. Supabase hat die Schlüssel umgestellt; neue
+      // Projekte geben `sb_publishable_…` aus, und die alten JWT-Schlüssel
+      // lassen sich abschalten. Wer dann den JWT aus einer älteren Anleitung
+      // nimmt, bekommt 401 und sucht beim falschen Projekt.
+      console.log(`  ${FEHLT} Der Schlüssel wird abgelehnt. Zwei mögliche Gründe:`);
+      if (/^eyJ/.test(ANON)) {
+        console.log("     ① Dein Schlüssel fängt mit `eyJ` an — das ist die ALTE Bauart.");
+        console.log("       Neuere Projekte geben stattdessen einen aus, der mit");
+        console.log("       `sb_publishable_` anfängt, und schalten die alten ab.");
+        console.log("       In Supabase: „Project Settings → API Keys“, den unter");
+        console.log("       „Publishable key“ nehmen.");
+      } else {
+        console.log("     ① Der Schlüssel ist abgelaufen oder wurde neu erzeugt.");
+      }
+      console.log("     ② URL und Schlüssel stammen aus VERSCHIEDENEN Projekten.");
+      schritte.push(/^eyJ/.test(ANON)
+        ? "Den `Publishable key` (beginnt mit `sb_publishable_`) statt des alten `eyJ…`-Schlüssels eintragen — Supabase → Project Settings → API Keys."
+        : "Anon-/Publishable-Key aus DEMSELBEN Supabase-Projekt kopieren wie die URL.");
     }
   } catch (e) {
     erreichbar = false;
