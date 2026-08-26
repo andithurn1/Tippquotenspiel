@@ -82,7 +82,12 @@ export default function RundenHub() {
           rules: round?.rules, matches, tips, userId: user?.id,
           stand: history, zusatz: rad?.narren ?? [],
         }));
-      }).catch(() => {});
+      }).catch(() => {
+        // 🔴 „Status lädt …" hängt an `status === null`. Ohne diese Zeile
+        // bleibt die Kachel für immer im Ladezustand, sobald EIN Aufruf im
+        // `Promise.all` scheitert — live reicht dafür eine fehlende Anmeldung.
+        if (live) setStatus({ total: 0, open: 0, tippedByMe: 0 });
+      });
     return () => { live = false; };
   }, [roundId, user]);
 

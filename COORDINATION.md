@@ -126,6 +126,76 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-26 (XXVIII) · 🔴 **Der Hub holte den Spielplan DREIMAL** — und drei Screens hingen für immer in „lädt …"
+
+**Wenn du im Supabase-Store etwas anfasst: `listMatches()` und fünf Lese-
+Methoden gehen jetzt über einen Zusammenleger. Bitte nicht wieder daran
+vorbei.**
+
+Der Anlass: Andis Projekt ging live. Vorher lief alles auf dem Mock, wo keine
+dieser Fragen weh tut.
+
+**Gemessen an einem PRODUKTIONS-Build** (kein StrictMode-Artefakt), gegen
+einen Supabase-Nachbau:
+
+| Screen | vorher | Katalog | nachher |
+|---|---|---|---|
+| `/hub` | 18 Anfragen | **3×** | **9** |
+| `/tippen` | 11 | **3×** | **6** |
+| `/ranking` | 15 | 2× | **9** |
+
+🔴 **Der Katalog ist 3,15 MB roh** — 1942 Spiele à 1,7 KB, praktisch
+vollständig der Quoten-Snapshot. Dreimal sind **9,4 MB für einen Screen**. Der
+Testbetrieb findet auf Handys statt.
+
+⚠️ **Ursache ist keine Schleife, sondern Gleichzeitigkeit:** mehrere
+Komponenten laden unabhängig voneinander und starten zusammen. Wenn die zweite
+Anfrage kommt, ist die erste noch unterwegs — ein Ergebnis-Cache wäre dann
+noch leer. Gespeichert wird deshalb das **laufende Versprechen**.
+
+🔴 **`einmal()` ist ausdrücklich KEIN Cache.** Das Versprechen wird gelöscht,
+sobald es fertig ist; ein späterer Aufruf holt frische Daten. Zusammengelegt
+werden nur Anfragen, die sich ohnehin überlappen — an der Aktualität ändert
+sich nichts, und **deshalb** darf es auch für Daten gelten, die sich ändern
+(das Regelwerk einer Runde tut das). Wer daraus einen Cache macht, bricht
+genau diese Zusage.
+
+⚠️ Der Katalog selbst hat eine Frist von 60 s und **fällt beim Öffnen eines
+Spieltags** — dort wird das Big Game eingefroren, und an dieser Zahl hängen
+Punkte.
+
+---
+
+**Der zweite Fund desselben Durchgangs: drei Screens verließen den
+Ladezustand NIE.**
+
+`/joker`, `/regeln` und die Status-Kachel auf `/hub`. Ursache in allen drei
+Fällen dieselbe Zeile:
+
+```js
+}).catch(() => {});      // verschluckt UND setzt nichts
+```
+
+Der Ladezustand hängt an `matches == null` — und `null` bleibt es dann für
+immer. Ein einziger fehlschlagender Aufruf im `Promise.all` reicht, und live
+gibt es dafür Gründe genug. `Ranking.jsx` machte es schon richtig
+(`catch(() => setBoard([]))`).
+
+⏳ **Das Muster steht noch: 31 stille `catch(() => {})` in 21 Dateien, 11
+davon in Screens mit Ladezustand.** Behoben sind die drei, die nachweislich
+hingen. Wer eine der übrigen anfasst: setz im `catch` einen neutralen Wert.
+
+---
+
+⚠️ **Und ein Befund, der Andi gehört, nicht uns:** alle 30 Policies gelten
+`to authenticated`. Für `anon` gibt es keine einzige. Ein ausgeloggter
+Besucher sieht auf der Live-Seite **nichts** — RLS wirft keinen Fehler,
+sondern liefert 200 mit leerer Liste. Der Startscreen lädt aber genau so einen
+ein („👀 Erst mal ansehen"). Steht als **LV1** in `design/auftraege.md`.
+
+Belegt: `npm test` 2 723 grün · `lint` grün · `build` grün · Anfragezahlen
+gegen einen Produktions-Build gemessen, vorher und nachher.
+
 ### 2026-08-26 (XXVII) · 🔌 **Store-Parität geht jetzt bis in die Parameter**
 
 **Kurz: `storeParitaet.test.js` verglich bisher METHODENNAMEN. Ab jetzt auch

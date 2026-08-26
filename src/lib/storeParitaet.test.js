@@ -178,3 +178,78 @@ describe("Store-Parität: die Parameter", () => {
     expect(ueberholt, `Ausnahme zeigt ins Leere: ${ueberholt.join(", ")}`).toEqual([]);
   });
 });
+
+// ============================================================
+//  WERDEN GLEICHZEITIGE ABFRAGEN ZUSAMMENGELEGT?
+//
+//  🔴 Gemessen am 26.08.2026 an einem PRODUKTIONS-Build (also kein
+//  StrictMode-Artefakt), gegen einen Supabase-Nachbau:
+//
+//      /hub      18 Anfragen · den ganzen Spielplan-Katalog DREIMAL
+//      /tippen   11 Anfragen · dreimal
+//      /ranking  15 Anfragen · zweimal
+//
+//  Der Katalog ist **3,15 MB roh** (1942 Spiele à 1,7 KB, praktisch
+//  vollständig der Quoten-Snapshot). Dreimal sind 9,4 MB für EINEN Screen.
+//  Auf einem Handy im Mobilfunknetz ist das der Unterschied zwischen „geht
+//  auf" und „hakt" — und der Testbetrieb findet auf Handys statt.
+//
+//  Die Ursache ist keine Schleife, sondern Gleichzeitigkeit: mehrere
+//  Komponenten laden unabhängig voneinander und starten zur selben Zeit.
+//
+//  Nach dem Umbau: 9 · 6 · 9 Anfragen, der Katalog jeweils EINMAL.
+//
+//  ⚠️ Ein echter Laufzeit-Test bräuchte einen Supabase-Client;
+//  `createSupabaseStore()` wirft ohne Env-Variablen. Diese Prüfung liest
+//  deshalb den Quelltext — dieselbe Bauart wie `rueckmeldungUhr.test.js`.
+//  Sie sichert nicht das Verhalten, sondern die STELLE, an der es entsteht.
+// ============================================================
+describe("Gleichzeitige Abfragen werden zusammengelegt", () => {
+  // Reine Lese-Methoden, die im Messlauf mehrfach parallel aufliefen.
+  const ZUSAMMENGELEGT = ["getRound", "listTips", "listMembers", "listVotes", "listSeasonTips"];
+
+  it("der Spielplan-Katalog wird nicht bei jedem Aufruf neu geholt", () => {
+    const abschnitt = quelltext.slice(quelltext.indexOf("async listMatches()"));
+    expect(
+      abschnitt.slice(0, 900),
+      "`listMatches()` holt den Katalog wieder ungebremst. Das sind 3,15 MB je "
+      + "Aufruf, und der Hub rief ihn dreimal."
+    ).toContain("katalog");
+  });
+
+  it("ein gescheiterter Katalog-Versuch setzt sich nicht fest", () => {
+    // Ohne das `katalog = null` im Fehlerfall scheitert eine Minute lang JEDER
+    // weitere Aufruf mit, ohne es je wieder zu versuchen.
+    const abschnitt = quelltext.slice(quelltext.indexOf("async listMatches()"), quelltext.indexOf("async openMatchday"));
+    expect(abschnitt).toMatch(/catch[\s\S]*katalog = null/);
+  });
+
+  it("das Öffnen eines Spieltags verwirft den Katalog", () => {
+    // Dabei wird das Big Game eingefroren — an dieser Zahl hängen Punkte.
+    const abschnitt = quelltext.slice(quelltext.indexOf("async openMatchday"));
+    expect(abschnitt.slice(0, 1200)).toContain("katalog = null");
+  });
+
+  it("die mehrfach parallel gerufenen Lese-Methoden gehen über `einmal`", () => {
+    const ohne = ZUSAMMENGELEGT.filter((name) => {
+      const ab = quelltext.indexOf(`async ${name}(`);
+      if (ab < 0) return true;
+      return !quelltext.slice(ab, ab + 700).includes("einmal(");
+    });
+    expect(
+      ohne,
+      "Diese Methoden liefen im Messlauf mehrfach gleichzeitig und sind nicht "
+      + "mehr zusammengelegt:\n" + ohne.join("\n")
+    ).toEqual([]);
+  });
+
+  it("`einmal` ist ein Zusammenlegen und KEIN Cache", () => {
+    // 🔴 Der Unterschied entscheidet, ob das erlaubt ist: das Versprechen wird
+    // gelöscht, sobald es fertig ist. Ein späterer Aufruf holt frische Daten.
+    // Ohne das `finally` wäre es ein Cache ohne Frist — und das Regelwerk
+    // einer Runde ändert sich.
+    const ab = quelltext.indexOf("const einmal =");
+    expect(ab, "`einmal` gibt es nicht mehr").toBeGreaterThan(-1);
+    expect(quelltext.slice(ab, ab + 400)).toMatch(/finally\(\(\) => imFlug\.delete/);
+  });
+});

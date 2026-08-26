@@ -86,7 +86,14 @@ export default function MeineJoker() {
       setRadJoker(rad?.joker ?? []);
       setTagesPunkte(tagesPunkte ?? []);
       setFremdEingriffe(eingriffe ?? []);
-    }).catch(() => {});
+    }).catch(() => {
+      // 🔴 Der Ladezustand hängt an `matches == null` (weiter unten: „lädt …").
+      // Ein stiller `catch`, der NICHTS setzt, lässt den Screen für immer
+      // laden — gemessen am 26.08.2026 gegen ein Live-Supabase ohne Anmeldung.
+      // Ein leeres Array ist die ehrliche Antwort: „keine Spiele", nicht
+      // „gleich kommt was".
+      if (live) setMatches([]);
+    });
     return () => { live = false; };
   }, [roundId, user]);
 

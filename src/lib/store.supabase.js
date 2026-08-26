@@ -91,6 +91,33 @@ export function createSupabaseStore() {
 
   const orThrow = ({ data, error }) => { if (error) throw error; return data; };
 
+  // ── Zwischenspeicher für den Spielplan-Katalog ──────────────
+  // Begründung steht bei `listMatches()`. Die Variablen liegen HIER und nicht
+  // im Modul: `createSupabaseStore()` kann mehrfach aufgerufen werden (Tests,
+  // SSR), und ein modulweiter Cache überlebte den Store, zu dem er gehört.
+  const KATALOG_FRIST_MS = 60_000;
+  let katalog = null;      // das laufende bzw. zuletzt gelieferte Versprechen
+  let katalogZeit = 0;
+
+  // ── Gleichzeitige, gleiche Anfragen zusammenlegen ───────────
+  // 🔴 Gemessen am 26.08.2026: der Hub fragte VIERMAL dieselbe Runde ab, das
+  // Ranking dreimal — weil mehrere Komponenten unabhängig voneinander laden
+  // und alle zur selben Zeit starten.
+  //
+  // ⚠️ Das ist ausdrücklich KEIN Cache: das Versprechen wird gelöscht, sobald
+  // es fertig ist. Ein späterer Aufruf holt frische Daten. Zusammengelegt
+  // werden nur Anfragen, die sich ohnehin überlappen — an der Aktualität
+  // ändert sich dadurch nichts, und deshalb darf es auch für Daten gelten,
+  // die sich ändern (das Regelwerk einer Runde tut das).
+  const imFlug = new Map();
+  const einmal = (schluessel, hol) => {
+    const laufend = imFlug.get(schluessel);
+    if (laufend) return laufend;
+    const p = hol().finally(() => imFlug.delete(schluessel));
+    imFlug.set(schluessel, p);
+    return p;
+  };
+
   return {
     // 🔴 Die Spiele DIESER RUNDE — Begründung im Mock-Store.
     async listRoundMatches(roundId) {
@@ -98,9 +125,51 @@ export function createSupabaseStore() {
       return rundenSpieleVon(matches, round);
     },
 
+    // ── Der Spielplan-Katalog, EINMAL je Fenster ────────────
+    //
+    // 🔴 Gemessen am 26.08.2026 gegen einen Produktions-Build (kein
+    // StrictMode-Artefakt): der Hub löste **18** Datenbank-Abfragen aus,
+    // darunter **dreimal** den ganzen Katalog. `/tippen` ebenfalls dreimal,
+    // `/ranking` zweimal.
+    //
+    //     1942 Spiele · 3,15 MB roh · davon 1,7 KB je Spiel, praktisch
+    //     vollständig der Quoten-Snapshot
+    //
+    // Drei Abfragen sind **9,4 MB roh** für EINEN Screen. Auf einem Handy im
+    // Mobilfunknetz ist das der Unterschied zwischen „geht auf" und „hakt" —
+    // und der Testbetrieb findet auf Handys statt.
+    //
+    // ── Warum ein Versprechen zwischengespeichert wird und kein Ergebnis ──
+    // 🔴 Die drei Abfragen laufen GLEICHZEITIG: mehrere Komponenten rufen
+    // unabhängig voneinander `listRoundMatches()`, das intern hier landet. Wenn
+    // die zweite kommt, ist die erste noch unterwegs — ein Ergebnis-Cache wäre
+    // dann noch leer und würde nichts sparen. Gespeichert wird deshalb das
+    // laufende Versprechen; die Nachzügler hängen sich an dieselbe Anfrage.
+    //
+    // ⚠️ Kurze Frist statt „für immer": Ergebnisse und Quoten-Snapshots werden
+    // von den Hintergrund-Läufen fortgeschrieben. Eine Sitzung dauert Stunden,
+    // eine Minute reicht gegen den Ansturm beim Screen-Wechsel.
+    //
+    // ⚠️ Eine KOPIE der Liste zurückgeben: der Cache hält dasselbe Array, und
+    // ein Aufrufer, der es sortiert, sortierte sonst allen anderen den Katalog
+    // um. 1942 Zeiger zu kopieren kostet nichts gegen 3 MB Übertragung.
     async listMatches() {
-      const data = orThrow(await sb.from("matches").select("*").order("kickoff"));
-      return data.map(mapMatch);
+      const jetzt = Date.now();
+      if (katalog && jetzt - katalogZeit < KATALOG_FRIST_MS) return [...(await katalog)];
+      katalogZeit = jetzt;
+      katalog = (async () => {
+        const data = orThrow(await sb.from("matches").select("*").order("kickoff"));
+        return data.map(mapMatch);
+      })();
+      try {
+        return [...(await katalog)];
+      } catch (e) {
+        // Ein gescheiterter Versuch darf sich nicht festsetzen — sonst
+        // scheitert jeder weitere Aufruf eine Minute lang mit, ohne es je
+        // wieder zu versuchen.
+        katalog = null;
+        throw e;
+      }
     },
     // Spieltag öffnen = Big Game einfrieren. Läuft ueber eine SERVER-Route,
     // nicht hier: `matches` ist per RLS fuer Clients nur lesbar (Schreiben
@@ -110,6 +179,10 @@ export function createSupabaseStore() {
     // prueft das; hier wird nur das Token mitgereicht.
     // Signatur identisch zum Mock (Andre hat sie dort gefixt): der Wettbewerb
     // gehoert dazu, weil "Spieltag 1" seit der CL zweimal existiert.
+    // ⚠️ Wer hier durchkommt, hat den Katalog VERÄNDERT (das Big Game wird
+    // eingefroren). Der Zwischenspeicher muss danach fallen, sonst zeigt der
+    // Screen bis zu eine Minute lang den Stand von vorher — und genau an
+    // dieser Zahl hängen Punkte.
     async openMatchday(roundId, matchday, wettbewerb = DEFAULT_WETTBEWERB) {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) throw new Error("Nicht angemeldet.");
@@ -123,6 +196,7 @@ export function createSupabaseStore() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || "Spieltag konnte nicht geoeffnet werden.");
+      katalog = null;          // siehe Kommentar über dieser Methode
       return json;
     },
 
@@ -132,22 +206,26 @@ export function createSupabaseStore() {
     },
 
     async getRound(id) {
-      return orThrow(await sb.from("rounds").select("*").eq("id", id).maybeSingle());
+      // Zusammengelegt, nicht zwischengespeichert — siehe `einmal` oben.
+      return einmal(`round:${id}`, async () =>
+        orThrow(await sb.from("rounds").select("*").eq("id", id).maybeSingle()));
     },
     async getRoundByCode(code) {
       return orThrow(await sb.from("rounds").select("*").eq("join_code", code).maybeSingle());
     },
     async listMembers(roundId) {
-      // Join auf profiles für Anzeigename + Avatar
-      const data = orThrow(await sb
-        .from("round_members")
-        .select("round_id, user_id, profiles(display_name, avatar)")
-        .eq("round_id", roundId));
-      return data.map((m) => ({
-        round_id: m.round_id, user_id: m.user_id,
-        name: m.profiles?.display_name ?? m.user_id,
-        avatar: sanitizeAvatar(m.profiles?.avatar),
-      }));
+      return einmal(`members:${roundId}`, async () => {
+        // Join auf profiles für Anzeigename + Avatar
+        const data = orThrow(await sb
+          .from("round_members")
+          .select("round_id, user_id, profiles(display_name, avatar)")
+          .eq("round_id", roundId));
+        return data.map((m) => ({
+          round_id: m.round_id, user_id: m.user_id,
+          name: m.profiles?.display_name ?? m.user_id,
+          avatar: sanitizeAvatar(m.profiles?.avatar),
+        }));
+      });
     },
 
     // ── Profil (Anzeigename + Avatar) ───────────────────────
@@ -349,9 +427,13 @@ export function createSupabaseStore() {
       return data;
     },
     async listTips({ roundId, matchId }) {
-      let q = sb.from("tips").select("*").eq("round_id", roundId);
-      if (matchId) q = q.eq("match_id", matchId);
-      return orThrow(await q);
+      // Zusammengelegt (siehe `einmal`): der Hub fragte die Tipps dreimal,
+      // weil `getLeaderboard` und `getRoundEntries` sie intern nochmal holen.
+      return einmal(`tips:${roundId}:${matchId ?? ""}`, async () => {
+        let q = sb.from("tips").select("*").eq("round_id", roundId);
+        if (matchId) q = q.eq("match_id", matchId);
+        return orThrow(await q);
+      });
     },
 
     // ── Joker-Abstimmung ────────────────────────────────────
@@ -366,7 +448,8 @@ export function createSupabaseStore() {
         .select().single());
     },
     async listVotes({ roundId }) {
-      return orThrow(await sb.from("votes").select("*").eq("round_id", roundId));
+      return einmal(`votes:${roundId}`, async () =>
+        orThrow(await sb.from("votes").select("*").eq("round_id", roundId)));
     },
 
     // ── Regel-Abstimmung: Anträge und Stimmen ───────────────
@@ -462,9 +545,11 @@ export function createSupabaseStore() {
         .select().single());
     },
     async listSeasonTips({ roundId, userId }) {
-      let q = sb.from("season_tips").select("*").eq("round_id", roundId);
-      if (userId) q = q.eq("user_id", userId);
-      return orThrow(await q);
+      return einmal(`seasonTips:${roundId}:${userId ?? ""}`, async () => {
+        let q = sb.from("season_tips").select("*").eq("round_id", roundId);
+        if (userId) q = q.eq("user_id", userId);
+        return orThrow(await q);
+      });
     },
 
     async getLeaderboard(roundId) {

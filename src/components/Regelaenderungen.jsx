@@ -60,7 +60,10 @@ export default function Regelaenderungen() {
     setAntraege(liste ?? []);
   };
 
-  useEffect(() => { laden().catch(() => {}); /* eslint-disable-next-line */ }, [roundId]);
+  // ⚠️ `setMatches([])` im Fehlerfall, nicht nur `catch(() => {})`: der
+  // Ladezustand unten hängt an `matches == null`, und ein verschluckter Fehler
+  // ließ den Screen für immer „lädt …" zeigen.
+  useEffect(() => { laden().catch(() => setMatches([])); /* eslint-disable-next-line */ }, [roundId]);
 
   const a = rules.regelAbstimmung;
   const aktiv = a?.enabled === true;
