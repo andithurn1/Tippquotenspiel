@@ -57,7 +57,9 @@ export default function AdminFreigaben() {
     setFreigaben(fg ?? []);
   };
 
-  useEffect(() => { laden().catch(() => {}); /* eslint-disable-next-line */ }, [roundId]);
+  // ⚠️ Wie in `Abstimmung.jsx`: ohne diesen Wert bleibt `matches` null und der
+  // Screen zeigt für immer den Ladezustand.
+  useEffect(() => { laden().catch(() => setMatches([])); /* eslint-disable-next-line */ }, [roundId]);
 
   const istAdmin = user != null && adminId != null && user.id === adminId;
   const achse = zeitachse(matches ?? [], rules.zeitachse);

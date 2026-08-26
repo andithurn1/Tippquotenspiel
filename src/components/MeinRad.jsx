@@ -61,7 +61,13 @@ export default function MeinRad() {
       setMatches(ms);
       setZiehungen(rad?.ziehungen ?? []);
       if (Number.isFinite(rad?.spieltage)) setSpieltage(rad.spieltage);
-    }).catch(() => {});
+    }).catch(() => {
+      // 🔴 Der Ladezustand hängt an `matches == null`. Ein stiller `catch`,
+      // der nichts setzt, lässt den Screen für immer im Ladezustand — am
+      // 26.08.2026 an drei Screens gegen ein Live-Supabase gemessen. Ein
+      // leeres Array ist die ehrliche Antwort: nichts da, statt gleich kommt was.
+      if (live) setMatches([]);
+    });
     return () => { live = false; };
   }, [roundId]);
 

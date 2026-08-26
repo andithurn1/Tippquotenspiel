@@ -69,7 +69,13 @@ export default function SaisonVerlauf() {
         history: history ?? [],
         meineTips: (tips ?? []).filter((t) => t.user_id === user?.id),
       }));
-    }).catch(() => {});
+    }).catch(() => {
+      // 🔴 Der Ladezustand hängt an `matches == null`. Ein stiller `catch`,
+      // der nichts setzt, lässt den Screen für immer im Ladezustand — am
+      // 26.08.2026 an drei Screens gegen ein Live-Supabase gemessen. Ein
+      // leeres Array ist die ehrliche Antwort: nichts da, statt gleich kommt was.
+      if (live) setMatches([]);
+    });
     return () => { live = false; };
   }, [roundId, user]);
 

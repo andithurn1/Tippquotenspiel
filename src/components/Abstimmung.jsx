@@ -31,7 +31,9 @@ export default function Abstimmung() {
     setVotes(vs);
   };
 
-  useEffect(() => { laden().catch(() => {}); /* eslint-disable-next-line */ }, [roundId]);
+  // ⚠️ `setMatches([])` im Fehlerfall: der Ladezustand unten hängt an
+  // `matches == null`, und ein verschluckter Fehler ließe ihn nie enden.
+  useEffect(() => { laden().catch(() => setMatches([])); /* eslint-disable-next-line */ }, [roundId]);
 
   const aktiv = rules.joker?.enabled === true && rules.joker?.abstimmung === true;
 
