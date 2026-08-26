@@ -91,11 +91,20 @@ console.log(dateien.length
   ? `  gelesen aus: ${dateien.join(", ")}`
   : `  ${WARN}keine \`.env.local\` gefunden — es zählt nur, was in der Umgebung steht`);
 
-// ⚠️ Die URL steht UNMASKIERT da, und das ist Absicht: sie ist kein Geheimnis,
-// und der häufigste Fehler ist ein Tippfehler darin. Eine maskierte URL kann
-// man nicht gegenlesen — dann prüft der Durchgang etwas, das er verbirgt.
+// ── Sieht das überhaupt nach einer Adresse aus? ─────────────
+// 🔴 Der Fund vom 26.08.2026, und er ist die Sorte, die jedem passiert: Andi
+// hat den PUBLISHABLE KEY in die URL-Zeile geschrieben. In der Supabase-Konsole
+// liegen Adresse und Schlüssel direkt untereinander, beides ist ein langer
+// Text zum Kopieren, und die App meldet danach nur „Failed to fetch".
+//
+// ⚠️ Und es hing eine zweite Sache daran: die URL steht unmaskiert da (sie ist
+// kein Geheimnis, und der häufigste Fehler ist ein Tippfehler darin — eine
+// maskierte URL kann man nicht gegenlesen). Steht dort aber ein SCHLÜSSEL,
+// wurde er dadurch vollständig ausgegeben. Deshalb entscheidet nicht mehr das
+// FELD, ob maskiert wird, sondern der INHALT.
+const istAdresse = (v) => /^https?:\/\//i.test(v);
 const pflicht = [
-  ["NEXT_PUBLIC_SUPABASE_URL", URL_, "ohne sie läuft die App auf dem Mock: Daten sind beim Neuladen weg", true],
+  ["NEXT_PUBLIC_SUPABASE_URL", URL_, "ohne sie läuft die App auf dem Mock: Daten sind beim Neuladen weg", istAdresse(URL_)],
   ["NEXT_PUBLIC_SUPABASE_ANON_KEY", ANON, "der öffentliche Schlüssel; ohne ihn kommt kein Screen an Daten"],
 ];
 const kuer = [
@@ -120,6 +129,20 @@ for (const [name, wert, wozu, offen] of pflicht) {
 for (const [name, wert, wozu, offen] of kuer) {
   console.log(`\n  ${wert ? OK : WARN}${wert ? " " : ""}${name}`);
   console.log(`     ${wert ? (offen ? wert : maske(wert)) : "nicht gesetzt"} · ${wozu}`);
+}
+
+// 🔴 Steht in der URL-Zeile in Wahrheit ein Schlüssel? Das ist kein
+// theoretischer Fall — siehe den Kommentar oben. Ohne diese Prüfung meldet der
+// Durchgang brav „✅ gesetzt", scheitert zwei Abschnitte später an einem
+// Netzwerkfehler und lässt den Leser die Ursache suchen.
+if (URL_ && !istAdresse(URL_)) {
+  console.log(`\n  ${FEHLT} NEXT_PUBLIC_SUPABASE_URL ist keine Adresse.`);
+  console.log("     Dort steht etwas, das nicht mit `https://` anfängt —");
+  console.log(`     ${/^sb_(publishable|secret)_|^eyJ/.test(URL_) ? "das sieht nach einem SCHLÜSSEL aus." : "vermutlich ein Tippfehler."}`);
+  console.log("     Die Adresse steht in Supabase unter „Project Settings → Data API“");
+  console.log("     ganz oben als „Project URL“ und sieht so aus:");
+  console.log("       https://abcdefghijklmnop.supabase.co");
+  schritte.unshift("NEXT_PUBLIC_SUPABASE_URL berichtigen — dort gehört die „Project URL“ hin (beginnt mit https://), nicht ein Schlüssel.");
 }
 
 // 🔴 Der Fund, der sonst niemandem auffällt: ein Dienst-Schlüssel mit
