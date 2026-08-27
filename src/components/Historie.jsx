@@ -14,6 +14,7 @@ import { fremdEinsaetze } from "@/lib/fremdjoker";
 import { verlaufPositionen } from "@/lib/spieltag";
 import { computeRecords, matchdayDeltas } from "@/lib/records";
 import { PRESETS } from "@/lib/presets";
+import { EBENEN, ohneEbenen, beschreibeAnsicht } from "@/lib/vergleichsansicht";
 import { C, MONO, SERIES, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
@@ -113,6 +114,18 @@ export default function Historie() {
   const [entries, setEntries] = useState(null);
   const [roundRules, setRoundRules] = useState(DEFAULT_RULES);
   const [presetKey, setPresetKey] = useState("aktuell");
+  // 🔴 Andis Ansicht (27.08.2026): „was wäre, wenn alle Tipps bspw. auch
+  // komplett ohne joker oder ereignisse, oder ohne grund-andersbewertung
+  // verschiedener Wettbewerbe".
+  //
+  // ⚠️ Das ist eine ANDERE Frage als der Preset-Vergleich daneben. Der
+  // unterlegt ein FREMDES Regelwerk („wie liefe es unter Hardcore"); dies
+  // hier nimmt GENAU DIESES und schaltet eine Ebene ab. Nur die zweite
+  // beantwortet, was die Runde wirklich wissen will: wie viel von meinem
+  // Vorsprung kommt aus dem Tippen und wie viel aus dem Drumherum.
+  const [ausEbenen, setAusEbenen] = useState([]);
+  const schalte = (key) => setAusEbenen((liste) =>
+    liste.includes(key) ? liste.filter((k) => k !== key) : [...liste, key]);
   const [kriterium, setKriterium] = useState("punkte");
   // 🔴 Die Beschluss-Lage der Runde. Ohne sie rechnete dieser Screen den
   // Verlauf unter dem ANGELEGTEN Regelwerk — beschlossene Regeländerungen
@@ -160,7 +173,10 @@ export default function Historie() {
   // unberührt, das hier ist reine „was wäre gewesen"-Ansicht.
   const { history, records } = useMemo(() => {
     if (!entries?.length) return { history: [], records: [] };
-    const rules = gewaehlt.rules;
+    // ⚠️ Erst das gewählte Regelwerk, DANN die Ebenen abschalten — nicht
+    // umgekehrt. Ein Preset bringt seine eigenen Joker mit; würde man die
+    // Ebenen vorher abschalten, kämen sie mit dem Preset wieder herein.
+    const rules = ohneEbenen(gewaehlt.rules, ausEbenen);
     // ⚠️ Die Beschlüsse gelten NUR für die eigene Runde. Wer ein fremdes Preset
     // durchrechnet („was wäre gewesen"), fragt nach einer anderen Welt — dort
     // gab es diese Beschlüsse nie, und sie mitzurechnen wäre eine Mischung aus
@@ -202,11 +218,11 @@ export default function Historie() {
       return { userId: e.userId, name: e.name, matchday: e.matchday, total: s.total, ebene: s.ebene };
     });
     return { history, records: computeRecords(history, scored) };
-  }, [entries, gewaehlt, regelnFuer, rundenSpiele, rohTipps, mitglieder]);
+  }, [entries, gewaehlt, ausEbenen, regelnFuer, rundenSpiele, rohTipps, mitglieder]);
 
   const series = useMemo(() => buildSeries(history, kriterium), [history, kriterium]);
   const kritInfo = KRITERIEN.find((k) => k.key === kriterium);
-  const wasWaere = presetKey !== "aktuell";
+  const wasWaere = presetKey !== "aktuell" || ausEbenen.length > 0;
 
   return (
     <div style={{
@@ -267,11 +283,36 @@ export default function Historie() {
                 );
               })}
             </div>
-            <p style={{ fontSize: "0.6875rem", color: wasWaere ? C.akzent : C.muted, margin: "0 0 16px", lineHeight: 1.4 }}>
-              {wasWaere
+            <p style={{ fontSize: "0.6875rem", color: wasWaere ? C.akzent : C.muted, margin: "0 0 14px", lineHeight: 1.4 }}>
+              {presetKey !== "aktuell"
                 ? `„Was wäre gewesen" mit Preset „${gewaehlt.label}" — nur zur Inspiration, die Runde bleibt unverändert gewertet.`
                 : "Die echte Wertung dieser Runde. Wähle ein Preset, um zu sehen, was mit anderen Regeln herausgekommen wäre."}
             </p>
+
+            {/* 🔴 Andis Ebenen-Ansicht. Sie steht UNTER dem Preset-Vergleich,
+                weil sie die häufigere Frage beantwortet — „wie viel kommt aus
+                dem Tippen?" fragt man öfter als „wie liefe es unter Hardcore".
+                Beides zusammen geht: erst Preset, dann Ebenen weg. */}
+            <div style={{ fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 7 }}>
+              Ohne welche Ebene?
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+              {EBENEN.map((e) => {
+                const on = ausEbenen.includes(e.key);
+                return (
+                  <button key={e.key} onClick={() => schalte(e.key)} title={e.text} style={{
+                    cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem", fontWeight: 600,
+                    ...TAPZIEL, padding: "7px 12px", borderRadius: RUND.pille,
+                    background: on ? `${C.coral}22` : C.surface, color: on ? C.coral : C.muted,
+                    border: `1px solid ${on ? C.coral + "77" : C.line}`,
+                  }}>{e.label}</button>
+                );
+              })}
+            </div>
+            <p style={{
+              fontSize: "0.6875rem", color: ausEbenen.length ? C.coral : C.muted,
+              margin: "0 0 16px", lineHeight: 1.4,
+            }}>{beschreibeAnsicht(ausEbenen)}</p>
 
             {/* Kriterien-Umschalter */}
             <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
