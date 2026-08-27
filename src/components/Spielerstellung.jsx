@@ -135,6 +135,32 @@ export default function Spielerstellung() {
   // blieb aus. Ein Sprung, der je nach Umgebung stumm ausfällt, ist schlechter
   // als einer, der immer stattfindet — und die Vorgabe `auto` respektiert
   // außerdem die Systemeinstellung „Bewegung reduzieren".
+  // 🔴 Die EINE Liste der Abschnitte (Andi, 27.08.2026). Aus ihr kommen die
+  // Sprungleiste UND die Ids der Überschriften — zwei getrennte Listen liefen
+  // auseinander, sobald jemand einen Abschnitt einfügt, und die Leiste zeigte
+  // dann auf eine Überschrift, die es nicht mehr gibt.
+  //
+  // ⚠️ `kurz` ist NICHT die Überschrift: „Die vier wichtigsten Fragen" passt
+  // in keine Leiste. Deshalb je Abschnitt ein Chip-Wort und der volle Titel im
+  // `title` — auf dem Handy gibt es keinen Tooltip, aber der Chip trägt dort
+  // ohnehin das Wort, das man sucht.
+  const ABSCHNITTE = [
+    { id: "abs-spiele", kurz: "Spiele", titel: "Wettbewerbe auswählen" },
+    { id: "abs-fragen", kurz: "Die 4 Fragen", titel: "Die vier wichtigsten Fragen" },
+    { id: "abs-mitbestimmung", kurz: "Mitbestimmung", titel: "Mitbestimmung" },
+    { id: "abs-alleingang", kurz: "Alleingang", titel: "Alleingang-Bonus" },
+    { id: "abs-wertung", kurz: "Wertung", titel: "Wertung" },
+    { id: "abs-joker", kurz: "Joker", titel: "Joker" },
+    { id: "abs-mods", kurz: "Modifikatoren", titel: "Modifikatoren" },
+    { id: "abs-verlauf", kurz: "Verlauf", titel: "Verlauf" },
+    { id: "abs-saison", kurz: "Saison & Zeit", titel: "Saison & Zeit" },
+    { id: "abs-wettbewerbe", kurz: "Gewichte", titel: "Wettbewerbe gewichten" },
+    { id: "abs-sperre", kurz: "Favoriten", titel: "Favoriten sperren" },
+    { id: "abs-erstellen", kurz: "Erstellen", titel: "Runde erstellen" },
+    { id: "abs-code", kurz: "GameCode", titel: "Creator-Code" },
+    { id: "abs-bausteine", kurz: "Bausteine", titel: "Bausteine" },
+  ];
+
   const springZu = (id) => {
     const el = typeof document !== "undefined" && document.getElementById(id);
     if (el) el.scrollIntoView({ block: "start" });
@@ -758,7 +784,14 @@ export default function Spielerstellung() {
               Knöpfe, Bayern neben Burnley neben Bologna. Das ist die grobe
               Entscheidung, also gehört sie nach vorn; die Vereinsliste hängt
               dann davon ab. */}
-          <SectionTitle>Wettbewerbe auswählen</SectionTitle>
+          {/* 🔴 Die Sprungleiste (Andi, 27.08.2026: „dass es einen nicht
+              erschlägt und man nicht alle durchscrollen muss"). Sie steht VOR
+              dem ersten Abschnitt und nicht in der klebenden Kopfzeile: dort
+              sitzen schon drei Chips, und auf 375 px wären es dann sieben
+              Zeilen Kopf über zwei Zeilen Inhalt. */}
+          <Sprungleiste abschnitte={ABSCHNITTE} aufSprung={springZu} />
+
+          <SectionTitle id="abs-spiele">Wettbewerbe auswählen</SectionTitle>
           {/* Teil-Code für die Betippungsauswahl — direkt an der Ebene, nicht zentral */}
           <TeilCodeFeld aspekt="spiele" rules={rules} geladen={geladeneCodes["spiele"]}
             onGeladen={merkeCode}
@@ -1083,7 +1116,7 @@ export default function Spielerstellung() {
 
           {/* Schärfe */}
           {/* Stufe 2: vier grosse Fragen statt der Rohregler darunter */}
-          <SectionTitle>Die vier wichtigsten Fragen</SectionTitle>
+          <SectionTitle id="abs-fragen">Die vier wichtigsten Fragen</SectionTitle>
           <EinfacheRegler rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
 
           {/* Mitbestimmung: Regel-Abstimmung + Verfassung
@@ -1092,7 +1125,7 @@ export default function Spielerstellung() {
               ändern?" dasselbe in drei Bündeln, und bei „einfach" entscheidet
               der Charakter. Wer Quorum, Fristen und eine Verfassung je Bereich
               einzeln stellen will, ist genau hier richtig. */}
-          <SectionTitle>Mitbestimmung</SectionTitle>
+          <SectionTitle id="abs-mitbestimmung">Mitbestimmung</SectionTitle>
           <Mitbestimmung rules={rules}
             onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
 
@@ -1100,7 +1133,7 @@ export default function Spielerstellung() {
               In Stufe 2 beantwortet die Klartext-Frage „Lohnt sich ein
               Alleingang?" dasselbe in vier Bündeln; hier stehen alle
               Variablen einzeln, mit Regler UND Zahlenfeld. */}
-          <SectionTitle>Alleingang-Bonus</SectionTitle>
+          <SectionTitle id="abs-alleingang">Alleingang-Bonus</SectionTitle>
           <Alleinstellung rules={rules}
             onChange={(p) => { touched(); setRules((r) => ({ ...r, ...p })); }} />
 
@@ -1123,7 +1156,7 @@ export default function Spielerstellung() {
               Deshalb trägt das Sondermenü selbst KEINE Stufen-Abfrage — über
               die Sichtbarkeit entscheidet allein, wo diese Zeile steht. Der
               Umbau ordnet um, er nimmt nichts weg. */}
-          <SectionTitle>Wertung</SectionTitle>
+          <SectionTitle id="abs-wertung">Wertung</SectionTitle>
           <GrosseZeile
             icon="🎯" titel="Wertung" unter="Nähe · Underdog · Tore · Anzeige"
             wert={wertungStand(rules)}
@@ -1159,7 +1192,7 @@ export default function Spielerstellung() {
               der Anzeige-Umschalter. Beides ist am 22.08.2026 geschehen — die
               Zeile stand zwischenzeitlich in einer Profi-Bedingung, die es
               inzwischen nicht mehr gibt. */}
-          <SectionTitle>Joker</SectionTitle>
+          <SectionTitle id="abs-joker">Joker</SectionTitle>
           <GrosseZeile
             icon="🃏" titel="Joker" unter="Arten · Stärke · Herkunft · Fristen · Grenzen"
             wert={jokerZeileStand(rules)}
@@ -1185,7 +1218,7 @@ export default function Spielerstellung() {
 
               ⚠️ Der Alleingang-Bonus bleibt bewusst DRAUSSEN: er ist ein
               Punkte-Kanal (Ebene 3) mit eigenem Deckel, kein Modifikator. */}
-          <SectionTitle>Modifikatoren</SectionTitle>
+          <SectionTitle id="abs-mods">Modifikatoren</SectionTitle>
           {/* Eigenes Code-Feld je Bibliothek (ATE1). Seit der Aufteilung trägt
               dieser Aspekt nur noch, was sich EINEN additiven Topf teilt —
               Derby, Big Game, Wettbewerbs-Gewichte, Tabellen-Bonus. */}
@@ -1214,7 +1247,7 @@ export default function Spielerstellung() {
               ⚠️ Das Versäumnis stand bisher 180 Zeilen weiter unten zwischen
               Tipp-Fenster und Zeitachse — dort ging es um die AUSWAHL, nicht
               um den Verlauf. Der Rest jenes Blocks bleibt unangetastet. */}
-          <SectionTitle>Verlauf</SectionTitle>
+          <SectionTitle id="abs-verlauf">Verlauf</SectionTitle>
           <GrosseZeile
             icon="📈" titel="Verlauf über die Saison" unter="Anschluss · Streicher · Vergessen"
             wert={verlaufStand(rules)}
@@ -1237,7 +1270,7 @@ export default function Spielerstellung() {
               (`rules.spiele`) — er steht hier, weil ein Admin ihn dort sucht,
               wo er auch das Tipp-Fenster einstellt. Im Sondermenü steht die
               Begründung. */}
-          <SectionTitle>Saison &amp; Zeit</SectionTitle>
+          <SectionTitle id="abs-saison">Saison &amp; Zeit</SectionTitle>
           <GrosseZeile
             icon="📅" titel="Saison &amp; Zeit" unter="Saison-Wetten · Tippbar ab · Zeitachse · Zeitraum"
             wert={saisonZeitStand(rules)}
@@ -1249,7 +1282,7 @@ export default function Spielerstellung() {
 
           {/* Wettbewerbs-Gewichte — gehört zu den Modifikatoren, steht aber
               hier unten, weil es nur Runden mit mehreren Wettbewerben betrifft. */}
-          <SectionTitle>Wettbewerbe gewichten</SectionTitle>
+          <SectionTitle id="abs-wettbewerbe">Wettbewerbe gewichten</SectionTitle>
           <WettbewerbGewichte rules={rules}
             onChange={(wettbewerbe) => { touched(); setRules((r) => ({ ...r, wettbewerbe })); }} />
 
@@ -1261,14 +1294,14 @@ export default function Spielerstellung() {
               ⚠️ Die PLATZIERUNG ist vorläufig — wo ein Regler endgültig sitzt,
               entscheidet die Masterdatei (CLAUDE.md: „Mechanik ja, Platzierung
               nein"). Die Mechanik dahinter überlebt jeden Umbau. */}
-          <SectionTitle>Favoriten sperren</SectionTitle>
+          <SectionTitle id="abs-sperre">Favoriten sperren</SectionTitle>
           <FavoritenSperre rules={rules}
             onChange={(teil) => { touched(); setRules((r) => ({ ...r, ...teil })); }} />
 
 
           {/* Runde erstellen */}
 
-          <SectionTitle>Runde erstellen</SectionTitle>
+          <SectionTitle id="abs-erstellen">Runde erstellen</SectionTitle>
           {!created ? (
             <>
               <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: -4, marginBottom: 10, lineHeight: 1.5 }}>
@@ -1319,7 +1352,7 @@ export default function Spielerstellung() {
 
           {/* Creator-Code */}
           <div id="gamecode" style={{ scrollMarginTop: 64 }} />
-          <SectionTitle>Creator-Code</SectionTitle>
+          <SectionTitle id="abs-code">Creator-Code</SectionTitle>
           <div style={{
             background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
             padding: "10px 12px", fontFamily: MONO, fontSize: "0.75rem", color: C.akzent,
@@ -1365,7 +1398,7 @@ export default function Spielerstellung() {
               Codes darunter überhaupt bewirkt haben. */}
           <Schichtung basis={basisName} schichten={schichten} handAngepasst={handAngepasst} />
 
-          <SectionTitle>Bausteine</SectionTitle>
+          <SectionTitle id="abs-bausteine">Bausteine</SectionTitle>
           <Bausteine rules={rules} />
 
           {/* Import: langer ODER kurzer Code */}
@@ -1436,11 +1469,56 @@ function KopfChip({ icon, name, wert, titel, onClick }) {
   );
 }
 
-function SectionTitle({ children }) {
+// 🔴 `id` seit dem 27.08.2026 — Andi: „muss eben die admin
+// spielerstellungsseite auch so strukturiert sein mit den Unterpunkten dass es
+// einen nicht erschlägt und man nicht alle durchscrollen muss."
+//
+// ⚠️ `scrollMarginTop` gehört an die Überschrift und nicht an die Sprungleiste:
+// ohne das schöbe sich die klebende Kopfzeile über genau die Zeile, zu der man
+// gerade gesprungen ist. Steht so schon beim älteren Sprung (ST5) — hier
+// dieselbe Zahl, damit beide Wege gleich landen.
+function SectionTitle({ children, id = null }) {
   return (
-    <div style={{
+    <div id={id ?? undefined} style={{
       fontSize: "0.75rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1,
       marginTop: 22, marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${C.line}`,
+      scrollMarginTop: 64,
     }}>{children}</div>
+  );
+}
+
+// ── Die Sprungleiste ────────────────────────────────────────
+// 🔴 Gemessen, warum es sie braucht: die Spielerstellung hat **14 Abschnitte**
+// auf rund 1450 Zeilen. Es gab einen Sprung-Mechanismus (ST5), aber nur für
+// ZWEI Ziele — für die anderen zwölf blieb Scrollen.
+//
+// ⚠️ Sie ersetzt keine Struktur, sie macht die vorhandene sichtbar. WO ein
+// Abschnitt sitzt, entscheidet weiterhin die Masterdatei (CLAUDE.md:
+// „Mechanik ja, Platzierung nein"). Diese Leiste ändert keine Reihenfolge —
+// sie zeigt sie.
+//
+// ⚠️ Die Liste wird NICHT von Hand gepflegt: sie kommt aus denselben
+// Einträgen, aus denen die Überschriften entstehen. Zwei Listen liefen
+// garantiert auseinander, sobald jemand einen Abschnitt einfügt — und dann
+// zeigte die Leiste auf eine Überschrift, die es nicht mehr gibt.
+function Sprungleiste({ abschnitte, aufSprung }) {
+  if (abschnitte.length < 3) return null;
+  return (
+    <div style={{
+      display: "flex", gap: 6, flexWrap: "nowrap", overflowX: "auto",
+      // Bei 14 Chips auf 375 px darf die LEISTE scrollen, nie die Seite —
+      // dieselbe Regel wie bei den Kopf-Chips darüber.
+      padding: "2px 0 8px", marginBottom: 4,
+    }}>
+      {abschnitte.map((a) => (
+        <button key={a.id} type="button" onClick={() => aufSprung(a.id)} title={a.titel}
+          style={{
+            ...TAPZIEL, flex: "0 0 auto", cursor: "pointer", fontFamily: "inherit",
+            fontSize: "0.6875rem", padding: "0 11px", borderRadius: RUND.pille,
+            background: C.surface, color: C.muted, border: `1px solid ${C.line}`,
+            whiteSpace: "nowrap",
+          }}>{a.kurz}</button>
+      ))}
+    </div>
   );
 }

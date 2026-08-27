@@ -14,6 +14,7 @@ import {
   AUSWERTBARE_WIRKUNGEN, WIRKUNG, WIRKUNG_LIMITS, DEFAULT_WIRKUNG,
   sanitizeWirkung, beschreibeWirkung, konflikte as wirkungsKonflikte,
 } from "@/lib/wirkung";
+import { MESSLATTEN } from "@/lib/auswahl";
 import {
   AUSWERTBARE_AUSLOESER, AUSLOESER, AUSLOESER_LIMITS,
   sanitizeAusloeser, beschreibeAusloeser, haeufigkeit,
@@ -33,7 +34,10 @@ import {
 // die Größe, mit der `auswahl.js` selbst rechnet.
 const BEISPIEL_RUNDE = 12;
 
-const MODUS_LABEL = { rang: "Feste Anzahl", perzentil: "Anteil in Prozent", mitte: "Das Mittelfeld" };
+const MODUS_LABEL = {
+  rang: "Feste Anzahl", perzentil: "Anteil in Prozent", mitte: "Das Mittelfeld",
+  abstand: "Wer zu weit weg ist",
+};
 
 // ── WANN geht es los? ───────────────────────────────────────
 // 🔴 Die vierte Achse in dieser Oberfläche (`ausloeser.js`) — und ein GATTER,
@@ -236,21 +240,64 @@ function Auswahlfeld({ wert, onChange }) {
       {/* `mitte` hat keine Richtung — es ist per Definition „weder oben noch
           unten". Den Knopf trotzdem zu zeigen wäre eine Einstellung, die ins
           Leere läuft. */}
-      {a.modus !== "mitte" && (
+      {a.modus !== "mitte" && a.modus !== "abstand" && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
           {knopf(a.ende === "unten", "die Letzten", () => onChange({ ...a, ende: "unten" }), "u")}
           {knopf(a.ende === "oben", "die Besten", () => onChange({ ...a, ende: "oben" }), "o")}
         </div>
       )}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        {a.modus === "rang" ? (
+        {a.modus === "rang" && (
           <Zahl label="wie viele" wert={a.n} limits={AUSWAHL_LIMITS.n} breite={110}
             onChange={(v) => onChange({ ...a, n: v })} />
-        ) : (
+        )}
+        {(a.modus === "perzentil" || a.modus === "mitte") && (
           <Zahl label="Anteil %" wert={a.prozent} limits={AUSWAHL_LIMITS.prozent} breite={110}
             onChange={(v) => onChange({ ...a, prozent: v })} />
         )}
       </div>
+
+      {/* 🔴 Andi, 27.08.2026: „solche optionen müssen egtl hinter nem eigenen
+          öffnenbarem Fenster sein, weil die ganzen Einstellmöglichkeiten einen
+          sonst komplett erschlagen."
+
+          Also hinter `Feinheiten` — dem gemeinsamen Klapp-Bauteil, das
+          `npm run detail` ohnehin für alle Regel-Oberflächen verlangt. Ein
+          eigener Aufklapper hier wäre die neunte Fassung derselben Sache
+          (dieselbe Geschichte wie bei den acht Eckenradien).
+
+          ⚠️ Die Klappe zeigt in der Zusammenfassung, was drinsteht — sonst
+          sieht eine eingestellte Messlatte aus wie eine unbenutzte. */}
+      {a.modus === "abstand" && (
+        <Feinheiten
+          titel="Woran gemessen wird"
+          zusammenfassung={beschreibeAuswahl(a)}
+          abweichend={a.messlatte !== "schnitt" || a.schwelle !== 40 || a.richtung !== "ueber"}
+        >
+          <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 4 }}>Messlatte</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
+            {MESSLATTEN.map((m) =>
+              knopf(a.messlatte === m.key, m.label, () => onChange({ ...a, messlatte: m.key }), m.key, m.text))}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
+            {knopf(a.richtung === "ueber", "darüber", () => onChange({ ...a, richtung: "ueber" }), "ri-u")}
+            {knopf(a.richtung === "unter", "darunter", () => onChange({ ...a, richtung: "unter" }), "ri-d")}
+          </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <Zahl label="Abstand %" wert={a.schwelle} limits={AUSWAHL_LIMITS.schwelle} breite={110}
+              onChange={(v) => onChange({ ...a, schwelle: v })} />
+            {(a.messlatte === "schnittOben" || a.messlatte === "schnittUnten") && (
+              <Zahl label="wie viele" wert={a.n} limits={AUSWAHL_LIMITS.n} breite={110}
+                onChange={(v) => onChange({ ...a, n: v })} />
+            )}
+          </div>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "8px 0 0", lineHeight: 1.45 }}>
+            ⚠️ Dieser Modus kann <strong>niemanden</strong> treffen — und das ist
+            der Zweck: bei einem engen Rennen soll eine Aufhol-Regel schweigen.
+            Solange niemand Punkte hat, greift er ebenfalls nicht.
+          </p>
+        </Feinheiten>
+      )}
       {/* 🔴 Nicht nur WEN, sondern WIE VIELE. „die besten 5" klingt nach einer
           Kleinigkeit und ist in einer Zwölfer-Runde fast die halbe Gruppe —
           genau die Falle, für die es `anteile()` bei den Wettbewerbs-Gewichten

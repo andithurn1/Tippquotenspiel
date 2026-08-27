@@ -37,7 +37,7 @@
 import { spieltagKey, spieltageChronologisch } from "./spieltag";
 // 🔴 Die WEN-Achse. Sie lag seit ihrem Bau ungenutzt da — dieser Import ist
 // der erste Aufrufer überhaupt (Befund 06.08.2026).
-import { waehleBetroffene } from "./auswahl";
+import { waehleBetroffene, MESSLATTEN } from "./auswahl";
 // 🔴 Die WAS-Achse. Bis 07.08.2026 war die Wirkung eines Ereignisses IMMER
 // „n Joker" — das Feld hieß `belohnung` und war eine Zahl. Das ist die
 // Voreinstellung geblieben (`wirkungVon` unten), aber nicht mehr die einzige
@@ -244,11 +244,19 @@ const clamp = (v, { min, max }, fallback) => {
 // ⚠️ Bewusst eine kurze Liste statt „alles durchreichen": ein Modus, dessen
 // Daten fehlen, liefert stillschweigend eine leere Auswahl. Das sähe für den
 // Admin exakt aus wie ein Ereignis, das nie auslöst.
-export const AUSWAHL_MODI = ["rang", "perzentil", "mitte"];
+// ⚠️ Eine AUSWAHL aus `MODI` (auswahl.js), nicht die ganze Liste: die übrigen
+// Modi brauchen Daten, die ein Ereignis nicht hat (Paarungen, Gruppen,
+// Freiwillige). `abstand` ist am 27.08.2026 dazugekommen — er braucht nur die
+// Tabelle, die hier ohnehin vorliegt.
+export const AUSWAHL_MODI = ["rang", "perzentil", "mitte", "abstand"];
 
 export const AUSWAHL_LIMITS = {
   n: { min: 1, max: 5, step: 1 },
   prozent: { min: 5, max: 50, step: 5 },
+  // Andis Beispiel steht mitten drin: „über 40 % mehr als der Schnitt".
+  // ⚠️ Bis 200 %, weil „doppelt so viel wie der Letzte" eine sinnvolle Ansage
+  // ist — und 0 erlaubt, das heißt schlicht „mehr als".
+  schwelle: { min: 0, max: 200, step: 5 },
 };
 
 export function sanitizeAuswahl(partial = {}, standard = { modus: "rang", ende: "unten", n: 1, prozent: 20 }) {
@@ -262,6 +270,13 @@ export function sanitizeAuswahl(partial = {}, standard = { modus: "rang", ende: 
     ende: p.ende === "oben" ? "oben" : "unten",
     n: Math.round(clamp(p.n, AUSWAHL_LIMITS.n, standard.n)),
     prozent: Math.round(clamp(p.prozent, AUSWAHL_LIMITS.prozent, standard.prozent)),
+    // 🔴 Der Abstands-Modus (Andi, 27.08.2026). Die drei Felder werden IMMER
+    // mitgeschrieben, auch in anderen Modi — dieselbe Begründung wie bei
+    // `ende` darüber: ein Wechsel hin und zurück soll die frühere Wahl nicht
+    // verlieren.
+    messlatte: MESSLATTEN.some((m) => m.key === p.messlatte) ? p.messlatte : (standard.messlatte ?? "schnitt"),
+    schwelle: Math.round(clamp(p.schwelle, AUSWAHL_LIMITS.schwelle, standard.schwelle ?? 40)),
+    richtung: p.richtung === "unter" ? "unter" : "ueber",
   };
 }
 
@@ -269,6 +284,12 @@ export function sanitizeAuswahl(partial = {}, standard = { modus: "rang", ende: 
 // Wettbewerbs-Gewichten: „rang/unten/1" sagt niemandem etwas.
 export function beschreibeAuswahl(auswahl) {
   const a = sanitizeAuswahl(auswahl);
+  // ⚠️ Der Abstands-Modus zuerst: er ist der einzige, dessen Satz die Zahl
+  // BRAUCHT — „wer zu weit weg ist" allein sagt nichts.
+  if (a.modus === "abstand") {
+    const latte = MESSLATTEN.find((m) => m.key === a.messlatte)?.label ?? "der Schnitt";
+    return `alle, die ${a.schwelle} % ${a.richtung === "unter" ? "unter" : "über"} ${latte} liegen`;
+  }
   if (a.modus === "mitte") return `das mittlere Feld (ohne die oberen und unteren ${a.prozent} %)`;
   if (a.modus === "perzentil") return `${a.ende === "oben" ? "das obere" : "das untere"} Fünftel (${a.prozent} %)`;
   if (a.n === 1) return a.ende === "oben" ? "der Beste des Spieltags" : "der Letzte des Spieltags";

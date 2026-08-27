@@ -52,7 +52,53 @@ export const MODI = [
   { key: "neu",              label: "Neulinge",             text: "Wer erst seit n Spieltagen dabei ist." },
   { key: "inaktiv",          label: "Eingeschlafene",       text: "Wer n Spieltage nicht getippt hat." },
   { key: "freiwillig",       label: "Freiwillige",          text: "Wer sich meldet." },
+  // 🔴 Andi, 27.08.2026, wörtlich: „mit genau einstellbaren eingaben wie bspw.
+  // alle die über 40 % mehrpunkte als der Schnitt, als der letzte oder auch
+  // der schnitt der letzten 5 haben".
+  //
+  // ⚠️ Der Unterschied zu `rang` und `perzentil` ist nicht die Feinheit,
+  // sondern die FRAGE: die beiden schneiden die Tabelle an einer STELLE („die
+  // besten 3", „das obere Fünftel") und treffen deshalb immer jemanden, egal
+  // wie eng das Feld ist. Dieser Modus misst einen ABSTAND und trifft
+  // womöglich niemanden — genau das ist bei einer Aufhol-Regel erwünscht: bei
+  // einem Kopf-an-Kopf-Rennen soll sie schweigen.
+  { key: "abstand",          label: "Wer zu weit weg ist",  text: "Alle über oder unter einer Messlatte — „40 % mehr als der Schnitt“." },
 ];
+
+// ── Woran der Abstand gemessen wird ─────────────────────────
+// Andis drei Beispiele in einem Katalog. ⚠️ „der Schnitt der letzten 5" gibt
+// es damit ZWEIMAL, und beides ist richtig: als Messlatte `schnittUnten` mit
+// n = 5 (die letzten fünf SPIELER) und über die vorhandene Achse
+// `bezug: "zeitraum"` (die letzten fünf SPIELTAGE). Die beiden Achsen kreuzen
+// sich, statt sich zu wiederholen.
+export const MESSLATTEN = [
+  { key: "schnitt",     label: "der Schnitt",              text: "Der Durchschnitt aller Mitspieler." },
+  { key: "letzter",     label: "der Letzte",               text: "Der Punktestand des Schlusslichts." },
+  { key: "erster",      label: "der Führende",             text: "Der Punktestand an der Spitze." },
+  { key: "schnittUnten", label: "der Schnitt der letzten n", text: "Durchschnitt der n schwächsten — robuster als ein einzelner Ausreißer." },
+  { key: "schnittOben",  label: "der Schnitt der besten n",  text: "Durchschnitt der n stärksten." },
+];
+const MESSLATTE_KEYS = new Set(MESSLATTEN.map((m) => m.key));
+
+// Der Wert, gegen den verglichen wird. `null`, wenn er sich nicht bilden lässt.
+function messlatteWert(tabelle, messlatte, anzahl) {
+  if (!tabelle.length) return null;
+  // ⚠️ `total`, nicht `punkte` — so heißt das Feld in `geordnet()`, und danach
+  // wird auch sortiert. Mit dem falschen Namen wären alle Werte 0, die
+  // Messlatte damit 0, und der Modus träfe stumm NIEMANDEN. Genau die Sorte
+  // Fehler, die niemandem auffällt, weil „niemand getroffen" ein erlaubtes
+  // Ergebnis ist.
+  const werte = tabelle.map((z) => Number(z.total) || 0);
+  const mittel = (liste) => (liste.length ? liste.reduce((a, b) => a + b, 0) / liste.length : null);
+  const k = Math.max(1, Math.min(anzahl || 1, werte.length));
+  switch (messlatte) {
+    case "letzter": return werte[werte.length - 1];
+    case "erster": return werte[0];
+    case "schnittOben": return mittel(werte.slice(0, k));
+    case "schnittUnten": return mittel(werte.slice(-k));
+    default: return mittel(werte);
+  }
+}
 
 const MODUS_KEYS = new Set(MODI.map((m) => m.key));
 
@@ -139,6 +185,10 @@ export function waehleBetroffene({
   n = 1,
   prozent = 20,
   ende = "unten",          // "oben" | "unten" — für rang/perzentil
+  // Für `abstand`: woran gemessen wird, wie weit weg, und in welche Richtung.
+  messlatte = "schnitt",
+  schwelle = 40,           // in PROZENT über/unter der Messlatte
+  richtung = "ueber",      // "ueber" | "unter"
   seit = 3,                // für neu/inaktiv
   gruppe = null,
   fuer = null,             // für nachbarn: aus wessen Sicht
@@ -189,6 +239,24 @@ export function waehleBetroffene({
     case "perzentil": {
       const k = ausProzent(prozent, tabelle.length);
       return ende === "oben" ? ids(tabelle.slice(0, k)) : ids(tabelle.slice(tabelle.length - k));
+    }
+
+    // 🔴 Der Abstands-Modus (Andi, 27.08.2026). Er kann NIEMANDEN treffen, und
+    // das ist kein Fehler, sondern der Zweck: bei einem engen Feld soll eine
+    // Aufhol-Regel schweigen.
+    case "abstand": {
+      const latte = messlatteWert(tabelle, messlatte, anzahl);
+      // ⚠️ Ohne positive Messlatte gibt es kein „40 % mehr als". Am ersten
+      // Spieltag stehen alle bei 0 — dann trifft die Regel niemanden, statt
+      // durch eine Division durch null jeden oder keinen zu treffen. Still,
+      // wie jeder andere Modus ohne Daten.
+      if (!Number.isFinite(latte) || latte <= 0) return [];
+      const grenze = latte * (1 + (Number(schwelle) || 0) / 100);
+      const drunter = latte * (1 - (Number(schwelle) || 0) / 100);
+      return ids(tabelle.filter((z) => {
+        const p = Number(z.total) || 0;
+        return richtung === "unter" ? p < drunter : p > grenze;
+      }));
     }
 
     // Das Mittelfeld ist definiert als „weder im oberen noch im unteren

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { waehleBetroffene, paarungen, trefferAnteil, MODI } from "@/lib/auswahl";
+import { waehleBetroffene, paarungen, trefferAnteil, MODI, MESSLATTEN } from "@/lib/auswahl";
 import { seeded } from "@/lib/seeded";
 
 // Ein Feld mit klarer Ordnung: A vorn, F hinten.
@@ -304,5 +304,104 @@ describe("Der Zeitraum-Bezug", () => {
       modus: "rang", ende: "oben", n: 1, bezug: "zeitraum",
       stand: saison, mitglieder: ["a", "b"],
     })).toEqual([]);
+  });
+});
+
+// ============================================================
+//  DER ABSTANDS-MODUS (Andi, 27.08.2026)
+//
+//  „mit genau einstellbaren eingaben wie bspw. alle die über 40 % mehrpunkte
+//   als der Schnitt, als der letzte oder auch der schnitt der letzten 5 haben"
+//
+//  🔴 Der Unterschied zu `rang`/`perzentil` ist nicht die Feinheit, sondern
+//  die Frage: die schneiden die Tabelle an einer STELLE und treffen immer
+//  jemanden. Dieser misst einen ABSTAND und trifft womoeglich niemanden --
+//  bei einem Kopf-an-Kopf-Rennen soll eine Aufhol-Regel schweigen.
+// ============================================================
+describe("Abstand zur Messlatte", () => {
+  // Schnitt = 100. Ueber 40 % darueber liegt nur `a` (200).
+  const STAND = [
+    { userId: "a", total: 200 },
+    { userId: "b", total: 120 },
+    { userId: "c", total: 100 },
+    { userId: "d", total: 50 },
+    { userId: "e", total: 30 },
+  ];
+  const waehle = (teil) => waehleBetroffene({
+    modus: "abstand", stand: STAND, mitglieder: STAND, ...teil,
+  });
+
+  it("Andis Beispiel: ueber 40 % mehr als der Schnitt", () => {
+    expect(waehle({ messlatte: "schnitt", schwelle: 40, richtung: "ueber" })).toEqual(["a"]);
+  });
+
+  it("dieselbe Schwelle nach UNTEN trifft die anderen", () => {
+    expect(waehle({ messlatte: "schnitt", schwelle: 40, richtung: "unter" }).sort())
+      .toEqual(["d", "e"]);
+  });
+
+  it("gemessen am LETZTEN statt am Schnitt", () => {
+    // Letzter = 30, +40 % = 42 -> alle ausser `e`.
+    expect(waehle({ messlatte: "letzter", schwelle: 40, richtung: "ueber" }).sort())
+      .toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("gemessen am FUEHRENDEN", () => {
+    // Erster = 200, +40 % = 280 -> niemand.
+    expect(waehle({ messlatte: "erster", schwelle: 40, richtung: "ueber" })).toEqual([]);
+  });
+
+  it("„der Schnitt der letzten n“ -- Andis dritter Fall", () => {
+    // Die letzten 2 sind 50 und 30, Schnitt 40, +40 % = 56.
+    expect(waehle({ messlatte: "schnittUnten", n: 2, schwelle: 40, richtung: "ueber" }).sort())
+      .toEqual(["a", "b", "c"]);
+  });
+
+  it("und der Schnitt der BESTEN n", () => {
+    // Die besten 2 sind 200 und 120, Schnitt 160, −40 % = 96.
+    expect(waehle({ messlatte: "schnittOben", n: 2, schwelle: 40, richtung: "unter" }).sort())
+      .toEqual(["d", "e"]);
+  });
+
+  it("trifft bei einem engen Feld NIEMANDEN -- das ist der Zweck", () => {
+    const eng = [
+      { userId: "a", total: 101 }, { userId: "b", total: 100 }, { userId: "c", total: 99 },
+    ];
+    expect(waehleBetroffene({
+      modus: "abstand", stand: eng, mitglieder: eng,
+      messlatte: "schnitt", schwelle: 40, richtung: "ueber",
+    })).toEqual([]);
+  });
+
+  it("schweigt, solange niemand Punkte hat", () => {
+    // 🔴 Am ersten Spieltag stehen alle bei 0. „40 % mehr als 0" ist keine
+    // Aussage -- die Regel trifft niemanden, statt jeden oder keinen zu raten.
+    const null_ = [{ userId: "a", total: 0 }, { userId: "b", total: 0 }];
+    expect(waehleBetroffene({
+      modus: "abstand", stand: null_, mitglieder: null_,
+      messlatte: "schnitt", schwelle: 40,
+    })).toEqual([]);
+  });
+
+  it("eine Schwelle von 0 trifft jeden, der ueberhaupt darueber liegt", () => {
+    expect(waehle({ messlatte: "schnitt", schwelle: 0, richtung: "ueber" }).sort())
+      .toEqual(["a", "b"]);
+  });
+
+  it("liest `total` und nicht irgendein anderes Feld", () => {
+    // ⚠️ Die Tabelle in `geordnet()` heisst `total`. Mit einem falschen
+    // Feldnamen waeren alle Werte 0 und der Modus traefe stumm niemanden --
+    // und „niemand getroffen" ist hier ein ERLAUBTES Ergebnis, faellt also
+    // nicht auf.
+    const falsch = [{ userId: "a", punkte: 999 }, { userId: "b", punkte: 1 }];
+    expect(waehleBetroffene({
+      modus: "abstand", stand: falsch, mitglieder: falsch,
+      messlatte: "schnitt", schwelle: 40,
+    })).toEqual([]);
+  });
+
+  it("jede Messlatte ist beschrieben und eindeutig", () => {
+    for (const m of MESSLATTEN) expect(m.key && m.label && m.text).toBeTruthy();
+    expect(new Set(MESSLATTEN.map((m) => m.key)).size).toBe(MESSLATTEN.length);
   });
 });

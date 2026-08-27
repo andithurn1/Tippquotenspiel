@@ -429,7 +429,14 @@ describe("Ereignisse sind auf allen drei Stufen erreichbar", () => {
   it("Stufe 3: jedes Bibliotheks-Bündel ist ein gültiges Regelwerk und schaltet etwas ein", () => {
     for (const p of EREIGNIS_PRESETS) {
       const c = sanitizeEreignisse(p.ereignisse);
-      expect(c).toEqual(p.ereignisse);          // nichts wird stillschweigend verworfen
+      // 🔴 Geprüft wird, dass nichts VERWORFEN wird — nicht, dass nichts
+      // dazukommt. Die Bereinigung ergänzt fehlende Felder mit ihrer Vorgabe
+      // (seit dem 27.08.2026 etwa `messlatte`/`schwelle` des Abstands-Modus),
+      // und das ist ihre Aufgabe. Ein `toEqual` verlangte dagegen, dass jede
+      // neue Vorgabe in JEDES Bündel der Bibliothek nachgetragen wird — dann
+      // stünde in zehn Bündeln ein Wert, den dort niemand braucht.
+      expect(c).toMatchObject(p.ereignisse);    // nichts wird stillschweigend verworfen
+      expect(sanitizeEreignisse(c)).toEqual(c); // und zweimal säubern ändert nichts mehr
       expect(c.enabled).toBe(p.key !== "aus");  // nur „aus“ ist aus
       // ⚠️ Jeder aktive Eintrag muss AUSWERTBAR sein — ein Bündel mit einem
       // vorbereiteten Typ (Quiz, Duell) sähe eingeschaltet aus und täte nichts.
