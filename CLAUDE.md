@@ -551,6 +551,14 @@ NICHT abgeschafft: die Regeln gelten unverändert.
 Alternativen — ohne dass er darum bittet.** Kurz und prägnant, als Liste oder
 Schema. Er wählt aus, DANN wird geändert. Nicht vorher implementieren.
 
+**1b. 🔴 TONFALL: locker jugendlich — der Maßstab steht in `docs/tonfall.md`.**
+Andi am 27.08.2026: *„locker jugendlich, und nicht so Alter Sack der jung und
+hipp ist"*. Sein eigener Beispieltext für die Fremdjoker ist die Referenz, an
+der jeder neue Text gemessen wird. ⛔ Ausgenommen und ausdrücklich SACHLICH:
+`reglerWarnung.js`, Fehlermeldungen beim Speichern, Datenschutz, Impressum.
+⚠️ Der Bestand (4 609 Stellen, ~97 Normseiten) ist NICHT nachgezogen — das
+steht als TON1 in `design/auftraege.md`. Neue Texte folgen dem Ton ab sofort.
+
 **2. Weniger Text, dafür größer.** Sein Satz: „mir ist aufgefallen, dass oft
 weniger Text möglich ist, den man dafür größer darstellen kann — genauso wie
 die Boxen. Das ermöglicht, es später übersichtlicher zu gestalten." Gilt für

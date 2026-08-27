@@ -12,7 +12,7 @@ import {
 } from "@/lib/eingriffe";
 import {
   aktiveArten, familieAn, familieSchalten, beschreibeFremdjoker,
-  konflikte, zweiPhasenHinweis,
+  konflikte, zweiPhasenHinweis, grosseRundeHinweis, RUNDE_KLEIN_BIS,
 } from "@/lib/fremdjoker";
 import { sanitizeDuellJoker } from "@/lib/duellJoker";
 import { basisFuer, WIDERRUF } from "@/lib/jokerBasis";
@@ -55,7 +55,10 @@ import Feinheiten from "@/components/Feinheiten";
 //
 // `onChange` bekommt ein TEIL-Regelwerk, genau wie `JokerSondermenue` es an
 // seine Bausteine weitergibt: `{ eingriffe: … }`, `{ duell: … }` oder beides.
-export default function Fremdjoker({ rules, onChange }) {
+// `anzahlMitglieder` ist optional: beim ANLEGEN gibt es noch keine Runde und
+// damit keine Zahl. Wer sie hat (`Regelaenderungen` an einer laufenden Runde),
+// reicht sie durch — dann meldet sich der Hinweis zur Rundengröße.
+export default function Fremdjoker({ rules, onChange, anzahlMitglieder = null }) {
   const eg = sanitizeEingriffe(rules?.eingriffe);
   // Jede Änderung durch die Bereinigung — ein Tippfehler im Feldnamen sieht
   // sonst exakt aus wie eine tote Einstellung (`npm run greift`, Sperrklinke
@@ -117,6 +120,11 @@ export default function Fremdjoker({ rules, onChange }) {
   const eigeneSperren = arten.filter((k) => karte[k]?.spieltage !== undefined);
   const an = familieAn(rules);
   const hinweis = zweiPhasenHinweis(rules);
+  // 🔴 Andis Empfehlung aus seinem eigenen Text: „Eher bei kleinen, privaten
+  // Runden unter 15 Teilnehmern anwenden!" — als echter Hinweis, sobald die
+  // Runde ihre Größe kennt. Beim ANLEGEN ist `anzahlMitglieder` null, dann
+  // steht unten nur der Satz ohne Zahl.
+  const grosseRunde = grosseRundeHinweis(rules, anzahlMitglieder);
   const streit = konflikte(rules);
 
   // 🔴 JK7 — der EINE Griff. `familieSchalten` gibt ein GANZES Regelwerk
@@ -170,10 +178,20 @@ export default function Fremdjoker({ rules, onChange }) {
   return (
     <div>
       {/* ── 1) JK7: der eine Griff ── */}
+      {/* 🔴 Der Ton ist Andis eigener (27.08.2026, `docs/tonfall.md`):
+          „Wische deinen Kontrahenten etwas aus, und sabotiere ihre
+          Tippabgaben! Sie werden und würden es auch bei dir tun!"
+          Der zweite Satz ist nicht Deko — er nimmt die Hemmung, die Sache
+          überhaupt einzuschalten. */}
+      <p style={{ fontSize: "0.8125rem", color: C.text, margin: "0 0 4px", lineHeight: 1.5 }}>
+        <strong>Wisch deinen Mitspielern eins aus.</strong> Blocken, klauen,
+        mitkassieren, dagegenhalten — vier Joker, die im Tipp eines{" "}
+        <strong>anderen</strong> landen. Sie würden es bei dir genauso machen.
+      </p>
       <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
-        Vier Joker in den Tipp eines <strong>anderen</strong>: blocken, klauen,
-        mitprofitieren, dagegen wetten. Ein Griff für die ganze Familie —
-        Büro-Runde aus, Freundesrunde an.
+        Ein Griff für alle vier: Büro-Runde aus, Freundesrunde an. Am besten
+        in kleinen Runden unter {RUNDE_KLEIN_BIS} Leuten — da kennt man den,
+        den man gerade ärgert.
       </p>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -195,6 +213,18 @@ export default function Fremdjoker({ rules, onChange }) {
              `zweiPhasenHinweis` — dieselbe Aussage in der Komponente noch
              einmal zu formulieren hieße, dass sie beim nächsten Umbau
              auseinanderläuft. ── */}
+      {/* Die Runde ist zu groß dafür — steht ganz oben, weil es die Frage
+          betrifft, ob man die Familie überhaupt einschaltet. */}
+      {an && grosseRunde && (
+        <div style={{
+          marginTop: 8, fontSize: "0.75rem", lineHeight: 1.5,
+          padding: "9px 11px", borderRadius: RUND.karte,
+          color: C.text, background: `${C.coral}14`, border: `1px solid ${C.coral}55`,
+        }}>
+          ⚠️ {grosseRunde.text}
+        </div>
+      )}
+
       {an && hinweis && (
         <div style={{
           // 🔴 Der Ton entscheidet die Farbe (25.08.2026). Vorher war der

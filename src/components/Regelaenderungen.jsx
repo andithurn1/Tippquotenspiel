@@ -15,6 +15,7 @@ import {
   verstoesstGegenVerfassung, beschreibeMitbestimmung,
 } from "@/lib/regelAbstimmung";
 import { regelwerkAmSpieltag, beschreibeBeschluesse } from "@/lib/beschluss";
+import { grosseRundeHinweis } from "@/lib/fremdjoker";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // ── Schritt 4: Anträge stellen und darüber abstimmen ────────
@@ -142,6 +143,11 @@ export default function Regelaenderungen() {
     rules, antraege, mitglieder: leute, spieltag: aktuellerSpieltag,
   });
 
+  // ⚠️ Erst rechnen, wenn die Mitglieder wirklich geladen sind: `leute.length`
+  // ist im Ladezustand 0, und `grosseRundeHinweis` liefert dann `null` — der
+  // Hinweis blitzt also nicht kurz auf und verschwindet wieder.
+  const grosseRunde = grosseRundeHinweis(rules, leute.length || null);
+
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
@@ -156,6 +162,22 @@ export default function Regelaenderungen() {
         <p style={{ fontSize: "0.8125rem", color: C.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
           {beschreibeMitbestimmung(rules, { mitglieder: leute.length || null, aspektKeys: ASPEKT_KEYS })}
         </p>
+
+        {/* 🔴 Andis Empfehlung zu den Fremdjokern (27.08.2026): „Eher bei
+            kleinen, privaten Runden unter 15 Teilnehmern anwenden!"
+
+            Sie steht HIER und nicht in der Spielerstellung, und das ist der
+            ganze Grund, warum sie überhaupt etwas taugt: beim Anlegen gibt es
+            noch keine Mitspieler, die Zahl wäre also immer null. Erst diese
+            Seite kennt die echte Rundengröße — und sie ist zugleich die
+            Stelle, an der die Runde etwas dagegen tun kann. */}
+        {grosseRunde && (
+          <div style={{
+            background: `${C.coral}14`, border: `1px solid ${C.coral}55`, borderRadius: RUND.karte,
+            padding: "10px 12px", marginBottom: 12, fontSize: "0.75rem",
+            color: C.text, lineHeight: 1.5,
+          }}>⚠️ {grosseRunde.text}</div>
+        )}
 
         {matches == null && <div style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted }}>lädt …</div>}
 

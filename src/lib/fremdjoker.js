@@ -809,6 +809,38 @@ export function konflikte(rules) {
 // (⚠️), die zusammengelegte ist eine Beruhigung (💡). Ein roter Kasten für
 // den Normalfall hätte den Admin zu einer Einstellung gedrängt, die er gar
 // nicht braucht.
+// ── Für wie viele Leute ist diese Familie gedacht? ──────────
+//
+// 🔴 Andi, 27.08.2026, in seinem eigenen Werbetext für die Fremdjoker:
+// *„Eher bei kleinen, privaten Runden unter 15 Teilnehmern anwenden!"*
+//
+// Das ist kein Balancing, sondern eine Aussage über die SOZIALE Lage: ein
+// Fremdjoker lebt davon, dass man den Getroffenen kennt und ihn danach
+// aufziehen kann. In einer Runde mit 40 Leuten trifft man einen Namen, kein
+// Gesicht — dann ist es kein Spaß mehr, sondern nur noch Punktverlust.
+//
+// ⚠️ Deshalb ein HINWEIS und kein Verbot (Baukasten-Grundsatz, CLAUDE.md):
+// will ein Admin es in einer großen Runde, soll er es haben.
+//
+// ⚠️ Und deshalb `null`, solange die Zahl unbekannt ist. Beim ANLEGEN gibt es
+// noch keine Mitspieler — ein Hinweis, der dort schon meckert, meckert über
+// eine Runde, die es nicht gibt.
+export const RUNDE_KLEIN_BIS = 15;
+
+export function grosseRundeHinweis(rules, anzahlMitglieder = null) {
+  if (!familieAn(rules)) return null;
+  const n = Number(anzahlMitglieder);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (n < RUNDE_KLEIN_BIS) return null;
+  return {
+    ton: "warnung",
+    text: `Ihr seid ${n} — für Fremdjoker ist das viel. Sie leben davon, dass man den `
+      + "Getroffenen kennt und ihn danach aufziehen kann. Ab etwa 15 Leuten trifft man "
+      + "einen Namen statt ein Gesicht, und aus dem Spaß wird nacktes Punkteklauen. "
+      + "Läuft trotzdem — aber rechnet mit Diskussionen.",
+  };
+}
+
 export function zweiPhasenHinweis(rules) {
   if (!familieAn(rules)) return null;
   const f = sanitizeTippfenster(rules?.tippfenster);

@@ -5,10 +5,11 @@ import {
   fremdEinsaetze, eingriffFenster, offeneEingriffe, zieleJeArt, sperrGrund,
   losZiele, meinLos, geschuetzteSpiele, schutzStand, konflikte, zweiPhasenHinweis,
   tippSperre,
+  grosseRundeHinweis, RUNDE_KLEIN_BIS,
 } from "@/lib/fremdjoker";
 import { DEFAULT_EINGRIFFE } from "@/lib/eingriffe";
 import { DEFAULT_DUELL, applyDuellJoker } from "@/lib/duellJoker";
-import { DEFAULT_RULES, brauchtVerlauf } from "@/lib/engine";
+import { DEFAULT_RULES, brauchtVerlauf, sanitizeRules } from "@/lib/engine";
 import { verlaufPositionen } from "@/lib/spieltag";
 
 // Ein ausgeglichenes Spiel, dasselbe Raster wie in `ergebnisMatrix.test.js` —
@@ -1012,5 +1013,46 @@ describe("tippSperre", () => {
     expect(tippSperre([], regeln(), {})).toBeNull();
     expect(tippSperre(null, regeln(), { userId: "b", matchId: "M1" })).toBeNull();
     expect(tippSperre([einsatz()], {}, { userId: "b", matchId: "M1" })).toBeNull();
+  });
+});
+
+// ============================================================
+//  „Eher bei kleinen, privaten Runden unter 15 Teilnehmern anwenden!"
+//  (Andi, 27.08.2026, in seinem eigenen Werbetext fuer die Fremdjoker)
+//
+//  ⚠️ Kein Verbot, ein HINWEIS -- Baukasten-Grundsatz. Und kein Balancing:
+//  die Aussage ist eine soziale, keine rechnerische. Ein Fremdjoker lebt
+//  davon, dass man den Getroffenen kennt.
+// ============================================================
+describe("Hinweis zur Rundengroesse", () => {
+  const an = sanitizeRules({
+    ...DEFAULT_RULES,
+    eingriffe: { ...DEFAULT_RULES.eingriffe, enabled: true, trittbrett: { enabled: true, anteil: 0.3, kopierterBekommt: 0 } },
+  });
+
+  it("schweigt, solange die Familie aus ist", () => {
+    const aus = sanitizeRules({ ...DEFAULT_RULES, eingriffe: { ...DEFAULT_RULES.eingriffe, enabled: false } });
+    expect(grosseRundeHinweis(aus, 40)).toBeNull();
+  });
+
+  it("schweigt, solange die Zahl unbekannt ist -- beim ANLEGEN gibt es keine Runde", () => {
+    expect(grosseRundeHinweis(an, null)).toBeNull();
+    expect(grosseRundeHinweis(an, 0)).toBeNull();
+    expect(grosseRundeHinweis(an, "acht")).toBeNull();
+  });
+
+  it("schweigt in einer kleinen Runde -- genau da gehoert sie hin", () => {
+    for (const n of [2, 8, 14]) expect(grosseRundeHinweis(an, n), String(n)).toBeNull();
+  });
+
+  it("meldet sich ab 15 und nennt die Zahl", () => {
+    expect(grosseRundeHinweis(an, RUNDE_KLEIN_BIS)).not.toBeNull();
+    expect(grosseRundeHinweis(an, 22).text).toContain("22");
+  });
+
+  it("verbietet nichts -- der Ton ist Warnung, nicht Sperre", () => {
+    const h = grosseRundeHinweis(an, 30);
+    expect(h.ton).toBe("warnung");
+    expect(h.text).toMatch(/Läuft trotzdem/);
   });
 });
