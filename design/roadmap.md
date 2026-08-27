@@ -3,6 +3,35 @@
 Offene Feature-Ideen, grob nach Aufwand. Gebaut wird in einzelnen, testbaren
 Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 
+## ✅ DAS RUNDEN-MENÜ IST DURCH (27.08.2026)
+
+Andis Beschreibung vom 27.08.2026 hatte vier Teile (`design/rundenmenue.md`
+Teil 2). **Alle vier sind gebaut**, und zwei davon brachten einen Befund mit,
+der größer war als der Auftrag:
+
+| | Was | Der Befund dahinter |
+|---|---|---|
+| 1 | `/runde` — „wer hält noch was, wann fällt es weg" | Die REGEL stand überall (`jokerBasis.verfall`), das **DATUM nirgends**. Ein Spieler sah „2 Joker übrig" und wusste nicht, ob er sie diese Woche ausgeben muss oder bis Mai Zeit hat |
+| 2+3 | Rücksetzung als Rad-Belohnung | Der Katalog kannte nur Zugaben und Abzüge. Eine Wirkung, die einen **ZUSTAND löscht**, gab es im ganzen Regelwerk nicht |
+| 4 | Das Menü in drei Ebenen | Die Klammer gab es längst (`/hub`) — sie war nur selbst zu dem geworden, wogegen die Ansage sich richtet: **elf gleiche Kacheln untereinander** |
+
+🔴 **Der Gedanke aus Nr. 3 ist der, der weiterträgt**, und zwar über die
+Rücksetzung hinaus: eine Rücksetzung ist **kein gespeicherter Zustand, sondern
+ein Schnitt auf der Zeitachse** (`{ userId, ziel, abSpieltag }`). Wer fragt,
+was jemand „bisher" getan hat, lässt alles davor weg. Aus einem Zustand wird
+ein Filter — und ein Filter ist aus der Historie jederzeit neu ableitbar.
+
+⚠️ **Wo das NICHT reicht, und deshalb Teil 1 weiter offen ist:** ein
+ausgeübtes Recht ist eine ENTSCHEIDUNG, die jemand später nachlesen können
+muss („warum war Bayern–Dortmund das Topspiel?"). Die lässt sich nicht
+ableiten. Drei Wege mit Preis stehen in `design/rundenmenue.md` Teil 1,
+Empfehlung **B** — **Andis Entscheidung**.
+
+❓ **Und eine Rückfrage liegt in `design/ideen.md`:** soll ein Rad-Feld auch ein
+*eingestelltes* Ereignis ziehen können? Das ist der allgemeine Fall von Nr. 2
+und braucht zwei Entscheidungen (WEN trifft es, WIE LANGE gilt es), die sich
+nicht ableiten lassen.
+
 ## ✅ EBENE 5 IST ANGESCHLOSSEN — die Favoriten-Sperre (26.08.2026)
 
 Bis heute hat dieses Spiel an genau einer Stelle **nichts verboten**: der

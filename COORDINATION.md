@@ -126,6 +126,76 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-27 (XXX) · 🧭 **Das Runden-Menü ist durch** — und die erste Wirkung, die einen ZUSTAND löscht
+
+**Andis Auftrag** (27.08.2026, wörtlich): *„ich hätt jetz eh gedacht dass es
+bei jeder Tipprunde ein Untermenü gibt wo einmal die Rangliste steht (auch mit
+dem bereits genannten Anzeigemodus was wäre, wenn …) und hier sehen wir ne
+Übersicht über die Ereignisse und angewendeten Joker bzw. wann die auch
+geresettet werden genauso wie einen Eintrag für die Auslösung (mittels
+Glücksrad) für die Ereignisse."*
+
+Vier Teile, alle vier gebaut — aufgeschrieben in `design/rundenmenue.md`
+Teil 2, nachgeführt in `design/auftraege.md` als RM1–RM5.
+
+**🔴 Der Befund, der für euch am meisten trägt, steckt in Teil 3.**
+Andis Beispiele waren „Joker-Cooldowns zurücksetzen" und „Budget zurücksetzen".
+Beim Bauen kam heraus: das sind **keine Ereignisse aus dem Katalog**, sondern
+die erste Wirkung, die einen **ZUSTAND löscht** statt einen Wert zu vergeben.
+Die gab es im ganzen Regelwerk nicht — alle bisherigen geben oder nehmen.
+
+Und ein Zustand ist genau das, woran dieses Projekt seine teuersten Fehler
+hatte. Gelöst **ohne jede Speicherung** (`src/lib/ruecksetzung.js`):
+
+> Eine Rücksetzung ist ein **SCHNITT auf der Zeitachse**:
+> `{ userId, ziel, abSpieltag }`. Wer fragt, was ein Spieler „bisher" getan
+> hat, lässt alles vor dem Schnitt weg. **Aus einem Zustand wird ein Filter**
+> — und ein Filter ist aus der Historie jederzeit neu ableitbar.
+
+⚠️ **Das Muster ist übertragbar**, und ich würde es beim nächsten „X wird
+zurückgesetzt" zuerst versuchen: die Wahrheit bleibt die Historie, nicht ein
+Feld in einer Tabelle. **Wo es NICHT reicht**, ist eine ENTSCHEIDUNG, die
+jemand später nachlesen können muss — die lässt sich nicht ableiten. Genau
+daran hängt die eine offene Frage unten.
+
+**Angeschlossen an beiden Enden** (sonst wäre es der Befund vom 06.08.):
+Ziel `cooldown` schneidet `letzteEinsaetze` in der Tippabgabe — die REGEL in
+`pruefeAbklingzeit` bleibt unberührt, nur die Historie, die man ihr vorlegt,
+ist kürzer. Ziel `budget` schneidet die kumulierten Käufe in `kontoVerlauf`.
+
+**Was sonst neu ist:**
+
+| Datei | Was |
+|---|---|
+| `src/lib/ablauf.js` · `/runde` | Übersetzt Regeln in Zeitpunkte: „Joker verfallen am Ende von Spieltag 8", „Einzel-Joker wieder frei ab Spieltag 5". ⚠️ `ablauf.test.js` **fesselt die Auskunft an `darfEinsetzen`** — der genannte Spieltag ist genau der erste, an dem der Torwächter wieder ja sagt |
+| `src/lib/vergleichsansicht.js` | „Was wäre ohne Joker / Ereignisse / Wettbewerbs-Gewichte" in `/historie`, mit Delta je Spieler („+2 Plätze · +140 Pkt") |
+| `RundenHub.jsx` | Drei Ebenen statt elf Kacheln untereinander. Aufgeklappt über `Feinheiten`, **keine neunte Aufklapp-Fassung** |
+
+**🔴 Zwei Dinge, die ich hier hinterlasse, weil sie euch sonst auch treffen:**
+
+1. **`Number(null)` ist 0 — DREIMAL an einem Tag.** Das dritte Mal in einer
+   Datei, deren eigener Kopfkommentar davor warnt, zwei Stunden nach den ersten
+   beiden. Die Falle zu KENNEN reicht also nicht. Die Regel steht jetzt
+   mechanisch in `docs/werkzeug-fallen.md`: **`null`-Prüfung VOR dem `Number()`,
+   immer, ohne Einzelfallprüfung.** Die Einzelfallprüfung ist das, was dreimal
+   danebenging.
+2. **`npm run tot` hat zweimal Recht behalten.** `unterschiedeZumStand` und
+   `sperrfristAblauf` lagen gebaut, getestet und ungefragt da — beide sind jetzt
+   angeschlossen, statt in der Liste stehenzubleiben.
+
+**⏳ Was OFFEN ist und bei Andi liegt** (nichts davon ist Arbeit für euch):
+
+- **`design/rundenmenue.md` Teil 1** — wo eine ausgeübte Wahl gespeichert wird
+  (A Antrag · B eigene Tabelle · C ins Regelwerk). Empfehlung **B**. Solange das
+  offen ist, meldet `nochOhneWirkung` jedes Angebot ausser dem Topspiel-Recht
+  als „wirkt noch nicht" — sichtbar unfertig statt still folgenlos.
+- **`design/ideen.md`** — soll ein Rad-Feld auch ein *eingestelltes* Ereignis
+  ziehen können? Braucht zwei Entscheidungen (WEN trifft es, WIE LANGE gilt es).
+
+**Stand:** `npm test` 2941 grün · lint · build · `tot` · `stufen` (0 Lücken) ·
+`greift` · `einstellbar` (0 Funde) · `anzeige` · `detail` — alle sauber.
+
+
 ### 2026-08-26 (XXIX) · 💡 **Neue Idee von Andi: Favoriten sperren** — und ein Sicherheits-Befund
 
 **Die Idee steht als `❓` in `design/ideen.md`, NICHT im Code.** Bitte nicht
