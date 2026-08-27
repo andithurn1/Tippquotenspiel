@@ -79,7 +79,25 @@ Die Wahl landet direkt in `rounds.rules` (etwa `bigGame.festesSpiel`).
 - ⚠️ Reparierbar nur, indem man den Spieltag mit hineinschreibt — und dann hat
   man Weg B gebaut, nur schlechter.
 
-## 🔴 Meine Empfehlung: B
+## ✅ ENTSCHIEDEN: B (Andi, 27.08.2026 — „ja b")
+
+**Gebaut und angeschlossen.** Tabelle `rechte_ausgeuebt` in `schema.sql`,
+`src/lib/rechteAusuebung.js` (25 Tests), beide Stores, und seit dem Abend auch
+die Ausübung selbst auf `/runde`.
+
+🔴 **Der wichtigste Test ist der negative:** an JEDEM anderen Spieltag steht die
+Wahl NICHT im Regelwerk. Das ist der ganze Unterschied zwischen B und C.
+
+⚠️ **Die bekannte Grenze, ausgeschrieben in `schema.sql`:** die RLS-Policy kann
+prüfen, dass der Schreiber Mitglied ist und für sich selbst schreibt — nicht,
+dass er der Spieltagssieger ist. Das wäre eine Nachbildung der Wertung in SQL.
+Es bleibt also ein Missbrauch möglich: jemand kommt dem Sieger zuvor. Für eine
+Runde unter Freunden tragbar; wasserdicht erst mit einer
+`security definer`-Funktion.
+
+---
+
+## Meine damalige Empfehlung: B
 
 **Weil das Regelwerk kein Gedächtnis hat und ein Antrag keine Abstimmung
 überspringen sollte.** B kostet einen halben Tag und ist danach für jedes
@@ -149,11 +167,16 @@ Katalog, sondern eine **Wirkung, die es noch nicht gab**. Das Rad schüttet sie
 jetzt direkt aus — `BELOHNUNGS_TYPEN` hat `ruecksetzung`, und `/runde` zeigt
 sie unter „Am Rad gezogen".
 
-⚠️ **Was damit NICHT gebaut ist und offen bleibt:** ein Rad-Feld, das ein
-beliebiges Ereignis aus `rules.ereignisse` zieht. Das wäre der allgemeine Fall
-und deutlich größer — die Ereignis-Grammatik (WANN/WEN/WAS/WIE LANGE) müsste
-ohne ihren Auslöser auskommen, denn den ersetzt hier das Rad. Steht als ❓ in
-`design/ideen.md`; es ist eine eigene Entscheidung, keine Restarbeit.
+✅ **Und seit dem Abend des 27.08.2026 auch der allgemeine Fall.** Andi auf die
+Rückfrage: *„klar dafür ist das Rad ja auch da? zum auslosen?"* — ein Rad-Feld
+„Ereignis" löst eines der eingestellten Ereignisse aus. Das Rad ersetzt nur den
+AUSLÖSER; die Wirkung kommt aus dem Ereignis.
+
+⚠️ Die zwei Entscheidungen, die ich dafür gebraucht hätte, sind zu EINEM
+sichtbaren Schalter geworden statt zu einer Annahme: *wen trifft es* steht am
+Rad-Feld (Zieher oder ganze Runde), *wie lange* ist der Spieltag der Ziehung.
+Die WEN-Achse des Ereignisses wird bewusst nicht benutzt — sie braucht einen
+Auslöser und einen Tabellenstand, die es hier nicht gibt.
 
 ### 3 · Zwei Wirkungen, die es noch nicht gibt — ✅ 27.08.2026
 

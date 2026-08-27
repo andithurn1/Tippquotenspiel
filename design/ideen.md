@@ -416,34 +416,29 @@ nicht). Soll ich?
 
 ---
 
-## ❓ Soll das Rad auch ECHTE Ereignisse ziehen können? (27.08.2026)
+## ✅ BEANTWORTET: das Rad zieht jetzt auch Ereignisse (27.08.2026)
 
-**Kein Auftrag, eine Rückfrage — und sie kommt aus etwas, das schon gebaut ist.**
+**Deine Antwort:** *„klar dafür ist das Rad ja auch da? zum auslosen?"*
 
-Du hast geschrieben: *„einen Eintrag für die Auslösung (mittels Glücksrad) für
-die Ereignisse (bspw. auch ein Ereignis dass dann Joker cooldowns geresettet
-werden oder eben Budget rückgesetzt wird)"*.
+✅ **Gebaut.** Ein Rad-Feld „Ereignis" löst eines deiner eingestellten
+Ereignisse aus. Das Rad ersetzt dabei nur den **Auslöser** — die Wirkung kommt
+aus dem Ereignis, wie du sie dort eingestellt hast.
 
-✅ **Die beiden Beispiele sind gebaut.** Das Rad hat jetzt ein Feld
-„Rücksetzung" mit zwei Zielen — Abklingzeiten und Narren-Konto. Beim Bauen fiel
-aber auf: die zwei sind gar keine Ereignisse aus dem Ereignis-Katalog, sondern
-eine **Wirkung, die es vorher nicht gab**. Sie hängen deshalb direkt am Rad.
+🔴 **Die zwei Fragen, die ich dir dabei gestellt hatte, sind beantwortet, ohne
+dass ich raten musste:**
 
-**❓ Die offene Frage ist die allgemeine:** soll ein Rad-Feld auch eines deiner
-**eingestellten Ereignisse** auslösen können — also irgendeines aus
-`rules.ereignisse`, mit seiner Wirkung und seiner Geltungsdauer?
+- **Wen trifft es?** → ein Schalter am Rad-Feld: *nur den Zieher* oder *die
+  ganze Runde*. ⚠️ Die WEN-Achse des Ereignisses selbst wird bewusst NICHT
+  benutzt: sie hängt an einem Tabellenstand und wird sonst gegen einen Auslöser
+  gerechnet, den es hier nicht gibt. Sie nachzubauen hieße, dieselbe Rechnung
+  zweimal zu schreiben.
+- **Wie lange gilt es?** → am Spieltag der Ziehung, wie jede andere
+  Rad-Belohnung.
 
-⚠️ **Warum ich das nicht einfach gebaut habe:** ein Ereignis besteht aus vier
-Teilen — WANN es auslöst, WEN es trifft, WAS es tut, WIE LANGE es gilt. Zieht
-das Rad es, ist das WANN weg (das Rad IST der Auslöser). Was mit dem Rest
-passiert, ist eine Entscheidung, keine Ableitung:
-
-- **WEN** — trifft es den, der gezogen hat, oder die Gruppe, die im Ereignis
-  eingestellt ist? Beides plausibel, und es ändert das Spiel komplett.
-- **WIE LANGE** — gilt die eingestellte Dauer, oder eine, die am Rad-Feld steht?
-
-**Sag einfach, was dir vorschwebt** — oder „lass erstmal", dann bleibt es bei
-den zwei Rücksetzungen, die es jetzt gibt.
+⚠️ **Was dabei nebenbei herauskam, und es war ein echter Fehler:** die
+Modifikator-Belohnung des Rades wurde seit ihrem Bau **erzeugt und von
+niemandem gelesen**. Wer „+50 % für zwei Spieltage" zog, bekam nichts — kein
+Fehler, keine Meldung. Läuft jetzt durch denselben Kanal wie ein Ereignis.
 
 ---
 

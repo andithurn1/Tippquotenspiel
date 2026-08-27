@@ -126,6 +126,67 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-27 (XXXI) · 🎡 **Das Rad ist jetzt ein Baukasten** — und zwei Wirkungen kamen nie an
+
+**Andi hat zwei Dinge entschieden und eines gefragt.** Alles drei ist gebaut,
+nachgeführt in `design/auftraege.md` als RM4 und RM6–RM8.
+
+**1️⃣ „ja b"** — der Speicherort für ein ausgeübtes Recht. Tabelle
+`rechte_ausgeuebt`, `src/lib/rechteAusuebung.js`, beide Stores, Ausübung auf
+`/runde`. 🔴 **Der Grund für B war das Gedächtnis:** Weg C (ins Regelwerk
+schreiben) hätte die Wahl für IMMER gelten lassen — und rückwirkend auch für
+Spieltage, an denen es sie nicht gab. Dieselbe Falle wie eine nachträglich
+veränderte Quote. **Der wichtigste Test ist deshalb der negative:** an JEDEM
+anderen Spieltag steht die Wahl NICHT im Regelwerk.
+
+**2️⃣ „optisch an dem Rad einstellen … mit den ganzen Regelbeziehungen"**
+(`RadEditor.jsx`). Die Antwort ist ja, **aber nicht für alles**, und die Grenze
+ist der eigentliche Ertrag:
+
+| | gehört ans Rad? | warum |
+|---|---|---|
+| Wahrscheinlichkeit | ✅ | die Fläche IST die Zahl, mit der gezogen wird |
+| Ausschlüsse | ✅ | eine Beziehung hat zwei Enden — das ist eine Linie |
+| Cooldown | ⛔ | eine Zahl ohne Ort. Das Rad zeigt eine MARKE, dass dort eine sitzt; die Zahl bleibt im Feld |
+
+🔴 **Der Satz, den ich mir merke:** ein Regler, den man nur ungefähr treffen
+kann, ist schlechter als ein Eingabefeld — auch wenn er hübscher aussieht.
+
+⚠️ **Und die Interaktion selbst:** der Zug bewegt eine **Grenze**, kein Feld.
+Die naive Umsetzung („Feld größer ziehen, alle anderen anteilig kleiner")
+fühlt sich beim ersten Zug richtig an und ist beim dritten unbrauchbar — jedes
+Feld wandert, während man ein anderes zieht, und man kann nichts festhalten.
+
+**3️⃣ „klar dafür ist das Rad ja auch da? zum auslosen?"** — das Rad zieht jetzt
+auch eingestellte Ereignisse. Es ersetzt nur den AUSLÖSER; die Wirkung kommt
+aus dem Ereignis.
+
+---
+
+🔴 **Zwei Funde, die euch genauso treffen können, und beide sind vom selben
+Typ: ERZEUGT UND NIE GELESEN.**
+
+1. **Die Modifikator-Belohnung des Rades.** Sie wird seit dem Bau des Rades
+   erzeugt — und niemand hat sie je verrechnet. Wer „+50 % für zwei Spieltage"
+   zog, bekam **nichts**. Kein Fehler, keine Meldung.
+   ⚠️ **`npm run tot` findet so etwas NICHT**, weil es kein Export ist, sondern
+   ein **Feld in einem Rückgabeobjekt**. Das ist eine echte Lücke unserer
+   Abnahmen. Wer ein Objekt mit mehreren Töpfen zurückgibt (`{ joker, narren,
+   modifikatoren, … }`), sollte für jeden Topf einen Test haben, der ihn bis in
+   die WERTUNG verfolgt — nicht bis in die Liste.
+2. **`offenesRecht` und `beschreibeAusuebung`** lagen gebaut und ungefragt da:
+   Weg B wurde gelesen, aber niemand konnte eine Zeile schreiben. Hier hat
+   `npm run tot` es gefunden, und zwar in seiner roten Gruppe.
+
+⚠️ **Nebenbei ein dritter:** das **Schaufenster hatte gar keine Ereignisse** —
+die ganze WAS-Achse wurde also nirgends vorgeführt. Aufgefallen ist das erst
+daran, dass das neue Rad-Feld auf ein Ereignis zeigte, das die Runde nicht
+führt. Steht jetzt drin.
+
+**Stand:** `npm test` 3011 grün · lint · build · `tot` (rote Gruppe leer) ·
+`stufen` (0 Lücken) · `einstellbar` (0 Funde) · `greift` · `detail` · `schrift`.
+
+
 ### 2026-08-27 (XXX) · 🧭 **Das Runden-Menü ist durch** — und die erste Wirkung, die einen ZUSTAND löscht
 
 **Andis Auftrag** (27.08.2026, wörtlich): *„ich hätt jetz eh gedacht dass es
