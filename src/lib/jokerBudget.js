@@ -48,6 +48,7 @@
 // ============================================================
 
 import { sanitizeDuellJoker, fensterVon, einsaetzeAusTipps } from "./duellJoker";
+import { schnittFuer } from "./ruecksetzung";
 
 // ── Kataloge ────────────────────────────────────────────────
 
@@ -510,7 +511,10 @@ export function einsaetzeAllerArten(tipps = [], rules = {}) {
 // Takt, keinen Verfall und keine Kurve, sondern ist genau einmal da.
 // ⚠️ Er unterliegt trotzdem der Grundregel der Datei: kein Schuldenmodell,
 // nie unter 0.
-export function kontoVerlauf({ rules, tipps = [], spieltage = 34, stand = null, userIds = [], zusatz = [] } = {}) {
+export function kontoVerlauf({
+  rules, tipps = [], spieltage = 34, stand = null, userIds = [], zusatz = [],
+  ruecksetzungen = [],
+} = {}) {
   const modus = rules?.joker?.modus;
   const cfg = sanitizeBudget(rules?.budget);
   const N = Number.isFinite(spieltage) && spieltage > 0 ? Math.floor(spieltage) : 34;
@@ -605,8 +609,18 @@ export function kontoVerlauf({ rules, tipps = [], spieltage = 34, stand = null, 
   for (const id of spielerIds) {
     const zuflussVerlauf = zufluss.proSpieler[id]
       ?? Array.from({ length: N }, (_, i) => ({ matchday: i + 1, kontostand: 0 }));
+    // 🔴 Die Rücksetzung vom Rad (`ruecksetzung.js`, Ziel „budget"): ab diesem
+    // Spieltag zählen die FRÜHEREN Käufe nicht mehr gegen das Konto. Kein
+    // gespeicherter Zustand — nur ein Schnitt auf derselben Zeitachse, über die
+    // hier ohnehin gelaufen wird.
+    const schnitt = schnittFuer(ruecksetzungen, id, "budget");
     let kumuliert = 0;
     proSpieler[id] = zuflussVerlauf.map((v) => {
+      // ⚠️ VOR dem Aufaddieren des Tages: was an DIESEM Spieltag gekauft wird,
+      // zählt weiter. Zurückgesetzt wird, was davor war — sonst wäre ein am
+      // Rad-Tag gesetzter Joker geschenkt (dieselbe „>="-Regel wie in
+      // `abSchnitt`).
+      if (schnitt !== null && v.matchday === schnitt) kumuliert = 0;
       const ausgabenTag = ausgabenJeSpielerUndTag.get(`${id}|${v.matchday}`) ?? 0;
       kumuliert += ausgabenTag;
       const zuflussTag = +(v.kontostand + zusatzBis(id, v.matchday)).toFixed(2);

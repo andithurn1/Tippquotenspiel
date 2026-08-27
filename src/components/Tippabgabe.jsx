@@ -16,6 +16,7 @@ import { bigGameAufschlag } from "@/lib/bigGame";
 import { jokerPlan } from "@/lib/jokerPlan";
 import { darfJokerSetzen, darfDuellSetzen, kontingent, erspielteJoker, standText } from "@/lib/jokerKontingent";
 import { pruefeJokerEinsatz, basisFuer, darfWiderrufen, duellBasis as duellBasisVon } from "@/lib/jokerBasis";
+import { ohneZurueckgesetztes } from "@/lib/ruecksetzung";
 import {
   kontoVerlauf, perioden, preisFuer, kannBezahlen, sanitizeBudget, istNarrenKauf, einsaetzeAllerArten,
 } from "@/lib/jokerBudget";
@@ -274,7 +275,7 @@ export default function Tippabgabe({ matchId }) {
   const [adminFreigaben, setAdminFreigaben] = useState([]);
   // Was das Rad ausser Punkten auszahlt (Joker, Narren) — aus dem Store,
   // damit es genau die Belohnungen sind, die auch das Leaderboard kennt.
-  const [radBelohnungen, setRadBelohnungen] = useState({ joker: [], narren: [], modifikatoren: [] });
+  const [radBelohnungen, setRadBelohnungen] = useState({ joker: [], narren: [], modifikatoren: [], ruecksetzungen: [] });
 
   useEffect(() => {
     let live = true;
@@ -719,12 +720,20 @@ export default function Tippabgabe({ matchId }) {
   // ins Leere laufen.
   const meinSpieltagRunde = meinRundenSpieltag ?? spieltag.matchday;
   const rundenSpieltagFuer = (t) => rundenSpieltagVon(achse, t) ?? t?.matchday ?? null;
-  const letzteEinsaetze = meineTips
-    .filter((t) => t.joker === true || (t.gewicht != null && t.gewicht !== 1))
-    .map((t) => ({
-      jokerArt: rankingModus ? "joker.ranking" : "joker.einzel",
-      spieltag: rundenSpieltagFuer(t),
-    }));
+  // 🔴 Rücksetzung vom Rad (Ziel „cooldown"): Einsätze VOR dem Schnitt zählen
+  // für die Abklingzeit nicht mehr — alle Joker-Arten sind sofort wieder frei.
+  // ⚠️ Der Schnitt greift HIER und nicht in `pruefeAbklingzeit`: dort steht die
+  // REGEL („n Spieltage nach dem letzten Einsatz"), und die ändert sich durch
+  // eine Rücksetzung nicht. Was sich ändert, ist die Historie, die man ihr
+  // vorlegt. Eine zweite Sonderregel im Torwächter wäre die doppelte Wahrheit.
+  const letzteEinsaetze = ohneZurueckgesetztes(
+    meineTips
+      .filter((t) => t.joker === true || (t.gewicht != null && t.gewicht !== 1))
+      .map((t) => ({
+        jokerArt: rankingModus ? "joker.ranking" : "joker.einzel",
+        spieltag: rundenSpieltagFuer(t),
+      })),
+    radBelohnungen.ruecksetzungen ?? [], user?.id, "cooldown");
   const kontext = {
     // Der Tipp, der hier gerade gespeichert wird, IST der Tipp DIESES
     // Spieltags — die Invariante „kein Joker ohne Tipp" (jokerBasis.js,
@@ -768,6 +777,11 @@ export default function Tippabgabe({ matchId }) {
     // Verfall (siehe `kontoVerlauf`). Ohne sie zahlte ein Rad-Feld
     // „30 Narren" nichts aus.
     zusatz: radBelohnungen.narren,
+    // 🔴 Rücksetzung vom Rad (Ziel „budget"): die Käufe VOR dem Schnitt zählen
+    // nicht mehr gegen das Konto. Ohne diese Zeile wäre das Rad-Feld
+    // „Narren-Konto zurücksetzen" eine Belohnung, die man zieht und die nichts
+    // tut — genau die Sorte, die `npm run tot` und `npm run greift` suchen.
+    ruecksetzungen: radBelohnungen.ruecksetzungen ?? [],
   });
   const meinKonto = user ? kontoAlle.proSpieler[user.id] : null;
   const narrenKontostand = meinKonto?.find((v) => v.matchday === meinRundenSpieltag)?.kontostand ?? null;

@@ -292,7 +292,7 @@ describe("drehradBelohnungen — was das Rad AUSSER Punkten auszahlt", () => {
   it("ohne Rad kommt nichts", () => {
     const aus = sanitizeRules({ ...DEFAULT_RULES, drehrad: { enabled: false } });
     expect(drehradBelohnungen({ rules: aus, rundenId: "r1", userIds: ["u1"] }))
-      .toEqual({ joker: [], narren: [], modifikatoren: [] });
+      .toEqual({ joker: [], narren: [], modifikatoren: [], ruecksetzungen: [] });
   });
 
   // 🔴 Der Grund, warum ein AUFRUFER ohne `kontext` ein Anzeige-Fehler ist.

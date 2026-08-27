@@ -19,9 +19,16 @@ describe("Kataloge", () => {
     expect(new Set(BELOHNUNGS_TYPEN.map((e) => e.key)).size).toBe(BELOHNUNGS_TYPEN.length);
   });
 
-  it("Abschnitt 2.2 nennt genau fünf Belohnungs-Typen", () => {
+  it("Abschnitt 2.2 nennt fünf Belohnungs-Typen — plus die Rücksetzung (27.08.2026)", () => {
+    // 🔴 Die sechste ist nachgetragen und nicht durchgerutscht: Andi,
+    // 27.08.2026, „bspw. auch ein Ereignis dass dann Joker cooldowns
+    // geresettet werden oder eben Budget rückgesetzt wird".
+    // ⚠️ Diese Liste bleibt eine ZAHLENSPERRE: wer einen Typ ergänzt, muss
+    // hier vorbei und dabei sagen, wer ihn bestellt hat. Genau so ist der
+    // Wildwuchs entstanden, vor dem CLAUDE.md warnt (38 Regel-Blöcke aus
+    // einem „du kannst dir sicher vorstellen").
     expect(BELOHNUNGS_TYPEN.map((t) => t.key).sort()).toEqual(
-      ["budget", "joker", "modifikator", "nichts", "punkte"],
+      ["budget", "joker", "modifikator", "nichts", "punkte", "ruecksetzung"],
     );
   });
 

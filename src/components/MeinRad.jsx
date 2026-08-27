@@ -233,6 +233,17 @@ function belohnungsText(belohnung, kurz = false) {
     // niemand wüsste warum. Nachgesehen statt abgesichert.
     return kurz ? `+${zahl(belohnung.betrag)}` : `${zahl(belohnung.betrag)} Punkte gehen auf dein Konto.`;
   }
+  // 🔴 Die Rücksetzung braucht ihren eigenen Satz. Der Sammel-Rückfall darunter
+  // würde „Rücksetzung." ausgeben — ein Wort, das dem Spieler nicht sagt, was er
+  // gerade gewonnen hat. Ton nach `docs/tonfall.md`.
+  if (belohnung.typ === "ruecksetzung") {
+    if (belohnung.ziel === "cooldown") {
+      return kurz ? "Joker frei" : "Alle Abklingzeiten weg — deine Joker sind sofort wieder scharf.";
+    }
+    if (belohnung.ziel === "budget") {
+      return kurz ? "Konto neu" : "Narren-Konto auf Anfang. Was du bisher ausgegeben hast, ist vergeben.";
+    }
+  }
   return kurz ? label : `${label}.`;
 }
 

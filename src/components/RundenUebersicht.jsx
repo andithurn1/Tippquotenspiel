@@ -12,6 +12,7 @@ import { zeitachse, rundenSchluessel, rundenSpieltagVon } from "@/lib/zeitachse"
 import { wirkungsVorgaenge } from "@/lib/ereignisse";
 import { ablaeufe, naechsterAblauf } from "@/lib/ablauf";
 import { einsaetzeAllerArten } from "@/lib/jokerBudget";
+import { beschreibeSchnitt, ohneZurueckgesetztes } from "@/lib/ruecksetzung";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // ============================================================
@@ -63,6 +64,7 @@ export default function RundenUebersicht() {
   const [eintraege, setEintraege] = useState([]);
   const [tagesPunkte, setTagesPunkte] = useState([]);
   const [radJoker, setRadJoker] = useState([]);
+  const [radSchnitte, setRadSchnitte] = useState([]);
 
   useEffect(() => {
     let live = true;
@@ -83,6 +85,7 @@ export default function RundenUebersicht() {
       setEintraege(entries ?? []);
       setTagesPunkte(punkte ?? []);
       setRadJoker(rad?.joker ?? []);
+      setRadSchnitte(rad?.ruecksetzungen ?? []);
     }).catch(() => {
       // ⚠️ Auch im Fehlerfall aus dem Ladezustand — sonst hängt die Seite für
       // immer (`ladezustand.test.js`, der Befund vom 26.08.2026).
@@ -156,8 +159,13 @@ export default function RundenUebersicht() {
         tip: t.tip,
       };
     });
-    return einsaetzeAllerArten(inRundenTakt, rules);
-  }, [tipps, matches, achse, rules]);
+    // 🔴 Die Rücksetzung vom Rad greift AUCH hier. Ohne diese Zeile stünde auf
+    // dieser Seite „Einzel-Joker wieder frei ab Spieltag 5", während die
+    // Tippabgabe den Joker längst durchlässt — zwei Wahrheiten über dieselbe
+    // Sperre, und der Spieler glaubt der falschen.
+    return ohneZurueckgesetztes(
+      einsaetzeAllerArten(inRundenTakt, rules), radSchnitte, meId, "cooldown");
+  }, [tipps, matches, achse, rules, radSchnitte, meId]);
 
   // ── Wann fällt was weg ──────────────────────────────────
   const fristen = useMemo(
@@ -218,6 +226,31 @@ export default function RundenUebersicht() {
                 </div>
               ))}
             </Karte>
+
+            {/* 🔴 Andi, 27.08.2026: „einen Eintrag für die Auslösung (mittels
+                Glücksrad) für die Ereignisse". Eine Rücksetzung ist die
+                einzige Wirkung, die man dem Kontostand später nicht mehr
+                ansieht — ohne diese Zeile wüsste niemand, warum jemand
+                plötzlich wieder Joker hat. */}
+            {radSchnitte.length > 0 && (
+              <Karte titel="Am Rad gezogen">
+                {radSchnitte.map((r, i) => (
+                  <div key={`${r.userId}-${r.ziel}-${i}`} style={{
+                    display: "flex", justifyContent: "space-between", gap: 10,
+                    alignItems: "baseline", padding: "6px 0", borderTop: `1px solid ${C.line}`,
+                  }}>
+                    <span style={{
+                      fontSize: "0.8125rem",
+                      fontWeight: r.userId === meId ? 700 : 400,
+                      color: r.userId === meId ? C.akzent : C.text,
+                    }}>{namen.get(r.userId) ?? r.userId}</span>
+                    <span style={{ fontSize: "0.6875rem", color: C.muted, textAlign: "right" }}>
+                      {beschreibeSchnitt(r)}
+                    </span>
+                  </div>
+                ))}
+              </Karte>
+            )}
 
             <Karte titel={`Ereignisse (${ereignisse.length})`}>
               {ereignisse.length === 0 && (

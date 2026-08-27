@@ -731,7 +731,7 @@ export function createSupabaseStore() {
     // Was das Rad ausser Punkten auszahlt — siehe Mock-Store.
     async getDrehradBelohnungen(roundId) {
       const { board, rules, kontext, spieltage, bespielt } = await this.standVorDemRad(roundId);
-      if (!rules?.drehrad?.enabled) return { joker: [], narren: [], modifikatoren: [] };
+      if (!rules?.drehrad?.enabled) return { joker: [], narren: [], modifikatoren: [], ruecksetzungen: [] };
       return drehradBelohnungen({
         rules, rundenId: roundId, userIds: board.map((e) => e.userId), spieltage, kontext, bespielt,
       });

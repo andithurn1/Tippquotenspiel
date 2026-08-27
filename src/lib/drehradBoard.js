@@ -37,6 +37,7 @@
 // `abPlatz`/`abRueckstand`.
 import { drehradPlan, ziehe, auswerten, sanitizeDrehrad } from "./drehrad";
 import { darfEinsetzen, basisFuer } from "./jokerBasis";
+import { schnitteAus } from "./ruecksetzung";
 
 // „drehrad" ist KEINE Art aus `JOKER_ARTEN` (jokerBudget.js) — das Rad ist ein
 // eigener Auslöser-Typ, keine Joker-Art (design/drehrad.md Abschnitt 1).
@@ -211,13 +212,20 @@ export function drehradZiehungen({
 export function drehradBelohnungen({
   rules, rundenId, userIds = [], spieltage = 34, kontext = null, bespielt = null,
 } = {}) {
-  const leer = { joker: [], narren: [], modifikatoren: [] };
+  const leer = { joker: [], narren: [], modifikatoren: [], ruecksetzungen: [] };
   if (!rules?.drehrad?.enabled || !userIds.length) return leer;
 
   const ziehungen = drehradZiehungen({ rules, rundenId, userIds, spieltage, kontext, bespielt });
   const { gutschriften } = auswerten(rules.drehrad, ziehungen);
 
-  const out = { joker: [], narren: [], modifikatoren: [] };
+  const out = {
+    joker: [], narren: [], modifikatoren: [],
+    // 🔴 Die Rücksetzungen kommen NICHT aus dieser Schleife, sondern aus
+    // `schnitteAus` — dieselbe Funktion, die auch jeder Anwender fragt. Hier
+    // ein zweites Mal über `belohnung.typ` zu gehen wäre die zweite Wahrheit
+    // in Kleinformat: zwei Stellen, die entscheiden, was ein Schnitt ist.
+    ruecksetzungen: schnitteAus(gutschriften),
+  };
   for (const g of gutschriften) {
     const b = g.belohnung;
     if (!b) continue;

@@ -10,6 +10,7 @@ import { PHASEN } from "@/lib/duellJoker";
 import Gluecksrad from "@/components/Gluecksrad";
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { WER } from "@/lib/jokerBasis";
+import { RUECKSETZ_ZIELE } from "@/lib/ruecksetzung";
 import { Zahl } from "@/components/Eingaben";
 import Feinheiten from "@/components/Feinheiten";
 import { TAPZIEL } from "@/lib/tapziel";
@@ -43,6 +44,7 @@ const STANDARD_BELOHNUNG = {
   budget: { typ: "budget", betrag: 10 },
   modifikator: { typ: "modifikator", faktor: 1.2, spieltage: 1 },
   punkte: { typ: "punkte", betrag: 5 },
+  ruecksetzung: { typ: "ruecksetzung", ziel: RUECKSETZ_ZIELE[0].key },
 };
 
 // Stabile Farbe je Feld-Id (nicht je Listenindex) — sonst tauschen alle
@@ -573,6 +575,29 @@ function FeldZeile({
         <div style={{ marginTop: 8, maxWidth: 150 }}>
           <Zahl label="Punkte" wert={belohnung.betrag} limits={DREHRAD_LIMITS.punkteBetrag}
             onChange={(v) => onBelohnungPatch({ betrag: v })} />
+        </div>
+      )}
+      {/* 🔴 Was genau zurückgesetzt wird. Ohne diese Auswahl bliebe die
+          Belohnung auf dem ersten Ziel stehen — ein Feld, das der Admin
+          anklickt und nicht einstellen kann. */}
+      {belohnung.typ === "ruecksetzung" && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+            {RUECKSETZ_ZIELE.map((z) => {
+              const an = belohnung.ziel === z.key;
+              return (
+                <button key={z.key} title={z.desc} onClick={() => onBelohnungPatch({ ziel: z.key })} style={{
+                  ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
+                  padding: "5px 10px", borderRadius: RUND.pille,
+                  background: an ? `${C.mint}22` : C.surface2, color: an ? C.mint : C.muted,
+                  border: `1px solid ${an ? C.mint + "66" : C.line}`,
+                }}>{z.label}</button>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 5, lineHeight: 1.4 }}>
+            {RUECKSETZ_ZIELE.find((z) => z.key === belohnung.ziel)?.desc ?? "Wähle, was zurückgesetzt wird."}
+          </div>
         </div>
       )}
     </div>

@@ -75,6 +75,7 @@ import { fensterVon, PHASEN } from "./duellJoker";
 import { seeded } from "./seeded";
 import { JOKER_ARTEN } from "./jokerBudget";
 import { WER } from "./jokerBasis";
+import { istRuecksetzZiel } from "./ruecksetzung";
 
 // ── Kataloge ────────────────────────────────────────────────
 
@@ -98,6 +99,15 @@ export const BELOHNUNGS_TYPEN = [
   {
     key: "punkte", label: "Punkte",
     desc: "Direkte Punkte. Braucht einen Deckel für die Saison.",
+  },
+  // 🔴 Andi, 27.08.2026: „bspw. auch ein Ereignis dass dann Joker cooldowns
+  // geresettet werden oder eben Budget rückgesetzt wird". Die erste Belohnung,
+  // die keinen Wert GUTSCHREIBT, sondern einen Zustand LÖSCHT — im ganzen
+  // Wirkungs-Katalog gab es das bisher nicht. Wie das ohne gespeicherten
+  // Zustand geht, steht im Kopf von `ruecksetzung.js`.
+  {
+    key: "ruecksetzung", label: "Rücksetzung",
+    desc: "Löscht, was bisher war: alle Abklingzeiten fallen weg, oder die bisherigen Narren-Käufe zählen nicht mehr. Kostet keinen Punkt und ist trotzdem viel wert, wenn man festsitzt.",
   },
 ];
 
@@ -207,6 +217,11 @@ function sanitizeBelohnung(b) {
       };
     case "punkte":
       return { typ: "punkte", betrag: Math.round(clamp(o.betrag, DREHRAD_LIMITS.punkteBetrag, 0)) };
+    case "ruecksetzung":
+      // ⚠️ Ohne gültiges Ziel VERWORFEN statt auf eins geraten. Ein Rad-Feld
+      // „Rücksetzung von irgendwas" wäre eine Belohnung, die der Spieler zieht
+      // und die nichts tut — und `pruefeFelder` sagt dann wenigstens, warum.
+      return istRuecksetzZiel(o.ziel) ? { typ: "ruecksetzung", ziel: o.ziel } : null;
     default:
       return null;
   }
@@ -218,6 +233,7 @@ function belohnungsGrund(b) {
   if (!BELOHNUNGS_TYPEN.some((t) => t.key === typ)) {
     return `unbekannter Belohnungs-Typ „${typ}“`;
   }
+  if (typ === "ruecksetzung") return `unbekanntes Rücksetz-Ziel „${b.ziel}“`;
   // typ ist bekannt, also (bei "joker") eine unbekannte Joker-Art.
   return `unbekannte Joker-Art „${b.art}“`;
 }
