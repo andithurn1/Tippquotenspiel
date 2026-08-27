@@ -59,6 +59,19 @@ export function schaufensterRegeln() {
     // ist, wird am Ende festgelegt (CLAUDE.md, Balancing ist Endphase).
     sperre: { enabled: true, modus: "quote", mindestQuote: 2.5, mindestensOffen: 5, freischaltungen: 1 },
 
+    // ── Rechte: was der Sieger bestimmen darf ──
+    // ⚠️ Bewusst als LISTE mit zwei Angeboten, damit man beide Bauarten sieht:
+    // das fertig verdrahtete Topspiel-Recht und eine vorbereitete Wirkung.
+    // Dass die zweite noch nicht in der Wertung ankommt, meldet der Bericht
+    // „was greift hier nicht" — genau dafür ist er da.
+    rechte: {
+      enabled: true, wahl: "liste",
+      angebote: [
+        { key: "angebot-1", art: "bigGame" },
+        { key: "angebot-2", art: "wirkung", wirkung: { typ: "bonus", prozent: 15 } },
+      ],
+    },
+
     tippfenster: TIPPFENSTER,
 
     // ── Die FREMDJOKER-Familie, vollständig ──

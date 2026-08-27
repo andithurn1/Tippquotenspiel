@@ -165,7 +165,11 @@ export const ASPEKTE = [
     // Beide Blöcke zusammen, weil sie sich gegenseitig bedingen: eine
     // Verfassung ohne Abstimmung regelt nichts, eine Abstimmung ohne
     // Verfassung hat keinen Rahmen.
-    keys: ["verfassung", "regelAbstimmung"],
+    // 🔴 `rechte` gehört hierher und nicht zu den Modifikatoren, obwohl das
+    // einzige heute wirksame Recht das Big Game betrifft: die Frage ist nicht
+    // „wie viel zählt ein Spiel", sondern „WER entscheidet das". Genau die
+    // Frage, die dieser Aspekt stellt.
+    keys: ["verfassung", "regelAbstimmung", "rechte"],
   },
 ];
 

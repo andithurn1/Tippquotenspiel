@@ -8,6 +8,7 @@ import { C, MONO, RUND } from "@/lib/theme";
 import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
 import { Slider, Toggle, GrosseZeile } from "@/components/Eingaben";
 import TabellenBonus from "@/components/TabellenBonus";
+import Rechte from "@/components/Rechte";
 
 // ============================================================
 //  MODIFIKATOREN-SONDERMENÜ — was für ALLE gilt, hinter EINER Zeile
@@ -193,6 +194,17 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
             </p>
           </div>
         )}
+      </GrosseZeile>
+
+      {/* ── Rechte: was der Sieger bestimmen darf (Andi, 27.08.2026) ──
+          Direkt unter dem Big Game, weil das einzige heute vollständig
+          verdrahtete Recht genau dieses ist: das Topspiel bestimmen.
+          ⚠️ Die PLATZIERUNG ist vorläufig — sie entscheidet die Masterdatei
+          (CLAUDE.md). Die Mechanik überlebt jeden Umbau. */}
+      <GrosseZeile icon="👑" titel="Der Sieger bestimmt" unter="ein Recht für den, der den Spieltag gewinnt"
+        wert={rules.rechte?.enabled ? "an" : "aus"}
+        offen={zeile === "rechte"} onClick={() => auf("rechte")}>
+        <Rechte rules={rules} onChange={(teil) => onChange(teil)} />
       </GrosseZeile>
 
       {/* ── Außenseiter nach Tabelle (Andis MOD3) ── */}

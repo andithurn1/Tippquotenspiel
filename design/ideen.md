@@ -360,6 +360,37 @@ Die Wertung kann es. Was fehlt, ist der Weg dahin:
    heute über Anträge und Abstimmung. Ein Recht ist kein Antrag.
 3. **Die Oberfläche für den Rechteinhaber.**
 
+### ✅ Beantwortet am 27.08.2026 — und die Antworten waren enger als mein Vorschlag
+
+| | Frage | Andis Antwort |
+|---|---|---|
+| ❓1 | Welche Rechte noch? | **„am ehesten egtl big game"** — plus: der Admin darf auch **die Wirkungen** zur Wahl stellen (Malus, Aufschlag, Umverteilung …) |
+| ❓ | Frei wählen oder aus einer Liste? | **„nur die der Admin einstellt"** — der Inhaber wählt NICHTS frei. Der Admin kann zusätzlich einstellen, dass aus einer Liste gewählt wird, und **jede Wirkung darin ist vorher fertig eingestellt** |
+| ❓ | Trifft es alle oder ein Ziel? | **„ist quasi als Ereignis was alle trifft und nicht Fremdjoker"** — ein Angebot hat deshalb **keine WEN-Achse** |
+
+🔴 **Die dritte Antwort ist die wichtigste, weil sie eine GRENZE zieht:** eine
+Wirkung, die sich EINE Person aussucht, ist ein Fremdjoker — und die gibt es
+längst, mit Schutzschild, Sperrfrist und Kontingent. Ein Recht ist das
+Gegenteil: der Sieger dreht an etwas, das für die ganze Runde gilt, **ihn
+eingeschlossen**. Ein Abzug, den er auslöst, trifft ihn selbst mit — genau
+deshalb braucht es dort keine Schutzregeln.
+
+✅ **Gebaut:** `src/lib/rechte.js` + `Rechte.jsx`, 22 Tests. Der
+Wirkungs-Editor ist dabei aus `Ereignisse.jsx` **ausgelagert**
+(`Wirkungsfeld.jsx`) statt nachgebaut.
+
+⏳ **Ein Schritt bleibt:** wo die getroffene Wahl gespeichert wird. Damit das
+niemanden überrascht, meldet der Bericht „was greift hier nicht" jedes Angebot
+außer dem Topspiel-Recht als **„wirkt noch nicht"**. Lieber sichtbar unfertig
+als stillschweigend folgenlos.
+
+⚠️ **Und Andis Hinweis im selben Atemzug stimmt:** *„das mit den Fremdjokern
+ist ja eh schon drin, dass Admin einstellen kann, sobald wer einen Unterwert
+erreicht hat, er eben auch Joker … zum aufholen kriegt."* Das ist ein
+**Ereignis**, kein Recht — und es läuft seit dem 07.08.2026. Seit heute sogar
+mit seiner Schwelle: der Modus `abstand` kann „wer 30 % unter dem Schnitt
+liegt", vorher ging nur „die letzten n".
+
 ### ❓ Rückfragen an Andi — hier bitte antworten
 
 **❓1 · Welche Rechte noch?** Du schreibst „gibt hier verschiedene interessante

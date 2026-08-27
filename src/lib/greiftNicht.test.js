@@ -199,10 +199,18 @@ describe("Probe an der Schaufenster-Runde", () => {
     expect(funde.map((f) => f.key)).toContain("wettbewerbe-ohne-wirkung");
   });
 
-  it("und sonst NICHTS -- eine Runde mit 189 verstellten Werten darf kein Rauschen erzeugen", () => {
-    // 🔴 Die eigentliche Probe. Wer bei jeder Runde vier Meldungen sieht, die
+  it("und sonst nur, was dort ABSICHTLICH steht", () => {
+    // 🔴 Die eigentliche Probe: wer bei jeder Runde vier Meldungen sieht, die
     // nichts bedeuten, liest ab der zweiten Woche keine mehr.
+    //
+    // ⚠️ Beide Funde sind hier RICHTIG, und beide stehen absichtlich in der
+    // Schaufenster-Runde:
+    //   · der Wettbewerbs-Aufschlag auf die CL in einer reinen BL-Runde
+    //     (der Kommentar dort sagt: „soll VORKOMMEN")
+    //   · das zweite Recht, dessen Weg bis in die Wertung noch nicht steht
+    //     (die Ehrlichkeits-Klausel aus `rechte.js`)
     const funde = greiftNicht(rules, { matches: spiele, mitglieder: 5 });
-    expect(funde.map((f) => f.titel).join(" · ")).toBe("Wettbewerbs-Gewichte greifen nirgends");
+    expect(funde.map((f) => f.key).sort())
+      .toEqual(["recht-ohne-weg", "wettbewerbe-ohne-wirkung"]);
   });
 });

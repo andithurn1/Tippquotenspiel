@@ -51,6 +51,7 @@ import { sanitizeTabellenBonus } from "./tabellenBonus";
 import { sanitizeDuellJoker } from "./duellJoker";
 import { familieAn } from "./fremdjoker";
 import { sanitizeSaison } from "./saisonwetten";
+import { nochOhneWirkung } from "./rechte";
 
 const zahl = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
 
@@ -190,7 +191,24 @@ const PRUEFUNGEN = [
     },
   },
 
-  // 8) Saison-Wetten eingeschaltet, aber keine einzige ausgewählt.
+  // 8) Ein Recht, dessen Weg von der Wahl bis in die Wertung noch nicht steht.
+  //    🔴 Die ehrlichste Prüfung dieses Berichts: der Admin kann mehr
+  //    einstellen, als heute ankommt. Er soll das SEHEN, statt es daran zu
+  //    merken, dass nichts passiert.
+  {
+    key: "recht-ohne-weg",
+    pruef({ rules }) {
+      const offen = nochOhneWirkung(rules);
+      if (!offen.length) return null;
+      return {
+        titel: offen.length === 1 ? "Ein Recht wirkt noch nicht" : `${offen.length} Rechte wirken noch nicht`,
+        text: `Eingestellt, aber der Weg von der Wahl bis in die Wertung fehlt noch: ${offen.join(", ")}.`,
+        beheben: "Solange nur „Das Topspiel bestimmen“ nehmen — das greift vollständig.",
+      };
+    },
+  },
+
+  // 9) Saison-Wetten eingeschaltet, aber keine einzige ausgewählt.
   //    ⚠️ `sanitizeSaison` lässt `enabled` mit leerer Liste durch — die
   //    Einstellung ist also gültig und trotzdem folgenlos.
   {

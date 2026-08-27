@@ -526,6 +526,14 @@ const OHNE_MESSFALL = {
   regelAbstimmung: "Wie `verfassung` — Mitbestimmung, keine Wertung.",
   oddsMode: "Woher die Quoten kommen. Im Mock gibt es nur eine Quelle.",
   reglerFeinheit: "Eine Einstellung der Profi-Ansicht selbst, kein Spielwert.",
+  rechte:
+    "Beschreibt, WAS der Sieger zur Wahl gestellt bekommt — die Punkte bewegt "
+    + "erst die AUSGEÜBTE Wahl, und die landet in `bigGame.festesSpiel` bzw. in "
+    + "einer Wirkung, die beide ihre eigenen Messfälle haben. Ein Leaderboard-"
+    + "Vergleich über den Block selbst bewegt sich zwangsläufig um null. "
+    + "Geprüft wird er in `rechte.test.js` (22 Fälle) und über die "
+    + "Ehrlichkeits-Klausel `nochOhneWirkung` im Bericht „was greift hier "
+    + "nicht“.",
 };
 
 const faelleQuelle = (() => {

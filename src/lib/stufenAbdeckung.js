@@ -113,6 +113,12 @@ export const NUR_PROFI = {
     + "Runden, die mehrere Joker-Arten gegeneinander abwägen wollen. Auf "
     + "Stufe 1/2 gibt es dafür den Wettmodus („Münzen verteilen“), der "
     + "dieselbe Frage in einer Form stellt, die ohne Vorwissen beantwortbar ist.",
+  rechte:
+    "Was der Sieger bestimmen darf, setzt voraus, dass man die Wirkungen "
+    + "schon kennt — der Admin stellt hier fertig eingestellte Wirkungen zur "
+    + "Wahl. Stufe 1 und 2 beantworten „wie fühlt sich die Runde an“; diese "
+    + "Frage kommt eine Ebene später und hat ohne die Kenntnis der Wirkungen "
+    + "keine sinnvolle Antwort.",
   limitKlassen:
     "Benannte Gruppen von Joker-Arten mit gemeinsamem Kontingent — sie "
     + "greifen quer über mehrere Ebenen und setzen voraus, dass man diese "

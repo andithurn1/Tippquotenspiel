@@ -64,6 +64,16 @@ export const GEKOPPELT = {
     + "steht (`aktive.length > 0`). Absicht: „der Admin soll nichts "
     + "einschalten können, das folgenlos bleibt“ — ein Schalter, hinter dem "
     + "nichts liegt, sieht aus wie eine kaputte Mechanik.",
+  "rechte.enabled":
+    "Lässt sich nur einschalten, wenn mindestens ein Angebot in der Liste "
+    + "steht — ein Recht, das nichts zur Wahl stellt, wäre ein Schalter, "
+    + "hinter dem nichts liegt. Dieselbe Klinke wie bei `ereignisse.enabled`.",
+  "rechte.wahl":
+    "„Er wählt aus einer Liste“ setzt zwei Angebote voraus; mit einem einzigen "
+    + "gibt es nichts zu wählen, und die Bereinigung holt es still auf „ein "
+    + "festes Recht“ zurück. Der Durchgang setzt jedes Feld EINZELN — dort "
+    + "steht die Liste leer. Im Schaufenster, wo zwei Angebote stehen, kommt "
+    + "der Wert an.",
   "bigGame.siegerWaehlt":
     "Lässt sich nur einschalten, wenn das Big Game selbst an ist — ein Recht, "
     + "das nichts zu bestimmen hat, wäre ein Schalter ohne Wirkung. Der "

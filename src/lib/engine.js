@@ -46,6 +46,7 @@ import {
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { sanitizeWettbewerbe, DEFAULT_WETTBEWERBE, wettbewerbAufschlag, maxWettbewerbAufschlag } from "./wettbewerbGewicht";
 import { sanitizeSperre, DEFAULT_SPERRE, schuetzenMalus } from "./favoritenSperre";
+import { sanitizeRechte, DEFAULT_RECHTE } from "./rechte";
 import { sanitizeTippfenster, DEFAULT_TIPPFENSTER } from "./tippfenster";
 import { sanitizeZeitachse, DEFAULT_ZEITACHSE } from "./zeitachse";
 // Spieltags-Identität liegt in einem eigenen, importfreien Modul — sonst gäbe
@@ -297,6 +298,11 @@ export const DEFAULT_RULES = {
   // Katalog, beide Bauarten und die Sicherung `mindestensOffen` stehen in
   // favoritenSperre.js. Standard aus.
   sperre: { ...DEFAULT_SPERRE },
+
+  // ── Rechte: was der Sieger für die ganze Runde bestimmen darf ──
+  // Andi, 27.08.2026. Der Admin stellt vorher ein, WAS zur Wahl steht — der
+  // Inhaber wählt nur daraus. Katalog und Begründung in `rechte.js`.
+  rechte: { ...DEFAULT_RECHTE },
 
   // ── Tipp-Fenster: wie lange vor Anpfiff ein Spiel tippbar wird ──
   // Quoten erscheinen erst einige Tage vorher; wie früh eine Runde tippt, ist
@@ -640,6 +646,7 @@ export function sanitizeRules(partial = {}) {
     ereignisse: sanitizeEreignisse(src.ereignisse),
     wettbewerbe: sanitizeWettbewerbe(src.wettbewerbe),
     sperre: sanitizeSperre(src.sperre),
+    rechte: sanitizeRechte(src.rechte),
     tippfenster: sanitizeTippfenster(src.tippfenster),
     zeitachse: sanitizeZeitachse(src.zeitachse),
     // Duell-Joker, Budget, Limitierungsklassen, Joker-Grundform und Drehrad
