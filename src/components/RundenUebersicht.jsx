@@ -13,6 +13,8 @@ import { wirkungsVorgaenge } from "@/lib/ereignisse";
 import { ablaeufe, naechsterAblauf } from "@/lib/ablauf";
 import { einsaetzeAllerArten } from "@/lib/jokerBudget";
 import { beschreibeSchnitt, ohneZurueckgesetztes } from "@/lib/ruecksetzung";
+import { offenesRecht, ausuebungenFuer, beschreibeAusuebung } from "@/lib/rechteAusuebung";
+import { beschreibeAngebot } from "@/lib/rechte";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // ============================================================
@@ -65,6 +67,10 @@ export default function RundenUebersicht() {
   const [tagesPunkte, setTagesPunkte] = useState([]);
   const [radJoker, setRadJoker] = useState([]);
   const [radSchnitte, setRadSchnitte] = useState([]);
+  const [ausuebungen, setAusuebungen] = useState([]);
+  // Was der Inhaber gerade anklickt. ⚠️ Reiner Anzeige-Zustand.
+  const [wahl, setWahl] = useState(null);   // { angebotKey, wert }
+  const [sendet, setSendet] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -76,7 +82,8 @@ export default function RundenUebersicht() {
       getStore().getRoundEntries(roundId),
       getStore().getSpieltagsPunkte?.(roundId) ?? Promise.resolve([]),
       getStore().getDrehradBelohnungen?.(roundId) ?? Promise.resolve(null),
-    ]).then(([round, ms, ts, brd, entries, punkte, rad]) => {
+      getStore().listRechteAusgeuebt?.({ roundId }) ?? Promise.resolve([]),
+    ]).then(([round, ms, ts, brd, entries, punkte, rad, rechte]) => {
       if (!live) return;
       setRules(round?.rules ?? DEFAULT_RULES);
       setMatches(ms ?? []);
@@ -86,6 +93,7 @@ export default function RundenUebersicht() {
       setTagesPunkte(punkte ?? []);
       setRadJoker(rad?.joker ?? []);
       setRadSchnitte(rad?.ruecksetzungen ?? []);
+      setAusuebungen(rechte ?? []);
     }).catch(() => {
       // ⚠️ Auch im Fehlerfall aus dem Ladezustand — sonst hängt die Seite für
       // immer (`ladezustand.test.js`, der Befund vom 26.08.2026).
@@ -167,6 +175,46 @@ export default function RundenUebersicht() {
       einsaetzeAllerArten(inRundenTakt, rules), radSchnitte, meId, "cooldown");
   }, [tipps, matches, achse, rules, radSchnitte, meId]);
 
+  // ── Wer darf gerade etwas bestimmen? ────────────────────
+  // 🔴 Weg B (Andi, 27.08.2026: „ja b"). Die Ablage stand seit heute Mittag,
+  // gelesen wurde sie auch — nur SCHREIBEN konnte niemand. Ein Recht, das man
+  // hat und nicht ausüben kann, ist kein Recht.
+  //
+  // ⚠️ Gewählt wird für den NÄCHSTEN Spieltag: man gewinnt an n und bestimmt
+  // für n+1. `offenesRecht` rechnet das aus derselben Punkte-Liste, aus der
+  // auch die Wertung liest (Frage 4 der Runden-Schicht) — nicht nachgerechnet.
+  const offen = useMemo(() => offenesRecht({
+    rules, ausuebungen, spieltagsPunkte: tagesPunkte,
+    spieltag: Number.isFinite(spieltag) ? spieltag + 1 : null,
+  }), [rules, ausuebungen, tagesPunkte, spieltag]);
+  const binDran = offen?.userId != null && offen.userId === meId;
+
+  // Für das Topspiel-Recht: die Spiele DES Spieltags, um den es geht.
+  // 🔴 Über `rundenSpieltagVon`, nicht über den Liga-Spieltag — sonst stünden
+  // in einer Runde über fünf Wettbewerbe fünf verschiedene „Spieltag 6" zur
+  // Wahl (CLAUDE.md, zweite Frage der Runden-Schicht).
+  const spieleZurWahl = useMemo(() => {
+    if (!offen) return [];
+    return (matches ?? []).filter((m) => rundenSpieltagVon(achse, m) === offen.spieltag);
+  }, [matches, achse, offen]);
+
+  const uebeAus = async (angebotKey, wert) => {
+    if (!binDran || sendet) return;
+    setSendet(true);
+    try {
+      await getStore().ueberechtAus({
+        roundId, userId: meId, matchday: offen.spieltag, angebotKey, wert: wert ?? null,
+      });
+      // ⚠️ Neu LESEN statt lokal anhängen: wer zuerst da war, gewinnt, und das
+      // entscheidet die Ablage — nicht dieser Screen. Hängte er die eigene
+      // Wahl blind an, zeigte er eine Ansage, die es gar nicht gibt.
+      setAusuebungen(await getStore().listRechteAusgeuebt({ roundId }));
+      setWahl(null);
+    } finally {
+      setSendet(false);
+    }
+  };
+
   // ── Wann fällt was weg ──────────────────────────────────
   const fristen = useMemo(
     () => ablaeufe(rules, {
@@ -226,6 +274,97 @@ export default function RundenUebersicht() {
                 </div>
               ))}
             </Karte>
+
+            {/* 🔴 Das Recht des Spieltagssiegers (Weg B). Steht ganz oben, weil
+                es das Einzige auf dieser Seite ist, das VERGEHT — der Spieltag
+                fängt an, ob gewählt wurde oder nicht. */}
+            {offen && (
+              <Karte titel={binDran ? "Du bist dran" : "Jemand darf bestimmen"}
+                ton={binDran ? C.akzent : null}>
+                <div style={{ fontSize: "0.8125rem", lineHeight: 1.5, marginBottom: binDran ? 10 : 0 }}>
+                  {binDran ? (
+                    <>Du hast Spieltag {offen.gewonnenAm} gewonnen und bestimmst für
+                    Spieltag {offen.spieltag}.</>
+                  ) : (
+                    <><strong style={{ color: C.text }}>{namen.get(offen.userId) ?? offen.userId}</strong>{" "}
+                    hat Spieltag {offen.gewonnenAm} gewonnen und bestimmt für
+                    Spieltag {offen.spieltag}.</>
+                  )}
+                </div>
+
+                {binDran && offen.angebote.map((a) => {
+                  const gewaehlt = wahl?.angebotKey === a.key;
+                  return (
+                    <div key={a.key} style={{ borderTop: `1px solid ${C.line}`, paddingTop: 8, marginTop: 8 }}>
+                      <div style={{ fontSize: "0.8125rem", fontWeight: 600 }}>{beschreibeAngebot(a)}</div>
+                      {a.art === "bigGame" ? (
+                        <>
+                          {/* ⚠️ Nur die Spiele DIESES Spieltags — ein Topspiel
+                              aus einer anderen Woche wäre keine Wahl, sondern
+                              ein Fehler, den erst die Wertung bemerkt. */}
+                          <select
+                            value={gewaehlt ? wahl.wert : ""}
+                            onChange={(e) => setWahl({ angebotKey: a.key, wert: e.target.value })}
+                            style={{
+                              display: "block", width: "100%", boxSizing: "border-box", marginTop: 6,
+                              background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
+                              borderRadius: RUND.karte, padding: "8px 9px",
+                              fontSize: "0.8125rem", fontFamily: "inherit",
+                            }}>
+                            <option value="">— Spiel wählen —</option>
+                            {spieleZurWahl.map((m) => (
+                              <option key={m.id ?? m.matchId} value={m.id ?? m.matchId}>
+                                {m.home ?? m.heim ?? "?"} – {m.away ?? m.gast ?? "?"}
+                              </option>
+                            ))}
+                          </select>
+                          {spieleZurWahl.length === 0 && (
+                            <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 5, lineHeight: 1.4 }}>
+                              Für Spieltag {offen.spieltag} stehen noch keine Spiele fest.
+                            </div>
+                          )}
+                        </>
+                      ) : null}
+                      <button
+                        disabled={sendet || (a.art === "bigGame" && !(gewaehlt && wahl.wert))}
+                        onClick={() => uebeAus(a.key, a.art === "bigGame" ? wahl?.wert : null)}
+                        style={{
+                          marginTop: 8, cursor: "pointer", fontFamily: "inherit",
+                          fontSize: "0.8125rem", fontWeight: 700, width: "100%",
+                          padding: "11px 0", borderRadius: RUND.karte,
+                          background: `${C.akzent}22`, color: C.akzent,
+                          border: `1px solid ${C.akzent}66`,
+                          opacity: (sendet || (a.art === "bigGame" && !(gewaehlt && wahl.wert))) ? 0.45 : 1,
+                        }}>
+                        {sendet ? "…" : "Festlegen"}
+                      </button>
+                      {/* 🔴 Ohne diesen Satz klickt jemand, weil er es später
+                          korrigieren zu können glaubt. Die Ablage lässt das
+                          nicht zu, und das ist Absicht. */}
+                      <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 5, lineHeight: 1.4 }}>
+                        ⚠️ Steht fest, sobald du drückst — zurücknehmen geht nicht.
+                      </div>
+                    </div>
+                  );
+                })}
+              </Karte>
+            )}
+
+            {/* Was für diesen Spieltag schon bestimmt wurde. */}
+            {(() => {
+              const schon = ausuebungenFuer(ausuebungen, offen?.spieltag ?? (Number.isFinite(spieltag) ? spieltag + 1 : null));
+              if (!schon.length) return null;
+              return (
+                <Karte titel="Für den nächsten Spieltag bestimmt">
+                  {schon.map((a) => (
+                    <div key={a.angebotKey} style={{
+                      fontSize: "0.75rem", lineHeight: 1.5, padding: "5px 0",
+                      borderTop: `1px solid ${C.line}`,
+                    }}>{beschreibeAusuebung(a, rules, (id) => namen.get(id) ?? id)}</div>
+                  ))}
+                </Karte>
+              );
+            })()}
 
             {/* 🔴 Andi, 27.08.2026: „einen Eintrag für die Auslösung (mittels
                 Glücksrad) für die Ereignisse". Eine Rücksetzung ist die

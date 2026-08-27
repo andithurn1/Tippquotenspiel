@@ -10,6 +10,7 @@ import { DEFAULT_RULES, sanitizeRules } from "@/lib/engine";
 import { zeitachse, rundenSpieltagVon } from "@/lib/zeitachse";
 import { naechstesOffenesSpiel } from "@/lib/muenzstand";
 import { wahrscheinlichkeiten, auswerten, beschreibeDrehrad, drehradPlan, BELOHNUNGS_TYPEN } from "@/lib/drehrad";
+import { EREIGNIS } from "@/lib/ereignisse";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { zahl } from "@/lib/format";
 
@@ -236,6 +237,15 @@ function belohnungsText(belohnung, kurz = false) {
   // 🔴 Die Rücksetzung braucht ihren eigenen Satz. Der Sammel-Rückfall darunter
   // würde „Rücksetzung." ausgeben — ein Wort, das dem Spieler nicht sagt, was er
   // gerade gewonnen hat. Ton nach `docs/tonfall.md`.
+  if (belohnung.typ === "ereignis") {
+    // ⚠️ Der Name des Ereignisses, nicht das Wort „Ereignis" — sonst weiss
+    // niemand, was gerade passiert ist.
+    const name = EREIGNIS[belohnung.key]?.label ?? "Ein Ereignis";
+    if (kurz) return name;
+    return belohnung.trifft === "runde"
+      ? `${name} — und zwar fuer alle. Du hast es ausgeloest.`
+      : `${name} trifft dich.`;
+  }
   if (belohnung.typ === "ruecksetzung") {
     if (belohnung.ziel === "cooldown") {
       return kurz ? "Joker frei" : "Alle Abklingzeiten weg — deine Joker sind sofort wieder scharf.";

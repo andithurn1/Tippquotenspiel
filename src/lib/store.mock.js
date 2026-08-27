@@ -831,8 +831,13 @@ export function createMockStore() {
     // über den Verlauf gehen (der Bonus hängt am Stand vor jedem Spieltag) und
     // den Endstand nehmen — scoreLeaderboardHistory wendet applyCatchup an.
     async getLeaderboard(roundId) {
-      const { board, rules, kontext, spieltage, bespielt } = await standVorDemRad(roundId);
-      const fertig = await withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext, bespielt });
+      const { board, rules, kontext, spieltage, bespielt, verlauf } = await standVorDemRad(roundId);
+      // ⚠️ `verlauf` mit hinein: ohne ihn koennen die FAKTOR-Wirkungen des
+      // Rades (Modifikator, gezogenes Ereignis) nicht ankommen — ein Faktor
+      // wirkt auf die Punkte EINES Spieltags, und die stehen nur im Verlauf.
+      const fertig = await withDrehradPunkte({
+        board, rules, rundenId: roundId, spieltage, nameOf, kontext, bespielt, verlauf,
+      });
       // ⚠️ Erst NACH der Wertung angehängt: die Reihenfolge kommt aus der
       // Engine, das Sinnbild ist reine Beschriftung. Vorher angehängt würde es
       // durch jede Rechenstufe mitgeschleift, ohne dort etwas zu tun.

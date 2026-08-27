@@ -361,6 +361,23 @@ export function schaufensterRegeln() {
       steigerung: 2,
     },
 
+    // ── Ereignisse ──
+    // 🔴 Sie standen bis zum 27.08.2026 NICHT im Schaufenster — die ganze
+    // WAS-Achse (`wirkung.js`) wurde also nirgends vorgeführt. Aufgefallen
+    // ist es beim Anschließen des Rad-Feldes „Ereignis": es zeigte auf ein
+    // Ereignis, das diese Runde gar nicht führt, und wäre damit genau das
+    // gewesen, wovor sein eigener Kommentar warnt — ein Feld ohne Wirkung.
+    // ⚠️ Zwei Einträge, nicht zehn: das Schaufenster soll zeigen, DASS es die
+    // Ebene gibt, nicht den ganzen Katalog durchdeklinieren.
+    ereignisse: {
+      enabled: true,
+      maxErspielt: 6,
+      aktive: [
+        { key: "serie", anzahl: 3, wirkung: { typ: "bonus", prozent: 25 }, geltung: { typ: "sofort" } },
+        { key: "letzter-am-spieltag", belohnung: 1, ausloeser: { typ: "immer" } },
+      ],
+    },
+
     // ── Das Drehrad ──
     // `felder` ist eine LISTE und zählt im einstellbar-Durchgang nicht mit
     // (Arrays bleiben dort draußen) — es steht hier trotzdem, weil das Rad
@@ -378,7 +395,12 @@ export function schaufensterRegeln() {
         // 🔴 Die Rücksetzung (Andi, 27.08.2026) gehört ins Schaufenster, weil
         // sie sonst nirgends VORGEFÜHRT wird — ein Feld, das man nur im
         // Katalog liest, sieht niemand.
-        { id: "frei", label: "Joker frei", gewicht: 15, sperrfrist: 0, belohnung: { typ: "ruecksetzung", ziel: "cooldown" } },
+        { id: "frei", label: "Joker frei", gewicht: 12, sperrfrist: 0, belohnung: { typ: "ruecksetzung", ziel: "cooldown" } },
+        // 🔴 Das gezogene EREIGNIS (Andi, 27.08.2026: „klar dafür ist das Rad
+        // ja auch da? zum auslosen?"). Zeigt auf ein Ereignis, das die
+        // Schaufenster-Runde wirklich führt — sonst wäre es ein Feld ohne
+        // Wirkung, und die Vorführung führte nichts vor.
+        { id: "los", label: "Losglück", gewicht: 3, sperrfrist: 0, belohnung: { typ: "ereignis", key: "serie", trifft: "runde" } },
       ],
       // 🔴 Zwei Drehungen je Termin (Andi, 27.08.2026: „auch mehrfach bei einem
       // Rad-drehtereignis?"). ⚠️ Genau deshalb steht darunter auch ein

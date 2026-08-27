@@ -4,7 +4,7 @@ import {
   sanitizeDrehrad, pruefeAusschluesse, ziehe, wahrscheinlichkeiten,
   dreherwartung, drehradPlan, beschreibeDrehrad,
 } from "./drehrad";
-import { drehradZiehungen } from "./drehradBoard";
+import { drehradZiehungen, radVorgaenge, mitRadWirkungen } from "./drehradBoard";
 import { segmente, winkelVon, naechsteGrenze, ziehGrenze } from "./radGeometrie";
 import { DEFAULT_RULES, sanitizeRules } from "./engine";
 
@@ -371,5 +371,95 @@ describe("Frequenz und Gesamtzahl sind zwei Zugaenge zu EINER Zahl", () => {
     // ⚠️ Ein Umschalten der Vorgabe wuerde jede bestehende Runde anders
     // verteilen.
     expect(DEFAULT_DREHRAD.haeufigkeit).toBe("frequenz");
+  });
+});
+
+// ── Das Rad zieht ein EREIGNIS ──────────────────────────────
+// 🔴 Andi, 27.08.2026, auf die Rueckfrage: „klar dafuer ist das Rad ja auch da?
+// zum auslosen?"
+//
+// ⚠️ Und der eigentliche Befund dieses Bauabschnitts: `modifikatoren` wurde
+// seit dem Bau des Rades ERZEUGT und von niemandem gelesen. Wer „+50 % fuer
+// zwei Spieltage" zog, bekam nichts -- kein Fehler, keine Meldung. Deshalb
+// misst hier fast jeder Test, ob die Wirkung ANKOMMT.
+describe("Rad-Wirkungen kommen in der Wertung an", () => {
+  const MIT_EREIGNIS = sanitizeRules({
+    ...DEFAULT_RULES,
+    ereignisse: {
+      enabled: true, maxErspielt: 0,
+      // ⚠️ Ein Malus wird in PROZENT eingestellt, nicht als Faktor --
+      // `sanitizeWirkung` normalisiert das, und `wendeAn` macht daraus den
+      // Faktor 0.5. Beim ersten Schreiben stand hier `faktor: 0.5`, und der
+      // Test verglich gegen eine Zahl, die es im Regelwerk gar nicht gibt.
+      aktive: [{ key: "serie", wirkung: { typ: "malus", prozent: 50 } }],
+    },
+  });
+
+  const gutschrift = (belohnung, userId = "u1", spieltag = 2) =>
+    ({ userId, spieltag, feldId: "f", belohnung });
+
+  it("ein Modifikator wird zum Vorgang -- ueber seine ganze Dauer", () => {
+    const v = radVorgaenge(
+      [gutschrift({ typ: "modifikator", faktor: 1.5, spieltage: 3 })], MIT_EREIGNIS, ["u1", "u2"]);
+    expect(v).toHaveLength(3);
+    expect(v.map((x) => x.spieltag)).toEqual([2, 3, 4]);
+    expect(v.every((x) => x.faktor === 1.5 && x.userId === "u1")).toBe(true);
+  });
+
+  it("ein gezogenes Ereignis nimmt die Wirkung AUS dem Ereignis", () => {
+    const v = radVorgaenge(
+      [gutschrift({ typ: "ereignis", key: "serie", trifft: "zieher" })], MIT_EREIGNIS, ["u1", "u2"]);
+    expect(v).toHaveLength(1);
+    expect(v[0]).toMatchObject({ userId: "u1", faktor: 0.5 });
+  });
+
+  it("„die ganze Runde\" trifft alle -- den Zieher eingeschlossen", () => {
+    const v = radVorgaenge(
+      [gutschrift({ typ: "ereignis", key: "serie", trifft: "runde" })], MIT_EREIGNIS, ["u1", "u2", "u3"]);
+    expect(v.map((x) => x.userId).sort()).toEqual(["u1", "u2", "u3"]);
+  });
+
+  it("ein Ereignis, das die Runde gar nicht fuehrt, erzeugt NICHTS", () => {
+    // ⚠️ Statt auf irgendeines zu raten. Ein Rad-Feld, das auf ein
+    // abgeschaltetes Ereignis zeigt, ist ein Feld ohne Wirkung -- und
+    // `pruefeFelder` sagt dem Admin, warum.
+    const v = radVorgaenge(
+      [gutschrift({ typ: "ereignis", key: "gibtsnicht" })], MIT_EREIGNIS, ["u1"]);
+    expect(v).toEqual([]);
+  });
+
+  it("Punkte- und Joker-Felder erzeugen hier nichts -- sie gehen andere Wege", () => {
+    const v = radVorgaenge([
+      gutschrift({ typ: "punkte", betrag: 30 }),
+      gutschrift({ typ: "joker", art: "joker.einzel", anzahl: 1 }),
+      gutschrift({ typ: "nichts" }),
+    ], MIT_EREIGNIS, ["u1"]);
+    expect(v).toEqual([]);
+  });
+
+  it("🔴 der Vorgang bewegt den VERLAUF -- und nicht nur eine Liste", () => {
+    // Der Test, den es vor heute nicht gab: ein Faktor, der erzeugt und nicht
+    // angewandt wird, sieht in jedem Bericht richtig aus.
+    const verlauf = [
+      { wettbewerb: "bl", matchday: 1, board: [{ userId: "u1", name: "A", total: 100 }] },
+      { wettbewerb: "bl", matchday: 2, board: [{ userId: "u1", name: "A", total: 200 }] },
+    ];
+    const halbiert = mitRadWirkungen(verlauf, [{
+      userId: "u1", spieltag: 2, joker: 0, punkte: 0, faktor: 0.5, sperre: null,
+    }]);
+    // Spieltag 2 brachte 100 Punkte; halbiert sind es 50 -> Endstand 150.
+    expect(halbiert.at(-1).board[0].total).toBe(150);
+  });
+
+  it("ein Vorgang ausserhalb des Verlaufs aendert nichts, statt zu raten", () => {
+    const verlauf = [{ wettbewerb: "bl", matchday: 1, board: [{ userId: "u1", name: "A", total: 100 }] }];
+    expect(mitRadWirkungen(verlauf, [{ userId: "u1", spieltag: 9, faktor: 0.5, punkte: 0 }]))
+      .toBe(verlauf);
+  });
+
+  it("ohne Vorgaenge bleibt der Verlauf DASSELBE Objekt", () => {
+    // ⚠️ Kein neues Array bei jedem Aufruf: der Aufrufer vergleicht.
+    const verlauf = [{ wettbewerb: "bl", matchday: 1, board: [] }];
+    expect(mitRadWirkungen(verlauf, [])).toBe(verlauf);
   });
 });

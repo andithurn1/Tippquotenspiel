@@ -613,8 +613,13 @@ export function createSupabaseStore() {
     },
 
     async getLeaderboard(roundId) {
-      const { board, rules, kontext, spieltage, nameOf, avatarOf, bespielt } = await this.standVorDemRad(roundId);
-      const fertig = await withDrehradPunkte({ board, rules, rundenId: roundId, spieltage, nameOf, kontext, bespielt });
+      // ⚠️ `verlauf` mit heraus: ohne ihn koennen die FAKTOR-Wirkungen des Rades
+      // nicht ankommen — ein Faktor wirkt auf die Punkte EINES Spieltags, und
+      // die stehen nur im Verlauf.
+      const { board, rules, kontext, spieltage, nameOf, avatarOf, bespielt, verlauf } = await this.standVorDemRad(roundId);
+      const fertig = await withDrehradPunkte({
+        board, rules, rundenId: roundId, spieltage, nameOf, kontext, bespielt, verlauf,
+      });
       // Siehe Mock: erst NACH der Wertung angehängt, das Sinnbild ist
       // Beschriftung und geht die Rechnung nichts an.
       return (fertig ?? []).map((b) => ({ ...b, avatar: avatarOf(b.userId) }));

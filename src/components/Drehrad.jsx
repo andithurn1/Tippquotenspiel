@@ -5,7 +5,7 @@ import { C, MONO, SERIES, readableInk, RUND } from "@/lib/theme";
 import {
   BELOHNUNGS_TYPEN, DREHRAD_LIMITS, DEFAULT_DREHRAD,
   sanitizeDrehrad, pruefeFelder, wahrscheinlichkeiten, drehradPlan, beschreibeDrehrad,
-  AUSSCHLUSS_REICHWEITEN, HAEUFIGKEITEN, dreherwartung,
+  AUSSCHLUSS_REICHWEITEN, HAEUFIGKEITEN, EREIGNIS_TRIFFT, dreherwartung,
 } from "@/lib/drehrad";
 import { PHASEN } from "@/lib/duellJoker";
 import Gluecksrad from "@/components/Gluecksrad";
@@ -13,6 +13,7 @@ import RadEditor from "@/components/RadEditor";
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { WER } from "@/lib/jokerBasis";
 import { RUECKSETZ_ZIELE } from "@/lib/ruecksetzung";
+import { EREIGNIS, sanitizeEreignisse } from "@/lib/ereignisse";
 import { Zahl } from "@/components/Eingaben";
 import Feinheiten from "@/components/Feinheiten";
 import { TAPZIEL } from "@/lib/tapziel";
@@ -47,6 +48,10 @@ const STANDARD_BELOHNUNG = {
   modifikator: { typ: "modifikator", faktor: 1.2, spieltage: 1 },
   punkte: { typ: "punkte", betrag: 5 },
   ruecksetzung: { typ: "ruecksetzung", ziel: RUECKSETZ_ZIELE[0].key },
+  // ⚠️ Ohne Key kein gueltiges Feld — welches Ereignis, kann nur der Admin
+  // sagen. `sanitizeBelohnung` verwirft es solange, und `pruefeFelder` schreibt
+  // hin, warum. Lieber sichtbar unfertig als stillschweigend folgenlos.
+  ereignis: { typ: "ereignis", key: "", trifft: "zieher" },
 };
 
 // Stabile Farbe je Feld-Id (nicht je Listenindex) — sonst tauschen alle
@@ -112,6 +117,11 @@ export default function Drehrad({ rules, onChange }) {
   // `maxPunkteProSaison` ist nur eine Frage, wenn es überhaupt ein
   // Punkte-Feld gibt — sonst eine Einstellung zu etwas, das es nicht gibt.
   const hatPunkteFeld = felder.some((f) => f?.belohnung?.typ === "punkte");
+
+  // Welche Ereignisse kann das Rad ueberhaupt ziehen? Nur die eingeschalteten —
+  // eines, das die Runde nicht fuehrt, waere ein Rad-Feld ohne Wirkung.
+  const aktiveEreignisse = useMemo(
+    () => sanitizeEreignisse(rules?.ereignisse).aktive, [rules?.ereignisse]);
 
   const werWertLimits = cfg.wer === "abPlatz" ? DREHRAD_LIMITS.abPlatz
     : cfg.wer === "abRueckstand" ? DREHRAD_LIMITS.abRueckstand
@@ -332,6 +342,7 @@ export default function Drehrad({ rules, onChange }) {
             <FeldZeile key={f.id} feld={f} farbe={farbeFuer(f.id)} anteil={anteil}
               sperrfristVorgabe={cfg.sperrfrist}
               verworfenGrund={verworfenEintrag?.grund}
+              aktiveEreignisse={aktiveEreignisse}
               onPatch={(p) => patchFeld(f.id, p)}
               onBelohnungPatch={(p) => patchBelohnung(f.id, p)}
               onBelohnungsTyp={(typ) => setzeBelohnungsTyp(f.id, typ)}
@@ -648,7 +659,7 @@ function Leiste({ titel, tage = [], von, bis, gedimmt = false }) {
 
 // ── Eine Feld-Zeile ─────────────────────────────────────────
 function FeldZeile({
-  feld, farbe, anteil, sperrfristVorgabe, verworfenGrund,
+  feld, farbe, anteil, sperrfristVorgabe, verworfenGrund, aktiveEreignisse = [],
   onPatch, onBelohnungPatch, onBelohnungsTyp, onEntfernen,
 }) {
   const belohnung = feld.belohnung && typeof feld.belohnung === "object" ? feld.belohnung : { typ: "nichts" };
@@ -755,6 +766,56 @@ function FeldZeile({
         <div style={{ marginTop: 8, maxWidth: 150 }}>
           <Zahl label="Punkte" wert={belohnung.betrag} limits={DREHRAD_LIMITS.punkteBetrag}
             onChange={(v) => onBelohnungPatch({ betrag: v })} />
+        </div>
+      )}
+      {/* 🔴 Welches Ereignis gezogen wird — und wen es trifft.
+          Andi, 27.08.2026: „klar dafür ist das Rad ja auch da? zum auslosen?"
+          ⚠️ Nur EINGESCHALTETE Ereignisse stehen zur Wahl: eines, das die
+          Runde gar nicht führt, wäre ein Rad-Feld ohne Wirkung. */}
+      {belohnung.typ === "ereignis" && (
+        <div style={{ marginTop: 8 }}>
+          {aktiveEreignisse.length === 0 ? (
+            <div style={{ fontSize: "0.6875rem", color: C.coral, lineHeight: 1.45 }}>
+              In dieser Runde ist noch kein Ereignis eingeschaltet — solange kann das Rad
+              auch keines ziehen. Schalte oben eins ein, dann steht es hier zur Wahl.
+            </div>
+          ) : (
+            <>
+              <label style={{ fontSize: "0.6875rem", color: C.muted, display: "block" }}>
+                Welches Ereignis
+                <select value={belohnung.key ?? ""}
+                  onChange={(e) => onBelohnungPatch({ key: e.target.value })}
+                  style={{
+                    display: "block", width: "100%", boxSizing: "border-box", marginTop: 3,
+                    background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
+                    borderRadius: RUND.karte, padding: "7px 9px", fontSize: "0.8125rem", fontFamily: "inherit",
+                  }}>
+                  <option value="">— bitte wählen —</option>
+                  {aktiveEreignisse.map((a) => (
+                    <option key={a.key} value={a.key}>{EREIGNIS[a.key]?.label ?? a.key}</option>
+                  ))}
+                </select>
+              </label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 8 }}>
+                {EREIGNIS_TRIFFT.map((t) => {
+                  const an = (belohnung.trifft ?? "zieher") === t.key;
+                  return (
+                    <button key={t.key} title={t.desc}
+                      onClick={() => onBelohnungPatch({ trifft: t.key })} style={{
+                        ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
+                        padding: "5px 10px", borderRadius: RUND.pille,
+                        background: an ? `${C.violet}22` : C.surface2, color: an ? C.violet : C.muted,
+                        border: `1px solid ${an ? C.violet + "66" : C.line}`,
+                      }}>{t.label}</button>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 5, lineHeight: 1.4 }}>
+                {EREIGNIS_TRIFFT.find((t) => t.key === (belohnung.trifft ?? "zieher"))?.desc}
+                {" "}Die Wirkung selbst kommt aus dem Ereignis — das Rad ersetzt nur seinen Auslöser.
+              </div>
+            </>
+          )}
         </div>
       )}
       {/* 🔴 Was genau zurückgesetzt wird. Ohne diese Auswahl bliebe die

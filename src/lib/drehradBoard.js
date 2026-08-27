@@ -38,6 +38,8 @@
 import { drehradPlan, ziehe, auswerten, sanitizeDrehrad } from "./drehrad";
 import { darfEinsetzen, basisFuer } from "./jokerBasis";
 import { schnitteAus } from "./ruecksetzung";
+import { sanitizeEreignisse, applyEreignisWirkungen } from "./ereignisse";
+import { wendeAn } from "./wirkung";
 
 // „drehrad" ist KEINE Art aus `JOKER_ARTEN` (jokerBudget.js) — das Rad ist ein
 // eigener Auslöser-Typ, keine Joker-Art (design/drehrad.md Abschnitt 1).
@@ -238,6 +240,16 @@ export function drehradBelohnungen({
 
   const out = {
     joker: [], narren: [], modifikatoren: [],
+    // 🔴 Die Vorgaenge, mit denen ein Rad-Gewinn in der WERTUNG ankommt --
+    // dieselbe Form, die `wirkungsVorgaenge` fuer Ereignisse liefert, und
+    // dieselbe Funktion (`applyEreignisWirkungen`) verrechnet sie.
+    //
+    // ⚠️ Der Befund, der diese Zeile noetig macht: `modifikatoren` wurde seit
+    // dem Bau des Rades ERZEUGT und von niemandem gelesen. Ein Spieler zog
+    // „+50 % fuer zwei Spieltage“ und bekam nichts -- kein Fehler, keine
+    // Meldung, nur eine Belohnung ohne Wirkung. Genau die Sorte, die `npm run
+    // tot` nicht findet, weil es kein Export ist, sondern ein Feld.
+    vorgaenge: [],
     // 🔴 Die Rücksetzungen kommen NICHT aus dieser Schleife, sondern aus
     // `schnitteAus` — dieselbe Funktion, die auch jeder Anwender fragt. Hier
     // ein zweites Mal über `belohnung.typ` zu gehen wäre die zweite Wahrheit
@@ -257,11 +269,80 @@ export function drehradBelohnungen({
       });
     }
   }
+  out.vorgaenge = radVorgaenge(gutschriften, rules, userIds);
   return out;
+}
+
+// ── Aus Gutschriften werden Wirkungs-Vorgaenge ──────────────
+// 🔴 EINE Stelle, gefragt von `drehradBelohnungen` (fuer die Anzeige) und von
+// `withDrehradPunkte` (fuer die Wertung). Zweimal geschrieben waeren es zwei
+// Fassungen, die am Tag des Baus gleich sind und danach auseinanderlaufen —
+// genau der Verlauf, den dieses Projekt schon mehrfach hatte.
+export function radVorgaenge(gutschriften = [], rules = null, userIds = []) {
+  const out = [];
+  const aktive = sanitizeEreignisse(rules?.ereignisse).aktive;
+  for (const g of Array.isArray(gutschriften) ? gutschriften : []) {
+    const b = g?.belohnung;
+    if (!b) continue;
+
+    if (b.typ === "modifikator") {
+      // ⚠️ Ueber `b.spieltage` Spieltage hinweg -- ein Faktor gilt so lange,
+      // wie er eingestellt ist, und nicht nur am Tag der Ziehung.
+      for (let i = 0; i < Math.max(1, b.spieltage); i++) {
+        out.push({
+          userId: g.userId, spieltag: g.spieltag + i,
+          joker: 0, punkte: 0, faktor: b.faktor, sperre: null,
+          key: "rad:modifikator", vonUserId: g.userId,
+        });
+      }
+      continue;
+    }
+
+    if (b.typ === "ereignis") {
+      // Die Wirkung kommt aus dem EREIGNIS, wie der Admin sie dort gesetzt
+      // hat -- das Rad ersetzt nur den Ausloeser. Wen es trifft, steht am
+      // Rad-Feld (siehe `EREIGNIS_TRIFFT` in drehrad.js).
+      const ereignis = aktive.find((a) => a.key === b.key);
+      if (!ereignis?.wirkung) continue;
+      const betroffene = b.trifft === "runde" ? userIds : [g.userId];
+      for (const v of wendeAn({
+        wirkung: ereignis.wirkung, betroffene, mitglieder: userIds,
+      })) {
+        out.push({ ...v, spieltag: g.spieltag, key: `rad:${b.key}`, vonUserId: g.userId });
+      }
+    }
+  }
+  return out;
+}
+
+// ── Die Rad-Wirkungen im VERLAUF ────────────────────────────
+// 🔴 Warum das ein eigener, spaeter Durchgang ist und nicht in
+// `scoreLeaderboardHistory` steht: das Rad zieht auf dem Stand VOR dem Rad
+// (`wer: abPlatz` liest die Tabelle). Die Ziehung in die Wertung
+// hineinzuziehen, die sie selbst braucht, waere ein Kreis — deshalb erst
+// werten, dann drehen, dann die Wirkung auflegen.
+//
+// ⚠️ Die Uebersetzung ist dieselbe wie bei den ausgeuebten Rechten: ein
+// Rad-Vorgang traegt den RUNDEN-Spieltag, `applyEreignisWirkungen` sucht ueber
+// `wettbewerb|matchday`. Ueber die nackte Zahl gesucht traefe „Spieltag 1"
+// fuenf Wettbewerbe auf einmal.
+export function mitRadWirkungen(verlauf = [], vorgaenge = []) {
+  if (!Array.isArray(verlauf) || !verlauf.length || !vorgaenge.length) return verlauf;
+  const uebersetzt = [];
+  for (const v of vorgaenge) {
+    const tag = verlauf[v.spieltag - 1];
+    if (!tag) continue;   // Spieltag liegt (noch) nicht im Verlauf
+    uebersetzt.push({ ...v, wettbewerb: tag.wettbewerb, matchday: tag.matchday });
+  }
+  return uebersetzt.length ? applyEreignisWirkungen(verlauf, uebersetzt) : verlauf;
 }
 
 export function withDrehradPunkte({
   board = [], rules, rundenId, spieltage = 34, nameOf, kontext = null, bespielt = null,
+  // Optional: der Verlauf. Ohne ihn koennen FAKTOR-Wirkungen des Rades nicht
+  // ankommen — ein Faktor wirkt auf die Punkte EINES Spieltags, und die stehen
+  // nur im Verlauf. Fehlt er, bleibt es beim bisherigen Verhalten (nur Punkte).
+  verlauf = null,
 } = {}) {
   if (!rules?.drehrad?.enabled) return board;
 
@@ -286,7 +367,17 @@ export function withDrehradPunkte({
     punkteVon.set(g.userId, (punkteVon.get(g.userId) ?? 0) + g.belohnung.betrag);
   }
 
-  return board
+  // 🔴 Die Nicht-Punkte-Wirkungen des Rades (Modifikator, gezogenes Ereignis)
+  // gehen ueber den Verlauf — sie sind Faktoren auf Spieltagspunkte, und die
+  // gibt es im Endstand nicht mehr einzeln. `drehradBelohnungen` baut dieselbe
+  // Liste; hier wird sie aus denselben `gutschriften` erzeugt, damit es keine
+  // zweite Fassung gibt.
+  const vorgaenge = verlauf ? radVorgaenge(gutschriften, rules, userIds) : [];
+  const basis = vorgaenge.length
+    ? (mitRadWirkungen(verlauf, vorgaenge).at(-1)?.board ?? board)
+    : board;
+
+  return basis
     .map((e) => {
       const punkte = punkteVon.get(e.userId) ?? 0;
       return { ...e, drehrad: punkte, total: e.total + punkte };

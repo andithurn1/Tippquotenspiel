@@ -105,6 +105,20 @@ export const BELOHNUNGS_TYPEN = [
   // die keinen Wert GUTSCHREIBT, sondern einen Zustand LÖSCHT — im ganzen
   // Wirkungs-Katalog gab es das bisher nicht. Wie das ohne gespeicherten
   // Zustand geht, steht im Kopf von `ruecksetzung.js`.
+  // 🔴 Andi, 27.08.2026, auf die Rückfrage „soll das Rad auch ein eingestelltes
+  // Ereignis ziehen können?": „klar dafür ist das Rad ja auch da? zum
+  // auslosen?" — also ja.
+  //
+  // ⚠️ Das Rad ersetzt den AUSLÖSER des Ereignisses, nicht seine Einstellung:
+  // die WIRKUNG kommt aus dem Ereignis, wie der Admin sie dort gesetzt hat.
+  // WEN es trifft, steht am Rad-Feld (`trifft`) und NICHT in der WEN-Achse des
+  // Ereignisses — die braucht einen Tabellenstand und wird in `auswerten`
+  // gegen einen Auslöser gerechnet. Sie hier ein zweites Mal auszuwerten wäre
+  // dieselbe Rechnung an zwei Stellen.
+  {
+    key: "ereignis", label: "Ereignis",
+    desc: "Löst eines deiner eingestellten Ereignisse aus. Die Wirkung kommt von dort — du legst nur fest, wen es trifft.",
+  },
   {
     key: "ruecksetzung", label: "Rücksetzung",
     desc: "Löscht, was bisher war: alle Abklingzeiten fallen weg, oder die bisherigen Narren-Käufe zählen nicht mehr. Kostet keinen Punkt und ist trotzdem viel wert, wenn man festsitzt.",
@@ -137,6 +151,27 @@ export const AUSSCHLUSS_REICHWEITEN = [
   },
 ];
 const REICHWEITEN_KEYS = new Set(AUSSCHLUSS_REICHWEITEN.map((r) => r.key));
+
+// Wen trifft ein am Rad gezogenes Ereignis?
+//
+// 🔴 Zwei Möglichkeiten und keine dritte — das ist eine Entscheidung, keine
+// Sparsamkeit. Die WEN-Achse des Ereignisses („die letzten drei", „wer 40 %
+// über dem Schnitt liegt") hängt an einem Tabellenstand und wird in
+// `ereignisse.auswerten` gegen einen Auslöser gerechnet. Hier gibt es weder
+// den Auslöser noch den Kontext — sie nachzubauen hieße, dieselbe Rechnung
+// ein zweites Mal zu schreiben, und genau daran hatte dieses Projekt 17
+// Fehler an einem Tag.
+export const EREIGNIS_TRIFFT = [
+  {
+    key: "zieher", label: "Nur den Zieher",
+    desc: "Wer dreht, bekommt es ab — wie jede andere Rad-Belohnung auch.",
+  },
+  {
+    key: "runde", label: "Die ganze Runde",
+    desc: "Alle Mitspieler, den Zieher eingeschlossen. Für Ereignisse, die eine Ansage an alle sind.",
+  },
+];
+const TRIFFT_KEYS = new Set(EREIGNIS_TRIFFT.map((t) => t.key));
 
 // ── Wie oft wird gedreht? Zwei Wege zu derselben Zahl ───────
 // 🔴 Andi, 27.08.2026: „einstellbar machen wann und wie oft jeweils (gesamt
@@ -289,6 +324,17 @@ function sanitizeBelohnung(b) {
       };
     case "punkte":
       return { typ: "punkte", betrag: Math.round(clamp(o.betrag, DREHRAD_LIMITS.punkteBetrag, 0)) };
+    case "ereignis": {
+      // ⚠️ Ohne Ereignis-Key VERWORFEN statt auf irgendeines geraten. Ein
+      // Rad-Feld „löst ein Ereignis aus" ohne zu sagen welches, wäre eine
+      // Belohnung, die der Spieler zieht und die nichts tut.
+      const key = typeof o.key === "string" && o.key ? o.key : null;
+      if (!key) return null;
+      return {
+        typ: "ereignis", key,
+        trifft: TRIFFT_KEYS.has(o.trifft) ? o.trifft : "zieher",
+      };
+    }
     case "ruecksetzung":
       // ⚠️ Ohne gültiges Ziel VERWORFEN statt auf eins geraten. Ein Rad-Feld
       // „Rücksetzung von irgendwas" wäre eine Belohnung, die der Spieler zieht
@@ -305,6 +351,7 @@ function belohnungsGrund(b) {
   if (!BELOHNUNGS_TYPEN.some((t) => t.key === typ)) {
     return `unbekannter Belohnungs-Typ „${typ}“`;
   }
+  if (typ === "ereignis") return "kein Ereignis ausgewählt.";
   if (typ === "ruecksetzung") return `unbekanntes Rücksetz-Ziel „${b.ziel}“`;
   // typ ist bekannt, also (bei "joker") eine unbekannte Joker-Art.
   return `unbekannte Joker-Art „${b.art}“`;
