@@ -203,7 +203,7 @@ const PRUEFUNGEN = [
       return {
         titel: offen.length === 1 ? "Ein Recht wirkt noch nicht" : `${offen.length} Rechte wirken noch nicht`,
         text: `Eingestellt, aber der Weg von der Wahl bis in die Wertung fehlt noch: ${offen.join(", ")}.`,
-        beheben: "Solange nur „Das Topspiel bestimmen“ nehmen — das greift vollständig.",
+        beheben: "Solange eine Art nehmen, deren Weg steht — heute greifen alle.",
       };
     },
   },

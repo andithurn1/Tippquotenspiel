@@ -248,6 +248,36 @@ create table if not exists public.admin_freigaben (
 
 create index if not exists admin_freigaben_round_idx on public.admin_freigaben (round_id);
 
+-- ── Ausgeübte Rechte (Weg B, Andi 27.08.2026) ──────────────
+-- Der Spieltagssieger bestimmt etwas für den NÄCHSTEN Spieltag — das Topspiel,
+-- oder eine vom Admin vorbereitete Wirkung (`rules.rechte.angebote`).
+--
+-- 🔴 Warum eine eigene Tabelle und nicht `rounds.rules`: das Regelwerk hat
+-- kein Gedächtnis. Eine Wahl, die dort landet, gilt danach für IMMER und
+-- rückwirkend auch für Spieltage, an denen es sie noch gar nicht gab —
+-- dieselbe Falle wie eine nachträglich veränderte Quote. Deshalb steht der
+-- Spieltag in jeder Zeile: eine Ausübung ist eine Aussage über GENAU EINEN
+-- Spieltag.
+--
+--   matchday     Der RUNDEN-Spieltag, für den die Wahl gilt (nicht der, an
+--                dem sie getroffen wurde).
+--   angebot_key  Zeigt auf `rules.rechte.angebote[].key`.
+--   wert         Bei „Topspiel bestimmen" die Match-Id, sonst null.
+create table if not exists public.rechte_ausgeuebt (
+  round_id    uuid not null references public.rounds(id) on delete cascade,
+  matchday    int  not null,
+  angebot_key text not null,
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  wert        text,
+  created_at  timestamptz not null default now(),
+  -- Eine Wahl je Spieltag und Angebot. Der Schlüssel enthält BEWUSST nicht
+  -- `user_id`: sonst könnten zwei Spieler dasselbe Recht am selben Spieltag
+  -- ausüben, und es gäbe zwei Topspiele.
+  primary key (round_id, matchday, angebot_key)
+);
+
+create index if not exists rechte_ausgeuebt_round_idx on public.rechte_ausgeuebt (round_id);
+
 -- ── Kurzcode-Presets (Content-Creator-Codes) ───────────────
 -- Ein geteiltes Regelwerk unter einem kurzen, merkbaren Code — statt des
 -- langen Text-Creator-Codes. rules = per sanitizeRules() gültiges Regelwerk.
@@ -425,6 +455,7 @@ alter table public.season_tips   enable row level security;
 alter table public.rule_proposals      enable row level security;
 alter table public.rule_proposal_votes enable row level security;
 alter table public.admin_freigaben     enable row level security;
+alter table public.rechte_ausgeuebt    enable row level security;
 
 -- Profile: jeder Eingeloggte darf lesen; eigenes Profil schreiben.
 -- 🔴 Private Profildaten: NUR die eigene Zeile, und zwar in jeder Richtung.
@@ -623,4 +654,43 @@ create policy "admin_freigaben_delete_admin" on public.admin_freigaben for delet
   using (
     exists (select 1 from public.rounds r
             where r.id = admin_freigaben.round_id and r.admin_id = auth.uid())
+  );
+
+-- ── Ausgeübte Rechte ──
+-- LESEN darf jedes Mitglied der Runde: das Topspiel ist eine Ansage an alle,
+-- und wer nicht weiß, welches Spiel mehr zählt, tippt unter anderen
+-- Bedingungen als die übrigen.
+--
+-- 🔴 SCHREIBEN darf nur, wer das Recht auch HÄLT — und das ist der Punkt, an
+-- dem diese Tabelle sich von `admin_freigaben` unterscheidet: dort entscheidet
+-- eine feste Rolle (`rounds.admin_id`), hier ein ERGEBNIS. Der Sieger eines
+-- Spieltags steht nirgends in der Datenbank; er ergibt sich aus der Wertung,
+-- und die läuft in der Engine.
+--
+-- ⚠️ Deshalb prüft die Policy, was sie im SQL prüfen KANN: dass der Schreiber
+-- Mitglied dieser Runde ist und für sich selbst schreibt. Dass er auch der
+-- Spieltagssieger ist, kann sie NICHT prüfen — das wäre eine Nachbildung der
+-- Wertung in SQL, also eine zweite Wahrheit an der teuersten Stelle.
+--
+-- 🔴 Was diese Lücke schließt und was nicht: der Primärschlüssel
+-- `(round_id, matchday, angebot_key)` sorgt dafür, dass es **genau eine**
+-- Ausübung je Spieltag gibt — ein Fremder kann also nicht zusätzlich wählen,
+-- höchstens ZUERST. Und ein `update` gibt es nicht (keine Policy dafür), also
+-- kann niemand eine getroffene Wahl überschreiben.
+-- ⚠️ Damit bleibt genau ein Missbrauch möglich: jemand kommt dem Sieger zuvor.
+-- Das ist für eine Runde unter Freunden tragbar und steht hier, damit es eine
+-- bekannte Grenze ist und keine Überraschung. Wasserdicht wird es erst mit
+-- einer Server-Funktion (`security definer`), die den Sieger selbst ausrechnet.
+drop policy if exists "rechte_read_same_round"  on public.rechte_ausgeuebt;
+drop policy if exists "rechte_write_member"     on public.rechte_ausgeuebt;
+create policy "rechte_read_same_round" on public.rechte_ausgeuebt for select to authenticated
+  using (
+    exists (select 1 from public.round_members m
+            where m.round_id = rechte_ausgeuebt.round_id and m.user_id = auth.uid())
+  );
+create policy "rechte_write_member" on public.rechte_ausgeuebt for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and exists (select 1 from public.round_members m
+                where m.round_id = rechte_ausgeuebt.round_id and m.user_id = auth.uid())
   );

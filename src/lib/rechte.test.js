@@ -23,10 +23,17 @@ describe("Katalog", () => {
     expect(new Set(RECHT_ARTEN.map((a) => a.key)).size).toBe(RECHT_ARTEN.length);
   });
 
-  it("genau EIN Recht ist heute vollstaendig verdrahtet", () => {
-    // 🔴 Die Ehrlichkeits-Klausel: `fertig` sagt, ob der Weg von der Wahl bis
-    // in die Wertung wirklich steht. Heute nur das Topspiel.
-    expect(RECHT_ARTEN.filter((a) => a.fertig).map((a) => a.key)).toEqual(["bigGame"]);
+  it("jede Recht-Art traegt die Ehrlichkeits-Klausel -- und heute steht jeder Weg", () => {
+    // 🔴 `fertig` sagt, ob der Weg von der Wahl bis in die Wertung wirklich
+    // steht. Bis zum 27.08.2026 galt das NUR fuers Topspiel; seit Andis
+    // Entscheidung fuer Weg B (eigene Ablage `rechte_ausgeuebt`) laeuft auch
+    // eine ausgeuebte Wirkung durch -- als Vorgang wie ein Ereignis.
+    // ⚠️ Das Feld MUSS an jeder Art stehen, auch wenn heute alle `true` sind:
+    // `undefined` waere „nicht fertig" und damit stillschweigend richtig, aber
+    // aus dem falschen Grund. Die naechste neue Art soll sich entscheiden
+    // muessen.
+    for (const a of RECHT_ARTEN) expect(typeof a.fertig, a.key).toBe("boolean");
+    expect(RECHT_ARTEN.filter((a) => a.fertig).map((a) => a.key)).toEqual(["bigGame", "wirkung"]);
   });
 
   it("beide Wahl-Arten sind beschrieben", () => {
@@ -161,20 +168,28 @@ describe("Saetze fuer die Oberflaeche", () => {
 });
 
 describe("Die Ehrlichkeits-Klausel", () => {
-  it("meldet Angebote, deren Weg noch nicht steht", () => {
-    // 🔴 Der Admin kann alles einstellen -- aber nur das Topspiel-Recht hat
-    // heute einen vollstaendigen Weg von der Wahl bis in die Wertung. Er soll
-    // das SEHEN, statt es zu merken, wenn nichts passiert.
+  it("schweigt heute -- weil jeder Weg steht", () => {
+    // 🔴 Bis zum 27.08.2026 meldete diese Funktion das Wirkungs-Recht: der
+    // Admin konnte es einstellen, und es kam nichts an. Seit Weg B kommt es an.
     const rules = mit({
       wahl: "liste",
       angebote: [{ art: "bigGame" }, { art: "wirkung", wirkung: { typ: "bonus", prozent: 20 } }],
     });
-    const offen = nochOhneWirkung(rules);
-    expect(offen).toHaveLength(1);
-    expect(offen[0]).toMatch(/20 %/);
+    expect(nochOhneWirkung(rules)).toEqual([]);
   });
 
-  it("schweigt, wenn nur das fertige Recht eingestellt ist", () => {
-    expect(nochOhneWirkung(mit({ angebote: [{ art: "bigGame" }] }))).toEqual([]);
+  it("meldet trotzdem, sobald eine Art `fertig: false` traegt", () => {
+    // ⚠️ Die Klausel bleibt scharf, obwohl sie heute schweigt -- sonst waere
+    // sie beim naechsten neuen Recht ein toter Zweig, den niemand mehr prueft.
+    // Gemessen wird deshalb die MECHANIK, nicht der heutige Zustand: eine
+    // unfertige Art faellt durch, eine fertige nicht.
+    const unfertig = RECHT_ARTEN.map((a) => ({ ...a, fertig: false }));
+    const alsUnfertig = (rules) => angeboteFuer(rules)
+      .filter((g) => !unfertig.find((x) => x.key === g.art)?.fertig);
+    expect(alsUnfertig(mit({ angebote: [{ art: "bigGame" }] }))).toHaveLength(1);
+  });
+
+  it("schweigt, wenn gar kein Recht eingestellt ist", () => {
+    expect(nochOhneWirkung(mit({ enabled: false, angebote: [] }))).toEqual([]);
   });
 });

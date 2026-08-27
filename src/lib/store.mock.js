@@ -182,6 +182,16 @@ export function createMockStore() {
   // RUNDEN-Spieltag (siehe schema.sql).
   const freigaben = [];
   const seasonTips = [];   // Saison-Wetten: { round_id, user_id, wetten_id, wert }
+  // Ausgeübte Rechte: { round_id, matchday, angebot_key, user_id, wert }.
+  // `matchday` ist der RUNDEN-Spieltag, für den die Wahl GILT — nicht der, an
+  // dem sie getroffen wurde (siehe Kopf von `rechteAusuebung.js`).
+  const ausgeuebt = [];
+
+  // Die eine Stelle, an der die ausgeübten Rechte einer Runde herkommen —
+  // damit `beschlussLage` und die Wertung dieselbe Liste sehen.
+  const ausgeuebtVon = (roundId) => ausgeuebt
+    .filter((r) => r.round_id === roundId)
+    .map((r) => ({ spieltag: r.matchday, userId: r.user_id, angebotKey: r.angebot_key, wert: r.wert ?? null }));
 
   const nameOf = (userId) => members.find((m) => m.user_id === userId)?.name ?? userId;
   // 🔴 Das Sinnbild gehört ZUM Leaderboard, nicht in den Screen (25.08.2026).
@@ -230,6 +240,9 @@ export function createMockStore() {
   // AUCH den Admin abgewiesen. Beim Nachsehen aufgefallen, nicht im Test.
   const beschlussLage = (roundId, rules, achse = null) => regelnFuerSpieltag({
     rules,
+    // Ausgeübte Rechte (Weg B): sie legen für EINEN Spieltag etwas auf das
+    // Regelwerk — deshalb hier und nicht in `rounds.rules`.
+    ausuebungen: ausgeuebtVon(roundId),
     antraege: antraege.filter((a) => a.round_id === roundId).map((a) => ({
       ...a,
       stimmen: antragStimmen.filter((v) => v.antrag_id === a.id)
@@ -297,7 +310,7 @@ export function createMockStore() {
       const einsaetze = fremdEinsaetze(
         roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules,
         { rundenSpieltag: verlaufPositionen(entries) });
-      verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
+      verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId, { ausuebungen: ausgeuebtVon(roundId) });
       board = verlauf.length ? verlauf[verlauf.length - 1].board : [];
     } else {
       board = scoreLeaderboard(entries, rules, regelnFuer);
@@ -383,7 +396,7 @@ export function createMockStore() {
     const { verlauf, entries, rules, regelnFuer, roundTips, rundenSpieltag } = await standVorDemRad(roundId);
     if (verlauf) return verlauf;
     const einsaetze = fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules, { rundenSpieltag });
-    return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
+    return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId, { ausuebungen: ausgeuebtVon(roundId) });
   }
 
   // Der rohe Schreibvorgang ohne jede Prüfung — Grundlage von `saveTip` und
@@ -749,6 +762,32 @@ export function createMockStore() {
       return row;
     },
 
+    // ── Ausgeübte Rechte (Weg B, Andi 27.08.2026) ───────────
+    // 🔴 Eine eigene Ablage, weil das Regelwerk kein Gedächtnis hat: eine Wahl
+    // dort gälte für IMMER und rückwirkend auch für Spieltage, an denen es sie
+    // nicht gab. `matchday` ist der RUNDEN-Spieltag, für den sie GILT.
+    async listRechteAusgeuebt({ roundId }) {
+      return ausgeuebt.filter((r) => r.round_id === roundId)
+        .map((r) => ({
+          spieltag: r.matchday, userId: r.user_id,
+          angebotKey: r.angebot_key, wert: r.wert ?? null,
+        }));
+    },
+
+    // ⚠️ Wer ZUERST da ist, gewinnt — genau wie in der Datenbank, wo der
+    // Primärschlüssel `(round_id, matchday, angebot_key)` das durchsetzt und
+    // es KEIN `update` gibt. Eine getroffene Wahl lässt sich nicht
+    // überschreiben; sonst wäre „das Topspiel steht fest" eine Aussage, die
+    // bis zum Anpfiff wackelt.
+    async ueberechtAus({ roundId, userId, matchday, angebotKey, wert = null }) {
+      const da = ausgeuebt.find((r) => r.round_id === roundId
+        && r.matchday === matchday && r.angebot_key === angebotKey);
+      if (da) return da;
+      const row = { round_id: roundId, matchday, angebot_key: angebotKey, user_id: userId, wert };
+      ausgeuebt.push(row);
+      return row;
+    },
+
     // Abschluss oder Veto. Der Store entscheidet NICHT, ob ein Antrag
     // angenommen ist — das rechnet `zaehleAus`; hier wird nur festgehalten,
     // was entschieden wurde.
@@ -935,7 +974,7 @@ export function createMockStore() {
       if (!familieAn(rules)) return [];
       const einsaetze = fremdEinsaetze(roundTips.map((t) => ({ ...eintragVon(t), matchId: t.match_id })), rules, { rundenSpieltag });
       const sammeln = [];
-      scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln, roundId);
+      scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln, roundId, { ausuebungen: ausgeuebtVon(roundId) });
       return sammeln.map((v) => ({ ...v, vonName: nameOf(v.vonUserId), aufName: nameOf(v.aufUserId) }));
     },
 

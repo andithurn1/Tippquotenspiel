@@ -36,6 +36,7 @@ import { sanitizeRules } from "./engine";
 import { mergePresets, defaultAuswahl, ASPEKTE } from "./presetMerge";
 import { zaehleAus, wirktAb, aspektAenderbar, MITBESTIMMUNG_ASPEKT } from "./regelAbstimmung";
 import { rundenSpieltagVon } from "./zeitachse";
+import { regelnMitRechten } from "./rechteAusuebung";
 
 const ASPEKT_VORHANDEN = new Set(ASPEKTE.map((a) => a.key));
 
@@ -204,7 +205,9 @@ export function regelwerkAmSpieltag({
 // `round.rules` aus, der Verlauf würde gar nicht erst gebaut, und der Bonus
 // fiele still aus. Deshalb muss der Aufrufer BEIDE fragen. Genau die Sorte
 // halbe Verkabelung, die `design/kontaktstellen.md` auflistet.
-export function regelnFuerSpieltag({ rules, antraege = [], mitglieder = [], achse = [] } = {}) {
+export function regelnFuerSpieltag({
+  rules, antraege = [], mitglieder = [], achse = [], ausuebungen = [],
+} = {}) {
   const basis = sanitizeRules(rules);
   const spieltage = achse.length || 34;
   const gemerkt = new Map();
@@ -213,8 +216,14 @@ export function regelnFuerSpieltag({ rules, antraege = [], mitglieder = [], achs
     if (nummer == null) return basis;
     if (gemerkt.has(nummer)) return gemerkt.get(nummer);
     const { rules: r } = regelwerkAmSpieltag({ rules: basis, antraege, mitglieder, spieltag: nummer, spieltage });
-    gemerkt.set(nummer, r);
-    return r;
+    // 🔴 Das ausgeübte Recht kommt NACH den Beschlüssen, und zwar in dieser
+    // Reihenfolge: ein Beschluss ändert das Regelwerk der Runde, ein Recht
+    // legt für EINEN Spieltag etwas darauf. Umgekehrt gerechnet würde ein
+    // Beschluss die Wahl des Siegers überschreiben — und der hätte gewählt,
+    // ohne dass es etwas geändert hätte (`rechteAusuebung.js`, Weg B).
+    const mitRecht = regelnMitRechten(r, ausuebungen, nummer);
+    gemerkt.set(nummer, mitRecht);
+    return mitRecht;
   };
 
   const regelnFuer = (x) => fuerRundenSpieltag(rundenSpieltagVon(achse, {

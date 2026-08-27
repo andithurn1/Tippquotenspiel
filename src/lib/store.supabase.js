@@ -77,10 +77,13 @@ const eintragVon = (t, nameOf, matchOf) => {
 // ⚠️ `adminId` kommt aus `rounds.admin_id` — `round_members` hat KEINE
 // `role`-Spalte (siehe schema.sql). Eine erste Fassung fragte `m.role`; das
 // war immer falsch, ohne dass etwas fehlschlug.
-function beschlussLage({ rules, antraege, members, matches, achse = null, adminId = null }) {
+function beschlussLage({ rules, antraege, members, matches, achse = null, adminId = null, ausuebungen = [] }) {
   return regelnFuerSpieltag({
     rules,
     antraege,
+    // Ausgeübte Rechte (Weg B): sie legen für EINEN Spieltag etwas auf das
+    // Regelwerk — deshalb hier und nicht in `rounds.rules`.
+    ausuebungen,
     mitglieder: (members ?? []).map((m) => ({ userId: m.user_id, istAdmin: m.user_id === adminId })),
     achse: achse ?? zeitachse(matches ?? [], rules?.zeitachse),
   });
@@ -540,6 +543,38 @@ export function createSupabaseStore() {
         .select().single());
     },
 
+    // ── Ausgeübte Rechte (Weg B, Andi 27.08.2026) ───────────
+    // 🔴 Kein `upsert` und kein `update`: der Primärschlüssel
+    // `(round_id, matchday, angebot_key)` lässt genau EINE Ausübung je
+    // Spieltag zu, und es gibt bewusst keine Update-Policy. Eine getroffene
+    // Wahl steht damit fest — sonst wäre „das Topspiel ist bestimmt" eine
+    // Aussage, die bis zum Anpfiff wackelt.
+    // ⚠️ Ein Konflikt ist deshalb KEIN Fehler, sondern die Auskunft „jemand
+    // war schneller". Er wird geschluckt und die vorhandene Zeile geliefert.
+    async listRechteAusgeuebt({ roundId }) {
+      const rows = orThrow(await sb.from("rechte_ausgeuebt")
+        .select("matchday, user_id, angebot_key, wert").eq("round_id", roundId));
+      return (rows ?? []).map((r) => ({
+        spieltag: r.matchday, userId: r.user_id,
+        angebotKey: r.angebot_key, wert: r.wert ?? null,
+      }));
+    },
+
+    async ueberechtAus({ roundId, userId, matchday, angebotKey, wert = null }) {
+      const { data, error } = await sb.from("rechte_ausgeuebt")
+        .insert({ round_id: roundId, matchday, angebot_key: angebotKey, user_id: userId, wert })
+        .select().single();
+      // 23505 = unique_violation: jemand war zuerst da. Das ist ein Ergebnis,
+      // kein Fehler — die vorhandene Zeile ist die Antwort.
+      if (error?.code === "23505") {
+        return orThrow(await sb.from("rechte_ausgeuebt")
+          .select("*").eq("round_id", roundId).eq("matchday", matchday)
+          .eq("angebot_key", angebotKey).single());
+      }
+      if (error) throw error;
+      return data;
+    },
+
     async setAntragStatus({ antragId, status, veto }) {
       const patch = {};
       if (status != null) patch.status = status;
@@ -610,6 +645,7 @@ export function createSupabaseStore() {
         this.listSeasonTips({ roundId }),
       ]);
       const antraege = await this.listAntraege({ roundId });
+      const ausuebungen = await this.listRechteAusgeuebt({ roundId });
       const freigaben = await this.listAdminFreigaben({ roundId });
       const nameOf = (id) => members.find((m) => m.user_id === id)?.name ?? id;
       // Gegenstück zu `avatarOf` im Mock — `listMembers` liest den Avatar
@@ -635,7 +671,10 @@ export function createSupabaseStore() {
       // Die Zeitachse EINMAL bauen: Beschluss-Lage, Drehrad-Plan und der
       // Runden-Spieltag der Tipps brauchen sie alle drei.
       const achse = zeitachse(rundenSpiele, rules?.zeitachse);
-      const { regelnFuer, amEnde } = beschlussLage({ rules, antraege, members, matches, achse, adminId: round?.admin_id ?? null });
+      const { regelnFuer, amEnde } = beschlussLage({
+        rules, antraege, members, matches, achse,
+        adminId: round?.admin_id ?? null, ausuebungen,
+      });
       let board;
       let verlauf = null;
       // ⚠️ BEIDE fragen: `brauchtVerlauf` liest sonst nur das ANGELEGTE
@@ -652,7 +691,7 @@ export function createSupabaseStore() {
         const einsaetze = fremdEinsaetze(
           tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules,
           { rundenSpieltag: verlaufPositionen(entries) });
-        verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
+        verlauf = scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId, { ausuebungen });
         board = verlauf.length ? verlauf[verlauf.length - 1].board : [];
       } else {
         board = scoreLeaderboard(entries, rules, regelnFuer);
@@ -708,6 +747,10 @@ export function createSupabaseStore() {
       // Regel ihn braucht — dann baut ihn der Aufrufer aus `entries` nach.
       return {
         board, rules, kontext, nameOf, avatarOf, matchOf, entries, regelnFuer, verlauf, tips,
+        // Mit hinaus, damit `getLeaderboardHistory` und `getDuellVorgaenge` die
+        // ausgeübten Rechte nicht ein zweites Mal holen — und vor allem: nicht
+        // ohne sie rechnen, während das Leaderboard mit ihnen rechnet.
+        ausuebungen,
         spieltage: achse.length || SPIELTAGE, bespielt: bespielteSpieltage(achse),
         // 🔴 Die Position IM VERLAUF, nicht der Liga-Spieltag und auch nicht die
         // Zeitachse — die Begründung steht bei `verlaufPositionen` (spieltag.js).
@@ -744,11 +787,12 @@ export function createSupabaseStore() {
       ]);
       const rules = round?.rules ?? DEFAULT_RULES;
       const antraege = await this.listAntraege({ roundId });
+      const ausuebungen = await this.listRechteAusgeuebt({ roundId });
       // Über die Spiele DIESER Runde — sonst käme ein anderer Runden-Spieltag
       // heraus als im Leaderboard.
       return beschlussLage({
         rules, antraege, members, adminId: round?.admin_id ?? null,
-        matches: rundenSpieleVon(matches, round),
+        matches: rundenSpieleVon(matches, round), ausuebungen,
       });
     },
 
@@ -757,13 +801,13 @@ export function createSupabaseStore() {
     // diese Methode ihre Eintraege selbst, ohne Ersatz-Tipps: zwei Kurven fuer
     // dieselbe Runde, sobald das Versaeumnis eingeschaltet war.
     async getLeaderboardHistory(roundId) {
-      const { verlauf, entries, rules, regelnFuer, tips, nameOf, matchOf, rundenSpieltag } = await this.standVorDemRad(roundId);
+      const { verlauf, entries, rules, regelnFuer, tips, nameOf, matchOf, rundenSpieltag, ausuebungen } = await this.standVorDemRad(roundId);
       if (verlauf) return verlauf;
       // Wie im Zweig oben: `matchId` kommt aus den ROHEN Tipps, `entries` trägt
       // es nicht — ohne das Feld verliert der Duell-Einsatz seinen Gleichstand-
       // Schlüssel (zwei zeitgleich angepfiffene Spiele am selben Spieltag).
       const einsaetze = fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules, { rundenSpieltag });
-      return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId);
+      return scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, null, roundId, { ausuebungen });
     },
 
     // 🔴 Was hat wer an EINEM Spieltag geholt? — Frage 4 der Runden-Schicht.
@@ -804,7 +848,7 @@ export function createSupabaseStore() {
     },
 
     async getDuellVorgaenge(roundId) {
-      const { entries, rules, regelnFuer, tips, nameOf, matchOf, rundenSpieltag } = await this.standVorDemRad(roundId);
+      const { entries, rules, regelnFuer, tips, nameOf, matchOf, rundenSpieltag, ausuebungen } = await this.standVorDemRad(roundId);
       // 🔴 `familieAn` statt `rules.duell.enabled`: seit dem 23.08.2026 gibt es
       // VIER Fremdjoker, und zwei davon stehen gar nicht in `duell`. Die rohe
       // Abfrage hätte Trittbrettfahrer und Gegenwette aus der Vorgangsliste
@@ -813,7 +857,7 @@ export function createSupabaseStore() {
       if (!familieAn(rules)) return [];
       const einsaetze = fremdEinsaetze(tips.map((t) => ({ ...eintragVon(t, nameOf, matchOf), matchId: t.match_id })), rules, { rundenSpieltag });
       const sammeln = [];
-      scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln, roundId);
+      scoreLeaderboardHistory(entries, rules, einsaetze, regelnFuer, sammeln, roundId, { ausuebungen });
       return sammeln.map((v) => ({ ...v, vonName: nameOf(v.vonUserId), aufName: nameOf(v.aufUserId) }));
     },
   };

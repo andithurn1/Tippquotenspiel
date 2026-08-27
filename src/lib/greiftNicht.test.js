@@ -203,14 +203,18 @@ describe("Probe an der Schaufenster-Runde", () => {
     // 🔴 Die eigentliche Probe: wer bei jeder Runde vier Meldungen sieht, die
     // nichts bedeuten, liest ab der zweiten Woche keine mehr.
     //
-    // ⚠️ Beide Funde sind hier RICHTIG, und beide stehen absichtlich in der
-    // Schaufenster-Runde:
-    //   · der Wettbewerbs-Aufschlag auf die CL in einer reinen BL-Runde
-    //     (der Kommentar dort sagt: „soll VORKOMMEN")
-    //   · das zweite Recht, dessen Weg bis in die Wertung noch nicht steht
-    //     (die Ehrlichkeits-Klausel aus `rechte.js`)
+    // ⚠️ Der Fund ist hier RICHTIG und steht absichtlich in der
+    // Schaufenster-Runde: der Wettbewerbs-Aufschlag auf die CL in einer reinen
+    // BL-Runde (der Kommentar dort sagt: „soll VORKOMMEN").
+    //
+    // 🔴 `recht-ohne-weg` stand hier bis zum 27.08.2026 daneben — das zweite
+    // Recht war eingestellt, und der Weg von der Wahl bis in die Wertung
+    // fehlte. Seit Andis Entscheidung für Weg B (eigene Ablage
+    // `rechte_ausgeuebt`) steht er, und die Meldung ist deshalb WEG.
+    // ⚠️ Sie ist nicht abgeschaltet, sondern gegenstandslos geworden: kommt
+    // eine neue Recht-Art mit `fertig: false` dazu, meldet sie sich wieder.
     const funde = greiftNicht(rules, { matches: spiele, mitglieder: 5 });
     expect(funde.map((f) => f.key).sort())
-      .toEqual(["recht-ohne-weg", "wettbewerbe-ohne-wirkung"]);
+      .toEqual(["wettbewerbe-ohne-wirkung"]);
   });
 });

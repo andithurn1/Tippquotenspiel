@@ -82,7 +82,13 @@ export const RECHT_ARTEN = [
     key: "wirkung",
     label: "Eine vorbereitete Wirkung auslösen",
     text: "Er löst eine der Wirkungen aus, die der Admin vorbereitet hat — Aufschlag, Abzug, Umverteilung, Sperre.",
-    fertig: false,
+    // ✅ Seit dem 27.08.2026 steht auch dieser Weg vollständig: Andi hat sich
+    // für Weg B entschieden (eigene Ablage `rechte_ausgeuebt`), und eine
+    // ausgeübte Wirkung läuft seitdem als Vorgang durch `applyEreignisWirkungen`
+    // — durch denselben Kanal wie ein Ereignis, nicht daneben.
+    // ⚠️ `fertig` heißt hier NICHT „balanciert", sondern „der Weg von der Wahl
+    // bis in die Wertung ist durchgängig". `greiftNicht.js` liest genau das.
+    fertig: true,
   },
 ];
 const ART_KEYS = new Set(RECHT_ARTEN.map((a) => a.key));

@@ -47,6 +47,7 @@ import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { sanitizeWettbewerbe, DEFAULT_WETTBEWERBE, wettbewerbAufschlag, maxWettbewerbAufschlag } from "./wettbewerbGewicht";
 import { sanitizeSperre, DEFAULT_SPERRE, schuetzenMalus } from "./favoritenSperre";
 import { sanitizeRechte, DEFAULT_RECHTE } from "./rechte";
+import { vorgaengeAusRechten } from "./rechteAusuebung";
 import { sanitizeTippfenster, DEFAULT_TIPPFENSTER } from "./tippfenster";
 import { sanitizeZeitachse, DEFAULT_ZEITACHSE } from "./zeitachse";
 // Spieltags-Identität liegt in einem eigenen, importfreien Modul — sonst gäbe
@@ -1710,7 +1711,10 @@ function hatVerlaufsWirkung(rules) {
 // `erspielteJoker` geben — sonst zöge dieselbe Regel im Joker-Vorrat andere
 // Spieltage als in der Wertung, und das wäre die doppelte Wahrheit in
 // Reinform. Deshalb hier als Parameter und nicht als Vorgabe.
-export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, einsaetze = [], regelnFuer = null, sammeln = null, rundenId = "") {
+// ⚠️ Der siebte Parameter ist ein OBJEKT und kein weiterer Platzhalter: bei
+// sechs Positionen hat schon der Aufruf mit `null, null, ""` niemandem mehr
+// gesagt, was gemeint ist. Alles Weitere kommt benannt dazu.
+export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, einsaetze = [], regelnFuer = null, sammeln = null, rundenId = "", { ausuebungen = [] } = {}) {
   const geordnet = spieltageChronologisch(entries);
 
   // Position eines Spieltags im Verlauf — der kumulative Schnitt läuft über
@@ -1746,13 +1750,29 @@ export function scoreLeaderboardHistory(entries = [], rules = DEFAULT_RULES, ein
   // ein No-op — `hatVerlaufsWirkung` fragt genau das, und `brauchtVerlauf`
   // benutzt dieselbe Funktion, damit der Endstand nicht an dieser Ebene
   // vorbeirechnet.
-  const mitWirkungen = hatVerlaufsWirkung(rules)
-    ? applyEreignisWirkungen(roh, wirkungsVorgaenge({
+  // 🔴 Das ausgeübte Recht der Art „Wirkung" ist KEINE Regeländerung, sondern
+  // ein Vorgang wie ein Ereignis — Andis eigene Einordnung: „ist quasi als
+  // Ereignis was alle trifft und nicht Fremdjoker". Es läuft deshalb durch
+  // DENSELBEN Kanal und wird nicht danebengerechnet.
+  // ⚠️ `geordnet` ist die Übersetzung, ohne die nichts ankommt: eine Ausübung
+  // trägt den RUNDEN-Spieltag, `applyEreignisWirkungen` sucht über
+  // `wettbewerb|matchday`.
+  const mitglieder = [...new Set(entries.map((e) => e.userId).filter((x) => x != null))];
+  const rechteVorgaenge = vorgaengeAusRechten({
+    ausuebungen, rules, mitglieder, reihenfolge: geordnet,
+    spieltagsPunkte: null,
+  });
+  const ereignisVorgaenge = hatVerlaufsWirkung(rules)
+    ? wirkungsVorgaenge({
         alleEintraege: entries, ereignisse: rules?.ereignisse,
         spieltagsPunkte: punkteJeSpieltag(roh),
-        mitglieder: [...new Set(entries.map((e) => e.userId).filter((x) => x != null))],
+        mitglieder,
         rundenId,
-      }))
+      })
+    : [];
+  const alleVorgaenge = [...ereignisVorgaenge, ...rechteVorgaenge];
+  const mitWirkungen = alleVorgaenge.length
+    ? applyEreignisWirkungen(roh, alleVorgaenge)
     : roh;
 
   // ⚠️ `punkteJeSpiel` NUR rechnen, wenn die Streicher überhaupt an sind — es
