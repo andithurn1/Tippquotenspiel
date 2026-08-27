@@ -90,7 +90,13 @@ Konto-Adresse.
 
 ---
 
-## 4 · 🔴 Was am geladenen Code in DEINER Runde gar nicht greifen wird
+## 4 · ✅ Was am geladenen Code in DEINER Runde gar nicht greifen wird · GEBAUT 27.08.2026
+
+> **Gebaut** als `src/lib/greiftNicht.js`, sichtbar unter *Regeländerungen*.
+> Acht Prüfungen, alle GEMESSEN an den echten Spielen der Runde statt
+> nachgebaut. Die Probe an der Schaufenster-Runde findet genau einen Fall —
+> und zwar denselben, den ein Mensch dort im August als Kommentar
+> hinschreiben musste. 21 Tests.
 
 **Die Lücke — und sie ist ein echter Fehler, kein Komfort.** Ein Code kann
 Einstellungen enthalten, die in der empfangenden Runde **wirkungslos** sind:

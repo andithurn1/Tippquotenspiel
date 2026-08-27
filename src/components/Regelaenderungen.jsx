@@ -16,6 +16,7 @@ import {
 } from "@/lib/regelAbstimmung";
 import { regelwerkAmSpieltag, beschreibeBeschluesse } from "@/lib/beschluss";
 import { grosseRundeHinweis } from "@/lib/fremdjoker";
+import { greiftNicht, beschreibeGreiftNicht } from "@/lib/greiftNicht";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
 // ── Schritt 4: Anträge stellen und darüber abstimmen ────────
@@ -148,6 +149,17 @@ export default function Regelaenderungen() {
   // Hinweis blitzt also nicht kurz auf und verschwindet wieder.
   const grosseRunde = grosseRundeHinweis(rules, leute.length || null);
 
+  // 🔴 Was in DIESER Runde gar nicht greift (Vorschlag Nr. 4 aus
+  // `design/baukasten-ideen.md`). Gemessen an den echten Spielen der Runde —
+  // deshalb steht der Bericht hier und nicht in der Spielerstellung: dort gibt
+  // es weder Spiele noch Mitspieler, und ohne beides kann er nichts sagen.
+  //
+  // ⚠️ `matches` ist im Ladezustand `null`; `greiftNicht` bekommt dann eine
+  // leere Liste und hält sich zurück, statt kurz etwas Falsches zu behaupten.
+  const wirkungslos = greiftNicht(rules, {
+    matches: matches ?? [], mitglieder: leute.length || null,
+  });
+
   return (
     <div style={{
       minHeight: "100vh", background: C.ink, color: C.text,
@@ -177,6 +189,32 @@ export default function Regelaenderungen() {
             padding: "10px 12px", marginBottom: 12, fontSize: "0.75rem",
             color: C.muted, lineHeight: 1.5,
           }}>💡 {grosseRunde.text}</div>
+        )}
+
+        {/* 🔴 „Der Admin stellt etwas ein, es passiert nichts, und niemand
+            sagt ihm warum" — genau der Eindruck, aus dem „die App ist kaputt"
+            wird. Der Bericht steht deshalb OBEN und nicht hinter einer Klappe.
+
+            ⚠️ Ein Befund heißt „wirkungslos", nicht „falsch": es kann gute
+            Gründe geben, eine Einstellung mitzuschleppen (die Runde wächst
+            noch, der Code soll unverändert weitergegeben werden). Deshalb ein
+            Bericht ohne Knopf — und jeder Punkt sagt, was ihn beheben würde. */}
+        {wirkungslos.length > 0 && (
+          <div style={{
+            background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
+            padding: "11px 13px", marginBottom: 12,
+          }}>
+            <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 6 }}>
+              {beschreibeGreiftNicht(wirkungslos)}
+            </div>
+            {wirkungslos.map((f) => (
+              <div key={f.key} style={{ fontSize: "0.75rem", lineHeight: 1.5, marginTop: 7 }}>
+                <span style={{ color: C.text, fontWeight: 600 }}>{f.titel}</span>
+                <span style={{ color: C.muted }}> — {f.text}</span>
+                <span style={{ display: "block", color: C.akzent, marginTop: 1 }}>{f.beheben}</span>
+              </div>
+            ))}
+          </div>
         )}
 
         {matches == null && <div style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted }}>lädt …</div>}
