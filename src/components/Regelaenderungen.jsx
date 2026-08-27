@@ -173,10 +173,10 @@ export default function Regelaenderungen() {
             Stelle, an der die Runde etwas dagegen tun kann. */}
         {grosseRunde && (
           <div style={{
-            background: `${C.coral}14`, border: `1px solid ${C.coral}55`, borderRadius: RUND.karte,
+            background: C.surface, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
             padding: "10px 12px", marginBottom: 12, fontSize: "0.75rem",
-            color: C.text, lineHeight: 1.5,
-          }}>⚠️ {grosseRunde.text}</div>
+            color: C.muted, lineHeight: 1.5,
+          }}>💡 {grosseRunde.text}</div>
         )}
 
         {matches == null && <div style={{ fontFamily: MONO, fontSize: "0.8125rem", color: C.muted }}>lädt …</div>}

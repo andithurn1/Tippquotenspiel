@@ -54,12 +54,46 @@ Das ist Andis Formulierung, und sie ist die Grenze. Konkret:
 EINLÄDT. Sachlich bleibt der Text, der jemandem etwas ERKLÄRT, das gerade
 schiefgeht.
 
+## 🔴 Ratschlag ist nicht Warnung — die Lehre vom 27.08.2026
+
+Andis Nachtrag zu seinem eigenen Beispielsatz: *„des mit den 15 ist ja nur ein
+ratschlag wird sonst schnell unübersichtlich"*.
+
+Der Text war inhaltlich richtig und trotzdem falsch: er stand in einer **roten
+Kiste mit ⚠️** und endete mit „rechnet mit Diskussionen". Aus einem Tipp wurde
+so eine Rüge.
+
+⚠️ **Ein Hinweis, der aussieht wie ein Fehler, wird wie ein Fehler behandelt** —
+und dann schaltet jemand etwas ab, das er eigentlich wollte. Genau das
+Gegenteil dessen, was der Satz erreichen soll.
+
+| | Ratschlag | Warnung |
+|---|---|---|
+| Kiste | ruhig, wie ein Hinweis | rot |
+| Zeichen | 💡 | ⚠️ |
+| Schluss | „Nur ein Ratschlag — läuft bei euch genauso." | was zu tun ist |
+| Gilt für | „macht mehr Spaß, wenn …" | „so wie eingestellt geht es nicht" |
+
+## 🔴 Und die zweite Lehre: die Begründung muss SEINE sein
+
+Zum selben Satz hatte ich erklärt, in großen Runden treffe man „einen Namen
+statt ein Gesicht". Das klang gut und war **erfunden**. Andis Grund ist ein
+ganz anderer und viel einfacher: **es wird unübersichtlich.** Niemand weiß
+mehr, wer wen gerade blockt.
+
+⚠️ **Beim Lockermachen entstehen solche Begründungen fast von selbst** — ein
+flotter Satz will einen flotten Grund, und wenn keiner dasteht, erfindet man
+einen. Das ist dieselbe Falle wie ein erfundener Regler, nur in Prosa.
+**Steht der Grund nicht da, wird nachgefragt statt ausgeschmückt.**
+
 ## Die Probe
 
 Zwei Fragen an jeden neuen Text, und beide müssen mit ja beantwortbar sein:
 
 1. **Würde ich das einem Kumpel so sagen?** (Wenn nein: zu steif.)
 2. **Würde ich mich fremdschämen, wenn er es vorliest?** (Wenn ja: zu bemüht.)
+3. **Steht jeder Grund im Text auch wirklich fest — oder klingt er nur gut?**
+   (Wenn nur gut: erfunden.)
 
 ## Bestand
 

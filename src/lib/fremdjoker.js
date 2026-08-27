@@ -812,19 +812,24 @@ export function konflikte(rules) {
 // ── Für wie viele Leute ist diese Familie gedacht? ──────────
 //
 // 🔴 Andi, 27.08.2026, in seinem eigenen Werbetext für die Fremdjoker:
-// *„Eher bei kleinen, privaten Runden unter 15 Teilnehmern anwenden!"*
+// *„Eher bei kleinen, privaten Runden unter 15 Teilnehmern anwenden!"* — und
+// einen Tag später die Präzisierung, die diesen Block umgeschrieben hat:
+// *„des mit den 15 ist ja nur ein ratschlag wird sonst schnell unübersichtlich
+// und ich meine in so community tippspielen oder so von einer großen
+// Arbeitsplatzstätte eher weniger"*.
 //
-// Das ist kein Balancing, sondern eine Aussage über die SOZIALE Lage: ein
-// Fremdjoker lebt davon, dass man den Getroffenen kennt und ihn danach
-// aufziehen kann. In einer Runde mit 40 Leuten trifft man einen Namen, kein
-// Gesicht — dann ist es kein Spaß mehr, sondern nur noch Punktverlust.
+// ⚠️ **Der Grund ist ÜBERSICHTLICHKEIT, nicht Fairness und nicht Sozialkunde.**
+// Die erste Fassung dieses Blocks erklärte, man treffe in großen Runden „einen
+// Namen statt ein Gesicht" — das klang gut und war erfunden. Bei vierzig
+// Leuten weiß schlicht niemand mehr, wer gerade wen blockt.
 //
-// ⚠️ Deshalb ein HINWEIS und kein Verbot (Baukasten-Grundsatz, CLAUDE.md):
-// will ein Admin es in einer großen Runde, soll er es haben.
+// ⚠️ Und es ist ein RATSCHLAG, kein Verbot und keine Warnung. Der Unterschied
+// steckt im Ton: `ton: "rat"`, kein Ausrufezeichen, keine rote Kiste. Ein
+// Hinweis, der aussieht wie ein Fehler, wird wie ein Fehler behandelt — und
+// dann schaltet jemand etwas ab, das er eigentlich wollte.
 //
-// ⚠️ Und deshalb `null`, solange die Zahl unbekannt ist. Beim ANLEGEN gibt es
-// noch keine Mitspieler — ein Hinweis, der dort schon meckert, meckert über
-// eine Runde, die es nicht gibt.
+// ⚠️ `null`, solange die Zahl unbekannt ist. Beim ANLEGEN gibt es noch keine
+// Mitspieler; ein Ratschlag zu einer Runde, die es nicht gibt, ist keiner.
 export const RUNDE_KLEIN_BIS = 15;
 
 export function grosseRundeHinweis(rules, anzahlMitglieder = null) {
@@ -833,11 +838,11 @@ export function grosseRundeHinweis(rules, anzahlMitglieder = null) {
   if (!Number.isFinite(n) || n <= 0) return null;
   if (n < RUNDE_KLEIN_BIS) return null;
   return {
-    ton: "warnung",
-    text: `Ihr seid ${n} — für Fremdjoker ist das viel. Sie leben davon, dass man den `
-      + "Getroffenen kennt und ihn danach aufziehen kann. Ab etwa 15 Leuten trifft man "
-      + "einen Namen statt ein Gesicht, und aus dem Spaß wird nacktes Punkteklauen. "
-      + "Läuft trotzdem — aber rechnet mit Diskussionen.",
+    ton: "rat",
+    text: `Ihr seid ${n} — Fremdjoker machen in kleineren Runden mehr Spaß. Ab etwa `
+      + `${RUNDE_KLEIN_BIS} Leuten wird schnell unübersichtlich, wer gerade wen erwischt hat. `
+      + "Im Community-Tippspiel oder in der großen Firmenrunde lässt man sie eher weg. "
+      + "Nur ein Ratschlag — läuft bei euch genauso.",
   };
 }
 

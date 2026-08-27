@@ -1050,9 +1050,20 @@ describe("Hinweis zur Rundengroesse", () => {
     expect(grosseRundeHinweis(an, 22).text).toContain("22");
   });
 
-  it("verbietet nichts -- der Ton ist Warnung, nicht Sperre", () => {
+  it("ist ein RATSCHLAG und keine Warnung -- der Ton entscheidet die Kiste", () => {
+    // 🔴 Andi, 27.08.2026: „des mit den 15 ist ja nur ein ratschlag". Ein
+    // Hinweis, der aussieht wie ein Fehler, wird wie ein Fehler behandelt --
+    // und dann schaltet jemand etwas ab, das er eigentlich wollte.
     const h = grosseRundeHinweis(an, 30);
-    expect(h.ton).toBe("warnung");
-    expect(h.text).toMatch(/Läuft trotzdem/);
+    expect(h.ton).toBe("rat");
+    expect(h.text).toMatch(/Nur ein Ratschlag/);
+  });
+
+  it("nennt Andis Grund -- Uebersichtlichkeit, nicht Fairness", () => {
+    // ⚠️ Die erste Fassung erklaerte, man treffe „einen Namen statt ein
+    // Gesicht". Klang gut, war erfunden. Sein Grund ist ein anderer.
+    const h = grosseRundeHinweis(an, 30);
+    expect(h.text).toMatch(/unübersichtlich/);
+    expect(h.text).toMatch(/Community-Tippspiel|Firmenrunde/);
   });
 });

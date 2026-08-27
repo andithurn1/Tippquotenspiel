@@ -190,8 +190,8 @@ export default function Fremdjoker({ rules, onChange, anzahlMitglieder = null })
       </p>
       <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
         Ein Griff für alle vier: Büro-Runde aus, Freundesrunde an. Am besten
-        in kleinen Runden unter {RUNDE_KLEIN_BIS} Leuten — da kennt man den,
-        den man gerade ärgert.
+        in Runden unter {RUNDE_KLEIN_BIS} Leuten — sonst verliert man schnell
+        den Überblick, wer gerade wen erwischt hat.
       </p>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -213,15 +213,18 @@ export default function Fremdjoker({ rules, onChange, anzahlMitglieder = null })
              `zweiPhasenHinweis` — dieselbe Aussage in der Komponente noch
              einmal zu formulieren hieße, dass sie beim nächsten Umbau
              auseinanderläuft. ── */}
-      {/* Die Runde ist zu groß dafür — steht ganz oben, weil es die Frage
-          betrifft, ob man die Familie überhaupt einschaltet. */}
+      {/* 🔴 Ein RATSCHLAG, und er sieht auch so aus (Andi, 27.08.2026: „des mit
+          den 15 ist ja nur ein ratschlag"). Erste Fassung war eine rote Kiste
+          mit ⚠️ — ein Hinweis, der aussieht wie ein Fehler, wird wie ein
+          Fehler behandelt, und dann schaltet jemand etwas ab, das er
+          eigentlich wollte. */}
       {an && grosseRunde && (
         <div style={{
           marginTop: 8, fontSize: "0.75rem", lineHeight: 1.5,
           padding: "9px 11px", borderRadius: RUND.karte,
-          color: C.text, background: `${C.coral}14`, border: `1px solid ${C.coral}55`,
+          color: C.muted, background: C.surface, border: `1px solid ${C.line}`,
         }}>
-          ⚠️ {grosseRunde.text}
+          💡 {grosseRunde.text}
         </div>
       )}
 
