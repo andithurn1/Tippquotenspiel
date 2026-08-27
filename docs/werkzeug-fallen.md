@@ -153,3 +153,22 @@ Frage des ORTES, nicht der Gültigkeit.
 - **Die App-ID `de.quotentippspiel.app` ist nach dem ersten Play-Store-Upload
   unveränderlich.** Eine andere ID ist dort eine andere App — mit null
   Installationen und null Bewertungen.
+
+## ⌨️ Shell & Commit-Nachrichten (27.08.2026)
+
+- 🔴 **Backticks in einer Commit-Nachricht verschwinden**, wenn die Nachricht
+  über `git commit -m "…"` in doppelten Anführungszeichen steht: die Shell hält
+  `` `listMatches()` `` für einen Befehl, führt ihn aus und setzt das (leere)
+  Ergebnis ein. In der Nachricht steht dann ein Loch — „weil ␣␣ alle Spalten
+  holt". **Passiert genau dort, wo man Code benennt, also ständig.**
+  **Behebung:** Nachricht immer über ein Heredoc geben:
+  `git commit -F - <<'EOF'` … `EOF`. Die Anführungszeichen um `EOF` sind der
+  Punkt — ohne sie expandiert die Shell trotzdem.
+  ⚠️ Aufgefallen erst NACH dem Push. Eine gepushte Nachricht nachträglich zu
+  korrigieren hieße `--force` auf `main`, und dort arbeitet die andere Session
+  mit. Eine schiefe Nachricht ist billiger als umgeschriebene Historie.
+- ⚠️ **Deutsche Anführungszeichen in JS-Strings** sind die häufigste
+  Ursache für „invalid JS syntax" in diesem Projekt — `„Text"` schließt den
+  String, weil das schließende Zeichen ein normales `"` ist. In Kommentaren
+  harmlos, in einem `it("…")`-Titel tödlich. **Im Zweifel `»…«` oder das
+  schließende `"` mitschreiben.**
