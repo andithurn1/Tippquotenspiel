@@ -239,7 +239,9 @@ export function schaufensterRegeln() {
     saisonform: { ...DEFAULT_RULES.saisonform, kurve: "endspurt", staerke: 2.5, nurGetippte: false },
 
     // ── Das große Spiel ──
-    bigGame: { ...DEFAULT_RULES.bigGame, enabled: true, aufschlag: 0.8 },
+    // ⚠️ `siegerWaehlt` ist hier AN, damit man den Schalter sieht — das Recht
+    // selbst kann ohne einen gespielten Spieltag noch niemand ausüben.
+    bigGame: { ...DEFAULT_RULES.bigGame, enabled: true, aufschlag: 0.8, siegerWaehlt: true },
 
     // ── Aufhol-Hilfe und Versäumnis ──
     aufholen: { ...DEFAULT_RULES.aufholen, enabled: true, betrifft: "unter-schnitt" },
@@ -420,6 +422,7 @@ export const SCHAU_AUSGENOMMEN = {
   "zeitachse.modus": "„woche“ ersetzt die ganze Anker-Einteilung, auf die hier Duell-Fenster, Joker-Fenster und Spieltagsgrenzen abgestimmt sind.",
   "zeitachse.tage": "Nur im Wochen-Modus wirksam — folgt der Zeile darüber.",
   "duell.kosten": "„stattJoker“ verbraucht einen Joker aus demselben Vorrat; dann setzt im Schaufenster niemand mehr einen Fremdjoker ein.",
+  "bigGame.festesSpiel": "Keine Einstellung, sondern das ERGEBNIS eines ausgeübten Rechts — eine konkrete matchId eines konkreten Spieltags. Ein Vorführwert wäre ein Spiel, das in der nächsten Saison nicht mehr existiert.",
   "duell.block.wirkung": "„gesperrt“ macht die drei Zahlen darunter (restanteil · nurGewinn · beute) wirkungslos — und drei Regler ohne Wirkung vorzuführen ist das Gegenteil des Zwecks. Das Schaufenster zeigt deshalb „punkte“ samt Zahlen; die Sperre selbst deckt `greift` ab.",
 };
 

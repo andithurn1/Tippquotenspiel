@@ -304,6 +304,87 @@ andere Mechanik (Kontingent statt Auswahl). Soll es sie zusätzlich geben?
 
 ---
 
+## 🔨 Rechte statt Punkte — „der Sieger bestimmt das nächste Topspiel"
+
+*Andi, 27.08.2026, wörtlich:* „admin einstellbar machen, dass halt sieger eines
+Speiltags oder eauch eines letzten Top matches (gibt hier verschiedene
+interessante Optionen) das nächste Toppspiel oder ereignis auswählen kann (bzw.
+Sowas wie Big game aber auch andere für die ganze Tipprunde festlegt) hast du
+vllt auch schon so"
+
+### ✅ Ja — die Idee stand schon im Katalog, seit dem 07.08.2026
+
+Und zwar wörtlich mit seinem Beispiel. `wirkung.js`, Wirkung **`rolle`**:
+
+> „Ein Recht statt Punkten — z. B. **diese Woche das Big Game bestimmen**."
+
+⛔ Sie war nur **nicht auswertbar** (`braucht: ["rollen"]`), genau wie die
+Sperre bis zum 26.08. Die halbe Strecke war ebenfalls schon da: die WEN-Achse
+kennt seit Langem **„Der Letzte Sieger — wer den vorigen Spieltag gewonnen
+hat"** (`auswahl.js`, Modus `titelverteidiger`). Es fehlte das Recht selbst.
+
+### ✅ Gebaut am 27.08.2026 — die Wertungs-Seite
+
+- `bigGame.festesSpiel` — die matchId, die für DIESE Runde als Topspiel gilt.
+- `bigGame.siegerWaehlt` — der Admin-Schalter, der das Recht überhaupt vergibt.
+- `bigGameAufschlag` schlägt in **beide** Richtungen um: das gewählte Spiel
+  bekommt den Aufschlag ohne Rücksicht auf die Schwelle, **und jedes andere
+  bekommt ihn nicht** — auch wenn es sie reißt.
+
+⚠️ **Die zweite Hälfte ist die wichtigere.** Ohne sie gäbe es an einem
+Spieltag zwei Topspiele, das gewählte und das gerechnete, und „du bestimmst das
+Topspiel" wäre eine Halbwahrheit.
+
+### 🔴 Der Befund, an dem die ganze Idee hängt
+
+**Das Big Game wird GLOBAL eingefroren, nicht je Runde.** Der Kopf von
+`spieltagOeffnen.js` sagt warum: dieselbe Begegnung gehört zu vielen Runden,
+also wird nur der **objektive Spannungswert** festgeschrieben — „ob er zählt,
+entscheidet jede Runde mit ihrer eigenen Schwelle".
+
+Eine handverlesene Wahl ist das genaue Gegenteil von objektiv. Stünde sie im
+Snapshot, bestimmte der Sieger EINER Runde das Topspiel für alle anderen mit.
+
+✅ **Deshalb liegt sie im REGELWERK** — dem einzigen Ort, den die Wertung
+ohnehin je Runde UND je Spieltag liest (`getRegelnFuer`). Das ist kein
+Umweg, sondern die einzige Stelle, an der so etwas überhaupt hingehört.
+
+### ⏳ Was noch fehlt: das AUSÜBEN
+
+Die Wertung kann es. Was fehlt, ist der Weg dahin:
+
+1. **Wer hält das Recht gerade?** Aus den Ereignis-Vorgängen ableitbar,
+   dieselbe Bauart wie `sperrEingriff.js`.
+2. **Wo wird die Wahl gespeichert?** Sie ist eine Regeländerung für EINEN
+   Spieltag — die Maschinerie dafür gibt es (`beschluss.js`), aber sie läuft
+   heute über Anträge und Abstimmung. Ein Recht ist kein Antrag.
+3. **Die Oberfläche für den Rechteinhaber.**
+
+### ❓ Rückfragen an Andi — hier bitte antworten
+
+**❓1 · Welche Rechte noch?** Du schreibst „gibt hier verschiedene interessante
+Optionen" und „auch andere für die ganze Runde festlegt". Das Topspiel ist
+gebaut. Was noch — der Joker-Spieltag? Welcher Torschütze gesperrt ist? Das
+Motto der Woche? ⚠️ Ich baue keins davon auf Verdacht: jedes Recht braucht
+eine Mechanik, in die es greifen kann, und drei erfundene Rechte sind drei
+Schalter ohne Wirkung.
+
+**❓2 · Was, wenn der Sieger nicht wählt?** Verfällt das Recht und die Rechnung
+entscheidet wie bisher — oder wandert es weiter an den Zweiten?
+
+**❓3 · Offen oder verdeckt?** Sieht die Runde beim Tippen, dass der Sieger
+gewählt hat (und was), oder erfährt sie es erst hinterher? ⚠️ Verdeckt wäre
+heikel: das Topspiel zählt mehr, und wer nicht weiß, welches es ist, tippt
+unter anderen Bedingungen.
+
+**❓4 · „Sieger des letzten Top-Matches"** — dein zweiter Vorschlag. Das ist
+etwas anderes als der Spieltagssieger: wer auf DEM EINEN Spiel die meisten
+Punkte geholt hat. Reizvoll, weil es die Bühne an das Spiel bindet statt an die
+Tabelle. Braucht aber eine eigene Auswahl-Art (`auswahl.js` kennt sie noch
+nicht). Soll ich?
+
+---
+
 ## 🆕 Joker-Ökonomie — neue Einfälle
 
 *(Platzhalter vom 20.08.2026: Andi hat angekündigt, dass ihm hier noch etwas

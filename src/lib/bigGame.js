@@ -40,7 +40,36 @@ export const BIGGAME_LIMITS = {
   minSpannung: { min: 0, max: 0.8, step: 0.05 }, // ab welchem Wert es eins gibt
 };
 
-export const DEFAULT_BIGGAME = { enabled: false, aufschlag: 0.5, minSpannung: 0.35 };
+// ── 🔴 Das Topspiel von HAND bestimmen (Andi, 27.08.2026) ──
+// Wörtlich: *„admin einstellbar machen, dass halt sieger eines Spieltags oder
+// auch eines letzten Top matches das nächste Topspiel oder ereignis auswählen
+// kann (bzw. sowas wie Big Game aber auch andere für die ganze Tipprunde
+// festlegt)"*.
+//
+// `festesSpiel` ist die matchId, die für DIESE RUNDE als Topspiel gilt —
+// unabhängig vom Spannungswert. `null` = wie bisher, die Rechnung entscheidet.
+//
+// ⚠️ **Warum das ins REGELWERK gehört und nicht in den Snapshot** — und das
+// ist der Befund, an dem die ganze Idee hängt: `matches` ist GLOBAL, dieselbe
+// Begegnung gehört zu vielen Runden. Der Kopf von `spieltagOeffnen.js` sagt
+// es ausdrücklich: eingefroren wird nur der objektive Spannungswert, „ob er
+// zählt, entscheidet jede Runde mit ihrer eigenen Schwelle".
+//
+// Eine handverlesene Wahl ist aber genau das Gegenteil von objektiv. Stünde
+// sie im Snapshot, bestimmte der Sieger EINER Runde das Topspiel für alle
+// anderen mit. Sie muss also rundenweit liegen — und das Regelwerk ist der
+// einzige Ort, den die Wertung ohnehin je Runde UND je Spieltag liest
+// (`getRegelnFuer`).
+export const DEFAULT_BIGGAME = {
+  enabled: false, aufschlag: 0.5, minSpannung: 0.35,
+  festesSpiel: null,
+  // Darf der Sieger des letzten Spieltags das nächste Topspiel bestimmen?
+  // ⚠️ Das ist der ADMIN-Schalter. WER genau der Sieger ist, entscheidet die
+  // WEN-Achse (`auswahl.js`) — dort gibt es `titelverteidiger` („wer den
+  // vorigen Spieltag gewonnen hat") längst. Hier steht nur, ob das Recht
+  // überhaupt vergeben wird.
+  siegerWaehlt: false,
+};
 
 export function sanitizeBigGame(partial = {}) {
   const p = partial && typeof partial === "object" ? partial : {};
@@ -48,10 +77,19 @@ export function sanitizeBigGame(partial = {}) {
     const n = Number(v);
     return Number.isFinite(n) ? +Math.min(max, Math.max(min, n)).toFixed(2) : fallback;
   };
+  // Eine leere Zeichenkette ist keine matchId — sie käme aus einem
+  // zurückgesetzten Eingabefeld und stünde danach als „gewählt" da.
+  const festesSpiel = typeof p.festesSpiel === "string" && p.festesSpiel.trim()
+    ? p.festesSpiel.trim() : null;
   return {
     enabled: p.enabled === true,
     aufschlag: clamp(p.aufschlag, BIGGAME_LIMITS.aufschlag, DEFAULT_BIGGAME.aufschlag),
     minSpannung: clamp(p.minSpannung, BIGGAME_LIMITS.minSpannung, DEFAULT_BIGGAME.minSpannung),
+    festesSpiel,
+    // ⚠️ Nur sinnvoll, solange es überhaupt ein Big Game gibt. Ein Recht, das
+    // nichts bestimmen kann, wäre ein Schalter, der nichts tut — dieselbe
+    // Klinke wie bei `sanitizeSperre`.
+    siegerWaehlt: p.siegerWaehlt === true && p.enabled === true,
   };
 }
 
@@ -189,6 +227,14 @@ export function begruendung(bewertung, matches = [], tabelle = []) {
 export function bigGameAufschlag(snap, rules) {
   const cfg = sanitizeBigGame(rules?.bigGame);
   if (!cfg.enabled) return 0;
+  // 🔴 Ein von Hand bestimmtes Topspiel schlägt die Rechnung — in BEIDE
+  // Richtungen. Das gewählte Spiel bekommt den Aufschlag ohne Rücksicht auf
+  // die Schwelle, und jedes ANDERE bekommt ihn nicht, auch wenn es sie reißt.
+  //
+  // ⚠️ Die zweite Hälfte ist die wichtigere: ohne sie gäbe es an einem
+  // Spieltag zwei Topspiele — das gewählte und das gerechnete. „Du bestimmst
+  // das Topspiel" wäre dann eine Halbwahrheit.
+  if (cfg.festesSpiel) return snap?.matchId === cfg.festesSpiel ? cfg.aufschlag : 0;
   const wert = snap?.bigGameWert;
   if (!Number.isFinite(wert) || wert < cfg.minSpannung) return 0;
   return cfg.aufschlag;

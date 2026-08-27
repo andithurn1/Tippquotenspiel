@@ -64,6 +64,11 @@ export const GEKOPPELT = {
     + "steht (`aktive.length > 0`). Absicht: „der Admin soll nichts "
     + "einschalten können, das folgenlos bleibt“ — ein Schalter, hinter dem "
     + "nichts liegt, sieht aus wie eine kaputte Mechanik.",
+  "bigGame.siegerWaehlt":
+    "Lässt sich nur einschalten, wenn das Big Game selbst an ist — ein Recht, "
+    + "das nichts zu bestimmen hat, wäre ein Schalter ohne Wirkung. Der "
+    + "Durchgang setzt jedes Feld EINZELN auf die Vorgabe-Regeln, und dort ist "
+    + "`bigGame.enabled` aus; im Schaufenster, wo es an ist, kommt der Wert an.",
   "wettbewerbe.enabled":
     "Dito: nur zusammen mit mindestens einem Aufschlag oder einer Phasen-Stufe. "
     + "Ein eingeschaltetes Wettbewerbs-Gewicht ohne Gewicht wäre eine Zeile in "

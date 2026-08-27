@@ -149,14 +149,21 @@ describe("Auswahl des Big Game", () => {
 describe("Regelwerk & Modifikator", () => {
   it("Unsinn wird auf die Standardwerte zurückgeholt", () => {
     expect(sanitizeBigGame({ enabled: "ja", aufschlag: 99, minSpannung: -5 }))
-      .toEqual({ enabled: false, aufschlag: BIGGAME_LIMITS.aufschlag.max, minSpannung: BIGGAME_LIMITS.minSpannung.min });
+      .toEqual({
+        enabled: false, aufschlag: BIGGAME_LIMITS.aufschlag.max,
+        minSpannung: BIGGAME_LIMITS.minSpannung.min,
+        festesSpiel: null, siegerWaehlt: false,
+      });
     expect(sanitizeBigGame()).toEqual(DEFAULT_BIGGAME);
   });
 
   it("das Regelwerk trägt es mit — also auch der Creator-Code", () => {
     expect(DEFAULT_RULES.bigGame).toEqual(DEFAULT_BIGGAME);
     const r = sanitizeRules({ ...DEFAULT_RULES, bigGame: { enabled: true, aufschlag: 0.4, minSpannung: 0.5 } });
-    expect(r.bigGame).toEqual({ enabled: true, aufschlag: 0.4, minSpannung: 0.5 });
+    expect(r.bigGame).toEqual({
+      enabled: true, aufschlag: 0.4, minSpannung: 0.5,
+      festesSpiel: null, siegerWaehlt: false,
+    });
     expect(sanitizeRules(r)).toEqual(r);
   });
 
@@ -205,5 +212,64 @@ describe("Regelwerk & Modifikator", () => {
     const ohne = sanitizeRules({ ...DEFAULT_RULES, modCap: 4 });
     const mit = sanitizeRules({ ...ohne, bigGame: { enabled: true, aufschlag: 0.5 } });
     expect(maxTotalModifier(mit)).toBeGreaterThan(maxTotalModifier(ohne));
+  });
+});
+
+// ============================================================
+//  DAS TOPSPIEL VON HAND (Andi, 27.08.2026)
+//
+//  „admin einstellbar machen, dass halt sieger eines Spieltags ... das
+//  naechste Topspiel oder ereignis auswaehlen kann"
+//
+//  🔴 Der Befund, an dem die ganze Idee haengt: `matches` ist GLOBAL. Eine
+//  handverlesene Wahl darf deshalb NICHT in den Snapshot -- sonst bestimmte
+//  der Sieger EINER Runde das Topspiel fuer alle anderen mit. Sie liegt im
+//  Regelwerk, dem einzigen Ort, den die Wertung je Runde UND je Spieltag
+//  ohnehin liest.
+// ============================================================
+describe("Topspiel von Hand bestimmt", () => {
+  const snap = (matchId, wert) => ({ matchId, bigGameWert: wert });
+  const mit = (teil) => sanitizeRules({
+    ...DEFAULT_RULES,
+    bigGame: { enabled: true, aufschlag: 0.5, minSpannung: 0.35, ...teil },
+  });
+
+  it("ohne Wahl bleibt alles wie bisher", () => {
+    const rules = mit({});
+    expect(bigGameAufschlag(snap("a", 0.9), rules)).toBe(0.5);
+    expect(bigGameAufschlag(snap("b", 0.1), rules)).toBe(0);
+  });
+
+  it("das gewaehlte Spiel bekommt den Aufschlag -- ohne Ruecksicht auf die Schwelle", () => {
+    const rules = mit({ festesSpiel: "b" });
+    expect(bigGameAufschlag(snap("b", 0.1), rules)).toBe(0.5);
+  });
+
+  it("und jedes ANDERE bekommt ihn NICHT -- auch wenn es die Schwelle reisst", () => {
+    // 🔴 Die wichtigere Haelfte: sonst gaebe es an einem Spieltag zwei
+    // Topspiele, das gewaehlte und das gerechnete. „Du bestimmst das
+    // Topspiel" waere dann eine Halbwahrheit.
+    const rules = mit({ festesSpiel: "b" });
+    expect(bigGameAufschlag(snap("a", 0.99), rules)).toBe(0);
+  });
+
+  it("eine leere Zeichenkette ist keine Wahl", () => {
+    // Sie kaeme aus einem zurueckgesetzten Eingabefeld und stuende danach als
+    // „gewaehlt" da -- dann haette der Spieltag gar kein Topspiel mehr.
+    expect(sanitizeBigGame({ enabled: true, festesSpiel: "   " }).festesSpiel).toBeNull();
+    expect(bigGameAufschlag(snap("a", 0.9), mit({ festesSpiel: "  " }))).toBe(0.5);
+  });
+
+  it("das Recht laesst sich nicht einschalten, wenn es nichts zu bestimmen gibt", () => {
+    // Dieselbe Sperrklinke wie bei `sanitizeSperre`: ein aktiver Schalter ohne
+    // Wirkung ist eine Einstellung, die luegt.
+    expect(sanitizeBigGame({ enabled: false, siegerWaehlt: true }).siegerWaehlt).toBe(false);
+    expect(sanitizeBigGame({ enabled: true, siegerWaehlt: true }).siegerWaehlt).toBe(true);
+  });
+
+  it("die Wahl ueberlebt den Creator-Code", () => {
+    const r = mit({ festesSpiel: "bl-2026-5-3", siegerWaehlt: true });
+    expect(sanitizeRules(r).bigGame.festesSpiel).toBe("bl-2026-5-3");
+    expect(sanitizeRules(r).bigGame.siegerWaehlt).toBe(true);
   });
 });

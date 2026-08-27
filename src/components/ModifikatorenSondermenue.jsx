@@ -174,6 +174,23 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
               onChange={(v) => setzeBigGame({ minSpannung: v })}
               fmt={(x) => x.toFixed(2)}
               hint="Reißt kein Spiel diese Schwelle, hat der Spieltag kein Big Game — besser als ein aufgeblasenes Mittelfeldduell." />
+
+            {/* 🔴 Andi, 27.08.2026: „admin einstellbar machen, dass halt sieger
+                eines Spieltags … das nächste Topspiel auswählen kann".
+                Der Schalter vergibt das RECHT; wer der Sieger ist, beantwortet
+                die WEN-Achse (`auswahl.js`, „Der Letzte Sieger"). */}
+            <Toggle label="Der Sieger des Spieltags bestimmt das nächste Topspiel"
+              on={bg.siegerWaehlt}
+              onChange={(on) => setzeBigGame({ siegerWaehlt: on })} />
+            <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "2px 0 0", lineHeight: 1.45 }}>
+              Wer einen Spieltag gewinnt, sucht das Topspiel für den nächsten aus —
+              statt der Rechnung. Seine Wahl gilt für die ganze Runde und schlägt
+              die Brisanz-Schwelle: <strong>das gewählte Spiel ist das Topspiel,
+              alle anderen sind es nicht.</strong>
+              {bg.festesSpiel
+                ? <> Gerade gesetzt: <strong style={{ color: C.akzent }}>{bg.festesSpiel}</strong>.</>
+                : " Solange niemand gewählt hat, entscheidet weiter die Rechnung."}
+            </p>
           </div>
         )}
       </GrosseZeile>
