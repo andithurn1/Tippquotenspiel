@@ -279,6 +279,10 @@ Dateien sind lang:
    nie, sie ändert nur ihren Stand. ⚠️ **Ein ✅ ohne Beleg (Datei, Zeile oder
    Messung) ist ein ⏳.**
 
+4b. `design/baukasten-ideen.md` — MEINE Vorschläge (27.08.2026), keine
+   Aufträge. Sieben Lücken im Baukasten, jede mit dem, was es schon gibt.
+   ⚠️ Nichts davon wird ohne Andis Ansage gebaut.
+
 5. `design/roadmap.md` — was fertig ist und was als Nächstes ansteht. Wer
    etwas fertig macht, trägt es dort SOFORT ein.
    ⚡ **Kurzweg, wenn du nur die aktuelle Aufgabe brauchst:** der oberste
