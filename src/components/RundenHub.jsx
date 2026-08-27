@@ -19,6 +19,9 @@ const CARDS = [
   { href: "/tippen", title: "Tipp abgeben", desc: "Spiel wählen, Ergebnis + Torschützen tippen.", tone: C.akzent },
   { href: "/fahrplan", title: "Saison-Fahrplan", desc: "Wo die Runde steht und was als Nächstes aufgeht.", tone: C.sky },
   { href: "/ranking", title: "Ranking", desc: "Wer in dieser Runde gerade vorne liegt.", tone: C.mint },
+  // 🔴 Andi, 27.08.2026: „hier sehen wir ne Übersicht über die Ereignisse und
+  // angewendeten Joker bzw. wann die auch geresettet werden."
+  { href: "/runde", title: "Was gerade läuft", desc: "Wer hält noch Joker, welche Ereignisse liefen — und wann was verfällt.", tone: C.gold ?? C.akzent },
   { href: "/historie", title: "Historie & Rekorde", desc: "Verlauf, Auszeichnungen und „was wäre mit anderem Preset gewesen?“.", tone: C.sky },
   { href: "/spott", title: "Spott verschicken", desc: "Spruch + Clip an einen Mitspieler — über deinen normalen Chat.", tone: C.coral },
 ];

@@ -172,3 +172,32 @@ Frage des ORTES, nicht der Gültigkeit.
   String, weil das schließende Zeichen ein normales `"` ist. In Kommentaren
   harmlos, in einem `it("…")`-Titel tödlich. **Im Zweifel `»…«` oder das
   schließende `"` mitschreiben.**
+
+## 🔢 `Number(null)` ist 0 — zweimal an einem Tag (27.08.2026)
+
+```js
+Number(null)            // 0
+Number.isFinite(null)   // false  ← das täuscht
+Number.isFinite(Number(null))   // TRUE
+```
+
+🔴 **Damit wird aus „unbekannt" stillschweigend „null Stück".** Beide Fälle
+desselben Tages:
+
+| Wo | Was daraus wurde |
+|---|---|
+| `greiftNicht.js` | „Mitgliederzahl unbekannt" → **„ihr seid 0"**, samt Meldung über eine Runde, die es noch gar nicht gibt |
+| `ablauf.js` | „kein Treffer-Spieltag" → **Sperrfrist endet an Spieltag 3**, obwohl es gar keine gibt |
+
+⚠️ **Die Prüfung `Number.isFinite(Number(x))` ist genau die falsche**, weil sie
+so aussieht, als prüfe sie beides. Richtig ist, `null`/`undefined`/`""` VORHER
+abzufangen:
+
+```js
+const n = (x === null || x === undefined || x === "") ? NaN : Number(x);
+if (!Number.isFinite(n)) return null;
+```
+
+🔴 **Beide Male hat ein Test es sofort gefunden** — und beide Male nur, weil
+der Test den Fall „unbekannt" ausdrücklich hatte. Ohne ihn wäre eine Zahl
+dagestanden, und eine Zahl glaubt man.

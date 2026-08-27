@@ -14,7 +14,7 @@ import { fremdEinsaetze } from "@/lib/fremdjoker";
 import { verlaufPositionen } from "@/lib/spieltag";
 import { computeRecords, matchdayDeltas } from "@/lib/records";
 import { PRESETS } from "@/lib/presets";
-import { EBENEN, ohneEbenen, beschreibeAnsicht } from "@/lib/vergleichsansicht";
+import { EBENEN, ohneEbenen, beschreibeAnsicht, unterschiedeZumStand } from "@/lib/vergleichsansicht";
 import { C, MONO, SERIES, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
@@ -171,53 +171,71 @@ export default function Historie() {
 
   // Alles unter dem gewählten Regelwerk neu berechnen — die Runde selbst bleibt
   // unberührt, das hier ist reine „was wäre gewesen"-Ansicht.
-  const { history, records } = useMemo(() => {
-    if (!entries?.length) return { history: [], records: [] };
-    // ⚠️ Erst das gewählte Regelwerk, DANN die Ebenen abschalten — nicht
-    // umgekehrt. Ein Preset bringt seine eigenen Joker mit; würde man die
-    // Ebenen vorher abschalten, kämen sie mit dem Preset wieder herein.
-    const rules = ohneEbenen(gewaehlt.rules, ausEbenen);
+  const { history, records, vergleich } = useMemo(() => {
+    if (!entries?.length) return { history: [], records: [], vergleich: null };
     // ⚠️ Die Beschlüsse gelten NUR für die eigene Runde. Wer ein fremdes Preset
     // durchrechnet („was wäre gewesen"), fragt nach einer anderen Welt — dort
     // gab es diese Beschlüsse nie, und sie mitzurechnen wäre eine Mischung aus
     // zwei Regelwerken.
     const lage = gewaehlt.key === "aktuell" ? regelnFuer : null;
-    // 🔴 Ersatz-Tipps gehören in DIESELBE Eintragsliste wie echte Tipps —
-    // genauso, wie es der Store für das Ranking macht. Sie werden hier unter
-    // dem GEWÄHLTEN Regelwerk neu gebildet und nicht vom Store übernommen:
-    // `versaeumnis` ist Teil des Regelwerks, also muss ein „was wäre mit
-    // Preset X gewesen" auch seine Kulanz durchrechnen. Übernähme man die
-    // Ersatz-Tipps der echten Runde, mischte man zwei Regelwerke.
     const nameOf = (id) => mitglieder.find((m) => m.user_id === id)?.name ?? id;
-    const alle = [
-      ...entries,
-      ...ersatzEintraege({
-        matches: rundenSpiele, tips: rohTipps, rules,
-        userIds: mitglieder.map((m) => m.user_id), nameOf,
-      }),
-    ];
-    // `entries` kommt aus `getRoundEntries` und trägt `matchId` bereits
-    // (siehe store.mock.js/store.supabase.js) — keine separate Anreicherung
-    // nötig wie bei den anderen vier Aufrufern von `scoreLeaderboardHistory`.
-    // ⚠️ Die Duell-Einsätze kommen weiter aus den ECHTEN Tipps: ein Ersatz-Tipp
-    // trägt keinen Einsatz, den niemand gesetzt hat.
-    // ⚠️ MIT der Position im Verlauf, und zwar aus `alle` — derselben Liste,
-    // aus der `scoreLeaderboardHistory` seinen Verlauf baut. Ohne sie landete
-    // ein Einsatz in einer Runde über mehrere Wettbewerbe auf dem falschen
-    // Spieltag, und die Kurve hier zeigte etwas anderes als das Ranking
-    // (Befund vom 23.08.2026, siehe `verlaufPositionen` in spieltag.js).
-    const history = scoreLeaderboardHistory(
-      alle, rules,
-      fremdEinsaetze(entries, rules, { rundenSpieltag: verlaufPositionen(alle) }),
-      lage, null, roundId,
-    );
-    const scored = entries.filter((e) => e.result).map((e) => {
-      // Auch die Rekorde unter den Regeln des jeweiligen Spieltags — sonst
-      // steht in der Bestenliste ein Wert, den es nie gab.
-      const s = scoreTip(e.tip, e.result, e.snapshot, (lage ? lage(e) : null) || rules);
-      return { userId: e.userId, name: e.name, matchday: e.matchday, total: s.total, ebene: s.ebene };
-    });
-    return { history, records: computeRecords(history, scored) };
+
+    // 🔴 EIN Durchgang als Funktion, weil es zwei davon braucht: den
+    // gezeigten (ohne die abgewählten Ebenen) und den Vergleichsstand
+    // (dasselbe Regelwerk, alle Ebenen an). Zweimal derselbe Code wäre
+    // genau die zweite Wahrheit, vor der die Runden-Schicht warnt — und
+    // hier besonders teuer, weil die Ersatz-Tipps am Regelwerk hängen.
+    const lauf = (rules) => {
+      // 🔴 Ersatz-Tipps gehören in DIESELBE Eintragsliste wie echte Tipps —
+      // genauso, wie es der Store für das Ranking macht. Sie werden hier unter
+      // dem GEWÄHLTEN Regelwerk neu gebildet und nicht vom Store übernommen:
+      // `versaeumnis` ist Teil des Regelwerks, also muss ein „was wäre mit
+      // Preset X gewesen" auch seine Kulanz durchrechnen. Übernähme man die
+      // Ersatz-Tipps der echten Runde, mischte man zwei Regelwerke.
+      const alle = [
+        ...entries,
+        ...ersatzEintraege({
+          matches: rundenSpiele, tips: rohTipps, rules,
+          userIds: mitglieder.map((m) => m.user_id), nameOf,
+        }),
+      ];
+      // `entries` kommt aus `getRoundEntries` und trägt `matchId` bereits
+      // (siehe store.mock.js/store.supabase.js) — keine separate Anreicherung
+      // nötig wie bei den anderen vier Aufrufern von `scoreLeaderboardHistory`.
+      // ⚠️ Die Duell-Einsätze kommen weiter aus den ECHTEN Tipps: ein Ersatz-Tipp
+      // trägt keinen Einsatz, den niemand gesetzt hat.
+      // ⚠️ MIT der Position im Verlauf, und zwar aus `alle` — derselben Liste,
+      // aus der `scoreLeaderboardHistory` seinen Verlauf baut. Ohne sie landete
+      // ein Einsatz in einer Runde über mehrere Wettbewerbe auf dem falschen
+      // Spieltag, und die Kurve hier zeigte etwas anderes als das Ranking
+      // (Befund vom 23.08.2026, siehe `verlaufPositionen` in spieltag.js).
+      const history = scoreLeaderboardHistory(
+        alle, rules,
+        fremdEinsaetze(entries, rules, { rundenSpieltag: verlaufPositionen(alle) }),
+        lage, null, roundId,
+      );
+      const scored = entries.filter((e) => e.result).map((e) => {
+        // Auch die Rekorde unter den Regeln des jeweiligen Spieltags — sonst
+        // steht in der Bestenliste ein Wert, den es nie gab.
+        const s = scoreTip(e.tip, e.result, e.snapshot, (lage ? lage(e) : null) || rules);
+        return { userId: e.userId, name: e.name, matchday: e.matchday, total: s.total, ebene: s.ebene };
+      });
+      return { history, scored };
+    };
+
+    // ⚠️ Erst das gewählte Regelwerk, DANN die Ebenen abschalten — nicht
+    // umgekehrt. Ein Preset bringt seine eigenen Joker mit; würde man die
+    // Ebenen vorher abschalten, kämen sie mit dem Preset wieder herein.
+    const { history, scored } = lauf(ohneEbenen(gewaehlt.rules, ausEbenen));
+    // ⚠️ Der Vergleich nur, wenn wirklich eine Ebene abgeschaltet ist — er
+    // kostet einen zweiten vollen Bewertungsdurchgang. Ohne abgewählte Ebene
+    // wäre er ohnehin eine Spalte aus Nullen.
+    const vergleich = ausEbenen.length
+      ? unterschiedeZumStand(
+          lauf(gewaehlt.rules).history.at(-1)?.board ?? [],
+          history.at(-1)?.board ?? [])
+      : null;
+    return { history, records: computeRecords(history, scored), vergleich };
   }, [entries, gewaehlt, ausEbenen, regelnFuer, rundenSpiele, rohTipps, mitglieder]);
 
   const series = useMemo(() => buildSeries(history, kriterium), [history, kriterium]);
@@ -311,8 +329,47 @@ export default function Historie() {
             </div>
             <p style={{
               fontSize: "0.6875rem", color: ausEbenen.length ? C.coral : C.muted,
-              margin: "0 0 16px", lineHeight: 1.4,
+              margin: "0 0 10px", lineHeight: 1.4,
             }}>{beschreibeAnsicht(ausEbenen)}</p>
+
+            {/* 🔴 Die Zahl, wegen der man die Ansicht überhaupt umschaltet.
+                Zwei Tabellen nebeneinander liest niemand — interessant ist die
+                eine Frage: wie viel hat das Drumherum bei MIR bewegt?
+                ⚠️ Positiv heißt: im echten Stand steht er BESSER da, das
+                Drumherum hat ihm geholfen. */}
+            {vergleich?.length > 0 && (
+              <div style={{
+                background: C.ink2, border: `1px solid ${C.line}`,
+                borderRadius: RUND.karte, padding: "10px 12px", marginBottom: 16,
+              }}>
+                <div style={{
+                  fontSize: "0.6875rem", color: C.muted, textTransform: "uppercase",
+                  letterSpacing: 1, marginBottom: 6,
+                }}>Was das Drumherum bewegt hat</div>
+                {vergleich.map((v) => {
+                  const p = v.plaetze ?? 0;
+                  const pkt = v.punkteEcht == null ? null : Math.round(v.punkteEcht - v.punkteOhne);
+                  const ton = p > 0 ? C.mint : p < 0 ? C.coral : C.muted;
+                  return (
+                    <div key={v.userId} style={{
+                      display: "flex", justifyContent: "space-between", gap: 10,
+                      alignItems: "baseline", padding: "4px 0",
+                      borderTop: `1px solid ${C.line}`,
+                    }}>
+                      <span style={{
+                        fontSize: "0.8125rem",
+                        fontWeight: v.userId === meId ? 700 : 400,
+                        color: v.userId === meId ? C.akzent : C.text,
+                      }}>{v.name ?? v.userId}</span>
+                      <span style={{ fontSize: "0.75rem", fontFamily: MONO, color: ton }}>
+                        {p === 0 ? "gleicher Platz" : `${p > 0 ? "+" : ""}${p} ${Math.abs(p) === 1 ? "Platz" : "Plätze"}`}
+                        {pkt == null ? "" : `  ·  ${pkt > 0 ? "+" : ""}${pkt} Pkt`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Kriterien-Umschalter */}
             <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
