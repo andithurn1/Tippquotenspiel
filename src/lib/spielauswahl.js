@@ -306,6 +306,52 @@ export function filterSpiele(matches = [], spiele = DEFAULT_SPIELE) {
   return matches.filter((m) => passtSpiel(m, spiele));
 }
 
+// ── 🔴 Die GROBE Vorauswahl — für die Datenbank, nicht für die Wertung ──
+//
+// **Anlass, gemessen am 26.08.2026:** der Spielplan-Katalog ist 3,15 MB
+// (1942 Spiele à ~1,7 KB). Jeder Screen holt ihn ganz und wirft danach im
+// Browser 84 % davon weg — eine Bundesliga-Runde hat 306 Spiele.
+//
+// ⚠️ **Das hier ist ausdrücklich KEIN zweiter Filter.** Es ist eine
+// Vorauswahl, die IMMER eine Obermenge dessen liefert, was `passtSpiel`
+// durchlässt. Die eigentliche Auswahl trifft weiterhin `filterSpiele`, und
+// zwar unverändert — sonst gäbe es zwei Antworten auf „gehört dieses Spiel
+// zur Runde?", und genau daran hängt in diesem Projekt die Runden-Schicht.
+//
+// Bewiesen wird das nicht behauptet, sondern gemessen: `spielauswahl.test.js`
+// lässt über den ECHTEN Katalog jede Regelvariante durchlaufen und vergleicht
+// `filterSpiele(alle)` gegen `filterSpiele(grob gefiltert)`. Beide Listen
+// müssen identisch sein.
+//
+// ── Warum NUR die Wettbewerbe ──
+// Sie sind die einzige Dimension, die `auswahlFuer` ausdrücklich NICHT je Liga
+// überschreiben lässt („Runden-weit und NICHT überschreibbar"). Alles andere —
+// Spieltags-Bereich, Phasen, Zonen, Vereinsliste — kann je Wettbewerb
+// abweichen; eine Vorauswahl darüber wäre eine Nachbildung von `passtSpiel`
+// und damit die zweite Wahrheit.
+//
+// 🔴 `null` heißt „keine Einschränkung, hol alles". Das ist wichtiger, als es
+// aussieht: eine leere LISTE würde bedeuten „hol nichts".
+export function grobeVorauswahl(spiele = DEFAULT_SPIELE) {
+  const s = sanitizeSpiele(spiele);
+  if (!s.wettbewerbe.length) return { wettbewerbe: null };
+  return { wettbewerbe: [...s.wettbewerbe] };
+}
+
+// Passt dieses Spiel durch die grobe Vorauswahl?
+//
+// ⚠️ Ein Spiel OHNE Wettbewerb kommt durch — wörtlich dieselbe Regel wie in
+// `passtSpiel` („Ein Spiel ohne die Felder gilt als zugehörig, sonst fielen
+// Altdaten still aus der Runde"). Wer das vergisst, baut einen Filter, der in
+// der Datenbank strenger ist als im Browser — und dann fehlen Spiele, die
+// niemand vermisst, weil sie nie ankommen.
+export function passtGrob(match, grob) {
+  if (!grob?.wettbewerbe) return true;
+  const w = match?.wettbewerb;
+  if (!w) return true;
+  return grob.wettbewerbe.includes(w);
+}
+
 // Was die Auswahl konkret bedeutet — Zahlen statt Behauptungen. Ohne diese
 // Rückmeldung stellt man „nur die Top 6" ein und merkt erst in Woche drei,
 // dass pro Spieltag nur ein Spiel übrig bleibt.

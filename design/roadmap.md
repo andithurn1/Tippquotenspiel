@@ -147,27 +147,65 @@ Gegen einen **Produktions-Build** gemessen, also kein StrictMode-Artefakt:
 
 Der Spielplan-Katalog wurde dabei **dreimal** geholt, jetzt einmal.
 
-### 🔴 Was OFFEN ist — und es ist der größte Posten
+### ✅ Erledigt am 27.08.2026: weniger ZEILEN statt weniger Felder
 
-**Der Katalog ist 3,15 MB roh** (1942 Spiele à ~1,7 KB, praktisch vollständig
-der Quoten-Schnappschuss). Er wird jetzt nur noch EINMAL geholt statt dreimal —
-aber einmal 3,15 MB ist auf einem Handy im Mobilfunknetz immer noch der
-Unterschied zwischen „geht auf" und „hakt".
+**Gemessen am echten Spielplan:**
+
+| Runde | Spiele | Übertragung | gespart |
+|---|---|---|---|
+| alles (bisher) | 1942 | **3,15 MB** | — |
+| nur Bundesliga | 306 | **0,49 MB** | **84 %** |
+| Premier League | 380 | 0,62 MB | 80 % |
+| BL + Champions League | 465 | 0,74 MB | 76 % |
+| BL + 2. Liga | 612 | 0,99 MB | 69 % |
+
+🔴 **Der Weg dorthin war die Frage, WELCHE Einschränkung sicher ist.** Die
+naheliegende — Spalten weglassen, vor allem den fetten `snapshot` — ist es
+NICHT: sieben Stellen lesen ihn aus Listen (`saisonwetten.js` braucht die
+Kader, `ausloeser.js` die Sieger-Quote, `Spielwahl`, `Historie`,
+`LigaSonderregeln`, `SaisonTipps`, `autoTip`). Ein fehlendes Feld stürzt nicht
+ab, es zeigt still etwas Falsches.
+
+✅ **Sicher ist dagegen der WETTBEWERB.** `auswahlFuer` lässt ihn als einzige
+Dimension ausdrücklich NICHT je Liga überschreiben — er ist rundenweit. Damit
+gilt: was der grobe Filter durchlässt, ist immer eine Obermenge dessen, was
+`passtSpiel` behält.
+
+⚠️ **Und das wird nicht behauptet, sondern bewiesen:** `spielauswahl.test.js`
+lässt acht Regelvarianten über den echten 1942-Spiele-Katalog laufen und
+vergleicht `filterSpiele(alle)` gegen `filterSpiele(grob vorgefiltert)` —
+Listen müssen identisch sein. Darunter die Fälle, die man sonst übersieht:
+Teams über Ligen hinweg, je Wettbewerb ein anderes Spieltagsfenster, feste
+Match-Liste.
+
+🔴 **Die Falle, die dabei fast zugeschlagen hätte:** ein Spiel ohne
+Wettbewerb. `passtSpiel` lässt es durch („sonst fielen Altdaten still aus der
+Runde"), ein `.in("wettbewerb", …)` in der Datenbank hätte es geschluckt — der
+Filter wäre auf dem Server strenger als im Browser gewesen. Die Abfrage lautet
+deshalb `or(wettbewerb.is.null, wettbewerb.in.(…))`.
+
+### 🔴 Was WEITERHIN offen ist
+
+**Auch 0,49 MB sind noch viel für einen Screen** — und der Grund steckt in
+der Zusammensetzung: gemessen an einem Schnappschuss sind **43 % `players`**
+(die Kader mit ihren Torschützenquoten) und **14 % `correctScore`** (das
+Ergebnis-Raster). Beides braucht in voller Länge nur die Tippabgabe, für EIN
+Spiel.
 
 ⚠️ **Der Grund ist eine Bequemlichkeit, keine Notwendigkeit:** `listMatches()`
 holt ALLE Spalten ALLER Spiele, obwohl fast jeder Screen nur `id`, `kickoff`,
 `home`, `away`, `matchday` und `wettbewerb` braucht. Der fette Teil ist
 `snapshot` — und den braucht nur die Tippabgabe, für EIN Spiel.
 
-**Drei Schritte, in dieser Reihenfolge:**
+**Der nächste Schritt, und er braucht mehr Sorgfalt als der erste:** die
+sieben Leser des Schnappschusses einzeln durchgehen und fragen, WELCHEN Teil
+sie brauchen. `ausloeser.js` will `winner`, `saisonwetten.js` will die
+Zuordnung Spieler → Verein. Beides sind Bruchteile von `players`. Wenn jeder
+Leser seinen Teil benennt, lässt sich die Liste auf genau diese Felder
+schneiden.
 
-1. `listMatches()` ohne `snapshot` (`.select("id,kickoff,home,away,…")`) —
-   der Schnappschuss kommt über `getMatch(id)` nach, wo er gebraucht wird.
-   ⚠️ Vorher prüfen, wer `snapshot` aus der Liste liest; `bigGame` und die
-   Zeitachse sind Kandidaten.
-2. Serverseitig auf die Runde filtern statt im Browser
-   (`listRoundMatches` gibt es schon — es holt aber den vollen Katalog).
-3. Erst dann über Zwischenspeicher nachdenken.
+⛔ **Nicht vorher.** Ein weggelassenes Feld stürzt nicht ab — es zeigt still
+etwas Falsches, und das fällt frühestens Wochen später auf.
 
 ### ⚠️ Die Bundle-Größe: groß, aber nicht das Problem
 

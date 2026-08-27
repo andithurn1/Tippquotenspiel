@@ -19,6 +19,7 @@ import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
 import { scoreSaison } from "./saisonwetten";
 import { rundenSpiele as rundenSpieleVon, rundenAuswahl } from "./roundStatus";
+import { grobeVorauswahl } from "./spielauswahl";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
@@ -96,8 +97,12 @@ export function createSupabaseStore() {
   // im Modul: `createSupabaseStore()` kann mehrfach aufgerufen werden (Tests,
   // SSR), und ein modulweiter Cache überlebte den Store, zu dem er gehört.
   const KATALOG_FRIST_MS = 60_000;
-  let katalog = null;      // das laufende bzw. zuletzt gelieferte Versprechen
-  let katalogZeit = 0;
+  // 🔴 Seit dem 27.08.2026 je VORAUSWAHL ein eigener Eintrag, nicht mehr eine
+  // einzige Variable: eine Bundesliga-Runde holt 306 Spiele statt 1942, und
+  // zwei Runden mit verschiedenen Wettbewerben dürfen sich ihre Listen nicht
+  // gegenseitig überschreiben. Schlüssel ist die Wettbewerbs-Liste, sortiert —
+  // sonst gälten `["bl","pl"]` und `["pl","bl"]` als zwei verschiedene Fragen.
+  const kataloge = new Map();   // Schlüssel → { versprechen, zeit }
 
   // ── Gleichzeitige, gleiche Anfragen zusammenlegen ───────────
   // 🔴 Gemessen am 26.08.2026: der Hub fragte VIERMAL dieselbe Runde ab, das
@@ -120,8 +125,13 @@ export function createSupabaseStore() {
 
   return {
     // 🔴 Die Spiele DIESER RUNDE — Begründung im Mock-Store.
+    // ⚠️ ZWEI Schritte statt einem `Promise.all`, und das ist Absicht: die
+    // grobe Vorauswahl steht erst fest, wenn das Regelwerk der Runde da ist.
+    // Der Katalog-Abruf wartet dadurch auf die Runde — das kostet einen
+    // Rundlauf und spart bei einer Liga-Runde 84 % der Übertragung.
     async listRoundMatches(roundId) {
-      const [round, matches] = await Promise.all([this.getRound(roundId), this.listMatches()]);
+      const round = await this.getRound(roundId);
+      const matches = await this.listMatches(grobeVorauswahl(round?.rules?.spiele));
       return rundenSpieleVon(matches, round);
     },
 
@@ -153,21 +163,36 @@ export function createSupabaseStore() {
     // ⚠️ Eine KOPIE der Liste zurückgeben: der Cache hält dasselbe Array, und
     // ein Aufrufer, der es sortiert, sortierte sonst allen anderen den Katalog
     // um. 1942 Zeiger zu kopieren kostet nichts gegen 3 MB Übertragung.
-    async listMatches() {
+    // `grob` = das Ergebnis von `grobeVorauswahl(rules.spiele)` oder `null`
+    // für „alles". ⚠️ Es ist KEIN Filter im Sinne der Wertung: die eigentliche
+    // Auswahl trifft weiterhin `rundenSpieleVon`. Warum das eine Obermenge
+    // bleibt und wie es bewiesen wird, steht bei `grobeVorauswahl`.
+    async listMatches(grob = null) {
+      const liste = grob?.wettbewerbe ?? null;
+      const schluessel = liste ? [...liste].sort().join(",") : "*";
       const jetzt = Date.now();
-      if (katalog && jetzt - katalogZeit < KATALOG_FRIST_MS) return [...(await katalog)];
-      katalogZeit = jetzt;
-      katalog = (async () => {
-        const data = orThrow(await sb.from("matches").select("*").order("kickoff"));
+      const da = kataloge.get(schluessel);
+      if (da && jetzt - da.zeit < KATALOG_FRIST_MS) return [...(await da.versprechen)];
+
+      const versprechen = (async () => {
+        let q = sb.from("matches").select("*");
+        // 🔴 `or` und nicht `in`: ein Spiel OHNE Wettbewerb muss durchkommen,
+        // genau wie in `passtSpiel` („sonst fielen Altdaten still aus der
+        // Runde"). Ein reines `in` wäre in der Datenbank strenger als im
+        // Browser — und dann fehlten Spiele, die niemand vermisst, weil sie
+        // nie ankommen.
+        if (liste?.length) q = q.or(`wettbewerb.is.null,wettbewerb.in.(${liste.join(",")})`);
+        const data = orThrow(await q.order("kickoff"));
         return data.map(mapMatch);
       })();
+      kataloge.set(schluessel, { versprechen, zeit: jetzt });
       try {
-        return [...(await katalog)];
+        return [...(await versprechen)];
       } catch (e) {
         // Ein gescheiterter Versuch darf sich nicht festsetzen — sonst
         // scheitert jeder weitere Aufruf eine Minute lang mit, ohne es je
         // wieder zu versuchen.
-        katalog = null;
+        kataloge.delete(schluessel);
         throw e;
       }
     },
@@ -196,7 +221,7 @@ export function createSupabaseStore() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || "Spieltag konnte nicht geoeffnet werden.");
-      katalog = null;          // siehe Kommentar über dieser Methode
+      kataloge.clear();        // siehe Kommentar über dieser Methode
       return json;
     },
 

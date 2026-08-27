@@ -32,6 +32,7 @@ const NUR_MOCK = {
 };
 
 const quelltext = readFileSync("src/lib/store.supabase.js", "utf8");
+const mockQuelle = readFileSync("src/lib/store.mock.js", "utf8");
 // Methoden des zurückgegebenen Objektliterals: „  name(" bzw. „  async name(".
 const supabaseMethoden = new Set(
   [...quelltext.matchAll(/^\s{2,4}(?:async\s+)?([a-zA-Z_$][\w$]*)\s*\(/gm)].map((m) => m[1]),
@@ -208,26 +209,47 @@ describe("Gleichzeitige Abfragen werden zusammengelegt", () => {
   // Reine Lese-Methoden, die im Messlauf mehrfach parallel aufliefen.
   const ZUSAMMENGELEGT = ["getRound", "listTips", "listMembers", "listVotes", "listSeasonTips"];
 
+  // ⚠️ Seit dem 27.08.2026 heißt der Zwischenspeicher `kataloge` (Mehrzahl):
+  // je grober Vorauswahl ein Eintrag, damit eine Bundesliga-Runde 306 statt
+  // 1942 Spiele holt.
   it("der Spielplan-Katalog wird nicht bei jedem Aufruf neu geholt", () => {
-    const abschnitt = quelltext.slice(quelltext.indexOf("async listMatches()"));
+    const abschnitt = quelltext.slice(quelltext.indexOf("async listMatches("));
     expect(
-      abschnitt.slice(0, 900),
+      abschnitt.slice(0, 1200),
       "`listMatches()` holt den Katalog wieder ungebremst. Das sind 3,15 MB je "
       + "Aufruf, und der Hub rief ihn dreimal."
-    ).toContain("katalog");
+    ).toContain("kataloge.get(");
   });
 
   it("ein gescheiterter Katalog-Versuch setzt sich nicht fest", () => {
-    // Ohne das `katalog = null` im Fehlerfall scheitert eine Minute lang JEDER
-    // weitere Aufruf mit, ohne es je wieder zu versuchen.
-    const abschnitt = quelltext.slice(quelltext.indexOf("async listMatches()"), quelltext.indexOf("async openMatchday"));
-    expect(abschnitt).toMatch(/catch[\s\S]*katalog = null/);
+    // Ohne das Löschen im Fehlerfall scheitert eine Minute lang JEDER weitere
+    // Aufruf mit, ohne es je wieder zu versuchen.
+    const abschnitt = quelltext.slice(quelltext.indexOf("async listMatches("), quelltext.indexOf("async openMatchday"));
+    expect(abschnitt).toMatch(/catch[\s\S]*kataloge\.delete\(/);
   });
 
   it("das Öffnen eines Spieltags verwirft den Katalog", () => {
     // Dabei wird das Big Game eingefroren — an dieser Zahl hängen Punkte.
+    // ⚠️ ALLE Einträge, nicht nur einen: das Big Game eines Spieltags steckt
+    // in jeder Vorauswahl, die diesen Wettbewerb enthält.
     const abschnitt = quelltext.slice(quelltext.indexOf("async openMatchday"));
-    expect(abschnitt.slice(0, 1200)).toContain("katalog = null");
+    expect(abschnitt.slice(0, 1200)).toContain("kataloge.clear()");
+  });
+
+  it("die grobe Vorauswahl kommt aus der EINEN Stelle, nicht aus einer zweiten Regel", () => {
+    // 🔴 Der Filter für die Datenbank darf nicht neben `passtSpiel` neu
+    // erfunden werden — sonst gibt es zwei Antworten auf „gehört dieses Spiel
+    // zur Runde?". Beide Stores fragen `grobeVorauswahl`.
+    expect(quelltext).toContain("grobeVorauswahl(");
+    expect(mockQuelle).toContain("passtGrob(");
+  });
+
+  it("ein Spiel ohne Wettbewerb wird in der Abfrage NICHT ausgeschlossen", () => {
+    // Ein reines `in` wäre in der Datenbank strenger als `passtSpiel` im
+    // Browser — dann fehlten Spiele, die niemand vermisst, weil sie nie
+    // ankommen.
+    const abschnitt = quelltext.slice(quelltext.indexOf("async listMatches("), quelltext.indexOf("async openMatchday"));
+    expect(abschnitt).toContain("wettbewerb.is.null");
   });
 
   it("die mehrfach parallel gerufenen Lese-Methoden gehen über `einmal`", () => {

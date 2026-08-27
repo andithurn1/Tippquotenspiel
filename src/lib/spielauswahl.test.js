@@ -2,8 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   AUSWAHL_MODI, AUSWAHL_LIMITS, DEFAULT_SPIELE,
   sanitizeSpiele, passtSpiel, filterSpiele, zusammenfassung, beschreibeAuswahl,
-  spieleProSpieltag, engpaesse,
+  spieleProSpieltag, engpaesse, grobeVorauswahl, passtGrob,
 } from "@/lib/spielauswahl";
+import { alleMatches } from "@/lib/ligen";
 import { DEFAULT_RULES, sanitizeRules, encodePreset, decodePreset } from "@/lib/engine";
 
 // Ein kleiner Spielplan: 3 Spieltage à 3 Spiele.
@@ -474,5 +475,82 @@ describe("Engpass — welche Einschränkung kostet die meisten Spiele", () => {
     const spieltage = funde.find((f) => f.feld === "spieltage");
     expect(spieltage).toBeTruthy();
     expect(spieltage.gewinn).toBe(0);
+  });
+});
+
+// ============================================================
+//  DIE GROBE VORAUSWAHL — sie darf NIE etwas wegnehmen
+//
+//  🔴 Anlass: der Spielplan-Katalog ist 3,15 MB, und jeder Screen holt ihn
+//  ganz, um im Browser 84 % davon wegzuwerfen. `grobeVorauswahl` sagt der
+//  Datenbank vorher, welche Wettbewerbe ueberhaupt in Frage kommen.
+//
+//  ⚠️ Der ganze Gewinn ist nichts wert, wenn dabei ein Spiel verlorengeht, das
+//  zur Runde gehoert -- und das saehe niemand: es fehlte einfach. Deshalb wird
+//  hier nicht die Funktion geprueft, sondern die GLEICHHEIT gegen den vollen
+//  Katalog, ueber den ECHTEN Spielplan und jede Regelvariante.
+// ============================================================
+describe("Grobe Vorauswahl fuer die Datenbank", () => {
+  const KATALOG = alleMatches();
+
+  it("der echte Katalog steht -- sonst prueft dieser Block nichts", () => {
+    expect(KATALOG.length).toBeGreaterThan(1000);
+    expect(new Set(KATALOG.map((m) => m.wettbewerb)).size).toBeGreaterThan(3);
+  });
+
+  it("ohne Wettbewerbs-Einschraenkung wird gar nicht vorgefiltert", () => {
+    // 🔴 `null` heisst „hol alles". Eine leere LISTE hiesse „hol nichts" --
+    // der Unterschied ist der zwischen einer vollen und einer leeren Runde.
+    expect(grobeVorauswahl(DEFAULT_SPIELE).wettbewerbe).toBeNull();
+    expect(grobeVorauswahl({ ...DEFAULT_SPIELE, wettbewerbe: [] }).wettbewerbe).toBeNull();
+  });
+
+  const varianten = [
+    ["Vorgabe", DEFAULT_SPIELE],
+    ["nur Bundesliga", { ...DEFAULT_SPIELE, wettbewerbe: ["bl"] }],
+    ["zwei Ligen", { ...DEFAULT_SPIELE, wettbewerbe: ["bl", "pl"] }],
+    ["Liga + Spieltagsfenster", { ...DEFAULT_SPIELE, wettbewerbe: ["bl"], spieltagVon: 5, spieltagBis: 12 }],
+    ["Teams innerhalb einer Liga", {
+      ...DEFAULT_SPIELE, wettbewerbe: ["bl"], modus: "teams",
+      teams: ["FC Bayern München", "Borussia Dortmund"], teamModus: "eine",
+    }],
+    ["Teams ueber Ligen hinweg", {
+      ...DEFAULT_SPIELE, modus: "teams",
+      teams: ["FC Bayern München", "Real Madrid"], teamModus: "eine",
+    }],
+    ["je Wettbewerb ein anderes Fenster", {
+      ...DEFAULT_SPIELE, wettbewerbe: ["bl", "pl"],
+      jeWettbewerb: { pl: { spieltagVon: 20, spieltagBis: 25 } },
+    }],
+    ["feste Liste", {
+      ...DEFAULT_SPIELE, modus: "liste",
+      matchIds: KATALOG.slice(0, 5).map((m) => String(m.matchId)),
+    }],
+  ];
+
+  for (const [name, spiele] of varianten) {
+    it(`nimmt nichts weg: ${name}`, () => {
+      const grob = grobeVorauswahl(spiele);
+      const vorgefiltert = KATALOG.filter((m) => passtGrob(m, grob));
+      const voll = filterSpiele(KATALOG, spiele).map((m) => m.matchId);
+      const knapp = filterSpiele(vorgefiltert, spiele).map((m) => m.matchId);
+      expect(knapp).toEqual(voll);
+    });
+  }
+
+  it("spart bei einer Liga-Runde wirklich etwas -- sonst waere der Aufwand umsonst", () => {
+    const grob = grobeVorauswahl({ ...DEFAULT_SPIELE, wettbewerbe: ["bl"] });
+    const vorgefiltert = KATALOG.filter((m) => passtGrob(m, grob));
+    expect(vorgefiltert.length).toBeLessThan(KATALOG.length * 0.3);
+    expect(vorgefiltert.length).toBeGreaterThan(0);
+  });
+
+  it("ein Spiel OHNE Wettbewerb kommt durch -- genau wie in `passtSpiel`", () => {
+    // 🔴 Sonst waere der Datenbank-Filter strenger als der im Browser, und es
+    // fehlten Spiele, die niemand vermisst, weil sie nie ankommen.
+    const grob = grobeVorauswahl({ ...DEFAULT_SPIELE, wettbewerbe: ["bl"] });
+    expect(passtGrob({ matchId: "alt", home: "A", away: "B" }, grob)).toBe(true);
+    expect(passtGrob({ matchId: "x", wettbewerb: "pl" }, grob)).toBe(false);
+    expect(passtGrob({ matchId: "y", wettbewerb: "bl" }, grob)).toBe(true);
   });
 });

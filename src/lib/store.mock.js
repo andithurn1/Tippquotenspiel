@@ -39,6 +39,7 @@ import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 // verpufft still, ohne dass irgendetwas fehlschlägt.
 import { fremdEinsaetze, familieAn } from "./fremdjoker";
 import { rundenSpiele as rundenSpieleVon, rundenAuswahl } from "./roundStatus";
+import { grobeVorauswahl, passtGrob } from "./spielauswahl";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { darfSaisonTippen } from "./saisonFenster";
@@ -405,7 +406,15 @@ export function createMockStore() {
   }
 
   return {
-    async listMatches() { return [...matches.values()]; },
+    // `grob` = `grobeVorauswahl(rules.spiele)` oder `null`. Im Mock liegt alles
+    // ohnehin im Speicher — die Vorauswahl kostet hier nichts und spart nichts.
+    // Sie wird trotzdem ANGEWENDET und nicht ignoriert: sonst verhielten sich
+    // die beiden Stores verschieden, und ein Fehler in der Vorauswahl fiele
+    // ausgerechnet dort nicht auf, wo alle Tests laufen.
+    async listMatches(grob = null) {
+      const alle = [...matches.values()];
+      return grob?.wettbewerbe ? alle.filter((m) => passtGrob(m, grob)) : alle;
+    },
 
     // 🔴 Die Spiele DIESER RUNDE — der ganze Katalog ist etwas anderes.
     //
