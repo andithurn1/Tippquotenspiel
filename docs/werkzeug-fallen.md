@@ -173,7 +173,7 @@ Frage des ORTES, nicht der Gültigkeit.
   harmlos, in einem `it("…")`-Titel tödlich. **Im Zweifel `»…«` oder das
   schließende `"` mitschreiben.**
 
-## 🔢 `Number(null)` ist 0 — zweimal an einem Tag (27.08.2026)
+## 🔢 `Number(null)` ist 0 — DREIMAL an einem Tag (27.08.2026)
 
 ```js
 Number(null)            // 0
@@ -188,6 +188,7 @@ desselben Tages:
 |---|---|
 | `greiftNicht.js` | „Mitgliederzahl unbekannt" → **„ihr seid 0"**, samt Meldung über eine Runde, die es noch gar nicht gibt |
 | `ablauf.js` | „kein Treffer-Spieltag" → **Sperrfrist endet an Spieltag 3**, obwohl es gar keine gibt |
+| `ruecksetzung.js` | „Eintrag ohne Spieltag" → **fiel als „Spieltag 0" unter jeden Schnitt** und verschwand lautlos aus der Liste |
 
 ⚠️ **Die Prüfung `Number.isFinite(Number(x))` ist genau die falsche**, weil sie
 so aussieht, als prüfe sie beides. Richtig ist, `null`/`undefined`/`""` VORHER
@@ -198,6 +199,17 @@ const n = (x === null || x === undefined || x === "") ? NaN : Number(x);
 if (!Number.isFinite(n)) return null;
 ```
 
-🔴 **Beide Male hat ein Test es sofort gefunden** — und beide Male nur, weil
-der Test den Fall „unbekannt" ausdrücklich hatte. Ohne ihn wäre eine Zahl
+🔴 **Alle drei Male hat ein Test es sofort gefunden** — und alle drei Male nur,
+weil der Test den Fall „unbekannt" ausdrücklich hatte. Ohne ihn wäre eine Zahl
 dagestanden, und eine Zahl glaubt man.
+
+🔴 **Der dritte Fall ist der lehrreichste, und deshalb steht er hier so
+ausführlich:** er passierte beim Schreiben von `ruecksetzung.js` — in einer
+Datei, deren eigener Kopfkommentar schon vor diesem Griff warnte, zwei Stunden
+nach den ersten beiden. **Es reicht also nicht, die Falle zu KENNEN.** Was hilft,
+ist die mechanische Regel:
+
+> ⚠️ **Wo ein Spieltag, eine Anzahl oder ein Betrag aus fremden Daten kommt,
+> steht die `null`-Prüfung VOR dem `Number()` — immer, ohne Einzelfallprüfung.**
+
+Die Einzelfallprüfung ist genau das, was dreimal danebengegangen ist.

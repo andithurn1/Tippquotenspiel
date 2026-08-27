@@ -112,7 +112,10 @@ wie einen Eintrag für die Auslösung (mittels Glücksrad) für die Ereignisse."
 
 ## Was FEHLT — vier Dinge, in der Reihenfolge ihres Werts
 
-### 1 · Die Runden-Übersicht „wer hat was, und wann fällt es weg"
+> **Stand 27.08.2026, abends:** 1, 2 und 3 sind gebaut und angeschlossen.
+> Offen ist nur noch 4 (das Menü selbst) — und Andis Entscheidung zu Teil 1.
+
+### 1 · Die Runden-Übersicht „wer hat was, und wann fällt es weg" — ✅ 27.08.2026
 
 Heute sieht jeder nur SEINE Joker. Was fehlt, ist die Tabelle über die ganze
 Runde: wer hält welche Joker, welche Ereignisse sind gelaufen, **und wann
@@ -123,16 +126,36 @@ verfällt was.**
 🔴 Und das „wann wird zurückgesetzt" ist der Teil, den heute NIRGENDS jemand
 sieht: die Regel steht im Regelwerk, das Datum nirgends.
 
-### 2 · Das Rad soll Ereignisse auslösen können
+✅ **Gebaut:** `/runde` („Was gerade läuft") mit `src/lib/ablauf.js`. Die Datei
+übersetzt die vorhandenen Regeln in einen Zeitpunkt — `jokerBasis.verfall` plus
+Münz-Takt wird „Ende von Spieltag 8", `abklingzeit` wird „Einzel-Joker wieder
+frei ab Spieltag 5".
+⚠️ `ablauf.test.js` fesselt die Auskunft an `darfEinsetzen`: der genannte
+Spieltag ist genau der erste, an dem der Torwächter wieder ja sagt. Ohne diese
+Fessel stünde irgendwann ein Datum auf dem Schirm, an dem der Knopf nicht geht
+— und der Spieler hielte sich für blöd, nicht die App für kaputt.
+
+### 2 · Das Rad soll Ereignisse auslösen können — ✅ 27.08.2026
 
 Heute schüttet es fünf Dinge aus (Niete, Joker, Narren, Modifikator, Punkte).
 Ein Rad-Feld, das ein EREIGNIS auslöst, gibt es nicht — dabei ist das Rad die
 natürliche Ziehung dafür.
 
-⚠️ Die Verbindung wäre klein: `BELOHNUNGS_TYPEN` bekommt `ereignis`, und das
-gezogene Feld liefert eine Wirkung wie jede andere. Beide Kataloge stehen.
+✅ **Gebaut, aber anders als hier vermutet.** Der Plan war ein Rad-Feld
+`ereignis`, das ein Ereignis aus `rules.ereignisse` auslöst. Beim Bauen von
+Punkt 3 stellte sich heraus: was Andi an DIESER Stelle nennt („ein Ereignis
+dass dann Joker cooldowns geresettet werden"), ist gar kein Ereignis aus dem
+Katalog, sondern eine **Wirkung, die es noch nicht gab**. Das Rad schüttet sie
+jetzt direkt aus — `BELOHNUNGS_TYPEN` hat `ruecksetzung`, und `/runde` zeigt
+sie unter „Am Rad gezogen".
 
-### 3 · Zwei Wirkungen, die es noch nicht gibt
+⚠️ **Was damit NICHT gebaut ist und offen bleibt:** ein Rad-Feld, das ein
+beliebiges Ereignis aus `rules.ereignisse` zieht. Das wäre der allgemeine Fall
+und deutlich größer — die Ereignis-Grammatik (WANN/WEN/WAS/WIE LANGE) müsste
+ohne ihren Auslöser auskommen, denn den ersetzt hier das Rad. Steht als ❓ in
+`design/ideen.md`; es ist eine eigene Entscheidung, keine Restarbeit.
+
+### 3 · Zwei Wirkungen, die es noch nicht gibt — ✅ 27.08.2026
 
 Andis Beispiele, und beide sind ehrliche Lücken:
 
@@ -144,8 +167,37 @@ Andis Beispiele, und beide sind ehrliche Lücken:
 zurücksetzt, statt etwas zu vergeben. Die gibt es im ganzen Katalog noch
 nicht — alle heutigen Wirkungen geben oder nehmen, keine setzt zurück.
 
-### 4 · Das Menü selbst
+✅ **Gebaut: `src/lib/ruecksetzung.js`.** Und die Form ist die eigentliche
+Antwort auf „wo landet ein Zustand": **nirgends.** Eine Rücksetzung ist ein
+SCHNITT auf der Zeitachse — `{ userId, ziel, abSpieltag }`. Wer fragt, was ein
+Spieler „bisher" getan hat, lässt alles vor dem Schnitt weg. Aus einem Zustand
+wird ein Filter, und ein Filter ist aus der Historie jederzeit neu ableitbar.
+
+⚠️ Das ist derselbe Gedanke, der in TEIL 1 zur Debatte steht — nur fällt er
+hier leicht, weil eine Rücksetzung keine ENTSCHEIDUNG ist, die jemand später
+nachlesen können muss. Für das ausgeübte Recht gilt das nicht, deshalb bleibt
+Teil 1 offen.
+
+Angeschlossen an beiden Enden (sonst wäre es der Befund vom 06.08.):
+- Ziel `cooldown` → schneidet `letzteEinsaetze` in der Tippabgabe. Die REGEL in
+  `pruefeAbklingzeit` bleibt unberührt; kürzer ist nur die Historie, die man ihr
+  vorlegt. Eine Sonderregel im Torwächter wäre die doppelte Wahrheit.
+- Ziel `budget` → schneidet die kumulierten Käufe in `kontoVerlauf`. Der Kauf AM
+  Tag des Schnitts zählt weiter.
+
+### 4 · Das Menü selbst — ⏳ offen
 
 Vier Routen, die es einzeln gibt, brauchen eine Klammer: eine Seite je Runde,
 von der aus alles erreichbar ist. ⚠️ Das ist der billigste Punkt der vier —
 und der, der ohne die anderen drei am wenigsten bringt.
+
+🔴 **Jetzt bringt er etwas**, weil die anderen drei stehen. Und er hängt an
+Andis Ansage vom selben Tag: *„solche optionen müssen egtl hinter nem eigenen
+öffnenbarem Fenster sein, weil die ganzen Einstellmöglichkeiten einen sonst
+komplett erschlagen"*. Das gilt für die Spieler-Seite genauso wie für die
+Admin-Seite.
+
+⚠️ **Aber: „Mechanik ja, Platzierung nein"** (CLAUDE.md). WO die Kacheln
+sitzen, entscheidet `Quotentippen.pptx`. Was hier gebaut werden darf, ist die
+KLAMMER — eine Seite je Runde, die die vorhandenen Routen bündelt — nicht eine
+neue Anordnung der Spielerstellung.

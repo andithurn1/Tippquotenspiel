@@ -416,6 +416,37 @@ nicht). Soll ich?
 
 ---
 
+## ❓ Soll das Rad auch ECHTE Ereignisse ziehen können? (27.08.2026)
+
+**Kein Auftrag, eine Rückfrage — und sie kommt aus etwas, das schon gebaut ist.**
+
+Du hast geschrieben: *„einen Eintrag für die Auslösung (mittels Glücksrad) für
+die Ereignisse (bspw. auch ein Ereignis dass dann Joker cooldowns geresettet
+werden oder eben Budget rückgesetzt wird)"*.
+
+✅ **Die beiden Beispiele sind gebaut.** Das Rad hat jetzt ein Feld
+„Rücksetzung" mit zwei Zielen — Abklingzeiten und Narren-Konto. Beim Bauen fiel
+aber auf: die zwei sind gar keine Ereignisse aus dem Ereignis-Katalog, sondern
+eine **Wirkung, die es vorher nicht gab**. Sie hängen deshalb direkt am Rad.
+
+**❓ Die offene Frage ist die allgemeine:** soll ein Rad-Feld auch eines deiner
+**eingestellten Ereignisse** auslösen können — also irgendeines aus
+`rules.ereignisse`, mit seiner Wirkung und seiner Geltungsdauer?
+
+⚠️ **Warum ich das nicht einfach gebaut habe:** ein Ereignis besteht aus vier
+Teilen — WANN es auslöst, WEN es trifft, WAS es tut, WIE LANGE es gilt. Zieht
+das Rad es, ist das WANN weg (das Rad IST der Auslöser). Was mit dem Rest
+passiert, ist eine Entscheidung, keine Ableitung:
+
+- **WEN** — trifft es den, der gezogen hat, oder die Gruppe, die im Ereignis
+  eingestellt ist? Beides plausibel, und es ändert das Spiel komplett.
+- **WIE LANGE** — gilt die eingestellte Dauer, oder eine, die am Rad-Feld steht?
+
+**Sag einfach, was dir vorschwebt** — oder „lass erstmal", dann bleibt es bei
+den zwei Rücksetzungen, die es jetzt gibt.
+
+---
+
 ## 🆕 Joker-Ökonomie — neue Einfälle
 
 *(Platzhalter vom 20.08.2026: Andi hat angekündigt, dass ihm hier noch etwas
