@@ -111,6 +111,33 @@ export const BELOHNUNGS_TYPEN = [
   },
 ];
 
+// ── Regelbeziehungen zwischen Feldern (Andi, 27.08.2026) ────
+// 🔴 Wörtlich: „gegenseitige ausschlüsse und nicht kombinierbarkeit".
+//
+// ⚠️ Das sind in seiner Aufzählung zwei Begriffe, aber EINE Mechanik mit
+// verschiedener Reichweite — und genau deshalb steht hier ein Regler und
+// nicht zwei Kataloge. Zwei Listen für dieselbe Frage laufen auseinander,
+// sobald jemand eine ergänzt (derselbe Befund wie beim `wer`-Katalog, K1).
+//
+// Ein Ausschluss ist immer GEGENSEITIG. Eine Richtung („A sperrt B, aber
+// nicht umgekehrt") wäre für den Admin am Rad nicht mehr ablesbar — man
+// sieht eine Linie zwischen zwei Feldern, und eine Linie hat keine Richtung.
+export const AUSSCHLUSS_REICHWEITEN = [
+  {
+    key: "ereignis", label: "Nicht zusammen",
+    desc: "Nicht beide an demselben Dreh-Termin. Bei einer Drehung pro Termin ändert das nichts — es ist die Regel für mehrfaches Drehen.",
+  },
+  {
+    key: "drehungen", label: "Für n Drehungen",
+    desc: "Fällt das eine, ist das andere für die nächsten Drehungen dieses Spielers gesperrt — wie die Sperrfrist, nur über Kreuz.",
+  },
+  {
+    key: "saison", label: "Nur eines pro Saison",
+    desc: "Wer das eine gezogen hat, bekommt das andere nie mehr. Die härteste Form — für zwei Felder, die sich ausschließen sollen.",
+  },
+];
+const REICHWEITEN_KEYS = new Set(AUSSCHLUSS_REICHWEITEN.map((r) => r.key));
+
 // `wer` (Abschnitt 2.4) — K1 (Abnahme 31.07., design/drehrad.md Abschnitt 3b
 // (a)): EIN Katalog statt zwei. `drehrad.js` führte hier früher einen eigenen
 // `wer`-Katalog, der von `jokerBasis.WER` abwich (kein `adminFreigabe`, dafür
@@ -148,6 +175,14 @@ export const DREHRAD_LIMITS = {
   modFaktor: { min: 0.1, max: 5, step: 0.05 },
   modSpieltage: { min: 1, max: 10, step: 1 },
   punkteBetrag: { min: 0, max: 100, step: 1 },
+  // Wie oft an EINEM Dreh-Termin gedreht wird (Andi, 27.08.2026: „auch
+  // mehrfach bei einem Rad-drehtereignis?"). ⚠️ Klein gehalten: fünf
+  // Drehungen hintereinander sind schon eine kleine Show, zwanzig wären
+  // eine Rechnung.
+  drehungenProEreignis: { min: 1, max: 5, step: 1 },
+  // Für einen Ausschluss mit Reichweite „Drehungen" — dieselbe Größenordnung
+  // wie `sperrfrist`, weil es dieselbe Zählweise ist.
+  ausschlussDrehungen: { min: 1, max: 20, step: 1 },
   // ⚠️ `min: 0`, und 0 heißt KEIN Deckel.
   // Eine frühere Fassung stand auf `min: 1`, begründet mit „der Deckel darf nie
   // fehlen". Das war ein Denkfehler — verwechselt wurden:
@@ -180,6 +215,11 @@ export const DEFAULT_DREHRAD = {
   wer: "alle",
   werWert: null,
   maxPunkteProSaison: 20,
+  // Eine Drehung je Termin — die Vorgabe ändert für bestehende Runden
+  // nichts, und ein Rad, das ungefragt dreifach ausschüttet, wäre eine
+  // Überraschung.
+  drehungenProEreignis: 1,
+  ausschluesse: [],
 };
 
 const clamp = (v, { min, max }, fallback) => {
@@ -299,6 +339,53 @@ export function pruefeFelder(felder = [], sperrfristVorgabe = 0) {
   return { felder: out, verworfen, gueltig, grund, warnung };
 }
 
+// ── Ausschlüsse bereinigen ──────────────────────────────────
+// Ein Ausschluss zeigt auf zwei Felder. Zeigt er ins Leere, ist er kein
+// Ausschluss, sondern eine Zeile, die nichts tut — und der Admin sähe eine
+// Linie am Rad, die keine Wirkung hat.
+//
+// ⚠️ `a`/`b` werden SORTIERT abgelegt. Ohne das stünden „A–B" und „B–A" als
+// zwei Einträge da, obwohl der Ausschluss gegenseitig ist — und die
+// Doppelten-Prüfung darunter fände sie nicht.
+export function pruefeAusschluesse(ausschluesse = [], felder = []) {
+  const ids = new Set((Array.isArray(felder) ? felder : []).map((f) => f?.id).filter(Boolean));
+  const out = [];
+  const verworfen = [];
+  const gesehen = new Set();
+
+  (Array.isArray(ausschluesse) ? ausschluesse : []).forEach((roh, i) => {
+    const o = roh && typeof roh === "object" ? roh : {};
+    const a = String(o.a ?? "");
+    const b = String(o.b ?? "");
+    if (!ids.has(a) || !ids.has(b)) {
+      verworfen.push({ index: i, grund: `zeigt auf ein Feld, das es nicht (mehr) gibt („${a}“ / „${b}“).` });
+      return;
+    }
+    if (a === b) {
+      // Ein Feld gegen sich selbst IST die Sperrfrist — dafür gibt es das
+      // Feld `sperrfrist`, und zwei Wege zu derselben Regel laufen
+      // auseinander.
+      verworfen.push({ index: i, grund: "ein Feld gegen sich selbst — dafür ist die Sperrfrist da." });
+      return;
+    }
+    const [erst, zweit] = [a, b].sort();
+    const k = `${erst}|${zweit}`;
+    if (gesehen.has(k)) {
+      verworfen.push({ index: i, grund: "diesen Ausschluss gibt es schon (ein Ausschluss gilt gegenseitig)." });
+      return;
+    }
+    const reichweite = REICHWEITEN_KEYS.has(o.reichweite) ? o.reichweite : "ereignis";
+    const eintrag = { a: erst, b: zweit, reichweite };
+    if (reichweite === "drehungen") {
+      eintrag.drehungen = Math.round(clamp(o.drehungen, DREHRAD_LIMITS.ausschlussDrehungen, 2));
+    }
+    gesehen.add(k);
+    out.push(eintrag);
+  });
+
+  return { ausschluesse: out, verworfen };
+}
+
 // Bereinigt die GANZE Drehrad-Einstellung. Ungültige Felder fliegen still
 // raus (WARUM steht in `pruefeFelder`, für die UI).
 export function sanitizeDrehrad(partial = {}) {
@@ -318,11 +405,19 @@ export function sanitizeDrehrad(partial = {}) {
   const abSpieltagRoh = leerWert(p.abSpieltag) ? NaN : Number(p.abSpieltag);
   const bisSpieltagRoh = leerWert(p.bisSpieltag) ? NaN : Number(p.bisSpieltag);
 
+  // ⚠️ Erst die Felder, DANN die Ausschlüsse: ein Ausschluss auf ein Feld,
+  // das gerade verworfen wurde, ist selbst ungültig. Umgekehrt geprüft bliebe
+  // er stehen und zeigte ins Leere.
+  const felder = pruefeFelder(p.felder, sperrfrist).felder;
+
   return {
     // Nur ein ausdrückliches `true` schaltet ein — dieselbe Bauart wie bei
     // allen anderen optionalen Ebenen.
     enabled: p.enabled === true,
-    felder: pruefeFelder(p.felder, sperrfrist).felder,
+    felder,
+    ausschluesse: pruefeAusschluesse(p.ausschluesse, felder).ausschluesse,
+    drehungenProEreignis: Math.round(clamp(
+      p.drehungenProEreignis, DREHRAD_LIMITS.drehungenProEreignis, DEFAULT_DREHRAD.drehungenProEreignis)),
     sperrfrist,
     frequenz: Math.round(clamp(p.frequenz, DREHRAD_LIMITS.frequenz, DEFAULT_DREHRAD.frequenz)),
     modus,
@@ -404,9 +499,19 @@ export function drehradPlan({
 // 🔴 Deterministisch über `(rundenId, userId, spieltag, bisherige)` —
 // dieselben Eingaben liefern immer dasselbe Feld (Abschnitt 2.5, Punkt 1).
 // `bisherige` = zuletzt gezogene Feld-Ids DIESES Spielers, neueste zuerst.
-export function ziehe(drehrad, { rundenId, userId, spieltag, bisherige = [] } = {}) {
+export function ziehe(drehrad, {
+  rundenId, userId, spieltag, bisherige = [],
+  // Was an DIESEM Dreh-Termin schon gefallen ist (für Reichweite „ereignis")
+  imEreignis = [],
+  // Was diesem Spieler in der ganzen Saison je gefallen ist (für „saison")
+  jeGefallen = [],
+  // Die wievielte Drehung dieses Termins (0 = die erste)
+  nummer = 0,
+} = {}) {
   const cfg = sanitizeDrehrad(drehrad);
   const historie = Array.isArray(bisherige) ? bisherige : [];
+  const imTermin = new Set(Array.isArray(imEreignis) ? imEreignis : []);
+  const jemals = new Set(Array.isArray(jeGefallen) ? jeGefallen : []);
 
   // „Volles Rad" heißt: alle Felder mit Gewicht > 0 — ein Feld mit
   // `gewicht: 0` fällt NIE, auch nicht im Randfall (Abschnitt 2.5-Katalog).
@@ -422,14 +527,42 @@ export function ziehe(drehrad, { rundenId, userId, spieltag, bisherige = [] } = 
     return idx !== -1 && idx < feld.sperrfrist;
   };
 
-  let verfuegbar = felder.filter((f) => !gesperrt(f));
+  // 🔴 Regelbeziehungen (Andi, 27.08.2026): ein Ausschluss gilt GEGENSEITIG,
+  // deshalb wird für jedes Feld nach beiden Seiten gesucht. Was blockiert,
+  // hängt an der Reichweite — und alle drei Fälle lesen eine Liste, die der
+  // Aufrufer chronologisch mitführt, nicht einen gespeicherten Zustand.
+  const partnerVon = new Map();   // feldId -> [{ partner, reichweite, drehungen }]
+  for (const x of cfg.ausschluesse) {
+    if (!partnerVon.has(x.a)) partnerVon.set(x.a, []);
+    if (!partnerVon.has(x.b)) partnerVon.set(x.b, []);
+    partnerVon.get(x.a).push({ partner: x.b, ...x });
+    partnerVon.get(x.b).push({ partner: x.a, ...x });
+  }
+  const ausgeschlossen = (feld) => (partnerVon.get(feld.id) ?? []).some((x) => {
+    if (x.reichweite === "ereignis") return imTermin.has(x.partner);
+    if (x.reichweite === "saison") return jemals.has(x.partner);
+    const idx = historie.indexOf(x.partner);
+    return idx !== -1 && idx < (x.drehungen ?? 0);
+  });
+
+  let verfuegbar = felder.filter((f) => !gesperrt(f) && !ausgeschlossen(f));
   // 🔴 Randfall (Abschnitt 2.2b): sind ALLE Felder gesperrt, wird die Sperre
   // für DIESE Drehung ignoriert — eine Drehung ohne Ergebnis wäre der
   // schlechtere Fehler.
+  // ⚠️ Das gilt bewusst auch für die Ausschlüsse, obwohl es die härteste
+  // Reichweite („nur eines pro Saison") aufweicht: das Rad muss immer etwas
+  // liefern. `pruefeFelder` warnt vorab, wenn die Regeln rechnerisch nicht
+  // aufgehen — dort gehört der Hinweis hin, nicht in eine stumme Drehung.
   if (!verfuegbar.length) verfuegbar = felder;
 
   const gesamtgewicht = verfuegbar.reduce((s, f) => s + f.gewicht, 0);
-  const r = seeded(`${rundenId}|${userId}|${spieltag}`);
+  // ⚠️ Die Nummer kommt nur bei der ZWEITEN und jeder weiteren Drehung in den
+  // Schlüssel. Sonst änderte sich jedes Ergebnis jeder bestehenden Runde --
+  // eine Drehung, die gestern „30 Narren" war, wäre heute eine Niete.
+  const schluesselTeile = nummer > 0
+    ? `${rundenId}|${userId}|${spieltag}|${nummer}`
+    : `${rundenId}|${userId}|${spieltag}`;
+  const r = seeded(schluesselTeile);
   let schwelle = r * gesamtgewicht;
   for (const f of verfuegbar) {
     schwelle -= f.gewicht;

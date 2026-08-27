@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { C, MONO, SERIES, readableInk, RUND } from "@/lib/theme";
 import {
   BELOHNUNGS_TYPEN, DREHRAD_LIMITS, DEFAULT_DREHRAD,
   sanitizeDrehrad, pruefeFelder, wahrscheinlichkeiten, drehradPlan, beschreibeDrehrad,
+  AUSSCHLUSS_REICHWEITEN,
 } from "@/lib/drehrad";
 import { PHASEN } from "@/lib/duellJoker";
 import Gluecksrad from "@/components/Gluecksrad";
+import RadEditor from "@/components/RadEditor";
 import { JOKER_ARTEN } from "@/lib/jokerBudget";
 import { WER } from "@/lib/jokerBasis";
 import { RUECKSETZ_ZIELE } from "@/lib/ruecksetzung";
@@ -90,6 +92,12 @@ function farbeFuer(id) {
 export default function Drehrad({ rules, onChange }) {
   const raw = rules?.drehrad && typeof rules.drehrad === "object" ? rules.drehrad : {};
   const felder = Array.isArray(raw.felder) ? raw.felder : [];
+  const ausschluesse = Array.isArray(raw.ausschluesse) ? raw.ausschluesse : [];
+  // Welches Feld gerade am Rad angewählt ist. ⚠️ Nur ANZEIGE-Zustand, kein
+  // Regelwerk — deshalb hier und nicht in `raw`: eine Auswahl, die im Preset
+  // landet, käme beim nächsten Öffnen mit zurück und niemand wüsste, warum ein
+  // Feld hervorgehoben ist.
+  const [gewaehltesFeld, setGewaehltesFeld] = useState(null);
   // Nur für ANZEIGE-Zwecke (Slider-Vorgaben, Plan-Vorschau, Text) — nie als
   // Quelle für das, was gespeichert wird (siehe Kopfkommentar).
   const cfg = useMemo(() => sanitizeDrehrad(raw), [raw]);
@@ -122,7 +130,36 @@ export default function Drehrad({ rules, onChange }) {
   const hinzufuegen = () => setze({
     felder: [...felder, { id: neueFeldId(), label: "", gewicht: 1, belohnung: { typ: "nichts" } }],
   });
-  const entfernen = (id) => setze({ felder: felder.filter((f) => f.id !== id) });
+  // ⚠️ Mit dem Feld gehen auch seine Beziehungen. Ein Ausschluss, der auf ein
+  // gelöschtes Feld zeigt, wird von `pruefeAusschluesse` ohnehin verworfen —
+  // aber er stünde bis zum nächsten Speichern noch in der Liste, und der Admin
+  // sähe eine Zeile, die es nicht mehr gibt.
+  const entfernen = (id) => setze({
+    felder: felder.filter((f) => f.id !== id),
+    ausschluesse: ausschluesse.filter((x) => x.a !== id && x.b !== id),
+  });
+
+  // 🔴 Ein Ausschluss ist gegenseitig, deshalb wird das Paar SORTIERT abgelegt
+  // — sonst stünden „A–B" und „B–A" als zwei Einträge da. Dieselbe Regel wie in
+  // `pruefeAusschluesse`; hier wird sie schon beim Anlegen eingehalten, damit
+  // der Umschalter unten das vorhandene Paar wiederfindet.
+  const schalteAusschluss = (a, b) => {
+    const [erst, zweit] = [a, b].sort();
+    const da = ausschluesse.find((x) => x.a === erst && x.b === zweit);
+    setze({
+      ausschluesse: da
+        ? ausschluesse.filter((x) => !(x.a === erst && x.b === zweit))
+        : [...ausschluesse, { a: erst, b: zweit, reichweite: "ereignis" }],
+    });
+  };
+  const patchAusschluss = (i, patch) => setze({
+    ausschluesse: ausschluesse.map((x, k) => (k === i ? { ...x, ...patch } : x)),
+  });
+
+  // Ein Grenzzug liefert zwei neue Gewichte auf einmal.
+  const setzeGewichte = (map) => setze({
+    felder: felder.map((f) => (map[f.id] != null ? { ...f, gewicht: map[f.id] } : f)),
+  });
 
   return (
     <div>
@@ -202,6 +239,82 @@ export default function Drehrad({ rules, onChange }) {
         </Banner>
       )}
 
+      {/* ── Das Rad selbst als Editor ──
+          🔴 Andi, 27.08.2026: „optisch an dem Rad einstellen … mit den ganzen
+          Regelbeziehungen". Was eine FLÄCHE ist (die Wahrscheinlichkeit) und
+          was eine BEZIEHUNG ist (der Ausschluss), wird hier eingestellt. Alles
+          andere bleibt in den Zahlenfeldern darunter — die Begründung dafür
+          steht im Kopf von `RadEditor.jsx`. */}
+      <div style={{
+        background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
+        padding: "14px 12px", marginBottom: 14,
+      }}>
+        <RadEditor
+          felder={felder}
+          ausschluesse={ausschluesse}
+          gewaehlt={gewaehltesFeld}
+          onWaehlen={setGewaehltesFeld}
+          onGewichte={setzeGewichte}
+          onAusschluss={schalteAusschluss}
+        />
+      </div>
+
+      {/* ── Die Beziehungen als Liste: WAS sie bedeuten ──
+          Am Rad sieht man, DASS zwei Felder verbunden sind. Wie weit der
+          Ausschluss reicht, ist eine Wahl aus drei Möglichkeiten — und die hat
+          am Rad keinen Ort (`RadEditor.jsx`, „was eine Zahl ohne Ort ist"). */}
+      {ausschluesse.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 8 }}>
+            Beziehungen ({ausschluesse.length})
+          </div>
+          {ausschluesse.map((x, i) => {
+            const nameVon = (id) => felder.find((f) => f.id === id)?.label || "(ohne Namen)";
+            return (
+              <div key={`${x.a}|${x.b}`} style={{
+                background: C.surface, border: `1px solid ${C.line}`,
+                borderRadius: RUND.karte, padding: "9px 11px", marginBottom: 6,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "0.8125rem", fontWeight: 600 }}>
+                    {nameVon(x.a)} ↔ {nameVon(x.b)}
+                  </span>
+                  <button onClick={() => schalteAusschluss(x.a, x.b)} style={{
+                    marginLeft: "auto", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: "0.6875rem", ...TAPZIEL, padding: "4px 9px", borderRadius: RUND.pille,
+                    background: "transparent", color: C.muted, border: `1px solid ${C.line}`,
+                  }}>entfernen</button>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 7 }}>
+                  {AUSSCHLUSS_REICHWEITEN.map((rw) => {
+                    const an = x.reichweite === rw.key;
+                    return (
+                      <button key={rw.key} title={rw.desc}
+                        onClick={() => patchAusschluss(i, { reichweite: rw.key })} style={{
+                          ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
+                          padding: "5px 10px", borderRadius: RUND.pille,
+                          background: an ? `${C.indigo}22` : C.surface2, color: an ? C.indigo : C.muted,
+                          border: `1px solid ${an ? C.indigo + "66" : C.line}`,
+                        }}>{rw.label}</button>
+                    );
+                  })}
+                </div>
+                {x.reichweite === "drehungen" && (
+                  <div style={{ marginTop: 8, maxWidth: 170 }}>
+                    <Zahl label="Für wie viele Drehungen" wert={x.drehungen ?? 2}
+                      limits={DREHRAD_LIMITS.ausschlussDrehungen}
+                      onChange={(v) => patchAusschluss(i, { drehungen: v })} />
+                  </div>
+                )}
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 5, lineHeight: 1.4 }}>
+                  {AUSSCHLUSS_REICHWEITEN.find((rw) => rw.key === x.reichweite)?.desc}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ── Felder-Liste ── */}
       <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginTop: 4, marginBottom: 8 }}>
         Felder ({felder.length})
@@ -247,6 +360,20 @@ export default function Drehrad({ rules, onChange }) {
       {/* ── Wann wird gedreht ── */}
       <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 14, paddingTop: 12 }}>
         <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Wann wird gedreht?</div>
+        {/* 🔴 Andi, 27.08.2026: „auch mehrfach bei einem Rad-drehtereignis?"
+            Ja — und die Drehungen sehen einander: Sperrfrist und Ausschlüsse
+            greifen INNERHALB des Termins, sonst wären fünf Drehungen fünfmal
+            dieselbe Rechnung. */}
+        <div style={{ maxWidth: 210, margin: "10px 0 4px" }}>
+          <Zahl label="Drehungen je Termin" wert={cfg.drehungenProEreignis}
+            limits={DREHRAD_LIMITS.drehungenProEreignis}
+            onChange={(v) => setze({ drehungenProEreignis: v })} />
+        </div>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
+          {cfg.drehungenProEreignis === 1
+            ? "Eine Drehung, wenn das Rad drankommt."
+            : `${cfg.drehungenProEreignis} Drehungen hintereinander, wenn das Rad drankommt — nacheinander gezogen, jede sieht die vorigen.`}
+        </p>
         <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 9px", lineHeight: 1.45 }}>
           {beschreibeDrehrad(raw, SPIELTAGE)}
         </p>

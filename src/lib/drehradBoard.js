@@ -135,6 +135,7 @@ export function drehradZiehungen({
   // Einschränkung fällt eine Drehung in eine Länderspielpause, und „kein Rad
   // ohne Tipp" verwirft sie danach stillschweigend — der Spieler verliert sie.
   const plan = drehradPlan({ spieltage, drehrad: rules.drehrad, seed: rundenId, userIds, bespielt });
+  const anzahl = sanitizeDrehrad(rules.drehrad).drehungenProEreignis;
   const basis = kontext ? drehradBasis(rules) : null;
   const proSpieltag = kontext ? spieleJeMatchday(kontext.tipps ?? []) : null;
 
@@ -159,6 +160,10 @@ export function drehradZiehungen({
     // anderen Quelle beisteuern (etwa aus einer echten Ablage), und beide
     // zusammen sind die Wahrheit.
     const eigeneDrehungen = []; // [{ jokerArt, spieltag }], für die Abklingzeit
+    // Alles, was diesem Spieler je gefallen ist — für Ausschlüsse mit
+    // Reichweite „nur eines pro Saison". Wie `bisherige` entsteht sie
+    // unterwegs und wird nicht gespeichert: die Wahrheit ist der Verlauf.
+    const jeGefallen = [];
     for (const spieltag of eigeneSpieltage) {
       if (kontext) {
         const ctx = kontextFuer(
@@ -168,10 +173,23 @@ export function drehradZiehungen({
         const erlaubnis = darfEinsetzen(basis, userId, ctx, DREHRAD_JOKER_ART);
         if (!erlaubnis.erlaubt) continue; // wer/hatGetippt/Abklingzeit lehnt ab
       }
-      const feld = ziehe(rules.drehrad, { rundenId, userId, spieltag, bisherige });
-      if (!feld) continue; // kein gültiges Rad — nichts zu ziehen
-      ziehungen.push({ userId, spieltag, feldId: feld.id });
-      bisherige.unshift(feld.id);
+      // 🔴 Mehrfach drehen an EINEM Termin (Andi, 27.08.2026: „auch mehrfach
+      // bei einem Rad-drehtereignis?"). Die Drehungen laufen nacheinander und
+      // sehen einander: `bisherige` wächst zwischen ihnen, `imEreignis` sammelt
+      // die dieses Termins. Ohne das wären fünf Drehungen fünfmal dieselbe
+      // Rechnung — Sperrfrist und Ausschlüsse griffen innerhalb des Termins
+      // nicht, und ein „nicht zusammen" wäre eine Zierde.
+      const imEreignis = [];
+      for (let nummer = 0; nummer < anzahl; nummer++) {
+        const feld = ziehe(rules.drehrad, {
+          rundenId, userId, spieltag, bisherige, imEreignis, jeGefallen, nummer,
+        });
+        if (!feld) break;   // kein gültiges Rad — nichts zu ziehen
+        ziehungen.push({ userId, spieltag, feldId: feld.id });
+        bisherige.unshift(feld.id);
+        imEreignis.push(feld.id);
+        jeGefallen.push(feld.id);
+      }
       // Diese Drehung zählt ab jetzt für die Abklingzeit der nächsten.
       eigeneDrehungen.push({ userId, jokerArt: DREHRAD_JOKER_ART, spieltag });
     }

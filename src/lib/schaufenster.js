@@ -373,8 +373,26 @@ export function schaufensterRegeln() {
       // so groß wie das Rad selbst, und `pruefeFelder` meldet das zu Recht.
       felder: [
         { id: "punkte", label: "30 Punkte", gewicht: 40, sperrfrist: 0, belohnung: { typ: "punkte", betrag: 30 } },
-        { id: "joker", label: "Ein Joker", gewicht: 30, sperrfrist: 0, belohnung: { typ: "joker", art: "joker.einzel", anzahl: 1 } },
-        { id: "niete", label: "Niete", gewicht: 30, belohnung: { typ: "nichts" } },
+        { id: "joker", label: "Ein Joker", gewicht: 25, sperrfrist: 0, belohnung: { typ: "joker", art: "joker.einzel", anzahl: 1 } },
+        { id: "niete", label: "Niete", gewicht: 20, belohnung: { typ: "nichts" } },
+        // 🔴 Die Rücksetzung (Andi, 27.08.2026) gehört ins Schaufenster, weil
+        // sie sonst nirgends VORGEFÜHRT wird — ein Feld, das man nur im
+        // Katalog liest, sieht niemand.
+        { id: "frei", label: "Joker frei", gewicht: 15, sperrfrist: 0, belohnung: { typ: "ruecksetzung", ziel: "cooldown" } },
+      ],
+      // 🔴 Zwei Drehungen je Termin (Andi, 27.08.2026: „auch mehrfach bei einem
+      // Rad-drehtereignis?"). ⚠️ Genau deshalb steht darunter auch ein
+      // Ausschluss mit Reichweite „ereignis": bei EINER Drehung je Termin wäre
+      // er wirkungslos, und eine Vorführung, in der nichts passiert, führt
+      // nichts vor.
+      drehungenProEreignis: 2,
+      ausschluesse: [
+        // Nicht beide am selben Termin: wer die Punkte zieht, bekommt bei der
+        // zweiten Drehung keinen Joker obendrauf.
+        { a: "joker", b: "punkte", reichweite: "ereignis" },
+        // Und über Kreuz mit Reichweite: nach der Rücksetzung ist der
+        // Joker-Gewinn drei Drehungen lang gesperrt.
+        { a: "frei", b: "joker", reichweite: "drehungen", drehungen: 3 },
       ],
       sperrfrist: 2,
       modus: "kontingent",

@@ -32,7 +32,16 @@ export const VOLLE_UMDREHUNGEN = 4;
 export function segmente(felder = [], anteile = []) {
   const anteilVon = new Map((Array.isArray(anteile) ? anteile : []).map((a) => [a.id, Number(a.anteil) || 0]));
   const sichtbar = (Array.isArray(felder) ? felder : [])
-    .map((f) => ({ id: f?.id, label: f?.label ?? "", anteil: anteilVon.get(f?.id) ?? 0 }))
+    // ⚠️ `gewicht` kommt MIT hinaus, obwohl die Anzeige es nicht braucht: der
+    // Rad-Editor rechnet einen Grenzzug in Gewichte zurück, und ohne das Feld
+    // müsste er sich die Zahl aus dem Anteil zurückschätzen — also aus einer
+    // gerundeten Größe eine exakte machen. Genau daraus entsteht die zweite
+    // Wahrheit, vor der der Kopf dieser Datei warnt.
+    .map((f) => ({
+      id: f?.id, label: f?.label ?? "",
+      gewicht: Number(f?.gewicht) || 0,
+      anteil: anteilVon.get(f?.id) ?? 0,
+    }))
     .filter((f) => f.anteil > 0);
 
   let laufend = 0;
@@ -73,4 +82,102 @@ export function segmentUnterZeiger(segs = [], winkel = 0) {
   return segs.find((s) => pos >= s.von && pos < s.bis)
     // Rundungs-Randfall genau auf 360: das gehört zum letzten Segment.
     ?? segs[segs.length - 1];
+}
+
+// ============================================================
+//  DER EDITOR AM RAD (Andi, 27.08.2026)
+//
+//  🔴 Wörtlich: „glaubst du man kann so ein glücksrad so designen dass admin
+//  selber die felder größe also die wahrscheinlichkeit … optisch an dem Rad
+//  einstellen kann mit den ganzen Regelbeziehungen."
+//
+//  ── Warum das GEHT, und woran es sonst scheitert ──
+//  Ein Rad ist ein GANZES. Zieht man ein Feld größer, muss die Fläche
+//  irgendwo herkommen — und genau darin steckt die Entscheidung, die eine
+//  Zahlentabelle einem abnimmt und ein Rad einem aufzwingt.
+//
+//  ⚠️ Die naive Umsetzung („Feld größer ziehen, alle anderen anteilig
+//  kleiner") fühlt sich beim ersten Zug richtig an und wird beim dritten
+//  unbrauchbar: jedes Feld wandert, während man ein anderes zieht, und man
+//  kann nichts mehr festhalten. Deshalb wird hier eine GRENZE gezogen, nicht
+//  ein Feld: die Fläche geht zwischen genau zwei Nachbarn hin und her, alle
+//  übrigen bleiben, wo sie sind.
+//
+//  🔴 Und die Zahl bleibt die Wahrheit. Der Zug ändert `gewicht` — dieselbe
+//  Zahl, mit der `ziehe()` zieht. Es gibt keine zweite Größe fürs Aussehen.
+// ============================================================
+
+// Winkel eines Punktes relativ zur Mitte, in DERSELBEN Vereinbarung wie oben:
+// 0° oben, wachsend im Uhrzeigersinn, Bereich [0, 360).
+export function winkelVon(cx, cy, x, y) {
+  const grad = (Math.atan2(y - cy, x - cx) * 180) / Math.PI + 90;
+  return ((grad % 360) + 360) % 360;
+}
+
+// Welche Grenze liegt am nächsten? Grenzen sind die `bis`-Winkel der
+// Segmente — die letzte (360°/0°) ist KEINE ziehbare Grenze: sie ist der
+// Anfang des Rades, und sie zu verschieben hieße, das ganze Rad zu drehen.
+//
+// Gibt `null`, wenn nichts nahe genug liegt. ⚠️ `toleranz` in Grad, nicht in
+// Pixeln: nah am Mittelpunkt sind wenige Pixel viele Grad, und ein Griff, der
+// dort zuschnappt, macht das Ziehen unbrauchbar.
+export function naechsteGrenze(segs = [], grad, toleranz = 12) {
+  let beste = null;
+  segs.forEach((s, i) => {
+    if (i === segs.length - 1) return;   // die 360°-Naht ist keine Grenze
+    // ⚠️ Kreis-Abstand, nicht Zahlen-Abstand: zwischen 359° und 1° liegen zwei
+    // Grad, nicht 358. `(+540) % 360 - 180` bringt die Differenz auf
+    // [-180, 180), der Betrag davon ist der Abstand.
+    const abstand = Math.abs(((s.bis - grad + 540) % 360) - 180);
+    if (abstand <= toleranz && (beste === null || abstand < beste.abstand)) {
+      beste = { index: i, abstand, winkel: s.bis };
+    }
+  });
+  return beste;
+}
+
+// Die Grenze `index` auf `grad` ziehen: die Fläche wandert zwischen dem
+// Segment davor und dem danach, ihre SUMME bleibt gleich.
+//
+// Gibt `{ [feldId]: neuesGewicht }` für genau zwei Felder — oder `null`, wenn
+// der Zug nichts ändern würde.
+//
+// ⚠️ Beide Felder behalten mindestens 1. Ein Feld auf 0 zu ziehen sähe aus
+// wie „gelöscht", ist aber etwas anderes (ein Feld mit Gewicht 0 liegt weiter
+// auf dem Rad und fällt nie) — und aus einem Segment ohne Fläche kommt man
+// mit der Maus nicht mehr heraus, weil es keine Grenze mehr zum Anfassen hat.
+export function ziehGrenze(segs = [], index, grad, gesamtGewicht) {
+  const links = segs[index];
+  const rechts = segs[index + 1];
+  if (!links || !rechts || !(gesamtGewicht > 0)) return null;
+
+  // Der neue Winkel muss ZWISCHEN den beiden Außenkanten liegen — sonst
+  // würde ein Feld übersprungen und die Fläche käme aus einem dritten.
+  const von = links.von;
+  const bis = rechts.bis;
+  const spanne = ((bis - von) + 360) % 360;
+  const relativ = ((grad - von) + 360) % 360;
+  if (relativ <= 0 || relativ >= spanne) return null;
+
+  const proGrad = gesamtGewicht / 360;
+  const linksNeu = Math.max(1, Math.round(relativ * proGrad));
+  const summe = Math.round((spanne) * proGrad);
+  const rechtsNeu = Math.max(1, summe - linksNeu);
+  if (linksNeu === links.gewicht && rechtsNeu === rechts.gewicht) return null;
+  return { [links.id]: linksNeu, [rechts.id]: rechtsNeu };
+}
+
+// Die Sehne zwischen zwei Segmentmitten — so wird eine Regelbeziehung im Rad
+// sichtbar. ⚠️ Eine LINIE und kein Pfeil: ein Ausschluss gilt gegenseitig,
+// und ein Pfeil behauptete eine Richtung, die es nicht gibt.
+export function sehne(cx, cy, radius, gradA, gradB) {
+  const p = (g) => {
+    const rad = ((g - 90) * Math.PI) / 180;
+    return [cx + radius * Math.cos(rad), cy + radius * Math.sin(rad)];
+  };
+  const [x1, y1] = p(gradA);
+  const [x2, y2] = p(gradB);
+  // Leicht zur Mitte gebogen, damit sich mehrere Sehnen nicht überdecken —
+  // bei acht Feldern und vier Beziehungen läge sonst alles auf einem Punkt.
+  return `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
 }
