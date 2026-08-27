@@ -64,6 +64,141 @@ und zahlt weniger. ⚠️ Damit verlässt die Regel Ebene 5: `abwerten` greift i
 
 ---
 
+## 🌍 ANDERE SPRACHEN: wie das laufen würde (27.08.2026, GEMESSEN)
+
+Andis Frage: *„wie könnte das egtl laufen wenn man exakt die app in anderen
+sprachen auf den markt bringt, mit automatischer übersetzung"*
+
+### 🔴 Der Aufwand liegt NICHT beim Übersetzen
+
+| | |
+|---|---|
+| Textstellen in Anführungszeichen | 3 941 |
+| Textknoten direkt im JSX (`<p>Text</p>`) | 668 |
+| **zusammen** | **4 609** |
+| Zeichen | ~175 000 (**≈ 97 Normseiten**) |
+| davon Oberfläche | 2 325 Stellen |
+| davon Regel-Kataloge (`einfachRegler`, `ereignisse`, `reglerWarnung` …) | 1 616 Stellen |
+
+Eine Maschine übersetzt 97 Normseiten in Minuten und für ein paar Euro. **Der
+teure Teil ist das Herauslösen**: heute steht jeder Satz dort, wo er gebraucht
+wird — fest im Code, mitten im JSX, in Katalog-Objekten.
+
+### Der Weg, in der Reihenfolge, in der er billig bleibt
+
+1. **Herauslösen** (`next-intl` o. Ä.): jeder Satz bekommt einen Schlüssel,
+   der Code holt ihn über `t("tippabgabe.endstand")`. ⚠️ Das ist die Arbeit —
+   4 609 Stellen, und jede will einen Namen, der in zwei Jahren noch stimmt.
+2. **Maschinell vorübersetzen** (DeepL/Claude über die Schlüsseldatei).
+3. **Durchsehen lassen** — von jemandem, der die Sprache spricht UND das Spiel
+   kennt. Ohne diesen Schritt entsteht die Sorte App, der man das Übersetztsein
+   ansieht.
+4. **Store-Texte** separat: Titel, Beschreibung, Screenshots je Sprache.
+
+### ⚠️ Vier Haken, die man vorher wissen sollte
+
+- 🔴 **Ein lockerer Ton ist das, was eine Maschine am schlechtesten
+  überträgt** (TON1 in `design/auftraege.md`). „Boah, knapp daneben" wird
+  englisch entweder steif oder falsch. Je lässiger die deutsche Fassung, desto
+  mehr menschliche Nacharbeit je Sprache.
+- **Fußball-Vokabular ist nicht wörtlich.** „Spieltag" ist im Englischen
+  *matchday*, im Amerikanischen eher *week*; „Torschütze" ist *goalscorer*,
+  aber der Markt heißt *anytime scorer*. Wer wörtlich übersetzt, klingt nach
+  Übersetzung.
+- **Die Zahlen ändern sich mit.** Quoten schreibt man `2,5` (DE) gegen `2.5`
+  (EN), Datum `27.08.` gegen `08/27`. Dafür gibt es `Intl` — aber es muss
+  einmal überall durch, und `format.js` ist heute die einzige Stelle, die das
+  könnte.
+- **Der Platz reicht nicht.** Deutsch ist kompakt gegenüber Französisch
+  (+15–20 %) — jede Beschriftung, die heute knapp passt, bricht dort um.
+  ⚠️ Genau deshalb ist Andis Regel „weniger Text, dafür größer" (07.08.2026)
+  nebenbei die beste Vorbereitung auf Mehrsprachigkeit, die es gibt.
+
+### 🔴 Die Empfehlung zur Reihenfolge
+
+**Nicht jetzt — aber die Entscheidung, WANN, gehört vor die Texte.** Wird der
+Bestand erst auf lockeren Ton umgeschrieben (TON1) und danach herausgelöst,
+fasst man dieselben 4 609 Stellen zweimal an. Beides in EINEM Durchgang zu
+machen, kostet fast nichts extra: wer den Satz sowieso neu schreibt, kann ihn
+gleich unter einen Schlüssel legen.
+
+⚠️ Das ist keine Empfehlung, sofort mit i18n anzufangen — es ist eine
+Empfehlung, die Frage zu beantworten, BEVOR der Ton-Durchgang läuft.
+
+---
+
+## ⚡ PERFORMANCE: was gemessen ist und was nicht (27.08.2026)
+
+Andis Frage: *„Denkst du es ist auch bereits optimiert dass die Performance
+super läuft und echt wenig ladezeit bzw verzögerung besteht."*
+
+**Ehrliche Antwort: teilweise. Ein Fund ist behoben, einer steht offen, und die
+wichtigste Zahl hat noch nie jemand gemessen.**
+
+### ✅ Behoben und nachgemessen (26.08.2026, LV3)
+
+Gegen einen **Produktions-Build** gemessen, also kein StrictMode-Artefakt:
+
+| Screen | Anfragen vorher | nachher |
+|---|---|---|
+| `/hub` | 18 | **9** |
+| `/tippen` | 11 | **6** |
+| `/ranking` | 15 | **9** |
+
+Der Spielplan-Katalog wurde dabei **dreimal** geholt, jetzt einmal.
+
+### 🔴 Was OFFEN ist — und es ist der größte Posten
+
+**Der Katalog ist 3,15 MB roh** (1942 Spiele à ~1,7 KB, praktisch vollständig
+der Quoten-Schnappschuss). Er wird jetzt nur noch EINMAL geholt statt dreimal —
+aber einmal 3,15 MB ist auf einem Handy im Mobilfunknetz immer noch der
+Unterschied zwischen „geht auf" und „hakt".
+
+⚠️ **Der Grund ist eine Bequemlichkeit, keine Notwendigkeit:** `listMatches()`
+holt ALLE Spalten ALLER Spiele, obwohl fast jeder Screen nur `id`, `kickoff`,
+`home`, `away`, `matchday` und `wettbewerb` braucht. Der fette Teil ist
+`snapshot` — und den braucht nur die Tippabgabe, für EIN Spiel.
+
+**Drei Schritte, in dieser Reihenfolge:**
+
+1. `listMatches()` ohne `snapshot` (`.select("id,kickoff,home,away,…")`) —
+   der Schnappschuss kommt über `getMatch(id)` nach, wo er gebraucht wird.
+   ⚠️ Vorher prüfen, wer `snapshot` aus der Liste liest; `bigGame` und die
+   Zeitachse sind Kandidaten.
+2. Serverseitig auf die Runde filtern statt im Browser
+   (`listRoundMatches` gibt es schon — es holt aber den vollen Katalog).
+3. Erst dann über Zwischenspeicher nachdenken.
+
+### ⚠️ Die Bundle-Größe: groß, aber nicht das Problem
+
+| | |
+|---|---|
+| First Load JS, typische Route | **~310 kB** |
+| `/erstellen` | **407 kB** |
+| größter Chunk (roh) | 524 KB |
+
+310 kB ist über dem, was man sich wünscht (~150–200 kB), aber es ist ein
+EINMALIGER Preis beim ersten Öffnen und danach im Cache — in der nativen Hülle
+liegt er sogar mit im Paket und kostet gar keine Ladezeit. Der Katalog dagegen
+kostet **bei jedem Öffnen**.
+
+### ⚠️ Was NIEMAND gemessen hat, und es ist die eigentliche Frage
+
+**Wie lange dauert das Öffnen auf einem echten Telefon?** Es gibt in diesem
+Projekt Messungen für Anfragen (`LV3`), für Bewegung (`npm run bewegung`: 12
+gratis, 4 Paint, 0 Layout) und für Tippziele (`npm run sicht`) — aber keine
+einzige für Ladezeit.
+
+🔴 **Vorschlag: `npm run tempo`** — dieselbe Bauart wie die anderen Abnahmen:
+Produktions-Build, Playwright, gedrosseltes Netz (3G) und gedrosselte CPU, dann
+LCP und „bis der erste Tipp möglich ist" je Screen. Eine Zahl, die man
+verbessern kann, statt eines Gefühls.
+
+⛔ **Ohne diese Messung ist jede Aussage über „läuft super" geraten** — auch
+meine.
+
+---
+
 ## 📱 DIE NATIVE APP: was wirklich im Weg steht (26.08.2026, GEMESSEN)
 
 Andis Frage: *„wir müssen uns ja eh mal um die native app kümmern, wie
