@@ -292,6 +292,49 @@ war: Layout und UX müssen NICHT auf die native Hülle warten. Sie warten auf
 die Masterdatei (`Quotentippen.pptx`), wie bisher. Die Hülle steht jetzt
 daneben und kostet nichts, solange sie niemand anfasst.
 
+### 🔴 Gegenprobe am echten Fall: die Favoriten-Sperre (26.08.2026)
+
+Andis Rückfrage nach einem Tag Arbeit am Regelwerk: *„wie ist das denn jetz
+eigentlich mit solchen anpassungen am gehirn unserer App, ist das jetzt
+ineffizient und muss sowas zwangsweise davor stehen bevor wir die native
+übertragung machen?"*
+
+**Gemessen an den drei Commits dieses Tages** (`e21fbe9..252e869`):
+
+| | |
+|---|---|
+| geänderte Dateien | 29 |
+| Zeilen | +2163 / −44 |
+| davon an einer **nativen Nahtstelle** | **0** |
+
+Kein einziger Treffer in `pushKanal.js`, `AuthProvider.jsx`, `capacitor.config.json`
+oder `android/`. Das ist keine Zufälligkeit dieses Tages, sondern die Folge von
+Architektur-Regel 1: die Engine ist UI-frei, und die Hülle kennt nur die
+Oberfläche.
+
+🔴 **Beide Richtungen sind unabhängig, und das ist die Antwort:**
+
+- Regelwerk-Arbeit braucht die Hülle **nicht** — sie fasst nichts an, was
+  Capacitor sieht.
+- Die Hülle braucht das Regelwerk **nicht fertig** — sie verpackt, was in
+  `out/` liegt, egal wie viele Regeln darin stehen.
+
+⛔ Es gibt also **keine Reihenfolge, die erzwungen wäre**. Die einzige echte
+Reihenfolge im Projekt bleibt die aus `CLAUDE.md`: **eigener Mailversand vor
+dem Testbetrieb mit Freunden** — ohne ihn kann sich außer Andi niemand anmelden.
+
+⚠️ **Und die ehrliche Stelle, an der es an DIESEM Tag doch ineffizient war —
+sie hat mit „nativ" nichts zu tun:** die Endstand-Sperre wurde gebaut und am
+selben Tag wieder zurückgebaut (`517 +/− 405` Zeilen im Rückbau-Commit). Nicht
+weil das Regelwerk teuer wäre, sondern weil sie gebaut wurde, **bevor die Frage
+dazu beantwortet war** (❓6: zahlt die Nähe über eine gesperrte Zelle?). Die
+Frage stand im Ideen-Eintrag — sie war nur nicht abgewartet worden.
+
+🔴 **Die Lehre, und sie gilt unabhängig von Capacitor:** eine offene ❓ im
+Ideen-Eintrag ist kein Schönheitsfehler, sondern eine Kostenstelle. Was daran
+hängt, wird nicht vorgebaut (`CLAUDE.md`: „Lieber eine Rückfrage zu viel als
+ein erfundener Regler").
+
 ## 🔔 ZP5: fünf Benachrichtigungsarten — zwei davon liefern noch nichts (25.08.2026)
 
 Andis Zusage beim Fremdjoker-Gespräch: *„wir machen noch ein Untermenü wo
