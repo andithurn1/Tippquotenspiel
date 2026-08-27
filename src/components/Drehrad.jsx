@@ -5,7 +5,7 @@ import { C, MONO, SERIES, readableInk, RUND } from "@/lib/theme";
 import {
   BELOHNUNGS_TYPEN, DREHRAD_LIMITS, DEFAULT_DREHRAD,
   sanitizeDrehrad, pruefeFelder, wahrscheinlichkeiten, drehradPlan, beschreibeDrehrad,
-  AUSSCHLUSS_REICHWEITEN,
+  AUSSCHLUSS_REICHWEITEN, HAEUFIGKEITEN, dreherwartung,
 } from "@/lib/drehrad";
 import { PHASEN } from "@/lib/duellJoker";
 import Gluecksrad from "@/components/Gluecksrad";
@@ -364,11 +364,48 @@ export default function Drehrad({ rules, onChange }) {
             Ja — und die Drehungen sehen einander: Sperrfrist und Ausschlüsse
             greifen INNERHALB des Termins, sonst wären fünf Drehungen fünfmal
             dieselbe Rechnung. */}
-        <div style={{ maxWidth: 210, margin: "10px 0 4px" }}>
+        {/* 🔴 Zwei Zugänge zu DERSELBEN Zahl (Andi: „gesamt mit frequenz
+            aussetzern auch"). Bisher ging nur der Abstand — wie viele
+            Drehungen dabei herauskommen, musste man rückwärts ausrechnen, und
+            bei einem Fenster, das man selbst verstellt, ändert sich die Zahl
+            unter der Hand. */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, margin: "10px 0 8px" }}>
+          {HAEUFIGKEITEN.map((h) => {
+            const an = cfg.haeufigkeit === h.key;
+            return (
+              <button key={h.key} title={h.desc} onClick={() => setze({ haeufigkeit: h.key })} style={{
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
+                padding: "5px 10px", borderRadius: RUND.pille,
+                background: an ? `${C.mint}22` : C.surface2, color: an ? C.mint : C.muted,
+                border: `1px solid ${an ? C.mint + "66" : C.line}`,
+              }}>{h.label}</button>
+            );
+          })}
+        </div>
+        {/* ⚠️ Der Regler dafür steht WEITER UNTEN, bei „Wann wird gedreht?" —
+            er war schon da, und ein zweiter für dieselbe Zahl wäre genau die
+            Sorte Doppelung, die dieses Projekt schon achtmal hatte. Hier steht
+            nur, was es NICHT gab: wie oft je Termin. */}
+        <div style={{ maxWidth: 210, marginBottom: 4 }}>
           <Zahl label="Drehungen je Termin" wert={cfg.drehungenProEreignis}
             limits={DREHRAD_LIMITS.drehungenProEreignis}
             onChange={(v) => setze({ drehungenProEreignis: v })} />
         </div>
+        {/* ⚠️ Die Gegenrechnung steht immer da, in BEIDE Richtungen — wer den
+            Abstand einstellt, sieht die Gesamtzahl, und umgekehrt. */}
+        {(() => {
+          const e = dreherwartung(raw, SPIELTAGE);
+          return (
+            <div style={{
+              fontFamily: MONO, fontSize: "0.6875rem", color: C.mint,
+              background: `${C.mint}10`, border: `1px solid ${C.mint}33`,
+              borderRadius: RUND.karte, padding: "7px 10px", margin: "2px 0 8px",
+            }}>
+              ≈ {e.termine} Termine · {e.drehungen} Drehungen · etwa jeder {e.frequenz}. Spieltag
+              {" "}(Spieltag {e.fenster.von}–{e.fenster.bis})
+            </div>
+          );
+        })()}
         <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
           {cfg.drehungenProEreignis === 1
             ? "Eine Drehung, wenn das Rad drankommt."
@@ -378,14 +415,30 @@ export default function Drehrad({ rules, onChange }) {
           {beschreibeDrehrad(raw, SPIELTAGE)}
         </p>
 
+        {/* 🔴 EIN Schieber, zwei Zugänge (Andi: „gesamt mit frequenz aussetzern
+            auch"). Welche Zahl er bedient, entscheiden die Knöpfe oben — es
+            bleibt dieselbe Verteilung, nur anders herum eingegeben. */}
         <div style={{ marginTop: 4 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
-            <span style={{ fontSize: "0.8125rem" }}>Etwa jeder {cfg.frequenz}. Spieltag</span>
+            <span style={{ fontSize: "0.8125rem" }}>
+              {cfg.haeufigkeit === "gesamt"
+                ? `${cfg.gesamtProSaison} Dreh-Termine in der Saison`
+                : `Etwa jeder ${cfg.frequenz}. Spieltag`}
+            </span>
           </div>
-          <input type="range" value={cfg.frequenz}
-            min={DREHRAD_LIMITS.frequenz.min} max={DREHRAD_LIMITS.frequenz.max} step={DREHRAD_LIMITS.frequenz.step}
-            onChange={(e) => setze({ frequenz: +e.target.value })}
-            style={{ width: "100%", accentColor: C.akzent, cursor: "pointer" }} />
+          {cfg.haeufigkeit === "gesamt" ? (
+            <input type="range" value={cfg.gesamtProSaison}
+              min={DREHRAD_LIMITS.gesamtProSaison.min} max={DREHRAD_LIMITS.gesamtProSaison.max}
+              step={DREHRAD_LIMITS.gesamtProSaison.step}
+              onChange={(e) => setze({ gesamtProSaison: +e.target.value })}
+              style={{ width: "100%", accentColor: C.mint, cursor: "pointer" }} />
+          ) : (
+            <input type="range" value={cfg.frequenz}
+              min={DREHRAD_LIMITS.frequenz.min} max={DREHRAD_LIMITS.frequenz.max}
+              step={DREHRAD_LIMITS.frequenz.step}
+              onChange={(e) => setze({ frequenz: +e.target.value })}
+              style={{ width: "100%", accentColor: C.akzent, cursor: "pointer" }} />
+          )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>

@@ -70,7 +70,7 @@
 //  Reine Funktionen, UI-frei.
 // ============================================================
 
-import { jokerPlan } from "./jokerPlan";
+import { jokerPlan, kontingent } from "./jokerPlan";
 import { fensterVon, PHASEN } from "./duellJoker";
 import { seeded } from "./seeded";
 import { JOKER_ARTEN } from "./jokerBudget";
@@ -138,6 +138,31 @@ export const AUSSCHLUSS_REICHWEITEN = [
 ];
 const REICHWEITEN_KEYS = new Set(AUSSCHLUSS_REICHWEITEN.map((r) => r.key));
 
+// ── Wie oft wird gedreht? Zwei Wege zu derselben Zahl ───────
+// 🔴 Andi, 27.08.2026: „einstellbar machen wann und wie oft jeweils (gesamt
+// mit frequenz aussetzern auch)".
+//
+// Bisher ging nur die Frequenz („etwa jeder 4. Spieltag"). Wie viele
+// Drehungen dabei herauskommen, musste der Admin rückwärts ausrechnen — und
+// bei einem Fenster, das er selbst verstellt, ändert sich die Zahl unter der
+// Hand. Wer „fünf Drehungen in der Saison" will, will genau das sagen können.
+//
+// ⚠️ Es bleibt EINE Zahl mit zwei Zugängen, keine zweite Mechanik: der
+// „gesamt"-Weg rechnet nur die Frequenz aus, die dann ganz normal in
+// `jokerPlan` geht. Zwei getrennte Verteilungen wären die doppelte Wahrheit
+// über denselben Plan.
+export const HAEUFIGKEITEN = [
+  {
+    key: "frequenz", label: "Etwa jeder N-te",
+    desc: "Du sagst den Abstand, die Gesamtzahl ergibt sich aus der Länge der Runde.",
+  },
+  {
+    key: "gesamt", label: "So viele in der Saison",
+    desc: "Du sagst die Gesamtzahl, der Abstand ergibt sich. Praktisch, wenn das Fenster noch wackelt.",
+  },
+];
+const HAEUFIGKEIT_KEYS = new Set(HAEUFIGKEITEN.map((h) => h.key));
+
 // `wer` (Abschnitt 2.4) — K1 (Abnahme 31.07., design/drehrad.md Abschnitt 3b
 // (a)): EIN Katalog statt zwei. `drehrad.js` führte hier früher einen eigenen
 // `wer`-Katalog, der von `jokerBasis.WER` abwich (kein `adminFreigabe`, dafür
@@ -180,6 +205,9 @@ export const DREHRAD_LIMITS = {
   // Drehungen hintereinander sind schon eine kleine Show, zwanzig wären
   // eine Rechnung.
   drehungenProEreignis: { min: 1, max: 5, step: 1 },
+  // Wie viele Dreh-TERMINE in der Saison (nicht Drehungen — das ist die
+  // Termine mal `drehungenProEreignis`).
+  gesamtProSaison: { min: 1, max: 38, step: 1 },
   // Für einen Ausschluss mit Reichweite „Drehungen" — dieselbe Größenordnung
   // wie `sperrfrist`, weil es dieselbe Zählweise ist.
   ausschlussDrehungen: { min: 1, max: 20, step: 1 },
@@ -220,6 +248,10 @@ export const DEFAULT_DREHRAD = {
   // Überraschung.
   drehungenProEreignis: 1,
   ausschluesse: [],
+  // ⚠️ Vorgabe bleibt der Frequenz-Weg: er war es bisher, und ein
+  // Umschalten würde jede bestehende Runde anders verteilen.
+  haeufigkeit: "frequenz",
+  gesamtProSaison: 8,
 };
 
 const clamp = (v, { min, max }, fallback) => {
@@ -420,6 +452,9 @@ export function sanitizeDrehrad(partial = {}) {
       p.drehungenProEreignis, DREHRAD_LIMITS.drehungenProEreignis, DEFAULT_DREHRAD.drehungenProEreignis)),
     sperrfrist,
     frequenz: Math.round(clamp(p.frequenz, DREHRAD_LIMITS.frequenz, DEFAULT_DREHRAD.frequenz)),
+    haeufigkeit: HAEUFIGKEIT_KEYS.has(p.haeufigkeit) ? p.haeufigkeit : DEFAULT_DREHRAD.haeufigkeit,
+    gesamtProSaison: Math.round(clamp(
+      p.gesamtProSaison, DREHRAD_LIMITS.gesamtProSaison, DEFAULT_DREHRAD.gesamtProSaison)),
     modus,
     phase: PHASEN.some((ph) => ph.key === p.phase) ? p.phase : DEFAULT_DREHRAD.phase,
     schlussLaenge: Math.round(clamp(p.schlussLaenge, DREHRAD_LIMITS.schlussLaenge, DEFAULT_DREHRAD.schlussLaenge)),
@@ -452,6 +487,36 @@ export function wahrscheinlichkeiten(felder = []) {
   }));
 }
 
+// Die tatsächlich wirksame Frequenz. Beim „gesamt"-Weg aus der gewünschten
+// Zahl und der Fensterbreite zurückgerechnet.
+//
+// ⚠️ `Math.max(1, …)`: bei mehr gewünschten Terminen als Spieltagen käme sonst
+// 0 heraus, und `kontingent` teilte durch null. Mehr Termine als Spieltage
+// sind nicht falsch eingestellt, sondern schlicht nicht möglich — dann wird
+// eben an jedem gedreht.
+export function frequenzVon(cfg, breite) {
+  const c = cfg?.haeufigkeit ? cfg : sanitizeDrehrad(cfg);
+  if (c.haeufigkeit !== "gesamt") return c.frequenz;
+  const n = Math.max(1, c.gesamtProSaison);
+  return Math.max(1, Math.round(breite / n));
+}
+
+// Was kommt dabei heraus? Die Zahl, die der Admin sehen will, BEVOR er
+// speichert — und die beim Frequenz-Weg bisher nirgends stand.
+//
+// ⚠️ „etwa": `jokerPlan` verteilt über Blöcke und rundet dabei. Eine exakte
+// Zusage wäre falsch, und eine Zahl, der man nicht trauen kann, ist schlimmer
+// als ein „etwa" davor.
+export function dreherwartung(drehrad, spieltage = 34) {
+  const cfg = sanitizeDrehrad(drehrad);
+  const fenster = fensterVon(cfg, spieltage);
+  const breite = Math.max(0, fenster.bis - fenster.von + 1);
+  if (!cfg.enabled || breite < 1) return { termine: 0, drehungen: 0, frequenz: cfg.frequenz, fenster };
+  const frequenz = frequenzVon(cfg, breite);
+  const termine = kontingent(breite, frequenz);
+  return { termine, drehungen: termine * cfg.drehungenProEreignis, frequenz, fenster };
+}
+
 // ── Wann gedreht wird ─────────────────────────────────────────
 // Ruft `jokerPlan` auf, baut die Blockverteilung nicht nach (Abschnitt 2.3).
 // Muster `duellPlan` in duellJoker.js: erst das Saison-Fenster über
@@ -481,7 +546,10 @@ export function drehradPlan({
     : null;
   const plan = jokerPlan({
     spieltage: breite,
-    verteilung: { modus: cfg.modus, frequenz: cfg.frequenz },
+    // 🔴 Der „gesamt"-Weg ist KEINE zweite Verteilung, sondern dieselbe mit
+    // ausgerechneter Frequenz. Ein eigener Plan-Zweig wäre die doppelte
+    // Wahrheit über denselben Kalender.
+    verteilung: { modus: cfg.modus, frequenz: frequenzVon(cfg, breite) },
     seed,
     userIds,
     bespielt: bespieltRelativ,
@@ -580,7 +648,14 @@ export function beschreibeDrehrad(drehrad, spieltage = 34) {
   }
   const fenster = fensterVon(cfg, spieltage);
   const wo = cfg.modus === "gleich" ? "für alle am selben Spieltag" : "jeder an eigenen Spieltagen";
-  return `${positive.length} Felder auf dem Rad, etwa jeder ${cfg.frequenz}. Spieltag zwischen Spieltag ${fenster.von} und ${fenster.bis}, ${wo}.`;
+  // 🔴 Die ausgerechnete Zahl steht MIT dabei. Sie war bisher nur rückwärts zu
+  // ermitteln, und bei einem Fenster, das der Admin selbst verstellt, ändert
+  // sie sich unter der Hand.
+  const e = dreherwartung(drehrad, spieltage);
+  const wieOft = e.drehungen === e.termine
+    ? `etwa ${e.termine} Drehungen`
+    : `etwa ${e.termine} Termine × ${cfg.drehungenProEreignis} = ${e.drehungen} Drehungen`;
+  return `${positive.length} Felder auf dem Rad, ${wieOft} zwischen Spieltag ${fenster.von} und ${fenster.bis} (etwa jeder ${e.frequenz}.), ${wo}.`;
 }
 
 // ── Auswertung: der Punkte-Deckel wird durchgesetzt ──────────

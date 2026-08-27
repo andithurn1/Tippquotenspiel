@@ -386,6 +386,12 @@ export function schaufensterRegeln() {
       // er wirkungslos, und eine Vorführung, in der nichts passiert, führt
       // nichts vor.
       drehungenProEreignis: 2,
+      // 🔴 Der zweite Zugang zu derselben Zahl (Andi, 27.08.2026: „gesamt mit
+      // frequenz aussetzern auch"). Das Schaufenster nimmt ihn, damit er
+      // vorgeführt wird — der Frequenz-Weg ist die Vorgabe und steht ohnehin
+      // überall.
+      haeufigkeit: "gesamt",
+      gesamtProSaison: 3,
       ausschluesse: [
         // Nicht beide am selben Termin: wer die Punkte zieht, bekommt bei der
         // zweiten Drehung keinen Joker obendrauf.

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   AUSSCHLUSS_REICHWEITEN, DREHRAD_LIMITS, DEFAULT_DREHRAD,
   sanitizeDrehrad, pruefeAusschluesse, ziehe, wahrscheinlichkeiten,
+  dreherwartung, drehradPlan, beschreibeDrehrad,
 } from "./drehrad";
 import { drehradZiehungen } from "./drehradBoard";
 import { segmente, winkelVon, naechsteGrenze, ziehGrenze } from "./radGeometrie";
@@ -299,5 +300,76 @@ describe("Die Grenzen bleiben bedienbar", () => {
 
   it("die Vorgabe traegt keine Ausschluesse", () => {
     expect(sanitizeDrehrad({}).ausschluesse).toEqual([]);
+  });
+});
+
+// ── Wie oft wird gedreht? ───────────────────────────────────
+// 🔴 Andi, 27.08.2026: „einstellbar machen wann und wie oft jeweils (gesamt
+// mit frequenz aussetzern auch)". Bisher ging nur der Abstand -- die
+// Gesamtzahl musste man rueckwaerts ausrechnen.
+describe("Frequenz und Gesamtzahl sind zwei Zugaenge zu EINER Zahl", () => {
+  const mit = (extra) => sanitizeDrehrad({
+    ...DEFAULT_DREHRAD, enabled: true,
+    felder: [feld("a", 50), feld("b", 50)],
+    abSpieltag: 1, bisSpieltag: 34, phase: "manuell",
+    ...extra,
+  });
+
+  it("der Frequenz-Weg sagt jetzt auch, wie viele es werden", () => {
+    const e = dreherwartung(mit({ haeufigkeit: "frequenz", frequenz: 4 }), 34);
+    expect(e.termine).toBe(9);          // 34 / 4, gerundet
+    expect(e.drehungen).toBe(9);        // eine Drehung je Termin
+    expect(e.frequenz).toBe(4);
+  });
+
+  it("🔴 der Gesamt-Weg rechnet die Frequenz zurueck -- und trifft die Zahl", () => {
+    const e = dreherwartung(mit({ haeufigkeit: "gesamt", gesamtProSaison: 5 }), 34);
+    expect(e.termine).toBe(5);
+    expect(e.frequenz).toBe(7);         // 34 / 5, gerundet
+  });
+
+  it("Drehungen je Termin gehen in die Gesamtzahl ein", () => {
+    const e = dreherwartung(mit({ haeufigkeit: "gesamt", gesamtProSaison: 4, drehungenProEreignis: 3 }), 34);
+    expect(e.termine).toBe(4);
+    expect(e.drehungen).toBe(12);
+  });
+
+  it("mehr Termine als Spieltage sind moeglich, nicht kaputt", () => {
+    // ⚠️ Ohne `Math.max(1, …)` kaeme eine Frequenz von 0 heraus und
+    // `kontingent` teilte durch null.
+    const e = dreherwartung(mit({ haeufigkeit: "gesamt", gesamtProSaison: 38, bisSpieltag: 6 }), 34);
+    expect(e.frequenz).toBe(1);
+    expect(Number.isFinite(e.termine)).toBe(true);
+  });
+
+  it("der Plan folgt der ausgerechneten Frequenz, nicht der eingestellten", () => {
+    // 🔴 Die eigentliche Probe: der Gesamt-Weg darf keine ZWEITE Verteilung
+    // sein. Er rechnet nur die Frequenz aus, die dann normal in `jokerPlan`
+    // geht -- also muss ein Rad mit „gesamt 5" denselben Plan liefern wie eins
+    // mit der entsprechenden Frequenz.
+    const ausGesamt = drehradPlan({
+      spieltage: 34, seed: "p", userIds: ["u1"],
+      drehrad: mit({ haeufigkeit: "gesamt", gesamtProSaison: 5, modus: "gleich" }),
+    });
+    const ausFrequenz = drehradPlan({
+      spieltage: 34, seed: "p", userIds: ["u1"],
+      drehrad: mit({ haeufigkeit: "frequenz", frequenz: 7, modus: "gleich" }),
+    });
+    expect(ausGesamt.proSpieler.u1).toEqual(ausFrequenz.proSpieler.u1);
+  });
+
+  it("ein ausgeschaltetes Rad dreht null mal", () => {
+    expect(dreherwartung(mit({ enabled: false }), 34)).toMatchObject({ termine: 0, drehungen: 0 });
+  });
+
+  it("der Satz fuer die Oberflaeche nennt die Zahl, nicht nur den Abstand", () => {
+    const text = beschreibeDrehrad(mit({ haeufigkeit: "gesamt", gesamtProSaison: 5 }), 34);
+    expect(text).toMatch(/5 Drehungen/);
+  });
+
+  it("die Vorgabe bleibt der Frequenz-Weg", () => {
+    // ⚠️ Ein Umschalten der Vorgabe wuerde jede bestehende Runde anders
+    // verteilen.
+    expect(DEFAULT_DREHRAD.haeufigkeit).toBe("frequenz");
   });
 });
