@@ -185,7 +185,7 @@ Angeschlossen an beiden Enden (sonst wäre es der Befund vom 06.08.):
 - Ziel `budget` → schneidet die kumulierten Käufe in `kontoVerlauf`. Der Kauf AM
   Tag des Schnitts zählt weiter.
 
-### 4 · Das Menü selbst — ⏳ offen
+### 4 · Das Menü selbst — ✅ 27.08.2026
 
 Vier Routen, die es einzeln gibt, brauchen eine Klammer: eine Seite je Runde,
 von der aus alles erreichbar ist. ⚠️ Das ist der billigste Punkt der vier —
@@ -201,3 +201,34 @@ Admin-Seite.
 sitzen, entscheidet `Quotentippen.pptx`. Was hier gebaut werden darf, ist die
 KLAMMER — eine Seite je Runde, die die vorhandenen Routen bündelt — nicht eine
 neue Anordnung der Spielerstellung.
+
+✅ **Gebaut, und der Befund war größer als gedacht:** die Klammer gab es längst
+(`/hub`, `RundenHub.jsx`) — sie war nur selbst zu dem geworden, wogegen Andis
+Ansage sich richtet. **Bis zu elf gleich aussehende Kacheln untereinander**,
+sechs davon als kopierte Link-Blöcke im JSX, jede mit demselben Verlauf und
+demselben Punkt noch einmal ausgeschrieben.
+
+Jetzt drei Ebenen statt einer Liste:
+
+| | Was | Warum dort |
+|---|---|---|
+| **Über allem** | Joker-Abstimmung · Regeländerungen | Aufrufe, die vergehen, wenn man sie übersieht. Nie hinter einem Klick |
+| **Offen** | Tipp abgeben · Ranking · Was gerade läuft | Was man an einem normalen Spieltag tut |
+| **„Deine Sachen"** | Joker · Glücksrad · Saison-Wetten | Meins, aber es eilt nicht |
+| **„Die Runde"** | Fahrplan · Historie · Freigaben · Spott | Nachschlagen und verwalten |
+
+🔴 **Der Teil, der leicht schiefgeht und deshalb einen Wächter hat**
+(`rundenMenue.test.js`, 8 Tests): eine zugeklappte Gruppe **muss sagen, was in
+ihr liegt** (`kurz`). Sonst klappt sie niemand auf — und aus dem Aufräumen ist
+ein Verstecken geworden, also das Gegenteil des Auftrags. Der Wächter prüft
+außerdem, dass jede Kachel auf eine Route zeigt, die es gibt (sonst 404, und
+zwar nur für den, dessen Runde diese Ebene eingeschaltet hat), und dass `wenn`
+keine Ebene nennt, die der Hub gar nicht abfragt (ein Tippfehler dort lässt die
+Kachel still für alle verschwinden).
+
+⚠️ **Aufgeklappt wird über `Feinheiten`**, nicht über eine eigene Mechanik —
+acht Fassungen desselben Aufklappers sind in diesem Projekt schon einmal
+entstanden, jede für sich plausibel.
+
+⛔ **Was NICHT passiert ist:** eine neue Anordnung der Spielerstellung. Die
+bleibt bei der Masterdatei.

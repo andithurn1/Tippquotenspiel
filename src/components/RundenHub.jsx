@@ -10,20 +10,55 @@ import { muenzStand } from "@/lib/muenzstand";
 import { basisFuer } from "@/lib/jokerBasis";
 import { narrenStand } from "@/lib/narrenstand";
 import Waehrungen from "@/components/Waehrungen";
+import Feinheiten from "@/components/Feinheiten";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 
 
-// Landing-Karten der aktiven Runde: Tipp abgeben / Ranking / Ranking-Verlauf.
-const CARDS = [
+// ============================================================
+//  DIE KACHELN DES RUNDEN-MENÜS — in drei Gruppen statt einer Liste
+//
+//  🔴 Andi, 27.08.2026: „solche optionen müssen egtl hinter nem eigenen
+//  öffnenbarem Fenster sein, weil die ganzen Einstellmöglichkeiten einen sonst
+//  komplett erschlagen".
+//
+//  ⚠️ `kurz` ist kein Beiwerk: es steht in der Zeile über der zugeklappten
+//  Gruppe und ist das Einzige, was jemand sieht, bevor er klickt. Eine Gruppe,
+//  die nicht sagt, was in ihr liegt, wird nicht geöffnet — dann ist die
+//  Aufräumaktion eine Versteckaktion geworden.
+// ============================================================
+
+// Was man an einem normalen Spieltag tut. Immer offen, nie hinter einem Klick.
+const JETZT = [
   { href: "/tippen", title: "Tipp abgeben", desc: "Spiel wählen, Ergebnis + Torschützen tippen.", tone: C.akzent },
-  { href: "/fahrplan", title: "Saison-Fahrplan", desc: "Wo die Runde steht und was als Nächstes aufgeht.", tone: C.sky },
   { href: "/ranking", title: "Ranking", desc: "Wer in dieser Runde gerade vorne liegt.", tone: C.mint },
   // 🔴 Andi, 27.08.2026: „hier sehen wir ne Übersicht über die Ereignisse und
   // angewendeten Joker bzw. wann die auch geresettet werden."
   { href: "/runde", title: "Was gerade läuft", desc: "Wer hält noch Joker, welche Ereignisse liefen — und wann was verfällt.", tone: C.gold ?? C.akzent },
-  { href: "/historie", title: "Historie & Rekorde", desc: "Verlauf, Auszeichnungen und „was wäre mit anderem Preset gewesen?“.", tone: C.sky },
-  { href: "/spott", title: "Spott verschicken", desc: "Spruch + Clip an einen Mitspieler — über deinen normalen Chat.", tone: C.coral },
+];
+
+// Was MIR gehört. Jede Kachel hängt an einer Ebene, die auch aus sein kann —
+// deshalb steht neben `href` die Bedingung, unter der sie überhaupt erscheint.
+const MEINS = [
+  { href: "/joker", title: "🃏 Deine Joker", kurz: "Joker", tone: C.akzent,
+    desc: "Wie viele du hast, welche Spieltage sie tragen, wie weit du bist.", wenn: "joker" },
+  { href: "/rad", title: "🎡 Dein Glücksrad", kurz: "Glücksrad", tone: C.sky,
+    desc: "Was für dich gefallen ist — und wann sich das Rad das nächste Mal dreht.", wenn: "rad" },
+  { href: "/saison", title: "🏆 Saison-Wetten", kurz: "Saison-Wetten", tone: C.violet,
+    desc: "Langzeit-Tipps: Meister, Torschützenkönig & Co.", wenn: "saison" },
+];
+
+// Was die RUNDE angeht — nachschlagen, nachlesen, verwalten. Nichts davon
+// eilt an einem Spieltag, deshalb liegt es hinter einem Klick.
+const RUNDE = [
+  { href: "/fahrplan", title: "Saison-Fahrplan", kurz: "Fahrplan", tone: C.sky,
+    desc: "Wo die Runde steht und was als Nächstes aufgeht.", wenn: null },
+  { href: "/historie", title: "Historie & Rekorde", kurz: "Historie", tone: C.sky,
+    desc: "Verlauf, Auszeichnungen und „was wäre ohne Joker gewesen?“.", wenn: null },
+  { href: "/freigaben", title: "🔑 Freigaben", kurz: "Freigaben", tone: C.indigo,
+    desc: "Wer an welchem Spieltag einsetzen darf — erteilt der Admin.", wenn: "freigaben" },
+  { href: "/spott", title: "Spott verschicken", kurz: "Spott", tone: C.coral,
+    desc: "Spruch + Clip an einen Mitspieler — über deinen normalen Chat.", wenn: null },
 ];
 
 // Geparkte Premium-Features (siehe design/roadmap.md) — nur als sichtbare,
@@ -34,6 +69,29 @@ const CARDS = [
 // schlimmer als keine — sie wird zur Schuld, die man beim Nutzer stehen lässt.
 // Kommt hier etwas Neues rein, bitte erst wenn es auch gebaut wird.
 const SOON = [];
+
+// ⚠️ EINE Kachel-Fassung statt sechs kopierter Link-Blöcke. Vorher stand
+// derselbe Verlauf, derselbe Rahmen und derselbe Punkt sechsmal im JSX —
+// genau der Weg, auf dem in diesem Projekt schon einmal acht Eckenradien
+// entstanden sind.
+function Kachel({ href, punkt, titel, desc, rahmen = null }) {
+  return (
+    <Link href={href} style={{
+      textDecoration: "none", color: C.text,
+      background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
+      border: `1px solid ${rahmen ?? C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{
+          width: 8, height: 8, borderRadius: RUND.pille,
+          background: punkt, boxShadow: `0 0 12px ${punkt}`,
+        }} />
+        <span style={{ fontSize: "1rem", fontWeight: 700 }}>{titel}</span>
+      </div>
+      <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>{desc}</div>
+    </Link>
+  );
+}
 
 // Das Runden-Hub: Startbildschirm der AKTIVEN Runde (Tipp abgeben, Ranking,
 // Ranking-Verlauf, Premium-Ausblick). Von hier geht es über die Fußzeile ins
@@ -94,6 +152,13 @@ export default function RundenHub() {
     return () => { live = false; };
   }, [roundId, user]);
 
+  // Welche Kacheln erscheinen überhaupt? Eine Ebene, die in dieser Runde aus
+  // ist, hat auch keine Kachel — sonst führt ein Klick auf eine leere Seite.
+  const an = { joker, rad, saison, freigaben };
+  const sichtbar = (k) => k.wenn === null || an[k.wenn];
+  const meins = MEINS.filter(sichtbar);
+  const runde = RUNDE.filter(sichtbar);
+
   return (
     <main style={{
       minHeight: "100vh", background: C.ink, color: C.text,
@@ -126,110 +191,60 @@ export default function RundenHub() {
           </div>
         )}
 
+        {/* 🔴 Andi, 27.08.2026: „solche optionen müssen egtl hinter nem eigenen
+            öffnenbarem Fenster sein, weil die ganzen Einstellmöglichkeiten
+            einen sonst komplett erschlagen … dass es einen nicht erschlägt und
+            man nicht alle durchscrollen muss."
+
+            Die Ansage galt der Spielerstellung, aber sie traf diese Seite
+            genauso: hier standen bis zu ELF gleich aussehende Kacheln
+            untereinander. Was jetzt oben steht, ist das, was man an einem
+            normalen Spieltag tut. Alles andere liegt hinter einem Klick — mit
+            einer Zeile davor, die sagt, was drin ist. Eine zugeklappte Gruppe,
+            von der man nicht weiß, was sie enthält, klappt niemand auf. */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Was gerade ANSTEHT — Aufrufe, die vergehen, wenn man sie übersieht.
+              Sie stehen über allem und niemals hinter einem Klick. */}
           {abstimmung && (
-            <Link href="/abstimmung" style={{
-              textDecoration: "none", color: C.text,
-              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte, padding: "16px 18px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
-                <span style={{ fontSize: "1rem", fontWeight: 700 }}>🃏 Joker-Abstimmung</span>
-              </div>
-              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
-                Stimmt ab, an welchen Spieltagen es einen Joker gibt.
-              </div>
-            </Link>
+            <Kachel href="/abstimmung" punkt={C.akzent} rahmen={`${C.akzent}44`}
+              titel="🃏 Joker-Abstimmung"
+              desc="Stimmt ab, an welchen Spieltagen es einen Joker gibt." />
           )}
           {regelWahl && (
-            <Link href="/regeln" style={{
-              textDecoration: "none", color: C.text,
-              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte, padding: "16px 18px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
-                <span style={{ fontSize: "1rem", fontWeight: 700 }}>⚖️ Regeländerungen</span>
-              </div>
-              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
-                Änderungen am Regelwerk vorschlagen und darüber abstimmen.
-              </div>
-            </Link>
+            <Kachel href="/regeln" punkt={C.akzent} rahmen={`${C.akzent}44`}
+              titel="⚖️ Regeländerungen"
+              desc="Änderungen am Regelwerk vorschlagen und darüber abstimmen." />
           )}
-          {freigaben && (
-            <Link href="/freigaben" style={{
-              textDecoration: "none", color: C.text,
-              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.indigo, boxShadow: `0 0 12px ${C.indigo}` }} />
-                <span style={{ fontSize: "1rem", fontWeight: 700 }}>🔑 Freigaben</span>
-              </div>
-              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
-                Wer an welchem Spieltag einsetzen darf — erteilt der Admin.
-              </div>
-            </Link>
-          )}
-          {joker && (
-            <Link href="/joker" style={{
-              textDecoration: "none", color: C.text,
-              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.akzent}44`, borderRadius: RUND.karte, padding: "16px 18px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.akzent, boxShadow: `0 0 12px ${C.akzent}` }} />
-                <span style={{ fontSize: "1rem", fontWeight: 700 }}>🃏 Deine Joker</span>
-              </div>
-              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
-                Wie viele du hast, welche Spieltage sie tragen, wie weit du bist.
-              </div>
-            </Link>
-          )}
-          {rad && (
-            <Link href="/rad" style={{
-              textDecoration: "none", color: C.text,
-              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.sky, boxShadow: `0 0 12px ${C.sky}` }} />
-                <span style={{ fontSize: "1rem", fontWeight: 700 }}>🎡 Dein Glücksrad</span>
-              </div>
-              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
-                Was für dich gefallen ist — und wann sich das Rad das nächste Mal dreht.
-              </div>
-            </Link>
-          )}
-          {saison && (
-            <Link href="/saison" style={{
-              textDecoration: "none", color: C.text,
-              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: C.violet, boxShadow: `0 0 12px ${C.violet}` }} />
-                <span style={{ fontSize: "1rem", fontWeight: 700 }}>🏆 Saison-Wetten</span>
-              </div>
-              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
-                Langzeit-Tipps: Meister, Torschützenkönig & Co.
-              </div>
-            </Link>
-          )}
-          {CARDS.map((s) => (
-            <Link key={s.href} href={s.href} style={{
-              textDecoration: "none", color: C.text,
-              background: `radial-gradient(120% 120% at 50% -20%, ${C.ink2} 0%, ${C.surface} 100%)`,
-              border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "16px 18px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 8, height: 8, borderRadius: RUND.pille, background: s.tone, boxShadow: `0 0 12px ${s.tone}` }} />
-                <span style={{ fontSize: "1rem", fontWeight: 700 }}>{s.title}</span>
-              </div>
-              <div style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 6, lineHeight: 1.5 }}>{s.desc}</div>
-            </Link>
+
+          {/* Der Spieltag selbst. Drei Kacheln, immer offen. */}
+          {JETZT.map((k) => (
+            <Kachel key={k.href} href={k.href} punkt={k.tone} titel={k.title} desc={k.desc} />
           ))}
+
+          {/* ⚠️ `Feinheiten` und KEIN eigener Aufklapper — das wäre die neunte
+              Fassung derselben Sache (siehe Kopf von `Feinheiten.jsx`: acht
+              Varianten waren am 24.08. schon einmal so entstanden). */}
+          {meins.length > 0 && (
+            <Feinheiten titel="Deine Sachen"
+              zusammenfassung={meins.map((k) => k.kurz).join(" · ")}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+                {meins.map((k) => (
+                  <Kachel key={k.href} href={k.href} punkt={k.tone} titel={k.title} desc={k.desc} />
+                ))}
+              </div>
+            </Feinheiten>
+          )}
+
+          {runde.length > 0 && (
+            <Feinheiten titel="Die Runde"
+              zusammenfassung={runde.map((k) => k.kurz).join(" · ")}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+                {runde.map((k) => (
+                  <Kachel key={k.href} href={k.href} punkt={k.tone} titel={k.title} desc={k.desc} />
+                ))}
+              </div>
+            </Feinheiten>
+          )}
 
           {SOON.map((s) => (
             <div key={s.title} style={{
