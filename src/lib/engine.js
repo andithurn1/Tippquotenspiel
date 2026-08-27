@@ -45,7 +45,7 @@ import {
 // bekommt exakt dieselbe Liste, die auch der Store liefert.
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { sanitizeWettbewerbe, DEFAULT_WETTBEWERBE, wettbewerbAufschlag, maxWettbewerbAufschlag } from "./wettbewerbGewicht";
-import { sanitizeSperre, DEFAULT_SPERRE } from "./favoritenSperre";
+import { sanitizeSperre, DEFAULT_SPERRE, schuetzenMalus } from "./favoritenSperre";
 import { sanitizeTippfenster, DEFAULT_TIPPFENSTER } from "./tippfenster";
 import { sanitizeZeitachse, DEFAULT_ZEITACHSE } from "./zeitachse";
 // Spieltags-Identität liegt in einem eigenen, importfreien Modul — sonst gäbe
@@ -748,8 +748,23 @@ export function scoreResult(tip, actual, snap, rules = DEFAULT_RULES) {
 }
 
 // Tore: gleicher Spieler 2× = Doppelpack. 2 Tore → double, 1 Tor → anytime (Floor), 0 → nichts.
-export function scoreGoals(picks, snap, rules = DEFAULT_RULES, playerGoals = null) {
+// `frei` = dieser Tipp hat den Freischalt-Joker benutzt (`tip.frei`). Dann
+// greift der Favoriten-Malus nicht — der Knopf heißt „Sperre für dieses Spiel
+// aufheben", und wer ihn drückt und trotzdem weniger bekommt, hält die App
+// für kaputt.
+export function scoreGoals(picks, snap, rules = DEFAULT_RULES, playerGoals = null, frei = false) {
   let net = 0; const detail = [];
+  // 🔴 Der Favoriten-Malus (Andi, 26.08.2026: „ein mechanismus, der einfach die
+  // Topwahrscheinlichen Torschützen quoten bisschen abwertet"). Er ist die
+  // WEICHE Konsequenz derselben Auswahl, die sonst sperrt — gefragt wird
+  // deshalb `favoritenSperre.js` und nicht eine zweite Schwelle hier.
+  //
+  // ⚠️ Er greift auf den GEWINN (`q − 1`), nicht auf die Quote: `q` selbst zu
+  // dämpfen zöge auch den Einsatz mit, und ein Tipp, der 30 % weniger gewinnt,
+  // verlöre dann auch 30 % weniger. Das wäre keine Abwertung, sondern eine
+  // Versicherung.
+  const eingriff = frei ? { frei: true } : null;
+  const malusVon = (name) => schuetzenMalus(snap, rules, name, eingriff);
   // Im Modus `proSpiel` gibt es keine Trennung nach Mannschaft: die Namen
   // stehen alle in EINEM Topf, und nachgeschlagen wird auf beiden Seiten. Die
   // Tipp-Form bleibt trotzdem `{ home, away }` — schon abgegebene Tipps und die
@@ -767,15 +782,16 @@ export function scoreGoals(picks, snap, rules = DEFAULT_RULES, playerGoals = nul
         : snap.players[side][p];
       if (!P) continue;
       const scored = playerGoals ? (playerGoals[p] || 0) : null;   // null = "angenommen es trifft"
+      const malus = malusVon(p);
       if (c >= 2) {
         const goals2 = scored == null ? 2 : scored;                // Auswertung: echte Toranzahl
         const q = goals2 >= 2 ? P.double : goals2 === 1 ? P.anytime : 1;
-        if (goals2 >= 1) net += q - 1;
-        detail.push({ side, player: p, type: "double", single: P.anytime, double: P.double, scored });
+        if (goals2 >= 1) net += (q - 1) * (1 - malus);
+        detail.push({ side, player: p, type: "double", single: P.anytime, double: P.double, scored, malus });
       } else {
         const hit = scored == null ? true : scored >= 1;
-        if (hit) net += P.anytime - 1;
-        detail.push({ side, player: p, type: "single", anytime: P.anytime, scored });
+        if (hit) net += (P.anytime - 1) * (1 - malus);
+        detail.push({ side, player: p, type: "single", anytime: P.anytime, scored, malus });
       }
     }
   }
@@ -1401,7 +1417,7 @@ export function einsatzPlanung({ tips = [], spieltag, spieleImSpieltag, rules = 
 // Gesamtwertung eines Tipps inkl. Kombi-Multiplikator, Favoriten-Malus und Joker.
 export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   const res = scoreResult(tip, actual, snap, rules);
-  const goals = scoreGoals(tip.goals || { home: [], away: [] }, snap, rules, actual.playerGoals);
+  const goals = scoreGoals(tip.goals || { home: [], away: [] }, snap, rules, actual.playerGoals, tip.frei === true);
   const combined = applyCombo(res.resultPart, res.ebene, goals.net, rules, goals.detail);
   // Favoriten-Reinfall: Abzug vom Gesamt-Roh-Wert, aber nicht unter 0
   // (kein tiefes Minus — die richtig getippten Underdog-Tore federn ab).

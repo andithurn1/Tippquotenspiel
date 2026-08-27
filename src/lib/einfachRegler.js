@@ -293,8 +293,8 @@ export const REGLER = [
     // nur die Auswahl. `mindestensOffen` bleibt auf 4 bzw. 6, damit auch die
     // strenge Stufe an keinem Spiel die Auswahl leerräumt.
     key: "favoriten",
-    label: "Ist der Naheliegende wählbar?",
-    hint: "Ob der wahrscheinlichste Torschütze und der wahrscheinlichste Endstand getippt werden dürfen.",
+    label: "Was ist der Naheliegende wert?",
+    hint: "Ob der wahrscheinlichste Torschütze voll zählt, weniger zählt oder gar nicht wählbar ist. ⛔ Gilt nur für Torschützen — Endstände bleiben immer offen.",
     stufen: [
       {
         key: "alle", label: "Ja, alles ist wählbar",
@@ -302,14 +302,29 @@ export const REGLER = [
         werte: { sperre: { enabled: false } },
       },
       {
+        // 🔴 Die WEICHE Stufe, und sie steht bewusst VOR den harten: Andi am
+        // 26.08.2026 — „ist ja egtl ne ähnliche einstellung ienfach mit nem
+        // Malus sobald schwellenwerte". Für eine Freundesrunde ist das
+        // vermutlich die richtige Antwort: der Naheliegende bleibt wählbar,
+        // er lohnt sich nur weniger. Niemand steht vor einem grauen Knopf.
+        //
+        // ⚠️ Die 20 % sind nicht geraten: es ist die Größenordnung, die Andi
+        // selbst gesetzt hat (21.08.2026, „milde Aufwertungen bis etwa +20 %"),
+        // hier mit umgekehrtem Vorzeichen. Endgültig festgelegt wird sie im
+        // Balancing.
+        key: "mild", label: "Er zahlt weniger",
+        beschreibung: "Der wahrscheinlichste Torschütze bleibt wählbar, bringt aber ein Fünftel weniger. Der sanfte Weg — niemand steht vor einem gesperrten Knopf.",
+        werte: { sperre: { enabled: true, wirkung: "abwerten", modus: "rang", schuetzen: 1, malusProzent: 20 } },
+      },
+      {
         key: "favorit", label: "Der Favorit ist gesperrt",
-        beschreibung: "Der wahrscheinlichste Torschütze und der wahrscheinlichste Endstand fallen weg — man muss sich für etwas entscheiden.",
-        werte: { sperre: { enabled: true, modus: "rang", schuetzen: 1, ergebnisse: 1, mindestensOffen: 4 } },
+        beschreibung: "Der wahrscheinlichste Torschütze fällt weg — man muss sich für jemand anderen entscheiden.",
+        werte: { sperre: { enabled: true, wirkung: "sperren", modus: "rang", schuetzen: 1, mindestensOffen: 4 } },
       },
       {
         key: "streng", label: "Die drei Naheliegendsten sind gesperrt",
-        beschreibung: "Die drei wahrscheinlichsten Torschützen und Endstände fallen weg. Deutlich mehr Mut nötig — und deutlich mehr Streuung im Feld.",
-        werte: { sperre: { enabled: true, modus: "rang", schuetzen: 3, ergebnisse: 3, mindestensOffen: 6 } },
+        beschreibung: "Die drei wahrscheinlichsten Torschützen fallen weg. Deutlich mehr Mut nötig — und deutlich mehr Streuung im Feld.",
+        werte: { sperre: { enabled: true, wirkung: "sperren", modus: "rang", schuetzen: 3, mindestensOffen: 6 } },
       },
     ],
   },

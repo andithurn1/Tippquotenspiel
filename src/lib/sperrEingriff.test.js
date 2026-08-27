@@ -4,7 +4,7 @@ import { sperrenFuer, beschreibeEingriff, freischaltStand } from "./sperrEingrif
 // „kein Eingriff" ist `null` und kein eigener Export — von außen prüft man auf
 // falsy, und ein zweiter Name dafür wäre toter Code.
 const KEIN_EINGRIFF = null;
-import { schuetzenSperre, ergebnisSperre } from "./favoritenSperre";
+import { schuetzenSperre } from "./favoritenSperre";
 import { wendeAn } from "./wirkung";
 
 const V = (userId, sperre, matchday = 5, ereignisText = null) =>
@@ -18,7 +18,7 @@ describe("sperrenFuer", () => {
   });
 
   it("trifft nur den gemeinten Spieler", () => {
-    const v = [V("a", { schuetzen: 1, ergebnisse: 0 })];
+    const v = [V("a", { schuetzen: 1 })];
     expect(sperrenFuer(v, { userId: "a", matchday: 5 })).toMatchObject({ schuetzen: 1 });
     expect(sperrenFuer(v, { userId: "b", matchday: 5 })).toBe(KEIN_EINGRIFF);
   });
@@ -36,8 +36,8 @@ describe("sperrenFuer", () => {
   });
 
   it("mehrere Ereignisse am selben Spieltag addieren sich", () => {
-    const v = [V("a", { schuetzen: 1, ergebnisse: 1 }), V("a", { schuetzen: 2, ergebnisse: 0 })];
-    expect(sperrenFuer(v, { userId: "a", matchday: 5 })).toMatchObject({ schuetzen: 3, ergebnisse: 1 });
+    const v = [V("a", { schuetzen: 1 }), V("a", { schuetzen: 2 })];
+    expect(sperrenFuer(v, { userId: "a", matchday: 5 })).toMatchObject({ schuetzen: 3 });
   });
 
   it("sammelt die Anlaesse, ohne sie zu doppeln", () => {
@@ -63,13 +63,10 @@ describe("der Eingriff kommt in der Auswahl an", () => {
   };
 
   it("verschaerft eine Runde OHNE eigene Sperre", () => {
-    const eingriff = { schuetzen: 2, ergebnisse: 1 };
     const ohne = schuetzenSperre(SNAP, {});
     expect(ohne.filter((o) => o.gesperrt)).toHaveLength(0);
-    const mit = schuetzenSperre(SNAP, {}, eingriff);
+    const mit = schuetzenSperre(SNAP, {}, { schuetzen: 2 });
     expect(mit.filter((o) => o.gesperrt).map((o) => o.id)).toEqual(["Kane", "Musiala"]);
-    expect(ergebnisSperre(SNAP, {}, eingriff).filter((o) => o.gesperrt).map((o) => o.id))
-      .toEqual(["3:1"]);
   });
 
   it("legt auf eine bestehende Runden-Sperre NACH, statt sie zu ersetzen", () => {
@@ -102,8 +99,7 @@ describe("der Eingriff kommt in der Auswahl an", () => {
 
   it("ein Eingriff mit 0 aendert gar nichts", () => {
     const rules = { sperre: { enabled: true, modus: "rang", schuetzen: 1, mindestensOffen: 1 } };
-    expect(schuetzenSperre(SNAP, rules, { schuetzen: 0, ergebnisse: 0 }))
-      .toEqual(schuetzenSperre(SNAP, rules));
+    expect(schuetzenSperre(SNAP, rules, { schuetzen: 0 })).toEqual(schuetzenSperre(SNAP, rules));
   });
 });
 
@@ -111,19 +107,18 @@ describe("die Kette von der Wirkung bis zur Auswahl", () => {
   it("`wendeAn` liefert genau die Form, die `sperrenFuer` liest", () => {
     // ⚠️ Ohne diesen Test koennten beide Seiten fuer sich richtig sein und
     // trotzdem nicht zusammenpassen -- genau die 17 Funde vom 05.08.2026.
-    const vorgaenge = wendeAn({ wirkung: { typ: "sperre", was: "favoriten", n: 2 }, betroffene: ["a"] })
+    const vorgaenge = wendeAn({ wirkung: { typ: "sperre", n: 2 }, betroffene: ["a"] })
       .map((v) => ({ ...v, matchday: 5 }));
-    expect(sperrenFuer(vorgaenge, { userId: "a", matchday: 5 }))
-      .toMatchObject({ schuetzen: 2, ergebnisse: 2 });
+    expect(sperrenFuer(vorgaenge, { userId: "a", matchday: 5 })).toMatchObject({ schuetzen: 2 });
   });
 
-  it("`was` trennt Torschuetzen und Ergebnisse sauber", () => {
-    const nur = (was) => sperrenFuer(
-      wendeAn({ wirkung: { typ: "sperre", was, n: 1 }, betroffene: ["a"] }).map((v) => ({ ...v, matchday: 1 })),
-      { userId: "a", matchday: 1 });
-    expect(nur("schuetzen")).toMatchObject({ schuetzen: 1, ergebnisse: 0 });
-    expect(nur("ergebnisse")).toMatchObject({ schuetzen: 0, ergebnisse: 1 });
-    expect(nur("favoriten")).toMatchObject({ schuetzen: 1, ergebnisse: 1 });
+  it("die Wirkung trifft ausschliesslich Torschuetzen", () => {
+    // ⛔ Ein `was`-Katalog gab es bis zum 26.08.2026. Er ist weg: Endstaende
+    // werden nicht mehr gesperrt, und ein Katalog mit einem Eintrag ist keiner.
+    const v = wendeAn({ wirkung: { typ: "sperre", n: 1 }, betroffene: ["a"] })
+      .map((x) => ({ ...x, matchday: 1 }));
+    expect(v[0].sperre).toEqual({ schuetzen: 1 });
+    expect(sperrenFuer(v, { userId: "a", matchday: 1 })).toMatchObject({ schuetzen: 1 });
   });
 
   it("der Vorgang bleibt in Punkten, Jokern und Faktor neutral", () => {
@@ -139,9 +134,8 @@ describe("die Kette von der Wirkung bis zur Auswahl", () => {
 
 describe("beschreibeEingriff", () => {
   it("nennt Zahl UND Anlass", () => {
-    const t = beschreibeEingriff({ schuetzen: 1, ergebnisse: 2, gruende: ["Pechsträhne"] });
-    expect(t).toContain("1 Torschütze");
-    expect(t).toContain("2 Ergebnisse");
+    const t = beschreibeEingriff({ schuetzen: 2, gruende: ["Pechsträhne"] });
+    expect(t).toContain("2 Torschützen");
     expect(t).toContain("Pechsträhne");
   });
 
@@ -184,16 +178,15 @@ describe("Freischaltung", () => {
     expect(freischaltStand(tipps, { freischaltungen: 1 }, { userId: "a", spieltag: 5 }).frei).toBe(0);
   });
 
-  it("hebt in der Auswahl BEIDE Richtungen auf -- Runde und Ereignis", () => {
+  it("hebt in der Auswahl BEIDES auf -- die Sperre der Runde UND die des Ereignisses", () => {
     const SNAP = {
       players: { home: { Kane: { anytime: 1.6 }, Musiala: { anytime: 2.4 } }, away: { Saad: { anytime: 6.5 } } },
       correctScore: [[26, 34], [15, 18]],
     };
-    const rules = { sperre: { enabled: true, modus: "rang", schuetzen: 1, ergebnisse: 1, mindestensOffen: 1 } };
+    const rules = { sperre: { enabled: true, modus: "rang", schuetzen: 1, mindestensOffen: 1 } };
     // Runde sperrt einen, das Ereignis noch einen.
     expect(schuetzenSperre(SNAP, rules, { schuetzen: 1 }).filter((o) => o.gesperrt)).toHaveLength(2);
     // Mit Freischaltung ist nichts mehr zu.
     expect(schuetzenSperre(SNAP, rules, { schuetzen: 1, frei: true }).filter((o) => o.gesperrt)).toHaveLength(0);
-    expect(ergebnisSperre(SNAP, rules, { ergebnisse: 1, frei: true }).filter((o) => o.gesperrt)).toHaveLength(0);
   });
 });

@@ -17,17 +17,14 @@
 //  nichts an Punkten, Quoten oder Fairness. Wer ihn nicht anfasst, tippt
 //  genau wie vorher.
 //
-//  ── 🔴 Warum die Sperre hier mitgelesen wird ──
-//  Läuft in der Runde die Favoriten-Sperre (`favoritenSperre.js`), ist der
-//  wahrscheinlichste Endstand oft genau der GESPERRTE. Eine Vorbelegung, die
-//  in einen gesperrten Stand springt, wäre die schlimmste Sorte Oberfläche:
-//  sie schlägt etwas vor, das sie selbst ablehnt. Deshalb wird der
-//  wahrscheinlichste OFFENE Stand genommen — nicht der wahrscheinlichste.
+//  ── ⚠️ Warum hier KEINE Sperre mitgelesen wird ──
+//  Die erste Fassung fragte die Favoriten-Sperre, weil die auch Endstände
+//  zuhalten konnte. Seit Andis Entscheidung vom 26.08.2026 („ich will keinen
+//  block ermöglichen bei ergebnissen, nur Torschützen") gibt es beim Endstand
+//  nichts mehr zu umgehen — der wahrscheinlichste ist immer wählbar.
 //
 //  Reine Funktionen, UI-frei.
 // ============================================================
-
-import { ergebnisSperre } from "./favoritenSperre";
 
 export const VORBELEGUNGEN = ["fest", "wahrscheinlich"];
 
@@ -61,11 +58,18 @@ export const VORBELEGUNG_HINWEIS = {
 // ⚠️ Nicht exportiert: von außen fragt man `startErgebnis`, sonst gäbe es zwei
 // Wege zum selben Wert — und `npm run tot` hätte den zweiten prompt als
 // Export gemeldet, den außer den Tests niemand aufruft.
-function wahrscheinlichsterEndstand(snap, rules, eingriff) {
-  const offen = ergebnisSperre(snap, rules, eingriff)
-    .filter((o) => !o.gesperrt && Number.isFinite(o.quote) && o.quote > 0);
-  if (!offen.length) return null;
-  return offen.reduce((a, b) => (b.quote < a.quote ? b : a));
+function wahrscheinlichsterEndstand(snap) {
+  const raster = Array.isArray(snap?.correctScore) ? snap.correctScore : [];
+  let beste = null;
+  for (let h = 0; h < raster.length; h++) {
+    const zeile = Array.isArray(raster[h]) ? raster[h] : [];
+    for (let a = 0; a < zeile.length; a++) {
+      const quote = zeile[a];
+      if (!Number.isFinite(quote) || quote <= 0) continue;
+      if (!beste || quote < beste.quote) beste = { home: h, away: a, quote };
+    }
+  }
+  return beste;
 }
 
 // ── Womit der Stepper startet ───────────────────────────────
@@ -74,13 +78,9 @@ function wahrscheinlichsterEndstand(snap, rules, eingriff) {
 //
 //   fest   — der Vorgabe-Stand (2:1)
 //   quote  — aus dem Raster gelesen
-// `eingriff` = die persönlichen Sperren dieses Spielers (`sperrEingriff.js`).
-// ⚠️ Er gehört hierher und nicht nur in die Anzeige: eine Vorbelegung, die auf
-// einem Feld landet, das AUSGERECHNET diesem Spieler zugehalten ist, schlägt
-// ihm etwas vor, das sein eigenes Speichern ablehnt.
-export function startErgebnis(snap, rules, stufe = DEFAULT_VORBELEGUNG, eingriff = null) {
+export function startErgebnis(snap, stufe = DEFAULT_VORBELEGUNG) {
   if (stufe !== "wahrscheinlich") return { ...FESTER_START, quelle: "fest" };
-  const beste = wahrscheinlichsterEndstand(snap, rules, eingriff);
+  const beste = wahrscheinlichsterEndstand(snap);
   // Kein Raster (oder alles gesperrt) → der feste Stand. Ein Spiel ohne
   // Ergebnis-Quoten gibt es: Saison-Wetten und frisch angelegte Spiele haben
   // keins, und ein `undefined` im Stepper wäre ein weißer Screen.

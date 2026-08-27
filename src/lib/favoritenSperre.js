@@ -7,6 +7,18 @@
 //  pro Wettbewerb) sobald sie einen Schwellenwert nicht erreichen … find halt
 //  immer harry kane nehmen boringo"
 //
+//  ── ⛔ NUR TORSCHÜTZEN — Andis Entscheidung vom selben Tag ──
+//  Die erste Fassung sperrte auch ENDSTÄNDE. Sie ist zurückgebaut, wörtlich:
+//  *„stimmt deine Frage wirfts auf, ich will keinen block ermöglichen bei
+//  ergebnissen, nur Torschützen"*.
+//
+//  🔴 Und das war keine Geschmacksfrage, sondern die Auflösung eines echten
+//  Widerspruchs — meine offene ❓6: die Nähe-Belohnung zahlt für „knapp
+//  daneben". Ist 2:1 gesperrt und 2:0 nicht, bekäme man über die Nähe doch
+//  Punkte für den gesperrten Endstand — die Sperre wäre durch die Hintertür
+//  erreichbar. Beim Torschützen gibt es diese Hintertür nicht: es gibt keine
+//  „Nähe" zu einem Namen.
+//
 //  ── EBENE 5 (AUSWAHL), und darauf steht oder fällt sie ──
 //  Es wird nichts umgewertet und nichts vergeben — es wird etwas WEGGENOMMEN.
 //  Damit ist es keine Balance-Frage und darf gebaut werden, bevor Balancing
@@ -48,12 +60,38 @@
 
 export const SPERRE_MODI = ["rang", "quote"];
 
+// ── 🔴 Zwei Konsequenzen aus DERSELBEN Auswahl (Andi, 26.08.2026) ──
+// Wörtlich: *„wir haben ja auch nen mechanismus, der einfach die
+// Topwahrscheinlichen Torschützen quoten biischen abwertet (ist ja egtl ne
+// ähnliche einstellung ienfach mit nem Malus sobald schwellenwerte)"*.
+//
+// ⚠️ **Den Mechanismus gab es an dem Tag NICHT** — der nächste Verwandte ist
+// der Kombi-Bonus (`kombiBonus.js`), und der geht in die andere Richtung: er
+// wertet SELTENE Schützen AUF, nur wenn Ergebnis und Schütze zusammen
+// aufgehen, und kennt keine Schwelle. Andis Beschreibung passt aber genau auf
+// diese Datei: die Auswahl „wer liegt über der Schwelle" ist hier längst
+// gerechnet — es fehlte nur die zweite Konsequenz.
+//
+// Sie steht deshalb als SCHALTER neben der Sperre und nicht als eigener Block:
+// eine zweite Datei mit eigener Schwelle wäre eine zweite Antwort auf „wer ist
+// hier der Favorit?" — genau die doppelte Wahrheit aus der Runden-Schicht.
+//
+//   sperren  — der Name ist nicht wählbar. Vorgabe.
+//   abwerten — der Name bleibt wählbar, zahlt aber weniger.
+//
+// ⚠️ Der Unterschied ist größer, als er aussieht: `sperren` ist **Ebene 5**
+// (Auswahl) und verrechnet nichts, `abwerten` ist **Ebene 2** und greift in
+// die Wertung. Deshalb steht der Malus-Prozentsatz auf einem Platzhalter und
+// die ganze Sperre auf AUS — was eine gute Abwertung ist, ist Balancing und
+// gehört ans Ende (CLAUDE.md).
+export const SPERRE_WIRKUNGEN = ["sperren", "abwerten"];
+
 export const SPERRE_LIMITS = {
   schuetzen: { min: 0, max: 6, step: 1 },
-  ergebnisse: { min: 0, max: 8, step: 1 },
   mindestQuote: { min: 1, max: 15, step: 0.1 },
   mindestensOffen: { min: 1, max: 20, step: 1 },
   freischaltungen: { min: 0, max: 5, step: 1 },
+  malusProzent: { min: 5, max: 60, step: 5 },
 };
 
 // ⛔ AUS als Vorgabe, und die Zahlen darin sind Platzhalter. Was eine gute
@@ -61,11 +99,14 @@ export const SPERRE_LIMITS = {
 // hier steht nur, was der Mechanismus kann.
 export const DEFAULT_SPERRE = {
   enabled: false,
+  wirkung: "sperren",
   modus: "rang",
   schuetzen: 1,        // im Modus `rang`: wie viele der wahrscheinlichsten
-  ergebnisse: 1,
   mindestQuote: 2,     // im Modus `quote`: alles darunter ist gesperrt
-  mindestensOffen: 4,  // so viele Optionen bleiben IMMER wählbar
+  mindestensOffen: 4,  // so viele Optionen bleiben IMMER wählbar (nur beim Sperren)
+  // ⏳ Platzhalter. Bewusst nicht 0 (sähe aus wie „aus") und nicht 50 (sähe aus
+  // wie eine Empfehlung) — dieselbe Begründung wie bei `kombiBonus.staerke`.
+  malusProzent: 25,
   // 🔴 Der JOKER dazu (Andi, 26.08.2026: „mach generell solche mechaniken auch
   // als Ereignis verfügbar und als Joker"). 0 = es gibt ihn nicht.
   //
@@ -92,8 +133,9 @@ export function sanitizeSperre(partial = {}) {
   const p = partial && typeof partial === "object" ? partial : {};
   const L = SPERRE_LIMITS;
   const modus = SPERRE_MODI.includes(p.modus) ? p.modus : DEFAULT_SPERRE.modus;
+  const wirkung = SPERRE_WIRKUNGEN.includes(p.wirkung) ? p.wirkung : DEFAULT_SPERRE.wirkung;
+  const malusProzent = Math.round(zahl(p.malusProzent, L.malusProzent, DEFAULT_SPERRE.malusProzent));
   const schuetzen = Math.round(zahl(p.schuetzen, L.schuetzen, DEFAULT_SPERRE.schuetzen));
-  const ergebnisse = Math.round(zahl(p.ergebnisse, L.ergebnisse, DEFAULT_SPERRE.ergebnisse));
   const mindestQuote = +zahl(p.mindestQuote, L.mindestQuote, DEFAULT_SPERRE.mindestQuote).toFixed(1);
   const mindestensOffen = Math.round(zahl(p.mindestensOffen, L.mindestensOffen, DEFAULT_SPERRE.mindestensOffen));
   const freischaltungen = Math.round(zahl(p.freischaltungen, L.freischaltungen, DEFAULT_SPERRE.freischaltungen));
@@ -103,44 +145,60 @@ export function sanitizeSperre(partial = {}) {
     // wäre `enabled: true` eine Einstellung, die nichts bewirkt — und die
     // Oberfläche zeigte einen aktiven Schalter ohne Wirkung.
     enabled: p.enabled === true
-      && (modus === "quote" ? mindestQuote > 1 : schuetzen > 0 || ergebnisse > 0),
-    modus, schuetzen, ergebnisse, mindestQuote, mindestensOffen, freischaltungen,
+      && (modus === "quote" ? mindestQuote > 1 : schuetzen > 0),
+    wirkung, modus, schuetzen, mindestQuote, mindestensOffen, freischaltungen, malusProzent,
   };
 }
 
 // ── Der eine Sperr-Entscheider ──────────────────────────────
 // Bekommt eine Liste `[{ id, quote }]` und gibt sie mit `gesperrt`/`grund`
-// zurück. Beide Märkte (Torschützen, Ergebnisse) laufen hier durch — sonst
-// entstünden zwei Fassungen derselben Regel.
+// zurück. Ausgelagert, obwohl es heute nur EINEN Aufrufer gibt: die Auswahl
+// „wer liegt über/unter der Schwelle" ist die eigentliche Regel, und die
+// Abwertung (unten) braucht genau dieselbe.
 //
 // ⚠️ Sortiert wird nach Quote AUFSTEIGEND: die niedrigste Quote ist der
 // wahrscheinlichste Ausgang. Wer hier absteigend sortiert, sperrt genau die
 // Außenseiter, die das Spiel interessant machen — der Fehler wäre in der
 // Oberfläche nicht zu sehen, weil gesperrt ja gesperrt aussieht.
-function entscheide(optionen, { anzahl, modus, mindestQuote, mindestensOffen, grundText = null }) {
+function entscheide(optionen, {
+  anzahl, modus, mindestQuote, mindestensOffen, wirkung = "sperren",
+  malusProzent = 0, grundText = null,
+}) {
   const gueltig = optionen.filter((o) => Number.isFinite(o.quote) && o.quote > 0);
   const sortiert = [...gueltig].sort((a, b) => a.quote - b.quote);
 
-  // Wie viele DÜRFEN höchstens gesperrt werden, damit genug offen bleibt?
-  const spielraum = Math.max(0, sortiert.length - mindestensOffen);
+  // Wie viele DÜRFEN höchstens getroffen werden, damit genug offen bleibt?
+  //
+  // ⚠️ Nur beim SPERREN. Beim Abwerten wird nichts weggenommen — dort wäre die
+  // Sicherung eine stille Verfälschung: der Admin stellt „alle unter 2,0
+  // zahlen weniger" ein, und in Wahrheit zahlten die ersten vier voll.
+  const spielraum = wirkung === "abwerten"
+    ? sortiert.length
+    : Math.max(0, sortiert.length - mindestensOffen);
 
-  let gesperrteIds;
+  let getroffen;
   if (modus === "quote") {
     const kandidaten = sortiert.filter((o) => o.quote < mindestQuote);
-    gesperrteIds = new Set(kandidaten.slice(0, spielraum).map((o) => o.id));
+    getroffen = new Set(kandidaten.slice(0, spielraum).map((o) => o.id));
   } else {
-    gesperrteIds = new Set(sortiert.slice(0, Math.min(anzahl, spielraum)).map((o) => o.id));
+    getroffen = new Set(sortiert.slice(0, Math.min(anzahl, spielraum)).map((o) => o.id));
   }
 
+  const weil = modus === "quote"
+    ? `Quote unter ${String(mindestQuote).replace(".", ",")}`
+    : "zu wahrscheinlich";
+
   return optionen.map((o) => {
-    if (!gesperrteIds.has(o.id)) return { ...o, gesperrt: false, grund: null };
-    return {
-      ...o,
-      gesperrt: true,
-      grund: grundText ?? (modus === "quote"
-        ? `gesperrt: Quote unter ${String(mindestQuote).replace(".", ",")}`
-        : `gesperrt: zu wahrscheinlich`),
-    };
+    if (!getroffen.has(o.id)) return { ...o, gesperrt: false, malus: 0, grund: null };
+    if (wirkung === "abwerten") {
+      return {
+        ...o,
+        gesperrt: false,
+        malus: malusProzent / 100,
+        grund: grundText ?? `−${malusProzent} %: ${weil}`,
+      };
+    }
+    return { ...o, gesperrt: true, malus: 0, grund: grundText ?? `gesperrt: ${weil}` };
   });
 }
 
@@ -165,11 +223,16 @@ function entscheide(optionen, { anzahl, modus, mindestQuote, mindestensOffen, gr
 // einen Knopf passt.
 function persoenlich(eintraege, cfg, anzahl) {
   if (!anzahl) return eintraege;
-  const offen = eintraege.filter((o) => !o.gesperrt);
+  // ⚠️ Die noch UNBERÜHRTEN, nicht nur die ungesperrten: beim Abwerten ist
+  // niemand gesperrt, und ohne diese Zeile träfe der zweite Durchgang dieselben
+  // Namen noch einmal — der Malus stünde doppelt da, ohne doppelt zu wirken.
+  const offen = eintraege.filter((o) => !o.gesperrt && !o.malus);
   const zweite = entscheide(offen, {
-    anzahl, modus: "rang",
+    anzahl, modus: "rang", wirkung: cfg.wirkung, malusProzent: cfg.malusProzent,
     mindestQuote: cfg.mindestQuote, mindestensOffen: cfg.mindestensOffen,
-    grundText: "gesperrt: für dich, wegen eines Ereignisses",
+    grundText: cfg.wirkung === "abwerten"
+      ? `−${cfg.malusProzent} %: für dich, wegen eines Ereignisses`
+      : "gesperrt: für dich, wegen eines Ereignisses",
   });
   const nach = new Map(zweite.map((o) => [o.id, o]));
   return eintraege.map((o) => nach.get(o.id) ?? o);
@@ -185,58 +248,52 @@ export function schuetzenSperre(snap, rules, eingriff = null) {
     ...Object.entries(snap?.players?.home ?? {}).map(([name, q]) => ({ id: name, seite: "home", quote: q?.anytime })),
     ...Object.entries(snap?.players?.away ?? {}).map(([name, q]) => ({ id: name, seite: "away", quote: q?.anytime })),
   ];
-  if (eingriff?.frei) return alle.map((o) => ({ ...o, gesperrt: false, grund: null }));
+  if (eingriff?.frei) return alle.map((o) => ({ ...o, gesperrt: false, malus: 0, grund: null }));
   const runde = (!cfg.enabled || !cfg.schuetzen)
-    ? alle.map((o) => ({ ...o, gesperrt: false, grund: null }))
+    ? alle.map((o) => ({ ...o, gesperrt: false, malus: 0, grund: null }))
     : entscheide(alle, {
-      anzahl: cfg.schuetzen, modus: cfg.modus,
+      anzahl: cfg.schuetzen, modus: cfg.modus, wirkung: cfg.wirkung,
+      malusProzent: cfg.malusProzent,
       mindestQuote: cfg.mindestQuote, mindestensOffen: cfg.mindestensOffen,
     });
   return persoenlich(runde, cfg, eingriff?.schuetzen);
 }
 
-// ── Ergebnisse (Spielstand) ─────────────────────────────────
-// `snap.correctScore` ist ein Raster [heim][auswärts]. Die Id ist „h:a" —
-// dieselbe Schreibweise, die die Oberfläche ohnehin benutzt.
-export function ergebnisSperre(snap, rules, eingriff = null) {
-  const cfg = sanitizeSperre(rules?.sperre);
-  const raster = Array.isArray(snap?.correctScore) ? snap.correctScore : [];
-  const alle = [];
-  for (let h = 0; h < raster.length; h++) {
-    const zeile = Array.isArray(raster[h]) ? raster[h] : [];
-    for (let a = 0; a < zeile.length; a++) alle.push({ id: `${h}:${a}`, home: h, away: a, quote: zeile[a] });
-  }
-  if (eingriff?.frei) return alle.map((o) => ({ ...o, gesperrt: false, grund: null }));
-  const runde = (!cfg.enabled || !cfg.ergebnisse)
-    ? alle.map((o) => ({ ...o, gesperrt: false, grund: null }))
-    : entscheide(alle, {
-      anzahl: cfg.ergebnisse, modus: cfg.modus,
-      mindestQuote: cfg.mindestQuote, mindestensOffen: cfg.mindestensOffen,
-    });
-  return persoenlich(runde, cfg, eingriff?.ergebnisse);
-}
-
-// ── Zwei Nachschlage-Helfer für die Oberfläche ──────────────
+// ── Der Nachschlage-Helfer für die Oberfläche ───────────────
 // Damit ein Screen nicht selbst über die Liste laufen muss (und dabei eine
 // zweite Fassung der Regel baut — die Runden-Schicht in CLAUDE.md).
 export function istSchuetzeGesperrt(snap, rules, name, eingriff = null) {
   return schuetzenSperre(snap, rules, eingriff).find((o) => o.id === name)
-    ?? { gesperrt: false, grund: null };
+    ?? { gesperrt: false, malus: 0, grund: null };
 }
-export function istErgebnisGesperrt(snap, rules, home, away, eingriff = null) {
-  return ergebnisSperre(snap, rules, eingriff).find((o) => o.id === `${home}:${away}`)
-    ?? { gesperrt: false, grund: null };
+
+// ── Der Malus für die WERTUNG ───────────────────────────────
+// 🔴 Die einzige Stelle, die `scoreGoals` fragt. Sie gibt einen Anteil 0…1 —
+// nicht Prozent, weil die Engine damit multipliziert und ein Prozentwert dort
+// zweimal umgerechnet würde.
+//
+// ⚠️ `frei` (der Freischalt-Joker) hebt AUCH den Malus auf, nicht nur die
+// Sperre. Alles andere wäre nicht erklärbar: der Knopf heißt „Sperre für
+// dieses Spiel aufheben", und ein Spieler, der ihn drückt und trotzdem
+// weniger bekommt, hält die App für kaputt.
+export function schuetzenMalus(snap, rules, name, eingriff = null) {
+  const cfg = sanitizeSperre(rules?.sperre);
+  if (!cfg.enabled || cfg.wirkung !== "abwerten") return 0;
+  return istSchuetzeGesperrt(snap, rules, name, eingriff).malus ?? 0;
 }
 
 // Ein Satz für den Admin: was bewirkt die Einstellung an DIESEM Spiel?
 export function beschreibeSperre(snap, rules) {
   const cfg = sanitizeSperre(rules?.sperre);
-  if (!cfg.enabled) return "Alle Torschützen und Ergebnisse sind wählbar.";
-  const s = schuetzenSperre(snap, rules).filter((o) => o.gesperrt);
-  const e = ergebnisSperre(snap, rules).filter((o) => o.gesperrt);
-  const teile = [];
-  if (s.length) teile.push(`${s.length} Torschütze${s.length === 1 ? "" : "n"} (${s.map((o) => o.id).join(", ")})`);
-  if (e.length) teile.push(`${e.length} Ergebnis${e.length === 1 ? "" : "se"} (${e.map((o) => o.id).join(", ")})`);
-  if (!teile.length) return "An diesem Spiel greift die Sperre nicht — es bleibt zu wenig Auswahl übrig.";
-  return `Gesperrt: ${teile.join(" und ")}.`;
+  if (!cfg.enabled) return "Alle Torschützen sind wählbar, alle zahlen voll.";
+  const alle = schuetzenSperre(snap, rules);
+  const getroffen = alle.filter((o) => o.gesperrt || o.malus);
+  if (!getroffen.length) {
+    return "An diesem Spiel greift die Regel nicht — es bleibt zu wenig Auswahl übrig.";
+  }
+  const namen = getroffen.map((o) => o.id).join(", ");
+  const n = getroffen.length;
+  return cfg.wirkung === "abwerten"
+    ? `${n} Torschütze${n === 1 ? "" : "n"} zahlt ${n === 1 ? "" : "zahlen "}${cfg.malusProzent} % weniger (${namen}).`
+    : `Gesperrt: ${n} Torschütze${n === 1 ? "" : "n"} (${namen}).`;
 }

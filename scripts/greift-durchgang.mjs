@@ -73,6 +73,16 @@ const FAELLE = [
   ["markets (Picks je Team)", { markets: { ...DEFAULT_RULES.markets,
     goals: { ...DEFAULT_RULES.markets.goals, picksPerTeam: 3 } } }, { mehrSchuetzen: true,
     hinweis: "greift nur, wenn ein Spiel überhaupt drei plausible Schützen anbietet" }],
+  // 🔴 Die Favoriten-Regel in ihrer WEICHEN Form (Andi, 26.08.2026). Sie ist
+  // die einzige der beiden, die überhaupt Punkte bewegt: `sperren` nimmt nur
+  // aus der Auswahl und ist damit hier nicht messbar (Ebene 5), `abwerten`
+  // dämpft den Torschützen-Gewinn und muss es sein.
+  // ⚠️ `mindestQuote: 99` trifft absichtlich JEDEN Schützen — mit einer
+  // realistischen Schwelle hinge die Messung daran, ob dieses eine Spiel
+  // zufällig einen Favoriten unter 2,0 anbietet.
+  ["sperre (Torschützen-Abwertung)", { sperre: {
+    enabled: true, wirkung: "abwerten", modus: "quote", mindestQuote: 99, malusProzent: 50,
+  } }, { mehrSchuetzen: true, hinweis: "bewegt nur Tipps MIT Torschützen" }],
   ["underdogBoost", { underdogBoost: 3 }],
   // Die Rampe formt den Außenseiter-Aufschlag. Ohne einen Aufschlag GRÖSSER 1
   // ist sie folgenlos — deshalb steht er im Vergleichsstand mit drin, sonst
@@ -516,13 +526,6 @@ const OHNE_MESSFALL = {
   regelAbstimmung: "Wie `verfassung` — Mitbestimmung, keine Wertung.",
   oddsMode: "Woher die Quoten kommen. Im Mock gibt es nur eine Quelle.",
   reglerFeinheit: "Eine Einstellung der Profi-Ansicht selbst, kein Spielwert.",
-  sperre:
-    "Nimmt Optionen aus der AUSWAHL und verrechnet nichts — ein Leaderboard-"
-    + "Vergleich bewegt sich hier zwangsläufig um null. Gemessen wird sie "
-    + "stattdessen dort, wo sie wirkt: `favoritenSperre.test.js` (trifft sie "
-    + "den Favoriten oder den Außenseiter?), `sperrEingriff.test.js` (kommt "
-    + "der Eingriff in der Auswahl an?) und `autoTip.test.js` (hält sich der "
-    + "Ersatz-Tipp daran?).",
 };
 
 const faelleQuelle = (() => {

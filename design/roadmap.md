@@ -27,16 +27,27 @@ Menschen zu fragen. Es waren drei, und keine davon fällt bei einem Test auf,
 der nur die Rechnung prüft.
 
 **Was sie heute kann:** zwei Bauarten (`rang` relativ zum Spiel · `quote` als
-feste Schwelle), getrennt für Torschützen und Endstände, mit `mindestensOffen`
-als Sicherung. Als **Ereignis** (`wirkung.js`, Typ `sperre`) trifft sie einen
+feste Schwelle) und zwei Konsequenzen (`sperren` · `abwerten`), NUR für
+Torschützen, mit `mindestensOffen` als Sicherung. Als **Ereignis** (`wirkung.js`, Typ `sperre`) trifft sie einen
 Spieler an einem Spieltag; als **Joker** (`sperre.freischaltungen`) hebt ein
 Spieler sie an einem Spiel selbst auf.
 
+🔴 **Am selben Tag wieder verengt — und das ist der wichtigere Teil der
+Geschichte.** Die erste Fassung sperrte auch ENDSTÄNDE. Andi hat das
+zurückgenommen (*„ich will keinen block ermöglichen bei ergebnissen, nur
+Torschützen"*), und zwar an genau der Stelle, an der ich selbst eine offene
+Frage hatte: die Nähe-Belohnung hätte ein gesperrtes 2:1 über ein getipptes
+2:0 doch bezahlt. **Eine Auswahl-Sperre verträgt sich nicht mit einer Wertung,
+die für „knapp daneben" zahlt** — beim Namen eines Torschützen gibt es diese
+Hintertür nicht, beim Endstand immer.
+
+✅ **Und um eine weiche Schwester ergänzt:** `sperre.wirkung` = `sperren` |
+`abwerten`. Dieselbe Auswahl, andere Konsequenz — der Favorit bleibt wählbar
+und zahlt weniger. ⚠️ Damit verlässt die Regel Ebene 5: `abwerten` greift in
+`scoreGoals` ein und bewegt gemessen 1690 Punkte.
+
 ⏳ **Was offen ist:**
 
-- **Nähe über eine gesperrte Zelle** (Andis ❓6, `design/ideen.md`): 2:1 gesperrt,
-  getippt 2:0, es endet 2:1 — zahlt die Nähe? Heute ja, wie immer. Andis
-  Entscheidung.
 - **Sperre gegen einen MITSPIELER** (Fremdjoker-Richtung): baubar, aber sie
   kollidiert mit der Fremdjoker-Familie, die einen schon abgegebenen Tipp
   voraussetzt. Zwei Auswege stehen in `design/ideen.md`.
@@ -46,9 +57,10 @@ Spieler sie an einem Spiel selbst auf.
 
 ### Endphase (Balancing — NICHT jetzt anfassen)
 
-- Wie viele Optionen eine Sperre nehmen darf, ohne dass eine Runde zäh wird.
-  Die heutigen Zahlen (`DEFAULT_SPERRE`, die drei Regler-Stufen, die
-  Schaufenster-Runde) sind ausdrücklich Platzhalter bzw. Vorführwerte.
+- Wie viele Optionen eine Sperre nehmen darf, ohne dass eine Runde zäh wird —
+  und wie stark der Abzug der weichen Variante sein soll. Die heutigen Zahlen
+  (`DEFAULT_SPERRE`, die vier Regler-Stufen, die Schaufenster-Runde) sind
+  ausdrücklich Platzhalter bzw. Vorführwerte.
 
 ---
 

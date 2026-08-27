@@ -125,12 +125,20 @@ export function breakdown(tip, actual, snap, rules = DEFAULT_RULES) {
       const quote = d.type === "double" ? d.double : d.anytime;
       const getroffen = d.scored == null ? true : d.scored >= 1;
       if (!getroffen) continue;
+      // 🔴 Der Favoriten-Malus (26.08.2026) gehört SICHTBAR in die Zeile.
+      // `scoreGoals` rechnet `(q − 1) × (1 − malus)`; stünde hier weiter der
+      // volle Gewinn, ergäbe die Aufschlüsselung eine andere Summe als die
+      // Wertung — genau die Sorte Abweichung, die `npm run anzeige` misst und
+      // die am 05.08.2026 17 Funde an einem Tag hervorgebracht hat.
+      const malus = d.malus ?? 0;
       posten.push({
         key: `tor-${d.side}-${d.player}`,
         label: d.type === "double" ? `Doppelpack ${d.player}` : `Torschütze ${d.player}`,
         art: "summe",
-        wert: zeige(quote - 1),
-        hinweis: `Quote ${r1(quote)}`,
+        wert: zeige((quote - 1) * (1 - malus)),
+        hinweis: malus
+          ? `Quote ${r1(quote)} · −${Math.round(malus * 100)} % (zu wahrscheinlich)`
+          : `Quote ${r1(quote)}`,
       });
     }
     const nachKombi = applyCombo(s.resultPart, s.ebene, s.goals.net, rules);

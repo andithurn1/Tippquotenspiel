@@ -302,3 +302,52 @@ describe("Die angezeigte Spalte addiert sich auf die angezeigte Summe", () => {
     expect(Math.round(kette(b.posten))).toBe(b.gesamt);
   });
 });
+
+// ============================================================
+//  DER FAVORITEN-MALUS steht in der Aufschluesselung
+//
+//  🔴 Ohne diesen Test waere der Malus die klassische zweite Wahrheit: die
+//  Wertung zoege ihn ab, die Aufschluesselung zeigte den vollen Gewinn, und
+//  die Summe stuende daneben. Genau die Fehlerklasse der 17 Funde vom
+//  05.08.2026 -- keiner davon war ein Rechenfehler.
+// ============================================================
+describe("Favoriten-Malus in der Aufschluesselung", () => {
+  const mitToren = tipp(5, 1, { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal"] });
+  const abwerten = sanitizeRules({
+    ...DEFAULT_RULES,
+    sperre: { enabled: true, wirkung: "abwerten", modus: "quote", mindestQuote: 99, malusProzent: 40 },
+  });
+
+  it("die Kette geht auch MIT Malus auf", () => {
+    const b = breakdown(mitToren, RESULT, SNAP, abwerten);
+    expect(b.gesamt).toBe(scoreTip(mitToren, RESULT, SNAP, abwerten).total);
+    expect(b.stimmt).toBe(true);
+  });
+
+  it("der Malus steht am Torschuetzen dran, nicht irgendwo", () => {
+    const b = breakdown(mitToren, RESULT, SNAP, abwerten);
+    const tore = b.posten.filter((p) => p.key.startsWith("tor-"));
+    expect(tore.length).toBeGreaterThan(0);
+    for (const t of tore) expect(t.hinweis).toContain("−40 %");
+  });
+
+  it("mit Malus kommt weniger heraus als ohne -- die Gegenprobe", () => {
+    const ohne = scoreTip(mitToren, RESULT, SNAP, DEFAULT_RULES).raw;
+    const mit = scoreTip(mitToren, RESULT, SNAP, abwerten).raw;
+    expect(mit).toBeLessThan(ohne);
+  });
+
+  it("der Freischalt-Joker hebt ihn auf -- auch in der WERTUNG", () => {
+    // ⚠️ Der Knopf heisst „Sperre fuer dieses Spiel aufheben". Wer ihn drueckt
+    // und trotzdem weniger bekommt, haelt die App fuer kaputt.
+    const frei = { ...mitToren, frei: true };
+    expect(scoreTip(frei, RESULT, SNAP, abwerten).raw)
+      .toBe(scoreTip(mitToren, RESULT, SNAP, DEFAULT_RULES).raw);
+  });
+
+  it("ohne die Regel aendert sich an der Aufschluesselung gar nichts", () => {
+    const aus = sanitizeRules({ ...DEFAULT_RULES, sperre: { enabled: false, wirkung: "abwerten" } });
+    expect(breakdown(mitToren, RESULT, SNAP, aus).posten)
+      .toEqual(breakdown(mitToren, RESULT, SNAP, DEFAULT_RULES).posten);
+  });
+});

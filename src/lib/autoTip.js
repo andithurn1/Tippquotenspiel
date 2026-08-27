@@ -21,7 +21,7 @@
 
 import { likelyScorelines } from "./nearResults";
 import { seeded } from "./seeded";
-import { schuetzenSperre, ergebnisSperre } from "./favoritenSperre";
+import { schuetzenSperre } from "./favoritenSperre";
 import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules } from "./engine";
 
 // ── Was passiert bei einem Versäumnis? Der ADMIN entscheidet ──
@@ -92,35 +92,28 @@ function likelyScorers(snap, side, n, rules) {
 //  jokerPlan, autoTip und auswahl.)
 
 // Endstand nach gewählter Strategie.
-// Ist DIESER Endstand für die Runde gesperrt? (Favoriten-Sperre, 26.08.2026)
-const standZu = (snap, rules, stand) => !!stand
-  && ergebnisSperre(snap, rules).some((o) => o.gesperrt && o.id === `${stand.home}:${stand.away}`);
-
-// ⚠️ Der Mittelwert der Mitspieler-Tipps („schnitt") kann auf einem gesperrten
-// Stand landen, obwohl kein einziger Mitspieler ihn getippt hat — Rundung. Dann
-// gilt derselbe Ausweg wie überall hier: der wahrscheinlichste OFFENE Stand.
+// ⚠️ Hier stand bis zum 26.08.2026 eine Prüfung, ob der gewählte ENDSTAND für
+// die Runde gesperrt ist. Sie ist weg, weil es die Endstand-Sperre nicht mehr
+// gibt (Andi: „ich will keinen block ermöglichen bei ergebnissen, nur
+// Torschützen"). Die Schützen-Prüfung in `likelyScorers` bleibt — dort ist der
+// Fall echt: der Versäumte bekäme sonst, was der Anwesende nicht darf.
 function pickScoreline(snap, rules, strategie, { fremdeTipps = [], seed = "" } = {}) {
-  const offen = (stand) => (standZu(snap, rules, stand) ? null : stand);
   if (strategie === "schnitt" && fremdeTipps.length > 0) {
     // Mittelwert der Mitspieler-Tipps, kaufmännisch gerundet.
     const n = fremdeTipps.length;
     const home = Math.round(fremdeTipps.reduce((s, t) => s + (Number(t?.home) || 0), 0) / n);
     const away = Math.round(fremdeTipps.reduce((s, t) => s + (Number(t?.away) || 0), 0) / n);
-    const schnitt = offen({ home, away });
-    if (schnitt) return schnitt;
+    return { home, away };
   }
   if (strategie === "zufall") {
     // Aus den fünf plausibelsten Endständen einen ziehen — nie ein Freilos,
     // aber mehr Abwechslung als immer derselbe Standard.
-    // ⚠️ Gesperrte fallen VOR der Ziehung weg, nicht danach: nachträglich
-    // aussortieren hieße, dass ein und derselbe Seed je nach Regelwerk einen
-    // anderen Stand zieht — reproduzierbar wäre der Auto-Tipp dann nicht mehr.
-    const kandidaten = likelyScorelines(snap, rules, 8).filter((k) => !standZu(snap, rules, k));
+    const kandidaten = likelyScorelines(snap, rules, 5);
     if (kandidaten.length) return kandidaten[Math.floor(seeded(seed) * kandidaten.length)];
   }
   // Fallback für alle Fälle (auch „schnitt" ohne fremde Tipps): das
-  // wahrscheinlichste Ergebnis, das die Runde auch zulässt.
-  const best = likelyScorelines(snap, rules, 12).find((k) => !standZu(snap, rules, k));
+  // wahrscheinlichste Ergebnis.
+  const [best] = likelyScorelines(snap, rules, 1);
   return best ?? null;
 }
 

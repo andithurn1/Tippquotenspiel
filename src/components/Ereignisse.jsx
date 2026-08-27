@@ -12,7 +12,7 @@ import { TAPZIEL } from "@/lib/tapziel";
 import Feinheiten from "@/components/Feinheiten";
 import {
   AUSWERTBARE_WIRKUNGEN, WIRKUNG, WIRKUNG_LIMITS, DEFAULT_WIRKUNG,
-  sanitizeWirkung, beschreibeWirkung, konflikte as wirkungsKonflikte, SPERR_ZIELE,
+  sanitizeWirkung, beschreibeWirkung, konflikte as wirkungsKonflikte,
 } from "@/lib/wirkung";
 import {
   AUSWERTBARE_AUSLOESER, AUSLOESER, AUSLOESER_LIMITS,
@@ -196,18 +196,6 @@ function Wirkungsfeld({ wert, onChange }) {
         {info.parameter.includes("prozent") && (
           <Zahl label="Prozent" wert={w.prozent} limits={WIRKUNG_LIMITS.prozent} breite={110}
             onChange={(v) => onChange({ ...w, prozent: v })} />
-        )}
-        {/* 🔴 Was die Sperre zuhält (Andi, 26.08.2026). Aus `SPERR_ZIELE`
-            gebaut und nicht hier aufgezählt: ein drittes Ziel im Katalog wäre
-            sonst gebaut, geprüft — und in der Oberfläche unsichtbar. */}
-        {info.parameter.includes("was") && (
-          <div>
-            <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 4 }}>was gesperrt wird</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-              {SPERR_ZIELE.map((z) =>
-                knopf(w.was === z.key, z.label, () => onChange({ ...w, was: z.key }), z.key, z.text))}
-            </div>
-          </div>
         )}
         {/* Der eigene Saison-Deckel — er gehört zu dieser Wirkung und nicht
             zum Ereignis, sonst hätte dieselbe Wirkung in zwei Regeln zwei

@@ -65,16 +65,14 @@ function giltFuer(vorgang, userId, matchday) {
 export function sperrenFuer(vorgaenge = [], { userId = null, matchday = null } = {}) {
   if (!userId || !Array.isArray(vorgaenge)) return KEIN_EINGRIFF;
   let schuetzen = 0;
-  let ergebnisse = 0;
   const gruende = [];
   for (const v of vorgaenge) {
     if (!giltFuer(v, userId, matchday)) continue;
     schuetzen += Math.max(0, Number(v.sperre.schuetzen) || 0);
-    ergebnisse += Math.max(0, Number(v.sperre.ergebnisse) || 0);
     if (v.ereignisText && !gruende.includes(v.ereignisText)) gruende.push(v.ereignisText);
   }
-  if (!schuetzen && !ergebnisse) return KEIN_EINGRIFF;
-  return { schuetzen, ergebnisse, gruende };
+  if (!schuetzen) return KEIN_EINGRIFF;
+  return { schuetzen, gruende };
 }
 
 // ── Der Joker: wie viele Freischaltungen habe ich noch? ────
@@ -105,13 +103,8 @@ export function freischaltStand(tipps = [], cfg = {}, { userId = null, spieltag 
 // deshalb trägt schon jede einzelne Sperre ihren Grund.
 export function beschreibeEingriff(eingriff) {
   if (!eingriff) return "";
-  const teile = [];
-  if (eingriff.schuetzen) {
-    teile.push(`${eingriff.schuetzen} Torschütze${eingriff.schuetzen === 1 ? "" : "n"}`);
-  }
-  if (eingriff.ergebnisse) {
-    teile.push(`${eingriff.ergebnisse} Ergebnis${eingriff.ergebnisse === 1 ? "" : "se"}`);
-  }
+  const n = eingriff.schuetzen;
+  if (!n) return "";
   const anlass = eingriff.gruende?.length ? ` (${eingriff.gruende.join(", ")})` : "";
-  return `Für dich an diesem Spieltag zusätzlich gesperrt: ${teile.join(" und ")}${anlass}.`;
+  return `Für dich an diesem Spieltag zusätzlich gesperrt: ${n} Torschütze${n === 1 ? "" : "n"}${anlass}.`;
 }

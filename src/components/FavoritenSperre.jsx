@@ -4,7 +4,7 @@ import { C, RUND } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import { Zahl } from "@/components/Eingaben";
 import Feinheiten from "@/components/Feinheiten";
-import { sanitizeSperre, DEFAULT_SPERRE, SPERRE_LIMITS, SPERRE_MODI } from "@/lib/favoritenSperre";
+import { sanitizeSperre, DEFAULT_SPERRE, SPERRE_LIMITS, SPERRE_MODI, SPERRE_WIRKUNGEN } from "@/lib/favoritenSperre";
 
 // ============================================================
 //  FAVORITEN-SPERRE — Oberfläche
@@ -28,6 +28,11 @@ import { sanitizeSperre, DEFAULT_SPERRE, SPERRE_LIMITS, SPERRE_MODI } from "@/li
 //  die einen Tipp unmöglich macht, wäre ein Fehler und keine Einstellung.
 //  Sie steht deshalb MIT Erklärung da und nicht als nackte Zahl.
 // ============================================================
+
+const WIRKUNG_TEXT = {
+  sperren: { key: "sperren", label: "Gar nicht wählbar", hint: "hartes Verbot — der Name lässt sich nicht anklicken" },
+  abwerten: { key: "abwerten", label: "Zahlt weniger", hint: "der Name bleibt wählbar, bringt aber weniger Punkte" },
+};
 
 const MODUS_TEXT = {
   rang: { key: "rang", label: "Die wahrscheinlichsten", hint: "relativ zu diesem Spiel — passt sich jedem Wettbewerb an" },
@@ -70,16 +75,17 @@ function Wahl({ label, wert, optionen, onChange }) {
 // Spiel, denn das Regelwerk gilt für alle. Was sie an EINEM Spiel bewirkt,
 // sagt `beschreibeSperre(snap, rules)` in der Tippabgabe.
 function satz(cfg) {
-  if (!cfg.enabled) return "aus — alles ist wählbar";
+  if (!cfg.enabled) return "aus — alles ist wählbar und zahlt voll";
+  const was = cfg.wirkung === "abwerten" ? `zahlen ${cfg.malusProzent} % weniger` : "gesperrt";
   const teile = [];
   if (cfg.modus === "quote") {
     teile.push(`alles unter Quote ${String(cfg.mindestQuote).replace(".", ",")}`);
-  } else {
-    if (cfg.schuetzen) teile.push(`${cfg.schuetzen} Torschütze${cfg.schuetzen === 1 ? "" : "n"}`);
-    if (cfg.ergebnisse) teile.push(`${cfg.ergebnisse} Ergebnis${cfg.ergebnisse === 1 ? "" : "se"}`);
+  } else if (cfg.schuetzen) {
+    teile.push(`${cfg.schuetzen} Torschütze${cfg.schuetzen === 1 ? "" : "n"}`);
   }
   const joker = cfg.freischaltungen > 0 ? ` · ${cfg.freischaltungen}× aufhebbar` : "";
-  return `${teile.join(" · ")} gesperrt, mindestens ${cfg.mindestensOffen} bleiben offen${joker}`;
+  const sicherung = cfg.wirkung === "abwerten" ? "" : `, mindestens ${cfg.mindestensOffen} bleiben offen`;
+  return `${teile.join(" · ")} ${was}${sicherung}${joker}`;
 }
 
 export default function FavoritenSperre({ rules, onChange }) {
@@ -88,11 +94,12 @@ export default function FavoritenSperre({ rules, onChange }) {
   const L = SPERRE_LIMITS;
   const setze = (teil) => onChange({ sperre: { ...cfg, ...teil } });
   const nachQuote = cfg.modus === "quote";
+  const weich = cfg.wirkung === "abwerten";
 
   // Was hinter der Klappe von der Vorgabe abweicht — gegen `DEFAULT_SPERRE`
   // geprüft und nicht gegen hier notierte Werte (zweite Wahrheit).
   const feinAbweichend = [
-    cfg.mindestensOffen !== D.mindestensOffen ? "Mindestauswahl" : null,
+    !weich && cfg.mindestensOffen !== D.mindestensOffen ? "Mindestauswahl" : null,
     nachQuote && cfg.mindestQuote !== D.mindestQuote ? "Schwelle" : null,
   ].filter(Boolean);
 
@@ -126,9 +133,31 @@ export default function FavoritenSperre({ rules, onChange }) {
       {cfg.enabled && (
         <>
           <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
-            Nimmt die <b style={{ color: C.text }}>naheliegendsten</b> Torschützen und Endstände
-            aus der Auswahl. Verrechnet wird nichts anders — es steht nur weniger zur Wahl.
+            Betrifft die <b style={{ color: C.text }}>naheliegendsten Torschützen</b> —
+            entweder sie fallen aus der Auswahl, oder sie zahlen weniger.
+            ⛔ Endstände bleiben immer offen: eine gesperrte Zelle wäre über die
+            Nähe-Belohnung eines Nachbarfelds doch bezahlt worden.
           </p>
+
+          {/* 🔴 Die WEICHE Variante (Andi, 26.08.2026: „ist ja egtl ne ähnliche
+              einstellung ienfach mit nem Malus sobald schwellenwerte"). Sie
+              steht ganz oben, weil sie die Frage vor allen anderen beantwortet:
+              nehme ich dem Spieler etwas WEG oder mache ich es nur weniger
+              attraktiv? Alles darunter — Schwelle, Anzahl, Sicherung — gilt für
+              beide gleich, es ist dieselbe Auswahl. */}
+          <Wahl
+            label="Was mit dem Naheliegenden passiert"
+            wert={cfg.wirkung}
+            onChange={(wirkung) => setze({ wirkung })}
+            optionen={SPERRE_WIRKUNGEN.map((k) => WIRKUNG_TEXT[k])}
+          />
+
+          {weich && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+              <Zahl label="Abzug %" wert={cfg.malusProzent} limits={L.malusProzent}
+                onChange={(v) => setze({ malusProzent: v })} />
+            </div>
+          )}
 
           <Wahl
             label="Woran gemessen wird"
@@ -144,8 +173,6 @@ export default function FavoritenSperre({ rules, onChange }) {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
               <Zahl label="Torschützen gesperrt" wert={cfg.schuetzen} limits={L.schuetzen}
                 onChange={(v) => setze({ schuetzen: v })} />
-              <Zahl label="Ergebnisse gesperrt" wert={cfg.ergebnisse} limits={L.ergebnisse}
-                onChange={(v) => setze({ ergebnisse: v })} />
             </div>
           )}
 
@@ -188,15 +215,16 @@ export default function FavoritenSperre({ rules, onChange }) {
               )}
             </div>
             <p style={{ fontSize: "0.6875rem", color: C.muted, margin: 0, lineHeight: 1.45 }}>
-              Die Sperre hört auf, sobald so viele Optionen übrig sind. An einem Spiel mit
-              wenig Auswahl greift sie dadurch schwächer als eingestellt — gewollt: eine
-              Sperre, die keinen Tipp mehr zulässt, wäre ein Fehler.
+              {weich
+                ? "⚠️ Ohne Wirkung, solange abgewertet statt gesperrt wird — es wird ja nichts weggenommen. Die Zahl gilt wieder, sobald du auf „gar nicht wählbar“ umstellst."
+                : "Die Sperre hört auf, sobald so viele Optionen übrig sind. An einem Spiel mit wenig Auswahl greift sie dadurch schwächer als eingestellt — gewollt: eine Sperre, die keinen Tipp mehr zulässt, wäre ein Fehler."}
             </p>
           </Feinheiten>
 
           <p style={{ fontSize: "0.6875rem", color: C.akzent, margin: "6px 0 0", lineHeight: 1.45 }}>
-            Die Spieler sehen die gesperrten Namen und Felder weiterhin — ausgegraut, mit
-            dem Grund daneben. Wer nichts sieht, sucht.
+            {weich
+              ? "Die Spieler sehen den Abzug am Namen stehen, bevor sie tippen — nicht erst in der Abrechnung."
+              : "Die Spieler sehen die gesperrten Namen weiterhin — ausgegraut, mit dem Grund daneben. Wer nichts sieht, sucht."}
           </p>
         </>
       )}

@@ -32,7 +32,7 @@ import {
 import { FREMDJOKER_ARTEN, jokerArtVon, sanitizeSchutz } from "@/lib/eingriffe";
 import { pruefeEinsatz } from "@/lib/limitKlassen";
 import { ergebnisQuote } from "@/lib/randquoten";
-import { schuetzenSperre, istSchuetzeGesperrt, istErgebnisGesperrt, sanitizeSperre } from "@/lib/favoritenSperre";
+import { schuetzenSperre, istSchuetzeGesperrt, sanitizeSperre } from "@/lib/favoritenSperre";
 import { sperrenFuer, beschreibeEingriff, freischaltStand } from "@/lib/sperrEingriff";
 import { wirkungsVorgaenge } from "@/lib/ereignisse";
 import { startErgebnis, FESTER_START } from "@/lib/vorbelegung";
@@ -99,6 +99,9 @@ const SPIELTAGE = 34;
 // Name der Liste — und das ist bei einem Favoriten-Filter genau der, der nicht
 // mehr geht. Der Spieler hätte einen Tipp gesehen, den das Speichern ablehnt.
 const initialPicks = (snap, scorer, teams, rules) => {
+  // ⚠️ Nur GESPERRTE meiden. Ein abgewerteter Name ist eine gültige Wahl —
+  // ihn zu umgehen hieße, dem Spieler die Entscheidung abzunehmen, die die
+  // Abwertung ihm gerade stellen soll.
   const zu = new Set(schuetzenSperre(snap, rules).filter((o) => o.gesperrt).map((o) => o.id));
   const offen = (namen) => {
     const frei = namen.filter((n) => !zu.has(n));
@@ -558,23 +561,24 @@ export default function Tippabgabe({ matchId }) {
     () => (freigeschaltet ? { ...(meinEingriff ?? {}), frei: true } : meinEingriff),
     [meinEingriff, freigeschaltet]);
 
-  // 🔴 Die Favoriten-Sperre, EINMAL gefragt statt an fünf Stellen nachgebaut
+  // 🔴 Die Favoriten-Regel, EINMAL gefragt statt an fünf Stellen nachgebaut
   // (Andi, 26.08.2026: „mach dann auch bei der Tippabgabe einsehbar für die
   // nutzer, dass halt bspw. kane wegen der einstellung gesperrt ist mit
-  // knapper begründung"). Die Ergebnisse fragt `ErgebnisMatrix` selbst — hier
-  // stehen die Torschützen und der aktuell eingestellte Endstand.
+  // knapper begründung"). Sie betrifft nur TORSCHÜTZEN — Endstände hat Andi am
+  // selben Tag ausgenommen.
+  //
+  // ⚠️ Die Karte trägt BEIDE Konsequenzen: gesperrt (nicht wählbar) und
+  // abgewertet (wählbar, zahlt weniger). Zwei getrennte Karten wären zwei
+  // Wege, dieselbe Frage zu stellen — und die Oberfläche müsste an jeder
+  // Stelle beide abfragen.
   const schuetzenZu = useMemo(() => {
     const m = new Map();
     if (!match) return m;
     for (const o of schuetzenSperre(match.snapshot, RULES, eingriffMitJoker)) {
-      if (o.gesperrt) m.set(o.id, o.grund);
+      if (o.gesperrt || o.malus) m.set(o.id, { gesperrt: o.gesperrt, malus: o.malus, grund: o.grund });
     }
     return m;
   }, [match, RULES, eingriffMitJoker]);
-  const standZu = useMemo(
-    () => (match ? istErgebnisGesperrt(match.snapshot, RULES, h, a, eingriffMitJoker).grund : null),
-    [match, RULES, h, a, eingriffMitJoker]);
-
   // 🔴 Der Startwert des Steppers (Andi, 26.08.2026). Ein Effekt und kein
   // `useState`-Initialwert: beim ersten Rendern ist der Schnappschuss noch
   // nicht da, und die Vorbelegung braucht ihn.
@@ -584,10 +588,10 @@ export default function Tippabgabe({ matchId }) {
   // stürzte beim zweiten mit „change in the order of Hooks" ab (CLAUDE.md).
   useEffect(() => {
     if (!match || standBeruehrt) return;
-    const start = startErgebnis(match.snapshot, RULES, prefs?.vorbelegung, eingriffMitJoker);
+    const start = startErgebnis(match.snapshot, prefs?.vorbelegung);
     setH(start.home);
     setA(start.away);
-  }, [match, RULES, prefs?.vorbelegung, standBeruehrt, eingriffMitJoker]);
+  }, [match, prefs?.vorbelegung, standBeruehrt]);
 
   // Neues Spiel → die Vorbelegung gilt wieder. Ohne das behielte das zweite
   // Spiel den Stand des ersten, sobald man dort einmal gesteppt hat.
@@ -906,7 +910,7 @@ export default function Tippabgabe({ matchId }) {
   );
   // Anbieten nur, wenn es überhaupt etwas aufzuheben gibt: ein Knopf, der eine
   // Sperre aufhebt, die es nicht gibt, verbraucht ein Kontingent für nichts.
-  const etwasZu = schuetzenZu.size > 0 || !!standZu || freigeschaltet;
+  const etwasZu = schuetzenZu.size > 0 || freigeschaltet;
   const freiMoeglich = sperrRegel.enabled && freiLage.erlaubt > 0
     && (freiLage.frei > 0 || freigeschaltet);
 
@@ -1056,12 +1060,6 @@ export default function Tippabgabe({ matchId }) {
       //
       // ⚠️ Geprüft wird gegen dieselben Funktionen, die auch ausgrauen — nicht
       // gegen eine zweite Fassung der Regel (Runden-Schicht, CLAUDE.md).
-      const standGesperrt = istErgebnisGesperrt(SNAP, RULES, h, a, eingriffMitJoker);
-      if (RULES.markets.result && standGesperrt.gesperrt) {
-        setSperrGrund(`${h}:${a} ist nicht wählbar — ${standGesperrt.grund.replace(/^gesperrt: /, "")}`);
-        setSaveState("sperrUngueltig");
-        return;
-      }
       if (scorer.enabled) {
         const getroffen = (picks ?? []).flat()
           .flatMap((pk) => [pk.main, pk.backup])
@@ -1447,7 +1445,11 @@ export default function Tippabgabe({ matchId }) {
                       color: freigeschaltet ? C.mint : C.muted,
                       border: `1px solid ${freigeschaltet ? C.mint + "77" : C.line}`,
                     }}>
-                    {freigeschaltet ? "🔓 Sperre aufgehoben" : "🔓 Sperre für dieses Spiel aufheben"}
+                    {freigeschaltet
+                      ? "🔓 Aufgehoben"
+                      : sperrRegel.wirkung === "abwerten"
+                        ? "🔓 Abzug für dieses Spiel aufheben"
+                        : "🔓 Sperre für dieses Spiel aufheben"}
                   </button>
                   <span style={{ fontFamily: MONO, fontSize: "0.6875rem", color: C.muted }}>
                     {freiLage.frei} von {freiLage.erlaubt} frei
@@ -1455,7 +1457,7 @@ export default function Tippabgabe({ matchId }) {
                 </div>
                 <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 6, lineHeight: 1.45 }}>
                   {freigeschaltet
-                    ? "Alle Torschützen und Endstände sind wieder wählbar — für dieses eine Spiel."
+                    ? "Alle Torschützen zählen wieder voll — für dieses eine Spiel."
                     : "Für das eine Spiel, bei dem du den Naheliegenden trotzdem willst."}
                 </p>
               </div>
@@ -1494,22 +1496,8 @@ export default function Tippabgabe({ matchId }) {
                     er tippen will, ist mit zwei Antippern am Stepper schneller
                     als mit dem Suchen im Raster. Derselbe Gedanke wie Regler
                     UND Zahlenfeld im Baukasten-Grundsatz — Wahl statt Ersatz. */}
-                {/* 🔴 Der eingestellte Stand ist gesperrt — und zwar sichtbar,
-                    nicht erst beim Absenden. Ein Speichern-Knopf, der ohne
-                    Vorwarnung ablehnt, ist die schlechteste Reihenfolge. */}
-                {standZu && (
-                  <div style={{
-                    marginTop: 10, fontSize: "0.8125rem", lineHeight: 1.45, color: C.coral,
-                    background: `${C.coral}14`, border: `1px solid ${C.coral}55`,
-                    borderRadius: RUND.karte, padding: "9px 12px",
-                  }}>
-                    🔒 <strong>{h}:{a} ist nicht wählbar</strong> — {standZu.replace(/^gesperrt: /, "")}.
-                    So hat der Admin die Runde eingestellt; wähle einen anderen Endstand.
-                  </div>
-                )}
-
                 <ErgebnisMatrix snap={SNAP} rules={RULES} tip={{ home: h, away: a }}
-                  gesperrt={gesperrt} eingriff={eingriffMitJoker}
+                  gesperrt={gesperrt}
                   onWahl={(hh, aa) => { setStandBeruehrt(true); setH(hh); setA(aa); }} />
               </Section>
             )}
@@ -2127,14 +2115,18 @@ function Stepper({ value, onStep }) {
   );
 }
 
-// `sperren` ist eine Map Name → Grund (Favoriten-Sperre, 26.08.2026).
+// `sperren` ist eine Map Name → `{ gesperrt, malus, grund }` (favoritenSperre.js).
 //
-// 🔴 Die gesperrten Namen bleiben in der Liste STEHEN und werden dort als
-// gesperrt bezeichnet, statt zu verschwinden. Andis Ansage war „einsehbar …
-// mit knapper begründung" — und ein Name, der fehlt, ist nicht einsehbar: der
-// Spieler suchte Kane und hielte die Kaderliste für kaputt.
+// 🔴 Die betroffenen Namen bleiben in der Liste STEHEN und werden dort
+// bezeichnet, statt zu verschwinden. Andis Ansage war „einsehbar … mit knapper
+// begründung" — und ein Name, der fehlt, ist nicht einsehbar: der Spieler
+// suchte Kane und hielte die Kaderliste für kaputt.
+//
+// ⚠️ Ein ABGEWERTETER Name bleibt anklickbar. Nur die Beschriftung sagt, was
+// er kostet — er ist eine gültige Wahl, nur eine teurere.
 function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim, flex, sperren }) {
-  const grund = sperren?.get?.(value) ?? null;
+  const eintrag = sperren?.get?.(value) ?? null;
+  const grund = eintrag?.grund ?? null;
   return (
     <div style={{ flex }}>
       <div style={{
@@ -2151,10 +2143,13 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
         }}>
           {allowEmpty && <option value="" style={{ color: "#000" }}>– keiner –</option>}
           {Object.keys(players).map((p) => {
-            const zu = sperren?.get?.(p) ?? null;
+            const e = sperren?.get?.(p) ?? null;
+            const marke = !e ? p
+              : e.gesperrt ? `🔒 ${p} — gesperrt`
+                : `📉 ${p} — −${Math.round(e.malus * 100)} %`;
             return (
-              <option key={p} value={p} disabled={!!zu} style={{ color: "#000" }}>
-                {zu ? `🔒 ${p} — gesperrt` : p}
+              <option key={p} value={p} disabled={!!e?.gesperrt} style={{ color: "#000" }}>
+                {marke}
               </option>
             );
           })}
@@ -2163,8 +2158,13 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
       {/* Der Grund steht unter dem Feld und nicht in einem Tooltip: auf einem
           Telefon gibt es kein Überfahren mit der Maus. */}
       {grund && (
-        <div style={{ fontSize: "0.6875rem", lineHeight: 1.4, color: C.coral, marginTop: 4 }}>
-          🔒 {grund.replace(/^gesperrt: /, "")} — bitte einen anderen wählen.
+        <div style={{
+          fontSize: "0.6875rem", lineHeight: 1.4, marginTop: 4,
+          color: eintrag.gesperrt ? C.coral : C.muted,
+        }}>
+          {eintrag.gesperrt
+            ? `🔒 ${grund.replace(/^gesperrt: /, "")} — bitte einen anderen wählen.`
+            : `📉 ${grund} — er zählt, bringt aber weniger.`}
         </div>
       )}
     </div>

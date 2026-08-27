@@ -90,11 +90,16 @@ nicht — er wählt aus.
 | ❓3 | Torschütze und Endstand getrennt? | **Getrennt** — `schuetzen` und `ergebnisse` sind zwei Zahlen. |
 | ❓4 | Was, wenn nichts übrig bleibt? | **`mindestensOffen`.** Gesperrt wird nur so weit, wie danach noch genug Auswahl bleibt. Vorgabe 4. |
 | ❓5 | Welche Stufe? | **Stufe 2**, als Klartext-Frage „Ist der Naheliegende wählbar?" (12. Regler). |
-| ❓6 | Nähe über eine gesperrte Zelle? | **NOCH OFFEN** — siehe unten. Das ist die einzige Frage, die noch auf dich wartet. |
+| ❓6 | Nähe über eine gesperrte Zelle? | **ERLEDIGT — durch Wegfall.** Andi am 26.08.2026: *„stimmt deine Frage wirfts auf, ich will keinen block ermöglichen bei ergebnissen, nur Torschützen"*. Endstände werden nicht mehr gesperrt, also gibt es die Hintertür nicht mehr. Beim Torschützen gibt es sie ohnehin nicht: es gibt keine „Nähe" zu einem Namen. |
+| ➕ | *neu, aus derselben Nachricht* | **Abwerten statt sperren.** Dieselbe Auswahl, weiche Konsequenz — siehe unten. |
 
 ⚠️ **Alles darunter ist die ursprüngliche Notiz** und bleibt stehen, weil sie
-zeigt, woher die Antworten kommen. Wo sie fragt, ist die Frage beantwortet —
-außer bei ❓6.
+zeigt, woher die Antworten kommen. **Alle sechs Fragen sind beantwortet.**
+
+⛔ **Und eine Antwort hat etwas zurückgebaut:** die erste Fassung sperrte auch
+Endstände. Sie ist weg — auf Andis Ansage und aus dem Grund, den ❓6 benannt
+hatte. Der Code, die Tests und die Oberfläche sind entsprechend
+zurückgenommen, nicht nur ausgeschaltet.
 
 ### Vorlage ausgefüllt (`design/vokabular.md`)
 
@@ -189,6 +194,56 @@ zusammen ginge auch.
 
 ---
 
+## ✅ Abwerten statt sperren — die weiche Schwester · GEBAUT 26.08.2026
+
+*Andi, 26.08.2026, wörtlich:* „gut wir haben ja auch nen mechanismus, der
+einfach die Topwahrscheinlichen Torschützen quoten biischen abwertet (ist ja
+egtl ne ähnliche einstellung ienfach mit nem Malus sobald schwellenwerte)"
+
+### ⚠️ Zuerst die Richtigstellung: den Mechanismus gab es NICHT
+
+Nachgesehen, nicht vermutet. Was es gab:
+
+| | |
+|---|---|
+| `kombiBonus.js` | wertet **seltene** Schützen **auf** — und nur, wenn Ergebnis UND Schütze zusammen aufgehen. Keine Schwelle. |
+| `underdogBoost` / `favFlopPenalty` | Ergebnis-Ebene, nicht Torschützen. |
+| `tabellenBonus.richtung: "auchFavorit"` | dämpft den erwartbaren SIEG, nicht den erwartbaren Schützen. |
+
+Der Gedanke stimmt also, die Umsetzung fehlte. Deine Beschreibung passt
+allerdings **genau** auf die Favoriten-Sperre: „wer liegt über der Schwelle"
+rechnet die längst aus — es fehlte nur die zweite Konsequenz.
+
+### ✅ Gebaut als SCHALTER, nicht als zweiter Block
+
+`sperre.wirkung`: **sperren** (nicht wählbar, Vorgabe) oder **abwerten**
+(wählbar, zahlt `malusProzent` weniger). Eine eigene Datei mit eigener
+Schwelle wäre eine zweite Antwort auf „wer ist hier der Favorit?" — genau die
+doppelte Wahrheit, an der dieses Projekt am 05.08.2026 17 Fehler an einem Tag
+hatte.
+
+🔴 **Der Unterschied ist größer, als er aussieht, und er steht im Code:**
+`sperren` ist **Ebene 5** (Auswahl) und verrechnet nichts. `abwerten` ist
+**Ebene 2** und greift in `scoreGoals` ein — gemessen bewegt es **1690 Punkte**
+(`npm run greift`). Deshalb steht der Prozentsatz auf einem Platzhalter und die
+ganze Regel auf AUS.
+
+⚠️ **Der Malus greift auf den GEWINN (`Quote − 1`), nicht auf die Quote.** Die
+Quote selbst zu dämpfen zöge den Einsatz mit — ein Tipp, der 30 % weniger
+gewinnt, verlöre dann auch 30 % weniger. Das wäre keine Abwertung, sondern eine
+Versicherung.
+
+**Auf Stufe 2 steht sie VOR den harten Stufen** („Er zahlt weniger" · „Der
+Favorit ist gesperrt" · „Die drei Naheliegendsten sind gesperrt"): für eine
+Freundesrunde ist die weiche vermutlich die richtige Antwort, und niemand steht
+vor einem grauen Knopf.
+
+⏳ **Endphase:** wie stark der Abzug sein soll. Heute 20 % in der Regler-Stufe —
+die Größenordnung, die du am 21.08.2026 selbst gesetzt hast („milde
+Aufwertungen bis etwa +20 %"), hier mit umgekehrtem Vorzeichen.
+
+---
+
 ## ❓ Sperre als Ereignis und als Joker — die zweite Richtung
 
 *Andi, 26.08.2026, wörtlich:* „mach generell solche mechaniken auch als Ereignis
@@ -198,9 +253,9 @@ verfügbar und als Joker (oder gibts da Bedenken dass es nicht aufgeht, )"
 
 - **Als Ereignis:** die Wirkung `sperre` in `wirkung.js` ist auswertbar
   geworden. Ein Ereignis kann EINEM Spieler an EINEM Spieltag zusätzlich
-  Torschützen und/oder Endstände zuhalten (`sperrEingriff.js`). Sie stand seit
-  dem 07.08.2026 als Vorbereitung im Katalog und hatte bis heute nichts, worauf
-  sie greifen konnte.
+  Torschützen zuhalten — bzw. abwerten, je nachdem, was die Runde eingestellt
+  hat (`sperrEingriff.js`). Sie stand seit dem 07.08.2026 als Vorbereitung im
+  Katalog und hatte bis heute nichts, worauf sie greifen konnte.
 - **Als Joker:** `sperre.freischaltungen` — der Spieler hebt die Sperre an
   einem Spiel je Spieltag selbst auf. Bauart wörtlich wie `eingriffe.schutz`
   (JK14): Anzahl vom Admin, Auswahl vom Spieler bei der Tippabgabe.

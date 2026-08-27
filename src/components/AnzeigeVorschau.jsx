@@ -194,7 +194,7 @@ export default function AnzeigeVorschau({ art, stufe }) {
     // 🔴 Wieder das ECHTE Raster statt einer Zeichnung — nur mit dem Tipp, auf
     // dem der Stepper STARTEN würde. Man sieht damit sofort, welches Feld die
     // Einstellung anspringt, und die Punkte daneben stehen schon dort.
-    const start = startErgebnis(snap, DEFAULT_RULES, stufe);
+    const start = startErgebnis(snap, stufe);
     return (
       <Rahmen>
         <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 6, lineHeight: 1.5 }}>

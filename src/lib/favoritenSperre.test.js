@@ -1,8 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   DEFAULT_SPERRE, SPERRE_MODI, sanitizeSperre,
-  schuetzenSperre, ergebnisSperre,
-  istSchuetzeGesperrt, istErgebnisGesperrt, beschreibeSperre,
+  schuetzenSperre, istSchuetzeGesperrt, beschreibeSperre, schuetzenMalus,
 } from "./favoritenSperre";
 
 // ============================================================
@@ -12,6 +11,11 @@ import {
 //  wahrscheinlichsten, nie die Aussenseiter. Dieser Fehler waere in der
 //  Oberflaeche unsichtbar, weil gesperrt eben gesperrt aussieht -- man saehe
 //  erst nach Wochen, dass ausgerechnet die 30er-Quoten fehlen.
+//
+//  ⛔ NUR TORSCHUETZEN. Die Endstand-Sperre ist am 26.08.2026 auf Andis Ansage
+//  zurueckgebaut worden -- die Naehe-Belohnung haette ein gesperrtes 2:1 ueber
+//  ein getipptes 2:0 doch bezahlt. `SNAP.correctScore` steht hier trotzdem
+//  noch: `startErgebnis` liest es, und der Schnappschuss soll echt bleiben.
 //
 //  NICHT geprueft wird, ob eine Zahl gut gewaehlt ist. Das ist Balance und
 //  damit Endphase (CLAUDE.md).
@@ -47,7 +51,6 @@ describe("sanitizeSperre", () => {
 
   it("klemmt Werte in ihre Grenzen statt sie zu uebernehmen", () => {
     expect(sanitizeSperre({ schuetzen: 99 }).schuetzen).toBe(6);
-    expect(sanitizeSperre({ ergebnisse: -3 }).ergebnisse).toBe(0);
     expect(sanitizeSperre({ mindestQuote: 999 }).mindestQuote).toBe(15);
     expect(sanitizeSperre({ mindestensOffen: 0 }).mindestensOffen).toBe(1);
     expect(sanitizeSperre({ schuetzen: "kaputt" }).schuetzen).toBe(DEFAULT_SPERRE.schuetzen);
@@ -56,7 +59,7 @@ describe("sanitizeSperre", () => {
   it("laesst sich nicht einschalten, wenn sie nichts tut", () => {
     // Dieselbe Sperrklinke wie bei `sanitizeWettbewerbe`: ein aktiver Schalter
     // ohne Wirkung ist eine Einstellung, die luegt.
-    expect(sanitizeSperre({ enabled: true, modus: "rang", schuetzen: 0, ergebnisse: 0 }).enabled).toBe(false);
+    expect(sanitizeSperre({ enabled: true, modus: "rang", schuetzen: 0 }).enabled).toBe(false);
     expect(sanitizeSperre({ enabled: true, modus: "quote", mindestQuote: 1 }).enabled).toBe(false);
     expect(sanitizeSperre({ enabled: true, modus: "rang", schuetzen: 1 }).enabled).toBe(true);
     expect(sanitizeSperre({ enabled: true, modus: "quote", mindestQuote: 2 }).enabled).toBe(true);
@@ -67,7 +70,7 @@ describe("Torschuetzen", () => {
   it("laesst ohne Einstellung jeden Namen wählbar -- und traegt dann keinen Grund", () => {
     const alle = schuetzenSperre(SNAP, {});
     expect(alle).toHaveLength(6);
-    expect(alle.every((o) => o.gesperrt === false && o.grund === null)).toBe(true);
+    expect(alle.every((o) => o.gesperrt === false && o.malus === 0 && o.grund === null)).toBe(true);
   });
 
   it("sperrt im Modus `rang` den Favoriten, nicht den Aussenseiter", () => {
@@ -129,51 +132,105 @@ describe("Torschuetzen", () => {
   });
 });
 
-describe("Ergebnisse", () => {
-  it("sperrt den wahrscheinlichsten Endstand -- 3:1, nicht 0:2", () => {
-    const alle = ergebnisSperre(SNAP, mit({ modus: "rang", ergebnisse: 1, mindestensOffen: 1 }));
-    expect(alle.filter((o) => o.gesperrt).map((o) => o.id)).toEqual(["3:1"]);
-  });
-
-  it("die Id ist `heim:auswaerts` -- die Schreibweise der Oberflaeche", () => {
-    const alle = ergebnisSperre(SNAP, {});
-    expect(alle).toHaveLength(12);
-    expect(alle.map((o) => o.id)).toContain("2:0");
-    expect(alle.find((o) => o.id === "2:0")).toMatchObject({ home: 2, away: 0, quote: 11 });
-  });
-
-  it("kommt mit einem fehlenden Raster zurecht", () => {
-    expect(ergebnisSperre({}, mit({ ergebnisse: 2 }))).toEqual([]);
-  });
-});
-
 describe("Nachschlagen fuer die Oberflaeche", () => {
   it("beantwortet die Frage nach EINEM Namen genauso wie die Liste", () => {
     const rules = mit({ modus: "rang", schuetzen: 1, mindestensOffen: 1 });
     expect(istSchuetzeGesperrt(SNAP, rules, "Kane").gesperrt).toBe(true);
     expect(istSchuetzeGesperrt(SNAP, rules, "Smith").gesperrt).toBe(false);
     // Ein Name, den es gar nicht gibt, ist nicht gesperrt -- kein Absturz.
-    expect(istSchuetzeGesperrt(SNAP, rules, "Gibtsnicht")).toEqual({ gesperrt: false, grund: null });
-  });
-
-  it("beantwortet die Frage nach EINEM Endstand", () => {
-    const rules = mit({ modus: "rang", ergebnisse: 1, mindestensOffen: 1 });
-    expect(istErgebnisGesperrt(SNAP, rules, 3, 1).gesperrt).toBe(true);
-    expect(istErgebnisGesperrt(SNAP, rules, 0, 2).gesperrt).toBe(false);
-    expect(istErgebnisGesperrt(SNAP, rules, 8, 8)).toEqual({ gesperrt: false, grund: null });
+    expect(istSchuetzeGesperrt(SNAP, rules, "Gibtsnicht")).toEqual({ gesperrt: false, malus: 0, grund: null });
   });
 
   it("sagt dem Admin in einem Satz, was an DIESEM Spiel passiert", () => {
     expect(beschreibeSperre(SNAP, {})).toMatch(/wählbar/);
-    const satz = beschreibeSperre(SNAP, mit({ modus: "rang", schuetzen: 1, ergebnisse: 1, mindestensOffen: 1 }));
+    const satz = beschreibeSperre(SNAP, mit({ modus: "rang", schuetzen: 1, mindestensOffen: 1 }));
     expect(satz).toContain("Kane");
-    expect(satz).toContain("3:1");
   });
 
   it("sagt es auch, wenn die Sperre AN ist und trotzdem nichts trifft", () => {
     // Der Fall, den man sonst fuer einen Fehler haelt: eingeschaltet, aber die
     // Sicherung `mindestensOffen` laesst keinen Spielraum.
-    const satz = beschreibeSperre(SNAP, mit({ modus: "rang", schuetzen: 2, ergebnisse: 0, mindestensOffen: 6 }));
-    expect(satz).toMatch(/greift die Sperre nicht/);
+    const satz = beschreibeSperre(SNAP, mit({ modus: "rang", schuetzen: 2, mindestensOffen: 6 }));
+    expect(satz).toMatch(/greift die Regel nicht/);
+  });
+});
+
+// ============================================================
+//  ABWERTEN STATT SPERREN — dieselbe Auswahl, weiche Konsequenz
+//
+//  🔴 Andi, 26.08.2026: „wir haben ja auch nen mechanismus, der einfach die
+//  Topwahrscheinlichen Torschuetzen quoten biischen abwertet (ist ja egtl ne
+//  aehnliche einstellung ienfach mit nem Malus sobald schwellenwerte)".
+//
+//  ⚠️ Den Mechanismus gab es NICHT -- der naechste Verwandte (`kombiBonus.js`)
+//  wertet SELTENE Schuetzen AUF. Gebaut ist er jetzt, als zweite Konsequenz
+//  DERSELBEN Auswahl: eine eigene Schwelle waere eine zweite Antwort auf „wer
+//  ist hier der Favorit".
+// ============================================================
+describe("Abwerten statt Sperren", () => {
+  const abwerten = (teil) => ({
+    sperre: { enabled: true, wirkung: "abwerten", modus: "rang", malusProzent: 30, ...teil },
+  });
+
+  it("trifft GENAU dieselben Namen wie die Sperre", () => {
+    // Der Kern der Bauart: eine Auswahl, zwei Konsequenzen.
+    const hart = schuetzenSperre(SNAP, mit({ modus: "rang", schuetzen: 2, mindestensOffen: 1 }))
+      .filter((o) => o.gesperrt).map((o) => o.id);
+    const weich = schuetzenSperre(SNAP, abwerten({ schuetzen: 2, mindestensOffen: 1 }))
+      .filter((o) => o.malus).map((o) => o.id);
+    expect(weich).toEqual(hart);
+  });
+
+  it("sperrt dabei NICHTS -- der Name bleibt waehlbar", () => {
+    const alle = schuetzenSperre(SNAP, abwerten({ schuetzen: 2 }));
+    expect(alle.some((o) => o.gesperrt)).toBe(false);
+    expect(alle.filter((o) => o.malus)).toHaveLength(2);
+  });
+
+  it("gibt den Malus als ANTEIL, nicht in Prozent", () => {
+    const kane = schuetzenSperre(SNAP, abwerten({ schuetzen: 1 })).find((o) => o.id === "Kane");
+    expect(kane.malus).toBeCloseTo(0.3, 10);
+    expect(schuetzenMalus(SNAP, abwerten({ schuetzen: 1 }), "Kane")).toBeCloseTo(0.3, 10);
+    expect(schuetzenMalus(SNAP, abwerten({ schuetzen: 1 }), "Smith")).toBe(0);
+  });
+
+  it("nennt im Grund die Zahl -- „−30 %“ statt „gesperrt“", () => {
+    const kane = schuetzenSperre(SNAP, abwerten({ schuetzen: 1 })).find((o) => o.id === "Kane");
+    expect(kane.grund).toContain("30");
+    expect(kane.grund).not.toContain("gesperrt");
+  });
+
+  it("`mindestensOffen` gilt hier NICHT -- es wird ja nichts weggenommen", () => {
+    // 🔴 Sonst stellte der Admin „alle unter 2,0 zahlen weniger" ein, und in
+    // Wahrheit zahlten die ersten vier voll.
+    const alle = schuetzenSperre(SNAP, abwerten({ modus: "quote", mindestQuote: 15, mindestensOffen: 5 }));
+    expect(alle.filter((o) => o.malus)).toHaveLength(6);
+  });
+
+  it("`schuetzenMalus` gibt 0, solange die Runde SPERRT", () => {
+    // Die Gegenprobe: der Malus darf nicht heimlich auch beim Sperren greifen.
+    expect(schuetzenMalus(SNAP, mit({ modus: "rang", schuetzen: 1, mindestensOffen: 1 }), "Kane")).toBe(0);
+  });
+
+  it("die Freischaltung hebt AUCH den Malus auf", () => {
+    const rules = abwerten({ schuetzen: 2 });
+    expect(schuetzenMalus(SNAP, rules, "Kane")).toBeGreaterThan(0);
+    expect(schuetzenMalus(SNAP, rules, "Kane", { frei: true })).toBe(0);
+  });
+
+  it("ein Ereignis wertet weiter ab, statt zu sperren", () => {
+    const rules = abwerten({ schuetzen: 1 });
+    const alle = schuetzenSperre(SNAP, rules, { schuetzen: 1 });
+    const getroffen = alle.filter((o) => o.malus);
+    expect(getroffen.map((o) => o.id)).toEqual(["Kane", "Musiala"]);
+    expect(alle.some((o) => o.gesperrt)).toBe(false);
+    // Und der zweite Grund sagt, dass er nur für mich gilt.
+    expect(getroffen[1].grund).toMatch(/für dich/);
+  });
+
+  it("sagt dem Admin den Unterschied in einem Satz", () => {
+    expect(beschreibeSperre(SNAP, abwerten({ schuetzen: 1 }))).toMatch(/30 % weniger/);
+    expect(beschreibeSperre(SNAP, mit({ modus: "rang", schuetzen: 1, mindestensOffen: 1 })))
+      .toMatch(/Gesperrt/);
   });
 });
