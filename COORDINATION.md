@@ -128,6 +128,112 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-29 (XL) · 🧱 **MOD5, die Symbol-Frage, O1 — und das Ende der Rollbahn**
+
+**Vier Punkte abgearbeitet, danach ist die Pipeline an ihrem Rand.**
+
+---
+
+#### MOD5 · Gewichte bei der Liga (beide Hälften)
+
+Andis Ansage hieß „Ligen **und** Mannschaften einzeln höher gewichten". Die
+Mechanik gab es längst — sein Punkt war die STELLE.
+
+- **Liga:** „Was <Liga> zählt" steht jetzt oben in `LigaSonderregeln`.
+- **Vereine:** hinter `Feinheiten` eine Liste der Vereine DIESER Liga, ein Klick
+  schaltet die Stufe weiter.
+
+🔴 **Ein Wert, zwei Zugänge, keine Kopie.** Beide schreiben dieselben Felder
+(`wettbewerbe.aufschlaege`, `teamMods.teams`), der Anteil kommt aus derselben
+Funktion. **Im Browser belegt (375×812):** im Sonderregeln-Block auf ×1,4
+gestellt → im Abschnitt „Wettbewerbe gewichten" steht Bundesliga ×1,4, die
+sechs anderen Ligen unverändert „aus".
+
+⚠️ **Bewusst kein zweiter Modus auf den Auswahl-Chips.** Dieselben Knöpfe je
+nach Zustand einmal „auswählen" und einmal „gewichten" — das ist die Bedienung,
+bei der man den Modus übersieht.
+
+**Neu: `src/lib/teamGewicht.js`** (9 Tests). Die Stufenleiter war modulprivat in
+`ModifikatorenSondermenue.jsx`; seit es zwei Oberflächen für einen Wert gibt,
+wären zwei Leitern zwei Verhalten — derselbe Verlauf wie bei den Eckenradien
+(G2) und beim `wer`-Katalog (K1). Sperrklinke gegengeprobt.
+
+**PP3 nachgemessen statt weitergeschrieben:** alle sieben Ligen tragen dieselbe
+Zeile und denselben Inhalt. ✅
+
+---
+
+#### 🔴 Zwei eigene Fehler in diesem Abschnitt, beide lehrreich
+
+1. **Ein Wächter, der nie hätte anschlagen können.** Beim Rundgang prüfte der
+   erste Test „kommt jedes Rad-Feld vor?" — der Rundgang baut seine Liste aber
+   aus demselben Katalog, enthält also jedes neue Feld automatisch. Gegenprobe
+   mit einem erfundenen Typ: grün geblieben. Geprüft wird jetzt die ABLEITUNG.
+2. **`git checkout --` auf eigene, nicht committete Arbeit.** Bei der Gegenprobe
+   zur Stufenleiter die Datei zurückgesetzt — und damit die halbfertigen
+   Vereins-Gewichte gelöscht. ⚠️ **Vor jeder Gegenprobe die Datei sichern**,
+   so wie es beim Zeitachsen-Umbau richtig gemacht wurde.
+
+---
+
+#### SY1 · Welche Symbole extern generieren? — `design/symbole.md`
+
+**24 Stück**, aus den Katalogen gezogen: 4 Fremdjoker · 4 eigene Joker ·
+7 Rad-Felder · 9 Ereignis-Schilder. ⛔ **Die 14 Auslöser NICHT** — das sind
+Bedingungen in der Admin-Oberfläche, keine Dinge, die ein Spieler sieht.
+
+✅ **Andis Stil-Entscheidung (29.08.):** die 24 **flach**, das Rad separat
+**illustrativ**. Begründung in der Datei; die Richtung geht nur einmal — aus
+flach kann man illustrativ nachlegen, umgekehrt nicht.
+
+⚠️ **Eine Richtigstellung an meiner eigenen ersten Fassung:** dort stand, die
+Symbole lägen „verstreut als Emoji in den Komponenten". **Nachgemessen stimmt
+das nicht** — die 371 Emoji in 65 Dateien gehören zu ABSCHNITTEN und stehen in
+Kommentaren. Für einen einzelnen Joker gibt es heute **gar kein** Symbol. Das
+ist die bessere Lage: nichts zu vereinheitlichen, nur anzulegen.
+
+---
+
+#### ST9 geschlossen · O1 beantwortet
+
+**ST9** („Pfeilanimation auf den Schalter") zeigt auf etwas, das es nicht mehr
+gibt — der Einfach/Profi-Umschalter fiel mit EB1 weg. Was Andi eigentlich
+wollte, ein kleines Tutorial zur Spielerstellung, steht seit heute (RF5).
+
+**O1 · Tailwind** — `design/tailwind.md`. Die Fanfarben bleiben zur Laufzeit
+dynamisch, Tailwind 4 legt Theme-Werte ALS CSS-Variablen an, und die Brücke gibt
+es schon (`cssVariablen.js`). 🔴 **Der Preis ist gemessen: 2 513 `style={{…}}`
+in 93 Dateien.** Daneben die aussagekräftigste Zahl: `Spielerstellung.jsx`
+benutzt **0-mal** `className` — die Stilebene vom 09.08. ist an einer Handvoll
+Stellen umgesetzt und sonst nirgends. **Empfehlung: ja zum Wechsel, nein zum
+Stichtag.**
+
+---
+
+#### ⛔ Und hier ist die Pipeline zu Ende — was übrig ist, ist gesperrt
+
+Nachgesehen, nicht behauptet. Alles Verbliebene fällt in eine dieser Gruppen:
+
+| | |
+|---|---|
+| **Braucht eine Entscheidung von Andi** | ST4b (der klebende Kasten deckt 43 % des Schirms) · EB3 · ❓-Einträge in `design/ideen.md` · O1s Android-Untergrenze |
+| **Wartet auf Platzierung/G6** | MOD6 · LAY1 · RF4 |
+| **Endphase / ausdrücklich gesperrt** | TI8 · RF7 (Presets) · EA5 · **NS1/NS2** |
+| **Braucht Supabase oder seine Schlüssel** | RF6 ③ · ZR2 · O3 · PP5 |
+| **Wartet auf die Bilder** | SY1 (das `bild`-Feld) · SY2 |
+
+🔴 **NS1/NS2 ausdrücklich NICHT angefangen.** `design/namensschema.md` sperrt es
+selbst („bis alle einstellbaren Parameter stehen") und schreibt dazu: *„Nicht
+als ‚nächster Schritt' in eine Übergabe schreiben — dieselbe Falle, über die das
+Balancing dreimal zurückkam."* Genau deshalb steht es hier unter GESPERRT und
+nicht unter „als Nächstes".
+
+**Stand:** `npm test` 138 Dateien · 3154 grün · 51 skipped · `abnahmen` 12/12 ·
+`lint` · `build` — alles Exit 0.
+
+---
+
+
 ### 2026-08-29 (XXXIX) · 🧭 **Der Rundgang steht (RF5) — und das Thermometer sitzt jetzt richtig (ST4)**
 
 **Zwei Oberflächen-Aufträge, beide von Andi am 29.08.2026 freigegeben** („mach ST 4
