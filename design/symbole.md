@@ -13,15 +13,22 @@ geschätzt — wenn eine Joker-Art dazukommt, fehlt sie hier, und das fällt auf
 
 **Gemessen am 29.08.2026:** weder `JOKER_ARTEN` (`jokerBudget.js`) noch
 `FREMDJOKER_ARTEN` (`eingriffe.js`), `EREIGNIS_TYPEN` (`ereignisse.js`) oder
-`BELOHNUNGS_TYPEN` (`drehrad.js`) haben ein `icon`- oder `bild`-Feld. Die
-Symbole, die man heute sieht, stehen als Emoji **direkt in den Komponenten** —
-mehrfach, je Screen neu getippt.
+`BELOHNUNGS_TYPEN` (`drehrad.js`) haben ein `icon`- oder `bild`-Feld.
 
-⚠️ **Das ist der Punkt, der vor dem Generieren geklärt gehört.** Wer 24 Bilder
-bestellt und sie dann in den Screens verteilt, bekommt denselben Joker in drei
-Ansichten mit drei verschiedenen Bildern — genau der Verlauf, den dieses Projekt
-bei den Eckenradien (G2), beim `wer`-Katalog (K1) und zuletzt bei der
-Stufenleiter der Vereins-Gewichte hatte.
+⚠️ **Richtigstellung zur ersten Fassung dieser Datei.** Dort stand, die Symbole
+stünden „als Emoji direkt in den Komponenten, mehrfach, je Screen neu getippt".
+**Nachgemessen stimmt das nicht.** Im ganzen `src/components` liegen zwar 371
+Emoji in 65 Dateien — aber die gehören zu ABSCHNITTEN (📅 Saison & Zeit,
+⚽ Wettbewerbe, 🧭 Zeitachse) und stehen in Kommentaren und Warntexten. Für
+einen einzelnen Joker, ein Ereignis oder ein Rad-Feld gibt es **heute gar kein
+Symbol** — weder im Katalog noch im Screen.
+
+✅ **Das ist die bessere Ausgangslage:** es gibt nichts zu vereinheitlichen, nur
+etwas anzulegen. Der Fehler „derselbe Joker, drei Bilder" ist noch nicht
+passiert — er würde erst entstehen, wenn die Bilder ohne gemeinsamen Ort in die
+Screens wandern. Genau der Verlauf, den dieses Projekt bei den Eckenradien (G2),
+beim `wer`-Katalog (K1) und zuletzt bei der Stufenleiter der Vereins-Gewichte
+hatte.
 
 ✅ **Der Weg, der das verhindert, ist eine Zeile je Eintrag:** ein `bild`-Feld im
 KATALOG, und die Screens lesen es. Dann gibt es je Joker genau ein Symbol, und
