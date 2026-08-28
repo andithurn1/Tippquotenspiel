@@ -53,6 +53,8 @@ describe("Der Zuschnitt trifft, was er treffen soll", () => {
     // Gemessen 27.08.2026: 669 von 1942. Beides waere ein Fehler -- 0 hiesse
     // „Filter trifft nichts", 1942 hiesse „Filter greift nicht".
     // Gemessen 27.08.2026: 629 von 1942 (mit der CL-Lostopf-Regel).
+    // Gemessen 27.08.2026 abends: 665 -- die 2. Liga traegt seit der
+    // Korrektur am Aufstiegskampf 36 Spiele bei statt null.
     expect(spiele.length).toBeGreaterThan(400);
     expect(spiele.length).toBeLessThan(900);
   });
@@ -65,12 +67,18 @@ describe("Der Zuschnitt trifft, was er treffen soll", () => {
   it("in jedem LIGA-Spiel steht mindestens einer der Sechzehn", () => {
     // ⚠️ `teamModus: "einer"` -- gemessen: „nur untereinander" waeren 70 Spiele
     // in einer ganzen Saison. Das ist kein Tippspiel, das ist ein Turnier.
-    // 🔴 Die CL ist ausgenommen: dort gilt seit dem 27.08.2026 die
-    // Lostopf-Regel und nicht die Vereinsliste -- ein Topf-2-Verein im
-    // Achtelfinale gehoert dazu, auch wenn er keiner der Sechzehn ist.
+    // 🔴 ZWEI Wettbewerbe sind ausgenommen, und beide aus demselben Grund:
+    // sie tragen eine eigene ABWEICHUNG in `jeWettbewerb` und folgen damit
+    // nicht der runden-weiten Vereinsliste.
+    //   • CL   -- die Lostopf-Regel (ein Topf-2-Verein im Achtelfinale
+    //                gehoert dazu, auch wenn er keiner der Sechzehn ist).
+    //   • BL2  -- der Aufstiegskampf ueber die letzten vier Spieltage. Dort
+    //                steht `teams: []`, weil die Top-16 nicht in der 2. Liga
+    //                spielen; genau deshalb darf hier keiner von ihnen stehen.
     const top = new Set(TOP_16);
+    const eigeneRegel = new Set(Object.keys(creatorRegeln().spiele.jeWettbewerb ?? {}));
     const ohne = spiele
-      .filter((m) => m.wettbewerb !== "cl")
+      .filter((m) => m.wettbewerb !== "cl" && !eigeneRegel.has(m.wettbewerb))
       .filter((m) => !top.has(m.home) && !top.has(m.away));
     expect(ohne.map((m) => `${m.home}-${m.away}`)).toEqual([]);
   });
@@ -98,18 +106,30 @@ describe("Der Zuschnitt trifft, was er treffen soll", () => {
     }
   });
 
-  it("⚠️ die 2. Bundesliga traegt HEUTE nichts bei -- und das ist erklaerbar", () => {
-    // 🔴 Der Befund, den man kennen muss: von 1942 Spielen tragen 0 einen
-    // Tabellenplatz. `tabellenPlatz` wird erst beim OEFFNEN eines Spieltags
-    // eingefroren (`spieltagOeffnen.js`). Eine Auswahl ueber Tabellenzonen
-    // waehlt im rohen Katalog deshalb nichts aus -- sie ist richtig
-    // eingestellt und greift in einer laufenden Runde.
+  it("🔴 die 2. Bundesliga traegt die letzten vier Spieltage bei", () => {
+    // 🔴 Der Befund, an dem diese Fassung entstanden ist -- und er ist der
+    // Grund, warum hier eine Korrektur steht statt der ersten Idee: von 1942
+    // Spielen tragen 0 einen Tabellenplatz. `tabellenPlatz` entsteht erst beim
+    // OEFFNEN eines Spieltags (`spieltagOeffnen.js`).
+    //
+    // ⚠️ Die erste Fassung schnitt den Aufstiegskampf ueber die Tabellenzone
+    // 1-6 zu und waehlte damit NULL Spiele aus: die 2. Liga stand in der
+    // Wettbewerbs-Liste, ohne ein einziges Spiel beizutragen. Jetzt sind es
+    // schlicht die letzten vier Spieltage -- und die SIND der Aufstiegskampf.
+    //
+    // ⚠️ Der Test haelt beides fest: dass es die Tabellenplaetze im rohen
+    // Katalog wirklich nicht gibt (sonst waere die Korrektur unnoetig gewesen)
+    // und dass die Liga jetzt etwas beitraegt.
     const mitPlatz = alle.filter((m) => m.snapshot?.tabellenPlatz);
     expect(mitPlatz).toHaveLength(0);
-    expect(spiele.filter((m) => m.wettbewerb === "bl2")).toHaveLength(0);
-    // Die Regel selbst steht aber im Regelwerk -- sie ist nicht vergessen.
-    expect(creatorRegeln().spiele.jeWettbewerb.bl2.zonen).toEqual([{ von: 1, bis: 6 }]);
+
+    const bl2 = spiele.filter((m) => m.wettbewerb === "bl2");
+    expect(bl2.length, "die 2. Liga traegt nichts bei").toBeGreaterThan(0);
     expect(creatorRegeln().spiele.jeWettbewerb.bl2.spieltagVon).toBe(31);
+    expect(creatorRegeln().spiele.jeWettbewerb.bl2.zonen).toBeUndefined();
+    for (const m of bl2) {
+      expect(m.matchday, `${m.home}-${m.away}`).toBeGreaterThanOrEqual(31);
+    }
   });
 
   it("die Abstiegskampf-Fassung liegt bereit, falls Andi sie will", () => {
@@ -213,24 +233,22 @@ describe("Die Gegenproben, die CLAUDE.md verlangt", () => {
     }
   });
 
-  it("🔴 `greiftNicht` meldet GENAU einen Fund -- und der ist richtig", () => {
-    // ⚠️ Die 2. Bundesliga steht in der Wettbewerbs-Liste und traegt HEUTE
-    // null Spiele bei: ihre Auswahl laeuft ueber Tabellenzonen
-    // (Aufstiegskampf), und im rohen Katalog traegt kein Spiel einen
-    // Tabellenplatz -- der wird erst beim Oeffnen eines Spieltags eingefroren.
+  it("🔴 `greiftNicht` schweigt bei BEIDEN", () => {
+    // ⚠️ Hier stand bis zum Abend des 27.08.2026 die Erwartung, der Bericht
+    // melde GENAU einen Fund: die 2. Bundesliga, die keine Spiele beitraegt.
+    // Der Fund war echt -- nur war er kein Merkposten, sondern ein Fehler in
+    // DIESER Datei. Er ist behoben (siehe den Test zur 2. Liga oben), also hat
+    // der Bericht auch nichts mehr zu melden.
     //
-    // 🔴 Der Bericht SOLL das sagen. Bis zum 27.08.2026 schwieg er dazu,
-    // obwohl es die Kernfrage dieses Berichts ist: greift die Einstellung
-    // ueberhaupt? Der Durchgang `wettbewerb-ohne-spiele` ist an genau diesem
-    // Fall entstanden -- am eigenen Bau, nicht an einer Vermutung.
-    //
-    // ⚠️ Ein stiller Bericht waere hier der Fund, nicht die Meldung.
+    // 🔴 Die Lehre, weil sie groesser ist als der Fall: `greiftNicht` ist ein
+    // BERICHT fuer den Admin, kein Test. Er faellt nicht durch, er sagt etwas.
+    // Wer seine Meldung in einer Test-Erwartung einfriert, macht aus einem
+    // Hinweis einen Sollzustand -- und genau das war hier passiert.
     const alle = alleMatches();
     for (const [name, r, n] of [["Creator", creatorRegeln(), 1000], ["Privat", privatRegeln(), 20]]) {
       const spiele = filterSpiele(alle, r.spiele);
       const funde = greiftNicht(r, { matches: spiele, mitglieder: n });
-      expect(funde.map((f) => f.key), name).toEqual(["wettbewerb-ohne-spiele"]);
-      expect(funde[0].text).toMatch(/2\. Bundesliga/);
+      expect(funde.map((f) => f.key), `${name}: ${funde.map((f) => f.text).join(" | ")}`).toEqual([]);
     }
   });
 });

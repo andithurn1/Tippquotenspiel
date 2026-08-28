@@ -47,6 +47,14 @@
 //  Bundesliga steht die Abstiegskampf-Fassung als `BL_ABSTIEGSKAMPF` bereit —
 //  eine Zeile umstellen, dann bringt die BL den Abstiegskampf statt der Top-4.
 //  Ihre Spitzenvereine bleiben über die Champions League ohnehin dabei.
+//
+//  🔴 **Korrektur vom Abend des 27.08.2026:** der Aufstiegskampf lief zuerst
+//  über eine TABELLENZONE (Plätze 1–6) und wählte damit null Spiele aus — es
+//  gibt vor dem Öffnen eines Spieltags keine Tabellenplätze. Jetzt sind es
+//  schlicht die letzten vier Spieltage, **36 Spiele**, und sie greifen sofort.
+//  ⚠️ Die Zonen-Fassung ist nicht nur „später besser", sie ist für eine Runde
+//  ungeeignet: der Zuschnitt wird beim Anlegen eingefroren, also hinge die
+//  Größe der Runde davon ab, ob gerade schon Spieltage geöffnet waren.
 // ============================================================
 
 import { DEFAULT_RULES, sanitizeRules } from "./engine";
@@ -120,12 +128,26 @@ export const ZUSCHNITT = {
   teamModus: "einer",
   wettbewerbe: ["bl", "bl2", "pl", "pd", "sa", "cl"],
   jeWettbewerb: {
-    // 🔴 Aufstiegskampf: die letzten vier Spieltage, obere sechs Plätze.
-    // ⚠️ Greift erst in einer laufenden Runde — im rohen Katalog trägt kein
-    // Spiel einen Tabellenplatz (siehe Kopf). Deshalb ist `teams: []` wichtig:
-    // ohne das käme die runden-weite Top-16-Liste dazu, und die spielt nicht
-    // in der 2. Liga.
-    bl2: { modus: "alle", teams: [], spieltagVon: 31, zonen: [{ von: 1, bis: 6 }] },
+    // 🔴 Aufstiegskampf: die letzten vier Spieltage der 2. Bundesliga.
+    //
+    // ⚠️ **Ohne Tabellenzone, und das ist eine Korrektur vom 27.08.2026.** Die
+    // erste Fassung schränkte zusätzlich auf die Plätze 1–6 ein — richtig
+    // gedacht und in der Praxis unbrauchbar: Tabellenplätze entstehen erst
+    // beim ÖFFNEN eines Spieltags (`spieltagOeffnen.js`), im Katalog trägt
+    // kein einziges Spiel einen. Die Abweichung wählte damit **null Spiele**
+    // aus, und die 2. Liga stand in der Runde, ohne etwas beizutragen.
+    // `npm run greift`/`greiftNicht` hat das gemeldet — zu Recht.
+    //
+    // 🔴 **Die letzten vier Spieltage SIND der Aufstiegskampf.** Wer oben
+    // steht, entscheidet sich dort; die Zonen-Fassung wäre die Feinheit, nicht
+    // die Sache. Und sie hat einen Haken, der sie für eine Runde ungeeignet
+    // macht: der Zuschnitt wird beim Anlegen eingefroren, also hinge die Größe
+    // der Runde davon ab, ob zu diesem Zeitpunkt zufällig schon Spieltage
+    // geöffnet waren. Zwei Admins, gleiche Einstellung, verschiedene Runden.
+    //
+    // ⚠️ `teams: []` bleibt wichtig: ohne das käme die runden-weite
+    // Top-16-Liste dazu, und die spielt nicht in der 2. Liga.
+    bl2: { modus: "alle", teams: [], spieltagVon: 31 },
   },
 };
 
