@@ -180,6 +180,16 @@ und zahlt weniger. ⚠️ Damit verlässt die Regel Ebene 5: `abwerten` greift i
 
 ### Endphase (Balancing — NICHT jetzt anfassen)
 
+- 🔴 **`DEFAULT_RULES` selbst schlägt bei `reglerWarnung.pruefe()` an — vier
+  Hinweise** (`gratis-lose`, `minPayout`, `wrongPenalty`, `k`), gemessen am
+  29.08.2026 bei der Gegenprobe nach einer Vorgaben-Änderung. Die **sechs
+  Presets, fünf Charaktere und beide Testrunden sind sauber (je 0)** — die
+  Vorgabe selbst ist es nicht. ⚠️ Wer also nichts einstellt, fährt ein
+  Regelwerk, vor dem die eigene Ampel warnt.
+  ⛔ **Nicht angefasst:** das sind Wertungs-Zahlen (Nähe-Cutoff,
+  Fehltipp-Abzug, `k`) und damit Balancing. Steht hier, damit es in der
+  Endphase auf dem Tisch liegt statt dass nochmal jemand darüber stolpert.
+
 - Wie viele Optionen eine Sperre nehmen darf, ohne dass eine Runde zäh wird —
   und wie stark der Abzug der weichen Variante sein soll. Die heutigen Zahlen
   (`DEFAULT_SPERRE`, die vier Regler-Stufen, die Schaufenster-Runde) sind
