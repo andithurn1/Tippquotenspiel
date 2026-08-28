@@ -3,6 +3,36 @@
 Offene Feature-Ideen, grob nach Aufwand. Gebaut wird in einzelnen, testbaren
 Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 
+## ✅ ERLEDIGT: die zwei Befunde waren DERSELBE Windows-Fehler (28.08.2026, Account 2)
+
+🔴 **Keiner der beiden war ein echter Befund.** Beide kamen aus einer einzigen
+Sorte Fehler — Pfade mit Vorwaerts-Slash geprueft, waehrend `join` unter
+Windows Backslashes liefert. **Dreimal dasselbe Muster, in drei Dateien:**
+
+| Wo | Was schiefging | Folge |
+|---|---|---|
+| `ladezustand.test.js` | `p.split("/").pop()` liefert den GANZEN Pfad | vier Screens als „laden fuer immer" gemeldet, dieselben vier Ausnahmen als „ueberholt" |
+| `toepfe-durchgang.mjs` | `datei.replace(/^src/lib//, "")` greift nicht | der Eintrag in `GEDULDET` **stand da** und wurde nie gefunden |
+| `tot-durchgang.mjs` | dasselbe | `REGELMODULE` sortierte still nicht nach Risiko |
+
+⚠️ **Die Lehre, und sie ist teurer als der Fehler:** alle drei sahen aus wie
+inhaltliche Funde („diese Screens laden fuer immer", „dieser Topf wird nie
+ausgeleert"). Man laeuft ihnen nach und sucht im falschen Code. Ein Waechter,
+der auf der falschen Plattform Fehlalarm schlaegt, ist schlimmer als keiner.
+
+✅ **Behoben**, indem die Dateiliste beim Einsammeln normalisiert wird
+(`pfad.replace(/\/g, "/")`) bzw. `basename()` genommen wird. Gegenprobe: kein
+weiteres Vorkommen im Projekt.
+
+📊 **Damit ist der Stand auf diesem Rechner zum ersten Mal vollstaendig gruen:**
+`npm test` **135 von 135 Dateien · 3120 gruen · 51 skipped · Exit 0** ·
+`npm run abnahmen` **12 von 12 · Exit 0** · `lint` und `build` gruen.
+
+⚠️ **Was das ueber die Uebergabe sagt:** XXXIII meldete „3111 gruen" und „12 von
+12 sauber". Beides war auf diesem Rechner nicht nachstellbar — nicht weil der
+Code anders war, sondern weil die Waechter selbst nicht liefen. Eine Zahl aus
+einer Uebergabe ist eine Behauptung ueber EINEN Rechner.
+
 ## 🔴 ZWEI OFFENE BEFUNDE aus dem Zeitachsen-Umbau (28.08.2026, Account 2)
 
 **Beides gemessen, beides NICHT von diesem Umbau verursacht** — nachgestellt am

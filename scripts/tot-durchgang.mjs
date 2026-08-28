@@ -251,12 +251,18 @@ function exporteVon(text) {
   return namen;
 }
 
+// ⚠ **Pfade hier IMMER mit Vorwaerts-Slash.** `join` liefert unter Windows
+// `src\lib\datei.js`, und alles dahinter rechnet mit `src/lib/` — die
+// Abkuerzung `kurz` greift dann nicht, und damit auch kein Eintrag in
+// `GEDULDET` bzw. `REGELMODULE`. Gemessen am 28.08.2026: genau so meldete
+// `toepfe` einen Fund, der laengst begruendet geduldet war — die Ausnahme
+// stand da, nur fand der Schluessel sie nie.
 function dateien(ordner) {
   const out = [];
   for (const eintrag of readdirSync(ordner, { withFileTypes: true })) {
     const pfad = join(ordner, eintrag.name);
     if (eintrag.isDirectory()) out.push(...dateien(pfad));
-    else if (/\.(js|jsx|mjs)$/.test(eintrag.name)) out.push(pfad);
+    else if (/\.(js|jsx|mjs)$/.test(eintrag.name)) out.push(pfad.replace(/\\/g, "/"));
   }
   return out;
 }
