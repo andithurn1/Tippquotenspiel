@@ -128,6 +128,50 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-29 (XXXVIII) · 📐 **Die Gegenproben nach dem Umbau — und was die Testrunden jetzt zeigen**
+
+**Zwei Nachmessungen, die zum Zeitachsen-Umbau gehören und noch fehlten.**
+
+#### 1. Voreinstellungen gegen `reglerWarnung.js`
+
+CLAUDE.md verlangt das nach jeder Vorgaben-Änderung („die Gegenprobe, die
+dreimal an einem Tag etwas gefunden hat"). Nachgeholt:
+
+| Regelwerk | Hinweise |
+|---|---|
+| 6 Presets · 5 Charaktere · Testrunden `GROSS` und `PRIVAT` | **je 0** ✅ |
+| Schaufenster | 8 — ⚠️ **richtig so**, siehe CLAUDE.md, wird nicht glattgezogen |
+| **`DEFAULT_RULES`** | **4** 🔴 |
+
+🔴 **Der letzte Punkt ist ein Fund, aber keiner für jetzt:** die Vorgabe selbst
+schlägt an (`gratis-lose`, `minPayout`, `wrongPenalty`, `k`) — wer nichts
+einstellt, fährt ein Regelwerk, vor dem die eigene Ampel warnt. ⛔ **Nicht
+angefasst**, das sind Wertungs-Zahlen und damit Balancing; steht als Zeile
+unter „Endphase" in `design/roadmap.md`. **Er kommt NICHT von diesem Umbau** —
+die Zeitachse berührt keinen dieser Werte.
+
+#### 2. Was die neue Vorgabe für Andis zwei Testrunden bedeutet
+
+Beide setzen **keine eigene Zeitachse**, erben also die neue Vorgabe. Gemessen:
+
+| | `GROSS` und `PRIVAT` (identisch) |
+|---|---|
+| Achse | `woche` · `endeTag: "do"` · `zuordnung: "datum"` |
+| Umfang | 665 Spiele · **39 Runden-Spieltage** · 17,1 Spiele je Spieltag |
+| Spanne | kleinster 3 · größter 28 Spiele |
+| **CL als letztes Spiel** | **12 von 12** ✅ |
+| `warnungen()` | keine |
+
+✅ **Damit fahren Andis Testrunden genau das Bild, das er beschrieben hat:** der
+Europapokal steht am Ende des Spieltags, die Liga eröffnet ab Freitag den
+nächsten. Vorher (Anker-Modus) war die CL in **3 von 12** das letzte Spiel.
+
+⚠️ Der dünne erste Spieltag (3 Spiele, nur La Liga) ist kein Fehler: die Ligen
+starten versetzt, und alles vor der ersten Grenze fällt bewusst in Spieltag 1.
+
+---
+
+
 ### 2026-08-29 (XXXVII) · ⏰ **Auftrag XXXIV ist KOMPLETT — und die Saison hat einen Fehler geweckt**
 
 **③ ist gebaut.** Andis Entscheidung vom 29.08.2026 auf die offene Frage:
