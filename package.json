@@ -31,7 +31,8 @@
     "bewegung": "vite-node scripts/bewegung-durchgang.mjs",
     "build:app": "node scripts/app-build.mjs",
     "app:sync": "npm run build:app && npx cap sync android",
-    "app:oeffnen": "npx cap open android"
+    "app:oeffnen": "npx cap open android",
+    "toepfe": "vite-node scripts/toepfe-durchgang.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.0",

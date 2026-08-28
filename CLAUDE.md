@@ -483,7 +483,15 @@ entstanden, den die beiden anderen nicht gesehen haben.
 | `npm run tot` | **Ruft die gebaute Funktion überhaupt jemand auf?** Ein Export, den außerhalb seiner Datei und ihrer Tests niemand nennt. Sortiert nach Risiko: Funktionen in `rules.*`-Modulen zuerst. | An EINEM Tag sechs Mechaniken, die fertig, getestet und einstellbar waren — und niemand fragte sie |
 | `npm run schrift` | **Skaliert die Schrift mit der Geräte-Einstellung?** Verbietet die nackte px-Schriftgröße; die Leiter steht als `TEXT` in `theme.js`. | 1 210 Fundstellen in px, 0 in `rem` — auf iOS ein bekannter Ablehnungsgrund im App-Review |
 | `npm run detail` | **Gilt Andis Regel „gängigstes oben, Feinheiten hinter einem Klick" überall?** Zählt je Regel-Oberfläche, ob es eine zweite Ebene gibt — und ob sie über das gemeinsame `Feinheiten`-Bauteil läuft. | Die Regel WAR mehrfach befolgt, aber jede Stelle hatte ihre eigene Fassung gebaut — derselbe Verlauf wie bei den acht Eckenradien |
+| `npm run toepfe` | **Wird jeder Rückgabe-TOPF auch ausgeleert?** Eine Funktion, die in Fächer aufteilt (`{ joker: [], narren: [], modifikatoren: [] }`), kann quicklebendig sein und trotzdem ein Fach ins Leere schütten. ⚠️ Prüft nur ZURÜCKGEGEBENE Fächer — ein interner Zwischenspeicher derselben Form ist kein Fund. | Die Modifikator-Belohnung des Rades wurde seit ihrem Bau erzeugt und nie verrechnet: „+50 % für zwei Spieltage" zahlte **nichts** |
 | `npm run bereit` | 👤 **Kann sich außer Andi überhaupt jemand anmelden?** Fragt Env-Variablen, Datenbank, Schema und Spielplan an EINER Stelle ab und gibt aus, was zu tun ist. ⚠️ Für ANDI, nicht für die Sitzung: er braucht die echten Schlüssel, die hier niemand hat. | Der einzige echte Blocker des Testbetriebs hängt an fünf Dingen, die einzeln in Ordnung aussehen — verteilt über Supabase, Netlify und Brevo |
+
+🔴 **Und der Fund vom 27.08.2026 ist derselbe Gedanke eine Ebene tiefer:**
+`npm run tot` fragt, ob eine FUNKTION jemand aufruft. Es fragt nicht, ob jeder
+TOPF ihres Ergebnisses jemand ausleert. `drehradBelohnungen()` wird überall
+gerufen — einer ihrer vier Töpfe ging trotzdem zwei Wochen lang ins Leere.
+**Wer ein Objekt mit mehreren Fächern zurückgibt, braucht je Fach einen Test
+bis in die WERTUNG — nicht bis in die Liste.**
 
 🔴 **Der gemeinsame Nenner aller sechs Funde vom 06.08.:** ein grüner Test
 beweist, dass eine Funktion RICHTIG rechnet — nicht, dass sie jemand fragt.
