@@ -484,10 +484,26 @@ create policy "profiles_update_self" on public.profiles for update to authentica
 revoke update on public.profiles from authenticated;
 grant  update (display_name, avatar) on public.profiles to authenticated;
 
--- Matches: für alle Eingeloggten lesbar (Schreiben nur serverseitig
--- via service_role, das RLS umgeht — z. B. Quoten-/Ergebnis-Job).
+-- Matches: lesbar für Eingeloggte UND für Besucher ohne Konto (Schreiben nur
+-- serverseitig via service_role, das RLS umgeht — z. B. Quoten-/Ergebnis-Job).
+--
+-- 🔴 `anon` dazu am 27.08.2026 (LV1, Andis Entscheidung: „1a"). Der Grund war
+-- ein Befund: der Startscreen lädt ausdrücklich Ausgeloggte ein
+-- („👀 Erst mal ansehen — die Demo-Runde läuft mit echten Spielplänen"), und
+-- ohne Policy für `anon` landeten die in einer LEEREN Runde. ⚠️ RLS wirft
+-- dabei keinen Fehler: sie liefert HTTP 200 mit leerer Liste. Ein Besucher sah
+-- also nicht „du musst dich anmelden", sondern „hier ist nichts los" — der
+-- schlechteste erste Eindruck, den man haben kann.
+--
+-- ⚠️ Vertretbar, weil ein Spielplan **öffentliche Fußballdaten** sind: wer
+-- spielt wann gegen wen. Nichts daran gehört jemandem.
+--
+-- ⛔ Was ausdrücklich NICHT dazukommt: `tips`, `rounds`, `round_members`,
+-- `profiles`. Ein Besucher soll den SPIELPLAN sehen, nicht die Tipps anderer.
+-- Der Quoten-Schnappschuss hängt an `matches` und ist damit auch offen — er
+-- ist ein Marktpreis, kein Geheimnis.
 drop policy if exists "matches_read" on public.matches;
-create policy "matches_read" on public.matches for select to authenticated using (true);
+create policy "matches_read" on public.matches for select to authenticated, anon using (true);
 
 -- Runden: für alle Eingeloggten lesbar. Regelwerk und Name sind nicht
 -- sensibel; jeder darf eine Runde anlegen und wird dabei automatisch ihr Admin.

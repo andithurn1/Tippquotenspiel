@@ -17,6 +17,10 @@ import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 // Die erste fährt `DEFAULT_RULES` und zeigt damit fast nichts; ohne eine
 // zweite lässt sich im Browser nicht nachsehen, ob eine Mechanik ankommt.
 import { SCHAU_ROUND_ID, SCHAU_JOIN_CODE, SCHAU_NAME, schaufensterRegeln, schaufensterTipps } from "./schaufenster";
+import {
+  CREATOR_ROUND_ID, CREATOR_JOIN_CODE, CREATOR_NAME, creatorRegeln,
+  PRIVAT_ROUND_ID, PRIVAT_JOIN_CODE, PRIVAT_NAME, privatRegeln,
+} from "./testrunden";
 import { generateJoinCode } from "./joinCode";
 // Nur für die geseedeten geteilten Regelwerke (Demo) — siehe GETEILTE_DEMO.
 import { PRESETS } from "./presets";
@@ -130,6 +134,21 @@ export function createMockStore() {
       id: SCHAU_ROUND_ID, name: SCHAU_NAME, admin_id: "u-du",
       rules: schaufensterRegeln(), join_code: SCHAU_JOIN_CODE,
       spiele: schaufensterRegeln().spiele,
+    }],
+    // 🔴 Andis zwei Test-Runden vom 27.08.2026 (`testrunden.js`). Derselbe
+    // Zuschnitt, verschiedene Regeln — so lässt sich vergleichen, was die
+    // REGELN ausmachen, statt zwei Unterschiede gleichzeitig zu haben.
+    // ⛔ Keine Bibliothek und kein Preset: „die ganzen Presets bzw eine
+    // Bibliothek erstellen wir erst am Ende" (Andi).
+    [CREATOR_ROUND_ID, {
+      id: CREATOR_ROUND_ID, name: CREATOR_NAME, admin_id: "u-du",
+      rules: creatorRegeln(), join_code: CREATOR_JOIN_CODE,
+      spiele: creatorRegeln().spiele,
+    }],
+    [PRIVAT_ROUND_ID, {
+      id: PRIVAT_ROUND_ID, name: PRIVAT_NAME, admin_id: "u-du",
+      rules: privatRegeln(), join_code: PRIVAT_JOIN_CODE,
+      spiele: privatRegeln().spiele,
     }],
   ]);
   // Kurzcode → geteiltes Regelwerk (Content-Creator-Codes).
