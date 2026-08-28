@@ -46,6 +46,7 @@ import WertungSondermenue, { wertungStand } from "@/components/WertungSondermenu
 import VerlaufSondermenue, { verlaufStand } from "@/components/VerlaufSondermenue";
 import SaisonZeitSondermenue, { saisonZeitStand } from "@/components/SaisonZeitSondermenue";
 import { TAPZIEL } from "@/lib/tapziel";
+import { sanitizeWettbewerbe } from "@/lib/wettbewerbGewicht";
 import Walkthrough from "@/components/Walkthrough";
 import { walkthroughGesehen } from "@/lib/walkthrough";
 import { useRueckmeldung } from "@/components/Rueckmeldung";
@@ -980,7 +981,31 @@ export default function Spielerstellung() {
                           {sp.jeWettbewerb?.[g.key] && " · aktiv"}
                         </button>
                         {sonderregelnLiga === g.key && (
-                          <LigaSonderregeln wettbewerb={g.key} label={g.label} spiele={sp} onChange={patchSpiele} />
+                          <LigaSonderregeln
+                            wettbewerb={g.key} label={g.label} spiele={sp} onChange={patchSpiele}
+                            // 🔴 MOD5: das Gewicht dieser Liga wird HIER
+                            // gesetzt, schreibt aber in dasselbe Feld wie der
+                            // Abschnitt „Wettbewerbe gewichten" weiter unten.
+                            // Kein zweiter Wert, kein Abgleich — eine Quelle.
+                            rules={rules}
+                            onAufschlag={(v) => {
+                              touched();
+                              setRules((r) => {
+                                const cfg = sanitizeWettbewerbe(r.wettbewerbe);
+                                return {
+                                  ...r,
+                                  wettbewerbe: sanitizeWettbewerbe({
+                                    ...cfg,
+                                    // ⚠️ `enabled: true` wie in der Gesamtübersicht:
+                                    // ein Gewicht zu setzen und es dann nicht wirken
+                                    // zu lassen wäre die stille Sorte Enttäuschung.
+                                    enabled: true,
+                                    aufschlaege: { ...cfg.aufschlaege, [g.key]: v },
+                                  }),
+                                };
+                              });
+                            }}
+                          />
                         )}
                       </>
                     )}

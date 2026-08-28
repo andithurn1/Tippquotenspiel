@@ -33,6 +33,8 @@ import { getStore } from "@/lib/store";
 import { AUSWAHL_LIMITS, TEAM_MODI } from "@/lib/spielauswahl";
 import { TAPZIEL } from "@/lib/tapziel";
 import Feinheiten from "@/components/Feinheiten";
+import { WETTBEWERB_LIMITS, sanitizeWettbewerbe, anteile } from "@/lib/wettbewerbGewicht";
+import { fmtFaktorOderAus } from "@/lib/format";
 
 // Unsere Voreinstellung für den Abstiegskampf. Keine Balance-Aussage — eine
 // Bequemlichkeit: die Zahlen sind sofort verstellbar.
@@ -55,7 +57,20 @@ export const ZONEN_VORLAGEN = [
   { key: "abstieg", label: "Abstiegskampf", unter: "unteres Tabellendrittel", von: 14, bis: 18 },
 ];
 
-export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }) {
+export default function LigaSonderregeln({
+  wettbewerb, label, spiele, onChange,
+  // 🔴 MOD5 (Andi): „Ligen und Mannschaften einzeln höher gewichten" — die
+  // Mechanik gab es längst (`wettbewerbe.aufschlaege`), sie lag nur in einem
+  // eigenen Abschnitt weit unten. Sein Punkt war die STELLE: wer gerade die
+  // Bundesliga aufhat, will ihr Gewicht hier setzen, nicht drei Bildschirme
+  // weiter.
+  //
+  // ⚠️ Beide Zugänge schreiben DASSELBE Feld — `rules.wettbewerbe.aufschlaege`.
+  // Es gibt keine Kopie und keinen zweiten Regler; `WettbewerbGewichte` bleibt
+  // als Gesamtübersicht bestehen, weil erst dort die Anteile ALLER Wettbewerbe
+  // nebeneinander stehen. Fehlt `onAufschlag`, verschwindet der Block einfach.
+  rules = null, onAufschlag = null,
+}) {
   const [matches, setMatches] = useState(null);
 
   const ab = spiele?.jeWettbewerb?.[wettbewerb] ?? null;
@@ -75,6 +90,23 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
       .catch(() => { if (live) setMatches([]); });
     return () => { live = false; };
   }, []);
+
+  // ── Das Gewicht DIESER Liga (MOD5) ────────────────────────
+  // ⚠️ Der Anteil wird mit derselben Funktion gerechnet wie in der
+  // Gesamtübersicht (`anteile` aus `wettbewerbGewicht.js`). Ein eigener
+  // Dreisatz hier wäre die zweite Wahrheit über dieselbe Zahl.
+  //
+  // 🔴 Und er MUSS dabeistehen: „×1,5" klingt nach doppelt so wichtig, ist bei
+  // 144 gegen 306 Spielen aber weiterhin die kleinere Hälfte. Genau davor
+  // warnt der Kopfkommentar von `WettbewerbGewichte` — ein nackter Regler an
+  // dieser Stelle hätte den Fehler zurückgeholt.
+  const gewichte = onAufschlag ? sanitizeWettbewerbe(rules?.wettbewerbe) : null;
+  const aufschlag = gewichte ? (gewichte.aufschlaege[wettbewerb] ?? 0) : 0;
+  const anteil = useMemo(() => {
+    if (!gewichte || !matches?.length) return null;
+    return anteile(matches, { ...rules, wettbewerbe: gewichte })
+      .find((x) => x.key === wettbewerb) ?? null;
+  }, [matches, rules, gewichte, wettbewerb]);
 
   const derbys = useMemo(() => (matches ?? [])
     .filter((m) => m.wettbewerb === wettbewerb && m.snapshot?.derby)
@@ -120,6 +152,50 @@ export default function LigaSonderregeln({ wettbewerb, label, spiele, onChange }
       <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
         Gelten nur für diese Liga. Alles Übrige bleibt bei der Einstellung der Runde.
       </p>
+
+      {/* ── Was diese Liga zählt (MOD5) ───────────────────────
+          Steht GANZ OBEN, weil es die gröbste Entscheidung über eine Liga ist:
+          zählt sie mehr, weniger oder normal. Alles darunter schneidet zu,
+          diese Zeile gewichtet. */}
+      {onAufschlag && (
+        <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${C.line}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Was {label} zählt</span>
+            <span
+              title={aufschlag > 0 ? "zählt mehr" : aufschlag < 0 ? "zählt weniger" : "kein Aufschlag"}
+              style={{
+                fontFamily: MONO, fontSize: "0.8125rem",
+                color: aufschlag > 0 ? C.akzent : aufschlag < 0 ? C.indigo : C.muted,
+              }}>
+              {fmtFaktorOderAus(1 + aufschlag)}
+            </span>
+          </div>
+          <input
+            type="range" value={aufschlag}
+            min={WETTBEWERB_LIMITS.aufschlag.min}
+            max={WETTBEWERB_LIMITS.aufschlag.max}
+            step={WETTBEWERB_LIMITS.aufschlag.step}
+            onChange={(e) => onAufschlag(+e.target.value)}
+            style={{ width: "100%", accentColor: C.akzent, cursor: "pointer" }}
+          />
+          {anteil ? (
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.45 }}>
+              {anteil.spiele} {anteil.spiele === 1 ? "Spiel" : "Spiele"} ·{" "}
+              <strong style={{ color: C.text }}>{Math.round(anteil.anteil * 100)} % der Wertung</strong>
+              {" "}— ohne Gewichte wären es {Math.round(anteil.anteilRoh * 100)} %
+            </div>
+          ) : (
+            <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3 }}>
+              Der Anteil steht, sobald der Spielplan geladen ist.
+            </div>
+          )}
+          <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.45 }}>
+            Der Aufschlag fällt in denselben Topf wie Derby und Topspiel —
+            addiert, nicht multipliziert, und vom Deckel begrenzt. Alle
+            Wettbewerbe nebeneinander siehst du unter „Wettbewerbe gewichten“.
+          </div>
+        </div>
+      )}
 
       {/* ── Einer oder beide? je Liga (Andi, 23.08.2026) ────
           🔴 Genau der Fall aus seiner Ansage: „so soll bspw. El Clásico auch
