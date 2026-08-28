@@ -768,6 +768,49 @@ export default function Spielerstellung() {
             onFensterOeffnen={() => setKomplettOffen(true)}
           />
 
+          {/* ── Das Thermometer, jetzt BEI der Vorauswahl (ST4, Andi) ──────
+              🔴 **Vorher stand dieser Kasten 340 Zeilen weiter unten** — man
+              wählte eine Voreinstellung und bekam die Rückmeldung dazu erst,
+              wenn man sich durch die halbe Seite gescrollt hatte. Genau das
+              war ST4.
+
+              ⚠️ **Warum er trotzdem über die volle Breite läuft und nicht
+              „rechts neben" der Vorauswahl steht.** Der Kasten KLEBT
+              (`sticky`) — und zwar mit Absicht: er ist die Rückmeldung auf die
+              Regler weiter unten, und wer einen Regler schiebt, soll die
+              Wirkung sehen, ohne hoch und wieder runter zu scrollen. Ein
+              Element klebt aber nur innerhalb seines Elternteils. In eine
+              Spalte NEBEN die Vorauswahl gesetzt, wäre sein Elternteil diese
+              eine Zeile — die Ampel bliebe genau so lange stehen, wie die drei
+              Karten hoch sind, und wäre bei den Reglern wieder weg. Von den
+              beiden Eigenschaften ist das Kleben die wertvollere.
+
+              📱 Auf 375 px (dem Maß, an dem dieser Screen gebaut ist) heißt
+              „rechts neben" ohnehin „direkt darunter": zwei Spalten gibt es
+              dort nicht. Wer es auf dem Desktop wirklich nebeneinander will,
+              braucht eine zweispaltige Seitenleiste über das GANZE Formular —
+              das ist ein Umbau am Aufbau der Einstellungen, und der gehört
+              laut CLAUDE.md Andi (G6).
+
+              Gedeckelt auf 42 % der Höhe (mit eigenem Scroll), sonst frisst
+              der Kasten auf dem Handy die ganze Fläche. */}
+          <div style={{
+            position: "sticky", top: 52, zIndex: 5,
+            maxHeight: "42vh", overflowY: "auto",
+            // Muss DECKEND sein, sonst scrollt der Inhalt sichtbar dahinter
+            // durch. `C.ink` ist der Grundton des Rahmens an dieser Stelle.
+            background: C.ink, paddingBottom: 8, marginBottom: 2,
+          }}>
+            {/* Balance-Ampel: eine Aussage, ob die Runde noch ein Tippspiel bleibt.
+                ⛔ Inhalt, Texte und `balanceSim.js` UNANGETASTET — ST4 ist
+                Platzierung, nicht Balancing (CLAUDE.md). */}
+            <BalanceAmpel rules={rules} />
+
+            {/* Leitplanken: nur in der Profi-Stufe, weil nur dort einzelne Regler
+                bis an ihre harte Grenze laufen können. */}
+            <ProfiWarnungen rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
+          </div>
+
           {/* ── Wettbewerbe auswählen ─────────────────────────────
               Andis Aufbau vom 07.08.2026 (iPhone 14): EINE Spalte, große
               Zeilen. Vorher lagen „Wettbewerbe" und „Teams" als zwei dauerhaft
@@ -1092,27 +1135,6 @@ export default function Spielerstellung() {
               VOR der Ampel, damit Ampel und Warnungen direkt aneinander
               grenzen und gemeinsam kleben können. */}
           <PresetRating rules={rules} />
-
-          {/* ── Klebt beim Scrollen ────────────────────────────
-              Ampel und Warnungen sind die RÜCKMELDUNG auf die Regler darunter.
-              Scrollten sie weg, schöbe man einen Regler und sähe die Wirkung
-              nicht — man müsste nach jedem Schritt hoch und wieder runter.
-              Gedeckelt auf 42 % der Höhe (mit eigenem Scroll), sonst frisst
-              der Kasten auf dem Handy die ganze Fläche. */}
-          <div style={{
-            position: "sticky", top: 52, zIndex: 5,
-            maxHeight: "42vh", overflowY: "auto",
-            // Muss DECKEND sein, sonst scrollt der Inhalt sichtbar dahinter
-            // durch. `C.ink` ist der Grundton des Rahmens an dieser Stelle.
-            background: C.ink, paddingBottom: 8, marginBottom: 2,
-          }}>
-            {/* Balance-Ampel: eine Aussage, ob die Runde noch ein Tippspiel bleibt */}
-            <BalanceAmpel rules={rules} />
-
-            {/* Leitplanken: nur in der Profi-Stufe, weil nur dort einzelne Regler
-                bis an ihre harte Grenze laufen können. */}
-            <ProfiWarnungen rules={rules} onChange={(neu) => { touched(); setRules(neu); }} />
-          </div>
 
           {/* Schärfe */}
           {/* Stufe 2: vier grosse Fragen statt der Rohregler darunter */}
