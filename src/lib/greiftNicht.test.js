@@ -218,3 +218,82 @@ describe("Probe an der Schaufenster-Runde", () => {
       .toEqual(["wettbewerbe-ohne-wirkung"]);
   });
 });
+
+// ── Ein gewaehlter Wettbewerb, der nichts beitraegt (27.08.2026) ──
+//
+// 🔴 Gefunden am eigenen Bau: in den Test-Runden stand die 2. Bundesliga in
+// der Wettbewerbs-Liste und trug NULL Spiele bei -- ihre Auswahl laeuft ueber
+// Tabellenzonen, und im rohen Katalog traegt kein Spiel einen Tabellenplatz.
+// Der Bericht schwieg dazu, obwohl das seine Kernfrage ist.
+describe("Wettbewerb ohne Spiele", () => {
+  it("meldet einen gewaehlten Wettbewerb, aus dem nichts ankommt", () => {
+    // Bundesliga UND Premier League gewaehlt, aber nur BL-Spiele da.
+    const funde = greiftNicht(regeln({ spiele: { modus: "alle", wettbewerbe: ["bl", "pl"] } }),
+      { matches: BL, mitglieder: 5 });
+    const f = funde.find((x) => x.key === "wettbewerb-ohne-spiele");
+    expect(f).toBeTruthy();
+    expect(f.text).toMatch(/Premier League/);
+    expect(f.text).not.toMatch(/Bundesliga,/);   // die traegt ja bei
+  });
+
+  it("zaehlt, wenn es mehrere sind", () => {
+    const funde = greiftNicht(regeln({ spiele: { modus: "alle", wettbewerbe: ["bl", "pl", "sa"] } }),
+      { matches: BL, mitglieder: 5 });
+    const f = funde.find((x) => x.key === "wettbewerb-ohne-spiele");
+    expect(f.titel).toMatch(/2 Wettbewerbe/);
+  });
+
+  it("schweigt, wenn jeder gewaehlte etwas beitraegt -- die Gegenprobe", () => {
+    const funde = greiftNicht(regeln({ spiele: { modus: "alle", wettbewerbe: ["bl"] } }),
+      { matches: BL, mitglieder: 5 });
+    expect(funde.map((f) => f.key)).not.toContain("wettbewerb-ohne-spiele");
+  });
+
+  it("🔴 schweigt bei LEERER Liste -- das heisst „alle\", nicht „keine\"", () => {
+    // ⚠️ Sonst meldete der Bericht bei JEDER normalen Runde etwas, und wer bei
+    // jeder Runde eine Meldung sieht, liest ab der zweiten Woche keine mehr.
+    const funde = greiftNicht(regeln({ spiele: { modus: "alle", wettbewerbe: [] } }),
+      { matches: BL, mitglieder: 5 });
+    expect(funde.map((f) => f.key)).not.toContain("wettbewerb-ohne-spiele");
+  });
+
+  it("schweigt ohne Spiele -- beim ANLEGEN gibt es noch keine", () => {
+    // 🔴 Dieselbe Zurueckhaltung wie ueberall in diesem Bericht: er soll nicht
+    // ueber eine Runde meckern, die es noch gar nicht gibt.
+    const funde = greiftNicht(regeln({ spiele: { modus: "alle", wettbewerbe: ["bl", "pl"] } }), {});
+    expect(funde.map((f) => f.key)).not.toContain("wettbewerb-ohne-spiele");
+  });
+
+  it("findet auch eine veraltete feste Begegnungs-Liste", () => {
+    // ⚠️ Der zweite Fall, der genauso still ist: `matchIds` zeigen auf einen
+    // alten Spielplan (`lostoepfe.js` uebernimmt eine feste Liste). Der
+    // Wettbewerb steht dann in der Auswahl und traegt nichts bei.
+    //
+    // 🔴 Gemessen wie ein echter Aufrufer: `greiftNicht` bekommt die Spiele
+    // DER RUNDE, also bereits gefiltert. Beim ersten Schreiben stand hier die
+    // ungefilterte Liste -- dann findet der Durchgang nichts, und zwar zu
+    // Recht: die Bundesliga WAR ja dabei. Der Test war falsch, nicht der Code.
+    const rules = regeln({
+      spiele: {
+        modus: "alle", wettbewerbe: ["bl"],
+        jeWettbewerb: { bl: { modus: "liste", matchIds: ["gibt-es-nicht-mehr"] } },
+      },
+    });
+    const rundenSpiele = filterSpiele(BL, rules.spiele);
+    expect(rundenSpiele, "die Vorbedingung: die Liste ist wirklich leer").toHaveLength(0);
+    const funde = greiftNicht(rules, { matches: rundenSpiele, mitglieder: 5 });
+    // ⚠️ Ohne Spiele haelt sich der Bericht insgesamt zurueck (Test darueber) --
+    // eine leere Runde ist der Normalfall beim Anlegen. Der Fund entsteht
+    // deshalb erst, wenn NEBEN dem leeren Wettbewerb noch einer beitraegt.
+    expect(funde.map((f) => f.key)).toEqual([]);
+
+    const gemischt = regeln({
+      spiele: {
+        modus: "alle", wettbewerbe: ["bl", "pl"],
+        jeWettbewerb: { pl: { modus: "liste", matchIds: ["gibt-es-nicht-mehr"] } },
+      },
+    });
+    const funde2 = greiftNicht(gemischt, { matches: filterSpiele(BL, gemischt.spiele), mitglieder: 5 });
+    expect(funde2.map((f) => f.key)).toContain("wettbewerb-ohne-spiele");
+  });
+});

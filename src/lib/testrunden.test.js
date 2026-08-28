@@ -213,12 +213,24 @@ describe("Die Gegenproben, die CLAUDE.md verlangt", () => {
     }
   });
 
-  it("`greiftNicht` meldet in beiden Runden nichts", () => {
+  it("🔴 `greiftNicht` meldet GENAU einen Fund -- und der ist richtig", () => {
+    // ⚠️ Die 2. Bundesliga steht in der Wettbewerbs-Liste und traegt HEUTE
+    // null Spiele bei: ihre Auswahl laeuft ueber Tabellenzonen
+    // (Aufstiegskampf), und im rohen Katalog traegt kein Spiel einen
+    // Tabellenplatz -- der wird erst beim Oeffnen eines Spieltags eingefroren.
+    //
+    // 🔴 Der Bericht SOLL das sagen. Bis zum 27.08.2026 schwieg er dazu,
+    // obwohl es die Kernfrage dieses Berichts ist: greift die Einstellung
+    // ueberhaupt? Der Durchgang `wettbewerb-ohne-spiele` ist an genau diesem
+    // Fall entstanden -- am eigenen Bau, nicht an einer Vermutung.
+    //
+    // ⚠️ Ein stiller Bericht waere hier der Fund, nicht die Meldung.
     const alle = alleMatches();
     for (const [name, r, n] of [["Creator", creatorRegeln(), 1000], ["Privat", privatRegeln(), 20]]) {
       const spiele = filterSpiele(alle, r.spiele);
       const funde = greiftNicht(r, { matches: spiele, mitglieder: n });
-      expect(funde.map((f) => f.key), name).toEqual([]);
+      expect(funde.map((f) => f.key), name).toEqual(["wettbewerb-ohne-spiele"]);
+      expect(funde[0].text).toMatch(/2\. Bundesliga/);
     }
   });
 });

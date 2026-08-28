@@ -52,6 +52,7 @@ import { sanitizeDuellJoker } from "./duellJoker";
 import { familieAn } from "./fremdjoker";
 import { sanitizeSaison } from "./saisonwetten";
 import { nochOhneWirkung } from "./rechte";
+import { wettbewerbVon, WETTBEWERB } from "./wettbewerbe";
 
 const zahl = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
 
@@ -125,6 +126,44 @@ const PRUEFUNGEN = [
         text: "Kein Spiel dieser Runde gehört zu einem der aufgewerteten Wettbewerbe — "
           + "und K.-o.-Runden gibt es hier auch keine.",
         beheben: "Den Aufschlag auf einen Wettbewerb legen, den diese Runde wirklich spielt.",
+      };
+    },
+  },
+
+  // 3b) Ein GEWÄHLTER Wettbewerb, der kein einziges Spiel beiträgt.
+  //
+  //    🔴 Gefunden am eigenen Bau (27.08.2026): in den Test-Runden stand die
+  //    2. Bundesliga in der Wettbewerbs-Liste und trug **null Spiele** bei —
+  //    ihre Auswahl läuft über Tabellenzonen, und im rohen Katalog trägt kein
+  //    Spiel einen Tabellenplatz (der wird erst beim Öffnen eines Spieltags
+  //    eingefroren). Der Bericht schwieg dazu, obwohl das die Kernfrage
+  //    dieses Berichts ist: **greift die Einstellung überhaupt?**
+  //
+  //    ⚠️ Es trifft nicht nur Zonen. Dieselbe Stille gibt es bei einer festen
+  //    Begegnungs-Liste, die auf einen alten Spielplan zeigt
+  //    (`lostoepfe.js`), bei einem Spieltag-Bereich außerhalb der Saison und
+  //    bei einer Vereinsliste, die in dieser Liga niemanden trifft.
+  //
+  //    ⚠️ Nur bei AUSDRÜCKLICH gewählten Wettbewerben: eine leere Liste heißt
+  //    „alle", und dann ist ein fehlender Wettbewerb keine Einstellung,
+  //    sondern schlicht keine Auswahl.
+  {
+    key: "wettbewerb-ohne-spiele",
+    pruef({ rules, matches }) {
+      const gewaehlt = rules?.spiele?.wettbewerbe ?? [];
+      if (!gewaehlt.length || !matches.length) return null;
+      const da = new Set(matches.map((m) => wettbewerbVon(m)));
+      const leer = gewaehlt.filter((w) => !da.has(w));
+      if (!leer.length) return null;
+      const namen = leer.map((w) => WETTBEWERB[w]?.label ?? w);
+      return {
+        titel: leer.length === 1
+          ? `${namen[0]} trägt kein Spiel bei`
+          : `${leer.length} Wettbewerbe tragen kein Spiel bei`,
+        text: `Ausgewählt, aber in dieser Runde kommt daraus nichts an: ${namen.join(", ")}. `
+          + "Meist liegt es an einer zweiten Einschränkung, die zusätzlich gilt — "
+          + "Vereinsliste, Spieltag-Bereich, Tabellenzone oder eine feste Begegnungs-Liste.",
+        beheben: "Die Abweichung für diesen Wettbewerb prüfen — oder ihn abwählen.",
       };
     },
   },
