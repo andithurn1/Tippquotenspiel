@@ -480,7 +480,7 @@ export const SCHAU_AUSGENOMMEN = {
   oddsMode: "Eine Aussage über die QUOTEN-QUELLE, keine Spielregel. Die Demo-Daten sind Snapshots.",
   "zeitachse.modus": "„woche“ ersetzt die ganze Anker-Einteilung, auf die hier Duell-Fenster, Joker-Fenster und Spieltagsgrenzen abgestimmt sind.",
   "zeitachse.tage": "Nur im Wochen-Modus wirksam — folgt der Zeile darüber.",
-  "zeitachse.startTag": "Ebenfalls nur im Wochen-Modus wirksam — folgt derselben Zeile. ⚠️ Im Anker-Modus gibt der Taktgeber die Grenze vor, nicht der Kalender.",
+  "zeitachse.endeTag": "Ebenfalls nur im Wochen-Modus wirksam — folgt derselben Zeile. ⚠️ Im Anker-Modus gibt der Taktgeber die Grenze vor, nicht der Kalender.",
   "duell.kosten": "„stattJoker“ verbraucht einen Joker aus demselben Vorrat; dann setzt im Schaufenster niemand mehr einen Fremdjoker ein.",
   "bigGame.festesSpiel": "Keine Einstellung, sondern das ERGEBNIS eines ausgeübten Rechts — eine konkrete matchId eines konkreten Spieltags. Ein Vorführwert wäre ein Spiel, das in der nächsten Saison nicht mehr existiert.",
   "duell.block.wirkung": "„gesperrt“ macht die drei Zahlen darunter (restanteil · nurGewinn · beute) wirkungslos — und drei Regler ohne Wirkung vorzuführen ist das Gegenteil des Zwecks. Das Schaufenster zeigt deshalb „punkte“ samt Zahlen; die Sperre selbst deckt `greift` ab.",

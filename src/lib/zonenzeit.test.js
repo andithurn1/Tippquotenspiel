@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  RUNDEN_ZONE, WOCHENTAGE, wochentagVon,
+  RUNDEN_ZONE, WOCHENTAGE, wochentagVon, tagNach,
   zonenVersatz, wochentagIndex, tagesBeginn, letzterWochentag,
 } from "./zonenzeit";
 
@@ -70,4 +70,23 @@ describe("Zonenzeit rechnet in der Zone, nicht auf dem Rechner", () => {
     expect(wochentagVon("gibtsnicht")).toBe(null);
     expect(RUNDEN_ZONE).toBe("Europe/Berlin");
   });
+
+  describe("tagNach — die Übersetzung vom Ende zum Anfang", () => {
+    // 🔴 Andi denkt in ENDEN („Donnerstag 23:59 ist Spieltag vorbei"),
+    // gerechnet wird mit Anfängen. Diese eine Funktion übersetzt — damit es
+    // nicht an fünf Stellen ein „+1 Tag" gibt und eines davon danebengreift.
+    it("nennt den Folgetag", () => {
+      expect(tagNach("do")).toBe("fr");
+      expect(tagNach("mo")).toBe("di");
+    });
+    it("⚠️ läuft über das Wochenende um — der Fehler, den ein Modulo verhindert", () => {
+      expect(tagNach("sa")).toBe("so");
+      expect(tagNach("so")).toBe("mo");
+    });
+    it("gibt null zurück, wenn kein Tag gemeint ist", () => {
+      expect(tagNach(null)).toBe(null);
+      expect(tagNach("quatsch")).toBe(null);
+    });
+  });
+
 });

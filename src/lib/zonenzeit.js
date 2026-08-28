@@ -106,3 +106,15 @@ export function letzterWochentag(ms, tagKey, zone = RUNDEN_ZONE) {
   }
   return ms;
 }
+
+// 🔴 Der Tag NACH einem Wochentag — für die Spieltags-Grenze.
+//
+// ⚠️ Andi denkt in ENDEN: „Donnerstag 23:59 ist Spieltag vorbei" (28.08.2026).
+// Gerechnet wird trotzdem mit Anfängen, weil ein Fenster einen Beginn braucht.
+// Diese Funktion ist die eine Stelle, die zwischen beidem übersetzt — damit
+// nicht an fünf Stellen jemand „+1 Tag" rechnet und einer davon danebengreift.
+export function tagNach(tagKey) {
+  const tag = wochentagVon(tagKey);
+  if (!tag) return null;
+  return WOCHENTAGE.find((t) => t.index === (tag.index + 1) % 7).key;
+}

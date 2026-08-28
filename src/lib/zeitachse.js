@@ -45,7 +45,7 @@
 
 import { wettbewerbVon, wettbewerbLabel, istEchterWettbewerb, WETTBEWERBE } from "./wettbewerbe";
 import { spieltagKey } from "./spieltag";
-import { WOCHENTAGE, letzterWochentag, wochentagVon } from "./zonenzeit";
+import { WOCHENTAGE, letzterWochentag, wochentagVon, tagNach, tagesBeginn } from "./zonenzeit";
 
 export const ZEITACHSE_MODI = ["anker", "woche"];
 
@@ -78,11 +78,25 @@ export const ZEITACHSE_LIMITS = {
   warnAbSpielen: 12,                // Untergrenze: darunter ist „doppelt so viel" belanglos
 };
 
-// 🔴 AN WELCHEM WOCHENTAG BEGINNT EIN SPIELTAG? (Andi, 28.08.2026)
+// 🔴 WANN IST EIN SPIELTAG VORBEI? (Andi, 28.08.2026)
 //
 //  „ich denke klar daran immer ab Donnerstag neuer Spieltag, damit
 //   internationale Wettbewerbe am Ende vom Spieltag kommen und dann gehts
 //   Freitag wieder mit Liga los“
+//
+//  …und einen Tag später, auf Nachfrage, in der Fassung, die zählt:
+//
+//  „Donnerstag 23:59 ist spieltag vorbei mein ich, bzw. Kann admin auch
+//   einstellen dass es halt Montag 23:59 auch gehen kann, aber tendenziell
+//   macht Donnerstag mehr sinn“
+//
+// 🔴 **Das Feld heißt nach dem ENDE und nicht nach dem Anfang, und das ist
+// keine Kosmetik.** Die erste Fassung hieß `startTag` und stand auf „do" — aus
+// „ab Donnerstag neuer Spieltag" gelesen. Gemeint war das Gegenteil: der
+// Spieltag ist Donnerstag zu Ende, der neue beginnt Freitag. Ein Feld, das
+// „Anfang" heißt, während der Admin in Enden denkt, ist genau die zweite
+// Wahrheit, an der dieses Projekt schon 17 Fehler an einem Tag hatte. Übersetzt
+// wird an EINER Stelle (`tagNach` in `zonenzeit.js`).
 //
 // ⚠️ **Bis dahin gab es diese Grenze GAR NICHT**, und das war kein Versehen,
 // sondern eine ungestellte Frage. Der Wochen-Modus schnitt ab dem ERSTEN
@@ -97,19 +111,20 @@ export const ZEITACHSE_LIMITS = {
 // der Beginn auf vier verschiedenen Wochentagen (So 17×, Sa 12×, Di 7×, Mi 4×).
 // Ein Spieltag, dessen Anfang man nicht nennen kann, ist keiner.
 //
-// ✅ `startTag` setzt den Anfang auf einen festen Wochentag, 00:00 Ortszeit
-// (`RUNDEN_ZONE`). `null` heißt weiterhin „ab dem ersten Anpfiff“ — die alte
-// Rechnung, damit bestehende Runden ihre Nummerierung behalten.
+// ✅ `endeTag` legt den letzten Tag fest; der nächste Spieltag beginnt am Tag
+// darauf um 00:00 Ortszeit (`RUNDEN_ZONE`). `null` heißt weiterhin „ab dem
+// ersten Anpfiff“ — die alte Rechnung, damit bestehende Runden ihre
+// Nummerierung behalten.
 //
 // ⚠️ **Zerschnitten wird trotzdem kein Liga-Spieltag.** Die Grenze verschiebt
 // nur die Fenster; zugeordnet wird weiter der GANZE Liga-Spieltag nach seinem
 // ersten Spiel (siehe `zeitachse()` weiter unten).
-export const WOCHENTAG_START = [
-  { key: null, label: "ab dem ersten Anpfiff", hint: "Die Fenster hängen am Saisonstart — der Wochentag wandert." },
+export const SPIELTAG_ENDE = [
+  { key: null, label: "am ersten Anpfiff ausgerichtet", hint: "Die Fenster hängen am Saisonstart — der Wochentag wandert." },
   ...WOCHENTAGE.map((t) => ({
     key: t.key,
-    label: `ab ${t.label}`,
-    hint: `Jeder Spieltag beginnt ${t.label} um 00:00.`,
+    label: `${t.label} 23:59`,
+    hint: `Der Spieltag ist ${t.label} um 23:59 vorbei; der nächste beginnt am Tag darauf um 00:00.`,
   })),
 ];
 
@@ -118,7 +133,7 @@ export const DEFAULT_ZEITACHSE = {
   anker: null,          // null = automatisch die früheste Liga
   buendeln: 1,
   tage: 7,
-  startTag: "do",       // 🔴 Donnerstag — Andis Ansage vom 28.08.2026
+  endeTag: "do",        // 🔴 „Donnerstag 23:59 ist Spieltag vorbei" — Andi, 28.08.2026
   pause: "auffuellen",  // Standard: der Rhythmus bleibt auch in der Winterpause
   pauseAbTagen: 10,     // 10 Tage — ein normaler Wochenrhythmus löst das nie aus
 };
@@ -140,13 +155,13 @@ export function sanitizeZeitachse(partial = {}) {
     anker,
     buendeln: zahl(p.buendeln, ZEITACHSE_LIMITS.buendeln, DEFAULT_ZEITACHSE.buendeln),
     tage: zahl(p.tage, ZEITACHSE_LIMITS.tage, DEFAULT_ZEITACHSE.tage),
-    // ⚠️ `null` ist hier ein GÜLTIGER Wert („ab dem ersten Anpfiff") und darf
-    // nicht auf die Vorgabe zurückfallen — sonst könnte eine Runde die alte
-    // Rechnung nie wieder wählen. Deshalb wird auf „ist der Schlüssel gesetzt"
-    // geprüft und nicht auf „ist der Wert wahr".
-    startTag: p.startTag === null
+    // ⚠️ `null` ist hier ein GÜLTIGER Wert („am ersten Anpfiff ausgerichtet")
+    // und darf nicht auf die Vorgabe zurückfallen — sonst könnte eine Runde die
+    // alte Rechnung nie wieder wählen. Deshalb wird auf „ist der Schlüssel
+    // gesetzt" geprüft und nicht auf „ist der Wert wahr".
+    endeTag: p.endeTag === null
       ? null
-      : (wochentagVon(p.startTag)?.key ?? DEFAULT_ZEITACHSE.startTag),
+      : (wochentagVon(p.endeTag)?.key ?? DEFAULT_ZEITACHSE.endeTag),
     pause: PAUSEN_MODI.some((m) => m.key === p.pause) ? p.pause : DEFAULT_ZEITACHSE.pause,
     pauseAbTagen: zahl(p.pauseAbTagen, ZEITACHSE_LIMITS.pauseAbTagen, DEFAULT_ZEITACHSE.pauseAbTagen),
   };
@@ -209,7 +224,7 @@ export function zeitachse(matches = [], cfg = DEFAULT_ZEITACHSE) {
   const taktgeber = c.modus === "anker" ? ankerWettbewerb(gueltig, c.anker) : null;
 
   const grenzen = c.modus === "woche"
-    ? wochenGrenzen(gueltig, c.tage, c.startTag)
+    ? wochenGrenzen(gueltig, c.tage, c.endeTag)
     : mitPausen(ankerPunkte(gueltig, taktgeber, c.buendeln), c, Math.max(...gueltig.map(zeit)));
 
   if (!grenzen.length) return [];
@@ -321,16 +336,37 @@ function mitPausen(punkte, c, endeAllerSpiele = null) {
   return grenzen;
 }
 
-function wochenGrenzen(matches, tage, startTag = null) {
+function wochenGrenzen(matches, tage, endeTag = null) {
   const ersterAnpfiff = Math.min(...matches.map(zeit));
   const ende = Math.max(...matches.map(zeit));
-  // 🔴 Der feste Wochentag: vom ersten Anpfiff RÜCKWÄRTS auf den letzten
-  // <Wochentag> um 00:00 Ortszeit. Rückwärts und nicht vorwärts, weil sonst
-  // die Spiele vor dem ersten Donnerstag aus der Achse fielen.
-  const start = startTag ? letzterWochentag(ersterAnpfiff, startTag) : ersterAnpfiff;
+  // 🔴 Vom ENDE zum ANFANG: ist der Spieltag Donnerstag 23:59 vorbei, beginnt
+  // der nächste Freitag 00:00. Übersetzt wird an genau dieser einen Stelle.
+  const beginnTag = tagNach(endeTag);
+  // Und dann vom ersten Anpfiff RÜCKWÄRTS auf den letzten solchen Tag um 00:00
+  // Ortszeit — rückwärts und nicht vorwärts, weil sonst die Spiele vor dem
+  // ersten Freitag aus der Achse fielen.
+  const start = beginnTag ? letzterWochentag(ersterAnpfiff, beginnTag) : ersterAnpfiff;
   const fenster = tage * 24 * 3600 * 1000;
   const grenzen = [];
-  for (let t = start; t <= ende; t += fenster) grenzen.push(t);
+  // 🔴 Der Fund vom 28.08.2026, gemessen an der Creator-Testrunde: mit
+  // Millisekunden-Schritten allein landete die Grenze nach der Zeitumstellung
+  // auf **Donnerstag 23:00** statt Freitag 00:00 — sieben mal 24 Stunden sind
+  // im Oktober acht Tage minus einer Stunde. Der Spieltag hätte damit eine
+  // Stunde vor dem Ende begonnen, und ein Donnerstagsspiel um 23:30 wäre in
+  // den falschen gefallen.
+  //
+  // ✅ Deshalb wird nach jedem Schritt wieder auf Mitternacht Ortszeit gezogen.
+  // Die halbe Tageslänge obendrauf hält den Schritt sicher im richtigen Tag:
+  // keine Umstellung der Welt verschiebt um mehr als zwei Stunden.
+  //
+  // ⚠️ Ohne festen Wochentag bleibt es beim reinen Millisekunden-Fenster —
+  // dort gibt es keinen Tag, auf den man ziehen könnte, und ein Nachziehen
+  // würde die alte Rechnung stillschweigend ändern.
+  const halberTag = 12 * 3600 * 1000;
+  for (let t = start; t <= ende; ) {
+    grenzen.push(t);
+    t = beginnTag ? tagesBeginn(t + fenster + halberTag) : t + fenster;
+  }
   return grenzen;
 }
 

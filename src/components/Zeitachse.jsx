@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { getStore } from "@/lib/store";
 import {
   zeitachse, sanitizeZeitachse, achsenLabel, warnungen, ankerWettbewerb,
-  ZEITACHSE_LIMITS, DEFAULT_ZEITACHSE, PAUSEN_MODI, WOCHENTAG_START,
+  ZEITACHSE_LIMITS, DEFAULT_ZEITACHSE, PAUSEN_MODI, SPIELTAG_ENDE,
 } from "@/lib/zeitachse";
 import { wettbewerbeIn, wettbewerbLabel } from "@/lib/wettbewerbe";
 import { C, MONO, RUND } from "@/lib/theme";
@@ -43,7 +43,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
   const wettbewerbe = useMemo(() => wettbewerbeIn(alle), [alle]);
   const achse = useMemo(
     () => zeitachse(alle, z),
-    [alle, z.modus, z.anker, z.buendeln, z.tage, z.startTag, z.pause, z.pauseAbTagen],
+    [alle, z.modus, z.anker, z.buendeln, z.tage, z.endeTag, z.pause, z.pauseAbTagen],
   );
   const hinweise = useMemo(() => warnungen(achse, z), [achse, z.modus]);
   const automatisch = useMemo(() => ankerWettbewerb(alle, null), [alle]);
@@ -145,13 +145,13 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
               Regel „gängigstes oben, Feinheiten hinter einem Klick". An welchem
               Tag ein Spieltag beginnt, entscheidet, wo der Europapokal landet —
               die Fensterlänge rührt kaum jemand an. */}
-          <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 5 }}>Spieltag beginnt</div>
+          <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 5 }}>Spieltag ist vorbei</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
-            {WOCHENTAG_START.map((opt) => {
-              const an = (z.startTag ?? null) === opt.key;
+            {SPIELTAG_ENDE.map((opt) => {
+              const an = (z.endeTag ?? null) === opt.key;
               return (
                 <button key={opt.key ?? "anpfiff"} title={opt.hint}
-                  onClick={() => patch({ startTag: opt.key })} style={{
+                  onClick={() => patch({ endeTag: opt.key })} style={{
                     ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", fontSize: "0.75rem",
                     padding: "5px 10px", borderRadius: RUND.pille,
                     background: an ? `${C.mint}22` : C.surface,
@@ -161,9 +161,9 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
             })}
           </div>
           <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 8, lineHeight: 1.45 }}>
-            {z.startTag
-              ? `Jeder Spieltag beginnt ${WOCHENTAG_START.find((w) => w.key === z.startTag)?.label.replace(/^ab /, "") ?? ""} um 00:00. Beginnt er am Donnerstag, steht die Liga am Wochenende vorn und der Europapokal am Dienstag und Mittwoch am Ende.`
-              : "Die Fenster hängen am ersten Anpfiff der Saison. Der Wochentag wandert dadurch — mal beginnt ein Spieltag sonntags, mal samstags."}
+            {z.endeTag
+              ? `Der Spieltag ist ${SPIELTAG_ENDE.find((w) => w.key === z.endeTag)?.label ?? ""} vorbei; der nächste beginnt am Tag darauf um 00:00. Endet er donnerstags, stehen Champions League und Europapokal am Ende und die Liga eröffnet ab Freitag den nächsten.`
+              : "Die Fenster hängen am ersten Anpfiff der Saison. Der Wochentag wandert dadurch — mal ist ein Spieltag sonntags vorbei, mal samstags."}
           </div>
 
           <Feinheiten

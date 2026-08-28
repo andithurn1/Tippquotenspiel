@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   zeitachse, sanitizeZeitachse, ankerWettbewerb, achsenLabel, rundenSpieltagVon,
   rundenSchluessel, warnungen, verlaufNachRundenSpieltag, DEFAULT_ZEITACHSE, ZEITACHSE_LIMITS,
-  WOCHENTAG_START,
+  SPIELTAG_ENDE,
 } from "./zeitachse";
-import { wochentagIndex } from "./zonenzeit";
+import { wochentagIndex, tagesBeginn } from "./zonenzeit";
 import { invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday } from "./engine";
 import { sanitizeRules } from "./engine";
 import { kontoVerlauf } from "./jokerBudget";
@@ -493,10 +493,17 @@ describe("verlaufNachRundenSpieltag", () => {
 
 });
 
-describe("🔴 Der Wochentag, an dem ein Spieltag beginnt (Andi, 28.08.2026)", () => {
-  // Seine Ansage: „immer ab Donnerstag neuer Spieltag, damit internationale
-  // Wettbewerbe am Ende vom Spieltag kommen und dann gehts Freitag wieder mit
-  // Liga los."
+describe("🔴 Der Wochentag, an dem ein Spieltag VORBEI ist (Andi, 28.08.2026)", () => {
+  // Seine Ansage, in der Fassung, die zaehlt: „Donnerstag 23:59 ist spieltag
+  // vorbei mein ich, bzw. Kann admin auch einstellen dass es halt Montag 23:59
+  // auch gehen kann, aber tendenziell macht Donnerstag mehr sinn."
+  //
+  // 🔴 Das ist die Umkehrung der ersten Lesart: nicht „ab Donnerstag beginnt
+  // der neue", sondern „Donnerstag ist der alte zu Ende". Der naechste beginnt
+  // also FREITAG. Genau darum heisst das Feld `endeTag` und nicht `startTag` —
+  // ein Feld, das „Anfang" heisst, waehrend der Admin in Enden denkt, ist die
+  // zweite Wahrheit, aus der in diesem Projekt schon 17 Fehler an einem Tag
+  // entstanden sind.
   //
   // 🔴 Nachgemessen an der Creator-Testrunde, BEVOR es die Einstellung gab:
   // die Champions League war in 2 von 12 Runden-Spieltagen das letzte Spiel.
@@ -527,8 +534,8 @@ describe("🔴 Der Wochentag, an dem ein Spieltag beginnt (Andi, 28.08.2026)", (
   const matches = [...frueh, ...[0, 1, 2, 3].flatMap((n) => woche(n))];
   const letztes = (e) => e.spiele.at(-1);
 
-  it("🔴 mit Donnerstags-Grenze steht der Europapokal am ENDE des Spieltags", () => {
-    const achse = zeitachse(matches, { modus: "woche", tage: 7, startTag: "do" })
+  it("🔴 endet der Spieltag donnerstags, steht der Europapokal an seinem ENDE", () => {
+    const achse = zeitachse(matches, { modus: "woche", tage: 7, endeTag: "do" })
       .filter((e) => e.spiele.length);
     const mitCl = achse.filter((e) => e.spiele.some((m) => m.wettbewerb === "cl"));
     expect(mitCl.length).toBeGreaterThan(1);
@@ -544,25 +551,52 @@ describe("🔴 Der Wochentag, an dem ein Spieltag beginnt (Andi, 28.08.2026)", (
   it("⚠️ ohne Grenze zerfällt genau das — der Zustand bis zum 28.08.2026", () => {
     // Die Fenster hängen am ersten Anpfiff (hier Freitagabend), also liegt der
     // Europapokal MITTEN im Spieltag statt an seinem Ende.
-    const achse = zeitachse(matches, { modus: "woche", tage: 7, startTag: null })
+    const achse = zeitachse(matches, { modus: "woche", tage: 7, endeTag: null })
       .filter((e) => e.spiele.length);
     const mitCl = achse.filter((e) => e.spiele.some((m) => m.wettbewerb === "cl"));
     expect(mitCl.some((e) => letztes(e).wettbewerb !== "cl")).toBe(true);
   });
 
-  it("die Grenze liegt wirklich auf einem Donnerstag, 00:00 Ortszeit", () => {
-    const achse = zeitachse(matches, { modus: "woche", tage: 7, startTag: "do" });
+  it("🔴 die Grenze liegt auf FREITAG 00:00 — dem Tag NACH dem Ende", () => {
+    const achse = zeitachse(matches, { modus: "woche", tage: 7, endeTag: "do" });
     // Der erste Eintrag beginnt bewusst im Unendlichen (alles davor gehört zu
     // ihm) — geprüft werden die echten Grenzen dahinter.
+    // ⚠️ 5 = Freitag. Stuende hier 4, waere die Ende-Lesart wieder zur
+    // Anfang-Lesart geworden — und der Donnerstagsabend faenge den neuen
+    // Spieltag an, statt den alten zu beschliessen.
     for (const e of achse.slice(1)) {
-      expect(wochentagIndex(e.von), new Date(e.von).toISOString()).toBe(4);
+      expect(wochentagIndex(e.von), new Date(e.von).toISOString()).toBe(5);
+    }
+  });
+
+  it("🔴 die Grenze bleibt an der Zeitumstellung stehen", () => {
+    // Der Fund vom 28.08.2026, gemessen an der echten Creator-Runde: mit
+    // reinen Millisekunden-Schritten landete die Grenze nach dem 25.10. auf
+    // **Donnerstag 23:00** statt Freitag 00:00 — sieben mal 24 Stunden sind im
+    // Oktober acht Tage minus einer Stunde. Der Spieltag haette damit eine
+    // Stunde VOR seinem Ende begonnen, und ein Donnerstagsspiel um 23:30 waere
+    // in den falschen gefallen.
+    const ueberDieUmstellung = [];
+    for (let w = 0; w < 10; w++) {
+      const sa = Date.UTC(2026, 9, 3) + w * 7 * TAG;   // Samstag, 03.10.2026
+      ueberDieUmstellung.push(spiel("bl", 100 + w, sa + 13.5 * 3600e3, `u-bl-${w}`));
+      ueberDieUmstellung.push(spiel("cl", 100 + w, sa + 3 * TAG + 19 * 3600e3, `u-cl-${w}`));
+    }
+    const achse = zeitachse(ueberDieUmstellung, { modus: "woche", tage: 7, endeTag: "do" });
+    // 5 = Freitag, ausnahmslos — vor wie nach dem letzten Oktober-Sonntag.
+    for (const e of achse.slice(1)) {
+      expect(wochentagIndex(e.von), new Date(e.von).toISOString()).toBe(5);
+    }
+    // Und die Uhrzeit ist wirklich Mitternacht, nicht 23:00 des Vortags.
+    for (const e of achse.slice(1)) {
+      expect(e.von - tagesBeginn(e.von), new Date(e.von).toISOString()).toBe(0);
     }
   });
 
   it("⚠️ kein Liga-Spieltag wird von der Grenze zerschnitten", () => {
     // Das ist die Zusage, die über allem steht: zugeordnet wird der GANZE
     // Liga-Spieltag. Eine neue Grenze darf sie nicht aushebeln.
-    const achse = zeitachse(matches, { modus: "woche", tage: 7, startTag: "do" });
+    const achse = zeitachse(matches, { modus: "woche", tage: 7, endeTag: "do" });
     const wo = new Map();
     achse.forEach((e, i) => {
       for (const m of e.spiele) {
@@ -575,20 +609,25 @@ describe("🔴 Der Wochentag, an dem ein Spieltag beginnt (Andi, 28.08.2026)", (
   });
 
   it("die Einstellung überlebt das Bereinigen — `null` eingeschlossen", () => {
-    expect(sanitizeZeitachse({ startTag: "mo" }).startTag).toBe("mo");
+    expect(sanitizeZeitachse({ endeTag: "mo" }).endeTag).toBe("mo");
     // ⚠️ `null` ist ein GÜLTIGER Wert („ab dem ersten Anpfiff"), kein
     // fehlender. Fiele er auf die Vorgabe zurück, käme eine Runde nie wieder
     // zur alten Rechnung.
-    expect(sanitizeZeitachse({ startTag: null }).startTag).toBe(null);
-    expect(sanitizeZeitachse({ startTag: "quatsch" }).startTag).toBe(DEFAULT_ZEITACHSE.startTag);
-    expect(sanitizeZeitachse({}).startTag).toBe("do");
+    expect(sanitizeZeitachse({ endeTag: null }).endeTag).toBe(null);
+    expect(sanitizeZeitachse({ endeTag: "quatsch" }).endeTag).toBe(DEFAULT_ZEITACHSE.endeTag);
+    expect(sanitizeZeitachse({}).endeTag).toBe("do");
+    // Andis zweites Beispiel, woertlich: „dass es halt Montag 23:59 auch gehen
+    // kann". Die Grenze liegt dann auf Dienstag 00:00.
+    expect(sanitizeZeitachse({ endeTag: "mo" }).endeTag).toBe("mo");
   });
 
   it("die Auswahlliste bietet alle sieben Tage plus die alte Rechnung", () => {
-    expect(WOCHENTAG_START).toHaveLength(8);
-    expect(WOCHENTAG_START[0].key).toBe(null);
-    expect(WOCHENTAG_START.map((w) => w.key)).toContain("do");
-    for (const w of WOCHENTAG_START) expect(w.label.length, w.key).toBeGreaterThan(3);
+    expect(SPIELTAG_ENDE).toHaveLength(8);
+    expect(SPIELTAG_ENDE[0].key).toBe(null);
+    // Der Text nennt die Uhrzeit — „Donnerstag 23:59", nicht „Donnerstag".
+    expect(SPIELTAG_ENDE.find((w) => w.key === "do").label).toBe("Donnerstag 23:59");
+    expect(SPIELTAG_ENDE.map((w) => w.key)).toContain("do");
+    for (const w of SPIELTAG_ENDE) expect(w.label.length, w.key).toBeGreaterThan(3);
   });
 
   it("⚠️ die Vorgabe-Achse ist unberührt — sie läuft im Anker-Modus", () => {
@@ -596,7 +635,7 @@ describe("🔴 Der Wochentag, an dem ein Spieltag beginnt (Andi, 28.08.2026)", (
     // aber nur im Wochen-Modus. Wer nichts umstellt, bekommt dieselbe Achse
     // wie vorher.
     expect(DEFAULT_ZEITACHSE.modus).toBe("anker");
-    const vorher = zeitachse(matches, { ...DEFAULT_ZEITACHSE, startTag: null });
+    const vorher = zeitachse(matches, { ...DEFAULT_ZEITACHSE, endeTag: null });
     const nachher = zeitachse(matches, DEFAULT_ZEITACHSE);
     expect(nachher.map((e) => e.spiele.length)).toEqual(vorher.map((e) => e.spiele.length));
   });
