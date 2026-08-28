@@ -128,6 +128,89 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-29 (XXXIX) · 🧭 **Der Rundgang steht (RF5) — und das Thermometer sitzt jetzt richtig (ST4)**
+
+**Zwei Oberflächen-Aufträge, beide von Andi am 29.08.2026 freigegeben** („mach ST 4
+und den Walkthrough"). ⚠️ Beides ist PLATZIERUNG und stand deshalb bisher hinter
+der Masterdatei — er hat es ausdrücklich vorgezogen.
+
+---
+
+#### ST4 · Das Thermometer steht bei der Vorauswahl
+
+Vorher lag es **340 Zeilen darunter**: man wählte eine Voreinstellung und bekam
+die Rückmeldung dazu erst nach dem halben Screen.
+
+⚠️ **Bewusst NICHT buchstäblich „rechts neben".** Der Kasten klebt, und ein
+Element klebt nur innerhalb seines Elternteils — in einer Spalte neben der
+Vorauswahl wäre er bei den Reglern wieder weg, und dort ist er die Rückmeldung,
+auf die es ankommt. Auf 375 px heißt „rechts neben" ohnehin „direkt darunter".
+⛔ Balance-Logik und Texte unangetastet.
+
+---
+
+#### RF5 · Der Rundgang
+
+Andis Bild: *„wie in nem klassichen Handyspiel bzw aufbauspiel Tutorial"* —
+Pfeil auf ein echtes Bedienelement, durchklicken, Teile überspringen.
+
+🔴 **Kapitel 1 ist der Ausweg, nicht das Finale.** Sein eigentlicher Punkt:
+*„muss man das Tutorial auch nicht machen wenn man ne guten Creatorcode hat …
+dass man sich im besten fall von iwelchen infleuencern die ihre codes vorstellen
+übernehmen kann ohne selber zu viele gedanken reinstecken zu müssen was wie
+balanced ist."* Der Rundgang sagt das als Erstes und zeigt auf Code-Feld und
+Teil-Codes.
+
+| | |
+|---|---|
+| Umfang | **8 Kapitel · 24 Schritte**, 11 davon mit Pfeil auf ein echtes Element |
+| Drehrad | **9 Schritte** — alle Feldtypen, Wahrscheinlichkeit, beide Häufigkeits-Wege, Phase, wer dreht, Ereignis-Felder, Sperrfrist, Ausschlüsse, Punkte-Deckel |
+| Start | beim ersten Besuch von selbst; Marke beim ÖFFNEN gesetzt (Lehre aus `erstkontakt.js`) |
+| Aussteigen | jedes Kapitel einzeln überspringbar, Kapitel-Übersicht zum Direktsprung, „Beenden" in jedem Schritt |
+
+⚠️ **Die Rad-Listen sind aus `drehrad.js` ABGELEITET, nicht abgeschrieben.** Ein
+Tutorial, das eine Mechanik falsch erklärt, ist schlimmer als keines.
+
+🔴 **Und die Sperrklinke dazu musste zweimal gebaut werden — das ist der
+lehrreichste Teil.** Die erste Fassung fragte „kommt jedes Rad-Feld irgendwo im
+Kapitel vor?". Sie konnte **nie** rot werden: der Rundgang baut seine Liste aus
+demselben Katalog, enthält also jedes neue Feld automatisch. Die Gegenprobe (ein
+erfundener Typ in `drehrad.js`) ließ sie grün — ein Test, der nichts beweist.
+✅ Geprüft wird jetzt die ABLEITUNG selbst; schreibt jemand die Liste von Hand
+ab, schlägt sie an. Gegengeprobt.
+
+---
+
+#### ⚠️ Drei echte Fehler, alle NUR im Browser sichtbar
+
+Kein einziger davon kam aus einem Test — sie sind der Grund, warum Oberfläche
+nicht ohne Hinsehen fertig wird.
+
+1. **`position: fixed` wirkte nicht.** Ein Vorfahr auf dem Erstellungs-Screen
+   trägt die Einblend-Klasse `tqs-auf` mit einem `transform` — und ein Element
+   mit `transform` wird zum BEZUGSRAHMEN für alles `fixed` darin. Der
+   Scheinwerfer stand bei −29 989 statt −907, die Seitenhöhe wuchs auf 34 780 px.
+   ✅ Jetzt per Portal an `document.body`.
+   ⚠️ **Das trifft jedes künftige Overlay auf diesem Screen.**
+2. **`scrollIntoView({behavior: "smooth"})` scrollte GAR NICHT** (gemessen: 0
+   statt 7221) — und genau das steht schon bei der Sprungleiste im selben Screen.
+   Ich bin trotzdem hineingelaufen. ✅ Harter Sprung.
+3. **Der Pfeil war unsichtbar**: er saß im selben Kasten wie der Text, und der
+   trug `overflow-y: auto` — das schneidet alles außerhalb ab.
+
+⚠️ **Dazu eine Lehre über das MESSEN, die Zeit gekostet hat:** bei ausgeblendetem
+Browser-Pane ist `window.innerWidth` **0**. Dann scrollt nichts sinnvoll, die
+Seite meldet absurde Höhen und Screenshots kommen weiß. Ein Teil meiner ersten
+„Funde" war nur das. **Wer hier im Browser misst, setzt vorher eine
+Viewport-Größe** (`resize_window`, 375×812 ist das Maß dieses Projekts).
+
+**Stand:** `npm test` 137 Dateien · 3145 grün · 51 skipped · `abnahmen` 12/12 ·
+`lint` · `build` — alles Exit 0. Der `worte`-Wächter hat beim Bauen einen meiner
+Texte erwischt („Zuschnitt"), ersetzt.
+
+---
+
+
 ### 2026-08-29 (XXXVIII) · 📐 **Die Gegenproben nach dem Umbau — und was die Testrunden jetzt zeigen**
 
 **Zwei Nachmessungen, die zum Zeitachsen-Umbau gehören und noch fehlten.**
