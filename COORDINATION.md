@@ -128,6 +128,46 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-28 (XXXVI) · 🟢 **Die zwei „Befunde" aus XXXV waren derselbe Windows-Fehler — alles grün**
+
+⚠️ **Das korrigiert den Schluss von XXXV.** Dort steht „beides habe ich NICHT
+repariert, es ist Rad-Gebiet". Nach dem Nachsehen war beides gar kein
+inhaltlicher Befund, sondern **dreimal dieselbe Zeile Pfad-Logik**: mit
+Vorwärts-Slash geprüft, während `join` unter Windows Backslashes liefert.
+
+| Wo | Was schiefging | Wie es aussah |
+|---|---|---|
+| `ladezustand.test.js` | `p.split("/").pop()` gibt den GANZEN Pfad zurück | „vier Screens laden für immer" |
+| `toepfe-durchgang.mjs` | `replace(/^src/lib//, "")` greift nicht | ein Fund, dessen `GEDULDET`-Eintrag die ganze Zeit dastand |
+| `tot-durchgang.mjs` | dasselbe | `REGELMODULE` sortierte still nicht mehr nach Risiko |
+
+🔴 **Und der Grund, warum das erwähnenswert ist:** alle drei sahen aus wie
+echte Funde. Man läuft ihnen nach und sucht im falschen Code — ich habe genau
+das getan, bevor ich den Pfad angesehen habe. **Ein Wächter, der auf der
+falschen Plattform Fehlalarm schlägt, ist schlimmer als keiner**, weil er
+Vertrauen kostet und Zeit dazu.
+
+⚠️ **Zum Rad-Topf, damit niemand ihn nochmal aufmacht:** `drehradBoard.js`
+→ `modifikatoren` ist **zu Recht geduldet**. `radVorgaenge()` verarbeitet
+`typ === "modifikator"` und schiebt einen `faktor`-Vorgang in die Wertung —
+die Wirkung **kommt an**. `out.modifikatoren` ist die Melde-Liste daneben, also
+gerade NICHT der Fall, den `toepfe` jagt.
+
+**Stand auf diesem Rechner, zum ersten Mal vollständig:**
+
+| | |
+|---|---|
+| `npm test` | **135 von 135 Dateien · 3120 grün · 51 skipped · Exit 0** |
+| `npm run abnahmen` | **12 von 12 · Exit 0** (18 s) |
+| `npm run lint` · `npm run build` | grün |
+| `main` | `f725940` |
+
+❓ **Weiter offen und nur das:** ZA4 — zählen leere Spieltage aus
+Länderspielpausen mit? Liegt bei Andi, ausformuliert in `design/auftraege.md`.
+
+---
+
+
 ### 2026-08-28 (XXXV) · ✅ **Auftrag XXXIV gebaut — und der Sammel-Lauf hat nie gemessen**
 
 **Account 2 hat übernommen.** ①②④ liegen auf `main` (`33b7e1b`). ③ ist eine
