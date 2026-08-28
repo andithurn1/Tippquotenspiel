@@ -132,7 +132,35 @@ Danach in dieser Reihenfolge:
 4. **Die 9 Ereignis-Schilder** — sie erscheinen einzeln und selten, ein Symbol
    weniger tut dort am wenigsten weh.
 
-⚠️ **Und die Frage, die ich nicht entscheiden kann:** ob der Stil illustrativ
-(gezeichnet, bunt) oder flach (einfarbig, wie die Emoji heute) sein soll. Das
-ist eine Gestaltungsfrage und gehört zu G6/der Masterdatei — die App ist heute
-flach, aber ein Drehrad verträgt mehr.
+---
+
+## 🔴 ENTSCHIEDEN: flach für die 24, illustrativ nur fürs Rad (Andi, 29.08.2026)
+
+Auf die Rückfrage, was „flach oder illustrativ" überhaupt heißt — es geht nicht
+darum, was auf dem Bild ist, sondern **wie es gezeichnet ist**:
+
+| | **Flach** | **Illustrativ** |
+|---|---|---|
+| Aussehen | Piktogramm: eine, höchstens zwei Farben, klare Umrisse, keine Tiefe, keine Schatten | Gezeichnet: Verläufe, Licht, Schatten, oft eine kleine Szene oder Figur |
+| Beispiel „Klau" | Ein Pfeil, der einen Anteil von einem Stapel wegzieht | Eine Figur, die einer anderen etwas abnimmt |
+| Bei **24 px** | lesbar — und das ist die echte Größe der Fremdjoker-Chips | wird Matsch, Details brauchen Platz |
+| Hell/dunkel | löst sich von selbst: einfarbig, das Theme färbt | Handarbeit — eigene Farben und Schatten passen nicht auf beide Gründe |
+| 24 Stück am Stück | sehen wie ein Satz aus, auch aus vier Sitzungen | 🔴 **schwer**: nacheinander bestellt kommen 24 Handschriften zurück — andere Strichstärke, Sättigung, Perspektive. Nebeneinander fällt das sofort auf |
+| Wirkung | sachlich, ordentlich | wertiger, „Jahrmarkt" statt „Formular" |
+
+✅ **Andis Entscheidung: beides, aber getrennt bestellt.**
+
+- **Die 24 aus der Liste oben: FLACH.** Sie stehen fast alle klein und
+  nebeneinander — Chips in der Tippabgabe, Zeilen in der Auswahl. Dort gewinnt
+  Erkennbarkeit gegen Schönheit.
+- **Das Rad separat und ILLUSTRATIV.** Sieben Felder, groß, an einer einzigen
+  Stelle: dort trägt es, dort stört die uneinheitliche Handschrift nicht, und
+  dort lohnt der Aufwand mit den zwei Themes.
+
+🔴 **Und die Richtung, in der es nur einmal geht:** aus flach kann man später
+illustrativ nachlegen. Aus 24 illustrativen Bildern bekommt man keine
+brauchbaren 24-px-Chips. Im Zweifel also flach.
+
+⚠️ Das ändert die technischen Vorgaben oben nicht — es macht sie nur leichter
+einzuhalten: **einfarbig mit transparentem Grund** ist bei flachen Symbolen der
+Normalfall, nicht die Ausnahme.
