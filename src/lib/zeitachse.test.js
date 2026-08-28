@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   zeitachse, sanitizeZeitachse, ankerWettbewerb, achsenLabel, rundenSpieltagVon,
   rundenSchluessel, warnungen, verlaufNachRundenSpieltag, DEFAULT_ZEITACHSE, ZEITACHSE_LIMITS,
+  WOCHENTAG_START,
 } from "./zeitachse";
+import { wochentagIndex } from "./zonenzeit";
 import { invalidJokerMatchdays, invalidWeightMatchdays, weightUsageForMatchday } from "./engine";
 import { sanitizeRules } from "./engine";
 import { kontoVerlauf } from "./jokerBudget";
@@ -488,4 +490,114 @@ describe("verlaufNachRundenSpieltag", () => {
     expect(kontoBei(verlauf, davor)).toBeGreaterThan(0);
   });
 
+
+});
+
+describe("🔴 Der Wochentag, an dem ein Spieltag beginnt (Andi, 28.08.2026)", () => {
+  // Seine Ansage: „immer ab Donnerstag neuer Spieltag, damit internationale
+  // Wettbewerbe am Ende vom Spieltag kommen und dann gehts Freitag wieder mit
+  // Liga los."
+  //
+  // 🔴 Nachgemessen an der Creator-Testrunde, BEVOR es die Einstellung gab:
+  // die Champions League war in 2 von 12 Runden-Spieltagen das letzte Spiel.
+  // Danach in 12 von 12. Genau dieser Unterschied wird hier festgehalten —
+  // nicht die Zahl 12, sondern die Eigenschaft.
+
+  // Ein Spielplan wie in Wirklichkeit: Liga am Wochenende, Europapokal Di/Mi.
+  // Alle Zeiten als UTC-Millisekunden, damit der Test auf jedem Rechner
+  // dasselbe misst.
+  const woche = (nr) => {
+    const mo = Date.UTC(2026, 8, 7) + nr * 7 * TAG;   // Montag, 07.09.2026
+    return [
+      spiel("bl", nr, mo + 4 * TAG + 18.5 * 3600e3, `bl-fr-${nr}`),  // Freitag 20:30
+      spiel("bl", nr, mo + 5 * TAG + 13.5 * 3600e3, `bl-sa-${nr}`),  // Samstag 15:30
+      spiel("pd", nr, mo + 6 * TAG + 19 * 3600e3, `pd-so-${nr}`),    // Sonntag 21:00
+      spiel("cl", nr, mo + 8 * TAG + 19 * 3600e3, `cl-di-${nr}`),    // Dienstag 21:00
+      spiel("cl", nr, mo + 9 * TAG + 19 * 3600e3, `cl-mi-${nr}`),    // Mittwoch 21:00
+    ];
+  };
+  // ⚠️ Und eine Liga, die frueher und an einem SONNTAG beginnt — La Liga tut
+  // in Wirklichkeit genau das (16.08.2026, 17:00). Daran haengen die Fenster
+  // ohne feste Grenze, und deshalb lag der Europapokal bisher mitten drin.
+  const frueh = [
+    spiel("pd", 90, Date.UTC(2026, 7, 16) + 15 * 3600e3, "pd-frueh-1"),
+    spiel("pd", 91, Date.UTC(2026, 7, 23) + 15 * 3600e3, "pd-frueh-2"),
+    spiel("pd", 92, Date.UTC(2026, 7, 30) + 15 * 3600e3, "pd-frueh-3"),
+  ];
+  const matches = [...frueh, ...[0, 1, 2, 3].flatMap((n) => woche(n))];
+  const letztes = (e) => e.spiele.at(-1);
+
+  it("🔴 mit Donnerstags-Grenze steht der Europapokal am ENDE des Spieltags", () => {
+    const achse = zeitachse(matches, { modus: "woche", tage: 7, startTag: "do" })
+      .filter((e) => e.spiele.length);
+    const mitCl = achse.filter((e) => e.spiele.some((m) => m.wettbewerb === "cl"));
+    expect(mitCl.length).toBeGreaterThan(1);
+    for (const e of mitCl) {
+      expect(letztes(e).wettbewerb, `Spieltag ${e.nummer}`).toBe("cl");
+    }
+    // Und die Liga eröffnet ihn — Andis „dann gehts Freitag wieder mit Liga los".
+    for (const e of mitCl) {
+      expect(e.spiele[0].wettbewerb, `Spieltag ${e.nummer}`).not.toBe("cl");
+    }
+  });
+
+  it("⚠️ ohne Grenze zerfällt genau das — der Zustand bis zum 28.08.2026", () => {
+    // Die Fenster hängen am ersten Anpfiff (hier Freitagabend), also liegt der
+    // Europapokal MITTEN im Spieltag statt an seinem Ende.
+    const achse = zeitachse(matches, { modus: "woche", tage: 7, startTag: null })
+      .filter((e) => e.spiele.length);
+    const mitCl = achse.filter((e) => e.spiele.some((m) => m.wettbewerb === "cl"));
+    expect(mitCl.some((e) => letztes(e).wettbewerb !== "cl")).toBe(true);
+  });
+
+  it("die Grenze liegt wirklich auf einem Donnerstag, 00:00 Ortszeit", () => {
+    const achse = zeitachse(matches, { modus: "woche", tage: 7, startTag: "do" });
+    // Der erste Eintrag beginnt bewusst im Unendlichen (alles davor gehört zu
+    // ihm) — geprüft werden die echten Grenzen dahinter.
+    for (const e of achse.slice(1)) {
+      expect(wochentagIndex(e.von), new Date(e.von).toISOString()).toBe(4);
+    }
+  });
+
+  it("⚠️ kein Liga-Spieltag wird von der Grenze zerschnitten", () => {
+    // Das ist die Zusage, die über allem steht: zugeordnet wird der GANZE
+    // Liga-Spieltag. Eine neue Grenze darf sie nicht aushebeln.
+    const achse = zeitachse(matches, { modus: "woche", tage: 7, startTag: "do" });
+    const wo = new Map();
+    achse.forEach((e, i) => {
+      for (const m of e.spiele) {
+        const k = `${m.wettbewerb}-${m.matchday}`;
+        if (!wo.has(k)) wo.set(k, new Set());
+        wo.get(k).add(i);
+      }
+    });
+    for (const [k, orte] of wo) expect(orte.size, k).toBe(1);
+  });
+
+  it("die Einstellung überlebt das Bereinigen — `null` eingeschlossen", () => {
+    expect(sanitizeZeitachse({ startTag: "mo" }).startTag).toBe("mo");
+    // ⚠️ `null` ist ein GÜLTIGER Wert („ab dem ersten Anpfiff"), kein
+    // fehlender. Fiele er auf die Vorgabe zurück, käme eine Runde nie wieder
+    // zur alten Rechnung.
+    expect(sanitizeZeitachse({ startTag: null }).startTag).toBe(null);
+    expect(sanitizeZeitachse({ startTag: "quatsch" }).startTag).toBe(DEFAULT_ZEITACHSE.startTag);
+    expect(sanitizeZeitachse({}).startTag).toBe("do");
+  });
+
+  it("die Auswahlliste bietet alle sieben Tage plus die alte Rechnung", () => {
+    expect(WOCHENTAG_START).toHaveLength(8);
+    expect(WOCHENTAG_START[0].key).toBe(null);
+    expect(WOCHENTAG_START.map((w) => w.key)).toContain("do");
+    for (const w of WOCHENTAG_START) expect(w.label.length, w.key).toBeGreaterThan(3);
+  });
+
+  it("⚠️ die Vorgabe-Achse ist unberührt — sie läuft im Anker-Modus", () => {
+    // 🔴 Wichtig für bestehende Runden: `startTag` steht zwar auf „do", greift
+    // aber nur im Wochen-Modus. Wer nichts umstellt, bekommt dieselbe Achse
+    // wie vorher.
+    expect(DEFAULT_ZEITACHSE.modus).toBe("anker");
+    const vorher = zeitachse(matches, { ...DEFAULT_ZEITACHSE, startTag: null });
+    const nachher = zeitachse(matches, DEFAULT_ZEITACHSE);
+    expect(nachher.map((e) => e.spiele.length)).toEqual(vorher.map((e) => e.spiele.length));
+  });
 });

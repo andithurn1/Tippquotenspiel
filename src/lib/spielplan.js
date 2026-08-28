@@ -231,18 +231,11 @@ export function herkunftLabel(matches = [], echteWettbewerbe = new Set(), saison
 //    Rückrunde ein Jahr in der Vergangenheit.
 const MONATE = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Welchen Versatz zu UTC hat diese Zeitzone in diesem Moment? Der Standardweg
-// ohne Fremdbibliothek: den Zeitpunkt in der Zone formatieren und die
-// Differenz zurückrechnen.
-function zonenVersatz(ms, zone) {
-  const teile = new Intl.DateTimeFormat("en-US", {
-    timeZone: zone, hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
-  }).formatToParts(new Date(ms));
-  const p = Object.fromEntries(teile.map((t) => [t.type, t.value]));
-  return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second) - ms;
-}
+// ⚠️ Die Versatz-Rechnung stand bis zum 28.08.2026 HIER — und seit dem
+// Wochentags-Beginn der Zeitachse braucht sie eine zweite Stelle. Sie steht
+// jetzt in `zonenzeit.js`, damit es sie einmal gibt: zwei Fassungen einer
+// Zeitzonen-Rechnung laufen auseinander, und man merkt es erst in der
+// Umstellungsnacht.
 
 // Ortszeit in der Liga-Zone → UTC-Zeitstempel.
 function ortszeitZuUTC(jahr, monat, tag, stunde, minute, zone) {
@@ -252,6 +245,8 @@ function ortszeitZuUTC(jahr, monat, tag, stunde, minute, zone) {
   const grob = alsWaereEsUTC - zonenVersatz(alsWaereEsUTC, zone);
   return new Date(alsWaereEsUTC - zonenVersatz(grob, zone)).toISOString();
 }
+
+import { zonenVersatz } from "./zonenzeit";
 
 export function parseOpenfootball(text, zone) {
   const spiele = [];

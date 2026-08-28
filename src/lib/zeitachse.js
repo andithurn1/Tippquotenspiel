@@ -45,6 +45,7 @@
 
 import { wettbewerbVon, wettbewerbLabel, istEchterWettbewerb, WETTBEWERBE } from "./wettbewerbe";
 import { spieltagKey } from "./spieltag";
+import { WOCHENTAGE, letzterWochentag, wochentagVon } from "./zonenzeit";
 
 export const ZEITACHSE_MODI = ["anker", "woche"];
 
@@ -77,11 +78,47 @@ export const ZEITACHSE_LIMITS = {
   warnAbSpielen: 12,                // Untergrenze: darunter ist „doppelt so viel" belanglos
 };
 
+// 🔴 AN WELCHEM WOCHENTAG BEGINNT EIN SPIELTAG? (Andi, 28.08.2026)
+//
+//  „ich denke klar daran immer ab Donnerstag neuer Spieltag, damit
+//   internationale Wettbewerbe am Ende vom Spieltag kommen und dann gehts
+//   Freitag wieder mit Liga los“
+//
+// ⚠️ **Bis dahin gab es diese Grenze GAR NICHT**, und das war kein Versehen,
+// sondern eine ungestellte Frage. Der Wochen-Modus schnitt ab dem ERSTEN
+// ANPFIFF der Runde in Sieben-Tage-Fenster. Gemessen an der Creator-Testrunde:
+// deren erstes Spiel ist ein Sonntag um 17:00, also lief jeder Spieltag von
+// Sonntagabend bis Sonntagabend — die Champions League am Dienstag/Mittwoch lag
+// **mitten drin**, die Bundesliga am Freitag/Samstag danach. Genau verkehrt
+// herum. Von 12 Runden-Spieltagen mit Champions League endete sie in **3**.
+//
+// 🔴 **Warum der Anfang so wandert:** die Fenster hängen aneinander. Fällt ein
+// Anpfiff eine Stunde anders, wandert die Grenze mit; über eine Saison landete
+// der Beginn auf vier verschiedenen Wochentagen (So 17×, Sa 12×, Di 7×, Mi 4×).
+// Ein Spieltag, dessen Anfang man nicht nennen kann, ist keiner.
+//
+// ✅ `startTag` setzt den Anfang auf einen festen Wochentag, 00:00 Ortszeit
+// (`RUNDEN_ZONE`). `null` heißt weiterhin „ab dem ersten Anpfiff“ — die alte
+// Rechnung, damit bestehende Runden ihre Nummerierung behalten.
+//
+// ⚠️ **Zerschnitten wird trotzdem kein Liga-Spieltag.** Die Grenze verschiebt
+// nur die Fenster; zugeordnet wird weiter der GANZE Liga-Spieltag nach seinem
+// ersten Spiel (siehe `zeitachse()` weiter unten).
+export const WOCHENTAG_START = [
+  { key: null, label: "ab dem ersten Anpfiff", hint: "Die Fenster hängen am Saisonstart — der Wochentag wandert." },
+  ...WOCHENTAGE.map((t) => ({
+    key: t.key,
+    label: `ab ${t.label}`,
+    hint: `Jeder Spieltag beginnt ${t.label} um 00:00.`,
+  })),
+];
+
 export const DEFAULT_ZEITACHSE = {
   modus: "anker",
   anker: null,          // null = automatisch die früheste Liga
   buendeln: 1,
   tage: 7,
+  startTag: "do",       // 🔴 Donnerstag — Andis Ansage vom 28.08.2026
   pause: "auffuellen",  // Standard: der Rhythmus bleibt auch in der Winterpause
   pauseAbTagen: 10,     // 10 Tage — ein normaler Wochenrhythmus löst das nie aus
 };
@@ -103,6 +140,13 @@ export function sanitizeZeitachse(partial = {}) {
     anker,
     buendeln: zahl(p.buendeln, ZEITACHSE_LIMITS.buendeln, DEFAULT_ZEITACHSE.buendeln),
     tage: zahl(p.tage, ZEITACHSE_LIMITS.tage, DEFAULT_ZEITACHSE.tage),
+    // ⚠️ `null` ist hier ein GÜLTIGER Wert („ab dem ersten Anpfiff") und darf
+    // nicht auf die Vorgabe zurückfallen — sonst könnte eine Runde die alte
+    // Rechnung nie wieder wählen. Deshalb wird auf „ist der Schlüssel gesetzt"
+    // geprüft und nicht auf „ist der Wert wahr".
+    startTag: p.startTag === null
+      ? null
+      : (wochentagVon(p.startTag)?.key ?? DEFAULT_ZEITACHSE.startTag),
     pause: PAUSEN_MODI.some((m) => m.key === p.pause) ? p.pause : DEFAULT_ZEITACHSE.pause,
     pauseAbTagen: zahl(p.pauseAbTagen, ZEITACHSE_LIMITS.pauseAbTagen, DEFAULT_ZEITACHSE.pauseAbTagen),
   };
@@ -165,7 +209,7 @@ export function zeitachse(matches = [], cfg = DEFAULT_ZEITACHSE) {
   const taktgeber = c.modus === "anker" ? ankerWettbewerb(gueltig, c.anker) : null;
 
   const grenzen = c.modus === "woche"
-    ? wochenGrenzen(gueltig, c.tage)
+    ? wochenGrenzen(gueltig, c.tage, c.startTag)
     : mitPausen(ankerPunkte(gueltig, taktgeber, c.buendeln), c, Math.max(...gueltig.map(zeit)));
 
   if (!grenzen.length) return [];
@@ -277,9 +321,13 @@ function mitPausen(punkte, c, endeAllerSpiele = null) {
   return grenzen;
 }
 
-function wochenGrenzen(matches, tage) {
-  const start = Math.min(...matches.map(zeit));
+function wochenGrenzen(matches, tage, startTag = null) {
+  const ersterAnpfiff = Math.min(...matches.map(zeit));
   const ende = Math.max(...matches.map(zeit));
+  // 🔴 Der feste Wochentag: vom ersten Anpfiff RÜCKWÄRTS auf den letzten
+  // <Wochentag> um 00:00 Ortszeit. Rückwärts und nicht vorwärts, weil sonst
+  // die Spiele vor dem ersten Donnerstag aus der Achse fielen.
+  const start = startTag ? letzterWochentag(ersterAnpfiff, startTag) : ersterAnpfiff;
   const fenster = tage * 24 * 3600 * 1000;
   const grenzen = [];
   for (let t = start; t <= ende; t += fenster) grenzen.push(t);
