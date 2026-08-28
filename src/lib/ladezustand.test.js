@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 
 // ============================================================
 //  ENDET DER LADEZUSTAND AUCH, WENN ETWAS SCHIEFGEHT?
@@ -56,6 +56,14 @@ const ohneKommentare = (text) => text
   .replace(/\/\*[\s\S]*?\*\//g, "")
   .replace(/(^|[^:])\/\/.*$/gm, "$1");
 
+// ⚠️ **Der Dateiname wird über `basename` geholt, nicht über `split("/")`.**
+// `join` liefert unter Windows `src\components\Ranking.jsx` — ein `split("/")`
+// findet dort nichts zu trennen und gibt den GANZEN Pfad zurück. Der stand dann
+// nicht in `GEDULDET`, also meldete der Test vier Screens als Fund UND dieselben
+// vier Ausnahmen als „überholt". Beides Fehlalarm, beides nur auf Windows, und
+// beides sah aus wie ein echter Befund: „diese Screens laden für immer".
+// Gemessen am 28.08.2026 — auf diesem Rechner waren es die einzigen zwei roten
+// Tests, die nicht aus einer Änderung stammten.
 const jsx = [];
 const lauf = (dir) => {
   for (const n of readdirSync(dir)) {
@@ -78,7 +86,7 @@ describe("Der Ladezustand endet auch im Fehlerfall", () => {
   it("kein Screen mit Ladezustand verschluckt einen Fehler, ohne etwas zu setzen", () => {
     const funde = mitLadezustand
       .filter((p) => ohneKommentare(readFileSync(p, "utf8")).includes("catch(() => {})"))
-      .map((p) => p.split("/").pop())
+      .map((p) => basename(p))
       .filter((n) => !GEDULDET[n]);
     expect(
       funde,
@@ -101,7 +109,7 @@ describe("Der Ladezustand endet auch im Fehlerfall", () => {
     // Eine Begründung für einen Screen, der den stillen `catch` gar nicht mehr
     // hat, beschreibt einen Zustand, den es nicht mehr gibt.
     const ueberholt = Object.keys(GEDULDET).filter((n) => {
-      const p = jsx.find((x) => x.endsWith(`/${n}`));
+      const p = jsx.find((x) => basename(x) === n);
       return !p || !ohneKommentare(readFileSync(p, "utf8")).includes("catch(() => {})");
     });
     expect(ueberholt, `Ausnahme zeigt ins Leere: ${ueberholt.join(", ")}`).toEqual([]);
