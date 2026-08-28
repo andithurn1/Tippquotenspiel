@@ -489,14 +489,71 @@ grant  update (display_name, avatar) on public.profiles to authenticated;
 drop policy if exists "matches_read" on public.matches;
 create policy "matches_read" on public.matches for select to authenticated using (true);
 
--- Runden: für alle Eingeloggten lesbar (Beitritt per Code muss die Runde
--- VOR der Mitgliedschaft finden können — der Code selbst ist die Schranke,
--- nicht die Sichtbarkeit; Regelwerk/Name sind nicht sensibel). Jeder darf
--- eine Runde anlegen und wird dabei automatisch ihr Admin.
+-- Runden: für alle Eingeloggten lesbar. Regelwerk und Name sind nicht
+-- sensibel; jeder darf eine Runde anlegen und wird dabei automatisch ihr Admin.
+--
+-- 🔴 KORRIGIERT am 27.08.2026 (LV4). Hier stand: „der Code selbst ist die
+-- Schranke, nicht die Sichtbarkeit". Das war falsch, und zwar auf die
+-- gefährliche Art — es klang nach einer Entscheidung und war eine Lücke:
+-- `join_code` ist eine SPALTE dieser Tabelle, und RLS filtert ZEILEN, nicht
+-- Spalten. Jeder Angemeldete konnte damit alle Beitritts-Codes lesen und jeder
+-- Runde beitreten. Eine Schranke, deren Schlüssel offen daneben liegt, ist
+-- keine.
+--
+-- ⚠️ Der Beitritt läuft seitdem über `/api/beitreten` (service_role,
+-- serverseitig). Die Route gibt den Code nie heraus und bremst Rateversuche.
+-- Der `revoke` darunter macht die Lücke auch dann zu, wenn jemand den alten
+-- Weg wieder aufmacht.
 drop policy if exists "rounds_read_members" on public.rounds;
 drop policy if exists "rounds_read"         on public.rounds;
 drop policy if exists "rounds_insert"       on public.rounds;
 create policy "rounds_read" on public.rounds for select to authenticated using (true);
+
+-- 🔴 Spalten-Recht statt Policy: `join_code` darf ein Client NICHT lesen.
+--
+-- ⚠️ **Und zwar so herum, nicht anders.** Ein `revoke select (join_code)`
+-- allein wäre WIRKUNGSLOS: Supabase gibt `authenticated`/`anon` ein
+-- TABELLENWEITES `select`, und ein Spalten-Entzug ändert daran nichts (so
+-- steht es auch in der Postgres-Doku). Erst das ganze Recht entziehen, dann
+-- die erlaubten Spalten einzeln geben. Wer die kurze Fassung schreibt, hat
+-- eine Zeile, die nach Schutz aussieht und keiner ist — also genau den Fehler
+-- noch einmal, den dieser Abschnitt behebt.
+--
+-- ⚠️ Das schließt auch das FILTERN aus (`where join_code = …` braucht
+-- Leserecht) — genau deshalb läuft der Beitritt über `/api/beitreten`.
+-- `service_role` ist davon nicht betroffen: die Route liest den Code weiter.
+--
+-- ⚠️ Neue Spalten müssen HIER nachgetragen werden. Eine vergessene Spalte
+-- fällt nicht als Fehler auf, sondern als „das Feld ist plötzlich leer".
+revoke select on public.rounds from authenticated, anon;
+grant select (id, name, admin_id, rules, team_filter, spiele, created_at)
+  on public.rounds to authenticated, anon;
+
+-- 🔴 Und die Kehrseite, die man beim Zumachen fast übersieht: **der Admin muss
+-- seinen EIGENEN Code sehen können.** Sonst kann er niemanden mehr einladen —
+-- die Lücke wäre zu und die Runde damit auch.
+--
+-- Spalten-Rechte können das nicht ausdrücken: sie gelten je ROLLE, nicht je
+-- Zeile. Deshalb eine Funktion mit erhöhten Rechten, die genau eine Frage
+-- beantwortet — „bin ich der Admin dieser Runde?" — und sonst nichts.
+--
+-- ⚠️ `security definer` heißt: sie läuft mit den Rechten ihres Eigentümers und
+-- umgeht RLS. Die Prüfung darin IST deshalb die ganze Sicherheit. `set
+-- search_path = public` gehört dazu, sonst lässt sich über einen eigenen
+-- Schema-Pfad eine andere `rounds`-Tabelle unterschieben.
+create or replace function public.runden_code(p_round uuid)
+returns text
+language sql
+security definer
+set search_path = public
+as $$
+  select r.join_code
+  from public.rounds r
+  where r.id = p_round and r.admin_id = auth.uid();
+$$;
+
+revoke all on function public.runden_code(uuid) from public, anon;
+grant execute on function public.runden_code(uuid) to authenticated;
 create policy "rounds_insert" on public.rounds for insert to authenticated
   with check (admin_id = auth.uid());
 

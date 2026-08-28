@@ -531,6 +531,39 @@ export function createMockStore() {
     },
 
     async getRound(id) { return rounds.get(id) ?? null; },
+    // ── Beitritt per Code: EINE Bewegung, nicht zwei (LV4) ──
+    // 🔴 Der Befund: `join_code` steht als Spalte in `rounds`, und die
+    // Lese-Policy gilt für ALLE Angemeldeten. Jeder konnte damit alle Codes
+    // lesen und jeder Runde beitreten — obwohl der Schema-Kommentar das
+    // Gegenteil behauptete („der Code ist die Zugangsschranke").
+    //
+    // ⚠️ Live läuft der Beitritt deshalb über eine SERVER-Route
+    // (`/api/beitreten`), die den Code nie herausgibt und Rateversuche
+    // bremst. Hier im Mock gibt es keinen Server — die Methode existiert, damit
+    // beide Stores dieselbe Schnittstelle haben und der Screen nicht zwei Wege
+    // kennen muss.
+    async beitretenMitCode({ code, userId, name }) {
+      const runde = await this.getRoundByCode(String(code ?? "").trim().toUpperCase());
+      if (!runde) return null;
+      await this.joinRound({ roundId: runde.id, userId, name });
+      // 🔴 OHNE `join_code` — dieselbe Zusage wie die Route: wer beitritt,
+      // bekommt Id und Name, nicht den Schlüssel zur Runde.
+      return { id: runde.id, name: runde.name };
+    },
+
+    // Der Beitritts-Code — nur für den Admin der Runde. Live läuft das über
+    // eine Datenbank-Funktion mit erhöhten Rechten (siehe `store.supabase.js`);
+    // hier reicht die Prüfung, damit beide Stores dieselbe Zusage geben.
+    async getJoinCode(roundId, userId = null) {
+      const r = rounds.get(roundId);
+      if (!r) return null;
+      // ⚠️ Ohne `userId` gibt es den Code — der Mock hat keine Sitzung, und ein
+      // Test soll ihn abfragen können. LIVE ist das nicht möglich: dort kommt
+      // die Nutzer-Id aus dem geprüften Token und nie vom Aufrufer.
+      if (userId != null && r.admin_id !== userId) return null;
+      return r.join_code ?? null;
+    },
+
     async getRoundByCode(code) {
       return [...rounds.values()].find((r) => r.join_code === code) ?? null;
     },

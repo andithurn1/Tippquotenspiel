@@ -278,6 +278,61 @@ export function createSupabaseStore() {
       return einmal(`round:${id}`, async () =>
         orThrow(await sb.from("rounds").select("*").eq("id", id).maybeSingle()));
     },
+    // ── Beitritt per Code: über die SERVER-Route (LV4) ─────
+    // 🔴 Warum nicht hier im Browser: `join_code` steht als Spalte in
+    // `rounds`, RLS filtert ZEILEN und keine Spalten — jeder Angemeldete
+    // konnte damit alle Codes lesen. Die Route gibt den Code nie heraus und
+    // bremst Rateversuche (ein 6-stelliger Code hat ~2 Milliarden
+    // Möglichkeiten; im Browser geht man die in Ruhe durch).
+    // ⚠️ `userId`/`name` werden ANGENOMMEN und ABSICHTLICH IGNORIERT. Der Mock
+    // braucht sie (er hat keine Sitzung), live wären sie eine Einladung: wer
+    // die Nutzer-Id mitschicken darf, tritt in fremdem Namen bei. Die Route
+    // holt sie aus dem geprüften Token. Die Signatur bleibt trotzdem gleich —
+    // `storeParitaet.test.js` besteht darauf, und zu Recht: ein Feld, das eine
+    // Seite still wegwirft, ist genau die Sorte Unterschied, die live anders
+    // rechnet als in der Entwicklung.
+    // eslint-disable-next-line no-unused-vars
+    async beitretenMitCode({ code, userId, name }) {
+      const { data: { session } } = await sb.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Nicht angemeldet.");
+      const antwort = await fetch(apiPfad("/api/beitreten"), {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+        body: JSON.stringify({ code }),
+      });
+      // ⚠️ 404 ist KEIN Fehler, sondern die Auskunft „diesen Code gibt es
+      // nicht". Als Ausnahme geworfen sähe er im Screen aus wie ein Ausfall,
+      // und der Nutzer bekäme „Beitritt hat nicht geklappt" statt „falscher
+      // Code" — zwei sehr verschiedene Nachrichten.
+      if (antwort.status === 404) return null;
+      if (!antwort.ok) {
+        const { error } = await antwort.json().catch(() => ({}));
+        throw new Error(error || "Beitritt fehlgeschlagen.");
+      }
+      return antwort.json();
+    },
+
+    // Der Beitritts-Code einer Runde — nur für ihren ADMIN.
+    //
+    // 🔴 Über eine Datenbank-Funktion mit erhöhten Rechten (`runden_code`,
+    // schema.sql) und nicht über eine Abfrage: die Spalte ist für Clients
+    // gesperrt, weil sie sonst JEDER lesen kann (LV4). Die Funktion beantwortet
+    // genau eine Frage — „bin ich der Admin dieser Runde?".
+    //
+    // ⚠️ Gibt `null`, wenn man es nicht ist. Kein Fehler: „du darfst nicht"
+    // und „hat nicht geklappt" sind zwei verschiedene Nachrichten, und die
+    // Oberfläche soll die richtige zeigen können.
+    async getJoinCode(roundId) {
+      const { data, error } = await sb.rpc("runden_code", { p_round: roundId });
+      if (error) return null;
+      return data ?? null;
+    },
+
+    // ⚠️ Bleibt für die Schnittstellen-Gleichheit mit dem Mock, ist live aber
+    // NICHT mehr der Weg zum Beitritt: sobald die Spalten-Rechte greifen
+    // (`revoke select (join_code)`, siehe schema.sql), liefert diese Abfrage
+    // gar nichts mehr. Wer beitreten will, nimmt `beitretenMitCode`.
     async getRoundByCode(code) {
       return orThrow(await sb.from("rounds").select("*").eq("join_code", code).maybeSingle());
     },
@@ -449,7 +504,16 @@ export function createSupabaseStore() {
           })
           .select()
           .single();
-        if (!error) { await this.joinRound({ roundId: data.id, userId: adminId }); return data; }
+        if (!error) {
+          await this.joinRound({ roundId: data.id, userId: adminId });
+          // 🔴 `join_code` kommt NICHT aus der Antwort: seit dem Spalten-Entzug
+          // (LV4, schema.sql) darf ein Client die Spalte nicht lesen, und
+          // `.select()` liefert sie deshalb nicht mehr. Gebraucht wird sie
+          // trotzdem — der Admin soll sie gleich weitergeben können.
+          // ⚠️ Sie ist hier bekannt, ohne irgendetwas zu lesen: der Code wurde
+          // eine Zeile weiter oben in DIESEM Browser erzeugt.
+          return { ...data, join_code: joinCode };
+        }
         if (error.code !== "23505") throw error;
         joinCode = generateJoinCode();
       }

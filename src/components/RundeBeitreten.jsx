@@ -36,9 +36,14 @@ export default function RundeBeitreten() {
     if (!user) { setState("error"); return; }
     setState("joining");
     try {
-      const round = await getStore().getRoundByCode(clean);
+      // 🔴 EIN Aufruf, nicht zwei (LV4, 27.08.2026): live läuft er über eine
+      // Server-Route, die den Beitritts-Code nie herausgibt. Vorher wurde hier
+      // erst die Runde per Code GELESEN — und weil RLS Zeilen filtert und
+      // keine Spalten, konnte jeder Angemeldete alle Codes mitlesen.
+      const round = await getStore().beitretenMitCode({
+        code: clean, userId: user.id, name: user.name,
+      });
       if (!round) { setState("notfound"); return; }
-      await getStore().joinRound({ roundId: round.id, userId: user.id, name: user.name });
       setRoundId(round.id);
       setJoinedName(round.name);
       setState("joined");
