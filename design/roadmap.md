@@ -93,6 +93,66 @@ und zahlt weniger. ⚠️ Damit verlässt die Regel Ebene 5: `abwerten` greift i
 
 ---
 
+## 🌍 Mehr Wettbewerbe, mehr Sportarten — notiert am 27.08.2026, ausdrücklich HINTEN DRAN
+
+**Andis Ansage, wörtlich:** *„sollen ja eh fast alle Wettbwerbe und Sportarten
+noch mal hinzukommen, gut Bewertungsschema muss man evtl an die anpassen, (wie
+bspw. in Basketball wer macht über 20 pkte, und andere Sportarten eben ähnliche
+Pendants und natürlich was wir als Quoten bekommen) aber die erstmal hinten
+dran"*
+
+⛔ **Nichts davon wird jetzt gebaut.** Das steht hier, damit es beim nächsten
+Umbau nicht vergessen wird — und damit niemand eine Entscheidung trifft, die
+es später teuer macht.
+
+### Was schon dafür vorbereitet ist
+
+🔴 Architektur-Regel 3 in `CLAUDE.md` sagt seit dem ersten Tag: **Märkte
+sportart-neutral modellieren** (`{ sportart, typ, ankerQuote,
+auswertungs-statistik }`). Der Grund war genau dieser Tag. Nachgesehen am
+27.08.2026, was davon wirklich steht:
+
+| | Stand |
+|---|---|
+| `markets` als Block mit `enabled` je Markt | ✅ vorhanden |
+| Ergebnis-Tipp (`result`) | ✅ fußballspezifisch, aber über den Markt gekapselt |
+| Torschützen (`goals`) | ✅ **der Kandidat** für „wer macht über 20 Punkte" |
+| Wettbewerbs-Katalog erweiterbar (`WETTBEWERBE`) | ✅ eine Liste, kein Sonderfall |
+| Lostöpfe je Wettbewerb | ✅ **seit heute** (`lostoepfe.js`) — trägt `el` bereits als leeren Eintrag |
+| ⛔ Ein Feld `sportart` | **fehlt** — heute ist Fußball überall implizit |
+
+### 🔴 Die eigentliche Frage, und sie ist keine Programmier-Frage
+
+**Andis Satz „und natürlich was wir als Quoten bekommen" ist der Kern.** Die
+ganze Wertung hängt an der Quote des REALEN Ergebnisses (Architektur-Regel 4).
+Ein Markt, für den es keine Quote gibt, lässt sich nicht quotengewichtet
+werten — dann wäre es ein normales Tippspiel mit Punktetabelle, und das ist
+ein anderes Produkt.
+
+⚠️ **Also zuerst nachsehen, was der Anbieter je Sportart liefert**, und erst
+danach entscheiden, welche Märkte es gibt. Umgekehrt gebaut hätte man einen
+Baukasten mit Reglern, hinter denen keine Zahlen stehen.
+
+### Was ein Basketball-Pendant konkret bräuchte
+
+Andis Beispiel („wer macht über 20 pkte") ist kein neuer Markt-TYP, sondern
+derselbe wie die Torschützen — **ein Spieler, eine Schwelle, eine Quote**.
+
+| Fußball | Basketball | gemeinsam |
+|---|---|---|
+| Wer trifft? | Wer legt über 20 Punkte auf? | Spieler + Schwelle |
+| Über/unter 2,5 Tore | Über/unter 210 Punkte | Team-Summe + Linie |
+| 1X2 | Sieger (ohne Remis) | Ausgang |
+
+🔴 **Der Unterschied, der Arbeit macht, ist nicht der Markt, sondern das
+REMIS.** Basketball kennt keins; `combo.tendenz` und die halbe Nähe-Rechnung
+setzen es voraus. Das ist die Stelle, an der eine zweite Sportart wirklich in
+die Engine greift — nicht die Statistik.
+
+⚠️ **Und die Reihenfolge, wenn es drankommt:** erst der Quoten-Anbieter, dann
+`sportart` ins Markt-Modell, dann das Remis-freie Ergebnis, dann die Märkte.
+Wer mit den Märkten anfängt, baut dreimal.
+
 ## 🌍 ANDERE SPRACHEN: wie das laufen würde (27.08.2026, GEMESSEN)
 
 Andis Frage: *„wie könnte das egtl laufen wenn man exakt die app in anderen

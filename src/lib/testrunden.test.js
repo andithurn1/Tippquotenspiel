@@ -6,6 +6,7 @@ import {
 } from "./testrunden";
 import { vereineVon, alleMatches } from "./ligen";
 import { filterSpiele } from "./spielauswahl";
+import { vereineAusToepfen, vereineAusLigen } from "./lostoepfe";
 import { pruefe } from "./reglerWarnung";
 import { greiftNicht } from "./greiftNicht";
 import { createMockStore } from "./store.mock";
@@ -51,6 +52,7 @@ describe("Der Zuschnitt trifft, was er treffen soll", () => {
   it("🔴 die Runde ist nicht leer und nicht der ganze Katalog", () => {
     // Gemessen 27.08.2026: 669 von 1942. Beides waere ein Fehler -- 0 hiesse
     // „Filter trifft nichts", 1942 hiesse „Filter greift nicht".
+    // Gemessen 27.08.2026: 629 von 1942 (mit der CL-Lostopf-Regel).
     expect(spiele.length).toBeGreaterThan(400);
     expect(spiele.length).toBeLessThan(900);
   });
@@ -60,17 +62,40 @@ describe("Der Zuschnitt trifft, was er treffen soll", () => {
     for (const w of drin) expect(ZUSCHNITT.wettbewerbe).toContain(w);
   });
 
-  it("in jedem Spiel steht mindestens einer der Sechzehn", () => {
+  it("in jedem LIGA-Spiel steht mindestens einer der Sechzehn", () => {
     // ⚠️ `teamModus: "einer"` -- gemessen: „nur untereinander" waeren 70 Spiele
     // in einer ganzen Saison. Das ist kein Tippspiel, das ist ein Turnier.
+    // 🔴 Die CL ist ausgenommen: dort gilt seit dem 27.08.2026 die
+    // Lostopf-Regel und nicht die Vereinsliste -- ein Topf-2-Verein im
+    // Achtelfinale gehoert dazu, auch wenn er keiner der Sechzehn ist.
     const top = new Set(TOP_16);
-    const ohne = spiele.filter((m) => !top.has(m.home) && !top.has(m.away));
+    const ohne = spiele
+      .filter((m) => m.wettbewerb !== "cl")
+      .filter((m) => !top.has(m.home) && !top.has(m.away));
     expect(ohne.map((m) => `${m.home}-${m.away}`)).toEqual([]);
   });
 
-  it("die Champions League ist dabei und traegt spuerbar bei", () => {
+  it("🔴 die Champions League folgt der LOSTOPF-Regel, nicht der Vereinsliste", () => {
+    // Andi, 27.08.2026: „nur die von Lostopf 1 und sonst noch deutsche
+    // Mannschaften von CL statt alle!, sowie alle Finalsspiele mit Beteiligung
+    // von Mannschaften der Lostoepfe 1 + 2".
+    // Gemessen: 85 von 159 -- vorher waren es 125 ueber die Vereinsliste.
     const cl = spiele.filter((m) => m.wettbewerb === "cl");
-    expect(cl.length).toBeGreaterThan(50);
+    expect(cl).toHaveLength(85);
+  });
+
+  it("alle K.-o.-Spiele der CL sind dabei", () => {
+    const ko = spiele.filter((m) => m.wettbewerb === "cl" && m.phase && m.phase !== "liga");
+    // 8 + 4 + 2 + 1 = 15
+    expect(ko).toHaveLength(15);
+  });
+
+  it("⚠️ ein CL-Spiel OHNE Topf-1- oder deutsche Beteiligung faellt in der Ligaphase raus", () => {
+    const drin = new Set([...vereineAusToepfen("cl", [1]), ...vereineAusLigen("cl", ["bl"])]);
+    const liga = spiele.filter((m) => m.wettbewerb === "cl" && m.phase === "liga");
+    for (const m of liga) {
+      expect(drin.has(m.home) || drin.has(m.away), `${m.home}-${m.away}`).toBe(true);
+    }
   });
 
   it("⚠️ die 2. Bundesliga traegt HEUTE nichts bei -- und das ist erklaerbar", () => {

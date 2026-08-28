@@ -50,6 +50,8 @@
 // ============================================================
 
 import { DEFAULT_RULES, sanitizeRules } from "./engine";
+import { alleMatches } from "./ligen";
+import { lostopfSpiele } from "./lostoepfe";
 
 export const CREATOR_ROUND_ID = "00000000-0000-0000-0000-000000000003";
 export const CREATOR_JOIN_CODE = "GROSS";
@@ -80,6 +82,36 @@ export const BL_ABSTIEGSKAMPF = { modus: "alle", teams: [], spieltagVon: 31, zon
 // Beide Runden spielen dieselben Spiele. Nur die REGELN unterscheiden sich —
 // so lässt sich vergleichen, was die Regeln ausmachen, statt zwei Unterschiede
 // gleichzeitig zu haben.
+// 🔴 Die Champions-League-Auswahl (Andi, 27.08.2026): „nur die von Lostopf 1
+// und sonst noch deutsche Mannschaften von CL statt alle!, sowie alle
+// Finalsspiele mit Beteiligung von Mannschaften der Lostöpfe 1 + 2".
+//
+// ⚠️ Das ist ein ODER über Dimensionen — „Topf 1 ODER deutsch" in der
+// Ligaphase, „Topf 1+2" in der K.-o.-Runde. `passtSpiel` kann das nicht (alle
+// Einschränkungen dort wirken UND-verknüpft). `lostoepfe.js` rechnet die Regel
+// deshalb einmal aus und liefert eine feste Begegnungsliste; die Begründung
+// samt Preis steht in ihrem Kopf.
+//
+// Gemessen: **85 von 159** CL-Spielen — alle 15 K.-o.-Spiele, 70 von 144 aus
+// der Ligaphase.
+export const CL_REGEL = {
+  toepfe: [1],
+  // „deutsche Mannschaften" = wer auch in der Bundesliga-Liste steht.
+  // ⚠️ Abgeleitet statt gepflegt: eine zweite Länderliste liefe auseinander,
+  // sobald jemand einen Aufsteiger nachträgt.
+  ausLigen: ["bl"],
+  koToepfe: [1, 2],
+};
+
+// ⚠️ Faul gerechnet und gemerkt: `alleMatches()` geht über 1942 Spiele, und
+// das soll nicht beim IMPORT dieser Datei passieren — sie wird auch dort
+// geladen, wo niemand die Liste braucht.
+let clIdsGemerkt = null;
+export function clSpielIds() {
+  if (clIdsGemerkt === null) clIdsGemerkt = lostopfSpiele(alleMatches(), CL_REGEL, "cl");
+  return clIdsGemerkt;
+}
+
 export const ZUSCHNITT = {
   modus: "teams",
   teams: TOP_16,
@@ -97,9 +129,26 @@ export const ZUSCHNITT = {
   },
 };
 
+// Die Champions-League-Abweichung wird erst beim Bauen des Regelwerks
+// eingesetzt — sie braucht den Katalog (siehe `clSpielIds`).
+function zuschnittMitCl() {
+  return {
+    ...ZUSCHNITT,
+    jeWettbewerb: {
+      ...ZUSCHNITT.jeWettbewerb,
+      // 🔴 `modus: "liste"` überschreibt für die CL das runden-weite
+      // „teams" — hier zählt genau, was in der Liste steht.
+      cl: { modus: "liste", matchIds: clSpielIds() },
+    },
+  };
+}
+
 // ── Was beide Runden teilen ─────────────────────────────────
-const GEMEINSAM = {
-  spiele: ZUSCHNITT,
+// ⚠️ Eine FUNKTION und kein Objekt: `zuschnittMitCl()` braucht den Katalog,
+// und auf Modulebene ausgewertet liefe die Rechnung doch beim Import — genau
+// das, was die faule Fassung von `clSpielIds` vermeiden soll.
+const gemeinsam = () => ({
+  spiele: zuschnittMitCl(),
 
   // ── Die Grundwertung: drei Regler, die `reglerWarnung.js` bemängelt hat ──
   // 🔴 Gegenprobe gelaufen (CLAUDE.md verlangt sie für neue Voreinstellungen):
@@ -136,7 +185,7 @@ const GEMEINSAM = {
   // anders als die Tabellenzonen. Gemessen: 84 Spiele im Katalog tragen ein
   // Label, darunter die deutschen Klassiker (Rheinisches Derby, Revierderby).
   teamMods: { ...DEFAULT_RULES.teamMods, derbyFaktor: 1.2 },
-};
+});
 
 // ── ① Die große Creator-Runde: 1000 Mitspieler ──────────────
 //
@@ -160,7 +209,7 @@ const GEMEINSAM = {
 export function creatorRegeln() {
   return sanitizeRules({
     ...DEFAULT_RULES,
-    ...GEMEINSAM,
+    ...gemeinsam(),
 
     // Joker: jeder bekommt gleich viele, an denselben Spieltagen. Bei 1000
     // Leuten ist „jeder an eigenen Spieltagen" nicht mehr nachvollziehbar.
@@ -260,7 +309,7 @@ export function creatorRegeln() {
 export function privatRegeln() {
   return sanitizeRules({
     ...DEFAULT_RULES,
-    ...GEMEINSAM,
+    ...gemeinsam(),
 
     joker: { ...DEFAULT_RULES.joker, enabled: true, modus: "einzel", faktor: 2.5 },
     jokerBasis: {
