@@ -46,6 +46,8 @@ import WertungSondermenue, { wertungStand } from "@/components/WertungSondermenu
 import VerlaufSondermenue, { verlaufStand } from "@/components/VerlaufSondermenue";
 import SaisonZeitSondermenue, { saisonZeitStand } from "@/components/SaisonZeitSondermenue";
 import { TAPZIEL } from "@/lib/tapziel";
+import Walkthrough from "@/components/Walkthrough";
+import { walkthroughGesehen } from "@/lib/walkthrough";
 import { useRueckmeldung } from "@/components/Rueckmeldung";
 
 // Alle Klubs ALLER Wettbewerbe — sonst ließe sich keine Runde bauen, die
@@ -96,6 +98,18 @@ export default function Spielerstellung() {
     setSchichten((l) => [...l.filter((x) => x.aspekt !== aspekt), { aspekt, code }]);
     setHandAngepasst(false);
   };
+  // 🔴 Der geführte Rundgang (RF5). Startet beim ersten Besuch von selbst.
+  //
+  // ⚠️ **Nicht im `useState`-Anfangswert, sondern in einem Effekt.** Der Server
+  // rendert diesen Screen mit, und dort gibt es kein `localStorage` — ein
+  // Anfangswert aus dem Speicher käme auf Server und Browser verschieden
+  // heraus, und React wirft dann einen Hydration-Fehler. Der Effekt läuft
+  // ausschließlich im Browser.
+  const [rundgangOffen, setRundgangOffen] = useState(false);
+  useEffect(() => {
+    if (!walkthroughGesehen()) setRundgangOffen(true);
+  }, []);
+
   const [charakterKey, setCharakterKey] = useState(null);
   // Andis PP1: die Bibliothek ist ein FENSTER, kein Abschnitt — sie legt sich
   // über den Screen und gibt ihn danach unverändert zurück.
@@ -661,6 +675,24 @@ export default function Spielerstellung() {
           <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
             Ein Klick genügt — den Rest stellen wir stimmig ein. Wer mag, geht danach ins Detail.
           </p>
+
+          {/* 🔴 Der geführte Rundgang (RF5). Startet beim ERSTEN Besuch von
+              selbst — genau wie das Tutorial eines Aufbauspiels, und genau
+              das war Andis Bild dazu. Sein erstes Kapitel sagt als Erstes,
+              dass man ihn nicht braucht, wenn man einen Code hat.
+              ⚠️ Der Knopf bleibt danach stehen: wer ihn weggeklickt hat und
+              es sich anders überlegt, muss ihn wiederfinden können. */}
+          <button
+            onClick={() => setRundgangOffen(true)}
+            style={{
+              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", marginTop: 8,
+              background: "transparent", border: `1px solid ${C.line}`,
+              borderRadius: RUND.pille, padding: "6px 12px",
+              color: C.akzent, fontSize: "0.75rem", fontWeight: 700,
+            }}
+          >
+            🧭 Zeig mir, wie das geht
+          </button>
 
           {/* ⚠️ Hier stand bis zum 22.08.2026 der Hinweis „oben rechts schaltest
               du zwischen Einfach und Profi um" (ST8). Mit dem Wegfall des
@@ -1442,6 +1474,15 @@ export default function Spielerstellung() {
       {/* ── Kompletteinstellungen: Andis eigenes Fenster (24.08.2026) ──
           Getrennt vom großen Bibliotheks-Fenster darunter, weil es eine andere
           Frage beantwortet: hier ganze Spiele, dort auch die Bausteine. */}
+      {/* ── Der geführte Rundgang (RF5) ──
+          Steht wie die Fenster darunter ganz unten im Baum und legt sich als
+          `position: fixed` über alles. Er ZEIGT nur — er stellt nichts ein und
+          bekommt deshalb auch kein `onChange`. */}
+      <Walkthrough
+        offen={rundgangOffen}
+        onSchliessen={() => setRundgangOffen(false)}
+      />
+
       <GesamtspielFenster
         offen={komplettOffen}
         onSchliessen={() => setKomplettOffen(false)}
