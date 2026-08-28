@@ -3,6 +3,37 @@
 Offene Feature-Ideen, grob nach Aufwand. Gebaut wird in einzelnen, testbaren
 Schritten (Engine zuerst, dann Store, dann UI, dann Browser-Check + Commit).
 
+## 🔴 ZWEI OFFENE BEFUNDE aus dem Zeitachsen-Umbau (28.08.2026, Account 2)
+
+**Beides gemessen, beides NICHT von diesem Umbau verursacht** — nachgestellt am
+Übergabestand `a267105` in einem eigenen Arbeitsbaum.
+
+**1. `toepfe` meldet einen Fund, und zwar schon vorher.**
+`srclibdrehradBoard.js`, Rückgabe-Topf `modifikatoren` (Zeile 242): außerhalb
+der eigenen Tests liest ihn niemand. Das ist genau das Muster, wegen dem es
+diesen Durchgang gibt — die Modifikator-Belohnung des Rades wurde schon einmal
+erzeugt und nie verrechnet („+50 % für zwei Spieltage" zahlte nichts).
+⚠️ **Nicht angefasst**, weil es Rad-Gebiet ist und nicht zum Auftrag gehörte.
+Zu tun: anschließen, entfernen, oder mit einem Satz in `GEDULDET` begründen.
+
+**2. `ladezustand` ist an vier Screens rot, ebenfalls vorbelastet.**
+`Abrechnung.jsx` · `Ranking.jsx` · `SpottSenden.jsx` · `Tippabgabe.jsx` zeigen
+einen Ladezustand und verschlucken Fehler, ohne einen Wert zu setzen — live
+heißt das: der Screen lädt für immer. Dazu meldet derselbe Test vier überholte
+Einträge in `GEDULDET`.
+
+🔴 **Und der Grund, warum beides unbemerkt blieb, ist der eigentliche Befund:**
+`npm run abnahmen` lief auf diesem Rechner **überhaupt nicht** — alle zwölf
+Durchgänge „stürzten ab" in je 0,0 Sekunden, weil `execFileSync` unter Windows
+`npm.cmd` nicht findet. Eine Tabelle voller roter Zeilen, hinter denen keine
+einzige Messung stand. Behoben (siehe `design/auftraege.md` ZA5); seitdem sind
+es **11 von 12 sauber in 17 s**.
+
+⚠️ **Die Lehre, weil sie sich wiederholt:** die Übergabe meldete „12 von 12
+sauber" und „3111 grün". Nachgemessen stimmte auf diesem Rechner keines von
+beidem. Eine Zahl aus einer Übergabe ist eine Behauptung über EINEN Rechner —
+wer sie übernimmt, misst nach, bevor er darauf aufbaut.
+
 ## ✅ DAS RUNDEN-MENÜ IST DURCH (27.08.2026)
 
 Andis Beschreibung vom 27.08.2026 hatte vier Teile (`design/rundenmenue.md`

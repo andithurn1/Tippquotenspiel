@@ -59,7 +59,7 @@ ausführen.
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
-| 2 (Andre) | **Zeitachse: Zuordnung nach DATUM** (Auftrag XXXIV) — `src/lib/zeitachse.js` (neues Regel-Feld `zuordnung`, `DEFAULT_ZEITACHSE.modus`), `zeitachse.test.js`, `src/components/Zeitachse.jsx`, `src/lib/schaufenster.js`. ⚠️ Regelwerk-Änderung, nach Push-Regel 3 hiermit angekündigt — Account 1 ist bis Dienstag 20:00 ohne Kontingent, Andi hat den Auftrag selbst erteilt, daher ohne Wartezeit. | läuft | 2026-08-28 |
+| 2 (Andre) | ~~**Zeitachse: Zuordnung nach DATUM** (Auftrag XXXIV)~~ — ①②④ gebaut, `33b7e1b`. Angefasst: `zeitachse.js`, `zeitachse.test.js`, `Zeitachse.jsx`, `schaufenster.js`, dazu `scripts/abnahmen-alle.mjs` + `schnappschuss.test.js` + `toepfe.test.js` (der Sammel-Lauf startete auf diesem Rechner gar nicht). ❓ **③ leere Spieltage liegt bei Andi** — ZA4 in `design/auftraege.md`. **Alle Bereiche wieder frei.** | fertig | 2026-08-28 |
 | 1 (Andi) | **KONTINGENT LEER am 28.08.2026** (5-Stunden-Limit 98 %, Wochenlimit 97 %, Rücksetzung **Dienstag 20:00**). Nichts hängt lokal, alles auf `main` (`1042481`). Zuletzt angefasst: `testrunden.js`, `zeitachse.js`, `zonenzeit.js` (neu), `Zeitachse.jsx`, `schaufenster.js`, `spielplan.js`, dazu vier Texte (`drehrad`, `anmeldung`, `kombiBonus`, `ergebnisMatrix`) und `scripts/worte-durchgang.mjs` (neu). **Alle Bereiche frei.** Übergabe steht als Eintrag XXXIII im Log. | pausiert | 2026-08-28 |
 | 1 (Andi) | **Spielauswahl JE LIGA** (Schritt 3) — Spec liegt: `design/spielauswahl-je-liga.md`. Ändert das Regelwerk (`spielauswahl.js`, `sanitizeRules`, Creator-Code), hiermit nach Push-Regel 3 ANGEKÜNDIGT. Noch nichts gebaut. | frei zu übernehmen | 2026-08-08 |
 | 1 (Andi) | ~~**Oberflächen-Umbau Schritt 1 + 2** (`Spielerstellung.jsx`, `SpielauswahlWettbewerbe.jsx`, `SpielauswahlListe.jsx`)~~ — alle sechs Punkte aus Andis iPhone-Durchgang, dazu Ligen aufklappbar; 18 zu kleine Tippziele → 0. ⚠️ Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** `main`. | fertig | 2026-08-08 |
@@ -127,6 +127,113 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-08-28 (XXXV) · ✅ **Auftrag XXXIV gebaut — und der Sammel-Lauf hat nie gemessen**
+
+**Account 2 hat übernommen.** ①②④ liegen auf `main` (`33b7e1b`). ③ ist eine
+Wertungsfrage und liegt bei Andi — ausformuliert als **ZA4** in
+`design/auftraege.md`, nicht hier vergraben.
+
+---
+
+#### Was gebaut ist
+
+| | |
+|---|---|
+| ① `zeitachse.zuordnung` | `"datum"` (Vorgabe) · `"spieltag"`, bereinigt wie `pause`. Oberfläche in `Zeitachse.jsx`, Vorführwert im Schaufenster |
+| ② `DEFAULT_ZEITACHSE.modus` | `"anker"` → `"woche"` — sonst greift `endeTag` bei einer neuen Runde nie |
+| ④ `warnungen()` | meldet `"spieltag"` **und** tatsächlich zerschnittene Spieltage — datengetrieben, nicht auf Verdacht |
+
+🔴 **Zwei Folgen, die im Auftrag nicht standen und den Umbau still ausgehebelt
+hätten.** Beide liegen eine Ebene unter der Achse:
+
+- `rundenSpieltagVon` suchte **zuerst über den Liga-Spieltag**. Alle Spiele
+  eines Spieltags tragen denselben Schlüssel — das Februar-Nachholspiel hätte
+  also wieder die Oktober-Nummer bekommen. Die Achse richtig, die Auskunft
+  darüber falsch. Jetzt ID zuerst.
+- `rundenSchluessel` merkte sich Antworten **je Liga-Spieltag**, gäbe dem
+  zweiten Spiel also still die Antwort des ersten. ⚠️ Der Merkzettel steht
+  jetzt auf ID **UND** Liga-Spieltag: nur die ID geht daneben, sobald sie in
+  der Achse gar nicht vorkommt — genau das hat ein bestehender Joker-Test
+  gefangen, nachdem ich es zuerst falsch gebaut hatte.
+
+#### Nachgemessen statt übernommen
+
+| | im Auftrag | gemessen |
+|---|---|---|
+| Liga-Spieltage im Katalog | 197 | **198** |
+| davon von der Freitagsgrenze zerrissen | 0 | **0** ✅ |
+| dasselbe ohne festen Wochentag (`endeTag: null`) | — | **11** |
+| CL als letztes Spiel (anker → woche) | 3/12 → 12/12 | **3/12 → 12/12** ✅ |
+| leere Runden-Spieltage | 3 von 42 | **3 von 42** (Nr. 8, 14, 33) ✅ |
+
+⚠️ **Ein Befund, der im Auftrag fehlt:** **kein einziger** der 198 Liga-Spieltage
+läuft über mehr als vier Tage. Das Februar-Nachholspiel aus dem Beispiel gibt es
+im heutigen Katalog also gar nicht — der Fehler ist echt, mit diesen Daten aber
+nicht auslösbar. Das ändert nichts am Bauauftrag; es erklärt, warum kein Test an
+den Daten hing.
+
+#### Zu den umgefallenen Tests
+
+Es waren **6**, nicht 4. Keiner wurde grün gemacht: der Block „Ein Liga-Spieltag
+bleibt ganz" prüft eine **echte Zusage**, die nicht weggefallen ist, sondern
+einen Namen bekommen hat — er läuft jetzt gegen `zuordnung: "spieltag"` und
+steht unverändert daneben. Dazu **6 neue Tests** für die Datums-Zuordnung, inkl.
+Andis Februar-Beispiel eins zu eins.
+
+Der siebte Test schrieb `DEFAULT_ZEITACHSE.modus === "anker"` fest — also genau
+das, was ② ändert. Er ist umgeschrieben, und die Zusage, die er eigentlich
+schützen wollte („bestehende Runden ändern sich nicht"), steht jetzt als eigener
+Test daneben: eine gespeicherte Anker-Achse rechnet unverändert.
+
+---
+
+#### 🔴 Und jetzt der Teil, der wichtiger ist als der Auftrag
+
+**`npm run abnahmen` hat auf diesem Rechner nie gemessen.** Alle **zwölf**
+Durchgänge meldeten „ABGESTÜRZT" in je **0,0 Sekunden**. Ursache:
+`execFileSync` öffnet keine Shell — unter Windows heißt der Starter `npm.cmd`
+und wird als nacktes `npm` nicht gefunden (`ENOENT`); seit Node 20 verweigert
+`spawnSync` zusätzlich eine `.cmd` ohne Shell (`EINVAL`). Dasselbe traf
+`schnappschuss.test.js` und `toepfe.test.js`, die schon beim **Einlesen**
+durchfielen.
+
+⚠️ **Das ist die gefährlichere Sorte:** ein Sammel-Lauf, der nicht startet,
+beruhigt nicht — er zeigt zwölf rote Zeilen und schickt einen auf die falsche
+Fährte. Läuft jetzt über den laufenden Node auf das lokale `vite-node`; die
+Kommandozeile kommt weiter aus der `package.json`. **11 von 12 sauber in 17 s.**
+
+🔴 **Damit stimmen zwei Zahlen aus der Übergabe (XXXIII) nicht**, und beide sind
+nachgestellt am Übergabestand `a267105` in einem eigenen Arbeitsbaum:
+
+| Übergabe sagte | gemessen auf `a267105` |
+|---|---|
+| `npm test` 3111 grün | `ladezustand.test.js` **2 rot**, `schnappschuss`/`toepfe` fielen beim Einlesen durch |
+| `npm run abnahmen` 12 von 12 | `toepfe` meldet **1 Fund**: `drehradBoard.js`, Topf `modifikatoren` — nur vom Test gelesen |
+
+⛔ **Beides habe ich NICHT repariert** — Rad-Gebiet und Screen-Ladezustände
+gehören nicht zu diesem Auftrag. Beide Befunde stehen ausformuliert in
+`design/roadmap.md` ganz oben.
+
+**Die Lehre, weil sie sich wiederholt:** eine Zahl aus einer Übergabe ist eine
+Behauptung über EINEN Rechner. Wer darauf aufbaut, misst vorher nach.
+
+#### Stand jetzt
+
+| | |
+|---|---|
+| `npm test` | **3115 grün · 51 skipped** · 2 rot (beide vorbelastet, s. o.) |
+| `npm run abnahmen` | **11 von 12** (`toepfe` = vorbelasteter Fund) |
+| `npm run lint` · `npm run build` | grün |
+| `main` | `33b7e1b` |
+
+⚠️ **Noch ein Werkzeug-Hinweis für den nächsten, der hier startet:**
+`node_modules` war unvollständig — `@capacitor/*` stand in der `package.json`,
+war aber nicht installiert, und `haptik.test.js` fiel dadurch beim Einlesen
+durch. Ein `npm install` hat es geholt, die Lockfile blieb unberührt.
+
+---
+
 
 ### 2026-08-28 (XXXIV) · 🔴 **DEIN AUFTRAG: Spiele nach DATUM zuordnen, nicht nach Liga-Spieltag**
 
