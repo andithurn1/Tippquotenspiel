@@ -90,3 +90,9 @@ console.log(`${"-".repeat(88)}`);
 console.log("  Als Admin-Screens abgeleitet (bauen das Regelwerk, zählen nicht als Anzeige):");
 console.log(`     ${[...admin].sort().join(" · ")}`);
 console.log();
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+melde("sicht", fehlend.length + ueberholt.length);

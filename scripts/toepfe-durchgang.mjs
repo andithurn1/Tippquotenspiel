@@ -187,3 +187,9 @@ if (!alle.length) {
   console.log("  ⚠️ Für jeden Eintrag gilt: anschließen, entfernen, oder mit einem SATZ");
   console.log("     in `GEDULDET` begründen.\n");
 }
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+melde("toepfe", alle.length);

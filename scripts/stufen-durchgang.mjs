@@ -121,3 +121,9 @@ if (ohneUi.length) {
   console.log("  ✅ Jedes Regel-Feld kommt in mindestens einer Oberfläche vor.");
 }
 console.log();
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+melde("stufen", fehlt.length + ohneUi.length + ueberholt.length);

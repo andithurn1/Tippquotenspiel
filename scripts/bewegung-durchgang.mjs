@@ -233,4 +233,13 @@ if (paintFunde.length) {
 }
 
 console.log(`\n${trennlinie}\n`);
-process.exit(fehler ? 1 : 0);
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+// ⚠️ Hier stand ein `process.exit(fehler ? 1 : 0)` — es schnitt die
+// Schlusszeile ab, BEVOR sie geschrieben war. `melde` setzt stattdessen
+// `process.exitCode`; der Rückgabewert bleibt derselbe, die Ausgabe kommt
+// vollständig an. Genau dafür gibt es die Unterscheidung.
+melde("bewegung", fehler ? Math.max(1, layoutFunde.length + festeDauern.length) : 0);

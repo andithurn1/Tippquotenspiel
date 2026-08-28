@@ -370,3 +370,13 @@ if (!alleBefunde.length) {
   console.log("     Label-Kataloge) und darf lange stehen bleiben.");
 }
 console.log();
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+// 🔴 NUR die erste Gruppe zählt als Fund. Die anderen drei sind
+// ausdrücklich geduldet (Kopf dieser Datei: „darf lange stehen bleiben") —
+// sie den Sammel-Lauf röten zu lassen hieße, ihn dauerhaft rot zu haben,
+// und ein dauerhaft roter Lauf wird nicht mehr gelesen.
+melde("tot", alleBefunde.filter((b) => rang(b) === 0).length);

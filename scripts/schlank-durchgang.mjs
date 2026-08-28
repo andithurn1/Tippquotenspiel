@@ -117,3 +117,9 @@ if (!funde.length) {
   console.log("  ⚠️ Entweder voll laden (und den Grund in `MIT_GRUND` schreiben), oder");
   console.log("     den Zugriff entfernen.\n");
 }
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+melde("schlank", funde.length);

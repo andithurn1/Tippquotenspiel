@@ -115,3 +115,9 @@ console.log(`  Ergebnis: ${a.funde.length} Funde · ${a.unerklaert.length} unerk
 console.log();
 
 process.exitCode = a.funde.length || a.unerklaert.length || ueberholt.length || ausUeberholt.length ? 1 : 0;
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+melde("einstellbar", a.funde.length + a.unerklaert.length + ueberholt.length + ausUeberholt.length);

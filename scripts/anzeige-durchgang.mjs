@@ -36,6 +36,11 @@ import {
 import { breakdown } from "../src/lib/breakdown.js";
 import { nearPayouts } from "../src/lib/nearResults.js";
 
+// Wie oft hat eine Ebene NICHTS bewegt, obwohl sie sollte. Modulweit, weil
+// die Meldung tief in einer Schleife entsteht und die Schlusszeile am
+// Dateiende steht.
+let nichtsGegriffen = 0;
+
 // Eigener Zufall statt `seeded.js`: dort steht Spielstand (Joker-Spieltage,
 // Ersatz-Tipps), der nicht zum Streuen von Messproben herhalten soll.
 function makeRng(seed) {
@@ -598,5 +603,12 @@ for (const [name, extra, opt = {}] of varianten) {
     + "   ·   " + (gegriffen.length
       ? "wirksam: " + gegriffen.join("+")
       : (opt.leerErwartet ? "keine Ebene aktiv (so erwartet)" : "⚠️ NICHTS GEGRIFFEN")));
+  if (!gegriffen.length && !opt.leerErwartet) nichtsGegriffen++;
 }
 console.log();
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+melde("anzeige", nichtsGegriffen);

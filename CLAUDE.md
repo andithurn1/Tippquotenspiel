@@ -469,6 +469,19 @@ Was-wäre-wenn) — dann aber mit den vier Antworten oben als Eingabe.
 
 ### 🔴 Abnahmen statt Tests — wer eine Mechanik ergänzt, geht sie ALLE durch
 
+⚡ **Seit 27.08.2026 gibt es dafür EIN Kommando: `npm run abnahmen`.** Es
+läuft alle durch (~30 s) und gibt eine Tabelle aus. **Bitte das nehmen** statt
+einzeln zu tippen — in der Praxis tippt man drei und vergisst vier.
+
+🔴 **Und der Grund, warum es das vorher nicht gab, ist selbst ein Befund:** von
+13 Durchgängen setzten **9 keinen Rückgabewert**. Sie fanden etwas, schrieben
+es hin und beendeten sich mit 0 — kein `&&` brach ab, keine Kette schlug an.
+Jeder endet jetzt mit einer maschinenlesbaren Zeile (`ABNAHME <name>: ok`), und
+`abnahmen.test.js` hält fest, dass keiner sie wieder verliert.
+
+⚠️ **Zwei laufen bewusst NICHT mit:** `balance` (stillgelegt, Endphase) und
+`bereit` (Bericht für Andi, kein Urteil über den Code).
+
 Ein Test fragt „ist es kaputt". Diese fünf fragen etwas anderes, und **keine
 kann die Frage der anderen beantworten** — jede von ihnen ist aus einem Fund
 entstanden, den die beiden anderen nicht gesehen haben.

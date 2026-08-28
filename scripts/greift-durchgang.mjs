@@ -45,6 +45,13 @@ import { zeitachse, rundenSchluessel } from "../src/lib/zeitachse.js";
 import { readFileSync } from "node:fs";
 import { regelFelder } from "../src/lib/stufenAbdeckung.js";
 
+// Funde, die in einem inneren Block entstehen und die Schlusszeile am
+// Dateiende trotzdem erreichen müssen (`taubeTore`, `abweichungen`,
+// verworfene Messfälle). ⚠️ Eine VERWORFENE Einstellung ist der
+// gefährlichste Fund dieses Durchgangs: ein Tippfehler im Feldnamen sieht
+// genauso aus wie eine tote Einstellung.
+let funde = 0;
+
 const blTeams = Object.keys(LIGEN.find((l) => l.key === "bl").ratings);
 const plTeams = Object.keys(LIGEN.find((l) => l.key === "pl").ratings);
 const SPIELER = ["u-du", "u-lena", "u-kemal"];
@@ -306,6 +313,7 @@ for (const [name, extra, opt = {}] of FAELLE) {
   // statt die Regel.
   if (!kommtDurch(extra, opt.gegen)) {
     console.log(`  ${name.padEnd(26)} ⚠️  EINSTELLUNG VERWORFEN — der Messfall trifft das Regelwerk nicht`);
+    funde++;
     verworfen.push(name);
     continue;
   }
@@ -453,6 +461,7 @@ for (const [name, eintrag, opt = {}] of EREIGNIS_FAELLE) {
   // Auch hier: kommt die Einstellung überhaupt durch `sanitizeRules`?
   if (!sanitizeRules({ ...DEFAULT_RULES, ereignisse: an }).ereignisse.aktive.length) {
     console.log(`  ${name.padEnd(26)} ⚠️  EINSTELLUNG VERWORFEN — Feldname prüfen`);
+    funde++;
     stumm.push(`${name} (verworfen)`);
     continue;
   }
@@ -845,6 +854,7 @@ for (const [name, vorgabe, extrem, einheit] of GATE_FAELLE) {
 }
 
 console.log(`\n${"-".repeat(88)}`);
+funde += taubeTore.length;
 if (taubeTore.length) {
   console.log("  ⚠️ Diese Tore lassen bei jeder Einstellung dasselbe durch:");
   for (const t of taubeTore) console.log(`     - ${t}`);
@@ -901,6 +911,7 @@ console.log();
   }
 
   console.log(`\n${"-".repeat(88)}`);
+  funde += abweichungen.length;
   if (abweichungen.length) {
     console.log("  ⚠️ Diese Einstellungen kommen in der Runde NICHT an:");
     for (const a of abweichungen) console.log(`     - ${a}`);
@@ -914,3 +925,9 @@ console.log();
   }
   console.log();
 }
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+melde("greift", funde);

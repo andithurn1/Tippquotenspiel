@@ -186,3 +186,9 @@ if (ohne.length === 0) {
   console.log("     Sie soll schrumpfen, nicht sofort leer sein.");
 }
 console.log("");
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+melde("detail", ohne.length);

@@ -35,6 +35,10 @@ import { DEFAULT_RULES, sanitizeRules, projectTip, scoreTip } from "../src/lib/e
 import { breakdown } from "../src/lib/breakdown.js";
 import { LIGEN } from "../src/lib/ligen.js";
 
+// Funde, die in einem inneren Block entstehen und die Schlusszeile am
+// Dateiende trotzdem erreichen müssen.
+let zusaetzlicheFunde = 0;
+
 const blTeams = Object.keys(LIGEN.find((l) => l.key === "bl").ratings);
 const SPIELER = Array.from({ length: 8 }, (_, i) => `u-${i}`);
 
@@ -363,6 +367,8 @@ console.log(`${"=".repeat(88)}\n`);
     console.log("  ⚠️ Die Rundenansicht zeigt etwas anderes, als gewertet wird:");
     for (const b of befunde3) console.log(`     - ${b}`);
     process.exitCode = 1;
+    // Für die Schlusszeile am Dateiende — `befunde3` lebt nur in diesem Block.
+    zusaetzlicheFunde += befunde3.length;
   } else {
     console.log("  ✅ Übersicht und Wertung meinen dieselbe Runde.");
   }
@@ -372,3 +378,9 @@ console.log(`${"=".repeat(88)}\n`);
   console.log("  ℹ️ „—“ bei Stand = dieser Zuschnitt führt weder Münzen noch Narren.");
   console.log();
 }
+
+// ── Die Schlusszeile für den Sammel-Lauf ────────────────────
+// ⚠️ Der Import steht hier unten und nicht oben: ESM hebt ihn ohnehin, und
+// ein Einfügen weiter oben zerreißt mehrzeilige Import-Blöcke.
+import { melde } from "./abnahme.mjs";
+melde("gleich", befunde.length + zusaetzlicheFunde);
