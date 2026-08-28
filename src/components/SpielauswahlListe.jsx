@@ -50,7 +50,7 @@ export default function SpielauswahlListe({ spiele, onChange }) {
   useEffect(() => {
     if (!an || matches) return;
     let live = true;
-    getStore().listMatches()
+    getStore().listMatches(null, { schlank: true })
       .then((m) => { if (live) setMatches(m ?? []); })
       .catch(() => { if (live) setMatches([]); });
     return () => { live = false; };

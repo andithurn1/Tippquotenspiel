@@ -54,7 +54,7 @@ export default function MeinRad() {
       getStore().getRound(roundId),
       // ⚠️ Die Spiele DIESER Runde: die Zeitachse unten muss dieselbe sein wie
       // im Store, sonst liegt die Drehung auf einem anderen Runden-Spieltag.
-      getStore().listRoundMatches(roundId),
+      getStore().listRoundMatches(roundId, { schlank: true }),
       getStore().getDrehradZiehungen(roundId),
     ]).then(([round, ms, rad]) => {
       if (!live) return;

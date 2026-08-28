@@ -40,6 +40,7 @@ import { wettbewerbVon, DEFAULT_WETTBEWERB } from "./wettbewerbe";
 import { fremdEinsaetze, familieAn } from "./fremdjoker";
 import { rundenSpiele as rundenSpieleVon, rundenAuswahl } from "./roundStatus";
 import { grobeVorauswahl, passtGrob } from "./spielauswahl";
+import { ohneSchnappschuss } from "./schnappschuss";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { punkteJeSpieltag } from "./spieltagsPunkte";
 import { darfSaisonTippen } from "./saisonFenster";
@@ -424,9 +425,15 @@ export function createMockStore() {
     // Sie wird trotzdem ANGEWENDET und nicht ignoriert: sonst verhielten sich
     // die beiden Stores verschieden, und ein Fehler in der Vorauswahl fiele
     // ausgerechnet dort nicht auf, wo alle Tests laufen.
-    async listMatches(grob = null) {
+    // `schlank: true` laesst den SCHNAPPSCHUSS weg — siehe die ausfuehrliche
+    // Begruendung in `store.supabase.js` (dort spart es echte Bytes auf der
+    // Leitung, hier nur Speicher). 🔴 Wichtiger ist, dass BEIDE Stores es
+    // gleich tun: sonst faellt ein versehentlicher Schnappschuss-Zugriff in
+    // der Entwicklung nicht auf und erst live.
+    async listMatches(grob = null, { schlank = false } = {}) {
       const alle = [...matches.values()];
-      return grob?.wettbewerbe ? alle.filter((m) => passtGrob(m, grob)) : alle;
+      const gefiltert = grob?.wettbewerbe ? alle.filter((m) => passtGrob(m, grob)) : alle;
+      return schlank ? gefiltert.map(ohneSchnappschuss) : gefiltert;
     },
 
     // 🔴 Die Spiele DIESER RUNDE — der ganze Katalog ist etwas anderes.
@@ -442,9 +449,10 @@ export function createMockStore() {
     // Runde. Beide Zahlen waren gleichzeitig im Umlauf: Spielwahl, Münz- und
     // Narrenstand rechneten über die gefilterten Spiele, Store, Tippabgabe,
     // Rad und Freigaben über den Katalog.
-    async listRoundMatches(roundId) {
+    async listRoundMatches(roundId, { schlank = false } = {}) {
       const round = rounds.get(roundId);
-      return rundenSpieleVon([...matches.values()], round);
+      const spiele = rundenSpieleVon([...matches.values()], round);
+      return schlank ? spiele.map(ohneSchnappschuss) : spiele;
     },
     async getMatch(id) { return matches.get(id) ?? null; },
 

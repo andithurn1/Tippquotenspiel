@@ -63,7 +63,7 @@ export default function MeineJoker() {
       getStore().getRound(roundId),
       // Die Spiele DIESER Runde — die Achse unten muss dieselbe sein wie im
       // Store, sonst zählt diese Ansicht andere Spieltage als die Wertung.
-      getStore().listRoundMatches(roundId),
+      getStore().listRoundMatches(roundId, { schlank: true }),
       getStore().listTips({ roundId }),
       getStore().getLeaderboard(roundId),
       getStore().getRoundEntries(roundId),

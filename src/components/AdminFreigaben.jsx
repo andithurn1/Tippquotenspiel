@@ -47,7 +47,7 @@ export default function AdminFreigaben() {
       getStore().getRound(roundId),
       // ⚠️ Die Spiele DIESER Runde — eine Freigabe gilt für einen Runden-Spieltag,
       // und der zählt über die Spiele der Runde (siehe `listRoundMatches`).
-      getStore().listRoundMatches(roundId),
+      getStore().listRoundMatches(roundId, { schlank: true }),
       getStore().listMembers(roundId), getStore().listAdminFreigaben({ roundId }),
     ]);
     setRules(sanitizeRules(round?.rules ?? DEFAULT_RULES));

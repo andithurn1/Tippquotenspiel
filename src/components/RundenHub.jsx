@@ -121,7 +121,7 @@ export default function RundenHub() {
     Promise.all([
       // 🔴 `listRoundMatches`: die Regel „welche Spiele gehören zur Runde"
       // hat EINE Stelle (Runden-Schicht, Frage 1). Hier lag sie nachgebaut.
-      getStore().getRound(roundId), getStore().listRoundMatches(roundId), getStore().listTips({ roundId }),
+      getStore().getRound(roundId), getStore().listRoundMatches(roundId, { schlank: true }), getStore().listTips({ roundId }),
       getStore().getLeaderboardHistory(roundId),
       // Narren vom Glücksrad — dieselbe Quelle wie in der Tippabgabe.
       getStore().getDrehradBelohnungen?.(roundId) ?? Promise.resolve(null),

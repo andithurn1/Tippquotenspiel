@@ -76,7 +76,7 @@ export default function RundenUebersicht() {
     let live = true;
     Promise.all([
       getStore().getRound(roundId),
-      getStore().listRoundMatches(roundId),
+      getStore().listRoundMatches(roundId, { schlank: true }),
       getStore().listTips({ roundId }),
       getStore().getLeaderboard(roundId),
       getStore().getRoundEntries(roundId),

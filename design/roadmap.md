@@ -226,15 +226,54 @@ holt ALLE Spalten ALLER Spiele, obwohl fast jeder Screen nur `id`, `kickoff`,
 `home`, `away`, `matchday` und `wettbewerb` braucht. Der fette Teil ist
 `snapshot` — und den braucht nur die Tippabgabe, für EIN Spiel.
 
-**Der nächste Schritt, und er braucht mehr Sorgfalt als der erste:** die
-sieben Leser des Schnappschusses einzeln durchgehen und fragen, WELCHEN Teil
-sie brauchen. `ausloeser.js` will `winner`, `saisonwetten.js` will die
-Zuordnung Spieler → Verein. Beides sind Bruchteile von `players`. Wenn jeder
-Leser seinen Teil benennt, lässt sich die Liste auf genau diese Felder
-schneiden.
+### ✅ Erledigt am 27.08.2026: der schlanke Katalog
+
+**Die Zahl zuerst** (Mock-Katalog, 1943 Spiele):
+
+| | |
+|---|---|
+| voll | **3 138 KB** |
+| schlank (ohne Schnappschuss) | **467 KB** |
+| gespart | **85 %** |
+
+🔴 **Warum das gefahrlos geht, und warum nur deshalb:** die WERTUNG liest den
+Schnappschuss NIE aus dem Katalog. Sie nimmt den, der am TIPP hängt
+(`snapshot: t.snapshot` in `eintragVon`, beide Stores) — eingefroren zum
+Zeitpunkt der Abgabe. Das ist keine Optimierung, sondern eine Fairness-Regel:
+eine nachträglich veränderte Quote wäre genau die Falle aus CLAUDE.md.
+
+**Gezählt:** von 19 Screens, die Spiele laden, fassen **14 den Schnappschuss
+überhaupt nicht an**. Sie laden jetzt `{ schlank: true }`; in Supabase wird die
+Spaltenliste eingeschränkt, es spart also echte Bytes auf der Leitung und nicht
+erst im Speicher.
+
+⚠️ **Die fünf übrigen haben je einen Satz** (`MIT_GRUND` in
+`scripts/schlank-durchgang.mjs`): Tippabgabe (Raster + Torschützen),
+Spielwahl (Quoten in der Liste), SaisonTipps (Spieler → Verein), Historie
+(rechnet Spieltage nach), LigaSonderregeln (Beispielquoten).
+
+🔴 **Gegen die Warnung darunter zwei Sperren:**
+1. `ohneSchnappschuss` **löscht** das Feld, statt es auf `null` zu setzen. Ein
+   `null` sieht aus wie „kein Schnappschuss vorhanden" und rechnet weiter; ein
+   fehlendes Feld fällt beim ersten Zugriff auf.
+2. **`npm run schlank`** misst, ob ein schlank ladender Screen doch zugreift —
+   direkt oder indirekt über eine Funktion, die einen Schnappschuss liest.
+
+**Wer welchen Teil braucht**, steht jetzt als Liste in
+`src/lib/schnappschuss.js` (`SCHNAPPSCHUSS_LESER`) — das war die Frage, die
+hier offen stand.
+
+### 🔴 Was danach noch ginge (feiner schneiden)
+
+Der Schnitt ist heute **ganz oder gar nicht**. Feiner ginge: `ausloeser.js`
+will nur `winner`, `saisonwetten.js` nur die Zuordnung Spieler → Verein —
+beides Bruchteile von `players`.
 
 ⛔ **Nicht vorher.** Ein weggelassenes Feld stürzt nicht ab — es zeigt still
-etwas Falsches, und das fällt frühestens Wochen später auf.
+etwas Falsches, und das fällt frühestens Wochen später auf. ⚠️ Und die Liste
+in `schnappschuss.js` zeigt, warum es teuer wird: `players` wird an **vier**
+ganz verschiedenen Stellen gebraucht, ein Teilschnitt bräuchte also vier
+Zusagen statt einer.
 
 ### ⚠️ Die Bundle-Größe: groß, aber nicht das Problem
 

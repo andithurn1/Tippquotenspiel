@@ -33,7 +33,7 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
 
   useEffect(() => {
     let live = true;
-    getStore().listMatches()
+    getStore().listMatches(null, { schlank: true })
       .then((ms) => { if (live) setMatches(ms); })
       .catch(() => { if (live) setMatches([]); });
     return () => { live = false; };

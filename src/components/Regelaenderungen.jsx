@@ -52,7 +52,7 @@ export default function Regelaenderungen() {
       getStore().getRound(roundId),
       // ⚠️ Die Spiele DIESER Runde: der Wirkungs-Spieltag eines Beschlusses zählt
       // über die Zeitachse der Runde (siehe `listRoundMatches`).
-      getStore().listRoundMatches(roundId),
+      getStore().listRoundMatches(roundId, { schlank: true }),
       getStore().listMembers(roundId), getStore().listAntraege({ roundId }),
     ]);
     setRules(sanitizeRules(round?.rules ?? DEFAULT_RULES));

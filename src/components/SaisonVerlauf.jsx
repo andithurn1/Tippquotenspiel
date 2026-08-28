@@ -52,7 +52,7 @@ export default function SaisonVerlauf() {
       getStore().getRound(roundId),
       // Die Spiele DIESER Runde — sonst zählt der Fahrplan andere Spieltage
       // als der Store (Architektur-Regel 5).
-      getStore().listRoundMatches(roundId),
+      getStore().listRoundMatches(roundId, { schlank: true }),
       getStore().listTips({ roundId }),
       getStore().getLeaderboard(roundId),
       getStore().getLeaderboardHistory(roundId),

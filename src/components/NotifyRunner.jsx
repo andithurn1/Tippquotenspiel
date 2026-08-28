@@ -77,7 +77,7 @@ export default function NotifyRunner() {
         // soll dafür auch keine Abfrage auslösen. Sonst kostet eine
         // abgeschaltete Meldung trotzdem eine Runde zur Datenbank.
         const [matches, tips, eingriffe, eintraege, verlauf] = await Promise.all([
-          getStore().listRoundMatches(roundId),
+          getStore().listRoundMatches(roundId, { schlank: true }),
           getStore().listTips({ roundId }),
           prefs.geblockt
             ? (getStore().getFremdEingriffe?.(roundId) ?? Promise.resolve([]))

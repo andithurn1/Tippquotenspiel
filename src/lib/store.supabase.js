@@ -20,6 +20,7 @@ import { withSaisonPunkte } from "./saisonBoard";
 import { scoreSaison } from "./saisonwetten";
 import { rundenSpiele as rundenSpieleVon, rundenAuswahl } from "./roundStatus";
 import { grobeVorauswahl } from "./spielauswahl";
+import { ohneSchnappschuss } from "./schnappschuss";
 import { ersatzEintraege } from "./versaeumnisBoard";
 import { withDrehradPunkte, drehradZiehungen, drehradBelohnungen } from "./drehradBoard";
 import { DEFAULT_WETTBEWERB, wettbewerbVon } from "./wettbewerbe";
@@ -47,6 +48,19 @@ const mapMatch = (m) => m && ({
   matchday: m.matchday, snapshot: m.snapshot, result: m.result,
   wettbewerb: m.wettbewerb, phase: m.phase,
 });
+
+// Die Spalten, die ein Spiel OHNE Schnappschuss ausmachen.
+//
+// 🔴 Der Schnappschuss ist der fette Teil: 43 % `players`, 14 % `correctScore`
+// (gemessen, design/roadmap.md). 14 von 18 Screens, die Spiele laden, fassen
+// ihn nie an — sie zahlen ihn trotzdem bei jedem Oeffnen.
+//
+// ⚠️ Diese Liste MUSS zu `mapMatch` passen, minus `snapshot`. Ein hier
+// vergessenes Feld faellt nicht auf: `mapMatch` liest `undefined` und schreibt
+// es brav weiter. `storeParitaet.test.js` haelt das fest.
+const SCHLANKE_SPALTEN = "id, home, away, kickoff, matchday, result, wettbewerb, phase";
+
+
 
 // Ein Tipp → der Roh-Eintrag, aus dem die Engine rechnet. EINE Stelle, weil
 // Leaderboard, Verlauf und Rekorde exakt dieselben Felder brauchen — vorher
@@ -132,9 +146,12 @@ export function createSupabaseStore() {
     // grobe Vorauswahl steht erst fest, wenn das Regelwerk der Runde da ist.
     // Der Katalog-Abruf wartet dadurch auf die Runde — das kostet einen
     // Rundlauf und spart bei einer Liga-Runde 84 % der Übertragung.
-    async listRoundMatches(roundId) {
+    async listRoundMatches(roundId, { schlank = false } = {}) {
       const round = await this.getRound(roundId);
-      const matches = await this.listMatches(grobeVorauswahl(round?.rules?.spiele));
+      // ⚠️ `schlank` wird DURCHGEREICHT, nicht hinterher abgeschnitten: nur so
+      // spart es auf der Leitung. Hinterher gefiltert waeren die 0,49 MB
+      // laengst geladen, und die Ersparnis waere eine Illusion.
+      const matches = await this.listMatches(grobeVorauswahl(round?.rules?.spiele), { schlank });
       return rundenSpieleVon(matches, round);
     },
 
@@ -170,15 +187,38 @@ export function createSupabaseStore() {
     // für „alles". ⚠️ Es ist KEIN Filter im Sinne der Wertung: die eigentliche
     // Auswahl trifft weiterhin `rundenSpieleVon`. Warum das eine Obermenge
     // bleibt und wie es bewiesen wird, steht bei `grobeVorauswahl`.
-    async listMatches(grob = null) {
+    // `schlank: true` laesst den SCHNAPPSCHUSS weg — und das ist die groesste
+    // Einzelersparnis, die dieser Store hat.
+    //
+    // 🔴 Gemessen (design/roadmap.md, Abschnitt Performance): ein Katalog wiegt
+    // 0,49 MB, davon sind **43 % `players`** (Kader mit Torschuetzenquoten) und
+    // **14 % `correctScore`** (das Ergebnis-Raster). Beides braucht in voller
+    // Laenge nur die Tippabgabe, und zwar fuer EIN Spiel — 14 von 18 Screens,
+    // die Spiele laden, fassen den Schnappschuss ueberhaupt nicht an.
+    //
+    // ⚠️ Und der Grund, warum das gefahrlos geht: die WERTUNG liest den
+    // Schnappschuss nie aus dem Katalog. Sie nimmt den, der am Tipp haengt
+    // (`snapshot: t.snapshot` in `eintragVon`) — eingefroren zum Zeitpunkt der
+    // Abgabe, denn eine nachtraeglich veraenderte Quote waere genau die Falle,
+    // vor der CLAUDE.md warnt.
+    //
+    // 🔴 Weggelassen wird das Feld GANZ, nicht auf `null` gesetzt. Ein `null`
+    // sieht aus wie „kein Schnappschuss vorhanden" und rechnet still weiter;
+    // ein fehlendes Feld faellt beim ersten Zugriff auf. Die Roadmap warnt
+    // genau davor: „Ein weggelassenes Feld stuerzt nicht ab — es zeigt still
+    // etwas Falsches."
+    async listMatches(grob = null, { schlank = false } = {}) {
       const liste = grob?.wettbewerbe ?? null;
-      const schluessel = liste ? [...liste].sort().join(",") : "*";
+      const schluessel = `${liste ? [...liste].sort().join(",") : "*"}${schlank ? "|schlank" : ""}`;
       const jetzt = Date.now();
       const da = kataloge.get(schluessel);
       if (da && jetzt - da.zeit < KATALOG_FRIST_MS) return [...(await da.versprechen)];
 
       const versprechen = (async () => {
-        let q = sb.from("matches").select("*");
+        // ⚠️ Die Spaltenliste MUSS zu `mapMatch` passen. Ein hier vergessenes
+        // Feld faellt nicht auf: `mapMatch` liest `undefined` und schreibt es
+        // brav weiter.
+        let q = sb.from("matches").select(schlank ? SCHLANKE_SPALTEN : "*");
         // 🔴 `or` und nicht `in`: ein Spiel OHNE Wettbewerb muss durchkommen,
         // genau wie in `passtSpiel` („sonst fielen Altdaten still aus der
         // Runde"). Ein reines `in` wäre in der Datenbank strenger als im

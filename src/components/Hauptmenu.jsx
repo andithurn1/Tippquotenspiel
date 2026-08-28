@@ -39,7 +39,7 @@ export default function Hauptmenu() {
   useEffect(() => {
     let live = true;
     if (!user) { setRounds([]); return; }
-    Promise.all([getStore().listRoundsForUser(user.id), getStore().listMatches()]).then(async ([myRounds, matches]) => {
+    Promise.all([getStore().listRoundsForUser(user.id), getStore().listMatches(null, { schlank: true })]).then(async ([myRounds, matches]) => {
       if (!live) return;
       const withStatus = await Promise.all(myRounds.map(async (r) => {
         // ⚠️ Hier BEWUSST nachgebaut statt `listRoundMatches(r.id)`: dieser

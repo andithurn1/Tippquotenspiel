@@ -32,7 +32,8 @@
     "build:app": "node scripts/app-build.mjs",
     "app:sync": "npm run build:app && npx cap sync android",
     "app:oeffnen": "npx cap open android",
-    "toepfe": "vite-node scripts/toepfe-durchgang.mjs"
+    "toepfe": "vite-node scripts/toepfe-durchgang.mjs",
+    "schlank": "vite-node scripts/schlank-durchgang.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.0",

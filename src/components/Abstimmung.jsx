@@ -24,7 +24,7 @@ export default function Abstimmung() {
     const [round, ms, vs] = await Promise.all([
       // ⚠️ Die Spiele DIESER Runde — abgestimmt wird über Spieltage, die es in
       // der Runde auch gibt.
-      getStore().getRound(roundId), getStore().listRoundMatches(roundId), getStore().listVotes({ roundId }),
+      getStore().getRound(roundId), getStore().listRoundMatches(roundId, { schlank: true }), getStore().listVotes({ roundId }),
     ]);
     setRules(round?.rules ?? DEFAULT_RULES);
     setMatches(ms);
