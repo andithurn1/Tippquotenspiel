@@ -1005,6 +1005,16 @@ export default function Spielerstellung() {
                                 };
                               });
                             }}
+                            // Und die Vereins-Gewichte dieser Liga — dasselbe
+                            // Feld wie im Modifikatoren-Sondermenü.
+                            teamMods={rules.teamMods}
+                            onTeams={(teams) => {
+                              touched();
+                              setRules((r) => ({
+                                ...r,
+                                teamMods: { ...(r.teamMods ?? {}), teams },
+                              }));
+                            }}
                           />
                         )}
                       </>

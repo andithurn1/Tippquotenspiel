@@ -6,6 +6,7 @@ import { BIGGAME_LIMITS } from "@/lib/bigGame";
 import { alleVereine } from "@/lib/ligen";
 import { C, MONO, RUND } from "@/lib/theme";
 import { zahl, fmtFaktor, fmtFaktorOderAus } from "@/lib/format";
+import { naechsteStufe } from "@/lib/teamGewicht";
 import { Slider, Toggle, GrosseZeile } from "@/components/Eingaben";
 import TabellenBonus from "@/components/TabellenBonus";
 import Rechte from "@/components/Rechte";
@@ -44,7 +45,9 @@ const ALL_TEAMS = alleVereine();
 // aufwärts — damit war ein Dämpfer über die Oberfläche gar nicht einstellbar,
 // obwohl die Logik ihn kann. Genau die tote Kontaktstelle, die dieser Baukasten
 // nicht haben darf.
-const TEAM_STUFEN = [1.25, 1.5, 2, 0.75, 0.5, 1];
+// Die Stufenleiter steht seit dem 29.08.2026 in `src/lib/teamGewicht.js` —
+// seit die Sonderregeln je Liga dieselbe Einstellung anbieten, gibt es zwei
+// Oberflaechen fuer einen Wert, und zwei Leitern waeren zwei Verhalten.
 
 export function modifikatorenStand(rules) {
   const tm = rules?.teamMods || { derbyFaktor: 1, teams: {} };
@@ -79,12 +82,7 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
   // Der nächste Wert wird IM Updater aus dem vorherigen Stand berechnet —
   // sonst lesen mehrere schnelle Klicks denselben alten Wert.
   const cycleTeamFaktor = (team) => {
-    const teams = { ...tmTeams };
-    const jetzt = teams[team] ?? 1;
-    const i = TEAM_STUFEN.indexOf(jetzt);
-    const naechster = TEAM_STUFEN[(i + 1) % TEAM_STUFEN.length];
-    if (naechster !== 1) teams[team] = naechster; else delete teams[team];
-    onChange({ teamMods: { ...tm, teams } });
+    onChange({ teamMods: { ...tm, teams: naechsteStufe(tmTeams, team) } });
   };
 
   // 🔴 Bis zum 25.08.2026 kehrte diese Funktion hier mit einer Bezahlschranke

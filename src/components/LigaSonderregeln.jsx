@@ -34,6 +34,8 @@ import { AUSWAHL_LIMITS, TEAM_MODI } from "@/lib/spielauswahl";
 import { TAPZIEL } from "@/lib/tapziel";
 import Feinheiten from "@/components/Feinheiten";
 import { WETTBEWERB_LIMITS, sanitizeWettbewerbe, anteile } from "@/lib/wettbewerbGewicht";
+import { teamFaktor, naechsteStufe } from "@/lib/teamGewicht";
+import { vereineVon } from "@/lib/ligen";
 import { fmtFaktorOderAus } from "@/lib/format";
 
 // Unsere Voreinstellung für den Abstiegskampf. Keine Balance-Aussage — eine
@@ -70,6 +72,10 @@ export default function LigaSonderregeln({
   // als Gesamtübersicht bestehen, weil erst dort die Anteile ALLER Wettbewerbe
   // nebeneinander stehen. Fehlt `onAufschlag`, verschwindet der Block einfach.
   rules = null, onAufschlag = null,
+  // Der zweite Halbsatz von MOD5: einzelne VEREINE dieser Liga gewichten.
+  // ⚠️ Wieder dasselbe Feld wie im Modifikatoren-Sondermenü
+  // (`rules.teamMods.teams`) und dieselbe Stufenleiter (`lib/teamGewicht.js`).
+  teamMods = null, onTeams = null,
 }) {
   const [matches, setMatches] = useState(null);
 
@@ -107,6 +113,15 @@ export default function LigaSonderregeln({
     return anteile(matches, { ...rules, wettbewerbe: gewichte })
       .find((x) => x.key === wettbewerb) ?? null;
   }, [matches, rules, gewichte, wettbewerb]);
+
+  // Die Vereine DIESER Liga — aus derselben Quelle wie die Auswahl darüber.
+  const vereine = useMemo(() => (onTeams ? vereineVon(wettbewerb) : []), [onTeams, wettbewerb]);
+  // Gezählt wird nur, was zu DIESER Liga gehört: die Standzeile soll nicht
+  // Vereine mitzählen, die in einer anderen Liga gewichtet wurden.
+  const gewichtet = useMemo(
+    () => vereine.filter((v) => teamFaktor(teamMods?.teams, v) !== 1).length,
+    [vereine, teamMods],
+  );
 
   const derbys = useMemo(() => (matches ?? [])
     .filter((m) => m.wettbewerb === wettbewerb && m.snapshot?.derby)
@@ -194,6 +209,56 @@ export default function LigaSonderregeln({
             addiert, nicht multipliziert, und vom Deckel begrenzt. Alle
             Wettbewerbe nebeneinander siehst du unter „Wettbewerbe gewichten“.
           </div>
+        </div>
+      )}
+
+      {/* ── Einzelne Vereine dieser Liga (MOD5, zweiter Halbsatz) ──────
+          🔴 **Bewusst eine EIGENE Liste und kein zweiter Modus auf den
+          Auswahl-Chips darüber.** Dieselben Knöpfe je nach Zustand einmal
+          „auswählen" und einmal „gewichten" zu lassen, ist die Sorte
+          Bedienung, bei der man den Modus übersieht und sich die Runde
+          zerschießt — auf dem Handy erst recht.
+
+          ⚠️ Hinter `Feinheiten`, weil Auswählen das Gängige ist und
+          Gewichten die Feinheit (Andis SA6). */}
+      {onTeams && vereine.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <Feinheiten
+            titel={`Feinheiten: einzelne Vereine aus ${label} gewichten`}
+            zusammenfassung={gewichtet ? `${gewichtet} gewichtet` : "keiner"}
+            abweichend={gewichtet > 0}
+          >
+            <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "2px 0 8px", lineHeight: 1.45 }}>
+              Ein Klick schaltet weiter: ×1,25 · ×1,5 · ×2 · ×0,75 · ×0,5 · aus.
+              Gilt für <strong>alle</strong> in der Runde und fällt in denselben
+              Topf wie Derby und Topspiel.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {vereine.map((v) => {
+                const f = teamFaktor(teamMods?.teams, v);
+                const an = f !== 1;
+                return (
+                  <button
+                    key={v}
+                    onClick={() => onTeams(naechsteStufe(teamMods?.teams ?? {}, v))}
+                    title={an ? `zählt ${fmtFaktorOderAus(f)}` : "kein Aufschlag"}
+                    style={{
+                      ...TAPZIEL, cursor: "pointer", fontFamily: "inherit",
+                      fontSize: "0.75rem", padding: "6px 10px", borderRadius: RUND.pille,
+                      background: an ? `${C.akzent}22` : C.surface,
+                      color: an ? C.akzent : C.muted,
+                      border: `1px solid ${an ? C.akzent + "66" : C.line}`,
+                    }}
+                  >
+                    {v}
+                    {an && (
+                      <span style={{ fontFamily: MONO, marginLeft: 6 }}>{fmtFaktorOderAus(f)}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </Feinheiten>
         </div>
       )}
 
