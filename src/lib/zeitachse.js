@@ -327,8 +327,35 @@ export function zeitachse(matches = [], cfg = DEFAULT_ZEITACHSE) {
     for (const m of gruppe) eintraege[idx].spiele.push(m);
   }
 
-  return eintraege.map((e) => ({
+  // 🔴 LEERE FENSTER WERDEN GAR NICHT ERST EIN SPIELTAG (Andi, 29.08.2026)
+  //
+  //  Im Wochen-Modus entsteht in jeder Länderspielpause ein Fenster ohne ein
+  //  einziges Spiel — gemessen an der Creator-Testrunde: 3 von 42.
+  //
+  //  🔴 **Das ist keine Anzeige-Frage, es verschiebt Fristen.** An einem
+  //  Runden-Spieltag hängen Abklingzeiten, Joker-Fenster und Sperren. Zählte
+  //  ein leerer mit, verstriche eine „3 Spieltage"-Sperre teilweise in einer
+  //  Woche, in der niemand tippt — sie wirkte kürzer, als sie aussieht, und
+  //  niemand könnte am Regler ablesen, um wie viel.
+  //
+  //  Andis Entscheidung: leere gar nicht erst führen. Eine „3 Spieltage"-Sperre
+  //  umfasst damit immer drei GESPIELTE Spieltage.
+  //
+  //  ⚠️ Der Pausen-Modus `auffuellen` bleibt trotzdem sinnvoll: er zerlegt eine
+  //  lange Lücke in Wochenfenster, und die davon BESPIELTEN bleiben erhalten.
+  //  Ohne ihn fiele die ganze Pause samt der Spiele dahinter in EINEN Spieltag.
+  const bespielt_ = eintraege.filter((e) => e.spiele.length > 0);
+
+  return bespielt_.map((e, i) => ({
     ...e,
+    // Durchgezählt wird nach dem Aussortieren — sonst hätte die Achse Löcher
+    // („Spieltag 7, 9, 10"), und jede Anzeige müsste die Lücke erklären.
+    nummer: i + 1,
+    // ⚠️ Das Fenster reicht bis zum Beginn des nächsten BESPIELTEN Spieltags.
+    // Sonst klaffte dort, wo ein leeres herausfällt, eine Lücke — und ein
+    // Zeitpunkt darin gehörte zu gar keinem Spieltag.
+    von: i === 0 ? -Infinity : e.von,
+    bis: bespielt_[i + 1]?.von ?? Infinity,
     taktgeber,
     spiele: e.spiele.sort((a, b) => zeit(a) - zeit(b)),
     ligen: ligaSpieltage(e.spiele),
@@ -611,14 +638,20 @@ export function verlaufNachRundenSpieltag(verlauf = [], achse = []) {
 // Genau das, was ohne Achse niemand im Kopf hat.
 // 🔴 Welche Runden-Spieltage tragen überhaupt ein Spiel?
 //
-// `mitPausen` füllt den Rhythmus durch Länderspielpausen hindurch auf, damit
-// „Spieltag 12" auch dann existiert, wenn zwei Wochen nichts läuft. Für die
-// ANZEIGE ist das richtig — für alles, was auf einen Spieltag GELEGT wird
-// (Joker, Rad-Drehung), nicht: gemessen am 05.08.2026 trugen 7 von 42
-// Runden-Spieltagen einer Bundesliga-Runde kein Spiel, und einer davon bekam
-// einen Joker. Der ist unbenutzbar.
+// ⚠️ **Seit dem 29.08.2026 ist das eine SPERRKLINKE, keine Filterung mehr.**
+// `zeitachse()` führt leere Fenster gar nicht erst als Spieltag (Andis
+// Entscheidung — die Begründung steht dort), also gibt diese Funktion in aller
+// Regel schlicht alle Nummern zurück.
 //
-// Wer etwas verteilt, filtert damit vorher — siehe `jokerPlan`s `bespielt`.
+// **Gelöscht wird sie trotzdem nicht, und zwar aus zwei Gründen:** ein Aufrufer
+// kann eine Achse aus einer anderen Quelle bekommen (gespeichert, gefiltert,
+// von Hand gebaut), und die Zusage „was ich verteile, landet auf einem
+// bespielten Spieltag" soll an der Stelle stehen, an der verteilt wird — nicht
+// als stille Annahme über eine Funktion weiter oben.
+//
+// Der Fund, aus dem sie entstand: gemessen am 05.08.2026 trugen 7 von 42
+// Runden-Spieltagen einer Bundesliga-Runde kein Spiel, und einer davon bekam
+// einen Joker. Der war unbenutzbar. Siehe `jokerPlan`s `bespielt`.
 export function bespielteSpieltage(achse = []) {
   return achse.filter((e) => (e.spiele?.length ?? 0) > 0).map((e) => e.nummer);
 }

@@ -60,11 +60,20 @@ describe("Saison-Fahrplan", () => {
     expect(verdeckt.some((z) => z.joker && z.nummer > jetztTag)).toBe(false);
   });
 
-  it("kein Joker fällt auf einen Spieltag ohne Spiele", () => {
+  // 🔴 **Die Zusage ist seit dem 29.08.2026 STÄRKER geworden, nicht schwächer.**
+  // Vorher füllte die Achse Pausen zu leeren Spieltagen auf, und dieser Test
+  // sicherte ab, dass wenigstens kein Joker darauf fällt. Inzwischen gibt es
+  // leere Spieltage gar nicht mehr (Andi, 29.08.2026) — geprüft wird deshalb
+  // direkt das Stärkere.
+  //
+  // ⚠️ Die alte Fassung verlangte ausdrücklich, dass es leere Zeilen GIBT
+  // („sonst prüft dieser Test nichts"). Das war als Schutz vor einem leeren
+  // Test gedacht und ist genau die Zeile, die beim Umbau umfiel. Der Schutz
+  // bleibt — er hängt jetzt nur an etwas, das nicht verschwinden kann.
+  it("es gibt gar keinen Spieltag ohne Spiele — und also auch keinen Joker darauf", () => {
     const zeilen = bauen(regeln());
-    // Die Achse füllt Pausen auf — es MUSS solche Zeilen geben, sonst prüft
-    // dieser Test nichts.
-    expect(zeilen.some((z) => z.spiele === 0)).toBe(true);
+    expect(zeilen.length, "ohne Zeilen prüft dieser Test nichts").toBeGreaterThan(5);
+    expect(zeilen.filter((z) => z.spiele === 0)).toEqual([]);
     for (const z of zeilen) if (z.spiele === 0) expect(z.joker).toBe(false);
   });
 
@@ -119,12 +128,26 @@ describe("aktuellerRundenSpieltag", () => {
   // ⚠️ Bewusst NICHT „das nächste offene Spiel": in der Länderspielpause gibt
   // es tagelang keines, und der Fahrplan stünde auf einem längst gelaufenen
   // Spieltag.
+  // 🔴 **Umgeschrieben am 29.08.2026, und die alte Fassung widersprach dieser
+  // Überschrift.** Sie suchte einen LEEREN Runden-Spieltag und erwartete DESSEN
+  // Nummer — also gerade nicht „den zuletzt begonnenen". Seit leere Fenster gar
+  // nicht mehr als Spieltag geführt werden (Andis Entscheidung, siehe
+  // `zeitachse.js`), fällt eine Pause INNERHALB des letzten bespielten
+  // Spieltags, und die Überschrift ist auch das, was gemessen wird.
   it("in einer Pause bleibt er auf dem zuletzt BEGONNENEN Spieltag", () => {
-    const leer = achse.find((e) => (e.spiele?.length ?? 0) === 0 && e.nummer > 1);
-    expect(leer).toBeDefined();
-    const mitten = Number.isFinite(leer.von) ? leer.von + 36e5 : null;
-    expect(mitten).not.toBeNull();
-    expect(aktuellerRundenSpieltag(achse, MATCHES, mitten)).toBe(leer.nummer);
+    // Die größte Lücke zwischen zwei aufeinanderfolgenden Spieltagen — das ist
+    // die Pause, ohne sie an einem Datum festzunageln.
+    let vorher = null, luecke = 0;
+    for (let i = 0; i < achse.length - 1; i++) {
+      const a = achse[i].spiele.at(-1), b = achse[i + 1].spiele[0];
+      if (!a || !b) continue;
+      const d = new Date(b.kickoff).getTime() - new Date(a.kickoff).getTime();
+      if (d > luecke) { luecke = d; vorher = achse[i]; }
+    }
+    expect(vorher, "es muss überhaupt eine Lücke geben, sonst prüft der Test nichts").toBeDefined();
+    expect(luecke).toBeGreaterThan(8 * 24 * 36e5 / 10);   // mehr als acht Tage
+    const mitten = new Date(vorher.spiele.at(-1).kickoff).getTime() + luecke / 2;
+    expect(aktuellerRundenSpieltag(achse, MATCHES, mitten)).toBe(vorher.nummer);
   });
 
   it("ohne Achse gibt es keinen Spieltag", () => {

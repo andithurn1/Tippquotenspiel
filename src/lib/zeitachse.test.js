@@ -175,10 +175,21 @@ describe("Zuordnung nach Datum (Vorgabe)", () => {
   // zwei Spiele im Oktober und eines vier Monate später nachgeholt.
   const OKT = Date.UTC(2026, 9, 24, 14);
   const FEB = Date.UTC(2027, 1, 17, 19);
+  // ⚠️ **Die Bundesliga-Spiele dazwischen sind kein Beiwerk.** Ohne sie wären
+  // die Wochen zwischen Oktober und Februar leer — und leere Fenster werden
+  // seit dem 29.08.2026 gar nicht erst zu Runden-Spieltagen. Dann gäbe es
+  // zwischen den beiden Terminen NUR EINEN Spieltag, und ein Nachholspiel
+  // könnte gar nicht in einen falschen fallen. Der Fall braucht eine Runde, in
+  // der weitergespielt wird — so wie jede echte.
   const NACHHOLER = [
     { id: "pl10-a", wettbewerb: "pl", matchday: 10, kickoff: new Date(OKT).toISOString() },
     { id: "pl10-b", wettbewerb: "pl", matchday: 10, kickoff: new Date(OKT + 2 * 3600 * 1000).toISOString() },
     { id: "pl10-nach", wettbewerb: "pl", matchday: 10, kickoff: new Date(FEB).toISOString() },
+    // Eine zweite Liga, die durchspielt: je ein Spiel pro Woche dazwischen.
+    ...Array.from({ length: 17 }, (_, i) => ({
+      id: `bl${i + 1}`, wettbewerb: "bl", matchday: i + 1,
+      kickoff: new Date(OKT + (i + 1) * 7 * 24 * 3600 * 1000).toISOString(),
+    })),
   ];
 
   it("ist die Vorgabe — niemand muss sie einschalten", () => {
