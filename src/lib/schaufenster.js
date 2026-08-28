@@ -212,12 +212,21 @@ export function schaufensterRegeln() {
     },
 
     // ── Die Zeitachse der Runde ──
-    // ⚠️ `modus` bleibt „anker“ — siehe `SCHAU_AUSGENOMMEN`. Der Anker ist die
-    // Bundesliga, weil die Runde nur aus Bundesliga-Spielen besteht.
+    // 🔴 `modus: "anker"` steht seit dem 28.08.2026 AUSDRÜCKLICH hier. Vorher
+    // war „anker“ die Vorgabe und stand deshalb in `SCHAU_AUSGENOMMEN`; seit
+    // die Vorgabe `"woche"` ist, wäre dieselbe Zeile ohne Eintrag stillschweigend
+    // etwas anderes geworden. Der Anker ist die Bundesliga, weil die Runde nur
+    // aus Bundesliga-Spielen besteht — und Duell-, Joker- und Spieltagsfenster
+    // dieser Runde sind auf genau diese Einteilung abgestimmt.
     zeitachse: {
       ...DEFAULT_RULES.zeitachse,
+      modus: "anker",
       anker: "bl",
       buendeln: 2,
+      // Die alte Zuordnung als Vorführwert: sie ist hier gefahrlos, weil ein
+      // Anker-Fenster nie mitten durch einen Bundesliga-Spieltag läuft — die
+      // Grenzen sind ja aus dessen eigenen Anpfiffen gebaut.
+      zuordnung: "spieltag",
       pause: "anhaengen",
       pauseAbTagen: 14,
     },
@@ -478,8 +487,7 @@ export const SCHAU_AUSGENOMMEN = {
   "spiele.modus": "„alle“ ist, was die Runde überhaupt füllt; „teams“/„liste“ kürzen sie auf eine Handvoll Spiele.",
   "spiele.teamModus": "Wirkt nur bei `spiele.modus: \"teams\"` — folgt der Zeile darüber.",
   oddsMode: "Eine Aussage über die QUOTEN-QUELLE, keine Spielregel. Die Demo-Daten sind Snapshots.",
-  "zeitachse.modus": "„woche“ ersetzt die ganze Anker-Einteilung, auf die hier Duell-Fenster, Joker-Fenster und Spieltagsgrenzen abgestimmt sind.",
-  "zeitachse.tage": "Nur im Wochen-Modus wirksam — folgt der Zeile darüber.",
+  "zeitachse.tage": "Nur im Wochen-Modus wirksam. Das Schaufenster fährt den Anker-Modus, auf den seine Duell- und Joker-Fenster abgestimmt sind.",
   "zeitachse.endeTag": "Ebenfalls nur im Wochen-Modus wirksam — folgt derselben Zeile. ⚠️ Im Anker-Modus gibt der Taktgeber die Grenze vor, nicht der Kalender.",
   "duell.kosten": "„stattJoker“ verbraucht einen Joker aus demselben Vorrat; dann setzt im Schaufenster niemand mehr einen Fremdjoker ein.",
   "bigGame.festesSpiel": "Keine Einstellung, sondern das ERGEBNIS eines ausgeübten Rechts — eine konkrete matchId eines konkreten Spieltags. Ein Vorführwert wäre ein Spiel, das in der nächsten Saison nicht mehr existiert.",

@@ -18,10 +18,12 @@
 //  angepfiffen wird, gehört dazu — egal aus welcher Liga. Das ist in EINEM Satz
 //  erklärbar, und genau daran hängt, ob ein Spieler dem Ding traut.
 //
-//  Zugeordnet wird immer ein GANZER Liga-Spieltag, nie ein einzelnes Spiel —
-//  ein Bundesliga-Spieltag läuft Freitag bis Sonntag und läge sonst links und
-//  rechts eines Ankerpunkts. Ein halber Spieltag ist der Punkt, an dem aus
-//  einer Anzeige-Frage eine Fairness-Frage wird.
+//  🔴 **Zugeordnet wird seit dem 28.08.2026 nach DATUM** (`zuordnung`, Vorgabe
+//  `"datum"`): jedes Spiel zählt zu dem Spieltag, an dem es angepfiffen wird.
+//  Vorher wanderte immer ein GANZER Liga-Spieltag, und ein im Februar
+//  nachgeholtes Spiel fiel in den Oktober-Spieltag zurück — bewertet mit einer
+//  Quote, die es nie gab. Die alte Fassung bleibt als `"spieltag"` wählbar;
+//  warum, steht bei `ZUORDNUNGEN` weiter unten.
 //
 //  Drei Kanten, die der naive Entwurf verliert:
 //   • **Vor dem ersten Ankerpunkt.** Startet der Anker später als die anderen,
@@ -31,9 +33,10 @@
 //     drei Wochen, während andere Ligen weiterspielen, wird ein Runden-Spieltag
 //     riesig. Das ist nicht falsch, aber überraschend — `warnungen()` benennt
 //     es, und der Modus `woche` ist die Alternative.
-//   • **Der Wochen-Modus fasst trotzdem Spieltage zusammen.** Er teilt nach
-//     festen Fenstern, aber die Einheit bleibt der Liga-Spieltag: ein Fenster
-//     von drei Tagen zerschneidet sonst jedes Wochenende.
+//   • **Zuordnung und Modus sind zwei Fragen, nicht eine.** Der Modus legt
+//     fest, WO die Grenzen liegen (Taktgeber oder festes Fenster); die
+//     Zuordnung, WAS an ihnen einsortiert wird (ein Spiel oder ein ganzer
+//     Liga-Spieltag). `zuordnung` steht deshalb neben `modus` und nicht darin.
 //
 //  ── Skalierung ──
 //  `buendeln: N` fasst N Ankerspieltage zu EINEM Runden-Spieltag zusammen —
@@ -62,6 +65,46 @@ export const PAUSEN_MODI = [
     key: "anhaengen",
     label: "Anhängen",
     hint: "Alles in der Pause fällt in den vorherigen Spieltag — ein dicker statt mehrerer dünner.",
+  },
+];
+
+// 🔴 WOHIN GEHÖRT EIN NACHHOLSPIEL? (Andi, 28.08.2026)
+//
+//  „ja rein nach datum, nur so haben wir ja auch quoten"
+//
+// **Das ist keine Anzeige-Frage, es trifft die Wertung.** Bis hierher ordnete
+// die Achse ganze LIGA-SPIELTAGE zu, maßgeblich war das erste Spiel der Gruppe.
+// Ein im Februar nachgeholtes Spiel des 10. Premier-League-Spieltags fiel damit
+// in den Oktober-Spieltag zurück — der ist da längst abgerechnet. Gewertet
+// würde es mit einer Quote, DIE ES NIE GAB: die ganze Wertung hängt an der
+// Quote des realen Ergebnisses, und ein Februar-Spiel hat eine Februar-Quote.
+//
+// ⚠️ **Warum die alte Fassung trotzdem bleibt und nicht gelöscht wird.** Sie
+// war kein Versehen: ein Bundesliga-Spieltag läuft Freitag bis Sonntag, und lag
+// eine Fenstergrenze mittendrin, zerfiel er auf zwei Runden-Spieltage. Ein
+// Joker auf einem halben Spieltag ist etwas anderes als auf einem ganzen, und
+// „alle Spiele des Spieltags getippt" (`ereignisse.js`) ginge nie wieder auf.
+//
+// ✅ Seit `endeTag` auf einem festen Wochentag liegt, kann das nicht mehr
+// passieren — **an allen 198 Liga-Spieltagen des Katalogs nachgemessen
+// (28.08.2026): mit `endeTag: "do"` und mit `"mo"` zerreißt die Grenze KEINEN
+// einzigen.** Ohne festen Wochentag (`endeTag: null`, die alte wandernde
+// Rechnung) sind es 11. Der Schutz kostet also nichts mehr, solange ein
+// Wochentag gesetzt ist — und genau dann schadet er nur noch.
+//
+// ⚠️ Wer im Anker-Modus mit spätem Taktgeber fährt, kann trotzdem in die alte
+// Lage kommen. Deshalb bleibt `"spieltag"` wählbar, und `warnungen()` meldet die
+// Kombination, in der still etwas Falsches herauskommt.
+export const ZUORDNUNGEN = [
+  {
+    key: "datum",
+    label: "Nach Datum",
+    hint: "Jedes Spiel zählt zu dem Spieltag, an dem es angepfiffen wird. Ein Nachholspiel gehört dorthin, wo es stattfindet.",
+  },
+  {
+    key: "spieltag",
+    label: "Nach Liga-Spieltag",
+    hint: "Ein Liga-Spieltag bleibt zusammen, auch wenn ein Spiel Monate später nachgeholt wird.",
   },
 ];
 
@@ -128,12 +171,24 @@ export const SPIELTAG_ENDE = [
   })),
 ];
 
+// 🔴 **Die Vorgabe ist seit dem 28.08.2026 `woche` und nicht mehr `anker`** —
+// und das ist der Teil dieses Umbaus, der wirklich etwas ändert. `endeTag`
+// wirkt NUR im Wochen-Modus; solange die Vorgabe „anker" hieß, bekam eine neu
+// angelegte Runde Andis Donnerstagsgrenze gar nicht. Gemessen an der
+// Creator-Testrunde: im Anker-Modus ist die Champions League in **3 von 12**
+// Runden-Spieltagen das letzte Spiel, im Wochen-Modus mit Donnerstagsgrenze in
+// **12 von 12**. Wer die Vorgabe nahm, bekam also das Gegenteil dessen, was
+// beschrieben war.
+//
+// ⚠️ Der Anker-Modus bleibt vollständig erhalten — er ist die richtige Wahl für
+// eine Runde, die dem Rhythmus EINER Liga folgen soll.
 export const DEFAULT_ZEITACHSE = {
-  modus: "anker",
+  modus: "woche",       // 🔴 war „anker"; nur im Wochen-Modus greift `endeTag`
   anker: null,          // null = automatisch die früheste Liga
   buendeln: 1,
   tage: 7,
   endeTag: "do",        // 🔴 „Donnerstag 23:59 ist Spieltag vorbei" — Andi, 28.08.2026
+  zuordnung: "datum",   // 🔴 „rein nach datum, nur so haben wir ja auch quoten" — Andi
   pause: "auffuellen",  // Standard: der Rhythmus bleibt auch in der Winterpause
   pauseAbTagen: 10,     // 10 Tage — ein normaler Wochenrhythmus löst das nie aus
 };
@@ -162,6 +217,10 @@ export function sanitizeZeitachse(partial = {}) {
     endeTag: p.endeTag === null
       ? null
       : (wochentagVon(p.endeTag)?.key ?? DEFAULT_ZEITACHSE.endeTag),
+    // Unbekannter Wert → Vorgabe, genau wie bei `pause`. `null` ist hier
+    // ANDERS als bei `endeTag` kein gültiger Wert: es gibt keine dritte Art,
+    // ein Spiel einzusortieren.
+    zuordnung: ZUORDNUNGEN.some((z) => z.key === p.zuordnung) ? p.zuordnung : DEFAULT_ZEITACHSE.zuordnung,
     pause: PAUSEN_MODI.some((m) => m.key === p.pause) ? p.pause : DEFAULT_ZEITACHSE.pause,
     pauseAbTagen: zahl(p.pauseAbTagen, ZEITACHSE_LIMITS.pauseAbTagen, DEFAULT_ZEITACHSE.pauseAbTagen),
   };
@@ -238,18 +297,27 @@ export function zeitachse(matches = [], cfg = DEFAULT_ZEITACHSE) {
     spiele: [],
   }));
 
-  // ⚠️ Zugeordnet wird der LIGA-SPIELTAG, nicht das einzelne Spiel. Ein
-  // Bundesliga-Spieltag läuft von Freitag bis Sonntag und kann links und rechts
-  // eines Ankerpunkts liegen — spielweise zugeordnet zerfiele er auf zwei
-  // Runden-Spieltage. Solange die Achse nur anzeigt, wäre das kosmetisch;
-  // sobald etwas daran hängt, ist es ein Fairness-Bruch: ein Joker auf einem
-  // halben Spieltag ist etwas anderes als auf einem ganzen, und „alle Spiele
-  // des Spieltags getippt" (`ereignisse.js`) ginge nie wieder auf.
+  // 🔴 Die Zuordnung — der Unterschied zwischen den beiden Fassungen ist genau
+  // die Größe der GRUPPE, die einsortiert wird:
   //
-  // Maßgeblich ist das ERSTE Spiel des Liga-Spieltags. Dadurch fällt jeder
-  // Spieltag des Taktgebers exakt auf seinen eigenen Ankerpunkt — die Grenzen
-  // sind ja genau aus diesen frühesten Anpfiffen gebaut.
-  for (const gruppe of ligaSpieltagGruppen(gueltig)) {
+  //   `datum`    — jedes Spiel für sich, nach seinem eigenen Anpfiff. Ein
+  //                Nachholspiel landet dort, wo es gespielt wird, und wird mit
+  //                der Quote gewertet, die es dann hatte.
+  //   `spieltag` — der ganze Liga-Spieltag, maßgeblich sein ERSTES Spiel. Ein
+  //                Bundesliga-Spieltag läuft Freitag bis Sonntag und zerfiele
+  //                sonst an einer Grenze mittendrin auf zwei Runden-Spieltage;
+  //                ein Joker auf einem halben Spieltag ist etwas anderes als
+  //                auf einem ganzen, und „alle Spiele des Spieltags getippt"
+  //                (`ereignisse.js`) ginge nie wieder auf.
+  //
+  // ⚠️ Im Anker-Modus fällt bei `spieltag` jeder Spieltag des Taktgebers exakt
+  // auf seinen eigenen Ankerpunkt — die Grenzen sind ja genau aus diesen
+  // frühesten Anpfiffen gebaut.
+  const gruppen = c.zuordnung === "datum"
+    ? gueltig.map((m) => [m])
+    : ligaSpieltagGruppen(gueltig);
+
+  for (const gruppe of gruppen) {
     const start = Math.min(...gruppe.map(zeit));
     let idx = 0;
     // Rückwärts suchen: der letzte Ankerpunkt, der nicht nach dem Start liegt.
@@ -282,6 +350,34 @@ function ligaSpieltagGruppen(matches = []) {
     gruppen.get(key).push(m);
   }
   return [...gruppen.values()];
+}
+
+// In welches Fenster fällt dieser Zeitpunkt — unabhängig davon, welchem
+// Runden-Spieltag das Spiel ZUGEORDNET wurde. Genau diese Differenz ist der
+// Fund: bei `zuordnung: "spieltag"` können beide auseinanderlaufen.
+function fensterNummer(achse, t) {
+  for (let i = achse.length - 1; i >= 0; i--) if (t >= achse[i].von) return achse[i].nummer;
+  return achse[0]?.nummer ?? null;
+}
+
+// Welche Liga-Spieltage laufen über eine Fenstergrenze hinweg? Lesbar
+// beschriftet, weil die Warnung ein Admin liest und nicht ein Entwickler:
+// „Bundesliga 12", nicht `bl#12`.
+function zerrisseneLigaSpieltage(achse = []) {
+  const proGruppe = new Map();
+  for (const e of achse) {
+    for (const m of e.spiele ?? []) {
+      if (m.matchday == null) continue;
+      const t = zeit(m);
+      if (!Number.isFinite(t)) continue;
+      const key = spieltagKey({ wettbewerb: wettbewerbVon(m), matchday: m.matchday });
+      if (!proGruppe.has(key)) {
+        proGruppe.set(key, { label: `${wettbewerbLabel(wettbewerbVon(m))} ${m.matchday}`, fenster: new Set() });
+      }
+      proGruppe.get(key).fenster.add(fensterNummer(achse, t));
+    }
+  }
+  return [...proGruppe.values()].filter((g) => g.fenster.size > 1).map((g) => g.label);
 }
 
 // Pausen im Taktgeber. Spielt er drei Wochen nicht, während die anderen Ligen
@@ -398,17 +494,35 @@ function ligaSpieltage(spiele = []) {
 // Wahrheit — genau die Sorte Abweichung, die niemand bemerkt.
 export function rundenSpieltagVon(achse = [], match) {
   if (!match) return null;
-  // Zuerst über den LIGA-SPIELTAG nachschlagen und nicht über die Anstoßzeit.
-  // Damit funktioniert die Frage auch für einen TIPP — der trägt Wettbewerb und
-  // Spieltag, aber keinen Anpfiff. Genau das braucht die Joker-Prüfung.
+  const id = match.id ?? match.matchId ?? match.match_id ?? null;
+
+  // 🔴 Zuerst über die SPIEL-ID, erst danach über den Liga-Spieltag — und diese
+  // Reihenfolge ist seit der Zuordnung „nach Datum" der Unterschied zwischen
+  // richtig und falsch. Vorher waren beide Wege in EINEM `||` verodert, und der
+  // Liga-Spieltag traf zuerst: bei `zuordnung: "datum"` liegen zwei Spiele
+  // desselben Liga-Spieltags in verschiedenen Runden-Spieltagen, und das
+  // Februar-Nachholspiel hätte hier wieder die Oktober-Nummer bekommen — also
+  // genau den Fehler, den dieser Umbau behebt, eine Ebene tiefer.
+  if (id != null) {
+    for (const e of achse) {
+      if (e.spiele.some((m) => (m.id ?? m.matchId) === id)) return e.nummer;
+    }
+  }
+
+  // Der Liga-Spieltag als zweiter Weg. Er wird gebraucht, weil ein TIPP
+  // Wettbewerb und Spieltag trägt, aber keinen Anpfiff und nicht immer eine ID
+  // — genau das braucht die Joker-Prüfung.
+  // ⚠️ Bei `zuordnung: "datum"` ist das eine NÄHERUNG: gefunden wird der erste
+  // Runden-Spieltag, in dem dieser Liga-Spieltag überhaupt vorkommt. Für ein
+  // nachgeholtes Spiel ohne ID wäre das zu früh — deshalb steht die ID oben.
   const key = match.matchday == null
     ? null
     : spieltagKey({ wettbewerb: wettbewerbVon(match), matchday: match.matchday });
-  const id = match.id ?? match.matchId ?? match.match_id ?? null;
-  for (const e of achse) {
-    if (e.spiele.some((m) => (id != null && (m.id ?? m.matchId) === id)
-      || (key != null && spieltagKey({ wettbewerb: wettbewerbVon(m), matchday: m.matchday }) === key))) {
-      return e.nummer;
+  if (key != null) {
+    for (const e of achse) {
+      if (e.spiele.some((m) => spieltagKey({ wettbewerb: wettbewerbVon(m), matchday: m.matchday }) === key)) {
+        return e.nummer;
+      }
     }
   }
   // Nicht in dieser Achse enthalten (fremdes oder Demo-Spiel): auf die Zeit
@@ -437,12 +551,26 @@ export function rundenSchluessel(achse = []) {
   const gemerkt = new Map();
   return (x) => {
     const key = spieltagKey({ wettbewerb: wettbewerbVon(x), matchday: x?.matchday ?? null });
-    if (gemerkt.has(key)) return gemerkt.get(key);
+    // ⚠️ Gemerkt wird auf ID **UND** Liga-Spieltag zusammen — also genau auf
+    // das, was die Antwort bestimmt.
+    //
+    // Beides einzeln wäre falsch, und zwar je in eine Richtung:
+    //  • **Nur der Liga-Spieltag** verliert bei `zuordnung: "datum"` den
+    //    Nachholspiel-Fall — zwei Spiele desselben Liga-Spieltags liegen dann
+    //    in verschiedenen Runden-Spieltagen, und der zweite bekäme still die
+    //    Antwort des ersten.
+    //  • **Nur die ID** geht daneben, sobald sie in der Achse gar nicht
+    //    vorkommt: dann entscheidet der Liga-Spieltag über die Antwort, aber
+    //    der Merkzettel steht auf der ID. Zwei Tipps mit derselben Fremd-ID und
+    //    verschiedenen Spieltagen teilten sich einen Eintrag.
+    const id = x?.id ?? x?.matchId ?? x?.match_id ?? null;
+    const merkKey = `${id ?? ""}|${key}`;
+    if (gemerkt.has(merkKey)) return gemerkt.get(merkKey);
     const nummer = rundenSpieltagVon(achse, x);
     // Was nicht zur Achse gehört (Demo-Spiel), behält seinen eigenen Schlüssel —
     // sonst fielen alle solchen Spiele in einen gemeinsamen Topf.
     const wert = nummer == null ? key : `runde#${nummer}`;
-    gemerkt.set(key, wert);
+    gemerkt.set(merkKey, wert);
     return wert;
   };
 }
@@ -562,6 +690,31 @@ export function warnungen(achse = [], cfg = DEFAULT_ZEITACHSE) {
           ? "Der Pausen-Modus Auffüllen macht daraus mehrere normale Spieltage."
           : "Ein anderer Taktgeber oder der Wochen-Modus verteilt das gleichmäßiger.",
     });
+  }
+
+  // 🔴 Die Kombination, in der still etwas Falsches herauskommt: die Runde
+  // ordnet nach LIGA-SPIELTAG zu, und die Fenstergrenze läuft mitten durch
+  // einen. Dann zieht das erste Spiel der Gruppe alle anderen zu sich —
+  // vorwärts wie rückwärts — und ein Spiel wird in einem Runden-Spieltag
+  // gewertet, an dem es gar nicht stattfand.
+  //
+  // ⚠️ Gemeldet wird nur, was WIRKLICH zerschnitten würde, nicht die
+  // Einstellung an sich: an allen 198 Liga-Spieltagen des Katalogs nachgemessen
+  // zerreißt eine Grenze auf festem Wochentag keinen einzigen. Eine Warnung auf
+  // Verdacht wäre hier ein Fehlalarm auf einer völlig normalen Runde.
+  if (c.zuordnung === "spieltag") {
+    const zerrissen = zerrisseneLigaSpieltage(achse);
+    if (zerrissen.length) {
+      out.push({
+        art: "zerrissen",
+        text: `${zerrissen.length} Liga-Spieltag${zerrissen.length > 1 ? "e laufen" : " läuft"} über eine `
+          + `Spieltags-Grenze hinweg (${zerrissen.slice(0, 3).join(", ")}`
+          + `${zerrissen.length > 3 ? ` und ${zerrissen.length - 3} weitere` : ""}). `
+          + `Weil nach Liga-Spieltag zugeordnet wird, zieht das erste Spiel die späteren zu sich — `
+          + `sie zählen dann zu einem Spieltag, an dem sie nicht stattfinden.`,
+        hilfe: "Die Zuordnung „Nach Datum“ setzt jedes Spiel dorthin, wo es angepfiffen wird.",
+      });
+    }
   }
 
   const erste = achse[0];

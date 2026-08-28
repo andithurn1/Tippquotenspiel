@@ -4,6 +4,18 @@ import { ohneSchnappschuss, hatSchnappschuesse, SCHNAPPSCHUSS_LESER } from "./sc
 import { createMockStore } from "./store.mock";
 import { DEMO_ROUND_ID } from "./constants";
 
+// ⚠️ **Nicht über `npx` starten.** `execFileSync` öffnet keine Shell: unter
+// Windows heißt der Starter `npx.cmd` und wird als nacktes `npx` gar nicht
+// gefunden (`ENOENT`) — und seit Node 20 verweigert `spawnSync` das Ausführen
+// einer `.cmd` ohne Shell zusätzlich mit `EINVAL`. Beides ließ diese Datei
+// schon beim EINLESEN durchfallen, ohne dass am geprüften Durchgang etwas
+// kaputt war (gemessen am 28.08.2026 auf diesem Rechner).
+//
+// ✅ Deshalb direkt derselbe Node, der gerade läuft, auf das lokale
+// `vite-node`-Skript. Das ist auf jeder Plattform dieselbe Zeile und braucht
+// weder Shell noch PATH.
+const VITE_NODE = "node_modules/vite-node/vite-node.mjs";
+
 // ============================================================
 //  DER SCHLANKE KATALOG -- und die Falle, die er aufmacht
 //
@@ -93,7 +105,7 @@ describe("Der Store liefert wirklich schlank", () => {
 });
 
 describe("Die Sperrklinke: npm run schlank", () => {
-  const ausgabe = execFileSync("npx", ["vite-node", "scripts/schlank-durchgang.mjs"], {
+  const ausgabe = execFileSync(process.execPath, [VITE_NODE, "scripts/schlank-durchgang.mjs"], {
     encoding: "utf8", timeout: 120000,
   });
 

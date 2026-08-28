@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { getStore } from "@/lib/store";
 import {
   zeitachse, sanitizeZeitachse, achsenLabel, warnungen, ankerWettbewerb,
-  ZEITACHSE_LIMITS, DEFAULT_ZEITACHSE, PAUSEN_MODI, SPIELTAG_ENDE,
+  ZEITACHSE_LIMITS, DEFAULT_ZEITACHSE, PAUSEN_MODI, SPIELTAG_ENDE, ZUORDNUNGEN,
 } from "@/lib/zeitachse";
 import { wettbewerbeIn, wettbewerbLabel } from "@/lib/wettbewerbe";
 import { C, MONO, RUND } from "@/lib/theme";
@@ -43,9 +43,9 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
   const wettbewerbe = useMemo(() => wettbewerbeIn(alle), [alle]);
   const achse = useMemo(
     () => zeitachse(alle, z),
-    [alle, z.modus, z.anker, z.buendeln, z.tage, z.endeTag, z.pause, z.pauseAbTagen],
+    [alle, z.modus, z.anker, z.buendeln, z.tage, z.endeTag, z.zuordnung, z.pause, z.pauseAbTagen],
   );
-  const hinweise = useMemo(() => warnungen(achse, z), [achse, z.modus]);
+  const hinweise = useMemo(() => warnungen(achse, z), [achse, z.modus, z.zuordnung]);
   const automatisch = useMemo(() => ankerWettbewerb(alle, null), [alle]);
 
   // Bei nur einem Wettbewerb ist die ganze Frage gegenstandslos — dann ist der
@@ -175,6 +175,27 @@ export default function Zeitachse({ zeitachse: cfg, onChange }) {
           </Feinheiten>
         </>
       )}
+
+      {/* 🔴 Die Zuordnung gilt in BEIDEN Modi und steht deshalb ausserhalb der
+          beiden Zweige. Sie ist keine Anzeige-Frage: ein Nachholspiel im
+          falschen Spieltag wird mit einer Quote gewertet, die es nie gab. */}
+      <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 5 }}>Wohin gehört ein Nachholspiel?</div>
+      <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+        {ZUORDNUNGEN.map((o) => {
+          const an = z.zuordnung === o.key;
+          return (
+            <button key={o.key} title={o.hint} onClick={() => patch({ zuordnung: o.key })} style={{
+              ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit", padding: "7px 6px",
+              borderRadius: RUND.karte, fontSize: "0.75rem", fontWeight: 700,
+              background: an ? `${C.mint}22` : C.surface, color: an ? C.mint : C.muted,
+              border: `1px solid ${an ? C.mint + "66" : C.line}`,
+            }}>{o.label}</button>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: "0.6875rem", color: C.muted, marginBottom: 8, lineHeight: 1.45 }}>
+        {ZUORDNUNGEN.find((o) => o.key === z.zuordnung)?.hint}
+      </div>
 
       {/* Die Vorschau ist der eigentliche Wert dieses Blocks. */}
       <div style={{

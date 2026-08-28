@@ -24,6 +24,34 @@
 // ============================================================
 
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+
+// 🔴 **Warum hier nicht `npm run <name>` steht, obwohl genau das gemeint ist.**
+// `execFileSync` öffnet keine Shell. Unter Windows heißt der Starter `npm.cmd`
+// und wird als nacktes `npm` nicht gefunden (`ENOENT`); seit Node 20 verweigert
+// `spawnSync` zusätzlich das Ausführen einer `.cmd` ohne Shell (`EINVAL`).
+//
+// ⚠️ **Das war kein Schönheitsfehler.** Gemessen am 28.08.2026: auf diesem
+// Rechner stürzten dadurch ALLE ZWÖLF Durchgänge in je 0,0 Sekunden ab — und
+// die Tabelle sah aus wie ein Befund, obwohl gar nichts gemessen worden war.
+// Ein Sammel-Lauf, der nicht startet, ist gefährlicher als keiner: er beruhigt
+// nicht, aber er lenkt auf die falsche Fährte.
+//
+// ✅ Deshalb wird die Kommandozeile aus der `package.json` GELESEN — sie bleibt
+// die eine Quelle — und mit demselben Node gestartet, der gerade läuft. Kein
+// Shell-Aufruf, kein PATH, plattformgleich.
+const SKRIPTE = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).scripts;
+const VITE_NODE = "node_modules/vite-node/vite-node.mjs";
+
+function befehlFuer(name) {
+  const zeile = SKRIPTE?.[name];
+  if (!zeile) throw new Error(`In package.json steht kein Skript "${name}".`);
+  const teile = zeile.trim().split(" ").filter(Boolean);
+  // `node scripts/x.mjs` → direkt; `vite-node scripts/x.mjs` → über vite-node.
+  if (teile[0] === "node") return teile.slice(1);
+  if (teile[0] === "vite-node") return [VITE_NODE, ...teile.slice(1)];
+  throw new Error(`Unbekannter Starter "${teile[0]}" für "${name}" — bitte hier ergänzen.`);
+}
 
 // Reihenfolge nach LAUFZEIT, die schnellen zuerst: wer etwas kaputt gemacht
 // hat, soll es nach zehn Sekunden wissen und nicht nach zwei Minuten.
@@ -58,7 +86,7 @@ for (const d of DURCHGAENGE) {
   let ausgabe = "";
   let abgestuerzt = false;
   try {
-    ausgabe = execFileSync("npm", ["run", "--silent", d.name], {
+    ausgabe = execFileSync(process.execPath, befehlFuer(d.name), {
       encoding: "utf8", timeout: 600000, stdio: ["ignore", "pipe", "pipe"],
     });
   } catch (e) {

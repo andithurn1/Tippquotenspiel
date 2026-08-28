@@ -97,7 +97,16 @@ describe("Die Kante, die der naive Entwurf verliert", () => {
 // Der Fall aus dem Browser: ein Bundesliga-Spieltag läuft Freitag bis Sonntag,
 // der La-Liga-Ankerpunkt liegt am Samstag dazwischen. Spielweise zugeordnet
 // zerfiele der Spieltag auf zwei Runden-Spieltage.
-describe("Ein Liga-Spieltag bleibt ganz", () => {
+//
+// 🔴 **Diese Zusage gilt seit dem 28.08.2026 für `zuordnung: "spieltag"`** und
+// steht deshalb an jedem Aufruf hier ausdrücklich dabei. Sie ist NICHT
+// weggefallen — sie hat einen Namen bekommen. Die Vorgabe ist inzwischen
+// `"datum"`, und was die leistet, steht im Block darunter.
+//
+// ⚠️ Diese Tests wurden bewusst nicht auf die neue Rechnung umgeschrieben. Ein
+// Test, den man anpasst, damit er wieder grün wird, hat vorher nichts bewiesen
+// — hier wird die alte Zusage weiter geprüft, nur eben dort, wo sie gilt.
+describe("Ein Liga-Spieltag bleibt ganz (zuordnung: spieltag)", () => {
   const FR = Date.UTC(2026, 7, 28, 18);      // BL 1, Freitagabend
   const SA = Date.UTC(2026, 7, 29, 13);      // Ankerpunkt der La Liga
   const SO = Date.UTC(2026, 7, 30, 15);      // BL 1, Sonntag — hinter dem Anker
@@ -110,20 +119,20 @@ describe("Ein Liga-Spieltag bleibt ganz", () => {
   ];
 
   it("beide Spiele des Spieltags landen im selben Runden-Spieltag", () => {
-    const achse = zeitachse(GETEILT, { modus: "anker", anker: "pd" });
+    const achse = zeitachse(GETEILT, { modus: "anker", anker: "pd", zuordnung: "spieltag" });
     const nummern = ["bl1-fr", "bl1-so"].map((id) =>
       achse.find((e) => e.spiele.some((m) => m.id === id))?.nummer);
     expect(nummern[0]).toBe(nummern[1]);
   });
 
   it("er fällt dorthin, wo sein ERSTES Spiel liegt — nicht in den späteren", () => {
-    const achse = zeitachse(GETEILT, { modus: "anker", anker: "pd" });
+    const achse = zeitachse(GETEILT, { modus: "anker", anker: "pd", zuordnung: "spieltag" });
     expect(achse[0].ligen).toEqual({ bl: [1], pd: [1] });   // Freitag zieht den Sonntag mit
     expect(achse[1].ligen).toEqual({ pd: [2] });
   });
 
   it("kein Liga-Spieltag steht in zwei Runden-Spieltagen", () => {
-    const achse = zeitachse(MATCHES, { modus: "anker", anker: "pd" });
+    const achse = zeitachse(MATCHES, { modus: "anker", anker: "pd", zuordnung: "spieltag" });
     const gesehen = new Map();
     for (const e of achse) {
       for (const key of Object.keys(e.ligen)) {
@@ -137,17 +146,105 @@ describe("Ein Liga-Spieltag bleibt ganz", () => {
   });
 
   it("rundenSpieltagVon sagt für BEIDE Spiele dieselbe Nummer", () => {
-    const achse = zeitachse(GETEILT, { modus: "anker", anker: "pd" });
+    const achse = zeitachse(GETEILT, { modus: "anker", anker: "pd", zuordnung: "spieltag" });
     const [fr, so] = ["bl1-fr", "bl1-so"].map((id) => GETEILT.find((m) => m.id === id));
     expect(rundenSpieltagVon(achse, so)).toBe(rundenSpieltagVon(achse, fr));
     expect(rundenSpieltagVon(achse, so)).toBe(1);
   });
 
   it("auch der Wochen-Modus zerschneidet kein Wochenende", () => {
-    const achse = zeitachse(GETEILT, { modus: "woche", tage: 3 });
+    const achse = zeitachse(GETEILT, { modus: "woche", tage: 3, zuordnung: "spieltag" });
     const nummern = ["bl1-fr", "bl1-so"].map((id) =>
       achse.find((e) => e.spiele.some((m) => m.id === id))?.nummer);
     expect(nummern[0]).toBe(nummern[1]);
+  });
+});
+
+// ============================================================
+//  🔴 DIE ZUORDNUNG NACH DATUM — die Vorgabe seit dem 28.08.2026
+//
+//  Andi: „ja rein nach datum, nur so haben wir ja auch quoten"
+//
+//  Das ist keine Anzeige-Frage. Die ganze Wertung hängt an der Quote des REALEN
+//  Ergebnisses; ein im Februar nachgeholtes Spiel hat eine Februar-Quote. Fiele
+//  es in den Oktober-Spieltag zurück, würde es mit einer Quote gewertet, die es
+//  nie gab — und der Spieltag ist da längst abgerechnet.
+// ============================================================
+describe("Zuordnung nach Datum (Vorgabe)", () => {
+  // Andis Beispiel aus dem Auftrag, eins zu eins: Premier League, Spieltag 10,
+  // zwei Spiele im Oktober und eines vier Monate später nachgeholt.
+  const OKT = Date.UTC(2026, 9, 24, 14);
+  const FEB = Date.UTC(2027, 1, 17, 19);
+  const NACHHOLER = [
+    { id: "pl10-a", wettbewerb: "pl", matchday: 10, kickoff: new Date(OKT).toISOString() },
+    { id: "pl10-b", wettbewerb: "pl", matchday: 10, kickoff: new Date(OKT + 2 * 3600 * 1000).toISOString() },
+    { id: "pl10-nach", wettbewerb: "pl", matchday: 10, kickoff: new Date(FEB).toISOString() },
+  ];
+
+  it("ist die Vorgabe — niemand muss sie einschalten", () => {
+    expect(DEFAULT_ZEITACHSE.zuordnung).toBe("datum");
+  });
+
+  it("das Nachholspiel landet im Februar, nicht im Oktober", () => {
+    const achse = zeitachse(NACHHOLER, { modus: "woche", tage: 7, endeTag: "do" });
+    const nummer = (id) => achse.find((e) => e.spiele.some((m) => m.id === id))?.nummer;
+    expect(nummer("pl10-a")).toBe(nummer("pl10-b"));
+    expect(nummer("pl10-nach")).toBeGreaterThan(nummer("pl10-a"));
+  });
+
+  it("🔴 rundenSpieltagVon folgt mit — sonst käme der Fehler eine Ebene tiefer zurück", () => {
+    // Diese Zeile ist der eigentliche Fund beim Bauen: die Suche ging ZUERST
+    // über den Liga-Spieltag. Alle drei Spiele tragen `pl#10`, also hätte das
+    // Februar-Spiel wieder die Oktober-Nummer bekommen — die Achse richtig, die
+    // Auskunft darüber falsch.
+    const achse = zeitachse(NACHHOLER, { modus: "woche", tage: 7, endeTag: "do" });
+    const okt = rundenSpieltagVon(achse, NACHHOLER[0]);
+    const feb = rundenSpieltagVon(achse, NACHHOLER[2]);
+    expect(feb).not.toBe(okt);
+    expect(feb).toBeGreaterThan(okt);
+  });
+
+  it("🔴 und rundenSchluessel ebenso — der Merkzettel darf nicht danebengreifen", () => {
+    // `rundenSchluessel` merkt sich Antworten. Auf den Liga-Spieltag geschlüsselt
+    // bekäme das zweite Spiel still die Antwort des ersten.
+    const achse = zeitachse(NACHHOLER, { modus: "woche", tage: 7, endeTag: "do" });
+    const s = rundenSchluessel(achse);
+    expect(s(NACHHOLER[0])).toBe(s(NACHHOLER[1]));      // gleicher Tag → gleicher Schlüssel
+    expect(s(NACHHOLER[2])).not.toBe(s(NACHHOLER[0]));  // vier Monate später → anderer
+  });
+
+  it("mit \"spieltag\" fällt es weiterhin in den Oktober — die Wahl bleibt", () => {
+    const achse = zeitachse(NACHHOLER, { modus: "woche", tage: 7, endeTag: "do", zuordnung: "spieltag" });
+    const nummer = (id) => achse.find((e) => e.spiele.some((m) => m.id === id))?.nummer;
+    expect(nummer("pl10-nach")).toBe(nummer("pl10-a"));
+  });
+
+  it("warnungen() meldet genau diese Kombination — und nur sie", () => {
+    const cfg = { modus: "woche", tage: 7, endeTag: "do", zuordnung: "spieltag" };
+    const achse = zeitachse(NACHHOLER, cfg);
+    const w = warnungen(achse, cfg).find((h) => h.art === "zerrissen");
+    expect(w).toBeTruthy();
+    expect(w.text).toContain("Premier League 10");
+
+    // Nach Datum gibt es nichts zu melden: dann liegt jedes Spiel dort, wo es
+    // gespielt wird. Eine Warnung wäre hier ein Fehlalarm.
+    const nachDatum = { ...cfg, zuordnung: "datum" };
+    expect(warnungen(zeitachse(NACHHOLER, nachDatum), nachDatum).some((h) => h.art === "zerrissen")).toBe(false);
+  });
+
+  it("ohne Nachholspiel schweigt die Warnung auch bei \"spieltag\"", () => {
+    // ⚠️ Gemessen am echten Katalog zerreißt eine Grenze auf festem Wochentag
+    // KEINEN der 198 Liga-Spieltage. Die Warnung darf deshalb nicht an der
+    // Einstellung hängen, sondern nur an den Daten.
+    const cfg = { modus: "woche", tage: 7, endeTag: "do", zuordnung: "spieltag" };
+    const achse = zeitachse(MATCHES, cfg);
+    expect(warnungen(achse, cfg).some((h) => h.art === "zerrissen")).toBe(false);
+  });
+
+  it("sanitizeZeitachse bereinigt einen unbekannten Wert auf die Vorgabe", () => {
+    expect(sanitizeZeitachse({ zuordnung: "quatsch" }).zuordnung).toBe("datum");
+    expect(sanitizeZeitachse({ zuordnung: null }).zuordnung).toBe("datum");
+    expect(sanitizeZeitachse({ zuordnung: "spieltag" }).zuordnung).toBe("spieltag");
   });
 });
 
@@ -630,13 +727,32 @@ describe("🔴 Der Wochentag, an dem ein Spieltag VORBEI ist (Andi, 28.08.2026)"
     for (const w of SPIELTAG_ENDE) expect(w.label.length, w.key).toBeGreaterThan(3);
   });
 
-  it("⚠️ die Vorgabe-Achse ist unberührt — sie läuft im Anker-Modus", () => {
-    // 🔴 Wichtig für bestehende Runden: `startTag` steht zwar auf „do", greift
-    // aber nur im Wochen-Modus. Wer nichts umstellt, bekommt dieselbe Achse
-    // wie vorher.
-    expect(DEFAULT_ZEITACHSE.modus).toBe("anker");
-    const vorher = zeitachse(matches, { ...DEFAULT_ZEITACHSE, endeTag: null });
-    const nachher = zeitachse(matches, DEFAULT_ZEITACHSE);
+  // 🔴 **Dieser Test stand bis zum 28.08.2026 andersherum da** und schrieb fest,
+  // dass die Vorgabe `anker` ist. Genau darin lag der Fehler: `endeTag` wirkt
+  // NUR im Wochen-Modus, also bekam eine neu angelegte Runde Andis
+  // Donnerstagsgrenze überhaupt nicht — die Einstellung war gebaut, angezeigt
+  // und wirkungslos.
+  //
+  // ⚠️ Die Zusage, die der alte Test eigentlich schützen wollte („bestehende
+  // Runden ändern sich nicht"), gilt unverändert und steht jetzt im zweiten
+  // Test darunter: eine Runde speichert ihre Achse, und eine gespeicherte
+  // `anker`-Achse rechnet exakt wie vorher.
+  it("🔴 die Vorgabe ist der Wochen-Modus — sonst greift der Donnerstag nie", () => {
+    expect(DEFAULT_ZEITACHSE.modus).toBe("woche");
+    expect(DEFAULT_ZEITACHSE.endeTag).toBe("do");
+    // Und die Vorgabe muss die Grenze auch wirklich auf Freitag legen.
+    const achse = zeitachse(matches, DEFAULT_ZEITACHSE);
+    const grenzen = achse.slice(1).map((e) => wochentagIndex(e.von));
+    for (const tag of grenzen) expect(tag).toBe(wochentagIndex(tagesBeginn(Date.UTC(2026, 7, 28))));
+  });
+
+  it("⚠️ eine gespeicherte Anker-Achse rechnet unverändert wie vorher", () => {
+    // Bestehende Runden tragen ihr Regelwerk bei sich — die neue Vorgabe holt
+    // sie nicht ein. `endeTag` bleibt dort ohne Wirkung, und das ist richtig:
+    // im Anker-Modus gibt der Taktgeber die Grenze vor.
+    const gespeichert = { ...DEFAULT_ZEITACHSE, modus: "anker" };
+    const vorher = zeitachse(matches, { ...gespeichert, endeTag: null });
+    const nachher = zeitachse(matches, gespeichert);
     expect(nachher.map((e) => e.spiele.length)).toEqual(vorher.map((e) => e.spiele.length));
   });
 });

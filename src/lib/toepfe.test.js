@@ -1,6 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "node:child_process";
 
+// ⚠️ **Nicht über `npx` starten.** `execFileSync` öffnet keine Shell: unter
+// Windows heißt der Starter `npx.cmd` und wird als nacktes `npx` gar nicht
+// gefunden (`ENOENT`) — und seit Node 20 verweigert `spawnSync` das Ausführen
+// einer `.cmd` ohne Shell zusätzlich mit `EINVAL`. Beides ließ diese Datei
+// schon beim EINLESEN durchfallen, ohne dass am geprüften Durchgang etwas
+// kaputt war (gemessen am 28.08.2026 auf diesem Rechner).
+//
+// ✅ Deshalb direkt derselbe Node, der gerade läuft, auf das lokale
+// `vite-node`-Skript. Das ist auf jeder Plattform dieselbe Zeile und braucht
+// weder Shell noch PATH.
+const VITE_NODE = "node_modules/vite-node/vite-node.mjs";
+
 // ============================================================
 //  DIE SPERRKLINKE FUER DEN TOPF-DURCHGANG
 //
@@ -20,7 +32,7 @@ import { execFileSync } from "node:child_process";
 //     Sorte gruener Haken, die schlimmer ist als gar keiner.
 // ============================================================
 
-const lauf = () => execFileSync("npx", ["vite-node", "scripts/toepfe-durchgang.mjs"], {
+const lauf = () => execFileSync(process.execPath, [VITE_NODE, "scripts/toepfe-durchgang.mjs"], {
   encoding: "utf8", timeout: 120000,
 });
 
