@@ -59,6 +59,7 @@ ausführen.
 
 | Account | Bereich / Dateien | Status | seit |
 |---------|-------------------|--------|------|
+| 1 (Andi) | **KONTINGENT LEER am 28.08.2026** (5-Stunden-Limit 98 %, Wochenlimit 97 %, Rücksetzung **Dienstag 20:00**). Nichts hängt lokal, alles auf `main` (`1042481`). Zuletzt angefasst: `testrunden.js`, `zeitachse.js`, `zonenzeit.js` (neu), `Zeitachse.jsx`, `schaufenster.js`, `spielplan.js`, dazu vier Texte (`drehrad`, `anmeldung`, `kombiBonus`, `ergebnisMatrix`) und `scripts/worte-durchgang.mjs` (neu). **Alle Bereiche frei.** Übergabe steht als Eintrag XXXIII im Log. | pausiert | 2026-08-28 |
 | 1 (Andi) | **Spielauswahl JE LIGA** (Schritt 3) — Spec liegt: `design/spielauswahl-je-liga.md`. Ändert das Regelwerk (`spielauswahl.js`, `sanitizeRules`, Creator-Code), hiermit nach Push-Regel 3 ANGEKÜNDIGT. Noch nichts gebaut. | frei zu übernehmen | 2026-08-08 |
 | 1 (Andi) | ~~**Oberflächen-Umbau Schritt 1 + 2** (`Spielerstellung.jsx`, `SpielauswahlWettbewerbe.jsx`, `SpielauswahlListe.jsx`)~~ — alle sechs Punkte aus Andis iPhone-Durchgang, dazu Ligen aufklappbar; 18 zu kleine Tippziele → 0. ⚠️ Branch `claude/koordinierte-arbeitsweise-fe6w1v`, **nicht** `main`. | fertig | 2026-08-08 |
 | 1 (Andi) | ~~**Regel-Abstimmung & Verfassung** (`abstimmung-verfassung.md`)~~ — alle fünf Schritte der Spec; offen bleibt allein das Einhängen in die Wertung. ⚠️ Branch, nicht `main`. ⚠️ `schema.sql` muss der Nutzer ausführen. | fertig | 2026-08-05 |
@@ -125,6 +126,175 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 ---
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
+
+### 2026-08-28 (XXXIII) · 🔄 **ÜBERGABE an Account 2 — Andis Kontingent ist leer bis Dienstag 20:00**
+
+🔴 **Lies diesen Eintrag ganz. Er ist selbsttragend geschrieben** — du brauchst
+keinen der Einträge darunter, um weiterzuarbeiten.
+
+**Warum die Übergabe:** Andi hat am 28.08.2026 sein 5-Stunden-Limit bei 98 % und
+sein Wochenlimit bei 97 %. **Rücksetzung Dienstag, 20:00.** Bis dahin läuft
+Account 2. Es hängt **nichts** lokal: Arbeitsbaum leer, alles auf `main`
+(`1042481`), Branch `claude/fremdjoker-jk4-jk7-ehc5fw` steht gleich.
+**Alle Bereiche frei.**
+
+**Zustand, gemessen und nicht behauptet:**
+
+| | |
+|---|---|
+| `npm test` | 3111 grün · 51 skipped (Balance, stillgelegt — nicht reparieren) |
+| `npm run abnahmen` | **12 von 12 sauber** (~20 s) |
+| `npm run lint` · `npm run build` | grün |
+| `main` | `1042481` |
+
+⚠️ **Nimm `npm run abnahmen`, nicht die Einzelkommandos.** Es gibt sie seit dem
+27.08. als EIN Lauf, und in der Praxis tippt man drei und vergisst vier.
+
+---
+
+#### Was in dieser Sitzung entstanden ist (vier Commits, alle auf `main`)
+
+**① `105bab3` — Testrunden: der Aufstiegskampf wählte NULL Spiele aus**
+
+`src/lib/testrunden.js` baut Andis zwei Testrunden (Auftrag vom 27.08.):
+**Creator-Runde** (1000 Leute, ohne Fremdjoker, Code **`GROSS`**) und
+**Privatrunde** (~20 Leute, mit Fremdjokern, Code **`PRIVAT`**). Beide liegen im
+Mock-Store, beide sind über `/beitreten` erreichbar.
+
+🔴 **Der Fund, und er ist der lehrreichste Teil:** die 2. Bundesliga stand in
+der Wettbewerbs-Liste und trug **null Spiele** bei. Ihre Abweichung schnitt den
+Aufstiegskampf über eine **Tabellenzone** (Plätze 1–6) zu — und `tabellenPlatz`
+entsteht erst beim ÖFFNEN eines Spieltags (`spieltagOeffnen.js`). Im rohen
+Katalog trägt **kein einziges von 1942 Spielen** einen.
+
+⚠️ **Die Zonen-Fassung ist nicht nur „später besser", sie ist für eine Runde
+ungeeignet:** der Zuschnitt wird beim Anlegen **eingefroren**, also hinge die
+Größe der Runde davon ab, ob zufällig schon Spieltage geöffnet waren. Zwei
+Admins, gleiche Einstellung, verschiedene Runden. Jetzt: die letzten vier
+Spieltage. **665 Spiele** (bl 124 · bl2 36 · pl 140 · pd 140 · sa 140 · cl 85).
+
+🔴 **Und der eigentliche Fehler lag im TEST:** er hatte den Befund von
+`greiftNicht` als Erwartung eingefroren („melde genau einen Fund"). Damit wird
+aus einem Hinweis ein Sollzustand. `greiftNicht` ist ein **Bericht für den
+Admin**, kein Test — er läuft nicht in `npm run abnahmen` mit.
+
+**② `eea987e` — Ton-Durchgang 2 und die neue Abnahme `npm run worte`**
+
+`docs/tonfall.md` schloss mit „danach sucht kein Muster; das findet nur, wer
+liest". Der Satz war zu bescheiden. Über eine Wortliste kamen vier Stellen:
+„Konto des Spielers" · „Anmelde-Token" · „der mildeste Zuschnitt" ·
+„das volle erzeugte Raster".
+
+🔴 Die letzte war nicht nur Werkstatt-Sprache, sondern **falsch**: sie stand an
+der Matrix-Stufe 8 und behauptete, das sei das volle Raster — seit es die Stufe
+9 gibt, stimmt das nicht. Eine schöne Formulierung hatte eine veraltete
+Behauptung getarnt.
+
+⚠️ **Wenn du an `scripts/worte-durchgang.mjs` etwas änderst:** die eigentliche
+Arbeit steckt in der **GEGENLISTE** `SPIELSPRACHE`. „Joker", „Narren",
+„Modifikator", „Deckel", „Faktor", „Anker", „Raster" sehen technisch aus und
+SIND unsere Wörter für die Spieler. Ohne sie meldet der Durchgang die halbe
+Spielsprache, und man schaltet ihn nach dem zweiten Lauf ab.
+
+⛔ **Eine fünfte Stelle blieb bewusst stehen:** `balanceSim.js:731` rät
+„Nähe-Cutoff anheben, Sieger-Boden abschalten". **Balancing ist Endphase**
+(CLAUDE.md ganz oben) — die Ampel bleibt, wie sie ist. Der Befund steht als
+Zeile in `design/roadmap.md` unter „Endphase". **Bitte nicht anfassen.**
+
+**③ `cafd7c8` + ④ `1042481` — die Spieltags-Grenze, und eine Umkehrung mittendrin**
+
+Andi fragte: *„was haben wir bislang für eine Spieltags grenze?"* — Antwort:
+**gar keine.** Der Wochen-Modus schnitt ab dem ERSTEN ANPFIFF in
+Sieben-Tage-Fenster. An der Creator-Runde gemessen: erstes Spiel Sonntag 17:00,
+also lief jeder Spieltag Sonntagabend bis Sonntagabend. Die Champions League am
+Di/Mi lag **mitten drin**, die Bundesliga am Fr/Sa danach. Und der Anfang
+wanderte über vier Wochentage (So 17× · Sa 12× · Di 7× · Mi 4×).
+
+🔴 **Die Umkehrung, und sie ist die Lehre des Tages:** ich hatte „immer ab
+Donnerstag neuer Spieltag" als ANFANG gelesen. Andi meinte das Gegenteil —
+*„Donnerstag 23:59 ist spieltag vorbei mein ich"*. Der nächste beginnt also
+**Freitag**, und damit steht auch der Donnerstags-Europapokal am ENDE.
+
+Deshalb heißt das Feld **`zeitachse.endeTag`** und nicht `startTag`: ein Feld,
+das „Anfang" heißt, während der Admin in Enden denkt, ist die zweite Wahrheit,
+aus der in diesem Projekt schon 17 Fehler an einem Tag entstanden sind.
+Übersetzt wird an EINER Stelle (`tagNach` in `zonenzeit.js`).
+
+| Einstellung | Grenze | CL letztes Spiel | Liga eröffnet |
+|---|---|---|---|
+| `null` (wie bisher) | wandert | 2/12 | 7/12 |
+| **`"do"` (Vorgabe)** | **immer Fr 00:00** | **12/12** | **11/12** |
+| `"mo"` (Andis Beispiel) | immer Di 00:00 | 2/12 | 0/12 |
+
+⚠️ **Bestehende Runden sind unberührt:** die Vorgabe-Achse läuft im
+**Anker-Modus**, dort gibt der Taktgeber die Grenze vor. `endeTag` greift nur im
+Wochen-Modus. `null` bleibt ein GÜLTIGER Wert, kein fehlender — deshalb prüft
+`sanitizeZeitachse` auf `=== null` und nicht auf Wahrheit.
+
+**Zwei Zeitzonen-Funde, beide echt:**
+
+- `new Date(t).getDay()` antwortet in der Zone des **Rechners**. Ein
+  Samstagsspiel um 00:30 wäre auf einem UTC-Server ein Freitagsspiel gewesen.
+  Deshalb neu: `src/lib/zonenzeit.js` (mit `Intl`), und die Versatz-Rechnung
+  aus `spielplan.js` steht jetzt dort statt zweimal im Projekt.
+- 🔴 **Der Rückwärts-Schritt sprang einen Tag zu weit.** Er ging 26 Stunden
+  zurück, mit der plausiblen Begründung „die Umstellungsnacht hat 23 oder 25
+  Stunden". Von MITTERNACHT aus landet aber jeder Schritt über 24 Stunden im
+  VORVORTAG — aus Freitag 00:00 wurde Mittwoch 22:00, der Donnerstag wurde
+  übersprungen, die Grenze rutschte **eine Woche** zurück. Jetzt 12 Stunden.
+- 🔴 **Und dasselbe eine Ebene höher:** die Fenster-Schritte in Millisekunden
+  ließen die Grenze nach dem 25.10. auf **Donnerstag 23:00** rutschen — sieben
+  mal 24 Stunden sind im Oktober acht Tage minus einer Stunde. Jetzt wird nach
+  jedem Schritt wieder auf Mitternacht Ortszeit gezogen.
+
+---
+
+#### 🔴 Was als Nächstes ansteht — meine Reihenfolge, du entscheidest
+
+**1. Der Anker-Modus hält Andis Zusage NICHT.** Das ist der direkte Anschluss
+und der wichtigste Punkt. `endeTag` wirkt nur im Wochen-Modus — die **Vorgabe**
+ist aber `modus: "anker"`, und dort gibt der Taktgeber die Grenze vor. Gemessen:
+im Anker-Modus ist die CL in **3 von 12** Runden-Spieltagen das letzte Spiel.
+Wer die Vorgabe-Runde anlegt, bekommt also NICHT, was Andi beschrieben hat.
+❓ Zwei Wege, und die Wahl ist eine Frage an Andi, keine Messfrage: entweder die
+Ankerpunkte auf den nächsten `endeTag` nachziehen, oder `modus: "woche"` zur
+Vorgabe machen. **Erst fragen, dann bauen** — das ändert die Achse jeder Runde.
+
+**2. Andi wollte sich die zwei Testrunden im Browser ansehen** (`GROSS` /
+`PRIVAT`). Steht noch aus; ob der Zuschnitt sich richtig anfühlt, kann keine
+Messung beantworten.
+
+**3. `design/ideen.md` prüfen.** Andi tippt dort über eine
+Desktop-Verknüpfung — seine Einträge liegen **uncommitted im Arbeitsbaum**.
+⚠️ `git checkout -- .`, `git stash` oder ein Branchwechsel löscht sie, und er
+merkt es erst Wochen später. **Erst `git status` lesen.** (Beim Schreiben dieses
+Eintrags: Arbeitsbaum leer, also nichts von ihm offen.)
+
+**4. Der einzige echte Launch-Blocker bleibt der eigene Mailversand** (O2).
+Ohne ihn kann sich außer Andi niemand anmelden, und ohne Anmeldung gibt es
+keinen Test mit Freunden. `npm run bereit` sagt, was fehlt — ⚠️ das ist ein
+Bericht **für Andi**, er braucht die echten Schlüssel, die hier niemand hat.
+
+---
+
+#### ⛔ Drei Dinge, die du NICHT tun sollst
+
+1. **Kein Balancing.** Nicht als Aufgabe, nicht nebenbei, nicht als
+   Gegenargument gegen einen Umbau. Steht ganz oben in `CLAUDE.md` und ist
+   fünfmal von Andi gesagt worden. Die 51 skipped Tests sind Absicht.
+2. **Keine Presets/Bibliothek** (RF7). Andi wörtlich am 27.08.: *„die ganzen
+   Presets bzw eine Bibliothek erstellen wir erst am Ende"*.
+3. **Keine Termine aus Daten ableiten.** Der 28.08.2026 ist der Saisonstart,
+   **keine Frist**. Die Hinrunde ist das Fenster für den Testbetrieb, nicht sein
+   erster Tag. Dieser Fehler ist viermal passiert; der Block dazu steht ganz
+   oben in `CLAUDE.md`.
+
+⚠️ Und die Arbeitsregel, die Andi am 21.08. ausdrücklich gesetzt hat:
+**Umfang nie eigenmächtig kürzen** und **nicht bei einer Rückfrage
+stehenbleiben** — erst alles bauen, was ohne die Antwort geht, dann fragen.
+
+---
+
 
 ### 2026-08-27 (XXXII) · 🔒 **Der Beitritts-Code war keine Schranke** — plus zwei neue Abnahmen
 
