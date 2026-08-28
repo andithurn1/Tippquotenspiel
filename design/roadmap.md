@@ -34,6 +34,39 @@ sauber" und „3111 grün". Nachgemessen stimmte auf diesem Rechner keines von
 beidem. Eine Zahl aus einer Übergabe ist eine Behauptung über EINEN Rechner —
 wer sie übernimmt, misst nach, bevor er darauf aufbaut.
 
+## ⚠️ IM BROWSER NICHT PRÜFBAR: die Spielerstellung sieht ohne Anmeldung KEINE Spiele (28.08.2026)
+
+**Beim Nachsehen der neuen Zeitachsen-Einstellung aufgefallen, und es betrifft
+weit mehr als sie.**
+
+`.env.local` setzt `NEXT_PUBLIC_SUPABASE_URL` und `_ANON_KEY` — der Dev-Server
+fährt also den **echten Store**, nicht den Mock. Und `npm run bereit` sagt,
+warum daraus nichts wird:
+
+> `matches_read` gilt nur `to authenticated` — ohne Anmeldung liefert die
+> Datenbank eine leere Liste, egal wie voll die Tabelle ist.
+
+🔴 **Die Folge in der Oberfläche ist still.** `Zeitachse.jsx` blendet sich
+selbst aus, sobald weniger als zwei Wettbewerbe in den geladenen Spielen
+vorkommen — bei null Spielen also immer. Der ganze Block „Spieltage der Runde"
+ist auf `/erstellen` **unsichtbar**, ohne Fehler und ohne Meldung. Dasselbe
+gilt für jeden anderen Teil der Spielerstellung, der aus dem Katalog rechnet.
+
+⚠️ **Was das für die Arbeitsweise heißt:** „im Browser geprüft" ist für die
+Spielerstellung derzeit nur nach Anmeldung zu haben — und die hängt am
+Mailversand (O2). Wer es ohne Konto versucht, sieht eine Seite, die geladen
+aussieht und leer rechnet.
+
+**Zwei Wege, beide nicht von mir entschieden:**
+
+- **Angemeldet prüfen.** Sauber, hängt aber an O2.
+- **Gegen den Mock-Store starten.** ⚠️ Ein `set NEXT_PUBLIC_SUPABASE_URL=` in
+  der Startzeile genügt NICHT: Next liest `.env.local` weiterhin, und in `cmd`
+  setzt `set VAR= &&` obendrein ein LEERZEICHEN statt zu löschen — dann hält
+  `hasSupabaseEnv` die Umgebung für gesetzt und `createClient` wirft
+  „supabaseUrl is required". Beides ausprobiert und verworfen. Ginge nur über
+  ein eigenes `.env`-Profil; das ist Andis Datei, angefasst habe ich sie nicht.
+
 ## ✅ DAS RUNDEN-MENÜ IST DURCH (27.08.2026)
 
 Andis Beschreibung vom 27.08.2026 hatte vier Teile (`design/rundenmenue.md`
