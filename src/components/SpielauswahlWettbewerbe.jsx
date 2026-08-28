@@ -6,6 +6,8 @@ import { getStore } from "@/lib/store";
 import { PHASEN, wettbewerbeIn, wettbewerbVon, phaseVon } from "@/lib/wettbewerbe";
 import { filterSpiele, engpaesse, zusammenfassung, VERKNUEPFUNG_HINWEIS } from "@/lib/spielauswahl";
 import KoRunden from "@/components/KoRunden";
+import LostopfVorauswahl from "@/components/LostopfVorauswahl";
+import { wettbewerbeMitToepfen } from "@/lib/lostoepfe";
 
 // ── „Nur das Interessanteste" ───────────────────────────────
 // Welche Wettbewerbe und welche Phasen gehören zur Runde. Der Reiz daran ist
@@ -114,6 +116,16 @@ export default function SpielauswahlWettbewerbe({ spiele, onChange, onZahl }) {
           ))}
         </Gruppe>
       )}
+
+      {/* 🔴 Lostopf-Vorauswahl (Andi, 27.08.2026). Steht hier und nicht in einem
+          eigenen Fenster: es ist dieselbe Frage wie die Chips darüber — welche
+          Spiele gehören dazu — nur feiner gestellt. ⚠️ Erscheint nur bei
+          Wettbewerben, für die es überhaupt Töpfe gibt; die Komponente
+          entscheidet das selbst und gibt sonst `null` zurück. */}
+      {wettbewerbeMitToepfen().map((wb) => (
+        <LostopfVorauswahl key={wb} wettbewerb={wb} matches={alle}
+          spiele={spiele} onChange={onChange} />
+      ))}
 
       {/* 🔴 K.-o.-Runden je Wettbewerb (SA1, Andi 24.08.2026). Steht NACH den
           Phasen-Chips, weil es dieselbe Frage feiner stellt: die Chips oben

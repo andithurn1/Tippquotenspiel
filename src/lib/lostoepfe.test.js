@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   LOSTOEPFE, toepfeVon, topfVon, vereineAusToepfen, vereineAusLigen,
   wettbewerbeMitToepfen, sanitizeLostopfRegel, passtLostopf, lostopfSpiele,
-  beschreibeLostopf, DEFAULT_LOSTOPF_REGEL,
+  beschreibeLostopf, DEFAULT_LOSTOPF_REGEL, vereineDerRegel,
 } from "./lostoepfe";
 import { alleMatches, vereineVon } from "./ligen";
 
@@ -142,5 +142,84 @@ describe("Die Bereinigung laesst nichts Ungueltiges durch", () => {
     expect(satz).toMatch(/Topf 1 \(9 Vereine\)/);
     expect(satz).toMatch(/4 aus eurer Liga/);
     expect(satz).toMatch(/K\.-o\.-Runde auch Topf 1 \+ 2/);
+  });
+});
+
+// ── Abwaehlen: der Topf ist eine VORauswahl ─────────────────
+// 🔴 Andi, 27.08.2026: „bei der mannschaftsauswahl mit den toepfen sollen
+// einzelne Mannschaften trotzdem abgewaehlt werden koennen".
+//
+// ⚠️ Ohne das waere die Mechanik eine Schublade statt eines Werkzeugs -- man
+// muesste einen Topf ganz nehmen oder ganz lassen.
+describe("Einzelne Vereine abwaehlen", () => {
+  const BASIS = { toepfe: [1], ausLigen: ["bl"], koToepfe: [1, 2] };
+
+  it("ein abgewaehlter Verein bringt kein Spiel mehr herein", () => {
+    const ohnePsg = { ...BASIS, ohne: ["Paris Saint-Germain"] };
+    const spiel = { wettbewerb: "cl", phase: "liga", home: "Paris Saint-Germain", away: "Sparta Prag" };
+    expect(passtLostopf(spiel, BASIS)).toBe(true);
+    expect(passtLostopf(spiel, ohnePsg)).toBe(false);
+  });
+
+  it("🔴 aber er ist KEIN Verbot -- der Gegner bringt das Spiel trotzdem herein", () => {
+    // ⚠️ Dieselbe Lesart wie `teamModus: "einer"` ueberall sonst: „Jedes Spiel
+    // der gewaehlten Vereine zaehlt -- auch gegen alle anderen." Eine zweite
+    // Lesart daneben waere eine Regel-Sprache mehr.
+    const ohnePsg = { ...BASIS, ohne: ["Paris Saint-Germain"] };
+    const gegenBayern = { wettbewerb: "cl", phase: "liga", home: "Paris Saint-Germain", away: "FC Bayern München" };
+    expect(passtLostopf(gegenBayern, ohnePsg)).toBe(true);
+  });
+
+  it("die Abwahl gilt AUCH in der K.-o.-Runde", () => {
+    // 🔴 Sonst kaeme ein abgewaehlter Verein durch die Hintertuer zurueck --
+    // und der Admin faende ihn dort wieder, ohne zu wissen warum.
+    const ohneChelsea = { ...BASIS, ohne: ["FC Chelsea"] };
+    const ko = { wettbewerb: "cl", phase: "achtelfinale", home: "FC Chelsea", away: "Ajax Amsterdam" };
+    expect(passtLostopf(ko, BASIS)).toBe(true);
+    expect(passtLostopf(ko, ohneChelsea)).toBe(false);
+  });
+
+  it("wirkt sich messbar auf die Spielauswahl aus", () => {
+    const voll = lostopfSpiele(alle, BASIS).length;
+    const ohne = lostopfSpiele(alle, { ...BASIS, ohne: ["Real Madrid", "Manchester City"] }).length;
+    expect(ohne).toBeLessThan(voll);
+    // Gegenprobe: es faellt etwas weg, aber nicht alles.
+    expect(ohne).toBeGreaterThan(voll / 2);
+  });
+
+  it("ein Name, den der Wettbewerb nicht kennt, wird verworfen", () => {
+    // ⚠️ Eine Abwahl ohne Wirkung sieht man einer Liste nicht an.
+    expect(sanitizeLostopfRegel({ ohne: ["SC Freiburg", "Gibtsnicht"] }).ohne).toEqual([]);
+    expect(sanitizeLostopfRegel({ ohne: ["Real Madrid", "Real Madrid"] }).ohne).toEqual(["Real Madrid"]);
+  });
+
+  it("`vereineDerRegel` sagt der Oberflaeche, was gewaehlt und was abgewaehlt ist", () => {
+    // 🔴 EINE Stelle, aus der Haekchen gelesen werden -- die Toepfe noch einmal
+    // selbst zusammenzurechnen hiesse, ein Haekchen zu zeigen, wo
+    // `passtLostopf` anders entscheidet.
+    const v = vereineDerRegel({ ...BASIS, ohne: ["Real Madrid"] });
+    expect(v.zurWahl).toContain("Real Madrid");
+    expect(v.gewaehlt).not.toContain("Real Madrid");
+    expect(v.abgewaehlt).toEqual(["Real Madrid"]);
+    // Topf 2 steht nur in der K.-o.-Runde dahinter -- getrennt ausgewiesen,
+    // weil es eine andere Aussage ist.
+    expect(v.nurKo).toContain("FC Chelsea");
+    expect(v.gewaehlt).not.toContain("FC Chelsea");
+  });
+
+  it("die Abwahl steht im Satz -- sonst liest er sich wie die Vorgabe", () => {
+    expect(beschreibeLostopf({ ...BASIS, ohne: ["Real Madrid"] })).toMatch(/ohne Real Madrid/);
+    expect(beschreibeLostopf({ ...BASIS, ohne: ["Real Madrid", "Inter Mailand"] }))
+      .toMatch(/ohne Real Madrid und Inter Mailand/);
+    // Ab drei wird gezaehlt statt aufgezaehlt -- sonst wird der Satz laenger
+    // als die Liste, die er beschreibt.
+    expect(beschreibeLostopf({ ...BASIS, ohne: ["Real Madrid", "Inter Mailand", "FC Barcelona"] }))
+      .toMatch(/ohne 3 abgewählte/);
+  });
+
+  it("ohne Abwahl bleibt alles, wie es war", () => {
+    // ⚠️ Regressionsschutz: `ohne` ist eine Zugabe, keine neue Vorgabe.
+    expect(lostopfSpiele(alle, BASIS).length).toBe(85);
+    expect(sanitizeLostopfRegel({}).ohne).toEqual([]);
   });
 });

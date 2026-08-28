@@ -129,17 +129,35 @@ export function vereineAusLigen(wettbewerb, ligen = []) {
 }
 
 // ── Die Regel ───────────────────────────────────────────────
-// `{ toepfe, ausLigen, koPhasen, koToepfe }`
+// `{ toepfe, ausLigen, ohne, koPhasen, koToepfe }`
 //   toepfe    — welche Töpfe in JEDER Phase zählen
 //   ausLigen  — zusätzlich alle Vereine aus diesen Ligen (Andis „deutsche")
+//   ohne      — einzelne Vereine, die trotz ihres Topfes NICHT zählen
 //   koPhasen  — welche Phasen als K.-o.-Runde gelten
 //   koToepfe  — welche Töpfe dort ZUSÄTZLICH zählen
 //
-// ⚠️ Die vier Felder sind ODER-verknüpft, und das ist der ganze Zweck: genau
-// das kann `passtSpiel` nicht.
+// ⚠️ `toepfe`, `ausLigen` und `koToepfe` sind ODER-verknüpft, und das ist der
+// ganze Zweck: genau das kann `passtSpiel` nicht.
+//
+// 🔴 **`ohne` ist der Grund, warum das hier eine VORauswahl heißt** (Andi,
+// 27.08.2026): „bei der mannschaftsauswahl mit den töpfen sollen einzelne
+// Mannschaften trotzdem abgewählt werden können". Ein Topf setzt einen
+// Startwert, er sperrt nicht. Ohne diese Zeile wäre die Mechanik eine
+// Schublade statt eines Werkzeugs — man müsste sie ganz nehmen oder ganz
+// lassen.
+//
+// ⚠️ **Und was Abwählen HEISST, ist keine Kleinigkeit.** Ein abgewählter
+// Verein zählt nicht mehr als GRUND, ein Spiel aufzunehmen — er ist damit kein
+// Verbot. Real Madrid abgewählt und Bayern drin: Real gegen Bayern ist
+// weiterhin dabei, weil Bayern es hineinbringt. Das ist dieselbe Lesart wie
+// `teamModus: "einer"` überall sonst („Jedes Spiel der gewählten Vereine
+// zählt — auch gegen alle anderen"), und eine zweite Lesart daneben wäre eine
+// Regel-Sprache mehr. Wer wirklich kein einziges Real-Spiel will, lässt Topf 1
+// weg und wählt die acht anderen über `ausLigen`/eine eigene Liste.
 export const DEFAULT_LOSTOPF_REGEL = {
   toepfe: [1],
   ausLigen: [],
+  ohne: [],
   koPhasen: ["achtelfinale", "viertelfinale", "halbfinale", "finale"],
   koToepfe: [1, 2],
 };
@@ -151,9 +169,16 @@ export function sanitizeLostopfRegel(roh = {}, wettbewerb = "cl") {
     const arr = Array.isArray(v) ? v.map(Number).filter((n) => gueltig.has(n)) : null;
     return arr && arr.length ? [...new Set(arr)].sort((a, b) => a - b) : vorgabe;
   };
+  // ⚠️ Nur Vereine, die es in diesem Wettbewerb überhaupt gibt. Ein Name, den
+  // niemand kennt, wäre eine Abwahl ohne Wirkung — und die sieht man einer
+  // Liste nicht an.
+  const imWettbewerb = new Set(Object.values(LOSTOEPFE[wettbewerb] ?? {}).flat());
   return {
     toepfe: nummern(p.toepfe, DEFAULT_LOSTOPF_REGEL.toepfe),
     ausLigen: Array.isArray(p.ausLigen) ? p.ausLigen.filter((x) => typeof x === "string") : [],
+    ohne: Array.isArray(p.ohne)
+      ? [...new Set(p.ohne.filter((x) => typeof x === "string" && imWettbewerb.has(x)))]
+      : [],
     koPhasen: Array.isArray(p.koPhasen) && p.koPhasen.length
       ? p.koPhasen.filter((x) => typeof x === "string")
       : DEFAULT_LOSTOPF_REGEL.koPhasen,
@@ -166,15 +191,49 @@ export function sanitizeLostopfRegel(roh = {}, wettbewerb = "cl") {
 export function passtLostopf(match, regel, wettbewerb = "cl") {
   if (!match) return false;
   const r = sanitizeLostopfRegel(regel, wettbewerb);
+  const abgewaehlt = new Set(r.ohne);
+
   const immer = new Set([
     ...vereineAusToepfen(wettbewerb, r.toepfe),
     ...vereineAusLigen(wettbewerb, r.ausLigen),
-  ]);
+  ].filter((v) => !abgewaehlt.has(v)));
   if (immer.has(match.home) || immer.has(match.away)) return true;
 
   if (!r.koPhasen.includes(match.phase)) return false;
-  const ko = new Set(vereineAusToepfen(wettbewerb, r.koToepfe));
+  // ⚠️ Die Abwahl gilt AUCH in der K.-o.-Runde. Sonst käme ein abgewählter
+  // Verein im Achtelfinale durch die Hintertür zurück — und der Admin fände
+  // ihn dort wieder, ohne zu wissen warum.
+  const ko = new Set(vereineAusToepfen(wettbewerb, r.koToepfe).filter((v) => !abgewaehlt.has(v)));
   return ko.has(match.home) || ko.has(match.away);
+}
+
+// ── Die Vereine, die die Regel WIRKLICH auswählt ────────────
+// Für eine Oberfläche, die Häkchen zeigen will: welche Vereine sind gewählt,
+// welche stehen zur Wahl, und welche sind abgewählt?
+//
+// 🔴 EINE Stelle, aus der die Oberfläche liest — nicht die Töpfe noch einmal
+// selbst zusammenrechnen. Sonst zeigt sie ein Häkchen, wo `passtLostopf`
+// anders entscheidet, und niemand merkt es.
+export function vereineDerRegel(regel, wettbewerb = "cl") {
+  const r = sanitizeLostopfRegel(regel, wettbewerb);
+  const abgewaehlt = new Set(r.ohne);
+  const ausToepfen = [
+    ...vereineAusToepfen(wettbewerb, r.toepfe),
+    ...vereineAusLigen(wettbewerb, r.ausLigen),
+  ];
+  const zurWahl = [...new Set(ausToepfen)];
+  return {
+    // Was die Regel am Ende auswählt.
+    gewaehlt: zurWahl.filter((v) => !abgewaehlt.has(v)),
+    // Was der Topf anbietet — die Liste, aus der man abwählt.
+    zurWahl,
+    // Was abgewählt wurde. ⚠️ Nur die, die überhaupt zur Wahl standen: eine
+    // Abwahl von jemandem, den der Topf gar nicht anbietet, ist keine.
+    abgewaehlt: zurWahl.filter((v) => abgewaehlt.has(v)),
+    // Zusätzlich in der K.-o.-Runde.
+    nurKo: vereineAusToepfen(wettbewerb, r.koToepfe)
+      .filter((v) => !abgewaehlt.has(v) && !zurWahl.includes(v)),
+  };
 }
 
 // ── Die Vorauswahl: aus der Regel wird eine Begegnungs-Liste ─
@@ -194,6 +253,12 @@ export function beschreibeLostopf(regel, wettbewerb = "cl") {
   const teile = [`Topf ${r.toepfe.join(" + ")} (${n} Vereine)`];
   const ausLigen = vereineAusLigen(wettbewerb, r.ausLigen);
   if (ausLigen.length) teile.push(`plus ${ausLigen.length} aus eurer Liga`);
+  // ⚠️ Die Abwahl gehört in den Satz. Eine Vorauswahl, die man verändert hat
+  // und die sich weiter wie die Vorgabe liest, ist eine falsche Auskunft.
+  const weg = vereineDerRegel(regel, wettbewerb).abgewaehlt;
+  if (weg.length) {
+    teile.push(weg.length <= 2 ? `ohne ${weg.join(" und ")}` : `ohne ${weg.length} abgewählte`);
+  }
   if (r.koToepfe.length) teile.push(`in der K.-o.-Runde auch Topf ${r.koToepfe.join(" + ")}`);
   return `${teile.join(", ")}.`;
 }
