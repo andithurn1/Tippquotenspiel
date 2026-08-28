@@ -127,6 +127,135 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-28 (XXXIV) · 🔴 **DEIN AUFTRAG: Spiele nach DATUM zuordnen, nicht nach Liga-Spieltag**
+
+⚠️ **Das ist die erste Aufgabe für Account 2.** Sie ist von Andi entschieden,
+nicht vorgeschlagen — gebaut ist NICHTS, bewusst nicht: sein Kontingent war
+leer, und er wollte, dass du übernimmst. `main` steht auf `8cd0c1a`,
+Arbeitsbaum leer, alle Abnahmen grün. **Fang hier an.**
+
+Lies vorher den Eintrag XXXIII darunter (die eigentliche Übergabe) — dort steht
+der Zustand und was sonst noch offen ist.
+
+---
+
+#### Der Fehler, um den es geht
+
+Die Zeitachse ordnet **ganze Liga-Spieltage** zu, nicht einzelne Spiele
+(`zeitachse()` in `src/lib/zeitachse.js`, Schleife über
+`ligaSpieltagGruppen`). Maßgeblich ist das **erste** Spiel der Gruppe; der Rest
+wird mitgezogen, egal wann er stattfindet.
+
+```
+Premier League, Spieltag 10
+   Sa 24.10.  Arsenal – Chelsea    → Tippspiel-Spieltag 8
+   Sa 24.10.  Liverpool – City     → Tippspiel-Spieltag 8
+   Mi 17.02.  Everton – Spurs      → Tippspiel-Spieltag 8   ⚠️ vier Monate später
+```
+
+Das Februar-Spiel fällt in den Oktober-Spieltag zurück — der ist da längst
+abgerechnet.
+
+🔴 **Andis Begründung, und sie wiegt schwerer als jede Anzeige-Frage:**
+
+> *„ja rein nach datum, nur so haben wir ja auch quoten“*
+
+Die ganze Wertung hängt an der Quote des REALEN Ergebnisses. Ein Nachholspiel
+im Februar hat eine Februar-Quote. Es in den Oktober-Spieltag zu rechnen hieße,
+es mit einer Quote zu werten, **die es nie gab**. Das ist kein Schönheitsfehler,
+das trifft die Wertung.
+
+#### ⚠️ Warum es überhaupt so gebaut war — und warum der Grund entfallen ist
+
+Ein Bundesliga-Spieltag läuft Freitag bis Sonntag. Lag eine Grenze mittendrin,
+zerfiel er auf zwei Runden-Spieltage — und ein Joker auf einem halben Spieltag
+ist etwas anderes als auf einem ganzen. Der Schutz war richtig.
+
+✅ **Seit dem 28.08.2026 liegt die Grenze auf einem festen Wochentag**
+(`zeitachse.endeTag`, Vorgabe „do" = Donnerstag 23:59, Schnitt also Freitag
+00:00). Damit kann das nicht mehr passieren. **Gemessen an allen 197
+Liga-Spieltagen des Katalogs: die Freitagsgrenze zerreißt keinen einzigen.**
+Der Schutz kostet also nichts mehr und schadet nur noch.
+
+⚠️ **Miss das selbst nach, bevor du es glaubst** — die Zahl stammt aus einem
+Wegwerf-Testfile, nicht aus einem Durchgang. Gruppiere nach
+`wettbewerb + matchday`, rechne je Spiel das Fenster aus, zähle die Gruppen mit
+mehr als einem Fenster.
+
+---
+
+#### Was zu bauen ist
+
+**① `src/lib/zeitachse.js` — neue Einstellung `zuordnung`**
+
+```js
+export const ZUORDNUNGEN = [
+  { key: "datum",    label: "Nach Datum",
+    hint: "Jedes Spiel zählt zu dem Spieltag, an dem es angepfiffen wird. Ein Nachholspiel gehört dorthin, wo es stattfindet." },
+  { key: "spieltag", label: "Nach Liga-Spieltag",
+    hint: "Ein Liga-Spieltag bleibt zusammen, auch wenn ein Spiel Monate später nachgeholt wird." },
+];
+```
+
+`DEFAULT_ZEITACHSE.zuordnung = "datum"`, in `sanitizeZeitachse` bereinigt wie
+`pause` (unbekannter Wert → Vorgabe).
+
+In `zeitachse()` die Zuordnungs-Schleife verzweigen: bei `"datum"` jedes Spiel
+einzeln nach seinem Anpfiff einsortieren, bei `"spieltag"` die heutige
+Gruppen-Fassung behalten. ⚠️ **`"spieltag"` NICHT löschen** — eine Runde, deren
+Grenze doch mitten im Wochenende liegt (Anker-Modus mit spätem Taktgeber),
+braucht sie weiter.
+
+**② `DEFAULT_ZEITACHSE.modus` von `"anker"` auf `"woche"`**
+
+🔴 **Das ist der Teil, der wirklich etwas ändert, und er gehört dazu.** `endeTag`
+wirkt nur im Wochen-Modus. Solange die Vorgabe „anker" ist, bekommt eine neu
+angelegte Runde Andis Donnerstag NICHT — gemessen: im Anker-Modus ist die
+Champions League in **3 von 12** Runden-Spieltagen das letzte Spiel, im
+Wochen-Modus mit Donnerstagsgrenze in **12 von 12**.
+
+**③ Die drei leeren Spieltage**
+
+Im Wochen-Modus entstehen an der Creator-Testrunde **3 leere Runden-Spieltage**
+(Länderspielpausen — eine Woche ohne ein einziges Spiel). Gemessen: 42
+Spieltage, davon 3 leer; im Anker-Modus 0 von 44.
+
+⚠️ Ich habe das nicht entschieden, weil es eine Wertungsfrage ist und keine
+Anzeige-Frage: eine „3 Spieltage"-Abklingzeit meint etwas anderes, je nachdem ob
+leere mitzählen. **Es gibt `bespielteSpieltage(achse)` bereits** — sieh dort
+zuerst nach, bevor du etwas Neues baust. Mein Vorschlag wäre, leere Fenster gar
+nicht erst als Spieltag zu führen; **frag Andi**, wenn du unsicher bist.
+
+**④ Die Gegenprobe, die dazugehört**
+
+`warnungen()` sollte melden, wenn `zuordnung: "spieltag"` läuft UND die Grenze
+Liga-Spieltage zerschneiden würde — das ist die Kombination, in der still etwas
+Falsches herauskommt.
+
+---
+
+#### ⚠️ Womit du rechnen musst
+
+Beim Vorbereiten dieser Änderung fielen sofort **4 Tests** in
+`zeitachse.test.js` um — das ist erwartet und nicht die Zahl, die zählt. Der
+Umbau ändert die Achse **jeder** Runde, also hängen viele Erwartungen daran.
+Geh sie einzeln durch und **frag bei jeder: prüft der Test die alte Rechnung
+oder eine echte Zusage?**
+
+🔴 Genau diese Sorte Fehler ist an diesem Tag schon einmal passiert (Eintrag
+XXXIII, Punkt ①): ein Test hatte einen BERICHT als Sollzustand eingefroren. Ein
+Test, den man nur anpasst, damit er wieder grün wird, hat vorher nichts bewiesen.
+
+Und die Pflichtläufe danach, alle vier: `npm test` · `npm run lint` ·
+`npm run build` · `npm run abnahmen` (12 Durchgänge, ~20 s).
+⚠️ `stufen` und `einstellbar` schlagen bei einem NEUEN Regel-Feld zuverlässig an
+— `zuordnung` braucht eine Oberfläche (`src/components/Zeitachse.jsx`) und
+entweder einen Vorführwert im Schaufenster oder eine Zeile mit Begründung in
+`SCHAU_AUSGENOMMEN` (`src/lib/schaufenster.js`). Das ist Absicht, keine Schikane.
+
+---
+
+
 ### 2026-08-28 (XXXIII) · 🔄 **ÜBERGABE an Account 2 — Andis Kontingent ist leer bis Dienstag 20:00**
 
 🔴 **Lies diesen Eintrag ganz. Er ist selbsttragend geschrieben** — du brauchst
