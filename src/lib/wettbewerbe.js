@@ -150,6 +150,20 @@ export function saisonLage(matches = [], jetzt = Date.now()) {
     // Wetten OHNE Freischalt-Fenster sind danach zu — sie gehören davor.
     gestartet: echte.some((m) => new Date(m.kickoff) <= jetzt),
     // Wetten MIT Fenster richten sich nach dem Spieltag IHRES Wettbewerbs.
-    stand: aktuellerSpieltag(matches),
+    //
+    // 🔴 **`jetzt` MUSS mitgereicht werden, und genau das fehlte bis zum
+    // 29.08.2026.** `aktuellerSpieltag` hat einen eigenen Vorgabewert
+    // (`Date.now()`) — ohne das zweite Argument rechnete diese Funktion ihre
+    // eine Hälfte (`gestartet`) gegen den übergebenen Zeitpunkt und die andere
+    // (`stand`) gegen die echte Uhr. Ein Aufrufer, der ausdrücklich einen
+    // Zeitpunkt angibt (Vorschau, Was-wäre-wenn, Test), bekam zwei Antworten
+    // aus zwei verschiedenen Gegenwarten.
+    //
+    // ⚠️ **Aufgefallen ist es erst, als die Saison wirklich begann.** Solange
+    // die echte Uhr vor dem ersten Anpfiff stand, kamen beide Wege zufällig auf
+    // dasselbe Ergebnis, und die Tests waren grün — am 28.08.2026 lief der
+    // erste Bundesliga-Spieltag, und am Tag darauf war `stand.bl` plötzlich 1,
+    // wo der Test 0 erwartete. Ein stiller Fehler mit eingebautem Wecker.
+    stand: aktuellerSpieltag(matches, jetzt),
   };
 }

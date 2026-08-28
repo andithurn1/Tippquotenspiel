@@ -128,6 +128,63 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-29 (XXXVII) · ⏰ **Auftrag XXXIV ist KOMPLETT — und die Saison hat einen Fehler geweckt**
+
+**③ ist gebaut.** Andis Entscheidung vom 29.08.2026 auf die offene Frage:
+**„Leere gar nicht erst führen."** Leere Fenster werden kein Runden-Spieltag
+mehr; danach wird durchgezählt, damit die Achse keine Löcher hat.
+**Gemessen an der Creator-Runde: 42 → 39 Spieltage, 0 leer.** Die
+Länderspielpause (13,1 Tage) liegt jetzt INNERHALB eines Spieltags — eine
+„3 Spieltage"-Sperre umfasst damit immer drei GESPIELTE Spieltage.
+
+---
+
+#### 🔴 Und dann ist etwas passiert, das kein Commit ausgelöst hat
+
+**Am 28.08.2026 lief der erste Bundesliga-Spieltag wirklich.** Am Tag darauf
+standen **8 Tests rot, ohne dass jemand etwas geändert hatte.** Zwei Ursachen,
+und die erste ist ein echter Fehler im Code:
+
+**1️⃣ `saisonLage(matches, jetzt)` reichte `jetzt` nicht weiter.**
+`gestartet` rechnete gegen den übergebenen Zeitpunkt, `stand` über
+`aktuellerSpieltag(matches)` gegen die **echte Uhr**. Ein Aufrufer, der
+ausdrücklich einen Zeitpunkt angibt, bekam zwei Antworten aus zwei
+verschiedenen Gegenwarten — dieselbe Sorte zweite Wahrheit, an der dieses
+Projekt schon 17 Fehler an einem Tag hatte. ✅ Behoben.
+
+⚠️ **Das Bemerkenswerte daran:** der Fehler war seit jeher da und **konnte
+nicht auffallen**, solange die echte Uhr vor dem ersten Anpfiff stand. Beide
+Wege kamen zufällig aufs selbe Ergebnis. Ein grüner Test hat hier nicht
+bewiesen, dass die Rechnung stimmt — nur, dass der Kalender mitspielte.
+
+**2️⃣ Der Mock-Store simuliert über die Wanduhr.** `kickoff <= Date.now()`
+entscheidet, welche der vorab hinterlegten Ergebnisse schon „gespielt" sind —
+richtig als Behelf, aber damit hängen Saison-Wetten-Fenster und die Tabelle am
+1. Spieltag am Datum des Rechners. ✅ In drei `describe`-Blöcken von
+`store.test.js` steht die Uhr jetzt fest auf einem Punkt vor dem Saisonstart.
+
+🔴 **Die Lehre, und sie ist die dritte dieser Art an zwei Tagen:** erst liefen
+die Wächter gar nicht (Windows-Pfade), dann meldeten sie Fehlalarme, und jetzt
+kippte die Suite am Kalender. **Ein Test, dessen Ergebnis vom Datum abhängt,
+misst nicht die Regel, sondern den Tag.** Wer hier eine rote Zeile sieht, prüft
+zuerst, ob sich überhaupt Code geändert hat.
+
+---
+
+#### Stand
+
+| | |
+|---|---|
+| `npm test` | **135 von 135 Dateien · 3120 grün · 51 skipped · Exit 0** |
+| `npm run abnahmen` | **12 von 12 · Exit 0** |
+| `npm run lint` · `npm run build` | grün |
+
+✅ **Auftrag XXXIV ist damit vollständig** — ①②③④ gebaut, alles gemessen,
+nichts offen. Das Auftragsbuch führt es als ZA1–ZA7.
+
+---
+
+
 ### 2026-08-28 (XXXVI) · 🟢 **Die zwei „Befunde" aus XXXV waren derselbe Windows-Fehler — alles grün**
 
 ⚠️ **Das korrigiert den Schluss von XXXV.** Dort steht „beides habe ich NICHT

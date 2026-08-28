@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createMockStore } from "./store.mock";
 import { DEMO_ROUND_ID, DEMO_JOIN_CODE } from "./constants";
 import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules } from "./engine";
@@ -9,6 +9,36 @@ import { WETT_TYP } from "./saisonwetten";
 import { filterMatchesByTeams } from "./roundStatus";
 import { darfEinsetzen, basisFuer } from "./jokerBasis";
 import { LIGEN } from "./ligen";
+
+// 🔴 **DIE UHR MUSS IN DIESEN TESTS STILLSTEHEN — und der Grund ist ein
+// Fehlschlag mit eingebautem Wecker.**
+//
+// Der Mock-Store hält Ergebnisse für die GANZE Saison vorab bereit und
+// entscheidet über `kickoff <= Date.now()`, welche davon schon „gespielt" sind
+// — ein Simulations-Behelf, damit die Tabelle am 1. Spieltag nicht die
+// Endtabelle ist. Dieselbe Wanduhr entscheidet, ob Saison-Wetten noch offen
+// sind.
+//
+// ⚠️ Solange die echte Uhr vor dem Saisonstart stand, war das unsichtbar.
+// **Am 28.08.2026 lief der erste Bundesliga-Spieltag wirklich** — und am Tag
+// darauf fielen acht Tests um, ohne dass jemand etwas geändert hatte:
+// Saison-Wetten galten als geschlossen („Saison läuft"), und die Tabelle am
+// 1. Spieltag kannte plötzlich Plätze.
+//
+// Deshalb hier ein fester Zeitpunkt VOR dem ersten Anpfiff des Katalogs
+// (Bundesliga 28.08.2026). Ein Test, dessen Ergebnis vom Kalender abhängt,
+// misst nicht die Regel, sondern das Datum.
+const VOR_SAISONSTART = new Date("2026-08-20T12:00:00Z").getTime();
+
+// `shouldAdvanceTime`, damit `await` nicht hängt: die Uhr steht nur für
+// `Date.now()` still, Zeitgeber laufen weiter.
+function uhrAnhalten() {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(VOR_SAISONSTART);
+  });
+  afterEach(() => { vi.useRealTimers(); });
+}
 
 describe("Mock-Store — Seed & Schnittstelle", () => {
   it("liefert das Demo-Match JOR-ESP mit Snapshot und Ergebnis", async () => {
@@ -155,6 +185,7 @@ describe("Kurzcode-Presets (publishPreset / getPresetByCode)", () => {
 });
 
 describe("Spieltag öffnen (openMatchday)", () => {
+  uhrAnhalten();
   it("friert den Spieltag ein und markiert JEDES Spiel als geprüft", async () => {
     const store = createMockStore();
     const ergebnis = await store.openMatchday(DEMO_ROUND_ID, 1, "bl");
@@ -202,6 +233,7 @@ describe("Spieltag öffnen (openMatchday)", () => {
 });
 
 describe("Saison-Wetten (saveSeasonTip / listSeasonTips + Leaderboard)", () => {
+  uhrAnhalten();
   // 🔴 Seit 06.08.2026 prüft `saveSeasonTip` das FREISCHALT-FENSTER (siehe
   // saisonFenster.js). Vorher war es ein `disabled`-Attribut in der
   // Oberfläche, und der Store nahm jede Wette zu jeder Zeit entgegen.
@@ -471,6 +503,7 @@ describe("Beschlossene Regeländerungen wirken ab ihrem Spieltag — und nur ab 
 // das zwei verschiedene Zahlen, und „kein Rad ohne Tipp" prüfte den falschen
 // Tag. Dieselbe Fehlerklasse wie beim Joker (siehe Zeitachse in CLAUDE.md).
 describe("Drehrad: der Store reicht den RUNDEN-Spieltag, nicht den Liga-Spieltag", () => {
+  uhrAnhalten();
   it("die Drehung liegt auf dem Spieltag, an dem wirklich getippt wurde", async () => {
     const s = createMockStore();
     const alle = await s.listMatches();
