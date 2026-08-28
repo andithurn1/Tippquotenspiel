@@ -304,7 +304,13 @@ und keine passt, hat entweder etwas übersehen oder braucht ihn nicht.
 | 3 | **Punkte-Kanäle** | Geben Punkte NEBEN der Wertung, mit **eigenem** Deckel | Saison-Wetten, Ereignis-Punkte, Alleingang, Drehrad |
 | 4 | **Verlaufs-Regeln** | Greifen über den STAND, nicht über ein Spiel | Aufhol-Bonus, Saisonform (Kurve, Streicher) |
 | 5 | **Auswahl** | Welche Spiele gehören dazu, wann sind sie tippbar | `spiele`, `tippfenster`, `zeitachse` |
-| 6 | **Ökonomie** | Woher Joker kommen, was sie kosten, wie oft | `jokerPlan`, `budget`, `limitKlassen`, `jokerBasis`, Ereignisse als Quelle |
+| 6 | **Joker-Ökonomie** | Woher Joker kommen, was sie kosten, wie oft | `jokerPlan`, `budget`, `limitKlassen`, `jokerBasis`, Ereignisse als Quelle |
+<!-- 🔴 Ebene 6 hieß bis zum 29.08.2026 nur „Ökonomie“. Umbenannt auf Andis
+     Ansage — im Glossar oben (Zeile „Joker-Ökonomie“) stand der lange Name
+     schon, in der Ebenen-Tabelle der kurze: dasselbe Ding, zwei Namen.
+     ⚠️ NICHT umbenannt wurde die Ökonomie-ACHSE der Joker-Bibliothek
+     (`joker-oekonomie.md`, Codeschema `<Wertung>-<Ökonomie>`) und die
+     „Narren-Ökonomie“ — das sind andere Begriffe, die nur ähnlich heißen. -->
 | 7 | **Anzeige** | Verändert die ZAHL, nie die Reihenfolge | `displayScale`, persönliche Anzeige-Stufen |
 
 🔴 **Die Grenze zwischen 2 und 3 ist die wichtigste im ganzen Spiel.**

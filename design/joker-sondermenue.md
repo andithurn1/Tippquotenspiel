@@ -506,7 +506,7 @@ eingeschaltet bleiben.
 
 ```
 Name          Geschütztes Spiel
-Ebene         6 (Ökonomie — worauf ein Einsatz überhaupt wirken darf)
+Ebene         6 (Joker-Ökonomie — worauf ein Einsatz überhaupt wirken darf)
 Hängt an      Tipp (ein Spiel, ein Spieltag, ein Spieler)
 Steht fest    beim Tippen — dieselbe Frist wie der Tipp selbst
 Wirkt als     Auswahl — ein geschütztes Spiel ist für Fremdjoker unsichtbar
@@ -586,7 +586,7 @@ weiterer Regler:
 
 ```
 Name          Ausgelostes Ziel
-Ebene         6 (Ökonomie — „gegen wen darf eingesetzt werden")
+Ebene         6 (Joker-Ökonomie — „gegen wen darf eingesetzt werden")
 Hängt an      Spieler (das Los) + Tipp (das gewählte Einzelspiel)
 Steht fest    das LOS beim Öffnen des Spieltags · das SPIEL beim Tippen
 Wirkt als     Auswahl — die Wirkung des Fremdjokers bleibt unverändert
