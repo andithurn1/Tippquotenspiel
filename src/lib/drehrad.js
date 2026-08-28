@@ -90,7 +90,7 @@ export const BELOHNUNGS_TYPEN = [
   },
   {
     key: "budget", label: "Narren",
-    desc: "Zahlt Narren auf das Konto des Spielers ein.",
+    desc: "Wer dreht, bekommt Narren aufs Konto.",
   },
   {
     key: "modifikator", label: "Modifikator",

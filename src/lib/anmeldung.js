@@ -65,7 +65,7 @@ export function leseAnmeldung(eingabe) {
   // ein Nutzer kann das nicht wissen.
   const token = p.get("token_hash") || p.get("token");
   if (!token) {
-    return { art: "unklar", grund: "In diesem Link steckt kein Anmelde-Token." };
+    return { art: "unklar", grund: "Dieser Link ist unvollständig. Fordere dir einen neuen an." };
   }
   // `magiclink` und `signup` sind die beiden, die hier ankommen; alles andere
   // reichen wir unverändert durch, statt es auf einen Typ zu zwingen.

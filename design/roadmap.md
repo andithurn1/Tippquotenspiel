@@ -91,6 +91,17 @@ und zahlt weniger. ⚠️ Damit verlässt die Regel Ebene 5: `abwerten` greift i
   (`DEFAULT_SPERRE`, die vier Regler-Stufen, die Schaufenster-Runde) sind
   ausdrücklich Platzhalter bzw. Vorführwerte.
 
+- 🔴 **Die Texte der Balance-Ampel tragen Werkstatt-Sprache** — gefunden beim
+  Ton-Durchgang am 28.08.2026, **nicht angefasst**. `balanceSim.js:731` rät
+  dem Admin: *„Nähe-Cutoff anheben, Sieger-Boden abschalten oder Strafe für
+  Fehltipps einführen."* **„Cutoff" und „Boden" sind unsere Wörter**, keine
+  Reglernamen, die irgendwo auf der Oberfläche stünden — wer den Rat liest,
+  weiß nicht, welchen Schalter er suchen soll.
+  ⛔ **Bewusst stehen gelassen:** `balanceSim.js` und die Ampel bleiben, wie sie
+  sind (CLAUDE.md). Wenn die Ampel in der Endphase wieder angeht, gehören ihre
+  Texte mit auf die Liste — die Empfehlung muss den Regler beim Namen nennen,
+  unter dem er in der Oberfläche steht.
+
 ---
 
 ## 🌍 Mehr Wettbewerbe, mehr Sportarten — notiert am 27.08.2026, ausdrücklich HINTEN DRAN

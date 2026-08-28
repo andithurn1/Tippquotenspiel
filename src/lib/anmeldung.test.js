@@ -46,9 +46,15 @@ describe("leseAnmeldung — Code oder Link", () => {
     expect(kurz.art).toBe("unklar");
     expect(kurz.grund).toContain(String(CODE_LAENGE));
     expect(leseAnmeldung("hallo").art).toBe("unklar");
-    // Ein Link OHNE Token ist der gemeinste Fall: er sieht richtig aus.
+    // Ein Link ohne Anmelde-Kennung ist der gemeinste Fall: er sieht richtig aus.
+    //
+    // ⚠️ Hier stand bis zum 28.08.2026 `toContain("Token")` — und damit war
+    // ausgerechnet das Werkstatt-Wort festgeschrieben, das der Nutzer nicht
+    // kennt. Geprüft wird jetzt, was der Text LEISTEN muss: sagen, dass der
+    // Link nicht taugt, und sagen, was zu tun ist.
     const ohne = leseAnmeldung("https://tippquotenspiel.vercel.app/");
     expect(ohne.art).toBe("unklar");
-    expect(ohne.grund).toContain("Token");
+    expect(ohne.grund).toMatch(/unvollständig/i);
+    expect(ohne.grund, "sagt nicht, was zu tun ist").toMatch(/neuen an/i);
   });
 });

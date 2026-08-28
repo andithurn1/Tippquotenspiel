@@ -47,7 +47,7 @@
 
 // Welche Ergebnis-Ebene muss stimmen, damit die Kombination zählt?
 export const KOMBI_STUFEN = [
-  { key: "tendenz", label: "Sieger richtig", desc: "Schon der richtige Sieger genügt — der mildeste Zuschnitt." },
+  { key: "tendenz", label: "Sieger richtig", desc: "Schon der richtige Sieger genügt — am leichtesten zu treffen." },
   { key: "abstand", label: "Abstand richtig", desc: "Die Tordifferenz muss stimmen." },
   { key: "exakt", label: "Ergebnis exakt", desc: "Beide Torzahlen müssen stimmen — die seltenste Kombination." },
 ];

@@ -163,6 +163,40 @@ der Stichprobe, in denen **Werkstatt-Sprache** stand:
 
 ⚠️ **Die letzten beiden sind der Typ, auf den es zu achten gilt** — nicht
 Steifheit, sondern **Werkstatt-Sprache**: ein Wort, das im Team eine Bedeutung
-hat und draußen keine. Danach sucht kein Muster; das findet nur, wer liest.
+hat und draußen keine.
+
+## Zweiter Durchgang, 28.08.2026 — und eine Korrektur an diesem Blatt
+
+🔴 **Hier stand: „Danach sucht kein Muster; das findet nur, wer liest."** Der
+Satz war zu bescheiden. Genau danach lässt sich suchen — man muss die Wörter
+nur **aufschreiben statt sie zu erraten**. Über eine schlichte Wortliste fanden
+sich vier Stellen, die beim Lesen durchgerutscht waren:
+
+| vorher | nachher | warum |
+|---|---|---|
+| „Zahlt Narren auf das Konto des Spielers ein." | „Wer dreht, bekommt Narren aufs Konto." | „der Spieler" statt du — und die Nachbarzeile machte es längst vor |
+| „In diesem Link steckt kein Anmelde-Token." | „Dieser Link ist unvollständig. Fordere dir einen neuen an." | „Token" steht in keiner Mail und auf keinem Knopf. ⚠️ Bleibt sachlich — Anmelde-Fehler sind vom lockeren Ton ausgenommen —, sagt aber jetzt, was zu TUN ist |
+| „Festes Quadrat 0–8 — das volle erzeugte Raster." | „Festes Quadrat 0–8." | 🔴 Werkstatt UND **falsch**: seit es die Stufe „9" gibt, ist 8 nicht mehr das volle Raster. Eine schöne Formulierung hatte eine veraltete Behauptung getarnt |
+| „Schon der richtige Sieger genügt — der mildeste Zuschnitt." | „…— am leichtesten zu treffen." | „Zuschnitt" ist unser Wort dafür, welche Spiele zur Runde gehören. Hier hieß es etwas anderes |
+
+⛔ **Eine fünfte Stelle steht bewusst unangetastet:** `balanceSim.js:731` rät
+„Nähe-Cutoff anheben, Sieger-Boden abschalten". Balancing ist Endphase
+(CLAUDE.md), die Ampel bleibt wie sie ist — der Befund steht als Zeile in
+`design/roadmap.md` unter „Endphase".
+
+### Daraus wurde eine Abnahme: `npm run worte`
+
+`scripts/worte-durchgang.mjs` durchsucht die Spielertexte nach einer Liste
+verzeichneter Werkstatt-Wörter. **Die eigentliche Arbeit steckt in der
+GEGENLISTE:** „Joker", „Narren", „Modifikator", „Deckel", „Faktor", „Anker",
+„Raster" sehen technisch aus und **sind unsere Wörter für die Spieler** — sie
+stehen so auf der Oberfläche. Ohne diese Liste meldet der Durchgang die halbe
+Spielsprache, und man schaltet ihn nach dem zweiten Lauf ab. Jeder Eintrag
+beider Listen trägt deshalb einen Satz, warum er dort steht.
+
+⚠️ **Was er NICHT kann, und das steht auch in seiner Ausgabe:** über den Ton
+urteilt er nicht. Ob ein Satz zu bemüht klingt, sieht nur ein Mensch — dafür
+sind die vier Probefragen oben da. Ein grünes „worte: ok" heißt „kein
+verzeichnetes Wort", nicht „Ton in Ordnung".
 
 ✅ Ab sofort gilt dieser Ton für jeden NEUEN Text.

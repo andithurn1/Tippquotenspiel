@@ -69,7 +69,7 @@ export const MATRIX_STUFEN = [
   { key: "4", label: "4", feste: 4, desc: "Festes Quadrat 0–4." },
   { key: "5", label: "5", feste: 5, desc: "Festes Quadrat 0–5." },
   { key: "6", label: "6", feste: 6, desc: "Festes Quadrat 0–6." },
-  { key: "8", label: "8", feste: 8, desc: "Festes Quadrat 0–8 — das volle erzeugte Raster." },
+  { key: "8", label: "8", feste: 8, desc: "Festes Quadrat 0–8." },
   // 🔴 Andis TI2 („viele Stufen für die Matrixgröße, bis 10"), nachgeholt am
   // 25.08.2026. Sie stand bis heute mit der Begründung aus, das Quoten-Raster
   // sei 6×6 und für ein 6:2 gebe es keine Quote — eine Stufe darüber wäre von

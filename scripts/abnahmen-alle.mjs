@@ -28,6 +28,7 @@ import { execFileSync } from "node:child_process";
 // Reihenfolge nach LAUFZEIT, die schnellen zuerst: wer etwas kaputt gemacht
 // hat, soll es nach zehn Sekunden wissen und nicht nach zwei Minuten.
 const DURCHGAENGE = [
+  { name: "worte", was: "Werkstatt-Sprache in einem Spielertext" },
   { name: "detail", was: "zweite Ebene hinter einem Klick" },
   { name: "toepfe", was: "wird jeder Rückgabe-Topf ausgeleert" },
   { name: "schlank", was: "Schnappschuss nur, wo er gebraucht wird" },
