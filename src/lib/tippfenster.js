@@ -73,7 +73,7 @@ export const TIPPFENSTER_LIMITS = {
 export const ANKER = [
   {
     key: "spiel", label: "Vor jedem einzelnen Spiel",
-    erklaerung: "Jedes Spiel wird für sich freigegeben. Das Sonntagsspiel geht später auf als das Freitagsspiel — dafür sind die Quoten überall gleich frisch.",
+    erklaerung: "Jedes Spiel geht für sich auf. Das Sonntagsspiel später als das Freitagsspiel — dafür sind die Quoten überall gleich frisch.",
   },
   {
     key: "spieltag", label: "Vor dem Beginn des Spieltags",

@@ -86,6 +86,39 @@ flotter Satz will einen flotten Grund, und wenn keiner dasteht, erfindet man
 einen. Das ist dieselbe Falle wie ein erfundener Regler, nur in Prosa.
 **Steht der Grund nicht da, wird nachgefragt statt ausgeschmückt.**
 
+## 🔴 Die dritte Lehre, 27.08.2026: GENAU schlägt locker
+
+Andi, nachdem er die Textüberarbeitung beauftragt hatte:
+
+> *„mach du dann noch ne Überarbeitung der Texte aber soll schon noch immer
+> **genau und nicht zu hipp und cool wirken wollend**"*
+
+⚠️ **Das ist eine Präzisierung, keine Rücknahme** — aber sie verschiebt den
+Schwerpunkt, und zwar an der wichtigsten Stelle. Bisher stand hier „locker
+jugendlich" als Ziel und „Alter Sack" als Grenze. Beides bleibt. Neu ist die
+Rangfolge:
+
+**Wenn locker und genau sich widersprechen, gewinnt GENAU.**
+
+Der Grund steckt in seinem Wort *„wirken wollend"*: ein Text, der cool sein
+WILL, ist keiner. Man hört die Absicht, und in dem Moment glaubt man ihm auch
+die Auskunft nicht mehr.
+
+| ⛔ zu bemüht | ✅ locker UND genau |
+|---|---|
+| „Boom — dein Joker ist scharf!" | „Joker gesetzt. Zählt doppelt." |
+| „Hier geht richtig was ab!" | „Drei Spiele offen, zwei davon heute Abend." |
+| „Krass, du führst!" | „Du bist Erster — 40 Punkte vor dem Zweiten." |
+
+🔴 **Der Unterschied ist nicht die Länge, sondern die ZAHL.** Die rechte Spalte
+ist genauso kurz und sagt trotzdem etwas. Ein Text wird nicht dadurch locker,
+dass man Information wegnimmt.
+
+⚠️ **Und die praktische Folge für den Umbau:** wo ein Bestandstext heute
+sachlich und richtig ist, wird er nicht „aufgelockert". Angefasst wird, was
+**umständlich** ist — Substantivketten, Passiv, „der Spieler" statt „du".
+Nicht, was nüchtern ist.
+
 ## Die Probe
 
 Zwei Fragen an jeden neuen Text, und beide müssen mit ja beantwortbar sein:
@@ -94,10 +127,42 @@ Zwei Fragen an jeden neuen Text, und beide müssen mit ja beantwortbar sein:
 2. **Würde ich mich fremdschämen, wenn er es vorliest?** (Wenn ja: zu bemüht.)
 3. **Steht jeder Grund im Text auch wirklich fest — oder klingt er nur gut?**
    (Wenn nur gut: erfunden.)
+4. 🔴 **Sagt der Text nach dem Auflockern noch dasselbe?** (Wenn eine Zahl,
+   eine Bedingung oder ein Grund verschwunden ist: zu weit gegangen. Andi,
+   27.08.2026 — „soll schon noch immer genau" sein.)
 
-## Bestand
+## Bestand — NACHGEMESSEN am 27.08.2026, und deutlich kleiner als gedacht
 
-⏳ **Nicht nachgezogen.** Gemessen am 27.08.2026: **4 609 Textstellen**,
-~175 000 Zeichen ≈ 97 Normseiten. Der Umbau steht als TON1 in
-`design/auftraege.md`, mit Reihenfolge. Ab sofort gilt dieser Ton für jeden
-NEUEN Text.
+🔴 **Die Zahl 4 609 war irreführend.** Sie zählte jede Zeichenkette im Code —
+Kommentare, Schlüssel, Testdaten. Nachgemessen wurde deshalb enger: nur was in
+einem BENANNTEN Textfeld steht (`desc`, `text`, `label`, `hinweis`, `help`,
+`titel`, `beheben`, `grund`), Kommentarzeilen ausgenommen.
+
+| | |
+|---|---|
+| Dateien durchsucht | 278 |
+| **Echte Nutzertexte** | **945** |
+| davon umständlich (Passiv · „der Spieler" · Substantivkette · Floskel) | **2** |
+
+⚠️ **Und die Stichprobe bestätigt es:** 16 zufällig gezogene Texte lesen sich
+bereits so, wie dieser Maßstab es verlangt — kurz, konkret, mit „du" und mit
+der Zahl darin („Auch ein knapp verfehlter Tipp zahlt noch ordentlich.",
+„Jemand hat dir eine Runde geschickt? Code eingeben, fertig.").
+
+🔴 **Was daraus folgt, und es ist die eigentliche Auskunft:** TON1 ist kein
+Umbau von 97 Normseiten. Der Bestand ist im richtigen Register. Angefasst
+wurden am 27.08.2026 genau **vier** Stellen — die zwei gemessenen plus zwei aus
+der Stichprobe, in denen **Werkstatt-Sprache** stand:
+
+| vorher | nachher | warum |
+|---|---|---|
+| „Schreibt dem Spieler einen Joker … gut." | „Wer dreht, bekommt einen Joker …" | „der Spieler" statt du |
+| „Jedes Spiel wird für sich freigegeben." | „Jedes Spiel geht für sich auf." | Passiv |
+| „Kostet null Balance." | „…die Auszeichnung ohne Punkte." | „Balance" ist UNSER Wort, nicht seins |
+| „lokal eingefroren, aber nicht gespeichert" | „dein Tipp gilt nur auf diesem Gerät" | sagt die Folge statt der Technik |
+
+⚠️ **Die letzten beiden sind der Typ, auf den es zu achten gilt** — nicht
+Steifheit, sondern **Werkstatt-Sprache**: ein Wort, das im Team eine Bedeutung
+hat und draußen keine. Danach sucht kein Muster; das findet nur, wer liest.
+
+✅ Ab sofort gilt dieser Ton für jeden NEUEN Text.

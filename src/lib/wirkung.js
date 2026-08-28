@@ -125,7 +125,7 @@ export const WIRKUNG_TYPEN = [
     key: "nichts", label: "Nur eine Auszeichnung", richtung: "neutral",
     braucht: [], parameter: [],
     standard: {},
-    text: "Es wird genannt, aber nichts verrechnet. Kostet null Balance.",
+    text: "Wird genannt, aber nicht verrechnet — die Auszeichnung ohne Punkte.",
     topf: "Keiner.",
   },
   {

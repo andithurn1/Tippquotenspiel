@@ -86,7 +86,7 @@ export const BELOHNUNGS_TYPEN = [
   },
   {
     key: "joker", label: "Joker",
-    desc: "Schreibt dem Spieler einen Joker der gewählten Art gut.",
+    desc: "Wer dreht, bekommt einen Joker der gewählten Art.",
   },
   {
     key: "budget", label: "Narren",

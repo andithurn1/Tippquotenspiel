@@ -2188,7 +2188,7 @@ function PlayerSelect({ label, value, quote, players, onChange, allowEmpty, dim,
 const SAVE_HINT = {
   saving: { text: "wird gespeichert …", col: C.muted },
   gesperrt: { text: "Dieses Spiel wurde dir geblockt — es lässt sich nicht mehr tippen.", col: C.coral },
-  guest:  { text: "nicht eingeloggt — lokal eingefroren, aber nicht gespeichert", col: C.akzent },
+  guest:  { text: "nicht angemeldet — dein Tipp gilt nur auf diesem Gerät", col: C.akzent },
   error:  { text: "Speichern fehlgeschlagen — später erneut versuchen", col: C.coral },
 };
 
