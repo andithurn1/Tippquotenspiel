@@ -126,6 +126,53 @@ Beide Accounts arbeiten auf **einem** Repo. Damit sich niemand überschreibt:
 
 ## Nachrichten-Log (neueste oben — anhängen, nichts überschreiben)
 
+### 2026-08-27 (XXXII) · 🔒 **Der Beitritts-Code war keine Schranke** — plus zwei neue Abnahmen
+
+**Drei Sachen, und die erste ist eine Sicherheitslücke.**
+
+**1️⃣ LV4: jeder Angemeldete konnte alle Beitritts-Codes lesen.** `join_code`
+ist eine SPALTE in `rounds`, und `rounds_read` gilt `for select to
+authenticated using (true)`. RLS filtert ZEILEN, nicht Spalten.
+
+⚠️ **Der Schema-Kommentar behauptete das Gegenteil** — der Code sei die
+Zugangsschranke, nicht die Sichtbarkeit. Das ist die gefährliche Sorte Fehler:
+sie klingt nach einer Entscheidung und ist eine Lücke.
+
+🔴 **Und der Griff, der beim Zumachen fast danebengegangen wäre:** ein blosses
+`revoke select (join_code)` ist **wirkungslos**, solange die Rolle ein
+TABELLENWEITES `select` hat — und Supabase gibt genau das. Man hätte eine
+Zeile gehabt, die nach Schutz aussieht und keiner ist. Richtig ist: das ganze
+Recht entziehen, dann die erlaubten Spalten einzeln geben.
+
+⚠️ **Die Kehrseite, die man dabei übersieht:** der Admin muss seinen EIGENEN
+Code sehen können, sonst kann er niemanden einladen — die Lücke wäre zu und
+die Runde auch. Dafür `runden_code()` (`security definer`, fester
+`search_path`). Beitritt läuft jetzt über `/api/beitreten`.
+
+**2️⃣ `npm run toepfe`** — die Abnahme, die dem Rad-Modifikator gefehlt hat.
+`npm run tot` fragt, ob eine FUNKTION jemand aufruft; nicht, ob jeder TOPF
+ihres Ergebnisses ausgeleert wird. 🔴 **Wer ein Objekt mit mehreren Fächern
+zurückgibt, braucht je Fach einen Test bis in die WERTUNG — nicht bis in die
+Liste.**
+
+**3️⃣ `npm run abnahmen`** — alle 11 in 30 s, eine Tabelle. Dabei kam heraus:
+**von 13 Durchgängen setzten NEUN keinen Rückgabewert.** Sie fanden etwas,
+schrieben es hin und beendeten sich mit 0 — kein `&&` brach ab, keine Kette
+schlug an. Jeder endet jetzt mit `ABNAHME <name>: ok`, und der Sammel-Lauf
+liest diese Zeile und nicht den Fließtext (ein Bericht, den man nach seiner
+Prosa beurteilt, wird beim ersten umformulierten Satz still grün).
+
+⚠️ **Bitte ab jetzt `npm run abnahmen` nehmen** statt einzeln zu tippen.
+
+**Nebenbei: der schlanke Katalog.** 14 von 19 Screens laden Spiele jetzt ohne
+Quoten-Schnappschuss — **3138 → 467 KB, 85 % gespart**. Gefahrlos nur, weil
+die WERTUNG den Schnappschuss nie aus dem Katalog liest, sondern den am Tipp
+eingefrorenen. `npm run schlank` misst, dass kein schlank ladender Screen doch
+zugreift.
+
+**Stand:** `npm test` 3042 grün · alle 11 Abnahmen sauber · build grün.
+
+
 ### 2026-08-27 (XXXI) · 🎡 **Das Rad ist jetzt ein Baukasten** — und zwei Wirkungen kamen nie an
 
 **Andi hat zwei Dinge entschieden und eines gefragt.** Alles drei ist gebaut,
