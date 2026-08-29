@@ -408,3 +408,47 @@ und keine Ebene füllt, wird gestrichen statt weiter mitgeschleppt.
 `sanitizeRules` entfernen — alte Creator-Codes müssen das überleben (sie
 laufen ohnehin durch `sanitizeRules`, unbekannte Felder fallen weg). Vor dem
 ersten Streichen `npm test` als Ausgangszahl festhalten.
+
+---
+
+## Regal — die Unterbibliothek der Einzeljoker
+
+**Andi, 29.08.2026:** *„ich finde Regal einen guten Begriff für die
+Unterbibliothek der Einzeljoker"*
+
+Damit hat die Sache einen Namen, bevor sie gebaut ist — und das ist die
+richtige Reihenfolge. Die Begriffsleiter steht jetzt vollständig:
+
+| Begriff | Was es trägt | Stand |
+|---|---|---|
+| **Bibliothek** | ganze Regelwerke (`TS2-…`) | ✅ da (`bibliothek.js`) |
+| **Teilbibliothek** | EIN Aspekt als Ganzes (`TS2A-joker-…`) | ✅ da (`teilbibliothek.js`, 12 Aspekte) |
+| **Regal** | EIN einzelner Joker samt Detail-Einstellungen | ⏳ **nicht gebaut** |
+
+### ⚠️ Warum das Regal heute noch nicht existiert
+
+Zwei Gründe, und beide sind Andis eigene:
+
+1. **„Keine Presets und keine Bibliothek. Die machen wir ganz am Ende."**
+   (CLAUDE.md, Verbot 2). Das Regal ist genau das.
+
+2. 🔴 **Der Kopf von `teilbibliothek.js` schließt es ausdrücklich aus:**
+   *„Ein Teil-Code trägt IMMER einen ganzen Aspekt, nie einzelne Felder daraus.
+   Wer ‚nur den Joker-Faktor' teilen könnte, teilt einen halben Satz."*
+
+   Das ist kein Formfehler, sondern die Begründung für die Aspekte überhaupt:
+   `joker`, `jokerBasis`, `budget`, `limitKlassen`, `duell` und `eingriffe`
+   hängen zusammen. Ein Klau-Joker ohne `eingriffe` übernimmt die Mechanik,
+   lässt aber offen, ob die Familie in der Zielrunde überhaupt eingeschaltet
+   ist — und ein geladener Code, der halb wirkt, ist schlimmer als einer, der
+   gar nicht wirkt.
+
+### 🔴 Die Frage, die vor dem Regal zu beantworten ist
+
+**Was genau ist „ein Einzeljoker"?** Nicht ein Feld — sondern ein Joker samt
+allem, was ihn funktionsfähig macht. Für den Klau-Joker wären das mindestens
+`duell.klau`, seine Kontingente, seine Sperrfrist und das `eingriffe`-Dach.
+
+⚠️ Solange das nicht festgelegt ist, wäre ein Regal eine Sammlung halber
+Sätze. Der Name ist gut und steht jetzt fest; der Zuschnitt gehört in die
+Endphase, zusammen mit Presets und Bibliothek.

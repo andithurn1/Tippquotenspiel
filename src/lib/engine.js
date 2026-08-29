@@ -1533,7 +1533,14 @@ export function projectTip(tip, snap, rules = DEFAULT_RULES) {
 // beide Seiten sind für sich richtig. Deshalb summiert `scoreLeaderboard`
 // dieses Ergebnis nur noch, statt es selbst zu erzeugen — und `punkteJeSpiel`
 // liest dieselbe Liste.
-function bewerteEintraege(entries = [], rules = DEFAULT_RULES, regelnFuer = null) {
+// 🔴 EXPORTIERT seit dem 29.08.2026, für die Abzeichen-Bilanz.
+//
+// ⚠️ Und zwar genau DESHALB exportiert, statt daneben noch einmal zu rechnen:
+// Das Ranking bewertet hier, und ein Abzeichen, das seine eigene Bewertung
+// mitbringt, behauptet im Profil irgendwann etwas anderes als die Tabelle
+// daneben. Die Abzeichen sind kosmetisch — aber sie sind zum ANGEBEN da, und
+// wer angibt, wird darauf angesprochen.
+export function bewerteEintraege(entries = [], rules = DEFAULT_RULES, regelnFuer = null) {
   // Tipp-Einfluss: die Runde bewegt das Ergebnis-Raster mit. Ist die Regel aus
   // (Vorgabe), kommen die Einträge unverändert zurück — dieselben Objekte, kein
   // Kopieren. Hier und nicht beim Speichern des Tipps, weil die Mischung erst
