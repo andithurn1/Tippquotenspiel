@@ -46,6 +46,7 @@ import NaheErgebnisse from "@/components/NaheErgebnisse";
 import ErgebnisMatrix from "@/components/ErgebnisMatrix";
 import SpielBlaettern from "@/components/SpielBlaettern";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
+import { paarungFarben } from "@/lib/vereinsfarben";
 // ⚠️ Der SPIELER bekam hier gerundete Joker-Faktoren zu sehen: bei einem
 // eingestellten ×1,15 stand „×1.2" auf dem Knopf. Seit die Faktoren auf dem
 // 0,05-Raster stehen, muss die Anzeige mitziehen — Begründung in format.js.
@@ -619,6 +620,46 @@ export default function Tippabgabe({ matchId }) {
   const kickoffLabel = new Intl.DateTimeFormat("de-DE", {
     weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
   }).format(new Date(SNAP.kickoff));
+
+  // ── 🔴 VEREINSFARBEN — nur hier, nirgends sonst ──────────────
+  //
+  // Andi, 29.08.2026, direkt nach der Frage nach Vereinslogos:
+  //   „das jeweilige Farbschema der einzelnen Wischfenster für die Tippabgabe
+  //    nach den jeweiligen Vereinsfarben anpassen bzw. entsprechende Details
+  //    und Verzierungen so einblenden … Nur die restlichen Übersichten sollen
+  //    in dem gewählten Farbschema angezeigt werden."
+  //
+  // ⚠️ `null`, sobald EINE der beiden Seiten fehlt — dann bleibt die Karte
+  // vollständig im gewählten Schema. Halb gefärbt wäre schlechter als gar
+  // nicht: es sähe aus, als gehöre die Farbe zur Runde und nicht zur Paarung.
+  //
+  // ⚠️ `C.ink` wird HEREINGEREICHT und nicht angenommen. Das Grundschema ist
+  // hell; auf Weiß ist Dortmund-Gelb als Schrift unlesbar. Die Bibliothek
+  // wählt deshalb je Grund eine andere Farbe des Vereins — die Wiedererkennung
+  // trägt das Farbband darüber, nicht die Schrift.
+  const vf = paarungFarben(SNAP.home, SNAP.away, C.ink);
+
+  // Bis zu drei Farben je Seite, harte Kanten statt Matsch: links die Heim-,
+  // rechts die Gastfarben. Genau das „bis zu 3 Farben", das Andi genannt hat.
+  //
+  // 🔴 Zwischen den Segmenten bleibt eine FUGE, durch die der dunkle Grund
+  // des Bandes scheint. Ohne sie verschwinden weiße Segmente spurlos — beim
+  // ersten Blick auf die Probe sah Newcastle gegen Real Madrid aus, als sei
+  // das Band halb kaputt: beide Vereine haben Weiß, und Weiß auf hellem
+  // Schema ist nichts. Weiß ist bei sehr vielen Vereinen die zweite Farbe,
+  // das ist also kein Randfall.
+  const FUGE = 1.2;   // Prozent der Bandbreite
+  const farbBand = vf && (() => {
+    const streifen = (liste, von, bis) => {
+      const breite = (bis - von) / liste.length;
+      return liste.map((f, i) => {
+        const a = von + i * breite, b = von + (i + 1) * breite - FUGE;
+        return `transparent ${a}%, ${f} ${a}%, ${f} ${b}%, transparent ${b}%`;
+      }).join(", ");
+    };
+    return `linear-gradient(90deg, ${streifen(vf.heim.alle, 0, 50)}, ${streifen(vf.gast.alle, 50, 100)})`;
+  })();
+
 
   // 🔴 NICHT `SNAP.correctScore[h]?.[a]` — das war eine zweite Wahrheit.
   // Das Raster im Katalog ist 6×6, der Stepper lässt 0…9 zu: gemessen tragen
@@ -1337,11 +1378,31 @@ export default function Tippabgabe({ matchId }) {
         background: `radial-gradient(120% 80% at 50% -10%, ${C.ink2} 0%, ${C.ink} 60%)`,
         border: `1px solid ${C.line}`, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)",
       }}>
+        {/* ⚠️ Der Schein nimmt die Vereinsfarben auf, wenn es welche gibt —
+            links die Heim-, rechts die Gastfarbe. Sehr schwach (14 von 255):
+            es ist eine Verzierung, kein zweiter Hintergrund. Ohne Paarung
+            bleibt es exakt der Akzent des gewählten Schemas. */}
         <div style={{
           position: "absolute", top: -90, left: "50%", transform: "translateX(-50%)",
           width: 320, height: 200, pointerEvents: "none",
-          background: `radial-gradient(circle, ${C.akzent}22 0%, transparent 70%)`,
+          background: vf
+            ? `radial-gradient(circle at 30% 50%, ${vf.heim.grund}22 0%, transparent 60%),`
+              + ` radial-gradient(circle at 70% 50%, ${vf.gast.grund}22 0%, transparent 60%)`
+            : `radial-gradient(circle, ${C.akzent}22 0%, transparent 70%)`,
         }} />
+
+        {/* 🔴 Das Farbband — hier sitzt die Wiedererkennung. Die ROHEN
+            Vereinsfarben, ungefiltert: auf dem Band steht kein Text, also
+            muss hier nichts lesbar gemacht werden. Gelb-Schwarz links,
+            Weiß-Rot rechts, und man weiß ohne ein einziges Wappen, worum es
+            geht. Das ist die rechtlich saubere Hälfte (siehe `design/symbole.md`). */}
+        {farbBand && (
+          <div aria-hidden style={{
+            position: "absolute", top: 0, left: 0, right: 0, height: 6,
+            backgroundColor: "rgba(17,17,17,0.85)",   // der Grund unter den Fugen
+            backgroundImage: farbBand, pointerEvents: "none",
+          }} />
+        )}
 
         {!done ? (
           <div style={{ position: "relative", padding: "26px 22px 22px" }}>
@@ -1352,8 +1413,18 @@ export default function Tippabgabe({ matchId }) {
               </span>
               <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted }}>Anpfiff {kickoffLabel}</span>
             </div>
+            {/* ⚠️ NICHT `vf.heim.grund`, sondern `aufDunkel` — das ist die
+                Farbe, die auf DIESEM Kartengrund lesbar bleibt. Der
+                Unterschied ist nicht kosmetisch: Newcastles Schwarz und
+                Dortmunds Gelb wären je nach Schema schlicht unsichtbar. */}
             <div style={{ marginTop: 6, fontSize: "1.25rem", fontWeight: 700 }}>
-              {SNAP.home} <span style={{ color: C.muted, fontWeight: 400 }}>vs</span> {SNAP.away}
+              {/* ⚠️ `aufDunkel` ist `null`, wenn KEINE Farbe des Vereins auf
+                  diesem Grund lesbar ist (Real Madrid auf Weiß). Dann bleibt
+                  der Name in der normalen Textfarbe — lieber ungefärbt als in
+                  einem erfundenen Grau, das wie ausgegraut aussieht. */}
+              <span style={vf?.heim.aufDunkel ? { color: vf.heim.aufDunkel } : undefined}>{SNAP.home}</span>
+              <span style={{ color: C.muted, fontWeight: 400 }}> vs </span>
+              <span style={vf?.gast.aufDunkel ? { color: vf.gast.aufDunkel } : undefined}>{SNAP.away}</span>
             </div>
 
             {/* 🔴 GESPERRT — ganz oben, weil alles darunter sinnlos wird.
