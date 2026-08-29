@@ -160,6 +160,23 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
               onChange={(on) => setzeGoals({ allowDouble: on })} />
             <Toggle label="Backup-Schützen erlaubt" on={g.allowBackups}
               onChange={(on) => setzeGoals({ allowBackups: on })} />
+
+            {/* 🔴 Andi, 29.08.2026, als Frage: ob „richtiger Torschütze mehr
+                wert" schon einstellbar sei. War es nicht — der Wert kam direkt
+                aus der Marktquote, und der einzige Griff daran wertete AB
+                (Favoriten-Malus). Nach oben ging gar nichts.
+
+                ⚠️ Das ist KEINE vierte Modifikator-Ebene: der Regler wiegt den
+                MARKT und nicht ein einzelnes Spiel — er wirkt auf jeden Tipp
+                gleich, so wie „Ergebnis-Nähe (k)" die Form der anderen Hälfte
+                bestimmt. Deshalb fällt er auch nicht unter den Deckel. */}
+            <div style={{ marginTop: 12 }}>
+              <Slider label="Torschützen zählen" value={g.gewicht ?? 1}
+                {...L.goalsGewicht} step={reglerSchritt(rules, L.goalsGewicht)}
+                onChange={(v) => setzeGoals({ gewicht: v })}
+                fmt={(x) => "×" + x.toFixed(2)}
+                hint="Wiegt den ganzen Torschützen-Anteil — für jeden Tipp gleich. Der Favoriten-Malus wertet einzelne NAMEN ab; das hier ist der Markt als Ganzes." />
+            </div>
           </div>
         )}
 

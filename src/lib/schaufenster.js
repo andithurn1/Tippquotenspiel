@@ -206,6 +206,11 @@ export function schaufensterRegeln() {
         // überhaupt etwas — in `proTeam` zählt `picksPerTeam`.
         modus: "proSpiel",
         picksProSpiel: 4,
+        // 🔴 Nicht 1: die Vorgabe ist 1, und ein vorgeführter Wert, der der
+        // Vorgabe entspricht, führt nichts vor. Die Schaurunde wiegt
+        // Torschützen ausdrücklich höher — genau der Griff, den Andi am
+        // 29.08.2026 vermisst hat („richtiger Torschütze mehr wert").
+        gewicht: 1.4,
         allowDouble: false,
         allowBackups: false,
       },

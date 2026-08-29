@@ -115,6 +115,21 @@ export const DEFAULT_RULES = {
     goals: {
       enabled: true, modus: "proTeam",
       picksPerTeam: 2, picksProSpiel: 3,
+      // 🔴 Wie viel ein getroffener Torschütze WERT ist (Andi, 29.08.2026:
+      // „richtiger Torschütze mehr wert"). Bis dahin ging das nur nach
+      // UNTEN: `schuetzenMalus` wertet die wahrscheinlichsten Schützen ab,
+      // nach oben skalieren konnte der Admin nicht.
+      //
+      // ⚠️ Das ist KEINE vierte Modifikator-Ebene. Es wiegt den MARKT und
+      // nicht ein einzelnes Spiel — dieselbe Art Regler wie `k` und `m`, die
+      // die Form der Ergebnis-Auszahlung bestimmen. Ein Modifikator sagt
+      // „DIESES Spiel ist besonders"; dieser Regler sagt „in dieser Runde
+      // zählen Torschützen mehr", und zwar für jeden Tipp gleich. Deshalb
+      // fällt er auch nicht unter `modCap`.
+      //
+      // ⏳ 1 ist ein neutrales No-op und bleibt die Vorgabe. Wo die sinnvolle
+      // Grenze liegt, ist Balancing und damit Endphase.
+      gewicht: 1,
       allowDouble: true, allowBackups: true,
     },
   },
@@ -388,6 +403,10 @@ export const RULE_LIMITS = {
     exakt:   { min: 1, max: 4, step: 0.05 },
   },
   picksPerTeam: { min: 1, max: 3, step: 1 },
+  // Gehört zur Multiplikator-Familie (Raster 0,05, siehe reglerRaster.test.js).
+  // Nach UNTEN nur bis 0,5: darunter wären Torschützen praktisch abgeschafft,
+  // und dafür gibt es den ehrlicheren Schalter `markets.goals.enabled`.
+  goalsGewicht: { min: 0.5, max: 3, step: 0.05 },
   // Mehr Spielraum als je Mannschaft: hier verteilen sich die Namen auf beide
   // Seiten, drei je Team entsprechen also sechs im Spiel.
   picksProSpiel: { min: 1, max: 6, step: 1 },
@@ -580,6 +599,7 @@ export function sanitizeRules(partial = {}) {
         modus: g.modus === "proSpiel" ? "proSpiel" : "proTeam",
         picksPerTeam: clamp(Math.round(num(g.picksPerTeam, D.markets.goals.picksPerTeam)), L.picksPerTeam.min, L.picksPerTeam.max),
         picksProSpiel: clamp(Math.round(num(g.picksProSpiel, D.markets.goals.picksProSpiel)), L.picksProSpiel.min, L.picksProSpiel.max),
+        gewicht: clamp(num(g.gewicht, D.markets.goals.gewicht), L.goalsGewicht.min, L.goalsGewicht.max),
         allowDouble: g.allowDouble !== false,
         allowBackups: g.allowBackups !== false,
       },
@@ -803,7 +823,21 @@ export function scoreGoals(picks, snap, rules = DEFAULT_RULES, playerGoals = nul
       }
     }
   }
-  return { net, detail };
+  // 🔴 Das Gewicht greift GANZ ZUM SCHLUSS und an genau EINER Stelle.
+  // Andi, 29.08.2026: „richtiger Torschütze mehr wert". Vorher ging das nur
+  // nach unten (`schuetzenMalus`).
+  //
+  // ⚠️ Warum hier und nicht je Spieler: der Malus ist eine Aussage über
+  // EINEN Namen, das Gewicht eine über den ganzen Markt. Je Spieler
+  // multipliziert wären es zwei Rechnungen, die dasselbe zu tun scheinen —
+  // und `detail` trüge dann gewichtete Zahlen, die niemand mehr mit den
+  // Quoten daneben zusammenbringt.
+  //
+  // ⚠️ `netRoh` bleibt erhalten, damit eine Aufschlüsselung „12,4 × 1,5"
+  // zeigen kann statt nur das Ergebnis. Eine Anzeige, die den Faktor selbst
+  // herausrechnet, wäre die zweite Wahrheit.
+  const gewicht = rules?.markets?.goals?.gewicht ?? 1;
+  return { net: net * gewicht, netRoh: net, gewicht, detail };
 }
 
 // Anzeige-Skalierung: intern wird roh gerechnet, erst hier hochskaliert.
