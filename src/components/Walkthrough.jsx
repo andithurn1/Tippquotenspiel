@@ -11,66 +11,82 @@ import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Der geführte Rundgang (RF5) ─────────────────────────────
 //
-// 🔴 Andis Bild dafür: „wie in nem klassichen Handyspiel bzw aufbauspiel
-// Tutorial" — Pfeil auf ein Bedienelement, ein Satz dazu, weiterklicken.
+// 🔴 Andis Zuschnitt vom 29.08.2026, und er ist strenger als die erste
+// Fassung: *„sehr interaktiv mit aufblinkenden Pfeilen die eben erst zum
+// nächsten Schritt gehen wenn was eingetippt wurde … erst wenn der Klick
+// richtig gesetzt wurde springt (mit scrollanimation) weiter."*
 //
-// Drei Dinge, die diese Bauart ausmachen und die man einzeln verlieren kann:
+// Damit ist es kein Textheft mit Pfeil mehr, sondern ein Tutorial wie in einem
+// Aufbauspiel. Vier Sachen machen den Unterschied, und jede einzelne kann man
+// verlieren:
 //
-//  1. **Das Loch im Dunkel.** Der Rest der Seite wird abgedunkelt, das Ziel
-//     bleibt hell. Gemacht mit EINEM Kasten und `box-shadow: 0 0 0 9999px` —
-//     der Schatten füllt alles außerhalb. Vier Rechtecke drumherum wären
-//     dieselbe Optik mit vier Rundungsfehlern an den Ecken.
-//  2. **Der Pfeil zeigt wirklich hin**, er liegt nicht dekorativ daneben. Er
-//     sitzt an der Blasenkante, die zum Ziel zeigt, und wechselt die Seite,
-//     wenn die Blase unter das Ziel rutscht.
-//  3. **Der Ausgang ist immer sichtbar.** Ein Tutorial, das man wegklicken
-//     will und nicht findet, ist eine Sperre. Deshalb steht „Beenden" in
-//     jedem Schritt, nicht erst am Ende.
+//  1. **Der Schritt WARTET.** Trägt er eine `aktion`, geht es erst weiter,
+//     wenn der Nutzer sie wirklich ausgeführt hat — nicht, wenn er „Weiter"
+//     drückt. Ein Tutorial, das man durchklicken kann, ohne etwas zu tun, ist
+//     eine Diashow.
+//  2. **Die Blase deckt nie zu, worauf sie zeigt.** Andi ausdrücklich: *„in
+//     der Regel oberes Drittel Einblendung mit Pfeil auf das zu klickende."*
+//     Deshalb wird das ZIEL in die untere Hälfte gescrollt und die Blase sitzt
+//     oben. Immer dieselbe Geometrie — der Blick muss sie nicht jedes Mal neu
+//     suchen.
+//  3. **Der Pfeil winkt.** Ein stehender Pfeil geht im Gewimmel unter.
+//  4. **Der Scheinwerfer lässt Klicks DURCH.** `pointer-events: none` — sonst
+//     könnte man genau das nicht anklicken, worauf gezeigt wird. Das ist der
+//     Unterschied zwischen „zeigen" und „machen lassen".
 //
-// ⚠️ **Warum die Maße bei JEDEM Schritt neu gemessen werden** und nicht
-// einmal beim Öffnen: der Rundgang scrollt selbst zum Ziel, die klebende
-// Ampel verschiebt sich dabei, und auf dem Handy klappt beim Drehen die halbe
-// Höhe weg. Ein einmal gemessenes Rechteck zeigt nach dem ersten Scrollen
-// daneben — und ein Pfeil, der danebenzeigt, ist schlimmer als keiner.
+// ⚠️ **Gescrollt wird von Hand, nicht mit `behavior: "smooth"`.** Gemessen am
+// 29.08.2026: mit `smooth` bewegte sich im Browser GAR NICHTS (`scrollY` blieb
+// 0 statt auf 7221 zu springen) — dieselbe Falle steht schon bei der
+// Sprungleiste in `Spielerstellung.jsx`. Die eigene Animation läuft über
+// `requestAnimationFrame` und hält sich an „Bewegung reduzieren".
 //
-// ⚠️ **Fehlt das Ziel-Element, wird der Schritt zur Karte in der Mitte** statt
-// zu einem Pfeil ins Leere. Das passiert im echten Betrieb: Abschnitte
-// erscheinen erst in der Profi-Stufe, und der Rundgang darf daran nicht
-// zerbrechen.
+// ⚠️ **Das Overlay hängt per Portal an `document.body`.** Ein Vorfahr auf dem
+// Erstellungs-Screen trägt die Einblend-Klasse `tqs-auf` mit `transform`, und
+// ein Element mit `transform` wird zum Bezugsrahmen für alles `fixed` darin.
+// Ohne Portal stand der Scheinwerfer 29 000 px daneben (gemessen).
 
-const RAND = 8;          // wie viel Luft das Loch um das Ziel lässt
-const BLASE_BREIT = 340; // Höchstbreite der Sprechblase
+const RAND = 8;            // Luft, die das Loch um das Ziel lässt
+const BLASE_BREIT = 360;   // Höchstbreite der Sprechblase
+const BLASE_OBEN = 12;     // Abstand der Blase zur Oberkante
+const LUFT = 26;           // Abstand zwischen Blasenunterkante und Ziel
+const SCROLL_MS = 420;
+
+const ruhig = () => typeof window !== "undefined"
+  && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+
+// Eigene Scroll-Animation. `scrollTo({behavior:"smooth"})` tut hier nichts —
+// siehe Kopf. Weiche Kurve, damit der Sprung nicht ruckt.
+function scrolleZu(y, fertig) {
+  if (typeof window === "undefined") { fertig?.(); return; }
+  const ziel = Math.max(0, y);
+  const von = window.scrollY;
+  const weg = ziel - von;
+  if (ruhig() || Math.abs(weg) < 2) { window.scrollTo(0, ziel); fertig?.(); return; }
+  const start = performance.now();
+  const schritt = (jetzt) => {
+    const t = Math.min(1, (jetzt - start) / SCROLL_MS);
+    const e = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;   // easeInOutQuad
+    window.scrollTo(0, von + weg * e);
+    if (t < 1) requestAnimationFrame(schritt); else fertig?.();
+  };
+  requestAnimationFrame(schritt);
+}
 
 export default function Walkthrough({ offen, onSchliessen, aufSchritt = null }) {
   const [index, setIndex] = useState(0);
   const [rechteck, setRechteck] = useState(null);
   const [uebersicht, setUebersicht] = useState(false);
-  const messTimer = useRef(null);
-
-  // 🔴 **Der Rundgang hängt an `document.body`, nicht an dieser Stelle im
-  // Baum — und das ist kein Aufräumen, sondern die Reparatur eines echten
-  // Fehlers.**
-  //
-  // Gemessen am 29.08.2026: der Scheinwerfer stand meilenweit daneben. Sein
-  // `style.top` war RICHTIG (−906 px, genau am Ziel), sein tatsächliches
-  // Rechteck lag bei −29 989. Ursache: ein Vorfahr auf dem Erstellungs-Screen
-  // trägt die Einblend-Klasse `tqs-auf` mit einem `transform` — und ein
-  // Element mit `transform` wird zum BEZUGSRAHMEN für alles darin, was
-  // `position: fixed` ist. Das Overlay klebte damit am Dokument statt am
-  // Fenster, und die Seitenhöhe wuchs von 8 000 auf 34 780 px.
-  //
-  // ⚠️ Die Falle ist heimtückisch, weil sie NICHT hier entsteht: dieses Bauteil
-  // ist richtig, der Fehler kommt aus einer Animationsklasse drei Ebenen
-  // darüber. Wer den Rundgang später woanders einhängt, nimmt das Portal bitte
-  // mit — sonst kommt es genau so zurück.
+  const [erledigt, setErledigt] = useState(false);   // Aktion dieses Schritts getan?
   const [amKoerper, setAmKoerper] = useState(false);
+  // Blase unter das Ziel statt darüber? Nur der Ausnahmefall, siehe Effekt.
+  const [blaseUnten, setBlaseUnten] = useState(false);
+  const messTimer = useRef(null);
+  const blaseRef = useRef(null);
+
   useEffect(() => { setAmKoerper(true); }, []);
 
   const schritt = schrittAn(index);
 
-  // ⚠️ Beide Handgriffe stehen VOR den Effekten, weil der Escape-Effekt
-  // `beenden` benutzt. Andersherum stünde im Effekt eine Bindung, die zum
-  // Zeitpunkt seiner Registrierung noch nicht belegt ist.
   const beenden = useCallback(() => {
     merkeWalkthrough();
     onSchliessen?.();
@@ -78,64 +94,150 @@ export default function Walkthrough({ offen, onSchliessen, aufSchritt = null }) 
 
   const gehe = useCallback((naechster) => {
     if (naechster == null) { beenden(); return; }
+    setErledigt(false);
     setIndex(naechster);
     aufSchritt?.(schrittAn(naechster));
   }, [beenden, aufSchritt]);
 
-  // ── Ziel suchen, hinscrollen, ausmessen ───────────────────
-  const messen = useCallback(() => {
-    if (!schritt?.ziel || typeof document === "undefined") { setRechteck(null); return; }
-    const el = document.getElementById(schritt.ziel);
-    if (!el) { setRechteck(null); return; }
-    const r = el.getBoundingClientRect();
-    // Ein Element mit Höhe 0 (ein reiner Ankerpunkt, davon gibt es welche)
-    // ergäbe ein Loch, das man nicht sieht. Dann lieber die Karte.
-    if (r.height < 4 && r.width < 4) { setRechteck(null); return; }
-    setRechteck({ top: r.top, left: r.left, width: r.width, height: r.height });
+  // ── Ziel ausmessen ────────────────────────────────────────
+  const zielElement = useCallback(() => {
+    if (!schritt?.ziel || typeof document === "undefined") return null;
+    return document.getElementById(schritt.ziel);
   }, [schritt]);
 
+  const messen = useCallback(() => {
+    const el = zielElement();
+    if (!el) { setRechteck(null); return; }
+    const r = el.getBoundingClientRect();
+    // Ein reiner Ankerpunkt ohne Fläche ergäbe ein Loch, das man nicht sieht.
+    if (r.height < 4 && r.width < 4) { setRechteck(null); return; }
+    setRechteck({ top: r.top, left: r.left, width: r.width, height: r.height });
+  }, [zielElement]);
+
+  // ── Hinscrollen: das Ziel UNTER die Blase ─────────────────
+  //
+  // 🔴 Andi ausdrücklich: *„achte darauf dass dann immer automatisch so
+  // gescrolled bzw gewischt wird, dass die Einblendungsfelder grade nicht das
+  // wesentliche überdecken."*
+  //
+  // ⚠️ **Ein fester Prozentwert reicht dafür nicht** — das war die erste
+  // Fassung und im Browser gemessen falsch: die Blase reichte bis 366 px, das
+  // Ziel begann bei 312, also 54 px Überdeckung. Der Grund ist, dass die Blase
+  // KEINE feste Höhe hat: ein Schritt mit sieben Aufzählungspunkten ist
+  // doppelt so hoch wie einer mit zwei Sätzen.
+  //
+  // ✅ Deshalb wird an der ECHTEN Blasenhöhe ausgerichtet. Sie steht schon im
+  // DOM, wenn dieser Effekt läuft — Effekte laufen nach dem Rendern.
   useEffect(() => {
     if (!offen || !schritt) return undefined;
-    const el = schritt.ziel && typeof document !== "undefined"
-      ? document.getElementById(schritt.ziel) : null;
-    // 🔴 **OHNE `behavior: "smooth"` — und das steht schon in
-    // `Spielerstellung.jsx` bei der Sprungleiste, gemessen.** Ich bin trotzdem
-    // hineingelaufen: mit `smooth` passierte im Browser GAR NICHTS. Gemessen
-    // am 29.08.2026 an `abs-joker`: mit `smooth` blieb `scrollY` auf 0, ohne
-    // sprang es auf 5776. Der Schritt wechselte, der Pfeil zeigte auf eine
-    // Stelle weit außerhalb des Bildes — ein Rundgang, der nicht hinscrollt,
-    // erklärt nichts.
+    const el = zielElement();
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const blaseHoch = blaseRef.current?.getBoundingClientRect().height ?? 300;
+      const wunschTop = BLASE_OBEN + blaseHoch + LUFT;
+      // 🔴 **Der Ausnahmefall, und er ist keine Kleinigkeit: manches Ziel kann
+      // gar nicht unter die Blase.** Das Code-Feld sitzt auf Dokumentposition
+      // 312 — um es auf 365 zu bringen, müsste `scrollY` auf −53, und das gibt
+      // es nicht. Gemessen am 29.08.2026; die Überdeckung blieb hartnäckig,
+      // bis ich nachgerechnet habe statt weiter am Scrollen zu drehen.
+      //
+      // ✅ Dann wandert die BLASE unter das Ziel und der Pfeil dreht sich um.
+      // Andis Vorgabe war „in der Regel oberes Drittel" — „in der Regel" lässt
+      // genau diesen Fall zu, und eine Blase, die das Wesentliche verdeckt,
+      // wäre der schlechtere Bruch.
+      const dokTop = r.top + window.scrollY;
+      const passtDrunter = dokTop >= wunschTop;
+      setBlaseUnten(!passtDrunter);
+      scrolleZu(
+        passtDrunter
+          ? window.scrollY + r.top - wunschTop
+          // Blase unten: das Ziel nach oben holen, damit darunter Platz bleibt.
+          : window.scrollY + r.top - BLASE_OBEN - 40,
+        messen,
+      );
+    }
+    // 🔴 **Nachjustieren, und das ist keine Vorsicht, sondern nachgemessen.**
+    // Beim ersten Anlauf stand das Ziel trotzdem 53 px zu hoch — gerechnet
+    // wurde mit der Blasenhöhe des VORIGEN Schritts (274 statt 327; 12 + 274 +
+    // 26 ergibt exakt die beobachteten 312). Wann genau die neue Höhe steht,
+    // hängt an Schriftladen und Umbruch und ist nichts, worauf man sich
+    // verlassen sollte.
     //
-    // ✅ Der harte Sprung ist hier ohnehin der bessere: der Pfeil steht sofort
-    // richtig, es gibt keine laufende Animation, gegen die die Messung
-    // anrennt, und „Bewegung reduzieren" ist automatisch respektiert.
-    if (el) el.scrollIntoView({ block: "center" });
-    // Danach messen. Der zweite und dritte Durchgang fangen, was sich noch
-    // setzt: die klebende Kopfzeile, ein nachladendes Bild, ein Aufklappen.
+    // ✅ Also nach dem Scrollen noch einmal nachsehen und den Rest schieben.
+    // Das ist billig (ein Rechteck) und macht die Zusage unabhängig davon,
+    // wann welche Höhe feststeht.
+    const nachjustieren = () => {
+      messen();
+      const ziel = zielElement();
+      const blase = blaseRef.current;
+      if (!ziel || !blase) return;
+      const z = ziel.getBoundingClientRect();
+      const b = blase.getBoundingClientRect();
+      // ⚠️ Das Vorzeichen ist die ganze Zeile: um das Ziel im Bild nach UNTEN
+      // zu schieben, muss die Seite nach OBEN scrollen. Beim ersten Versuch
+      // stand hier `+`, und die Überdeckung blieb exakt gleich groß.
+      const fehlt = blaseUnten
+        ? (z.bottom + LUFT) - b.top      // Blase unten: Ziel nach OBEN schieben
+        : (b.bottom + LUFT) - z.top;     // Blase oben:  Ziel nach UNTEN schieben
+      if (fehlt > 2) scrolleZu(window.scrollY + (blaseUnten ? fehlt : -fehlt), messen);
+    };
+
     messen();
     clearTimeout(messTimer.current);
-    messTimer.current = setTimeout(messen, 420);
-    const nochmal = setTimeout(messen, 900);
+    messTimer.current = setTimeout(nachjustieren, SCROLL_MS + 80);
+    const spaet = setTimeout(nachjustieren, 1000);
     window.addEventListener("resize", messen);
     window.addEventListener("scroll", messen, { passive: true });
     return () => {
       clearTimeout(messTimer.current);
-      clearTimeout(nochmal);
+      clearTimeout(spaet);
       window.removeEventListener("resize", messen);
       window.removeEventListener("scroll", messen);
     };
-  }, [offen, schritt, messen]);
+  }, [offen, schritt, messen, zielElement, blaseUnten]);
 
-  // 🔴 **Die Marke wird beim ÖFFNEN gesetzt, nicht beim Beenden** — dieselbe
-  // Lehre wie bei `erstkontakt.js` (G5), und sie ist dort teuer bezahlt
-  // worden: hängt die Marke am Wegklicken, kommt der Rundgang bei jedem Start
-  // wieder, bis jemand zufällig den richtigen Knopf trifft. Wer die Seite
-  // einfach zumacht, hat ihn gesehen und will ihn nicht nochmal.
+  // ── 🔴 Auf die echte Handlung warten ──────────────────────
+  //
+  // `aktion: "klick"`   — irgendwo INNERHALB des Ziels wurde geklickt.
+  // `aktion: "eingabe"` — ein Feld im Ziel trägt jetzt etwas.
+  //
+  // ⚠️ Gelauscht wird in der EINFANG-Phase am Dokument. Ein Klick auf einen
+  // Knopf, der sich beim Klick selbst entfernt (ein Menü, das zuklappt), wäre
+  // sonst schon weg, bevor der Lauscher dran ist.
   useEffect(() => {
-    if (offen) merkeWalkthrough();
-  }, [offen]);
+    if (!offen || !schritt?.aktion || erledigt) return undefined;
+    const el = zielElement();
+    if (!el) return undefined;
 
-  // Escape beendet — dieselbe Erwartung wie bei jedem Overlay.
+    const drin = (n) => n instanceof Node && el.contains(n);
+
+    const aufKlick = (e) => { if (drin(e.target)) setErledigt(true); };
+    const aufEingabe = (e) => {
+      if (!drin(e.target)) return;
+      if (String(e.target.value ?? "").trim().length > 0) setErledigt(true);
+    };
+
+    if (schritt.aktion === "klick") document.addEventListener("click", aufKlick, true);
+    if (schritt.aktion === "eingabe") document.addEventListener("input", aufEingabe, true);
+    return () => {
+      document.removeEventListener("click", aufKlick, true);
+      document.removeEventListener("input", aufEingabe, true);
+    };
+  }, [offen, schritt, erledigt, zielElement]);
+
+  // Ist die Handlung getan, geht es von selbst weiter — mit einer kurzen
+  // Pause, damit man das Häkchen noch sieht und der Sprung nicht überfällt.
+  useEffect(() => {
+    if (!erledigt || !schritt?.aktion) return undefined;
+    const t = setTimeout(() => gehe(weiter(index)), ruhig() ? 250 : 700);
+    return () => clearTimeout(t);
+  }, [erledigt, schritt, index, gehe]);
+
+  // Die Marke wird beim ÖFFNEN gesetzt, nicht beim Beenden — dieselbe Lehre
+  // wie bei `erstkontakt.js` (G5): sonst kommt der Rundgang bei jedem Start
+  // wieder, bis jemand zufällig den richtigen Knopf trifft.
+  useEffect(() => { if (offen) merkeWalkthrough(); }, [offen]);
+
   useEffect(() => {
     if (!offen) return undefined;
     const auf = (e) => { if (e.key === "Escape") beenden(); };
@@ -143,32 +245,26 @@ export default function Walkthrough({ offen, onSchliessen, aufSchritt = null }) 
     return () => window.removeEventListener("keydown", auf);
   }, [offen, beenden]);
 
-  // ⚠️ Vor dem ersten Effekt im Browser gibt es kein `document.body` (der
-  // Server rendert mit) — dann nichts zeigen statt abstürzen.
   if (!offen || !schritt || !amKoerper) return null;
 
   const f = fortschritt(index);
   const hatZiel = rechteck != null;
-
-  // Blase unter das Ziel, wenn darunter Platz ist — sonst darüber. Auf einem
-  // schmalen Schirm klebt sie am unteren Rand: dort liegt der Daumen.
-  const schirmHoehe = typeof window === "undefined" ? 800 : window.innerHeight;
-  const untenPlatz = hatZiel ? schirmHoehe - (rechteck.top + rechteck.height) : 0;
-  const blaseUnten = hatZiel && untenPlatz > 260;
+  const wartet = Boolean(schritt.aktion) && !erledigt;
 
   return createPortal(
     <div
       role="dialog"
-      aria-modal="true"
+      aria-modal="false"
       aria-label={`Rundgang: ${schritt.titel}`}
-      style={{ position: "fixed", inset: 0, zIndex: 900 }}
+      style={{ position: "fixed", inset: 0, zIndex: 900, pointerEvents: "none" }}
     >
-      {/* ── Das Loch im Dunkel ────────────────────────────────
-          Ohne Ziel wird der ganze Schirm gleichmäßig dunkel: eine Karte in
-          der Mitte hat nichts, worauf sie zeigen könnte. */}
+      {/* ── Der Scheinwerfer ──────────────────────────────────
+          🔴 `pointerEvents: "none"` ist hier die wichtigste Zeile. Der Nutzer
+          soll das Ding ANKLICKEN, auf das gezeigt wird — ein Loch, das Klicks
+          abfängt, macht aus dem Tutorial eine Vorführung. */}
       {hatZiel ? (
         <div
-          onClick={() => gehe(weiter(index))}
+          className="tqs-tut-loch"
           style={{
             position: "fixed",
             top: rechteck.top - RAND,
@@ -176,169 +272,158 @@ export default function Walkthrough({ offen, onSchliessen, aufSchritt = null }) 
             width: rechteck.width + RAND * 2,
             height: rechteck.height + RAND * 2,
             borderRadius: RUND.karte,
-            boxShadow: `0 0 0 9999px ${C.ink}D9, 0 0 0 2px ${C.akzent}AA inset`,
+            boxShadow: `0 0 0 9999px ${C.ink}D0`,
             border: `2px solid ${C.akzent}`,
-            pointerEvents: "auto",
+            pointerEvents: "none",
           }}
         />
       ) : (
-        <div onClick={() => gehe(weiter(index))}
-          style={{ position: "fixed", inset: 0, background: `${C.ink}E6` }} />
+        <div style={{ position: "fixed", inset: 0, background: `${C.ink}E6`, pointerEvents: "auto" }} />
       )}
 
-      {/* ── Die Sprechblase ───────────────────────────────── */}
-      <div style={{
+      {/* ── Die Sprechblase: IMMER oben ───────────────────────
+          Andis Vorgabe: oberes Drittel, Pfeil nach unten auf das Ziel. Eine
+          feste Geometrie ist hier mehr wert als eine schlaue: der Blick muss
+          die Blase nicht bei jedem Schritt neu suchen. */}
+      <div ref={blaseRef} style={{
         position: "fixed",
+        ...(blaseUnten && hatZiel
+          ? { top: Math.min(rechteck.top + rechteck.height + RAND + 14, window.innerHeight - 120) }
+          : { top: BLASE_OBEN }),
         left: "50%",
         transform: "translateX(-50%)",
-        // ⚠️ Über dem Ziel wird die Blase an ihrer UNTERKANTE verankert
-        // (`bottom`), nicht an der Oberkante. Mit `top` müsste man ihre Höhe
-        // vorher kennen — die hängt aber am Text und an den Aufzählungen und
-        // ist mal 180 und mal 500 px. Ein geratener Wert schöbe die Blase über
-        // das Ziel oder aus dem Bild.
-        ...(hatZiel
-          ? (blaseUnten
-            ? { top: rechteck.top + rechteck.height + RAND + 14 }
-            : { bottom: Math.max(12, schirmHoehe - rechteck.top + RAND + 14) })
-          : { top: "50%", transform: "translate(-50%, -50%)" }),
-        width: `min(${BLASE_BREIT}px, calc(100vw - 24px))`,
+        width: `min(${BLASE_BREIT}px, calc(100vw - 20px))`,
+        maxHeight: "40vh",
         background: C.surface,
         border: `1px solid ${C.line}`,
         borderRadius: RUND.karte,
         boxShadow: `0 12px 40px ${C.ink}88`,
+        pointerEvents: "auto",
       }}>
-        {/* Der Pfeil. Ein gedrehtes Quadrat mit denselben zwei Kanten wie die
-            Blase — ein Dreieck aus Rahmen-Tricks hätte keinen Rand.
-            🔴 **Er steht auf dem RAHMEN, nicht im Scrollbereich darunter.**
-            In der ersten Fassung saß er im selben Kasten wie der Text, und der
-            trug `overflow-y: auto` — das schneidet alles ab, was außerhalb
-            liegt, und der Pfeil war unsichtbar. Im Browser gesehen am
-            29.08.2026: Scheinwerfer da, Blase da, Pfeil weg. */}
+        {/* Der winkende Pfeil an der Unterkante — zeigt nach unten aufs Ziel.
+            ⚠️ Er sitzt auf dem RAHMEN, nicht im Scrollbereich darunter: der
+            trägt `overflow-y: auto`, und das schneidet alles außerhalb ab
+            (in der ersten Fassung war der Pfeil deshalb unsichtbar). */}
         {hatZiel && (
-          <div style={{
-            position: "absolute",
-            left: "50%",
-            marginLeft: -7,
-            width: 14, height: 14,
-            background: C.surface,
-            transform: "rotate(45deg)",
-            ...(blaseUnten
-              ? { top: -8, borderLeft: `1px solid ${C.line}`, borderTop: `1px solid ${C.line}` }
-              : { bottom: -8, borderRight: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}` }),
-          }} />
-        )}
-
-        {/* Der scrollende Teil. Getrennt vom Rahmen, damit der Pfeil oben
-            stehen bleiben kann (siehe Kommentar darüber). */}
-        <div style={{
-          maxHeight: "min(70vh, 560px)",
-          overflowY: "auto",
-          padding: "16px 16px 12px",
-          borderRadius: RUND.karte,
-        }}>
-
-        {/* Kopfzeile: wo bin ich, und wie lang ist das noch */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <button
-            onClick={() => setUebersicht((v) => !v)}
-            title="Alle Kapitel"
+          <div
+            className="tqs-tut-pfeil"
             style={{
-              ...TAPZIEL, cursor: "pointer", fontFamily: "inherit",
-              background: "none", border: "none", padding: "0 4px 0 0",
-              color: C.akzent, fontSize: TEXT.caption1, fontWeight: 700,
-              textAlign: "left",
+              position: "absolute", left: "50%", marginLeft: -7,
+              width: 14, height: 14, background: C.surface,
+              pointerEvents: "none",
+              ...(blaseUnten
+                ? { top: -8, borderLeft: `1px solid ${C.line}`, borderTop: `1px solid ${C.line}` }
+                : { bottom: -8, borderRight: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}` }),
             }}
-          >
-            {schritt.kapitelKurz} ▾
-          </button>
-          <span style={{ fontFamily: MONO, fontSize: TEXT.caption2, color: C.muted, marginLeft: "auto" }}>
-            {f.kapitelNr}/{f.kapitelAnzahl} · {f.imKapitel}/{f.kapitelLaenge}
-          </span>
-        </div>
-
-        {/* Fortschrittsbalken — eine Länge zu sehen ist der Unterschied
-            zwischen „gleich fertig" und „wie lange noch". */}
-        <div style={{ height: 3, background: C.line, borderRadius: RUND.pille, marginBottom: 12 }}>
-          <div style={{
-            width: `${Math.round(f.anteil * 100)}%`, height: "100%",
-            background: C.akzent, borderRadius: RUND.pille,
-          }} />
-        </div>
-
-        {uebersicht ? (
-          <div>
-            <div style={{ fontSize: TEXT.caption1, color: C.muted, marginBottom: 8 }}>
-              Spring hin, wo du willst:
-            </div>
-            {WALKTHROUGH_KAPITEL.map((k, i) => (
-              <button
-                key={k.key}
-                onClick={() => { setUebersicht(false); gehe(kapitelAnfang(k.key)); }}
-                style={{
-                  ...TAPZIEL, display: "block", width: "100%", textAlign: "left",
-                  cursor: "pointer", fontFamily: "inherit", marginBottom: 4,
-                  background: k.key === schritt.kapitel ? `${C.akzent}1A` : "transparent",
-                  border: `1px solid ${k.key === schritt.kapitel ? C.akzent + "55" : C.line}`,
-                  borderRadius: RUND.karte, padding: "8px 10px",
-                  color: C.text, fontSize: TEXT.footnote,
-                }}
-              >
-                <span style={{ fontFamily: MONO, color: C.muted, marginRight: 8 }}>{i + 1}</span>
-                {k.titel}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <>
-            <div style={{ fontSize: TEXT.callout, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>
-              {schritt.titel}
-            </div>
-            <p style={{ fontSize: TEXT.footnote, color: C.muted, margin: "8px 0 0", lineHeight: 1.55 }}>
-              {schritt.text}
-            </p>
-
-            {/* Die Aufzählungen kommen aus `drehrad.js` — siehe Kopf von
-                `walkthrough.js`. Hier wird nur gezeichnet. */}
-            {schritt.liste?.length > 0 && (
-              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 7 }}>
-                {schritt.liste.map((e) => (
-                  <div key={e.label} style={{
-                    background: C.ink, border: `1px solid ${C.line}`,
-                    borderRadius: RUND.karte, padding: "8px 10px",
-                  }}>
-                    <div style={{ fontSize: TEXT.caption1, fontWeight: 700, color: C.text }}>{e.label}</div>
-                    <div style={{ fontSize: TEXT.caption2, color: C.muted, lineHeight: 1.45, marginTop: 2 }}>
-                      {e.desc}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+          />
         )}
 
-        {/* ── Steuerung ─────────────────────────────────────
-            „Teil überspringen" steht bewusst NEBEN „Weiter" und nicht
-            versteckt: es ist Andis ausdrücklicher Wunsch und der häufigere
-            Fall als „alles abbrechen". */}
-        <div style={{ display: "flex", gap: 6, marginTop: 14, alignItems: "center" }}>
-          <Knopf onClick={() => gehe(zurueck(index))} schwach>Zurück</Knopf>
-          <Knopf onClick={() => gehe(kapitelUeberspringen(index))} schwach>Teil überspringen</Knopf>
-          <div style={{ flex: 1 }} />
-          <Knopf onClick={() => gehe(weiter(index))} stark>
-            {index + 1 >= SCHRITTE.length ? "Fertig" : "Weiter"}
-          </Knopf>
-        </div>
-        <button
-          onClick={beenden}
-          style={{
-            ...TAPZIEL, width: "100%", marginTop: 4, cursor: "pointer",
-            fontFamily: "inherit", background: "none", border: "none",
-            color: C.muted, fontSize: TEXT.caption2,
-          }}
-        >
-          Rundgang beenden
-        </button>
+        <div style={{ maxHeight: "40vh", overflowY: "auto", padding: "14px 16px 12px", borderRadius: RUND.karte }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <button
+              onClick={() => setUebersicht((v) => !v)}
+              title="Alle Kapitel"
+              style={{
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit",
+                background: "none", border: "none", padding: "0 4px 0 0",
+                color: C.akzent, fontSize: TEXT.caption1, fontWeight: 700, textAlign: "left",
+              }}
+            >{schritt.kapitelKurz} ▾</button>
+            <span style={{ fontFamily: MONO, fontSize: TEXT.caption2, color: C.muted, marginLeft: "auto" }}>
+              {f.kapitelNr}/{f.kapitelAnzahl} · {f.imKapitel}/{f.kapitelLaenge}
+            </span>
+          </div>
+
+          <div style={{ height: 3, background: C.line, borderRadius: RUND.pille, marginBottom: 12 }}>
+            <div style={{
+              width: `${Math.round(f.anteil * 100)}%`, height: "100%",
+              background: C.akzent, borderRadius: RUND.pille,
+            }} />
+          </div>
+
+          {uebersicht ? (
+            <div>
+              <div style={{ fontSize: TEXT.caption1, color: C.muted, marginBottom: 8 }}>Spring hin, wo du willst:</div>
+              {WALKTHROUGH_KAPITEL.map((k, i) => (
+                <button
+                  key={k.key}
+                  onClick={() => { setUebersicht(false); gehe(kapitelAnfang(k.key)); }}
+                  style={{
+                    ...TAPZIEL, display: "block", width: "100%", textAlign: "left",
+                    cursor: "pointer", fontFamily: "inherit", marginBottom: 4,
+                    background: k.key === schritt.kapitel ? `${C.akzent}1A` : "transparent",
+                    border: `1px solid ${k.key === schritt.kapitel ? C.akzent + "55" : C.line}`,
+                    borderRadius: RUND.karte, padding: "8px 10px",
+                    color: C.text, fontSize: TEXT.footnote,
+                  }}
+                >
+                  <span style={{ fontFamily: MONO, color: C.muted, marginRight: 8 }}>{i + 1}</span>
+                  {k.titel}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: TEXT.callout, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>
+                {schritt.titel}
+              </div>
+              <p style={{ fontSize: TEXT.footnote, color: C.muted, margin: "8px 0 0", lineHeight: 1.55 }}>
+                {schritt.text}
+              </p>
+
+              {schritt.liste?.length > 0 && (
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 7 }}>
+                  {schritt.liste.map((e) => (
+                    <div key={e.label} style={{
+                      background: C.ink, border: `1px solid ${C.line}`,
+                      borderRadius: RUND.karte, padding: "8px 10px",
+                    }}>
+                      <div style={{ fontSize: TEXT.caption1, fontWeight: 700, color: C.text }}>{e.label}</div>
+                      <div style={{ fontSize: TEXT.caption2, color: C.muted, lineHeight: 1.45, marginTop: 2 }}>{e.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 🔴 Die Aufforderung. Sie ist der Unterschied zur Diashow —
+                  hier steht, was der Nutzer TUN soll, und der Rundgang wartet
+                  darauf. Erledigt wird sie grün quittiert, bevor es weitergeht. */}
+              {schritt.aktion && (
+                <div style={{
+                  marginTop: 10, padding: "8px 10px", borderRadius: RUND.karte,
+                  background: erledigt ? `${C.mint}1A` : `${C.akzent}14`,
+                  border: `1px solid ${erledigt ? C.mint + "55" : C.akzent + "44"}`,
+                  color: erledigt ? C.mint : C.akzent,
+                  fontSize: TEXT.caption1, fontWeight: 700,
+                }}>
+                  {erledigt ? "✓ Passt — weiter geht's" : (schritt.tuWas ?? "Klick auf das markierte Feld")}
+                </div>
+              )}
+            </>
+          )}
+
+          <div style={{ display: "flex", gap: 6, marginTop: 14, alignItems: "center" }}>
+            <Knopf onClick={() => gehe(zurueck(index))} schwach>Zurück</Knopf>
+            <Knopf onClick={() => gehe(kapitelUeberspringen(index))} schwach>Teil überspringen</Knopf>
+            <div style={{ flex: 1 }} />
+            {/* ⚠️ Bei einem Schritt mit Aufgabe gibt es KEIN „Weiter". Wer sich
+                durchklicken kann, ohne etwas zu tun, hat nichts gelernt — und
+                genau das war Andis Punkt. Der Ausgang bleibt trotzdem offen:
+                „Teil überspringen" und „Beenden" stehen daneben. */}
+            {!wartet && (
+              <Knopf onClick={() => gehe(weiter(index))} stark>
+                {index + 1 >= SCHRITTE.length ? "Fertig" : "Weiter"}
+              </Knopf>
+            )}
+          </div>
+          <button
+            onClick={beenden}
+            style={{
+              ...TAPZIEL, width: "100%", marginTop: 4, cursor: "pointer",
+              fontFamily: "inherit", background: "none", border: "none",
+              color: C.muted, fontSize: TEXT.caption2,
+            }}
+          >Rundgang beenden</button>
         </div>
       </div>
     </div>,

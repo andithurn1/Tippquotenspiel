@@ -69,33 +69,36 @@ export const WALKTHROUGH_KAPITEL = [
         titel: "Kurz vorweg: der schnellste Weg geht ohne mich",
         text: "Eine gute Runde musst du dir nicht selbst ausdenken. Wenn dir "
           + "jemand einen Code gibt — ein Creator, ein Kumpel, irgendwer, der "
-          + "sich das überlegt hat — dann setzt du den ein und bist fertig. "
-          + "Keine Regler, kein Nachdenken darüber, was ausgewogen ist.",
+          + "sich das überlegt hat — setzt du den ein und bist fertig. Keine "
+          + "Regler, kein Nachdenken darüber, was ausgewogen ist.",
       },
       {
         key: "codes-feld",
         ziel: "gamecode-einsetzen",
-        titel: "Hier kommt der Code rein",
+        aktion: "klick",
+        tuWas: "Tipp das markierte Feld an",
+        titel: "Hier kommt ein fremder Code rein",
         text: "Ein GameCode bringt das ganze Regelwerk mit: Wertung, Joker, "
-          + "Ereignisse, alles. Einsetzen, fertig. Du kannst hinterher trotzdem "
-          + "an jedem Regler drehen — der Code ist ein Startpunkt, kein Vertrag.",
+          + "Ereignisse, alles. Einsetzen, fertig. Ändern kannst du danach "
+          + "trotzdem jeden Regler — der Code ist ein Startpunkt, kein Vertrag.",
       },
       {
         key: "codes-teil",
-        ziel: "abs-bausteine",
+        ziel: null,
         titel: "Und es geht auch stückweise",
-        text: "Teil-Codes bringen nur EINEN Bereich mit — nur das Drehrad, nur "
-          + "die Joker, nur die Spielauswahl. Damit baust du dir was zusammen: "
-          + "die Wertung von einem, das Rad von jemand anderem. Sie stapeln sich, "
-          + "jeder ändert nur seinen Teil.",
+        text: "Ein Teil-Code bringt nur EINEN Bereich mit — nur das Drehrad, "
+          + "nur die Joker, nur die Spielauswahl. Damit baust du dir was "
+          + "zusammen: die Wertung von einem, das Rad von jemand anderem. Sie "
+          + "stapeln sich, und jeder ändert nur seinen Teil. Wo sie hingehören, "
+          + "zeigen wir am Ende.",
       },
       {
         key: "codes-raus",
         ziel: null,
         titel: "Alles klar? Dann kannst du hier raus",
-        text: "Ab hier gehen wir die Einstellungen durch. Wenn du einen Code "
-          + "hast, brauchst du das nicht — unten rechts ist der Ausgang. Jedes "
-          + "Kapitel lässt sich auch einzeln überspringen.",
+        text: "Ab jetzt bauen wir eine Runde einmal von Hand durch. Jedes "
+          + "Kapitel lässt sich einzeln überspringen, und unten steht immer "
+          + "der Ausgang.",
       },
     ],
   },
@@ -118,78 +121,99 @@ export const WALKTHROUGH_KAPITEL = [
   },
 
   {
-    key: "vorauswahl",
-    titel: "Die Abkürzung: eine Voreinstellung nehmen",
-    kurz: "Vorauswahl",
+    key: "bibliothek",
+    titel: "Die Bibliothek — fertige Runden statt leerer Regler",
+    kurz: "Bibliothek",
     schritte: [
       {
-        key: "vorauswahl-karten",
-        ziel: "gamemode",
+        key: "bib-karten",
+        ziel: "tut-presets",
+        aktion: "klick",
+        tuWas: "Wähl eine der drei aus",
         titel: "Drei fertige Runden, ein Klick",
         text: "Kenner-Runde, Klassisch & fair, Mutig & wild. Jede stellt das "
-          + "ganze Regelwerk stimmig ein. Nimm eine, die in die Richtung geht, "
-          + "und ändere danach nur, was dich stört.",
+          + "ganze Regelwerk stimmig ein — Wertung, Joker, Saison-Wetten. Nimm "
+          + "eine, die ungefähr passt; ändern kannst du danach alles.",
       },
       {
-        key: "vorauswahl-ampel",
+        key: "bib-fenster",
+        ziel: "tut-bibliothek",
+        aktion: "klick",
+        tuWas: "Mach die Bibliothek auf",
+        titel: "Und dahinter liegen alle",
+        text: "Das ist unsere Datenbank an Vorkonfigurationen: suchen, filtern, "
+          + "vergleichen. Dazu kommen die Regelwerke, die andere geteilt haben "
+          + "— mit Kurzbeschreibung und der Zahl, wie oft sie schon übernommen "
+          + "wurden.",
+      },
+      {
+        key: "bib-thermometer",
         ziel: null,
         titel: "Das Thermometer sagt dir, was dabei rauskommt",
-        text: "Direkt unter der Auswahl steht eine Einschätzung: bleibt das "
-          + "noch ein Tippspiel, oder entscheidet Glück allein? Sie rechnet "
-          + "40 Saisons durch — ein guter Tipper gegen einen, der stur auf "
-          + "Außenseiter setzt. Sie bleibt beim Scrollen oben stehen, damit du "
-          + "beim Schrauben siehst, was sich ändert.",
+        text: "Unter der Auswahl steht eine Einschätzung: bleibt das noch ein "
+          + "Tippspiel, oder entscheidet Glück allein? Sie rechnet 40 Saisons "
+          + "durch — ein guter Tipper gegen einen, der stur auf Außenseiter "
+          + "setzt. Sie klebt beim Scrollen oben, damit du beim Schrauben "
+          + "siehst, was sich ändert.",
       },
     ],
   },
 
   {
-    key: "spiele",
-    titel: "Welche Spiele gehören dazu",
-    kurz: "Spiele",
+    key: "auswahl",
+    titel: "Die Betippungsauswahl — worauf überhaupt getippt wird",
+    kurz: "Betippung",
     schritte: [
       {
-        key: "spiele-wettbewerbe",
-        ziel: "abs-spiele",
-        titel: "Erst die Wettbewerbe, dann die Vereine",
-        text: "Hier legst du fest, worauf überhaupt getippt wird. Alle "
-          + "Einschränkungen wirken zusammen: wählst du Bundesliga UND vier "
-          + "Vereine, bleiben nur deren Bundesliga-Spiele. Die Zahl darunter "
-          + "sagt dir sofort, wie viele Spiele übrig sind.",
+        key: "aus-wettbewerbe",
+        ziel: "tut-wettbewerbe",
+        aktion: "klick",
+        tuWas: "Klapp die Wettbewerbe auf",
+        titel: "Der Teil mit den meisten Möglichkeiten",
+        text: "Hier legst du fest, welche Spiele überhaupt zur Runde gehören: "
+          + "Ligen, einzelne Vereine, Zeiträume — und je Liga eigene Regeln. "
+          + "Fang oben an, das Feine kommt danach.",
       },
       {
-        key: "spiele-zeit",
-        ziel: "abs-saison",
-        titel: "Und wann ein Spieltag vorbei ist",
-        text: "Über mehrere Ligen zählt jede für sich — „Spieltag 5“ gibt es "
-          + "dann fünfmal. Hier legst du fest, was ein Spieltag EURER Runde "
-          + "umfasst. Vorgabe: Donnerstag 23:59 ist Schluss, damit der "
-          + "Europapokal am Ende steht und die Liga ab Freitag den nächsten "
-          + "eröffnet.",
-      },
-    ],
-  },
-
-  {
-    key: "fragen",
-    titel: "Die vier Fragen, die den Charakter machen",
-    kurz: "Die 4 Fragen",
-    schritte: [
-      {
-        key: "fragen-vier",
-        ziel: "abs-fragen",
-        titel: "Wenn du nur vier Sachen einstellst, dann diese",
-        text: "Wie hart eine knappe Fehlprognose bestraft wird, wie viel "
-          + "Außenseiter extra bringen, ob Joker mitlaufen und ob es "
-          + "Saison-Wetten gibt. Alles darunter ist Feinschliff.",
+        key: "aus-liga",
+        ziel: "tut-liga",
+        aktion: "klick",
+        tuWas: "Mach eine Liga auf",
+        titel: "Jede Liga klappt einzeln auf",
+        text: "Rechts steht, wie viele Vereine du daraus schon gewählt hast. "
+          + "Der Knopf daneben nimmt alle auf einmal — sonst klickst du "
+          + "achtzehnmal. Alle Ligen sehen gleich aus, egal welche.",
       },
       {
-        key: "fragen-wertung",
-        ziel: "abs-wertung",
-        titel: "Darunter liegt die Wertung im Detail",
-        text: "Hier stehen die Rohregler: Nähe-Belohnung, Abzug für Fehltipps, "
-          + "Deckel. Musst du nicht anfassen — aber wenn du willst, kommst du "
-          + "überall ran.",
+        key: "aus-sonder",
+        ziel: "tut-sonderregeln",
+        aktion: "klick",
+        tuWas: "Öffne die Sonderregeln dieser Liga",
+        titel: "Und jetzt Regeln, die NUR für diese Liga gelten",
+        text: "Was du hier einstellst, gilt für keine andere. Tabellenzonen, "
+          + "nur Derbys, ab welchem Spieltag. Genau das macht eine Runde "
+          + "interessant statt nur groß.",
+      },
+      {
+        key: "aus-abstieg",
+        ziel: "tut-zonen",
+        aktion: "klick",
+        tuWas: "Nimm „Abstiegskampf“ dazu",
+        titel: "Beispiel: nur der Abstiegskampf",
+        text: "Ein Klick, und es zählen nur noch Spiele, bei denen eine Seite "
+          + "im unteren Tabellendrittel steht. Zonen lassen sich kombinieren — "
+          + "Spitze UND Abstiegskampf, das Mittelfeld raus. Plätze und "
+          + "Startspieltag bleiben danach frei verstellbar.",
+      },
+      {
+        key: "aus-gewicht",
+        ziel: "tut-ligagewicht",
+        titel: "Und so wird der Abstiegskampf mehr wert",
+        text: "Zwei Wege, und sie machen Verschiedenes. HIER schraubst du, was "
+          + "die ganze Liga zählt — mit dem Anteil daneben, damit „×1,5“ nicht "
+          + "größer klingt, als es ist. Für die Abstiegskampf-Spiele selbst "
+          + "gibt es den Tabellen-Bonus unter Modifikatoren: der zahlt extra, "
+          + "wenn du auf einen Verein tippst, der in der Tabelle unten steht.",
       },
     ],
   },
@@ -205,29 +229,20 @@ export const WALKTHROUGH_KAPITEL = [
         titel: "Ein Joker verdoppelt, was ein Spiel wert ist",
         text: "Wie viele es gibt, woher sie kommen und was sie kosten, stellst "
           + "du hier ein. Dahinter liegt auch alles, was Spieler gegeneinander "
-          + "einsetzen können — und das Drehrad.",
+          + "einsetzen können — und das Drehrad, das gleich kommt.",
       },
       {
         key: "joker-mods",
         ziel: "abs-mods",
         titel: "Modifikatoren schrauben an einzelnen Spielen",
-        text: "Derby, Topspiel, Wettbewerbs-Aufschlag. Sie werden ADDIERT, nicht "
-          + "multipliziert, und ein gemeinsamer Deckel begrenzt sie. Sonst "
-          + "türmen sich drei kleine Aufschläge zu einem Spiel, das die halbe "
-          + "Runde entscheidet.",
+        text: "Derby, Topspiel, Wettbewerbs-Aufschlag — und der Tabellen-Bonus "
+          + "von eben. Sie werden ADDIERT, nicht multipliziert, und ein "
+          + "gemeinsamer Deckel begrenzt sie. Sonst türmen sich drei kleine "
+          + "Aufschläge zu einem Spiel, das die halbe Runde entscheidet.",
       },
     ],
   },
 
-  // ── 🔴 Das Drehrad, ausführlich ─────────────────────────────
-  // Andi ausdrücklich: „grade das Drehrad mit allen funktionen muss gut
-  // erklärt werden."
-  //
-  // ⚠️ Nur der erste Schritt trägt ein `ziel`. Die Rad-Einstellungen liegen im
-  // Joker-Sondermenü (`JokerSondermenue.jsx` → `Drehrad.jsx`), also hinter
-  // einem Klick — ein Pfeil auf ein Element, das gerade gar nicht offen ist,
-  // zeigt ins Leere. Deshalb: einmal zeigen, WO es liegt, und den Rest als
-  // Karten erklären.
   {
     key: "drehrad",
     titel: "Das Drehrad — Glück, aber eingestelltes",
@@ -317,26 +332,45 @@ export const WALKTHROUGH_KAPITEL = [
   },
 
   {
-    key: "abschluss",
-    titel: "Runde anlegen und teilen",
-    kurz: "Abschluss",
+    key: "bausteine",
+    titel: "Teilbibliotheken — Stück für Stück zusammensetzen",
+    kurz: "Bausteine",
     schritte: [
       {
-        key: "abschluss-erstellen",
+        key: "bau-teilcode",
+        ziel: "tut-teilcode",
+        titel: "Ein Teil-Code bringt nur EINEN Bereich mit",
+        text: "Nur die Spielauswahl. Oder nur die Joker. Oder nur das Drehrad. "
+          + "Jeder Bereich hat sein eigenes Feld, direkt an der Stelle, an die "
+          + "er gehört — nicht zentral irgendwo.",
+      },
+      {
+        key: "bau-stapeln",
+        ziel: null,
+        titel: "🔴 Und sie stapeln sich, ohne dich zu überschreiben",
+        text: "Das ist der Punkt: Lädst du danach einen Joker-Code, bleibt "
+          + "deine Spielauswahl stehen. Jeder Teil-Code ändert NUR seinen "
+          + "Bereich. Du kannst dir die Wertung von einem holen, das Rad von "
+          + "einem anderen und die Spiele selbst wählen — in beliebiger "
+          + "Reihenfolge, und deine eigenen Änderungen überleben es.",
+      },
+      {
+        key: "bau-erstellen",
         ziel: "abs-erstellen",
-        titel: "Runde erstellen",
+        titel: "Runde anlegen",
         text: "Name rein, anlegen. Du bist automatisch Admin und drin. Die "
           + "Einstellungen kannst du danach weiter ändern — solange noch "
           + "niemand getippt hat, ohne dass jemand etwas davon merkt.",
       },
       {
-        key: "abschluss-code",
-        ziel: "abs-code",
-        titel: "Und jetzt gib deinen Code weiter",
-        text: "Dein Regelwerk wird zu einem Code. Wer ihn einsetzt, bekommt "
-          + "genau deine Runde — das ist die andere Seite von dem, womit wir "
-          + "angefangen haben. Wenn deine Runde gut läuft, spart dein Code dem "
-          + "Nächsten den ganzen Rundgang hier.",
+        key: "bau-code",
+        ziel: "tut-kurzcode",
+        titel: "Zum Schluss: dein eigener Code",
+        text: "Gib ihm einen Namen und einen Satz dazu, dann wird daraus ein "
+          + "kurzer Code mit Kopier-Knopf daneben. Wer ihn einsetzt, bekommt "
+          + "genau deine Runde — die andere Seite von dem, womit wir "
+          + "angefangen haben. Ist dein Zuschnitt gut, spart er dem Nächsten "
+          + "den ganzen Rundgang hier.",
       },
     ],
   },

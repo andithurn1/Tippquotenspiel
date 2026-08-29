@@ -173,7 +173,7 @@ export default function LigaSonderregeln({
           zählt sie mehr, weniger oder normal. Alles darunter schneidet zu,
           diese Zeile gewichtet. */}
       {onAufschlag && (
-        <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${C.line}` }}>
+        <div id="tut-ligagewicht" style={{ marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${C.line}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Was {label} zählt</span>
             <span
@@ -321,7 +321,9 @@ export default function LigaSonderregeln({
         Getippt wird, wer in EINER der Zonen steht. Ohne Zone gilt die ganze Liga.
       </p>
 
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+      {/* Griff für den Rundgang (RF5): hier zeigt er hin, wenn der Admin den
+          Abstiegskampf dazunehmen soll. Rein additiv. */}
+      <div id="tut-zonen" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
         {ZONEN_VORLAGEN.map((v) => {
           const drin = zonen.some((z) => z.von === v.von && z.bis === v.bis);
           return (

@@ -882,14 +882,23 @@ export default function Spielerstellung() {
 
           <SectionTitle id="abs-spiele">Wettbewerbe auswählen</SectionTitle>
           {/* Teil-Code für die Betippungsauswahl — direkt an der Ebene, nicht zentral */}
-          <TeilCodeFeld aspekt="spiele" rules={rules} geladen={geladeneCodes["spiele"]}
-            onGeladen={merkeCode}
-            onChange={(neu) => { touched(); setRules(neu); }} />
+          {/* Griff für den Rundgang (RF5): hier zeigt er, dass Teil-Codes sich
+              stapeln, ohne das Bisherige zu zerstören. Rein additiv. */}
+          <div id="tut-teilcode">
+            <TeilCodeFeld aspekt="spiele" rules={rules} geladen={geladeneCodes["spiele"]}
+              onGeladen={merkeCode}
+              onChange={(neu) => { touched(); setRules(neu); }} />
+          </div>
 
           <p style={{ fontSize: "0.8125rem", color: C.muted, marginTop: -6, marginBottom: 10, lineHeight: 1.45 }}>
             Mannschaften und Begegnungen wählen, Regeln je Wettbewerb festlegen.
           </p>
 
+          {/* Griff für den Rundgang (RF5) — rein additiv, ändert nichts am
+              Aufbau. Ein `div` drumherum statt einer id an `GrosseZeile`: die
+              Komponente reicht keine id durch, und sie dafür umzubauen wäre
+              eine Änderung an einem Bauteil, das zwanzig Stellen benutzen. */}
+          <div id="tut-wettbewerbe">
           <GrosseZeile
             icon="⚽" titel="Wettbewerbe" unter="Ligen &amp; Teams" wert={wettbewerbeStand}
             offen={auswahlOffen === "wettbewerbe"}
@@ -937,7 +946,9 @@ export default function Spielerstellung() {
                 return (
                   <div key={g.key} style={{ marginBottom: 8 }}>
                     <div style={{ display: "flex", gap: 6, alignItems: "stretch" }}>
-                      <button onClick={() => setOffeneLiga((o) => (o === g.key ? null : g.key))} style={{
+                      <button
+                        id={g.key === teamGruppen[0]?.key ? "tut-liga" : undefined}
+                        onClick={() => setOffeneLiga((o) => (o === g.key ? null : g.key))} style={{
                         flex: 1, minWidth: 0, minHeight: 48, boxSizing: "border-box",
                         display: "flex", alignItems: "center", gap: 10, textAlign: "left",
                         cursor: "pointer", fontFamily: "inherit", color: C.text,
@@ -983,7 +994,9 @@ export default function Spielerstellung() {
                             Verein. Was hier eingestellt wird, landet als
                             Abweichung in `spiele.jeWettbewerb[key]`; gemischt
                             wird ausschließlich in `auswahlFuer`. */}
-                        <button onClick={() => setSonderregelnLiga((o) => (o === g.key ? null : g.key))} style={{
+                        <button
+                          id={g.key === teamGruppen[0]?.key ? "tut-sonderregeln" : undefined}
+                          onClick={() => setSonderregelnLiga((o) => (o === g.key ? null : g.key))} style={{
                           marginTop: 8, width: "100%", minHeight: 44, boxSizing: "border-box",
                           cursor: "pointer", fontFamily: "inherit", fontSize: "0.8125rem", textAlign: "left",
                           background: "transparent", color: sonderregelnLiga === g.key ? C.mint : C.muted,
@@ -1111,6 +1124,7 @@ export default function Spielerstellung() {
               })()}
             </div>
           </GrosseZeile>
+          </div>
 
           {/* Die feste Liste — der Ausweg aus der UND-Verknüpfung aller
               anderen Dimensionen. Steht bewusst hinter ihnen: erst probiert
@@ -1468,7 +1482,7 @@ export default function Spielerstellung() {
 
           {/* Kurzcode (Content-Creator) */}
           <div style={{ marginTop: 14, background: C.ink2, border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "12px 14px" }}>
-            <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Kurzcode statt langem Code</div>
+            <div id="tut-kurzcode" style={{ fontSize: "0.8125rem", fontWeight: 700 }}>Kurzcode statt langem Code</div>
             <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 10px", lineHeight: 1.4 }}>
               Speichert dein Regelwerk unter einem kurzen, merkbaren Code — perfekt zum
               Teilen (z. B. von Content-Creatorn). Andere laden ihn unten einfach ein.

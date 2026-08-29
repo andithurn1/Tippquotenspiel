@@ -204,6 +204,37 @@
   50%      { opacity: 1; }
 }
 
+/* ── Der Rundgang: winkender Pfeil, atmender Scheinwerfer ────────────────
+   🔴 Andis Bild (29.08.2026): „sehr interaktiv mit aufblinkenden Pfeilen die
+   eben erst zum nächsten Schritt gehen wenn was eingetippt wurde" — wie das
+   Tutorial in einem Aufbauspiel von Supercell oder SimCity BuildIt.
+
+   ⚠️ Bewusst NUR `transform` und `opacity`. Beides erledigt die Grafikkarte
+   auf einer eigenen Ebene (`npm run bewegung`, Klasse „gratis"); alles
+   andere müsste der Browser neu MALEN — und das hier läuft dauerhaft, nicht
+   einmalig beim Öffnen.
+
+   ⚠️ Und die Dauer kommt aus der VARIABLE, nicht als feste Zahl. Nur sie
+   wird von „Bewegung reduzieren" auf 1 ms gesetzt; mit einer festen Zahl
+   blinkt es weiter, obwohl das Gerät um Ruhe gebeten hat. */
+.tqs-tut-pfeil {
+  animation: tqs-tut-winken calc(var(--tqs-dauer-ruhig) * 4) var(--tqs-kurve) infinite;
+}
+
+@keyframes tqs-tut-winken {
+  0%, 100% { opacity: 1;    transform: rotate(45deg) translate(0, 0); }
+  50%      { opacity: 0.55; transform: rotate(45deg) translate(-2px, -2px); }
+}
+
+.tqs-tut-loch {
+  animation: tqs-tut-atmen calc(var(--tqs-dauer-ruhig) * 5) var(--tqs-kurve) infinite;
+}
+
+@keyframes tqs-tut-atmen {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+
 /* Sanft hereinkommen — für Inhalte, die nachgeladen werden. Bewusst nur
    Deckkraft und ein winziger Versatz: alles Größere sieht nach Effekt aus,
    und Effekte nutzen sich ab. */

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import {
   WALKTHROUGH_KAPITEL, SCHRITTE, KAPITEL_ANZAHL, schrittAn, weiter, zurueck,
   kapitelUeberspringen, kapitelAnfang, fortschritt,
@@ -17,7 +17,15 @@ import { BELOHNUNGS_TYPEN, HAEUFIGKEITEN, AUSSCHLUSS_REICHWEITEN, EREIGNIS_TRIFF
 //     keines: es kostet Vertrauen, das man einmal ausgibt.
 // ============================================================
 
-const SCREEN = readFileSync("src/components/Spielerstellung.jsx", "utf8");
+// ⚠️ ALLE Komponenten, nicht nur der Erstellungs-Screen. Die Ziele des
+// Rundgangs sitzen dort, wo das Bedienelement steht — `tut-presets` und
+// `tut-bibliothek` in `GesamtspielAuswahl.jsx`, `tut-zonen` und
+// `tut-ligagewicht` in `LigaSonderregeln.jsx`. Eine Prüfung, die nur
+// eine Datei liest, meldet richtige Ziele als fehlend (genau so passiert).
+const SCREEN = readdirSync("src/components")
+  .filter((n) => n.endsWith(".jsx"))
+  .map((n) => readFileSync(`src/components/${n}`, "utf8"))
+  .join("\n");
 
 describe("Aufbau", () => {
   it("es gibt Kapitel und Schritte — sonst prüft hier nichts etwas", () => {
@@ -55,9 +63,14 @@ describe("Aufbau", () => {
 });
 
 describe("Die Pfeile zeigen auf Elemente, die es gibt", () => {
-  it("jedes `ziel` kommt als id in Spielerstellung.jsx vor", () => {
+  // ⚠️ Gesucht wird die id als ZEICHENKETTE, nicht als `id="…"`. Zwei Ziele
+  // werden bedingt vergeben — `id={g.key === teamGruppen[0]?.key ? "tut-liga"
+  // : undefined}`, weil sonst sieben Ligen dieselbe id trügen. Ein Muster auf
+  // `id="…"` meldet die als fehlend, obwohl sie da sind (genau so passiert).
+  // Die Kürzel sind eindeutig genug, dass das keine Fehltreffer bringt.
+  it("jedes `ziel` kommt als id in irgendeiner Komponente vor", () => {
     const fehlend = [...new Set(SCHRITTE.map((s) => s.ziel).filter(Boolean))]
-      .filter((id) => !SCREEN.includes(`id="${id}"`));
+      .filter((id) => !SCREEN.includes(`"${id}"`));
     expect(
       fehlend,
       "Diese Rundgang-Ziele gibt es auf dem Screen nicht (mehr) — der Pfeil "

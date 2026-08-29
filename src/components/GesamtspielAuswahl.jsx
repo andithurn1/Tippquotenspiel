@@ -100,7 +100,9 @@ export default function GesamtspielAuswahl({
         passend ein — ändern kannst du es später jederzeit.
       </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* id fuer den Rundgang (RF5) — er zeigt mit einem Pfeil hierher.
+          Rein additiv: eine id aendert nichts am Aufbau. */}
+      <div id="tut-presets" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {drei.map((e) => (
           <EintragKarte key={e.id} eintrag={e} aktiv={gewaehltId === e.id}
             onClick={() => onWaehlen?.(e)} />
@@ -110,7 +112,7 @@ export default function GesamtspielAuswahl({
       {/* Der Weg zu allem Übrigen. Steht UNTER den dreien, nicht darüber:
           wer schon eine passende Karte sieht, soll nicht erst an einem
           Recherche-Angebot vorbei. */}
-      <button onClick={onFensterOeffnen} style={{
+      <button id="tut-bibliothek" onClick={onFensterOeffnen} style={{
         marginTop: 10, width: "100%", cursor: "pointer", fontFamily: "inherit",
         color: C.text, textAlign: "left",
         background: C.ink2, border: `1px dashed ${C.sky}55`, borderRadius: RUND.karte,
