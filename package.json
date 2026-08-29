@@ -35,7 +35,9 @@
     "toepfe": "vite-node scripts/toepfe-durchgang.mjs",
     "schlank": "vite-node scripts/schlank-durchgang.mjs",
     "worte": "node scripts/worte-durchgang.mjs",
-    "abnahmen": "node scripts/abnahmen-alle.mjs"
+    "abnahmen": "node scripts/abnahmen-alle.mjs",
+    "predev": "node scripts/abzeichen-bilder.mjs",
+    "prebuild": "node scripts/abzeichen-bilder.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.0",

@@ -115,3 +115,21 @@ Dateiname wird dann `<key>.png` in `public/abzeichen/`.
   6. Diamant  #8FE3F0
 
 30 Abzeichen · 7 Stufen · 30 PNGs statt 210.
+
+---
+
+## So legst du die PNGs ab
+
+1. Datei benennen wie den **key** aus der Liste oben: `hasardeur.png`,
+   `letzter-held.png`, …
+2. Nach `public/abzeichen/` legen.
+3. Fertig. `npm run dev` und `npm run build` tragen sie automatisch ein
+   (`scripts/abzeichen-bilder.mjs` liest den Ordner).
+
+🔴 **Ein PNG mit falschem Namen wird stillschweigend nie angezeigt.** Damit du
+nicht am Code suchst statt am Dateinamen, meldet `npm test` es dir:
+„Diese Dateien in public/abzeichen/ passen auf kein Abzeichen: …"
+
+⚠️ **Die Bilder sollten rund sein** (bzw. mit transparentem Rand quadratisch).
+Der Schein der Stufe liegt DAHINTER und ragt darüber hinaus — an einer Ecke
+würde er ausfransen.

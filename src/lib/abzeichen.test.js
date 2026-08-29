@@ -4,6 +4,7 @@ import {
   LEERE_BILANZ, sanitizeBilanz, erreichteStufe, naechsteStufe,
   erspielte, schrank, nachGruppen, bildPfad,
 } from "./abzeichen";
+import { VORHANDENE_BILDER } from "./abzeichenBilder";
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
 const KEY = /^[a-z0-9-]+$/;
@@ -239,17 +240,40 @@ describe("Der Schrank", () => {
 describe("Der Bildpfad", () => {
   // ⚠️ EINE Stelle. Andi liefert die PNGs nach; wer den Pfad an zwei Stellen
   // zusammenbaut, hat beim Nachliefern zwei Stellen zu ändern.
-  it("heißt wie der Schlüssel", () => {
-    expect(bildPfad("neuling")).toBe("/abzeichen/neuling.png");
-  });
-
   it("gibt für Unbekanntes `null`", () => {
     expect(bildPfad("gibtsnicht")).toBeNull();
     expect(bildPfad(null)).toBeNull();
   });
 
-  it("jedes Abzeichen im Katalog hat einen Pfad", () => {
-    for (const a of ABZEICHEN) expect(bildPfad(a.key), a.key).toBeTruthy();
+  // 🔴 Solange ein Bild NICHT abgelegt ist, gibt es auch keinen Pfad. Das ist
+  // der Punkt: sonst fordert der Schrank dreißig Dateien an, die es nicht
+  // gibt, und die Konsole ist so voll mit 404ern, dass ein echter Fehler
+  // darin untergeht.
+  it("🔴 ein Abzeichen ohne abgelegtes Bild hat keinen Pfad", () => {
+    const ohne = ABZEICHEN.find((a) => !VORHANDENE_BILDER.includes(a.key));
+    if (!ohne) return;   // alle Bilder da — dann ist hier nichts zu prüfen
+    expect(bildPfad(ohne.key)).toBeNull();
+  });
+
+  it("ein abgelegtes Bild heißt wie sein Schlüssel", () => {
+    for (const key of VORHANDENE_BILDER) {
+      if (!ABZEICHEN_NACH_KEY[key]) continue;
+      expect(bildPfad(key)).toBe(`/abzeichen/${key}.png`);
+    }
+  });
+
+  // 🔴 Die Prüfung, die beim ABLEGEN hilft. Ein PNG, das `hasardeur2.png`
+  // heißt oder `Hasardeur.png`, wird stillschweigend nie angezeigt — man
+  // sucht dann am Code statt am Dateinamen. Der Test sagt es sofort.
+  it("🔴 jede abgelegte Datei gehört zu einem echten Abzeichen", () => {
+    const fremd = VORHANDENE_BILDER.filter((k) => !ABZEICHEN_NACH_KEY[k]);
+    expect(
+      fremd,
+      `Diese Dateien in public/abzeichen/ passen auf kein Abzeichen:\n${fremd.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  it("der Katalog ist vollständig nachschlagbar", () => {
     expect(Object.keys(ABZEICHEN_NACH_KEY).length).toBe(ABZEICHEN.length);
   });
 });

@@ -61,17 +61,42 @@
 //  `schein` ist die Leuchtfarbe, `rand` die Kante. Beides sind Farbwerte und
 //  kein CSS — wie daraus ein Verlauf wird, entscheidet die Oberfläche.
 // ============================================================
+// 🔴 `staerke` ist im Browser gemessen worden, nicht geschätzt. Die erste
+// Fassung gab allen Stufen denselben Schein — auf dem HELLEN Grundschema war
+// er bei Silber und Platin fast unsichtbar, und Platin wirkte damit SCHWÄCHER
+// als Silber. Eine Leiter, die nach oben hin verschwindet, ist keine.
+//
+// ⚠️ Die Stärke steigt deshalb mit dem Rang: nicht der Farbton trägt die
+// Rangfolge, sondern die Intensität. Das funktioniert auf hellem UND dunklem
+// Grund, ein Farbton allein tut das nicht.
+//
+// ⚠️ Und Silber · Platin · Diamant sind auseinandergezogen — grau, violett-
+// weiß, cyan. Vorher waren Silber (#C8CDD4) und Platin (#DCE6EA) fast
+// dasselbe Blassgrau, zwei Stufen also nicht unterscheidbar.
+import { VORHANDENE_BILDER } from "./abzeichenBilder";
+
 export const STUFEN = [
-  { key: "holz",    label: "Holz",    rang: 0, schein: "#8A6A45", rand: "#6B5133" },
-  { key: "bronze",  label: "Bronze",  rang: 1, schein: "#B87333", rand: "#8C5522" },
-  { key: "kupfer",  label: "Kupfer",  rang: 2, schein: "#D97742", rand: "#A6552C" },
-  { key: "silber",  label: "Silber",  rang: 3, schein: "#C8CDD4", rand: "#959BA3" },
-  { key: "gold",    label: "Gold",    rang: 4, schein: "#E8B325", rand: "#B4881A" },
-  { key: "platin",  label: "Platin",  rang: 5, schein: "#DCE6EA", rand: "#A9BFC7" },
-  { key: "diamant", label: "Diamant", rang: 6, schein: "#8FE3F0", rand: "#4FB8CC" },
+  { key: "holz",    label: "Holz",    rang: 0, staerke: 0.30, schein: "#8A6A45", rand: "#6B5133" },
+  { key: "bronze",  label: "Bronze",  rang: 1, staerke: 0.42, schein: "#B87333", rand: "#8C5522" },
+  { key: "kupfer",  label: "Kupfer",  rang: 2, staerke: 0.54, schein: "#D97742", rand: "#A6552C" },
+  { key: "silber",  label: "Silber",  rang: 3, staerke: 0.66, schein: "#9AA6B4", rand: "#71808F" },
+  { key: "gold",    label: "Gold",    rang: 4, staerke: 0.78, schein: "#E8B325", rand: "#B4881A" },
+  { key: "platin",  label: "Platin",  rang: 5, staerke: 0.89, schein: "#A99BD6", rand: "#7C6DB4" },
+  { key: "diamant", label: "Diamant", rang: 6, staerke: 1.00, schein: "#5FD3E8", rand: "#2E9DB6" },
 ];
 
 export const STUFE = Object.fromEntries(STUFEN.map((s) => [s.key, s]));
+
+// Die Deckkraft des Scheins als zweistellige Hex-Endung. ⚠️ An EINER Stelle,
+// damit Schrank, Profil und alles Spätere denselben Schein zeigen.
+export function scheinDeckkraft(stufe, grund = 0.45) {
+  const st = stufe && typeof stufe === "object" ? stufe : STUFE[String(stufe ?? "")];
+  const s = Number.isFinite(st?.staerke) ? st.staerke : 0.5;
+  const wert = Math.round(Math.min(1, Math.max(0, grund + s * (1 - grund))) * 255);
+  return wert.toString(16).padStart(2, "0").toUpperCase();
+}
+
+
 
 // ⚠️ `null` und keine Ersatzstufe: eine erfundene Stufe hinter einem Abzeichen
 // behauptet eine Seltenheit, die niemand vergeben hat.
@@ -510,6 +535,15 @@ export function nachGruppen(bilanz, erworbenAm = {}) {
 // Wer den Pfad an zwei Stellen zusammenbaut, hat beim Nachliefern zwei Stellen
 // zu ändern.
 export const BILD_ORDNER = "/abzeichen";
+
+// 🔴 Gefragt wird die ERZEUGTE Liste, nicht geraten. Im Browser gemessen:
+// ohne sie forderte der Schrank dreißig Bilder an, die es nicht gibt, und
+// produzierte dreißig 404er bei jedem Aufruf. Die Konsole ist danach so voll,
+// dass ein echter Fehler darin untergeht — und genau dafür ist sie da.
+//
+// ⚠️ `VORHANDENE_BILDER` entsteht in `scripts/abzeichen-bilder.mjs` und läuft
+// automatisch vor `dev` und `build`. Andi legt seine PNGs ab, mehr nicht.
 export function bildPfad(key) {
-  return ABZEICHEN_NACH_KEY[key] ? `${BILD_ORDNER}/${key}.png` : null;
+  if (!ABZEICHEN_NACH_KEY[key]) return null;
+  return VORHANDENE_BILDER.includes(key) ? `${BILD_ORDNER}/${key}.png` : null;
 }

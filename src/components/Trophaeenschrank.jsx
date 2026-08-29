@@ -27,7 +27,7 @@ import BackLink from "@/components/BackLink";
 import { useAuth } from "@/components/AuthProvider";
 import { getStore } from "@/lib/store";
 import { DEFAULT_RULES } from "@/lib/engine";
-import { nachGruppen, STUFEN, bildPfad } from "@/lib/abzeichen";
+import { nachGruppen, STUFEN, bildPfad, scheinDeckkraft } from "@/lib/abzeichen";
 import { bilanzAus, bilanzZusammen, bilanzAusUmfeld } from "@/lib/abzeichenBilanz";
 
 // ── Ein Abzeichen als runde Scheibe ─────────────────────────
@@ -40,7 +40,17 @@ const SCHEIBE = 64;
 function Scheibe({ a }) {
   const s = a.stufe;
   const bild = bildPfad(a.key);
-  const [bildDa, setBildDa] = useState(true);
+  // 🔴 UMGEKEHRT gedacht, und zwar nach einer Messung im Browser. Die erste
+  // Fassung zeigte das Bild und fiel per `onError` auf den Platzhalter zurück
+  // — das Bild scheitert aber, BEVOR React seinen Handler angehängt hat
+  // (Hydration), und dann feuert `onError` nie. Sichtbar war ein kaputtes
+  // Bildsymbol in jedem der dreißig Kreise.
+  //
+  // Jetzt liegt der Platzhalter IMMER da, und das Bild deckt ihn erst ab,
+  // wenn es wirklich geladen ist. Ein fehlendes Bild kann damit nichts mehr
+  // kaputt machen — und genau das ist der Zustand, in dem dieser Screen die
+  // nächsten Wochen leben wird, bis Andis PNGs da sind.
+  const [bildDa, setBildDa] = useState(false);
 
   return (
     <div style={{ position: "relative", width: SCHEIBE, height: SCHEIBE, flexShrink: 0 }}>
@@ -51,7 +61,10 @@ function Scheibe({ a }) {
       {s && (
         <div aria-hidden style={{
           position: "absolute", inset: -8, borderRadius: "50%", pointerEvents: "none",
-          background: `radial-gradient(circle, ${s.schein}66 0%, ${s.schein}22 55%, transparent 72%)`,
+          // ⚠️ Die Deckkraft kommt aus `scheinDeckkraft` und ist NICHT hier
+          // festgeschrieben: sie steigt mit dem Rang, sonst wirkt Platin
+          // schwächer als Silber (im Browser gemessen).
+          background: `radial-gradient(circle, ${s.schein}${scheinDeckkraft(s)} 0%, ${s.schein}33 58%, transparent 74%)`,
         }} />
       )}
       <div style={{
@@ -59,23 +72,28 @@ function Scheibe({ a }) {
         display: "flex", alignItems: "center", justifyContent: "center",
         background: C.surface,
         border: `2px solid ${s ? s.rand : C.line}`,
-        // ⚠️ Nicht ausgrauen, sondern zurücknehmen. Ein ausgegrautes Abzeichen
-        // sieht kaputt aus; ein blasses sieht nach „noch nicht" aus.
-        opacity: s ? 1 : 0.38,
         overflow: "hidden",
       }}>
-        {bild && bildDa ? (
-          // ⚠️ Bewusst ein rohes `img` und kein `next/image`: die Datei kann
-          // FEHLEN, solange Andis PNGs nicht da sind, und `onError` ist der
-          // Weg, der dann sauber auf den Platzhalter zurückfällt.
+        {/* Der Platzhalter. ⚠️ KEINE Deckkraft auf der ganzen Scheibe: die
+            erste Fassung dimmte alles auf 0,38, und graue Schrift auf weißem
+            Grund war damit unsichtbar. Zurückgenommen wird über die Farbe. */}
+        <span aria-hidden style={{
+          fontFamily: MONO, fontSize: "1.5rem", fontWeight: 700,
+          color: s ? s.rand : C.text, opacity: s ? 1 : 0.5,
+        }}>
+          {a.label.slice(0, 1)}
+        </span>
+        {bild && (
+          // ⚠️ Bewusst ein rohes `img` und kein `next/image`: die Datei DARF
+          // fehlen. `onLoad` ist der einzige Weg, der auch dann stimmt, wenn
+          // der Fehler vor der Hydration passiert.
           <img src={bild} alt="" width={SCHEIBE} height={SCHEIBE}
-            onError={() => setBildDa(false)}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          // Platzhalter, bis die PNGs da sind.
-          <span style={{ fontFamily: MONO, fontSize: "1.5rem", fontWeight: 700, color: s ? s.rand : C.muted }}>
-            {a.label.slice(0, 1)}
-          </span>
+            onLoad={() => setBildDa(true)}
+            style={{
+              position: "absolute", inset: 0,
+              width: "100%", height: "100%", objectFit: "cover",
+              opacity: bildDa ? 1 : 0,
+            }} />
         )}
       </div>
     </div>
