@@ -28,6 +28,7 @@ import { alleMatches } from "./ligen";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { sanitizeBeschreibung } from "./beschreibung";
 import { baueMeldung } from "./meldung";
+import { baueSpott } from "./spottPost";
 import { namensSchluessel } from "./benutzername";
 import { sanitizeGeburtsdatum } from "./geburtsdatum";
 import { isPremium, applyEntitlements } from "./premium";
@@ -171,6 +172,8 @@ export function createMockStore() {
   const presets = new Map(GETEILTE_DEMO.map((p) => [p.code, { ...p }]));
   // Meldungen zu Freitexten (Kurzbeschreibung). Siehe `meldung.js`.
   const meldungen = [];
+  // Hinterlegter Spott (SP1) — wird beim Öffnen der Auswertung gezeigt.
+  const spottPost = [];
   const members = [
     ...DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar })),
     // Dieselben fünf im Schaufenster: eine Runde mit einem Mitglied kann
@@ -539,6 +542,37 @@ export function createMockStore() {
       const i = meldungen.findIndex(
         (m) => m.melder_id === melderId && m.ziel_id === zielId && m.art === art);
       if (i >= 0) meldungen.splice(i, 1);
+      return true;
+    },
+
+    // ── Spott-Post (SP1) ────────────────────────────────────
+    // 🔴 ABHOLEN statt zustellen (Andi, 29.08.2026): der Spott liegt hier und
+    // wird gezeigt, wenn der Getroffene die Auswertung öffnet. Deshalb braucht
+    // es keine Benachrichtigungsrechte — und deshalb war SP1 plötzlich baubar.
+    async spottSenden({ vonId, aufId, roundId, spieltag, spruch = "", clip = null }) {
+      const gebaut = baueSpott({ vonId, aufId, roundId, spieltag, spruch, clip });
+      if (!gebaut.ok) throw new Error(gebaut.grund);
+      const s = gebaut.spott;
+      // ⚠️ Erneut senden überschreibt — dieselbe Grenze wie in `darfSpotten`.
+      const i = spottPost.findIndex((x) => x.von_id === s.von_id && x.auf_id === s.auf_id
+        && x.round_id === s.round_id && x.matchday === s.matchday
+        && (x.wettbewerb ?? "") === (s.wettbewerb ?? ""));
+      if (i >= 0) spottPost[i] = s; else spottPost.push(s);
+      return s;
+    },
+    // Was für MICH bereitliegt — und was ICH verschickt habe (für die
+    // „schon gespottet"-Grenze).
+    async listSpott({ userId }) {
+      return spottPost.filter((s) => s.auf_id === userId || s.von_id === userId);
+    },
+    async spottGesehen({ userId, vonId, roundId, spieltag }) {
+      for (const s of spottPost) {
+        if (s.auf_id !== userId) continue;
+        if (vonId && s.von_id !== vonId) continue;
+        if (roundId && s.round_id !== roundId) continue;
+        if (spieltag && s.matchday !== spieltag.matchday) continue;
+        s.gesehen_am = new Date().toISOString();
+      }
       return true;
     },
 

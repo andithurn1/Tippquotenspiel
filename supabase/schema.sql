@@ -114,6 +114,93 @@ create policy "eigene meldung zuruecknehmen" on public.meldungen
 create index if not exists meldungen_ziel_idx on public.meldungen (ziel_id, gemeldet_am desc);
 
 -- ============================================================
+--  SPOTT-POST (SP1, Andi 29.08.2026)
+--
+--  „soll ihm in der Auswertung angezeigt werden samt dem QT Kurzclip, wenn
+--   der schlechtere Tipper nach dem guten Tipper die App bzw Auswertung
+--   öffnet"
+--
+--  🔴 ABHOLEN, nicht zustellen. Genau deshalb reicht eine Tabelle: es braucht
+--  keine Benachrichtigungsrechte, keine Zustellquittung, kein Betriebssystem.
+--  Der Spott liegt hier und wird gezeigt, wenn der Getroffene die Auswertung
+--  aufmacht.
+--
+--  🔴 EINER je Absender, Ziel und Spieltag. Sonst wird aus einer Pointe eine
+--  Belästigung — und zwar in genau dem Moment, in dem jemand ohnehin schlecht
+--  dasteht. Erneut senden ÜBERSCHREIBT.
+create table if not exists public.spott_post (
+  von_id      uuid not null references auth.users on delete cascade,
+  auf_id      uuid not null references auth.users on delete cascade,
+  round_id    text not null,
+  wettbewerb  text not null default '',
+  matchday    int  not null,
+  spruch      text,
+  clip        text,
+  erstellt_am timestamptz not null default now(),
+  gesehen_am  timestamptz,
+  primary key (von_id, auf_id, round_id, wettbewerb, matchday),
+  constraint spott_nicht_selbst check (von_id <> auf_id),
+  constraint spott_spruch_laenge check (spruch is null or char_length(spruch) <= 160),
+  -- ⚠️ Leer geht nicht: ein Spott ohne Spruch UND ohne Clip ist ein Stups
+  -- ohne Inhalt, und genau das soll die Funktion nicht sein.
+  constraint spott_nicht_leer check (spruch is not null or clip is not null)
+);
+
+alter table public.spott_post enable row level security;
+
+-- ⚠️ Lesen darf, wen es angeht: Absender und Empfänger.
+--
+-- 🔴 Der Empfänger darf `gesehen_am` setzen — mehr nicht. Ohne diese Grenze
+-- könnte er den Spruch umschreiben und behaupten, es hätte etwas anderes
+-- dagestanden. Die Spalten selbst schützt der Trigger unten.
+drop policy if exists "spott lesen" on public.spott_post;
+create policy "spott lesen" on public.spott_post
+  for select to authenticated using (auth.uid() = von_id or auth.uid() = auf_id);
+
+drop policy if exists "spott schreiben" on public.spott_post;
+create policy "spott schreiben" on public.spott_post
+  for insert to authenticated with check (auth.uid() = von_id);
+
+drop policy if exists "spott aendern" on public.spott_post;
+create policy "spott aendern" on public.spott_post
+  for update to authenticated
+  using (auth.uid() = von_id or auth.uid() = auf_id)
+  with check (auth.uid() = von_id or auth.uid() = auf_id);
+
+-- ⚠️ Zurücknehmen darf nur der Absender. Der Empfänger soll ihn wegklicken
+-- können (`gesehen_am`), nicht löschen — sonst gäbe es Streit darüber, ob je
+-- etwas dastand.
+drop policy if exists "spott zuruecknehmen" on public.spott_post;
+create policy "spott zuruecknehmen" on public.spott_post
+  for delete to authenticated using (auth.uid() = von_id);
+
+-- 🔴 Der Trigger, ohne den die Update-Policy zu weit ist: der EMPFÄNGER darf
+-- ausschließlich `gesehen_am` setzen. Ohne ihn könnte er den Spruch ändern —
+-- und aus „Nachricht gelesen" würde „Nachricht umgeschrieben".
+create or replace function public.spott_nur_gesehen()
+returns trigger language plpgsql security definer as $$
+begin
+  if auth.uid() = old.auf_id and auth.uid() <> old.von_id then
+    if new.spruch is distinct from old.spruch
+      or new.clip is distinct from old.clip
+      or new.von_id is distinct from old.von_id
+      or new.auf_id is distinct from old.auf_id then
+      raise exception 'Der Empfaenger darf nur als gesehen markieren.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists spott_nur_gesehen_trg on public.spott_post;
+create trigger spott_nur_gesehen_trg
+  before update on public.spott_post
+  for each row execute function public.spott_nur_gesehen();
+
+create index if not exists spott_post_offen_idx
+  on public.spott_post (auf_id, erstellt_am) where gesehen_am is null;
+
+-- ============================================================
 --  PRIVATE Profildaten (KT9, Andi 25.08.2026)
 --
 --  🔴 WARUM EINE EIGENE TABELLE und nicht eine Spalte in `profiles`:

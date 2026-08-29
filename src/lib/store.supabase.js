@@ -16,6 +16,7 @@ import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { sanitizeBeschreibung } from "./beschreibung";
 import { baueMeldung } from "./meldung";
+import { baueSpott } from "./spottPost";
 import { sanitizeGeburtsdatum } from "./geburtsdatum";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
@@ -380,6 +381,39 @@ export function createSupabaseStore() {
     async meldungZuruecknehmen({ melderId, zielId, art = "beschreibung" }) {
       orThrow(await sb.from("meldungen").delete()
         .eq("melder_id", melderId).eq("ziel_id", zielId).eq("art", art));
+      return true;
+    },
+
+    // ── Spott-Post (SP1) ────────────────────────────────────
+    // 🔴 ABHOLEN statt zustellen: der Spott liegt in der Tabelle und wird
+    // gezeigt, wenn der Getroffene die Auswertung öffnet. Keine Push-Rechte,
+    // keine Zustellquittung — genau deshalb ist SP1 ohne die native App
+    // baubar.
+    async spottSenden({ vonId, aufId, roundId, spieltag, spruch = "", clip = null }) {
+      const gebaut = baueSpott({ vonId, aufId, roundId, spieltag, spruch, clip });
+      if (!gebaut.ok) throw new Error(gebaut.grund);
+      const s = { ...gebaut.spott, wettbewerb: gebaut.spott.wettbewerb ?? "" };
+      const data = orThrow(await sb.from("spott_post")
+        .upsert(s, { onConflict: "von_id,auf_id,round_id,wettbewerb,matchday" })
+        .select().maybeSingle());
+      return data ?? s;
+    },
+    // ⚠️ Beides in EINER Abfrage: was für mich bereitliegt UND was ich selbst
+    // verschickt habe. Die Lese-Policy gibt genau diese zwei Richtungen frei.
+    async listSpott({ userId }) {
+      return orThrow(await sb.from("spott_post").select("*")
+        .or(`auf_id.eq.${userId},von_id.eq.${userId}`)) ?? [];
+    },
+    async spottGesehen({ userId, vonId = null, roundId = null, spieltag = null }) {
+      // ⚠️ NUR `gesehen_am`. Ein Trigger in `schema.sql` erzwingt dasselbe —
+      // ohne ihn könnte der Empfänger den Spruch umschreiben, und aus
+      // „gelesen" würde „umgeschrieben".
+      let q = sb.from("spott_post").update({ gesehen_am: new Date().toISOString() })
+        .eq("auf_id", userId).is("gesehen_am", null);
+      if (vonId) q = q.eq("von_id", vonId);
+      if (roundId) q = q.eq("round_id", roundId);
+      if (spieltag?.matchday != null) q = q.eq("matchday", spieltag.matchday);
+      orThrow(await q);
       return true;
     },
 
