@@ -16,6 +16,31 @@ Alternativen gebeten — sie stehen in Abschnitt 4, er entscheidet.
 
 ---
 
+## ⛔ ÜBERHOLT (Andi, 29.08.2026) — der Creator benennt selbst
+
+**Wörtlich:** *„Ich bin mir mit den namen nicht mehr so sicher, ich denke egtl
+das sicherste Konzept dafür ist die Kurzbeschreibung und Creator (darunter dann
+auch erstmal wir) benennen ihre eigenen Codes dann selbst."*
+
+🔴 **Das ist die bessere Lösung, und zwar aus genau dem Grund, an dem dieses
+Dokument sich selbst gesperrt hatte.** Abschnitt 8 verbot das Bauen „bis alle
+einstellbaren Parameter stehen" — weil ein ERZEUGTER Name eine Aussage über
+alle Parameter seines Aspekts ist. Kommt ein Regler dazu, verschiebt sich die
+Skala, und schon vergebene Namen zeigen danach auf etwas anderes. **Ein selbst
+vergebener Name kann das nicht.** Die Sperre löst sich damit nicht auf — sie
+wird gegenstandslos.
+
+✅ **Gebaut als NS12** (`design/auftraege.md`): Name und Kurzbeschreibung beim
+Erstellen eines Kurzcodes, beide freiwillig. Die Datenschicht konnte es längst —
+es fehlte genau ein Argument an der Aufrufstelle.
+
+⚠️ **Dieses Dokument bleibt trotzdem stehen.** Die Skalen-Arbeit ist nicht
+wertlos: falls je ein VORSCHLAG erzeugt werden soll, den der Creator dann
+überschreibt, steht hier alles dafür — samt der Fugen-Grammatik, die immer
+aufgeht. Alles Folgende ist unter diesem Vorbehalt zu lesen.
+
+---
+
 ## 1 · Was der Name leisten soll — und was nicht
 
 Andis Satz enthält zwei Ziele, die einander widersprechen. Das ist der

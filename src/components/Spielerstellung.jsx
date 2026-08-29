@@ -191,6 +191,12 @@ export default function Spielerstellung() {
   const [createErr, setCreateErr] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
   const [shortCode, setShortCode] = useState(null);   // veröffentlichter Kurzcode
+  // Name und Kurzbeschreibung, die der Creator seinem Code selbst gibt
+  // (Andi, 29.08.2026). ⚠️ Getrennt von `rules.name`: der ist der Name der
+  // RUNDE, dies ist der Name des geteilten CODES. Wer beides in ein Feld legt,
+  // benennt beim Teilen unbemerkt seine eigene Runde um.
+  const [codeName, setCodeName] = useState("");
+  const [codeBeschreibung, setCodeBeschreibung] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [shortCopied, setShortCopied] = useState(false);
 
@@ -384,7 +390,14 @@ export default function Spielerstellung() {
     if (!user) { setImpErr("Zum Erstellen eines Kurzcodes bitte einloggen."); return; }
     setPublishing(true);
     try {
-      const p = await getStore().publishPreset({ name: rules.name, rules, creatorId: user.id });
+      // ⚠️ Der selbst vergebene Name gewinnt; ohne ihn fällt es auf den
+      // Rundennamen zurück, und erst dann setzt der Store „Regelwerk".
+      const p = await getStore().publishPreset({
+        name: codeName.trim() || rules.name,
+        beschreibung: codeBeschreibung.trim() || undefined,
+        rules,
+        creatorId: user.id,
+      });
       setShortCode(p.code);
       melder.gespeichert(`Veröffentlicht als ${p.code}`);
     } catch {
@@ -1460,6 +1473,53 @@ export default function Spielerstellung() {
               Speichert dein Regelwerk unter einem kurzen, merkbaren Code — perfekt zum
               Teilen (z. B. von Content-Creatorn). Andere laden ihn unten einfach ein.
             </p>
+            {/* 🔴 NAME und KURZBESCHREIBUNG — Andis Entscheidung vom
+                29.08.2026: *„ich denke egtl das sicherste Konzept dafür ist die
+                Kurzbeschreibung und Creator … benennen ihre eigenen Codes dann
+                selbst."* Damit ist das erzeugte Namensschema (NS1) vom Tisch.
+
+                🔴 **Der Fund, der das nötig machte:** die Spalte
+                `presets.beschreibung` steht im Schema, `publishPreset` nimmt
+                sie entgegen — und die Oberfläche hat sie **nie übergeben**.
+                Gebaut, gewandert, von niemandem gefüllt: dasselbe Muster wie
+                bei `autoTip.js` und der Modifikator-Belohnung des Rades.
+
+                ⚠️ Beides ist FREIWILLIG. Ohne Namen heißt der Eintrag
+                „Regelwerk" (der Store setzt das), ohne Beschreibung steht dort
+                nichts — ein Pflichtfeld vor dem Teilen wäre eine Hürde an der
+                Stelle, an der jemand gerade etwas hergeben will. */}
+            {!shortCode && (
+              <div style={{ marginBottom: 10 }}>
+                <input
+                  value={codeName}
+                  onChange={(e) => setCodeName(e.target.value)}
+                  placeholder="Name — z. B. „Bundesliga pur, harte Wertung“"
+                  maxLength={60}
+                  style={{
+                    width: "100%", boxSizing: "border-box", minHeight: 44,
+                    background: C.surface, color: C.text, fontFamily: "inherit",
+                    fontSize: "0.8125rem", padding: "8px 10px",
+                    border: `1px solid ${C.line}`, borderRadius: RUND.karte,
+                  }}
+                />
+                <textarea
+                  value={codeBeschreibung}
+                  onChange={(e) => setCodeBeschreibung(e.target.value)}
+                  placeholder="Kurz: für wen ist das, und was ist das Besondere daran?"
+                  maxLength={200}
+                  rows={2}
+                  style={{
+                    width: "100%", boxSizing: "border-box", marginTop: 6,
+                    background: C.surface, color: C.text, fontFamily: "inherit",
+                    fontSize: "0.8125rem", padding: "8px 10px", resize: "vertical",
+                    border: `1px solid ${C.line}`, borderRadius: RUND.karte,
+                  }}
+                />
+                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, textAlign: "right", fontFamily: MONO }}>
+                  {codeBeschreibung.length}/200
+                </div>
+              </div>
+            )}
             {!shortCode ? (
               <button onClick={publish} disabled={publishing || !user} style={{
                 width: "100%", cursor: publishing || !user ? "default" : "pointer",
