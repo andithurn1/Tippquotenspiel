@@ -69,7 +69,42 @@ create table if not exists public.profile_privat (
 -- an der nichts davon abhaengt.
 -- ⚠️ `date`, nicht `timestamptz`: ein Geburtstag hat keine Uhrzeit und keine
 -- Zeitzone. Mit timestamptz waere der 27.08. fuer manche der 26.08.
-alter table public.profiles add column if not exists geburtsdatum date;
+--
+-- 🔴 ES LIEGT IN `profile_privat`, NICHT HIER — und bis zum 29.08.2026 stand
+-- an dieser Stelle trotzdem noch die alte Spalte in `profiles`.
+--
+-- Der Kopf dieser Datei erklaert seit Langem, warum das falsch ist:
+-- `profiles` ist fuer JEDEN Eingeloggten lesbar, und Postgres kann RLS nur je
+-- ZEILE, nicht je SPALTE. Der Schreibweg wurde damals umgestellt (der Code
+-- schreibt nur noch nach `profile_privat`) — die SPALTE blieb stehen und
+-- wurde bei jedem Schema-Lauf neu angelegt. Wer sein Geburtsdatum in der
+-- alten Fassung gespeichert hatte, dessen Datum lag weiter offen.
+--
+-- ⚠️ Dieselbe Sorte wie LV4 beim Beitritts-Code: die Absicht war umgesetzt,
+-- der Rest blieb liegen. Ein halber Umzug ist kein Umzug.
+--
+-- ✅ Erst retten, dann loeschen — in dieser Reihenfolge, sonst ist das Datum
+-- weg. Beides idempotent, das Schema laeuft ja komplett neu.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'geburtsdatum'
+  ) then
+    -- Was nur in der alten Spalte steht, nach `profile_privat` heben.
+    insert into public.profile_privat (id, geburtsdatum)
+    select p.id, p.geburtsdatum
+      from public.profiles p
+     where p.geburtsdatum is not null
+    -- ⚠️ `coalesce` mit dem BESTEHENDEN Wert zuerst: wer schon eins in
+    -- `profile_privat` hat, behaelt es. Die alte Spalte ist die schlechtere
+    -- Quelle — sie wurde seit dem Umzug nicht mehr gepflegt.
+    on conflict (id) do update
+      set geburtsdatum = coalesce(profile_privat.geburtsdatum, excluded.geburtsdatum);
+
+    alter table public.profiles drop column geburtsdatum;
+  end if;
+end $$;
 
 -- ── Matches (das, worauf getippt wird) ──────────────────────
 -- snapshot = eingefrorene Quoten (Form der Engine-Quoten-Quelle),
