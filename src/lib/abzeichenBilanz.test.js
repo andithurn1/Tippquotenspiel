@@ -136,7 +136,7 @@ describe("Die Lücken", () => {
   // ⚠️ Die Zahl, die den Stand ehrlich hält. Sie darf nur SINKEN — wer ein
   // Signal anschließt, streicht die Lücke.
   it("⚠️ die Zahl der Lücken ist festgehalten und darf nur kleiner werden", () => {
-    expect(Object.keys(LUECKEN).length).toBeLessThanOrEqual(11);
+    expect(Object.keys(LUECKEN).length).toBeLessThanOrEqual(4);
   });
 });
 
@@ -300,5 +300,116 @@ describe("Die Umfeld-Bilanz", () => {
     for (const f of ["eigeneRunden", "rundenGroesse", "uebernahmen", "abstimmungen", "mitgespielteRunden"]) {
       expect(LUECKEN[f], `${f} ist angeschlossen, steht aber noch als Lücke`).toBeUndefined();
     }
+  });
+});
+
+// ============================================================
+//  🔴 WAS DIE WERTUNG DURCHREICHT
+//
+//  Sechs Felder kamen dazu, weil `bewerteEintraege` `dist`, `underdogMult`
+//  und die Schützen-Liste jetzt mit herausgibt. Kein einziges davon wird hier
+//  nachgerechnet — genau das ist der Punkt.
+// ============================================================
+describe("Torschützen und Außenseiter", () => {
+  // Ein Schnappschuss mit klarem Favoriten und ein Ergebnis, das ihn stürzt.
+  const SNAP_AUSSEN = {
+    ...SNAP,
+    winner: { home: 1.3, draw: 5.0, away: 9.0 },   // Heim ist klarer Favorit
+  };
+
+  it("zählt richtig getippte Torschützen", () => {
+    const namen = Object.keys(SNAP.players.home).slice(0, 1);
+    const e = [eintrag({
+      userId: "a", matchday: 1,
+      tip: { home: ERGEBNIS.home, away: ERGEBNIS.away, goals: { home: namen, away: [] } },
+      result: { ...ERGEBNIS, playerGoals: { [namen[0]]: 1 } },
+    })];
+    const b = bilanzAus({ eintraege: e, userId: "a" });
+    expect(b.schuetzenTreffer).toBe(1);
+  });
+
+  it("ein Schütze, der nicht traf, zählt nicht", () => {
+    const namen = Object.keys(SNAP.players.home).slice(0, 1);
+    const e = [eintrag({
+      userId: "a", matchday: 1,
+      tip: { home: ERGEBNIS.home, away: ERGEBNIS.away, goals: { home: namen, away: [] } },
+      result: { ...ERGEBNIS, playerGoals: { [namen[0]]: 0 } },
+    })];
+    expect(bilanzAus({ eintraege: e, userId: "a" }).schuetzenTreffer).toBe(0);
+  });
+
+  // 🔴 `every` auf einer leeren Liste wäre `true` — ein Tipp ganz OHNE
+  // Schützen wäre damit automatisch Hellsehen. Die Längenprüfung ist der
+  // ganze Unterschied.
+  it("🔴 ein exakter Tipp OHNE Torschützen ist kein Hellsehen", () => {
+    const e = [eintrag({ userId: "a", matchday: 1, tip: EXAKT })];
+    expect(bilanzAus({ eintraege: e, userId: "a" }).hellseher).toBe(0);
+  });
+
+  it("exakt plus alle Schützen ist Hellsehen", () => {
+    const namen = Object.keys(SNAP.players.home).slice(0, 1);
+    const e = [eintrag({
+      userId: "a", matchday: 1,
+      tip: { home: ERGEBNIS.home, away: ERGEBNIS.away, goals: { home: namen, away: [] } },
+      result: { ...ERGEBNIS, playerGoals: { [namen[0]]: 1 } },
+    })];
+    expect(bilanzAus({ eintraege: e, userId: "a" }).hellseher).toBe(1);
+  });
+
+  // ⚠️ „Ein Tor daneben" ist die Summe BEIDER Abweichungen — genau 1.
+  it("⚠️ knapp daneben heißt richtiger Sieger und genau ein Tor Abstand", () => {
+    const e = [
+      // richtiger Sieger, ein Tor daneben
+      eintrag({ userId: "a", matchday: 1, tip: { home: ERGEBNIS.home + 1, away: ERGEBNIS.away, goals: { home: [], away: [] } } }),
+      // exakt — zählt nicht
+      eintrag({ userId: "a", matchday: 2, tip: EXAKT }),
+      // weit daneben — zählt nicht
+      eintrag({ userId: "a", matchday: 3, tip: DANEBEN }),
+    ];
+    expect(bilanzAus({ eintraege: e, userId: "a" }).knappDaneben).toBe(1);
+  });
+
+  it("ohne Außenseiter-Sieg gibt es keinen Außenseiter-Treffer", () => {
+    const e = [eintrag({ userId: "a", matchday: 1, tip: EXAKT })];
+    const b = bilanzAus({ eintraege: e, userId: "a" });
+    expect(b.aussenseiterTreffer).toBe(0);
+    expect(b.jokerAussenseiter).toBe(0);
+  });
+
+  // ⚠️ Beide Joker-Formen zählen: Markierung UND Gewicht. Eine Runde fährt
+  // die eine oder die andere; nur `joker` zu prüfen übersähe den halben
+  // Bestand.
+  it("⚠️ der Joker zählt als Markierung und als Gewicht", () => {
+    const machen = (tipZusatz) => [eintrag({
+      userId: "a", matchday: 1,
+      tip: { home: 0, away: 3, goals: { home: [], away: [] }, ...tipZusatz },
+      result: { home: 0, away: 3, playerGoals: {} },
+    })];
+    const mitMarke = bilanzAus({ eintraege: machen({ joker: true }), userId: "a", rules: { ...DEFAULT_RULES, underdogBoost: 2 } });
+    const mitGewicht = bilanzAus({ eintraege: machen({ gewicht: 2 }), userId: "a", rules: { ...DEFAULT_RULES, underdogBoost: 2 } });
+    const ohne = bilanzAus({ eintraege: machen({}), userId: "a", rules: { ...DEFAULT_RULES, underdogBoost: 2 } });
+    // ⚠️ Ob der Schnappschuss diesen Ausgang als Außenseiter führt, hängt an
+    // seinen Quoten — geprüft wird deshalb der UNTERSCHIED, nicht ein Betrag.
+    expect(mitMarke.jokerAussenseiter).toBe(mitMarke.aussenseiterTreffer);
+    expect(mitGewicht.jokerAussenseiter).toBe(mitGewicht.aussenseiterTreffer);
+    expect(ohne.jokerAussenseiter).toBe(0);
+  });
+
+  it("die Favoriten-Serie liest den Favoriten aus dem Schnappschuss", () => {
+    const tippAuf = (h, a) => ({ home: h, away: a, goals: { home: [], away: [] } });
+    const e = [1, 2, 3].map((md) => ({
+      ...eintrag({ userId: "a", matchday: md, tip: tippAuf(2, 0) }),
+      snapshot: SNAP_AUSSEN,
+    }));
+    // Heim ist Favorit (1,3 gegen 9,0), getippt wurde Heimsieg → drei in Folge.
+    expect(bilanzAus({ eintraege: e, userId: "a" }).favoritenSerie).toBe(3);
+  });
+
+  it("ein Unentschieden-Tipp ist kein Favoriten-Tipp", () => {
+    const e = [{
+      ...eintrag({ userId: "a", matchday: 1, tip: { home: 1, away: 1, goals: { home: [], away: [] } } }),
+      snapshot: SNAP_AUSSEN,
+    }];
+    expect(bilanzAus({ eintraege: e, userId: "a" }).favoritenSerie).toBe(0);
   });
 });

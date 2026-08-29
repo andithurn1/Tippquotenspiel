@@ -1557,7 +1557,18 @@ export function bewerteEintraege(entries = [], rules = DEFAULT_RULES, regelnFuer
     const wert = Number.isFinite(e.malusFaktor) ? Math.round(s.total * e.malusFaktor) : s.total;
     // Der Modifikator-Faktor wandert mit: die FREMDJOKER rechnen auf dem Wert
     // OHNE ihn (siehe `grundwert` in `punkteJeSpiel`).
-    bewertet.push({ e, wert, ebene: s.ebene, faktor: s.modifier?.faktor ?? 1, key: `${i}` });
+    // 🔴 DURCHGEREICHT statt neu gerechnet (29.08.2026, für die Abzeichen).
+    // `scoreTip` kennt `dist`, `underdogMult` und die Schützen-Liste längst —
+    // sie kamen nur nicht heraus, und die Bilanz hätte sie sonst NACHGEBAUT.
+    // Genau das wäre die zweite Wahrheit: zwei Stellen, die „war das ein
+    // Außenseiter" beantworten und irgendwann auseinanderlaufen.
+    //
+    // ⚠️ Rein additiv — kein bestehender Leser ändert sein Verhalten.
+    bewertet.push({
+      e, wert, ebene: s.ebene, faktor: s.modifier?.faktor ?? 1, key: `${i}`,
+      dist: s.dist, winnerRight: s.winnerRight, underdogMult: s.underdogMult,
+      schuetzen: s.goals?.detail ?? [],
+    });
   }
 
   // ⚠️ Der Bonus hängt am WERT nach allen Modifikatoren, nicht an einer

@@ -32,15 +32,8 @@ import { spieltageChronologisch, spieltagKey } from "./spieltag";
 // Liste ehrlich: steht ein Feld hier, darf `bilanzAus` es nicht setzen — und
 // umgekehrt.
 export const LUECKEN = {
-  hellseher: "Braucht Ergebnis- UND Schützen-Treffer je Spiel; `bewerteEintraege` liefert nur die Ebene.",
-  doppelpacks: "Steckt in `scoreGoals().detail`, das die Wertung nicht durchreicht.",
-  schuetzenTreffer: "Dito — die Trefferliste je Schütze wird nicht aufbewahrt.",
-  aussenseiterTreffer: "`underdogMult` steckt in `scoreResult` und kommt nicht mit heraus.",
-  jokerAussenseiter: "Setzt `aussenseiterTreffer` voraus, das aus demselben Grund fehlt.",
-  knappDaneben: "Braucht `dist` je Tipp; die Wertung reicht nur `ebene` durch.",
   saisonsBeendet: "Es gibt noch keine einzige abgeschlossene Saison, an der man es ablesen könnte.",
   spottEmpfangen: "SP1 ist nicht gebaut.",
-  favoritenSerie: "Braucht den Favoriten je Spiel aus dem Schnappschuss.",
   aufholsprung: "Braucht den Rang-Verlauf (`scoreLeaderboardHistory`).",
   letzterUndWeiter: "Braucht den Spieltags-Letzten UND den Tipp danach — der Rang-Verlauf liegt nicht in den Einträgen.",
 };
@@ -160,6 +153,69 @@ export function bilanzAus({
     ? meineSpieltagsSummen.reduce((a, b) => a + b, 0) / meineSpieltagsSummen.length
     : 0;
   bilanz.bestesSpielFaktor = schnittSpieltag > 0 ? bestesSpiel / schnittSpieltag : 0;
+
+
+  // ── 🔴 Was die Wertung mitliefert, seit sie es durchreicht ──
+  //
+  // ⚠️ NICHTS hiervon wird hier nachgerechnet. `dist`, `underdogMult` und die
+  // Schützen-Liste kommen aus `scoreTip` — dieselbe Rechnung, die die Punkte
+  // vergeben hat. Ein zweiter Weg zu „war das ein Außenseiter" wäre genau die
+  // Sorte Doppelrechnung, an der dieses Projekt schon Fehler hatte.
+
+  // Ein Außenseiter-Tipp, der aufging. 🔴 `underdogMult > 1` heißt beides
+  // zugleich: der REALE Ausgang war ein Außenseiter-Sieg UND der Tipp hat
+  // gezahlt — die Engine setzt den Faktor nur, wenn `resultPart > 0`.
+  bilanz.aussenseiterTreffer = echte.filter((b) => (b.underdogMult ?? 1) > 1).length;
+
+  // ⚠️ Und derselbe Treffer MIT Joker darauf — das ist der Kaltschnäuzige.
+  // Der Joker steckt im Tipp selbst: entweder als Markierung (`joker`) oder
+  // als Gewicht über 1 (Ranglisten- und Einsatz-Modus). Beide Formen fragen,
+  // weil eine Runde die eine oder die andere fährt — nur `joker` zu prüfen
+  // hieße, den halben Bestand zu übersehen.
+  const mitJoker = (t) => t?.joker === true || (Number.isFinite(t?.gewicht) && t.gewicht > 1);
+  bilanz.jokerAussenseiter = echte.filter(
+    (b) => (b.underdogMult ?? 1) > 1 && mitJoker(b.e?.tip)).length;
+
+  // ⚠️ „Ein Tor daneben" ist `dist === 1`: `dist` ist die Summe BEIDER
+  // Abweichungen, ein einzelnes Tor Unterschied ergibt also genau 1. Mit
+  // richtigem Sieger — sonst ist es kein knappes Danebenliegen, sondern ein
+  // falscher Tipp, der zufällig nah lag.
+  bilanz.knappDaneben = echte.filter((b) => b.winnerRight === true && b.dist === 1).length;
+
+  // ── Torschützen ────────────────────────────────────────
+  let schuetzen = 0, doppel = 0, hellseher = 0;
+  for (const b of echte) {
+    const liste = Array.isArray(b.schuetzen) ? b.schuetzen : [];
+    if (!liste.length) continue;
+    const getroffen = liste.filter((d) => (d.scored ?? 0) >= 1);
+    schuetzen += getroffen.length;
+    doppel += liste.filter((d) => d.type === "double" && (d.scored ?? 0) >= 2).length;
+    // 🔴 Hellseher: exaktes Ergebnis UND jeder getippte Schütze hat getroffen.
+    // ⚠️ `every` auf einer leeren Liste wäre `true` — deshalb steht die
+    // Längenprüfung oben. Ein Tipp ohne Schützen ist kein Hellsehen.
+    if (b.ebene === "exakt" && getroffen.length === liste.length) hellseher += 1;
+  }
+  bilanz.schuetzenTreffer = schuetzen;
+  bilanz.doppelpacks = doppel;
+  bilanz.hellseher = hellseher;
+
+  // ── Der Sichere: Tipps in Folge auf den Favoriten ───────
+  //
+  // ⚠️ Der Favorit kommt aus dem SCHNAPPSCHUSS des Tipps (`winner`), nicht aus
+  // einer eigenen Einschätzung: was zum Zeitpunkt der Abgabe der Favorit war,
+  // steht dort eingefroren. Nachträglich zu bestimmen, wer Favorit „war",
+  // wäre eine Aussage über die Vergangenheit mit heutigen Zahlen.
+  const aufFavorit = new Set();
+  for (const b of echte) {
+    const w = b.e?.snapshot?.winner;
+    const t = b.e?.tip;
+    if (!w || !t || !Number.isFinite(t.home) || !Number.isFinite(t.away)) continue;
+    // Wen hat der Tipp als Sieger gesehen, und wen der Markt?
+    const getippt = Math.sign(t.home - t.away);
+    const favorit = w.home === w.away ? 0 : (w.home < w.away ? 1 : -1);
+    if (getippt !== 0 && getippt === favorit) aufFavorit.add(keyVon(b.e));
+  }
+  bilanz.favoritenSerie = laengsteFolge(reihenfolge, (s) => aufFavorit.has(s.key));
 
   return bilanz;
 }
