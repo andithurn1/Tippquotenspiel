@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { C, MONO, RUND } from "@/lib/theme";
+import { Slider } from "@/components/Eingaben";
 import {
   WETT_TYPEN, WETT_TYP, istAuswertbar, SAISON_LIMITS, SAISON_PRESETS,
   sanitizeSaison, wettenLabel, wettenId,
@@ -14,7 +15,10 @@ import {
 //
 // Der „außer"-Parameter ist der Grund, warum aus 7 Typen viele Wetten werden:
 // „Torschützenkönig außer Bayern" ist eine andere Wette als „Torschützenkönig".
-export default function SaisonWetten({ saison, onChange, teams = [] }) {
+// ⚠️ `rules` kommt nur für die Regler-Hinweise herein — die Einstellungen
+// selbst hängen weiter an `saison`. Ohne `rules` zeigt der Regler das Band
+// und keine Hinweise; er bricht nicht.
+export default function SaisonWetten({ saison, onChange, teams = [], rules = null }) {
   const s = sanitizeSaison(saison);
   const [offen, setOffen] = useState(null); // key des Typs, dessen Ausschluss gerade bearbeitet wird
 
@@ -61,12 +65,21 @@ export default function SaisonWetten({ saison, onChange, teams = [] }) {
             ))}
           </div>
 
-          {/* Gewichtung */}
-          <Label>Gewicht der Saison-Ebene: ×{s.gewicht.toFixed(1)}</Label>
-          <input type="range"
-            min={SAISON_LIMITS.gewicht.min} max={SAISON_LIMITS.gewicht.max} step={SAISON_LIMITS.gewicht.step}
-            value={s.gewicht} onChange={(e) => setze({ gewicht: Number(e.target.value) })}
-            style={{ width: "100%", accentColor: C.akzent }} />
+          {/* Gewichtung
+              🔴 Bis zum 29.08.2026 ein rohes `input type=range`. Es sah aus
+              wie ein Regler und war keiner: `BAND_FELDER` kennt für
+              `saison.gewicht` ein Empfehlungsband, und das konnte es nie
+              erreichen. Dieselbe Sorte wie Heimat- und Mut-Bonus (ST4d).
+
+              ⚠️ Die drei Sätze darunter bleiben — sie sagen etwas anderes als
+              das Band: das Band sagt „außerhalb des Erprobten", der Satz sagt
+              „so fühlt es sich an". Beides zugleich ist keine Doppelung. */}
+          <Slider label="Gewicht der Saison-Ebene" value={s.gewicht}
+            min={SAISON_LIMITS.gewicht.min} max={SAISON_LIMITS.gewicht.max}
+            step={SAISON_LIMITS.gewicht.step}
+            pfad="saison.gewicht" rules={rules}
+            onChange={(v) => setze({ gewicht: v })}
+            fmt={(x) => `×${x.toFixed(1)}`} />
           <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
             {s.gewicht < 0.8 && "Nur Würze — die Spieltage entscheiden die Runde."}
             {s.gewicht >= 0.8 && s.gewicht <= 1.4 && "Spürbar, aber nicht dominant."}

@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 import {
   BAND_FELDER, band, pruefe, korrigieren, zusammenfassung, rohModifikator,
   KOMBINATIONEN, hinweiseFuer, hinweisStufe,
@@ -436,5 +438,34 @@ describe("Hinweise am Regler", () => {
   it("meldet die höhere Stufe, wenn beides zusammenkommt", () => {
     const r = { ...DEFAULT_RULES, wrongPenalty: 0, minPayout: 0 };
     expect(hinweisStufe(r, "wrongPenalty")).toBe("warnung");
+  });
+});
+
+// ============================================================
+//  🔴 KOMMT JEDER HINWEIS AUCH IRGENDWO AN?
+//
+//  Ein Empfehlungsband, das keine Oberfläche zeigt, ist ein Hinweis, den
+//  niemand je liest — und zwar still. Genau das war beim Heimatbonus, beim
+//  Mut-Bonus und beim Saison-Gewicht der Fall: sie sahen aus wie Regler und
+//  waren rohe `input`-Elemente, an die das Band nicht herankam.
+//
+//  ⚠️ Der Test liest die Komponenten als TEXT. Das ist grob und genau
+//  deshalb belastbar: er fragt nur, ob der Pfad überhaupt irgendwo auftaucht.
+//  Eine feinere Prüfung müsste JSX verstehen und wäre die erste, die bei
+//  einem Umbau aus dem falschen Grund rot wird.
+// ============================================================
+describe("Jedes Bandfeld hat eine Oberfläche", () => {
+  it("🔴 kein Pfad aus BAND_FELDER bleibt ohne Anschluss", () => {
+    const ordner = path.join(process.cwd(), "src", "components");
+    const text = fs.readdirSync(ordner)
+      .filter((f) => f.endsWith(".jsx"))
+      .map((f) => fs.readFileSync(path.join(ordner, f), "utf8"))
+      .join("\n");
+    const ohne = BAND_FELDER.map((f) => f.pfad).filter((p) => !text.includes(`"${p}"`));
+    expect(
+      ohne,
+      "Für diese Felder gibt es ein Empfehlungsband, aber keine Stelle, die es zeigt:\n"
+      + ohne.join("\n"),
+    ).toEqual([]);
   });
 });

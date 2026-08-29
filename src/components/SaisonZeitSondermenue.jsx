@@ -90,6 +90,7 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
           saison={rules.saison || DEFAULT_RULES.saison}
           onChange={(saison) => onChange({ saison })}
           teams={teams}
+          rules={rules}
         />
       </GrosseZeile>
 

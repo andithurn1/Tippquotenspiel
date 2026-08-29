@@ -6,6 +6,7 @@ import { STAERKE_STUFEN, BETRIFFT, beschreibeBetrifft } from "@/lib/catchup";
 import { KURVEN, KURVE, SAISONFORM_LIMITS, beschreibeSaisonform } from "@/lib/saisonform";
 import { VERSAEUMNIS_STRATEGIEN, VERSAEUMNIS_LABEL, VERSAEUMNIS_HINT } from "@/lib/autoTip";
 import { C, RUND } from "@/lib/theme";
+import { hinweiseFuer } from "@/lib/reglerWarnung";
 import { TAPZIEL } from "@/lib/tapziel";
 import { Slider, Toggle, Field, GrosseZeile } from "@/components/Eingaben";
 
@@ -89,6 +90,29 @@ export default function VerlaufSondermenue({ rules, onChange }) {
                 })}
               </div>
             </Field>
+
+            {/* 🔴 Der Hinweis OHNE Regler (ST4d-Rest, 29.08.2026).
+                `BAND_FELDER` kennt für `aufholen.staerke` ein Empfehlungsband,
+                aber hier gibt es keinen Schieber — die Stärke wird über feste
+                Stufen gesetzt.
+
+                ⚠️ Das Band trotzdem zu streichen wäre falsch: über einen
+                Creator-Code kann ein Wert hereinkommen, den keine der Stufen
+                trifft (`auStufe === "custom"`). Genau dann ist der Hinweis das
+                Einzige, was ihn benennt.
+
+                ⚠️ Dieselbe Quelle wie am Regler (`hinweiseFuer`) — keine
+                zweite Wahrheit darüber, ob ein Wert in Ordnung ist. */}
+            {hinweiseFuer(rules, "aufholen.staerke").map((w) => (
+              <div key={`${w.art}-${w.id}`} style={{
+                marginTop: 6, paddingLeft: 8,
+                borderLeft: `2px solid ${w.stufe === "warnung" ? C.coral : C.mint}`,
+                fontSize: "0.6875rem", lineHeight: 1.4,
+                color: w.stufe === "warnung" ? C.coral : C.muted,
+              }}>
+                {w.art === "kombination" ? w.titel : w.text}
+              </div>
+            ))}
 
             <Field label="Wen betrifft es?">
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
