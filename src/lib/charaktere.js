@@ -218,6 +218,12 @@ export const CHARAKTERE = [
       ...preset("standard"),
       name: "Nur nebenbei",
       joker: { enabled: false },
+      // 🔴 Spott AUS. Andi, 29.08.2026: „gibt halt auch empfindliche Leute.“
+      // Eine Runde, die nicht jede Woche reinschaut, hat den Spieltag
+      // ohnehin nicht verfolgt — ein Spruch über ihr schlechtes Abschneiden
+      // trifft dort jemanden, der gar nicht mitspielen wollte, sondern
+      // nebenbei. Genau dafür ist der Schalter da.
+      spott: { enabled: false, clips: false },
       saison: saison("nebenbei"),
       versaeumnis: { enabled: true, strategie: "wahrscheinlich", malusProzent: 25, maxProSaison: 5 },
       // ⚠️ NICHT „ausgleich": der Trost-Joker und der Versäumnis-Ersatztipp

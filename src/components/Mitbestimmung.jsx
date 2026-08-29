@@ -1,6 +1,7 @@
 "use client";
 
 import { C, RUND } from "@/lib/theme";
+import { sanitizeSpott } from "@/lib/spottPost";
 import { Zahl } from "@/components/Eingaben";
 import { ASPEKTE, ASPEKT_KEYS } from "@/lib/presetMerge";
 import { TAPZIEL } from "@/lib/tapziel";
@@ -78,6 +79,11 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
   };
 
   const funde = konflikte(rules, ASPEKT_KEYS);
+  // ⚠️ Über `sanitizeSpott`, nicht roh: ein Regelwerk aus einem alten
+  // Creator-Code kennt das Feld noch gar nicht, und `sp.enabled` wäre dann
+  // `undefined` — der Schalter stünde auf AUS, obwohl die Vorgabe AN ist.
+  const sp = sanitizeSpott(rules?.spott);
+  const setzeSpott = (teil) => onChange({ spott: { ...sp, ...teil } });
 
   return (
     <div>
@@ -246,6 +252,42 @@ export default function Mitbestimmung({ rules, mitglieder = null, onChange }) {
           )}
         </>
       )}
+
+      {/* ── 🔴 SPOTT (SP1, Andi 29.08.2026) ────────────────
+          „ich würde das ganze mit der Benachrichtigung ohnehin als optional
+           vom Admin einstellen, wobei das schon erstmal standardausgewählt
+           ist … gibt halt auch empfindliche Leute."
+
+          ⚠️ Er steht HIER und nicht bei der Wertung: es ist keine Frage, wie
+          gerechnet wird, sondern wie miteinander umgegangen wird — dieselbe
+          Art Entscheidung wie „stimmen wir über Regeln ab". Deshalb liegt er
+          auch im Aspekt `mitbestimmung` und reist im Creator-Code mit.
+
+          🔴 Standard AN, abschaltbar mit EINEM Griff. Eine Funktion, die
+          niemand findet, gibt es nicht — aber wem sie zu viel ist, der soll
+          sie loswerden, ohne es begründen zu müssen. */}
+      <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 16, paddingTop: 14 }}>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 2 }}>Spott</div>
+        <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 10px", lineHeight: 1.45 }}>
+          Wer an einem Spieltag weit vorn lag, darf jemandem aus dem hinteren
+          Drittel einen Spruch hinterlassen. Er erscheint dort in der Auswertung
+          — <strong>einer je Person und Spieltag</strong>, und erst wenn der
+          Spieltag abgerechnet ist.
+        </p>
+
+        <Toggle label="Spott ist erlaubt" on={sp.enabled !== false}
+          onChange={(on) => setzeSpott({ enabled: on })} />
+
+        {sp.enabled !== false && (
+          <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginTop: 8 }}>
+            {/* ⚠️ Getrennt schaltbar: ein Text ist etwas anderes als ein
+                eingespielter Clip, und manche Runde will das eine ohne das
+                andere. */}
+            <Toggle label="QT-Clips dürfen mitgeschickt werden" on={sp.clips !== false}
+              onChange={(on) => setzeSpott({ clips: on })} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

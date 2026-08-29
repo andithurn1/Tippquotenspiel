@@ -50,6 +50,7 @@ import { sanitizeRechte, DEFAULT_RECHTE } from "./rechte";
 import { vorgaengeAusRechten } from "./rechteAusuebung";
 import { sanitizeTippfenster, DEFAULT_TIPPFENSTER } from "./tippfenster";
 import { sanitizeZeitachse, DEFAULT_ZEITACHSE } from "./zeitachse";
+import { DEFAULT_SPOTT, sanitizeSpott } from "./spottPost";
 // Spieltags-Identität liegt in einem eigenen, importfreien Modul — sonst gäbe
 // es einen Kreis über `ereignisse.js`, das dieselben Helfer braucht. Die Engine
 // reicht sie weiter, damit bestehende Importe aus "./engine" gültig bleiben.
@@ -326,6 +327,14 @@ export const DEFAULT_RULES = {
   // Kante wie der eingefrorene Quoten-Snapshot). Details in tippfenster.js.
   tippfenster: { ...DEFAULT_TIPPFENSTER },
 
+  // ── Spott aus der Auswertung (SP1, Andi 29.08.2026) ──
+  // „ich würde das ganze mit der Benachrichtigung ohnehin als optional vom
+  // Admin einstellen, wobei das schon erstmal standardausgewählt ist … gibt
+  // halt auch empfindliche Leute.“
+  // ⚠️ Standard AN — eine Funktion, die niemand findet, gibt es nicht. Aber
+  // sie muss sich mit EINEM Griff abschalten lassen. Katalog und Regeln in
+  // `spottPost.js`.
+  spott: { ...DEFAULT_SPOTT },
   // ── Zeitachse: was „Spieltag 5" in einer Runde über MEHRERE Ligen heißt ──
   // Die Ligen starten versetzt und haben eigene Zählungen. Ein Taktgeber gibt
   // den Rhythmus vor, alles andere ordnet sich ein. Reine Struktur- und
@@ -669,6 +678,7 @@ export function sanitizeRules(partial = {}) {
     sperre: sanitizeSperre(src.sperre),
     rechte: sanitizeRechte(src.rechte),
     tippfenster: sanitizeTippfenster(src.tippfenster),
+    spott: sanitizeSpott(src.spott),
     zeitachse: sanitizeZeitachse(src.zeitachse),
     // Duell-Joker, Budget, Limitierungsklassen, Joker-Grundform und Drehrad
     // prüfen sich selbst — dieselbe Delegation wie bei Saisonform und

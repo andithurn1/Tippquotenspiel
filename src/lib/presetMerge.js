@@ -169,7 +169,12 @@ export const ASPEKTE = [
     // einzige heute wirksame Recht das Big Game betrifft: die Frage ist nicht
     // „wie viel zählt ein Spiel", sondern „WER entscheidet das". Genau die
     // Frage, die dieser Aspekt stellt.
-    keys: ["verfassung", "regelAbstimmung", "rechte"],
+    // ⚠️ `spott` steht hier und nicht bei „fairness": es ist keine
+    // Wertungsfrage, sondern eine über den UMGANG in der Runde — dieselbe
+    // Art Entscheidung wie „stimmen wir über Regeln ab". Und es reist im
+    // Creator-Code mit, weil ein Creator seine ganze Runden-Idee teilt,
+    // Tonfall eingeschlossen.
+    keys: ["verfassung", "regelAbstimmung", "rechte", "spott"],
   },
 ];
 

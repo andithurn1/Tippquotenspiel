@@ -46,6 +46,41 @@
 
 import { spieltagKey } from "./spieltag";
 
+// ============================================================
+//  🔴 DIE ADMIN-EINSTELLUNG (Andi, 29.08.2026)
+//
+//    „ich würde das ganze mit der Benachrichtigung ohnehin als optional vom
+//     Admin einstellen, wobei das schon erstmal standardausgewählt ist …
+//     gibt halt auch empfindliche Leute"
+//
+//  ⚠️ **Standard AN, und das ist eine bewusste Asymmetrie.** Eine Funktion,
+//  die niemand findet, gibt es nicht — sie muss also erst einmal da sein.
+//  Aber sie muss sich mit EINEM Griff abschalten lassen, ohne dass jemand
+//  begründen muss, warum ihm das zu viel ist.
+//
+//  🔴 Und zwar für die GANZE Runde, nicht je Person. Eine Runde, in der
+//  einige spotten dürfen und andere nicht, erklärt niemandem, warum er nichts
+//  bekommt — und wer sich ausklinkt, macht das öffentlich. Der Admin
+//  entscheidet für alle, so wie bei den Fremdjokern (`eingriffe.enabled`).
+//
+//  ⏳ Eine PERSÖNLICHE Abschaltung wäre die feinere Lösung und ist offen:
+//  sie gehört zu den Anzeige-Stufen, nicht ins Regelwerk der Runde.
+// ============================================================
+export const DEFAULT_SPOTT = {
+  enabled: true,
+  // ⚠️ Auch der Clip einzeln abschaltbar: ein Text ist etwas anderes als ein
+  // eingespieltes Video, und manche Runde will das eine ohne das andere.
+  clips: true,
+};
+
+export function sanitizeSpott(partial = {}) {
+  const p = partial && typeof partial === "object" ? partial : {};
+  return {
+    enabled: p.enabled !== false,
+    clips: p.clips !== false,
+  };
+}
+
 // ⏳ PLATZHALTER. „Sehr gut" heißt: im oberen Drittel des Spieltags.
 // „Schlecht": im unteren Drittel. An EINER Stelle, damit die Endphase sie an
 // einer Stelle festzurrt.
@@ -91,8 +126,14 @@ export function stehtUnten(board, userId, anteil = SPOTT_SCHWELLEN.zielAnteil) {
 //  und nicht sagt warum, wirkt kaputt.
 // ============================================================
 export function darfSpotten({
-  board = [], vonId, aufId, spieltag, bereitsGesendet = [], abgerechnet = false,
+  board = [], vonId, aufId, spieltag, bereitsGesendet = [], abgerechnet = false, spott = null,
 } = {}) {
+  // 🔴 Die Runde zuerst. Ist Spott dort aus, gibt es nichts weiter zu prüfen —
+  // und die Antwort muss das auch sagen, statt eine der anderen Regeln
+  // vorzuschieben.
+  if (spott && sanitizeSpott(spott).enabled === false) {
+    return { erlaubt: false, grund: "In dieser Runde ist Spott abgeschaltet." };
+  }
   if (!vonId || !aufId) return { erlaubt: false, grund: "Absender oder Ziel fehlt." };
   if (vonId === aufId) return { erlaubt: false, grund: "Sich selbst kann man nicht aufziehen." };
 

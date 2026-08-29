@@ -6,6 +6,7 @@ import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 import { tippKurz } from "@/lib/format";
 import { getStore } from "@/lib/store";
 import { useAuth } from "@/components/AuthProvider";
+import { offenerSpott } from "@/lib/spottPost";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { usePrefs } from "@/components/PrefsProvider";
 import { vergleichFuer } from "@/lib/prefs";
@@ -47,6 +48,15 @@ export default function Zwischenabrechnung() {
   const { prefs, ready } = usePrefs();
   const [liste, setListe] = useState([]);
   const [offen, setOffen] = useState(false);
+  // 🔴 SP1 (Andi, 29.08.2026): „soll ihm in der Auswertung angezeigt werden
+  // samt dem QT Kurzclip, wenn der schlechtere Tipper nach dem guten Tipper
+  // die App bzw Auswertung öffnet."
+  //
+  // ⚠️ Der Spott wird ERST BEIM ANZEIGEN als gesehen markiert. Solange diese
+  // Einblendung nicht läuft — etwa weil sie in den Anzeige-Stufen abgestellt
+  // ist —, bleibt er liegen und geht nicht verloren. Er wartet, er
+  // verschwindet nicht.
+  const [spott, setSpott] = useState([]);
 
   const aus = prefs.zwischenabrechnung === "aus";
 
@@ -73,7 +83,17 @@ export default function Zwischenabrechnung() {
           // Blick haben will (persönliche Einstellung, siehe `prefs.js`).
           alleEintraege: entries, vergleich: vergleichFuer(prefs, roundId),
         });
-        if (neu.length) { setListe(neu); setOffen(true); }
+        // ⚠️ Der Spott kommt aus demselben Ladevorgang: eine zweite Runde
+        // Netzverkehr für eine Einblendung, die vielleicht gar nicht kommt,
+        // wäre verschwendet.
+        const post = await getStore().listSpott?.({ userId: user.id }).catch(() => []) ?? [];
+        const meiner = offenerSpott(post, user.id);
+        if (abgebrochen) return;
+        if (neu.length || meiner.length) {
+          setListe(neu);
+          setSpott(meiner);
+          setOffen(true);
+        }
       } catch { /* Ohne Daten keine Einblendung — sie ist Beiwerk, kein Muss. */ }
     })();
 
@@ -82,10 +102,17 @@ export default function Zwischenabrechnung() {
 
   const summe = useMemo(() => zusammenfassung(liste), [liste]);
 
-  if (!offen || !liste.length) return null;
+  // ⚠️ Auch dann, wenn es NUR Spott gibt: er ist der Grund, warum jemand die
+  // Auswertung öffnet, nicht ein Anhängsel der Abrechnung.
+  if (!offen || (!liste.length && !spott.length)) return null;
 
   const weiter = () => {
     schreib(gesehenBis(liste, lies()));
+    // 🔴 Erst HIER als gesehen markiert, nicht beim Laden. Wer die App
+    // schließt, bevor er es gelesen hat, soll es wiederbekommen.
+    if (spott.length) {
+      getStore().spottGesehen?.({ userId: user.id, roundId }).catch(() => {});
+    }
     setOffen(false);
   };
 
@@ -124,6 +151,51 @@ export default function Zwischenabrechnung() {
             )}.
           </div>
         </div>
+
+        {/* ── 🔴 SPOTT (SP1) ─────────────────────────────────
+            Andi, 29.08.2026: „soll ihm in der Auswertung angezeigt werden samt
+            dem QT Kurzclip, wenn der schlechtere Tipper nach dem guten Tipper
+            die App bzw Auswertung öffnet."
+
+            ⚠️ GANZ OBEN, vor den Spielen — und nicht bei „dezent" versteckt.
+            Wer den Spott bekommt, soll ihn sehen, nicht suchen; und wer die
+            Abrechnung dezent eingestellt hat, hat damit nichts über Spott
+            gesagt.
+
+            ⚠️ Der ABSENDER steht dabei. Anonymer Spott ist etwas anderes als
+            Aufziehen — er ist nicht mehr witzig, sondern unangenehm, und man
+            kann nicht zurückgeben. Genau das trennt Andis Funktion von einem
+            Briefkasten. */}
+        {spott.length > 0 && (
+          <div style={{ padding: "0 18px 4px" }}>
+            {spott.map((s) => (
+              <div key={`${s.von_id}-${s.matchday}-${s.erstellt_am}`} style={{
+                background: `${C.coral}12`, border: `1px solid ${C.coral}44`,
+                borderRadius: RUND.karte, padding: "10px 12px", marginTop: 10,
+              }}>
+                <div style={{
+                  fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: 1,
+                  color: C.coral, textTransform: "uppercase",
+                }}>
+                  {s.clip ? "Fanclip von" : "Spruch von"} {s.von_name ?? "einem Mitspieler"}
+                </div>
+                {s.spruch && (
+                  <div style={{ fontSize: "0.9375rem", marginTop: 4, lineHeight: 1.45 }}>
+                    „{s.spruch}“
+                  </div>
+                )}
+                {s.clip && (
+                  // ⏳ Der Clip selbst ist noch nicht hinterlegt — hier steht
+                  // vorerst sein Name. Ein Platzhalter, der sagt was fehlt,
+                  // ist ehrlicher als ein Abspieler, der nichts abspielt.
+                  <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 6 }}>
+                    QT-Clip: {s.clip}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Die Einzelspiele — bei „dezent" bleibt es bei der Summe oben.
             Der Unterschied ist keine Sparversion, sondern eine echte Wahl:

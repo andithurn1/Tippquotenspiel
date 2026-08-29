@@ -196,6 +196,11 @@ export function schaufensterRegeln() {
     modFloor: 0.2,
     reglerFeinheit: 0.025,
 
+    // ⚠️ Vorgeführt heißt ABWEICHEND von der Vorgabe (die ist `true`). Die
+    // Schaurunde zeigt deshalb die abgeschaltete Fassung — genau der Griff,
+    // den Andi für „empfindliche Leute" wollte.
+    spott: { enabled: false, clips: false },
+
     // ── Märkte ──
     // `markets.result` bleibt AN — siehe `SCHAU_AUSGENOMMEN`.
     markets: {
