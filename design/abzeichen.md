@@ -136,10 +136,30 @@ Bild** (wir übersetzen später), erkennbar bei 24 px.
 
 🔴 **Zwei Zusätze, die nur für Abzeichen gelten:**
 
-- **Eine gemeinsame Grundform.** Alle im selben Rahmen — Wappenschild, Kreis
-  oder Sechseck, aber überall derselbe. Sonst sieht der Trophäenschrank aus wie
-  ein Flohmarkt. **Das ist die eine Entscheidung, die vor dem ersten Bild
-  fallen muss.**
+- ✅ **ENTSCHIEDEN (Andi, 29.08.2026): das Wappenschild aus dem
+  QT-Logo ist die Grundform.** Am echten Logo abgelesen (`public/logo-dunkel.png`),
+  damit die Vorgabe nicht geraten ist:
+
+  | | |
+  |---|---|
+  | **Umriss** | Wappen mit **gerader Oberkante** und **spitz zulaufender Unterkante** — kein Kreis, kein Rundschild |
+  | **Kontur** | **doppelt**: eine kräftige Außenlinie, innen mit Abstand eine zweite, dünnere |
+  | **Innenfläche** | dunkel, das Motiv steht hell darin |
+  | **Motiv-Platz** | dort, wo im Logo der Ball sitzt — untere zwei Drittel, mittig |
+  | ⛔ **Schriftzug** | **weg.** Im Logo steht „QuotenTippspiel" oben; ein Abzeichen trägt keine Schrift (wir übersetzen später, und bei 24 px liest es ohnehin niemand) |
+
+  🔴 **Damit ist jedes Abzeichen erkennbar ein QT-Abzeichen**, bevor man das
+  Motiv überhaupt entziffert — genau das, was eine gemeinsame Grundform leisten
+  soll. Und der Trophäenschrank sieht aus wie eine Sammlung statt wie ein
+  Flohmarkt.
+
+  ⚠️ **Für die Bild-Erzeugung heißt das:** der Umriss samt Doppelkontur gehört
+  in JEDEN Auftrag, wörtlich gleich formuliert. Wechselt die Formulierung,
+  wechselt die Form — und dann passen die Abzeichen nicht mehr nebeneinander.
+  **Am besten einen Satz festlegen und ihn nie wieder anfassen**, etwa:
+  *„Wappenschild mit gerader Oberkante und spitzer Unterkante, doppelte
+  Kontur, einfarbig, transparenter Hintergrund, keine Schrift — darin
+  mittig: &lt;Motiv&gt;."*
 - **Drei Stufen derselben Form**, falls du Bronze/Silber/Gold willst: dann
   reicht EIN Motiv je Abzeichen, und die Stufe kommt über die Rahmenfarbe aus
   dem Theme. Das spart zwei Drittel der Bilder — und die Farbe passt sich
