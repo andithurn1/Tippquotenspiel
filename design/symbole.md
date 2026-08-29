@@ -100,6 +100,70 @@ brauchen einen Ton, der aufzieht statt auszulachen. Der Rest ist Auszeichnung.
 
 ---
 
+## 🔴 Vereinslogos: warum „das kann doch nicht teuer sein" nicht die Frage ist
+
+**Andis Frage (29.08.2026):** *„Wie schwer ist es denkst du eine Lizenz für alle
+Logos der Vereine zu erhalten, ich sehe so oft Billigprodukte, das kann ja nicht
+so teuer sein."*
+
+⚠️ **Kein Rechtsrat, und Preise kann ich nicht nachsehen** — mein Wissensstand
+endet im Mai 2026, und Lizenzkonditionen stehen ohnehin in keinem Katalog. Was
+sich sagen lässt, ist die Struktur des Problems.
+
+### Das Teure ist nicht der Preis, sondern die Anzahl der Gegenüber
+
+Ein Vereinswappen ist **Marke** und meist zusätzlich **urheberrechtlich**
+geschützt, und es gehört dem **jeweiligen Verein** — nicht der Liga. Es gibt
+keinen Schalter, an dem man „alle Bundesliga-Logos" bekommt. Bei sechs
+Wettbewerben in unserem Katalog wären das über hundert einzelne Gegenüber, jedes
+mit eigenem Vertrag, eigener Rechtsabteilung und eigenem Interesse daran, ob es
+mit einem unbekannten Tippspiel in Verbindung gebracht werden will.
+
+🔴 **Und die letzte Hürde ist die eigentliche:** ein Rechteinhaber muss nicht
+lizenzieren. Ein kleines Produkt bekommt oft schlicht keine Antwort.
+
+### Warum es trotzdem überall billige Produkte gibt
+
+Drei verschiedene Gründe, und nur einer davon ist übertragbar:
+
+1. **Echte Lizenzware.** Die Lizenz ist real und teuer — sie verteilt sich nur
+   auf hohe Stückzahlen. Bei Gebühren als Prozentsatz vom Verkauf trägt sich
+   ein 5-Euro-Schlüsselanhänger problemlos. Das funktioniert über **Masse**,
+   nicht über einen niedrigen Preis.
+2. **Unlizenziert.** Ein großer Teil dessen, was man auf Marktplätzen sieht, ist
+   schlicht nicht lizenziert. Es existiert, weil Verfolgung mühsam ist — nicht,
+   weil es erlaubt wäre.
+3. **Redaktionelle Nutzung.** Ein Wappen in einem Spielbericht ist etwas
+   anderes als ein Wappen als Bedienelement in einer App.
+
+⚠️ **Für eine App ist Punkt 2 der gefährlichste Trugschluss.** Ein Marktstand
+ist schwer zu verfolgen — eine App im Store ist **auffindbar, meldbar und mit
+einem Klick abschaltbar**. Apple und Google entfernen auf Beschwerde, und zwar
+ohne Verfahren. Der Schaden wäre nicht eine Abmahnung, sondern die
+Nichtverfügbarkeit.
+
+### ✅ Die gute Nachricht: wir brauchen sie nicht — und tun es schon
+
+**Nachgemessen am 29.08.2026: in `public/` liegt kein einziges Vereinslogo.**
+Die App löst Vereins-Identität über zwei Wege, die beide ohne fremde Marken
+auskommen:
+
+| | |
+|---|---|
+| **Farben statt Wappen** | `CLUB_PRESETS` in `theme.js` — und die Vorlagen heißen nach der FARBE („Gelb-Schwarz"), nicht nach dem Verein. Wer sein Team erkennt, erkennt es an der Farbe |
+| **Namen als Text** | „Borussia Dortmund" als Wort, um ein reales Spiel zu benennen, ist etwas anderes als sein Wappen abzubilden — es identifiziert, es schmückt nicht |
+
+🔴 **Das war eine gute Entscheidung, und sie sollte bewusst bleiben.** Sie ist
+kein Verzicht: Farbe plus Name trägt die Wiedererkennung fast vollständig, und
+sie kostet nichts, verhandelt mit niemandem und kann nicht zurückgezogen werden.
+
+**Wann sich die Frage neu stellt:** wenn die App Geld verdient und Reichweite
+hat. Dann führt der Weg über die Ligen bzw. deren Vermarkter, nicht über die
+Vereine einzeln — und dann ist es ein Geschäftsthema mit Anwalt, kein
+Gestaltungsthema.
+
+---
+
 ## ⛔ Was NICHT generiert werden sollte
 
 **Die 14 Auslöser** (`AUSLOESER_TYPEN`: „jeder n-te Spieltag", „solange es eng
