@@ -9,8 +9,13 @@ import { getStore } from "@/lib/store";
 import { useCurrentRound } from "@/components/RoundProvider";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
 
-// Ein echtes Rechenbeispiel (Engine, nicht ausgedacht): JOR-ESP real 5:1,
+// Ein durchgerechnetes Beispiel (Engine, nicht ausgedacht): JOR-ESP 5:1,
 // Tipp 4:1 → „hauchdünn" (richtiger Sieger, ein Tor daneben).
+//
+// ⚠️ NICHT „real": im echten Freundschaftsspiel gewann Spanien 5:1, unsere
+// Testdaten drehen es um. Für die RECHNUNG ist das gleichgültig, für das Wort
+// nicht — deshalb steht am Beispiel jetzt „Jordanien – Spanien 5:1" statt
+// „real 5:1" (Andi, 29.08.2026).
 const odds = createMockOddsSource();
 const SNAP = odds.getSnapshot("JOR-ESP");
 const RESULT = odds.getResult("JOR-ESP");
@@ -85,7 +90,20 @@ export default function Tutorial() {
           </p>
 
           <div style={exampleBox}>
-            <div style={exampleHead}>Rechenbeispiel · real 5:1</div>
+            {/* 🔴 Andi, 29.08.2026: „bei Tutorial mit dem Realbeispiel 5:1
+                fehlt der Gegner." — Er fehlte nicht in den DATEN, nur in der
+                Anzeige: `engine.js` führt das Demo-Spiel als Jordanien gegen
+                Spanien, 5:1, Torschützen Al-Naimat 2 und Yamal 1.
+
+                ⚠️ Und „real" ist gestrichen, ebenfalls auf seine Ansage. Das
+                Wort behauptet mehr, als die Testdaten hergeben: im echten
+                Freundschaftsspiel gewann SPANIEN 5:1, bei uns steht der
+                Außenseiter als Sieger. Für die RECHNUNG ist das gleichgültig —
+                sie zeigt, was ein unwahrscheinlicher Ausgang zahlt. Für das
+                Wort „real" ist es das nicht, und ein Beispiel, das an einer
+                nachprüfbaren Stelle schwindelt, kostet Vertrauen für alle
+                Zahlen daneben. */}
+            <div style={exampleHead}>Rechenbeispiel · Jordanien – Spanien 5:1</div>
             <ExRow tip="5:1" note="exakt getroffen" pts={EX_EXAKT.total} tone={C.mint} />
             <ExRow tip="4:1" note="hauchdünn — 1 Tor daneben" pts={EX_HAUCH.total} tone={C.akzent} />
             <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 8, lineHeight: 1.5 }}>

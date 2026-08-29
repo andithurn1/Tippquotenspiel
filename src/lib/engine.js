@@ -1859,12 +1859,12 @@ export function decodePreset(code) {
 export function demo() {
   const odds = createMockOddsSource();
   const snap = odds.getSnapshot("JOR-ESP");
-  const result = odds.getResult("JOR-ESP");   // real 5:1, Al-Naimat 2, Yamal 1
+  const result = odds.getResult("JOR-ESP");   // 5:1, Al-Naimat 2, Yamal 1 (Testdaten, nicht das echte Spiel)
   const S = DEFAULT_RULES.displayScale;
 
   const tipp = { home: 4, away: 1, goals: { home: ["Al-Naimat", "Al-Naimat"], away: ["Yamal", ""] } };
   const r = scoreTip(tipp, result, snap);
-  console.log("Voll-Tipp 4:1 + Al-Naimat-Doppelpack + Yamal → real 5:1:");
+  console.log("Voll-Tipp 4:1 + Al-Naimat-Doppelpack + Yamal → 5:1:");
   console.log(`  roh ${r.raw}  →  angezeigt ${r.total} Punkte  (Ebene: ${r.ebene})`);
   console.log("  Aufschlüsselung (skaliert):",
     `Nähebonus ${Math.round(r.parts.ergNaehe * S)} · Tore +${Math.round(r.goals.net * S)} · Kombi ×${DEFAULT_RULES.combo[r.ebene]}`);

@@ -1,6 +1,6 @@
 // ── Mock-Store: In-Memory-Daten, damit die App ohne Backend läuft ──
 // Gleiche Schnittstelle wie der Supabase-Store. Seed: die Demo-Runde
-// „Freundeskreis" auf dem Match JOR-ESP (real 5:1). Zurücksetzen bei
+// „Freundeskreis" auf dem Match JOR-ESP (5:1, Testdaten). Zurücksetzen bei
 // jedem Prozessstart — bewusst, es ist nur eine Attrappe.
 
 import { createMockOddsSource, DEFAULT_RULES, scoreLeaderboard, scoreLeaderboardHistory, sanitizeRules, brauchtVerlauf } from "./engine";
