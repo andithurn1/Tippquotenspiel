@@ -89,8 +89,25 @@ export default function Ranking() {
                     Unterschied zum Profil — Farbe und Rand bleiben gleich,
                     sonst wären es zwei Aussehen für dieselbe Sache. */}
                 <AvatarKreis id={b.avatar} size={26} />
+                {/* 🔴 Andi, 29.08.2026: „in den einzelnen Ranglisten je
+                    Tipprunde soll das Profil des anderen angezeigt werden, wo
+                    man eben auch Trophäenschrank plus Beschreibung einsehen
+                    kann."
+
+                    ⚠️ Der NAME ist der Knopf, nicht die ganze Zeile: rechts
+                    daneben stehen Zahlen, und eine Zeile, die überall klickt,
+                    öffnet ständig etwas, wenn man nur scrollen wollte.
+
+                    ⚠️ Der EIGENE Eintrag führt nicht auf die Spielerkarte —
+                    das eigene Profil bearbeitet man unter „Mein Account", und
+                    zwei Wege zum selben Ich sind zwei Stellen zum Pflegen. */}
                 <span style={{ flex: 1, fontSize: "0.9375rem", color: b.userId === meId ? C.akzent : C.text, fontWeight: b.userId === meId ? 700 : 400 }}>
-                  {b.name}
+                  {b.userId === meId ? b.name : (
+                    <Link href={`/spieler?id=${b.userId}`}
+                      style={{ color: "inherit", textDecoration: "none", borderBottom: `1px dotted ${C.line}` }}>
+                      {b.name}
+                    </Link>
+                  )}
                   {b.userId === meId && <span style={{ color: C.coral, fontSize: "0.6875rem", marginLeft: 6 }}>● du</span>}
                 </span>
                 {/* gewertet/getippt — bei einem reinen Saison-Tipper wäre „0/0"

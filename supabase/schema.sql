@@ -55,6 +55,65 @@ alter table public.profiles
   check (beschreibung is null or char_length(beschreibung) <= 280);
 
 -- ============================================================
+--  MELDUNGEN (29.08.2026)
+--
+--  `design/abzeichen.md`: „Ein Freitext für 1000 Leute braucht irgendwann eine
+--  Meldemöglichkeit; nicht jetzt, aber vor der ersten großen Creator-Runde."
+--
+--  🔴 `text_kopie` ist der Kern der Tabelle. Wer gemeldet wird, ändert seine
+--  Beschreibung — und dann steht „unangemessen" über einem harmlosen Satz.
+--  Das schadet BEIDEN Seiten: der Gemeldete kann sich gegen einen Vorwurf
+--  nicht wehren, den niemand mehr nachlesen kann.
+--
+--  🔴 EINE Meldung je Melder und Ziel und Art. Sonst kippt eine einzelne
+--  Person fünfzig Meldungen auf jemanden und die Liste sagt nichts mehr aus.
+--  Erneut melden ÜBERSCHREIBT (`on conflict`), es legt nichts Zweites an.
+create table if not exists public.meldungen (
+  melder_id    uuid not null references auth.users on delete cascade,
+  ziel_id      uuid not null references auth.users on delete cascade,
+  art          text not null default 'beschreibung',
+  grund        text not null,
+  notiz        text,
+  text_kopie   text,
+  gemeldet_am  timestamptz not null default now(),
+  primary key (melder_id, ziel_id, art),
+  -- ⛔ Niemand meldet sich selbst. Steht in der DATENBANK und nicht nur in der
+  -- Oberfläche: den Store kann man direkt ansprechen.
+  constraint meldungen_nicht_selbst check (melder_id <> ziel_id),
+  constraint meldungen_notiz_laenge check (notiz is null or char_length(notiz) <= 200),
+  constraint meldungen_kopie_laenge check (text_kopie is null or char_length(text_kopie) <= 500)
+);
+
+alter table public.meldungen enable row level security;
+
+-- ⚠️ EINSEITIG: schreiben ja, lesen nein.
+--
+-- 🔴 Wer Meldungen lesen könnte, wüsste, wer wen gemeldet hat — und genau das
+-- macht aus einer Schutzfunktion eine Waffe. Der Melder darf seine EIGENE
+-- Meldung sehen (damit die Oberfläche „Meldung ändern" anzeigen kann), sonst
+-- niemand. Die Durchsicht läuft über den Service-Schlüssel, also außerhalb
+-- von RLS — das ist bewusst KEINE Rolle in der App.
+drop policy if exists "meldung schreiben" on public.meldungen;
+create policy "meldung schreiben" on public.meldungen
+  for insert to authenticated with check (auth.uid() = melder_id);
+
+drop policy if exists "eigene meldung aendern" on public.meldungen;
+create policy "eigene meldung aendern" on public.meldungen
+  for update to authenticated using (auth.uid() = melder_id) with check (auth.uid() = melder_id);
+
+drop policy if exists "eigene meldung sehen" on public.meldungen;
+create policy "eigene meldung sehen" on public.meldungen
+  for select to authenticated using (auth.uid() = melder_id);
+
+-- ⚠️ Zurücknehmen können muss man auch: wer sich vertan hat, soll seine
+-- Meldung löschen dürfen, statt sie stehen zu lassen.
+drop policy if exists "eigene meldung zuruecknehmen" on public.meldungen;
+create policy "eigene meldung zuruecknehmen" on public.meldungen
+  for delete to authenticated using (auth.uid() = melder_id);
+
+create index if not exists meldungen_ziel_idx on public.meldungen (ziel_id, gemeldet_am desc);
+
+-- ============================================================
 --  PRIVATE Profildaten (KT9, Andi 25.08.2026)
 --
 --  🔴 WARUM EINE EIGENE TABELLE und nicht eine Spalte in `profiles`:

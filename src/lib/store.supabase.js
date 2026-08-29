@@ -15,6 +15,7 @@ import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
 import { sanitizeBeschreibung } from "./beschreibung";
+import { baueMeldung } from "./meldung";
 import { sanitizeGeburtsdatum } from "./geburtsdatum";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
@@ -353,9 +354,60 @@ export function createSupabaseStore() {
     },
 
     // ── Profil (Anzeigename + Avatar) ───────────────────────
-    async getProfile(userId) {
+    // ── Meldungen ───────────────────────────────────────────
+    // 🔴 EINSEITIG, und das ist der Kern: schreiben ja, FREMDE lesen nein.
+    // Wer Meldungen lesen könnte, wüsste, wer wen gemeldet hat — und genau
+    // das macht aus einer Schutzfunktion eine Waffe. Die Durchsicht läuft
+    // über den Service-Schlüssel, also außerhalb dieser App; es gibt hier
+    // bewusst KEINE Betreiber-Rolle, die sie holen könnte.
+    async melden({ melderId, zielId, art = "beschreibung", grund, notiz = "", textKopie = "" }) {
+      const gebaut = baueMeldung({ melderId, zielId, art, grund, notiz, textKopie });
+      if (!gebaut.ok) throw new Error(gebaut.grund);
+      // ⚠️ `upsert` auf den Primärschlüssel: erneut melden überschreibt, statt
+      // eine zweite Zeile anzulegen. Sonst kippt eine Person fünfzig
+      // Meldungen auf jemanden und die Liste sagt nichts mehr aus.
       const data = orThrow(await sb
-        .from("profiles").select("id, display_name, avatar, premium_until").eq("id", userId).maybeSingle());
+        .from("meldungen").upsert(gebaut.meldung, { onConflict: "melder_id,ziel_id,art" })
+        .select().maybeSingle());
+      return data ?? gebaut.meldung;
+    },
+    async listMeineMeldungen(melderId) {
+      // ⚠️ Die Einschränkung steht ZUSÄTZLICH hier, obwohl RLS sie schon
+      // erzwingt: wer die Zeile liest, soll sehen, dass es Absicht ist.
+      return orThrow(await sb
+        .from("meldungen").select("*").eq("melder_id", melderId)) ?? [];
+    },
+    async meldungZuruecknehmen({ melderId, zielId, art = "beschreibung" }) {
+      orThrow(await sb.from("meldungen").delete()
+        .eq("melder_id", melderId).eq("ziel_id", zielId).eq("art", art));
+      return true;
+    },
+
+    async getProfile(userId) {
+      // 🔴 Im Browser gegen die ECHTE Datenbank gemessen (29.08.2026): eine
+      // Abfrage auf eine Spalte, die es dort noch nicht gibt, scheitert mit
+      // 400 — und dann kommt das GANZE Profil nicht an, nicht nur das fehlende
+      // Feld. Name und Sinnbild wären in der Live-App verschwunden, weil eine
+      // Kurzbeschreibung fehlt.
+      //
+      // ⚠️ Das ist kein hypothetischer Fall: `schema.sql` läuft nicht
+      // automatisch mit dem Deploy, Andi führt es von Hand aus. Zwischen dem
+      // Deploy und diesem Lauf liegt immer eine Lücke.
+      //
+      // ⚠️ Und ausdrücklich NICHT `select("*")` als Ausweg: dann käme auch
+      // alles mit, was dort noch steht — in Bestands-Datenbanken zum Beispiel
+      // die alte Spalte `geburtsdatum`, deren Entfernung KP2 gerade erst als
+      // Sicherheitsfund behoben hat. Ein Sternchen holt genau das zurück.
+      const SPALTEN = "id, display_name, avatar, premium_until";
+      let data = null;
+      try {
+        data = orThrow(await sb.from("profiles")
+          .select(`${SPALTEN}, beschreibung`).eq("id", userId).maybeSingle());
+      } catch {
+        // Ohne die neue Spalte — dieselbe Abfrage, ein Feld weniger.
+        data = orThrow(await sb.from("profiles")
+          .select(SPALTEN).eq("id", userId).maybeSingle());
+      }
       if (!data) return null;
       // ⚠️ Zweite Abfrage statt eines Joins: `profile_privat` gibt per RLS nur
       // die EIGENE Zeile heraus. Fuer einen fremden Nutzer kommt hier nichts
@@ -414,10 +466,32 @@ export function createSupabaseStore() {
         }, { onConflict: "id" }));
       }
       if (!Object.keys(patch).length) return this.getProfile(userId);
-      const data = orThrow(await sb
-        .from("profiles").update(patch).eq("id", userId)
-        .select("id, display_name, avatar, beschreibung").maybeSingle());
-      return data ? { ...data, avatar: sanitizeAvatar(data.avatar) } : null;
+      // 🔴 Dieselbe Lücke wie beim Lesen, aber mit anderer Antwort. Fehlt die
+      // Spalte `beschreibung` in einer Bestands-Datenbank, scheitert der ganze
+      // Schreibvorgang — dann wären auch Name und Sinnbild nicht gespeichert,
+      // obwohl mit ihnen alles in Ordnung ist.
+      //
+      // ⚠️ Aber STILL weglassen darf man sie nicht: wer einen Satz über sich
+      // schreibt, bekäme „gespeichert" zu sehen, und der Satz wäre weg. Deshalb
+      // wird der Rest gerettet UND gesagt, was nicht ankam.
+      const SPALTEN = "id, display_name, avatar, beschreibung";
+      const OHNE = "id, display_name, avatar";
+      try {
+        const data = orThrow(await sb
+          .from("profiles").update(patch).eq("id", userId)
+          .select(SPALTEN).maybeSingle());
+        return data ? { ...data, avatar: sanitizeAvatar(data.avatar) } : null;
+      } catch (e) {
+        if (!("beschreibung" in patch)) throw e;
+        const { beschreibung: _weg, ...rest } = patch;
+        if (Object.keys(rest).length) {
+          orThrow(await sb.from("profiles").update(rest).eq("id", userId));
+        }
+        throw new Error(
+          "Die Kurzbeschreibung konnte nicht gespeichert werden — die Datenbank "
+          + "kennt das Feld noch nicht (schema.sql ausführen). Name und Sinnbild sind gespeichert.",
+        );
+      }
     },
     async listRoundsForUser(userId) {
       const memberRows = orThrow(await sb.from("round_members").select("round_id").eq("user_id", userId));

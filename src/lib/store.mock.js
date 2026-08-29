@@ -27,6 +27,7 @@ import { PRESETS } from "./presets";
 import { alleMatches } from "./ligen";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
 import { sanitizeBeschreibung } from "./beschreibung";
+import { baueMeldung } from "./meldung";
 import { namensSchluessel } from "./benutzername";
 import { sanitizeGeburtsdatum } from "./geburtsdatum";
 import { isPremium, applyEntitlements } from "./premium";
@@ -168,6 +169,8 @@ export function createMockStore() {
   // ⚠️ Die Übernahme-Zahlen sind erfunden und dürfen es sein: sie beantworten
   // die Frage „sortiert die Liste richtig?", nicht „was ist beliebt?".
   const presets = new Map(GETEILTE_DEMO.map((p) => [p.code, { ...p }]));
+  // Meldungen zu Freitexten (Kurzbeschreibung). Siehe `meldung.js`.
+  const meldungen = [];
   const members = [
     ...DEMO_TIPS.map((t) => ({ round_id: ROUND_ID, user_id: t.userId, name: t.name, avatar: t.avatar })),
     // Dieselben fünf im Schaufenster: eine Runde mit einem Mitglied kann
@@ -512,6 +515,33 @@ export function createMockStore() {
     },
 
     // ── Profil (Anzeigename + Avatar) ───────────────────────
+    // ── Meldungen ───────────────────────────────────────────
+    // 🔴 EINSEITIG: schreiben ja, fremde lesen nein. Wer Meldungen lesen
+    // könnte, wüsste, wer wen gemeldet hat — und genau das macht aus einer
+    // Schutzfunktion eine Waffe. Der Melder sieht nur seine eigene.
+    async melden({ melderId, zielId, art = "beschreibung", grund, notiz = "", textKopie = "" }) {
+      const gebaut = baueMeldung({ melderId, zielId, art, grund, notiz, textKopie });
+      if (!gebaut.ok) throw new Error(gebaut.grund);
+      const m = gebaut.meldung;
+      // ⚠️ Erneut melden ÜBERSCHREIBT. Sonst kippt eine Person fünfzig
+      // Meldungen auf jemanden und die Liste sagt nichts mehr aus.
+      const i = meldungen.findIndex(
+        (x) => x.melder_id === m.melder_id && x.ziel_id === m.ziel_id && x.art === m.art);
+      if (i >= 0) meldungen[i] = m; else meldungen.push(m);
+      return m;
+    },
+    // ⚠️ NUR die eigenen. Es gibt bewusst keinen Weg, fremde zu lesen — die
+    // Durchsicht läuft über den Service-Schlüssel, außerhalb der App.
+    async listMeineMeldungen(melderId) {
+      return meldungen.filter((m) => m.melder_id === melderId);
+    },
+    async meldungZuruecknehmen({ melderId, zielId, art = "beschreibung" }) {
+      const i = meldungen.findIndex(
+        (m) => m.melder_id === melderId && m.ziel_id === zielId && m.art === art);
+      if (i >= 0) meldungen.splice(i, 1);
+      return true;
+    },
+
     async getProfile(userId) {
       return profiles.get(userId) ?? null;
     },
