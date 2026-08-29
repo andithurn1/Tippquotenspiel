@@ -5,13 +5,21 @@ import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 import { C, MONO, RUND } from "@/lib/theme";
 import { leseAnmeldung } from "@/lib/anmeldung";
+import { pruefePasswort, passwortStaerke, passwortFehlerText } from "@/lib/passwort";
 import { TAPZIEL } from "@/lib/tapziel";
 
 
 // Kopfzeile mit Login-Status. Im Mock-Betrieb nur ein dezenter Demo-Hinweis;
 // im Live-Betrieb E-Mail-Login (Magic-Link) bzw. Abmelden.
 export default function AuthBar() {
-  const { user, loading, isMock, signInWithEmail, verifyCode, signOut } = useAuth();
+  const {
+    user, loading, isMock, signInWithEmail, verifyCode, signOut,
+    anmeldenMitPasswort, registrierenMitPasswort, passwortVergessen,
+  } = useAuth();
+  // Welcher Weg gerade gewaehlt ist. Vorgabe: Passwort (Andi, 29.08.2026).
+  const [weg, setWeg] = useState("passwort");
+  const [passwort, setPasswort] = useState("");
+  const [neuesKonto, setNeuesKonto] = useState(false);
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [state, setState] = useState("idle"); // idle | sending | sent | error
@@ -175,33 +183,204 @@ export default function AuthBar() {
 
   const canSend = Boolean(email.trim()) && consent && state !== "sending";
 
+  // ── 🔴 ZWEI WEGE HINEIN (Andi, 29.08.2026) ────────────────
+  //
+  // Wörtlich: *„finde das mit den Emails manchmal umständlich und
+  // benutzerunfreundlich immer die App schliessen zu müssen wenn man das Handy
+  // auch das Passwort und Benutzernamen merken lassen kann."*
+  //
+  // 🔴 **Der Passwort-Weg steht deshalb VORNE und ist die Vorgabe.** Der
+  // Magic-Link kostet jedes Mal einen App-Wechsel; ein Passwort merkt sich das
+  // Gerät. Für den Alltag — und ein Tippspiel macht man zweimal pro Spieltag
+  // auf — ist das der Unterschied zwischen „kurz reinschauen" und „erst mal
+  // ins Postfach".
+  //
+  // ⚠️ **Die `autoComplete`-Angaben sind hier keine Kosmetik, sondern der
+  // ganze Punkt.** Ohne `username` und `current-password` bietet weder iOS noch
+  // Android an, die Anmeldung zu speichern — und dann wäre der Passwort-Weg
+  // genauso lästig wie der Link. `new-password` beim Anlegen sorgt dafür, dass
+  // der Passwortmanager eines VORSCHLÄGT statt das alte einzusetzen.
+  //
+  // ⚠️ Der Magic-Link bleibt daneben: für die erste Anmeldung (man hat ja noch
+  // kein Passwort) und für „vergessen".
+  const passwortRegelFehler = weg === "passwort" && neuesKonto
+    ? pruefePasswort(passwort, email)
+    : null;
+  const staerke = passwortStaerke(passwort);
+  const kannPasswort = Boolean(email.trim()) && Boolean(passwort)
+    && !passwortRegelFehler && state !== "sending"
+    && (!neuesKonto || consent);
+
+  const passwortAbsenden = async (e) => {
+    e.preventDefault();
+    if (!kannPasswort) return;
+    setState("sending"); setErr("");
+    try {
+      if (neuesKonto) {
+        const { sofortDrin } = await registrierenMitPasswort(email.trim(), passwort);
+        // ⚠️ Nicht „fertig" behaupten, wenn Supabase noch eine Bestätigung
+        // verlangt — sonst steht der Nutzer ausgeloggt vor einer Erfolgsmeldung.
+        setState(sofortDrin ? "idle" : "bestaetigen");
+      } else {
+        await anmeldenMitPasswort(email.trim(), passwort);
+        setState("idle");
+      }
+    } catch (ex) {
+      setState("error");
+      setErr(passwortFehlerText(ex));
+    }
+  };
+
+  const vergessen = async () => {
+    if (!email.trim()) { setErr("Bitte zuerst deine Mailadresse eintragen."); setState("error"); return; }
+    setState("sending"); setErr("");
+    try { await passwortVergessen(email.trim()); setState("zuruecksetzen"); }
+    catch (ex) { setState("error"); setErr(passwortFehlerText(ex)); }
+  };
+
+  if (state === "bestaetigen" || state === "zuruecksetzen") {
+    return (
+      <div style={{
+        marginBottom: 18, background: `${C.mint}10`, border: `1px solid ${C.mint}44`,
+        borderRadius: RUND.karte, padding: "12px 14px", fontSize: "0.8125rem", lineHeight: 1.55,
+      }}>
+        <b style={{ color: C.mint }}>✓ Mail unterwegs</b> an {email}.{" "}
+        {state === "bestaetigen"
+          ? "Bestätige darin deine Adresse, danach meldest du dich mit deinem Passwort an."
+          : "Darin steht der Link, mit dem du ein neues Passwort setzt."}
+        <button type="button" onClick={() => setState("idle")} style={{
+          ...TAPZIEL, display: "block", marginTop: 8, cursor: "pointer", fontFamily: "inherit",
+          background: "none", border: "none", color: C.akzent, fontSize: "0.75rem", padding: 0,
+        }}>zurück</button>
+      </div>
+    );
+  }
+
   return (
-    <form onSubmit={submit} style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 8 }}>
-        Mit E-Mail anmelden (Magic-Link, kein Passwort — du bleibst danach angemeldet):
+    <div style={{ marginBottom: 18 }}>
+      {/* Die Wahl des Wegs. Zwei Knöpfe statt eines Reiters: auf 375 px ist
+          ein Reiter mit zwei Einträgen dasselbe, nur schlechter zu treffen. */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+        {[["passwort", "Mit Passwort"], ["link", "Mit Mail-Link"]].map(([k, t]) => {
+          const an = weg === k;
+          return (
+            <button key={k} type="button" onClick={() => { setWeg(k); setState("idle"); setErr(""); }}
+              style={{
+                ...TAPZIEL, flex: 1, cursor: "pointer", fontFamily: "inherit",
+                borderRadius: RUND.karte, padding: "8px 6px", fontSize: "0.8125rem", fontWeight: 700,
+                background: an ? `${C.akzent}22` : C.surface, color: an ? C.akzent : C.muted,
+                border: `1px solid ${an ? C.akzent + "66" : C.line}`,
+              }}>{t}</button>
+          );
+        })}
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-          placeholder="du@example.com" style={{
-            flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: RUND.karte, padding: "10px 12px", fontSize: "0.9375rem", fontFamily: "inherit", outline: "none",
-          }} />
-        <button type="submit" disabled={!canSend} style={{
-          cursor: canSend ? "pointer" : "default", background: canSend ? C.akzent : C.surface,
-          color: canSend ? C.ink : C.muted, fontWeight: 700, fontSize: "0.9375rem",
-          border: `1px solid ${canSend ? C.akzent : C.line}`, borderRadius: RUND.karte, padding: "0 16px",
-        }}>{state === "sending" ? "…" : "Link senden"}</button>
-      </div>
-      <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, cursor: "pointer" }}>
-        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
-          style={{ marginTop: 2, accentColor: C.akzent }} />
-        <span style={{ fontSize: "0.75rem", color: C.muted, lineHeight: 1.5 }}>
-          Ich habe die <Link href="/datenschutz" style={{ color: C.akzent }}>Datenschutzerklärung</Link> gelesen
-          und bin mit der Verarbeitung meiner Daten für dieses Tippspiel einverstanden.
-        </span>
-      </label>
-      {state === "error" && <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 6 }}>{err}</div>}
-    </form>
+
+      {weg === "passwort" ? (
+        <form onSubmit={passwortAbsenden}>
+          <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 8 }}>
+            {neuesKonto
+              ? "Konto anlegen — danach meldest du dich damit auf jedem Gerät an."
+              : "Anmelden. Dein Gerät darf sich das merken."}
+          </div>
+          <input
+            type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+            autoComplete="username" placeholder="du@example.com"
+            style={{
+              width: "100%", boxSizing: "border-box", background: C.ink2, color: C.text,
+              border: `1px solid ${C.line}`, borderRadius: RUND.karte, padding: "10px 12px",
+              fontSize: "0.9375rem", fontFamily: "inherit", outline: "none",
+            }} />
+          <input
+            type="password" required value={passwort} onChange={(e) => setPasswort(e.target.value)}
+            autoComplete={neuesKonto ? "new-password" : "current-password"}
+            placeholder={neuesKonto ? "Neues Passwort" : "Passwort"}
+            style={{
+              width: "100%", boxSizing: "border-box", marginTop: 8, background: C.ink2, color: C.text,
+              border: `1px solid ${passwortRegelFehler ? C.coral : C.line}`, borderRadius: RUND.karte,
+              padding: "10px 12px", fontSize: "0.9375rem", fontFamily: "inherit", outline: "none",
+            }} />
+
+          {neuesKonto && passwort && (
+            <div style={{ marginTop: 6 }}>
+              <div style={{ height: 3, background: C.line, borderRadius: RUND.pille }}>
+                <div style={{
+                  width: `${staerke.stufe * 25}%`, height: "100%", borderRadius: RUND.pille,
+                  background: staerke.stufe >= 3 ? C.mint : staerke.stufe === 2 ? C.akzent : C.coral,
+                }} />
+              </div>
+              <div style={{ fontSize: "0.6875rem", color: passwortRegelFehler ? C.coral : C.muted, marginTop: 3, lineHeight: 1.45 }}>
+                {passwortRegelFehler ?? staerke.wort}
+              </div>
+            </div>
+          )}
+
+          {neuesKonto && (
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, cursor: "pointer" }}>
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
+                style={{ marginTop: 2, accentColor: C.akzent }} />
+              <span style={{ fontSize: "0.75rem", color: C.muted, lineHeight: 1.5 }}>
+                Ich habe die <Link href="/datenschutz" style={{ color: C.akzent }}>Datenschutzerklärung</Link> gelesen
+                und bin mit der Verarbeitung meiner Daten für dieses Tippspiel einverstanden.
+              </span>
+            </label>
+          )}
+
+          <button type="submit" disabled={!kannPasswort} style={{
+            ...TAPZIEL, width: "100%", marginTop: 10,
+            cursor: kannPasswort ? "pointer" : "default",
+            background: kannPasswort ? C.akzent : C.surface,
+            color: kannPasswort ? C.ink : C.muted, fontWeight: 700, fontSize: "0.9375rem",
+            border: `1px solid ${kannPasswort ? C.akzent : C.line}`, borderRadius: RUND.karte,
+          }}>
+            {state === "sending" ? "…" : neuesKonto ? "Konto anlegen" : "Anmelden"}
+          </button>
+
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, gap: 8 }}>
+            <button type="button" onClick={() => { setNeuesKonto((v) => !v); setErr(""); setState("idle"); }}
+              style={{
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", background: "none",
+                border: "none", color: C.akzent, fontSize: "0.75rem", padding: 0, textAlign: "left",
+              }}>
+              {neuesKonto ? "Ich habe schon ein Konto" : "Noch kein Konto? Anlegen"}
+            </button>
+            {!neuesKonto && (
+              <button type="button" onClick={vergessen} style={{
+                ...TAPZIEL, cursor: "pointer", fontFamily: "inherit", background: "none",
+                border: "none", color: C.muted, fontSize: "0.75rem", padding: 0, textAlign: "right",
+              }}>Passwort vergessen?</button>
+            )}
+          </div>
+          {state === "error" && <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 6 }}>{err}</div>}
+        </form>
+      ) : (
+        <form onSubmit={submit}>
+          <div style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 8 }}>
+            Wir schicken dir einen Link — ohne Passwort. Gut für die erste Anmeldung.
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username" placeholder="du@example.com" style={{
+                flex: 1, minWidth: 0, background: C.ink2, color: C.text, border: `1px solid ${C.line}`,
+                borderRadius: RUND.karte, padding: "10px 12px", fontSize: "0.9375rem", fontFamily: "inherit", outline: "none",
+              }} />
+            <button type="submit" disabled={!canSend} style={{
+              cursor: canSend ? "pointer" : "default", background: canSend ? C.akzent : C.surface,
+              color: canSend ? C.ink : C.muted, fontWeight: 700, fontSize: "0.9375rem",
+              border: `1px solid ${canSend ? C.akzent : C.line}`, borderRadius: RUND.karte, padding: "0 16px",
+            }}>{state === "sending" ? "…" : "Link senden"}</button>
+          </div>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, cursor: "pointer" }}>
+            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
+              style={{ marginTop: 2, accentColor: C.akzent }} />
+            <span style={{ fontSize: "0.75rem", color: C.muted, lineHeight: 1.5 }}>
+              Ich habe die <Link href="/datenschutz" style={{ color: C.akzent }}>Datenschutzerklärung</Link> gelesen
+              und bin mit der Verarbeitung meiner Daten für dieses Tippspiel einverstanden.
+            </span>
+          </label>
+          {state === "error" && <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 6 }}>{err}</div>}
+        </form>
+      )}
+    </div>
   );
 }
 

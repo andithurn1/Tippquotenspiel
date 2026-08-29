@@ -85,6 +85,67 @@ export default function AuthProvider({ children }) {
     if (error) throw error;
   };
 
+  // ── 🔴 DER PASSWORT-WEG (Andi, 29.08.2026) ────────────────
+  //
+  // Wörtlich: *„finde das mit den Emails manchmal umständlich und
+  // benutzerunfreundlich immer die App schliessen zu müssen wenn man das Handy
+  // auch das Passwort und Benutzernamen merken lassen kann."*
+  //
+  // Er hat recht, und die Begründung steht schon direkt darunter: der
+  // Magic-Link kostet JEDES MAL einen App-Wechsel und scheitert auf dem
+  // Home-Bildschirm-iPhone sogar bauartbedingt. Ein Passwort kann der
+  // Passwortmanager des Geräts merken — ein Magic-Link nicht.
+  //
+  // ⚠️ **Der Magic-Link bleibt daneben stehen.** Er ist der Weg für die ERSTE
+  // Anmeldung (man hat ja noch kein Passwort) und der Weg zurück, wenn es weg
+  // ist. Arbeitsteilung, keine Doppelung.
+  //
+  // ⚠️ **Die Regeln stehen in `lib/passwort.js`, nicht hier.** Diese Datei
+  // spricht mit Supabase; was ein brauchbares Passwort ist, ist eine eigene
+  // Frage und gehört geprüft (Architektur-Regel 1).
+  const anmeldenMitPasswort = async (email, passwort) => {
+    const sb = getSupabaseBrowserClient();
+    if (!sb) throw new Error("Supabase nicht konfiguriert.");
+    const { error } = await sb.auth.signInWithPassword({ email, password: passwort });
+    if (error) throw error;
+  };
+
+  // Konto anlegen. ⚠️ Ob danach noch eine Bestätigungsmail nötig ist,
+  // entscheidet Supabase („Confirm email"), nicht wir — deshalb meldet diese
+  // Funktion zurück, ob schon eine Sitzung besteht. Der Aufrufer sagt dem
+  // Nutzer dann das Richtige, statt „fertig" zu behaupten und ihn ausgeloggt
+  // stehen zu lassen.
+  const registrierenMitPasswort = async (email, passwort) => {
+    const sb = getSupabaseBrowserClient();
+    if (!sb) throw new Error("Supabase nicht konfiguriert.");
+    const emailRedirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
+    const { data, error } = await sb.auth.signUp({
+      email, password: passwort, options: { emailRedirectTo },
+    });
+    if (error) throw error;
+    return { sofortDrin: Boolean(data?.session) };
+  };
+
+  // Für alle, die über den Magic-Link hereingekommen sind und sich jetzt ein
+  // Passwort setzen wollen — der übliche Fall, weil die erste Anmeldung ohne
+  // Passwort passiert.
+  const passwortSetzen = async (neu) => {
+    const sb = getSupabaseBrowserClient();
+    if (!sb) throw new Error("Supabase nicht konfiguriert.");
+    const { error } = await sb.auth.updateUser({ password: neu });
+    if (error) throw error;
+  };
+
+  // Vergessen. ⚠️ Läuft wieder über die Mail — aber nur EINMAL, statt bei
+  // jeder Anmeldung. Genau das war Andis Punkt.
+  const passwortVergessen = async (email) => {
+    const sb = getSupabaseBrowserClient();
+    if (!sb) throw new Error("Supabase nicht konfiguriert.");
+    const redirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw error;
+  };
+
   // 🔴 Der zweite Weg hinein — und für die App auf dem HOME-BILDSCHIRM der
   // einzige, der funktioniert (gemessen am 07.08.2026 auf Andis iPhone).
   //
@@ -220,6 +281,7 @@ export default function AuthProvider({ children }) {
     <AuthCtx.Provider value={{
       user, loading, isMock: !hasSupabaseEnv,
       signInWithEmail, verifyCode, signOut, updateName, saveFanColors, savePrefs,
+      anmeldenMitPasswort, registrierenMitPasswort, passwortSetzen, passwortVergessen,
       exportMyData, deleteAccount,
     }}>
       {children}
