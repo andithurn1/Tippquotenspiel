@@ -298,7 +298,7 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
             {j.modus !== "einsatz" && (
               <Slider label={j.modus === "ranking" ? "Höchstes Gewicht" : "Joker-Faktor"}
                 value={j.modus === "ranking" ? j.faktoren[0] : j.faktor} {...L.joker.faktor}
-                step={reglerSchritt(rules, L.joker.faktor)}
+                step={reglerSchritt(rules, L.joker.faktor)} pfad="joker.faktor" rules={rules}
                 onChange={(v) => setzeJoker(j.modus === "ranking"
                   ? { faktor: v, faktoren: buildWeightPool(v, j.faktoren.length) }
                   : { faktor: v })}
@@ -422,34 +422,29 @@ export default function JokerSondermenue({ rules, premium, spieleJeSpieltag = []
               </>
             )}
 
-            {/* Die Stärke der passiven Arten — die Schalter stehen in Karte A. */}
+            {/* Die Stärke der passiven Arten — die Schalter stehen in Karte A.
+                🔴 Beide liefen bis zum 29.08.2026 als rohes `input type=range`
+                in einem `Field`. Sie sahen aus wie Regler, waren aber keine:
+                `BAND_FELDER` kennt für beide ein Empfehlungsband, und das
+                konnte sie nie erreichen. Seit die Hinweise am Regler stehen
+                (Andi, 29.08.2026), wäre das eine Zusage, die für zwei Regler
+                still nicht gilt. */}
             {jh.enabled && (
-              <Field label={`Heimatbonus: ${fmtFaktor(jh.faktor ?? 1.2)}`}>
-                <input type="range"
-                  min={L.joker.faktor.min} max={L.joker.faktor.max} step={reglerSchritt(rules, L.joker.faktor)}
-                  value={jh.faktor ?? 1.2}
-                  onChange={(e) => setzeJoker({ heimat: { ...jh, faktor: Number(e.target.value) } })}
-                  style={{ width: "100%", accentColor: C.akzent }} />
-                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
-                  Jeder wählt seinen Verein selbst. Wirkt symmetrisch — auch auf
-                  Minuspunkte, denn Fans tippen ihr Team gern zu optimistisch.
-                </div>
-              </Field>
+              <Slider label="Heimatbonus" value={jh.faktor ?? 1.2}
+                {...L.joker.faktor} step={reglerSchritt(rules, L.joker.faktor)}
+                pfad="joker.heimat.faktor" rules={rules}
+                onChange={(v) => setzeJoker({ heimat: { ...jh, faktor: v } })}
+                fmt={fmtFaktor}
+                hint="Jeder wählt seinen Verein selbst. Wirkt symmetrisch — auch auf Minuspunkte, denn Fans tippen ihr Team gern zu optimistisch." />
             )}
 
             {jm.enabled && (
-              <Field label={`Mut-Bonus: ×${(jm.faktor ?? 1.1).toFixed(2)}`}>
-                <input type="range"
-                  min={L.joker.mutFaktor.min} max={L.joker.mutFaktor.max} step={reglerSchritt(rules, L.joker.mutFaktor)}
-                  value={jm.faktor ?? 1.1}
-                  onChange={(e) => setzeJoker({ mut: { ...jm, faktor: Number(e.target.value) } })}
-                  style={{ width: "100%", accentColor: C.akzent }} />
-                <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
-                  Zahlt nur, wenn der mutige Tipp <strong>aufgeht</strong> — sonst würde
-                  blindes Dagegenhalten belohnt. Deshalb auch die engere Obergrenze
-                  (×{L.joker.mutFaktor.max}): darüber gewinnt in der Simulation der Zocker.
-                </div>
-              </Field>
+              <Slider label="Mut-Bonus" value={jm.faktor ?? 1.1}
+                {...L.joker.mutFaktor} step={reglerSchritt(rules, L.joker.mutFaktor)}
+                pfad="joker.mut.faktor" rules={rules}
+                onChange={(v) => setzeJoker({ mut: { ...jm, faktor: v } })}
+                fmt={(x) => `×${x.toFixed(2)}`}
+                hint={`Zahlt nur, wenn der mutige Tipp AUFGEHT — sonst würde blindes Dagegenhalten belohnt. Deshalb auch die engere Obergrenze (×${L.joker.mutFaktor.max}): darüber gewinnt in der Simulation der Zocker.`} />
             )}
 
             {duell.enabled && (

@@ -60,17 +60,17 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
       {/* ══ Wie streng wird gemessen? ══════════════════════ */}
       <GrosseZeile icon="🎯" titel="Wie streng wird gemessen?" unter="Nähe, Sieger-Boden, Strafe"
         wert={`k ${rules.k}`} offen={karte === "naehe"} onClick={() => auf("naehe")}>
-        <Slider label="Ergebnis-Nähe (k)" value={rules.k} {...L.k} step={reglerSchritt(rules, L.k)} pfad="k"
+        <Slider label="Ergebnis-Nähe (k)" value={rules.k} {...L.k} step={reglerSchritt(rules, L.k)} pfad="k" rules={rules}
           onChange={(v) => setze({ k: v })}
           hint="Höher = die Belohnung fällt mit jedem Tor Abstand steiler ab (Underdog-Regler)." />
-        <Slider label="Team-Tore-Nähe (m)" value={rules.m} {...L.m} step={reglerSchritt(rules, L.m)} pfad="m"
+        <Slider label="Team-Tore-Nähe (m)" value={rules.m} {...L.m} step={reglerSchritt(rules, L.m)} pfad="m" rules={rules}
           onChange={(v) => setze({ m: v })}
           hint="Steilheit der siegerunabhängigen Team-Tore-Nähe." />
 
         <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 10 }}>
           <Toggle label="Sieger-Boden (richtiger Sieger zahlt mind. Quote−1)"
             on={rules.winnerFloor} onChange={(on) => setze({ winnerFloor: on })} />
-          <Slider label="Strafe bei komplett falsch" value={rules.wrongPenalty} {...L.wrongPenalty} pfad="wrongPenalty"
+          <Slider label="Strafe bei komplett falsch" value={rules.wrongPenalty} {...L.wrongPenalty} pfad="wrongPenalty" rules={rules}
             onChange={(v) => setze({ wrongPenalty: v })} fmt={(x) => x === 0 ? "aus" : x.toFixed(1)}
             hint="0 = keine Strafe. Negativ = Minuspunkte, wenn weder Sieger noch Nähe stimmen." />
         </div>
@@ -85,10 +85,10 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
           Favoriten setzt, wenn der patzt. Beide wirken nur bei echten Außenseiter-Siegen
           und werden über dieselbe Sieger-Quote skaliert.
         </p>
-        <Slider label="Underdog-Boost (×)" value={rules.underdogBoost} {...L.underdogBoost} pfad="underdogBoost"
+        <Slider label="Underdog-Boost (×)" value={rules.underdogBoost} {...L.underdogBoost} pfad="underdogBoost" rules={rules}
           onChange={(v) => setze({ underdogBoost: v })} fmt={fmtFaktor}
           hint="1,0 = aus. Höher = korrekt getippte Außenseiter-Siege zahlen zusätzlich mehr." />
-        <Slider label="Favoriten-Reinfall-Malus" value={rules.favFlopPenalty} {...L.favFlopPenalty} pfad="favFlopPenalty"
+        <Slider label="Favoriten-Reinfall-Malus" value={rules.favFlopPenalty} {...L.favFlopPenalty} pfad="favFlopPenalty" rules={rules}
           onChange={(v) => setze({ favFlopPenalty: v })} fmt={(x) => x === 0 ? "aus" : "−" + x}
           hint="Abzug, wenn du den Favoriten getippt hast und der real verliert. Gedeckelt bei 0 (kein tiefes Minus)." />
         {/* Die beiden Rampen-Regler erscheinen erst, wenn eine der beiden
@@ -170,9 +170,9 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
           <div style={{ fontSize: "0.8125rem", fontWeight: 700, marginBottom: 8 }}>Kombi-Multiplikatoren (Tore × Ebene)</div>
           <Slider label="bei richtiger Tendenz" value={rules.combo.tendenz} {...L.combo.tendenz} step={reglerSchritt(rules, L.combo.tendenz)}
             onChange={(v) => setzeCombo({ tendenz: v })} fmt={(x) => "×" + x.toFixed(2)} />
-          <Slider label="bei richtigem Abstand" value={rules.combo.abstand} {...L.combo.abstand} step={reglerSchritt(rules, L.combo.abstand)} pfad="combo.abstand"
+          <Slider label="bei richtigem Abstand" value={rules.combo.abstand} {...L.combo.abstand} step={reglerSchritt(rules, L.combo.abstand)} pfad="combo.abstand" rules={rules}
             onChange={(v) => setzeCombo({ abstand: v })} fmt={(x) => "×" + x.toFixed(2)} />
-          <Slider label="bei exaktem Ergebnis" value={rules.combo.exakt} {...L.combo.exakt} step={reglerSchritt(rules, L.combo.exakt)} pfad="combo.exakt"
+          <Slider label="bei exaktem Ergebnis" value={rules.combo.exakt} {...L.combo.exakt} step={reglerSchritt(rules, L.combo.exakt)} pfad="combo.exakt" rules={rules}
             onChange={(v) => setzeCombo({ exakt: v })} fmt={fmtFaktor} />
 
           {/* 🔴 Kombi-BONUS (B16) — der Aufschlag, der aus der Quote des
@@ -272,7 +272,7 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
             Die Skalierung oben ist reine Optik. Die beiden folgenden greifen in die
             <strong> Wertung</strong> ein — sie verändern die Reihenfolge.
           </p>
-          <Slider label="Mindest-Auszahlung (Cutoff)" value={rules.minPayout} {...L.minPayout} pfad="minPayout"
+          <Slider label="Mindest-Auszahlung (Cutoff)" value={rules.minPayout} {...L.minPayout} pfad="minPayout" rules={rules}
             onChange={(v) => setze({ minPayout: v })} fmt={(x) => x.toFixed(1)}
             hint="Nähe-Boni unter diesem Wert zählen nicht." />
           <Toggle label="Harter Punkte-Deckel pro Spiel"

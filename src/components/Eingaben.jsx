@@ -1,7 +1,7 @@
 "use client";
 
 import { C, MONO, RUND } from "@/lib/theme";
-import { band } from "@/lib/reglerWarnung";
+import { band, hinweiseFuer } from "@/lib/reglerWarnung";
 import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
 
 // ============================================================
@@ -15,15 +15,25 @@ import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
 //  und eine Kopie wäre genau die Drift, die im Kopf der Zahleneingabe steht.
 // ============================================================
 
-// ── Regler mit Empfehlungsband ──────────────────────────────
-// `pfad` schaltet das Empfehlungsband frei: der Bereich, den die vermessenen
-// Presets belegen, wird als Streifen unter dem Regler markiert und der Wert
-// färbt sich, sobald er ihn verlässt. Bewusst direkt am Regler — der
-// Zusammenhang zwischen Handgriff und Folge muss unmittelbar sein.
-export function Slider({ label, hint, value, min, max, step, onChange, fmt, pfad }) {
+// ── Regler mit Empfehlungsband und Hinweisen ────────────────
+// `pfad` schaltet BEIDES frei: den Streifen des erprobten Bereichs unter dem
+// Regler, und die Hinweise darunter.
+//
+// 🔴 Andi, 29.08.2026: „ob man nicht direkt bei den reglern bzw bei den werten
+// eher jeweils nen kleinen Hinweis einbaut, mit rückmeldung wie üblich diese
+// Einstellung ist und ob sie sich mit anderen verträgt, finde ich fast besser"
+// — besser nämlich als die große Ampel weit oben. Der Zusammenhang zwischen
+// Handgriff und Folge muss unmittelbar sein.
+//
+// ⚠️ `rules` ist OPTIONAL. Ohne sie verhält sich der Regler wie vorher — kein
+// Aufrufer bricht, und ein Regler ohne Regelwerk zeigt eben nur das Band.
+export function Slider({ label, hint, value, min, max, step, onChange, fmt, pfad, rules }) {
   const b = pfad ? band(pfad) : null;
   const draussen = b && (value < b.von || value > b.bis);
   const anteil = (v) => `${Math.max(0, Math.min(100, ((v - min) / (max - min || 1)) * 100))}%`;
+  // ⚠️ Dieselbe Quelle wie der Kasten oben (`pruefe`), nur nach Regler
+  // gefiltert — keine zweite Wahrheit darüber, ob ein Wert in Ordnung ist.
+  const meldungen = pfad && rules ? hinweiseFuer(rules, pfad) : [];
 
   return (
     <div style={{ marginBottom: 14 }}>
@@ -47,6 +57,22 @@ export function Slider({ label, hint, value, min, max, step, onChange, fmt, pfad
         </div>
       )}
       {hint && <div style={{ fontSize: "0.6875rem", color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{hint}</div>}
+
+      {/* 🔴 Klein und ohne Kasten. Ein Rahmen je Regler ergäbe auf 375 px eine
+          Seite aus Rahmen; der farbige Anstrich links reicht, um zu sagen
+          „das gehört zu DIESEM Regler". ⚠️ Die Kombinationen zeigen den
+          TITEL, nicht den ganzen Text: der lange Satz steht weiter im Kasten
+          oben, hier soll man ihn im Vorbeischieben lesen können. */}
+      {meldungen.map((w) => (
+        <div key={`${w.art}-${w.id}`} style={{
+          marginTop: 5, paddingLeft: 8,
+          borderLeft: `2px solid ${w.stufe === "warnung" ? C.coral : C.mint}`,
+          fontSize: "0.6875rem", lineHeight: 1.4,
+          color: w.stufe === "warnung" ? C.coral : C.muted,
+        }}>
+          {w.art === "kombination" ? w.titel : w.text}
+        </div>
+      ))}
     </div>
   );
 }

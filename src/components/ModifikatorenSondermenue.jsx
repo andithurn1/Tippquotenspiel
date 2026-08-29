@@ -106,7 +106,7 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
       <GrosseZeile icon="🔥" titel="Derby &amp; einzelne Vereine" unter="Traditionsduelle, Lieblingsklubs"
         wert={teamStand} offen={zeile === "teams"} onClick={() => auf("teams")}>
         <Slider label="Derby zählt" value={tm.derbyFaktor} {...L.teamMods.derbyFaktor}
-          step={reglerSchritt(rules, L.teamMods.derbyFaktor)} pfad="teamMods.derbyFaktor"
+          step={reglerSchritt(rules, L.teamMods.derbyFaktor)} pfad="teamMods.derbyFaktor" rules={rules}
           onChange={(v) => setzeTeamMods({ derbyFaktor: v })}
           fmt={fmtFaktorOderAus}
           hint="Traditionsduelle (Revierderby, Klassiker, Nordderby …) zählen mehr. 1,0 = aus." />
@@ -165,11 +165,13 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
           <div style={{ paddingLeft: 12, borderLeft: `1px solid ${C.line}`, marginTop: 10 }}>
             <Slider label="Big Game zählt zusätzlich" value={bg.aufschlag}
               {...BIGGAME_LIMITS.aufschlag} step={reglerSchritt(rules, BIGGAME_LIMITS.aufschlag)}
+              pfad="bigGame.aufschlag" rules={rules}
               onChange={(v) => setzeBigGame({ aufschlag: v })}
               fmt={(x) => `+${zahl(x)} → ${fmtFaktor(1 + x)}`}
               hint="Fließt in denselben Topf wie Derby und Team-Faktoren — addiert, nicht multipliziert." />
             <Slider label="Mindest-Brisanz" value={bg.minSpannung}
               {...BIGGAME_LIMITS.minSpannung} step={reglerSchritt(rules, BIGGAME_LIMITS.minSpannung)}
+              pfad="bigGame.minSpannung" rules={rules}
               onChange={(v) => setzeBigGame({ minSpannung: v })}
               fmt={(x) => x.toFixed(2)}
               hint="Reißt kein Spiel diese Schwelle, hat der Spieltag kein Big Game — besser als ein aufgeblasenes Mittelfeldduell." />
@@ -218,7 +220,7 @@ export default function ModifikatorenSondermenue({ rules, premium, onChange }) {
       {(tmAktiv || bg.enabled || rules.joker?.enabled || rules.tabellenBonus?.enabled) && (
         <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 12, paddingTop: 12 }}>
           <Slider label="Deckel für alle Modifikatoren" value={rules.modCap} {...L.modCap}
-            step={reglerSchritt(rules, L.modCap)} pfad="modCap"
+            step={reglerSchritt(rules, L.modCap)} pfad="modCap" rules={rules}
             onChange={(v) => onChange({ modCap: v })} fmt={fmtFaktor}
             hint="Obergrenze, wenn Joker und Team-Regeln zusammentreffen." />
           <p style={{ fontSize: "0.6875rem", color: C.muted, marginTop: -2, marginBottom: 8, lineHeight: 1.45 }}>

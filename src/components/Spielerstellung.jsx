@@ -838,11 +838,16 @@ export default function Spielerstellung() {
               das ist ein Umbau am Aufbau der Einstellungen, und der gehört
               laut CLAUDE.md Andi (G6).
 
-              Gedeckelt auf 42 % der Höhe (mit eigenem Scroll), sonst frisst
-              der Kasten auf dem Handy die ganze Fläche. */}
+              🔴 **Gedeckelt auf 28 % der Höhe** (mit eigenem Scroll). Vorher
+              waren es 42 % — gemessen auf 375×812 sind das **349 px, also 43 %
+              des Schirms, dauerhaft belegt**, seit ST4 auch über der
+              Spielauswahl. Andi am 29.08.2026 dazu entschieden: „wir deckeln,
+              ordentlich und die Ampel muss echt nicht groß sein". Der Kasten
+              behält damit das Kleben — die Eigenschaft, auf die es ankommt —
+              und gibt zwei Fünftel seiner Fläche zurück. */}
           <div style={{
             position: "sticky", top: 52, zIndex: 5,
-            maxHeight: "42vh", overflowY: "auto",
+            maxHeight: "28vh", overflowY: "auto",
             // Muss DECKEND sein, sonst scrollt der Inhalt sichtbar dahinter
             // durch. `C.ink` ist der Grundton des Rahmens an dieser Stelle.
             background: C.ink, paddingBottom: 8, marginBottom: 2,

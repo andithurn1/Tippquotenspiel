@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   BAND_FELDER, band, pruefe, korrigieren, zusammenfassung, rohModifikator,
+  KOMBINATIONEN, hinweiseFuer, hinweisStufe,
 } from "@/lib/reglerWarnung";
 import { DEFAULT_RULES, sanitizeRules, RULE_LIMITS, maxTotalModifier } from "@/lib/engine";
 import { PRESETS } from "@/lib/presets";
@@ -354,5 +355,86 @@ describe("Saison-Wetten in einer Runde, die mitten im Spielbetrieb beginnt", () 
 
   it("erzeugt bei keinem der sechs vermessenen Regelwerke Rauschen", () => {
     for (const p of PRESETS) expect(treffer(p.rules), p.key).toEqual([]);
+  });
+});
+
+// ============================================================
+//  🔴 HINWEISE AM REGLER — und die Frage, ob sie überhaupt ankommen
+//
+//  Andi, 29.08.2026: der Hinweis soll am REGLER stehen, nicht in einem Kasten
+//  340 Zeilen weiter oben. Damit das funktioniert, muss jede Kombination
+//  wissen, an welchen Reglern sie hängt — und diese Zuordnung ist von Hand
+//  geschrieben. Von Hand geschriebene Pfade sind Tippfehler-Kandidaten, und
+//  ein falscher Pfad fällt NICHT auf: der Hinweis erscheint einfach nie.
+//
+//  Genau dieselbe Falle wie bei den Vereinsfarben-Schlüsseln.
+// ============================================================
+describe("Hinweise am Regler", () => {
+  const pfadExistiert = (pfad) =>
+    pfad.split(".").reduce((o, k) => (o == null ? undefined : o[k]), DEFAULT_RULES) !== undefined;
+
+  it("🔴 jeder genannte Regler-Pfad existiert wirklich in den Regeln", () => {
+    for (const k of KOMBINATIONEN) {
+      expect(Array.isArray(k.felder), `${k.id} hat keine felder-Liste`).toBe(true);
+      expect(k.felder.length, `${k.id} nennt keinen einzigen Regler`).toBeGreaterThan(0);
+      for (const f of k.felder) {
+        expect(pfadExistiert(f), `${k.id} nennt "${f}" — den gibt es in DEFAULT_RULES nicht`).toBe(true);
+      }
+    }
+  });
+
+  it("🔴 auch jedes Band-Feld zeigt auf einen echten Regler", () => {
+    for (const f of BAND_FELDER) {
+      expect(pfadExistiert(f.pfad), `Band-Feld "${f.pfad}" gibt es in DEFAULT_RULES nicht`).toBe(true);
+    }
+  });
+
+  // ⚠️ Gemessen statt angenommen: `DEFAULT_RULES` liegen selbst NICHT im
+  // Empfehlungsband — das Band wird aus den PRESETS abgeleitet, nicht aus den
+  // Vorgaben. Ein Preset ist deshalb der richtige Maßstab für „hier ist
+  // nichts zu melden"; die erste Fassung dieses Tests hat das verwechselt.
+  it("liefert für einen Regler ohne Auffälligkeit nichts", () => {
+    expect(hinweiseFuer(BASIS, "k")).toEqual([]);
+    expect(hinweisStufe(BASIS, "k")).toBeNull();
+  });
+
+  it("gibt bei fehlendem Pfad nichts zurück, statt zu raten", () => {
+    expect(hinweiseFuer(DEFAULT_RULES, null)).toEqual([]);
+    expect(hinweiseFuer(DEFAULT_RULES, "")).toEqual([]);
+  });
+
+  // ⚠️ Der Kern: die Kombination „Gratis-Lose" hängt an ZWEI Reglern und muss
+  // an BEIDEN auftauchen. Vorher stand sie nur im Kasten — wer am Abzug
+  // schob, sah nicht, dass der Cutoff das Problem mitverursacht.
+  it("🔴 zeigt eine Kombination an JEDEM beteiligten Regler", () => {
+    const r = { ...DEFAULT_RULES, wrongPenalty: 0, minPayout: 0 };
+    const amAbzug = hinweiseFuer(r, "wrongPenalty");
+    const amCutoff = hinweiseFuer(r, "minPayout");
+    expect(amAbzug.some((w) => w.id === "gratis-lose")).toBe(true);
+    expect(amCutoff.some((w) => w.id === "gratis-lose")).toBe(true);
+  });
+
+  it("zeigt sie NICHT an einem unbeteiligten Regler", () => {
+    const r = { ...DEFAULT_RULES, wrongPenalty: 0, minPayout: 0 };
+    expect(hinweiseFuer(r, "m").some((w) => w.id === "gratis-lose")).toBe(false);
+  });
+
+  // 🔴 Die Zusicherung gegen die zweite Wahrheit: was am Regler steht, ist
+  // exakt eine Teilmenge dessen, was der Kasten sagt. Beide lesen `pruefe`.
+  it("🔴 sagt nie etwas, das die Gesamtprüfung nicht auch sagt", () => {
+    const r = { ...DEFAULT_RULES, wrongPenalty: 0, minPayout: 0, modCap: 8 };
+    const alle = new Set(pruefe(r).map((w) => `${w.art}|${w.id}`));
+    const pfade = [...BAND_FELDER.map((f) => f.pfad),
+      ...KOMBINATIONEN.flatMap((k) => k.felder)];
+    for (const pfad of new Set(pfade)) {
+      for (const w of hinweiseFuer(r, pfad)) {
+        expect(alle.has(`${w.art}|${w.id}`), `${pfad}: ${w.id} steht nicht in pruefe()`).toBe(true);
+      }
+    }
+  });
+
+  it("meldet die höhere Stufe, wenn beides zusammenkommt", () => {
+    const r = { ...DEFAULT_RULES, wrongPenalty: 0, minPayout: 0 };
+    expect(hinweisStufe(r, "wrongPenalty")).toBe("warnung");
   });
 });

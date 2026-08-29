@@ -239,9 +239,10 @@ function feldWarnung(rules, feld) {
 const TURM_SCHWELLE = 3;
 
 // ── Kombinationen: was einzeln harmlos aussieht ─────────────
-const KOMBINATIONEN = [
+export const KOMBINATIONEN = [
   {
     id: "gratis-lose",
+    felder: ["wrongPenalty", "minPayout"],
     stufe: "warnung",
     titel: "Außenseiter-Tipps kosten nichts",
     gilt: (r) => r.wrongPenalty > -2 && r.minPayout < 2.5,
@@ -254,6 +255,7 @@ const KOMBINATIONEN = [
   },
   {
     id: "modifikator-turm",
+    felder: ["modCap", "joker.faktor", "joker.heimat.faktor", "joker.mut.faktor", "bigGame.aufschlag", "teamMods.derbyFaktor"],
     stufe: "warnung",
     titel: "Ein Spiel kann alles entscheiden",
     gilt: (r) => maxTotalModifier(r) >= TURM_SCHWELLE,
@@ -265,6 +267,7 @@ const KOMBINATIONEN = [
   },
   {
     id: "deckel-beisst",
+    felder: ["modCap", "joker.faktor", "joker.heimat.faktor", "joker.mut.faktor", "bigGame.aufschlag", "teamMods.derbyFaktor"],
     stufe: "hinweis",
     titel: "Der Deckel schneidet deine Modifikatoren ab",
     // Nur melden, wenn das Anheben des Deckels auch wirklich der richtige Rat
@@ -305,6 +308,7 @@ const KOMBINATIONEN = [
     // ⛔ Deshalb ein Hinweis und kein Verbot: will ein Admin das, soll er es
     // haben (Baukasten-Grundsatz). Er soll es nur nicht aus Versehen tun.
     id: "saisonwetten-mitten-drin",
+    felder: ["spiele.spieltagVon"],
     stufe: "hinweis",
     titel: "Saison-Wetten in einer Runde, die mitten im Spielbetrieb beginnt",
     gilt: (r) => {
@@ -331,6 +335,7 @@ const KOMBINATIONEN = [
   },
   {
     id: "kein-unterschied",
+    felder: ["combo.exakt", "combo.abstand"],
     stufe: "hinweis",
     titel: "Exakt und ungefähr zahlen fast gleich",
     gilt: (r) => r.combo.exakt - r.combo.abstand < 0.3 && r.markets?.goals?.enabled,
@@ -342,6 +347,7 @@ const KOMBINATIONEN = [
   },
   {
     id: "versaeumnis-lohnt",
+    felder: ["versaeumnis.malusProzent"],
     stufe: "hinweis",
     titel: "Nichtstippen wird nicht spürbar teurer",
     gilt: (r) => r.versaeumnis?.enabled && r.versaeumnis.malusProzent < 10,
@@ -361,6 +367,7 @@ const KOMBINATIONEN = [
     // diese Krümel ab und macht „komplett daneben" zu einem echten Zustand.
     // Der Regler ist also nicht kaputt — er hängt an einem zweiten.
     id: "strafe-ohne-mindestauszahlung",
+    felder: ["wrongPenalty", "minPayout"],
     stufe: "hinweis",
     titel: "Der Abzug für „komplett daneben“ greift fast nie",
     gilt: (r) => r.wrongPenalty < 0 && !(r.minPayout > 0),
@@ -383,6 +390,7 @@ const KOMBINATIONEN = [
     // des Deckels. Die Warnung sagt das — welchen Deckel eine Runde will,
     // entscheidet der Admin.
     id: "duell-deckel-erdrueckt",
+    felder: ["duell.maxProSaison", "duell.klau"],
     stufe: "hinweis",
     titel: "Der Saison-Deckel macht den Stärke-Regler wirkungslos",
     gilt: (r) => {
@@ -419,6 +427,7 @@ const KOMBINATIONEN = [
     // die BEDINGUNG dafür, dass Fremdjoker eingeschaltet bleiben, nicht ihr
     // Gegenstück.
     id: "fremdjoker-ohne-schutz",
+    felder: ["eingriffe.schutz.proSpieltag"],
     stufe: "warnung",
     titel: "Niemand kann sein Spiel schützen",
     gilt: (r) => aktiveArten(r).length > 0 && sanitizeSchutz(r?.eingriffe?.schutz).proSpieltag === 0,
@@ -439,6 +448,7 @@ const KOMBINATIONEN = [
     // deutlich mehr Einsätze auf demselben Spieltag, und das Los (JK12) ist
     // die Antwort, die es nicht nur bemängelt, sondern unmöglich macht.
     id: "fremdjoker-rudel",
+    felder: ["duell.maxProZiel", "duell.zielWahl", "eingriffe.sperrfrist.standard.spieltage"],
     stufe: "warnung",
     titel: "Alle gehen auf den Führenden",
     gilt: (r) => {
@@ -470,6 +480,7 @@ const KOMBINATIONEN = [
     // pro Wiederholung, und ohne Deckel wächst sie über die Saison hinaus.
     // Dann ist die zweite Hälfte des Reglers Zierde.
     id: "sperrfrist-waechst-unbegrenzt",
+    felder: ["eingriffe.sperrfrist.standard.aufschlag", "eingriffe.sperrfrist.standard.hoechstens", "eingriffe.sperrfrist.standard.spieltage"],
     stufe: "hinweis",
     titel: "Die Sperrfrist wächst über die Saison hinaus",
     gilt: (r) => {
@@ -532,7 +543,7 @@ export function pruefe(rules) {
   for (const k of KOMBINATIONEN) {
     if (!k.gilt(r)) continue;
     treffer.push({
-      id: k.id, art: "kombination", stufe: k.stufe, titel: k.titel,
+      id: k.id, art: "kombination", stufe: k.stufe, titel: k.titel, felder: k.felder ?? [],
       text: k.text(r), fix: k.fix,
     });
   }
@@ -545,6 +556,38 @@ export function pruefe(rules) {
   const artRang = { kombination: 0, feld: 1 };
   return treffer.sort((a, b) =>
     rang[a.stufe] - rang[b.stufe] || artRang[a.art] - artRang[b.art]);
+}
+
+// ── 🔴 HINWEISE AM REGLER ────────────────────────────────────
+//
+// Andi, 29.08.2026: „ob man nicht direkt bei den reglern bzw bei den werten
+// eher jeweils nen kleinen Hinweis einbaut, mit rückmeldung wie üblich diese
+// Einstellung ist und ob sie sich mit anderen verträgt, finde ich fast besser".
+//
+// 🔴 Das ist KEINE neue Prüfung — es ist dieselbe wie `pruefe`, nur nach
+// Regler sortiert statt nach Dringlichkeit. Eine zweite Wahrheit über
+// „ist dieser Wert in Ordnung" wäre genau der Fehler, den dieses Projekt am
+// häufigsten gemacht hat: zwei Stellen, die dasselbe behaupten und irgendwann
+// auseinanderlaufen.
+//
+// ⚠️ Deshalb liest die Funktion `pruefe(rules)` und filtert. Wer eine Regel
+// ändert, ändert sie an EINER Stelle, und beide Anzeigen ziehen mit.
+//
+// Die beiden Hälften von Andis Satz landen in `art`:
+//   "feld"        → wie üblich ist dieser Wert (das Empfehlungsband)
+//   "kombination" → verträgt er sich mit den anderen
+export function hinweiseFuer(rules, pfad) {
+  if (!pfad) return [];
+  return pruefe(rules).filter((w) =>
+    w.art === "feld" ? w.id === pfad : (w.felder ?? []).includes(pfad));
+}
+
+// Ein Regler soll auf einen Blick sagen können, WIE dringend es ist, ohne die
+// Liste durchzugehen. `null` heißt: hier ist nichts zu melden.
+export function hinweisStufe(rules, pfad) {
+  const h = hinweiseFuer(rules, pfad);
+  if (!h.length) return null;
+  return h.some((w) => w.stufe === "warnung") ? "warnung" : "hinweis";
 }
 
 function formatWert(v) {
