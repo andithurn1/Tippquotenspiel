@@ -33,6 +33,28 @@ alter table public.profiles add column if not exists avatar text;
 alter table public.profiles add column if not exists premium_until timestamptz;
 
 -- ============================================================
+--  KURZBESCHREIBUNG (KP3, Andi 29.08.2026)
+--
+--  „es reicht bei jedem Profil der Benutzername samt nen kleinen
+--   Beschreibungstext über sich (den jeder selber einstellen kann)"
+--
+--  🔴 Sie gehört bewusst nach `profiles` (ÖFFENTLICH) und NICHT nach
+--  `profile_privat`. Das ist keine Nachlässigkeit, sondern der Zweck: wer sie
+--  schreibt, weiß, dass alle sie lesen. Eine „private Selbstbeschreibung"
+--  wäre ein Widerspruch — und genau die Sorte Halbheit, die beim Geburtsdatum
+--  einen Sicherheitsfund ergeben hat (KP2).
+--
+--  ⚠️ Die Länge steht in der DATENBANK und nicht nur in der Oberfläche. Ein
+--  Limit, das nur das Eingabefeld kennt, ist keins: der Store lässt sich
+--  direkt ansprechen.
+alter table public.profiles add column if not exists beschreibung text;
+alter table public.profiles
+  drop constraint if exists profiles_beschreibung_laenge;
+alter table public.profiles
+  add constraint profiles_beschreibung_laenge
+  check (beschreibung is null or char_length(beschreibung) <= 280);
+
+-- ============================================================
 --  PRIVATE Profildaten (KT9, Andi 25.08.2026)
 --
 --  🔴 WARUM EINE EIGENE TABELLE und nicht eine Spalte in `profiles`:

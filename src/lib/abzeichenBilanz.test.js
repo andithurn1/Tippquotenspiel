@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { bilanzAus, bilanzZusammen, LUECKEN } from "./abzeichenBilanz";
+import { bilanzAus, bilanzZusammen, bilanzAusUmfeld, LUECKEN } from "./abzeichenBilanz";
 import { LEERE_BILANZ, erspielte, ABZEICHEN } from "./abzeichen";
 import { createMockOddsSource, DEFAULT_RULES } from "./engine";
 
@@ -136,7 +136,7 @@ describe("Die Lücken", () => {
   // ⚠️ Die Zahl, die den Stand ehrlich hält. Sie darf nur SINKEN — wer ein
   // Signal anschließt, streicht die Lücke.
   it("⚠️ die Zahl der Lücken ist festgehalten und darf nur kleiner werden", () => {
-    expect(Object.keys(LUECKEN).length).toBeLessThanOrEqual(16);
+    expect(Object.keys(LUECKEN).length).toBeLessThanOrEqual(11);
   });
 });
 
@@ -220,5 +220,85 @@ describe("Deckt der Katalog eine echte Saison ab?", () => {
     const gut = erspielte(bilanzAus({ eintraege: e, userId: "gut" })).length;
     const faul = erspielte(bilanzAus({ eintraege: e, userId: "faul" })).length;
     expect(gut).toBeGreaterThan(faul);
+  });
+});
+
+// ============================================================
+//  🔴 DAS UMFELD — was nicht in den Tipps steht
+// ============================================================
+describe("Die Umfeld-Bilanz", () => {
+  const RUNDEN = [
+    { id: "r1", admin_id: "a" },
+    { id: "r2", admin_id: "b" },
+    { id: "r3", admin_id: "a" },
+  ];
+  const MITGLIEDER = {
+    r1: [1, 2, 3, 4, 5, 6, 7],
+    r3: [1, 2],
+  };
+
+  it("ohne Nutzer gibt es nichts", () => {
+    expect(bilanzAusUmfeld({ runden: RUNDEN })).toEqual({});
+  });
+
+  it("zählt eigene und mitgespielte Runden getrennt", () => {
+    const u = bilanzAusUmfeld({ userId: "a", runden: RUNDEN });
+    expect(u.mitgespielteRunden).toBe(3);
+    expect(u.eigeneRunden).toBe(2);
+  });
+
+  // 🔴 „Gastgeber Gold" soll heißen, dass einmal 25 Leute zusammenkamen —
+  // nicht, dass fünfmal fünf Leute an fünf verschiedenen Tischen saßen.
+  it("🔴 nimmt die GRÖSSTE eigene Runde, nicht die Summe", () => {
+    const u = bilanzAusUmfeld({ userId: "a", runden: RUNDEN, mitgliederJeRunde: MITGLIEDER });
+    expect(u.rundenGroesse).toBe(7);
+  });
+
+  it("wer keine eigene Runde hat, hat auch keine Rundengröße", () => {
+    const u = bilanzAusUmfeld({ userId: "c", runden: [{ id: "r1", admin_id: "a" }] });
+    expect(u.rundenGroesse).toBeUndefined();
+    expect(u.eigeneRunden).toBe(0);
+  });
+
+  it("summiert die Übernahmen über alle eigenen Codes", () => {
+    const presets = [
+      { creator_id: "a", uebernahmen: 12 },
+      { creator_id: "a", uebernahmen: 5 },
+      { creator_id: "b", uebernahmen: 99 },
+    ];
+    expect(bilanzAusUmfeld({ userId: "a", runden: [], presets }).uebernahmen).toBe(17);
+  });
+
+  // ⚠️ Wer seine Meinung ändert, hat trotzdem an EINER Abstimmung
+  // teilgenommen. Stimmabgaben zu zählen statt Abstimmungen belohnte
+  // Unentschlossenheit.
+  it("⚠️ zählt Abstimmungen, nicht Stimmabgaben", () => {
+    const stimmen = [
+      { user_id: "a", round_id: "r1", matchday: 3, wettbewerb: "bl" },
+      { user_id: "a", round_id: "r1", matchday: 3, wettbewerb: "bl" },
+      { user_id: "a", round_id: "r1", matchday: 4, wettbewerb: "bl" },
+      { user_id: "b", round_id: "r1", matchday: 9, wettbewerb: "bl" },
+    ];
+    expect(bilanzAusUmfeld({ userId: "a", runden: [], stimmen }).abstimmungen).toBe(2);
+  });
+
+  it("fehlende Listen lassen ihr Feld weg, statt es zu raten", () => {
+    const u = bilanzAusUmfeld({ userId: "a", runden: [] });
+    expect(u.uebernahmen).toBeUndefined();
+    expect(u.abstimmungen).toBeUndefined();
+  });
+
+  it("verträgt Unsinn in den Listen", () => {
+    expect(() => bilanzAusUmfeld({
+      userId: "a", runden: [null, 5], presets: [null], stimmen: [null],
+    })).not.toThrow();
+  });
+
+  // ⚠️ Die Gegenprobe zur Lückenliste: was jetzt gefüllt wird, darf dort
+  // nicht mehr stehen.
+  it("⚠️ die fünf angeschlossenen Felder stehen nicht mehr in LUECKEN", () => {
+    for (const f of ["eigeneRunden", "rundenGroesse", "uebernahmen", "abstimmungen", "mitgespielteRunden"]) {
+      expect(LUECKEN[f], `${f} ist angeschlossen, steht aber noch als Lücke`).toBeUndefined();
+    }
   });
 });

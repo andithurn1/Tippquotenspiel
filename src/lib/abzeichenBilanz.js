@@ -39,11 +39,6 @@ export const LUECKEN = {
   jokerAussenseiter: "Setzt `aussenseiterTreffer` voraus, das aus demselben Grund fehlt.",
   knappDaneben: "Braucht `dist` je Tipp; die Wertung reicht nur `ebene` durch.",
   saisonsBeendet: "Es gibt noch keine einzige abgeschlossene Saison, an der man es ablesen könnte.",
-  eigeneRunden: "Steht in der Runden-Tabelle, nicht in den Tipps.",
-  rundenGroesse: "Dito — kommt aus `listMembers`.",
-  uebernahmen: "Wird an den Presets gezählt, nicht an den Tipps.",
-  abstimmungen: "Steht in `votes`/`antraege`.",
-  mitgespielteRunden: "Kommt aus `listRoundsForUser`.",
   spottEmpfangen: "SP1 ist nicht gebaut.",
   favoritenSerie: "Braucht den Favoriten je Spiel aus dem Schnappschuss.",
   aufholsprung: "Braucht den Rang-Verlauf (`scoreLeaderboardHistory`).",
@@ -168,6 +163,65 @@ export function bilanzAus({
 
   return bilanz;
 }
+
+// ============================================================
+//  🔴 DAS UMFELD — was NICHT in den Tipps steht
+//
+//  Fünf Abzeichen hängen an Dingen, die kein einziger Tipp verrät: wie viele
+//  Runden man erstellt hat, wie groß sie sind, wie oft der eigene Code
+//  übernommen wurde, ob man abgestimmt hat, in wie vielen Runden man mitspielt.
+//
+//  ⚠️ Diese Funktion LÄDT NICHTS. Sie bekommt, was der Screen ohnehin schon
+//  geholt hat, und rechnet daraus. Ein Ladevorgang in einer Bibliothek wäre
+//  nicht prüfbar und stünde an einer Stelle, die sonst rein ist.
+//
+//  ⚠️ Alles ist optional. Fehlt eine Liste, bleibt ihr Feld weg — und das
+//  Abzeichen wird eben nicht vergeben. Kein Feld wird geraten.
+// ============================================================
+export function bilanzAusUmfeld({
+  userId, runden = [], mitgliederJeRunde = {}, presets = [], stimmen = [],
+} = {}) {
+  const out = {};
+  if (!userId) return out;
+
+  const meineRunden = (runden ?? []).filter(Boolean);
+  out.mitgespielteRunden = meineRunden.length;
+
+  // 🔴 `admin_id`, nicht „hat die erste Runde erstellt". Wer eine Runde
+  // übernimmt, ist ihr Admin — und wer seine abgibt, hat sie trotzdem gebaut.
+  // Die Datenbank kennt nur den JETZIGEN Admin; mehr behaupten wir hier nicht.
+  const eigene = meineRunden.filter((r) => r?.admin_id === userId);
+  out.eigeneRunden = eigene.length;
+
+  // Die GRÖSSTE eigene Runde. ⚠️ Nicht die Summe: „Gastgeber Gold" soll
+  // heißen, dass einmal 25 Leute zusammenkamen — nicht, dass fünfmal fünf
+  // Leute an fünf verschiedenen Tischen saßen.
+  let groesste = 0;
+  for (const r of eigene) {
+    const liste = mitgliederJeRunde?.[r.id];
+    if (Array.isArray(liste)) groesste = Math.max(groesste, liste.length);
+  }
+  if (eigene.length) out.rundenGroesse = groesste;
+
+  // ⚠️ Über ALLE eigenen Codes summiert: wer drei Codes veröffentlicht hat,
+  // hat drei Wege, gefunden zu werden, und die zählen zusammen.
+  const meineCodes = (presets ?? []).filter((p) => p?.creator_id === userId);
+  if (meineCodes.length) {
+    out.uebernahmen = meineCodes.reduce((n, p) => n + (Number(p.uebernahmen) || 0), 0);
+  }
+
+  // ⚠️ Eine Stimme je Abstimmung, nicht je Stimmabgabe. Wer seine Meinung
+  // ändert, hat trotzdem an EINER Abstimmung teilgenommen.
+  const meineStimmen = (stimmen ?? []).filter((s) => s?.user_id === userId || s?.userId === userId);
+  if (meineStimmen.length) {
+    const schluessel = new Set(meineStimmen.map(
+      (s) => `${s.round_id ?? s.roundId ?? ""}|${s.matchday ?? ""}|${s.wettbewerb ?? ""}`));
+    out.abstimmungen = schluessel.size;
+  }
+
+  return out;
+}
+
 
 // ============================================================
 //  Mehrere Runden zu EINER Kontobilanz

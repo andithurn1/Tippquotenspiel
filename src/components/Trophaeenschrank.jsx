@@ -28,7 +28,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { getStore } from "@/lib/store";
 import { DEFAULT_RULES } from "@/lib/engine";
 import { nachGruppen, STUFEN, bildPfad } from "@/lib/abzeichen";
-import { bilanzAus, bilanzZusammen } from "@/lib/abzeichenBilanz";
+import { bilanzAus, bilanzZusammen, bilanzAusUmfeld } from "@/lib/abzeichenBilanz";
 
 // ── Ein Abzeichen als runde Scheibe ─────────────────────────
 //
@@ -139,14 +139,32 @@ export default function Trophaeenschrank() {
       const store = getStore();
       const runden = await store.listRoundsForUser(user.id).catch(() => []);
       const teile = [];
+      const mitgliederJeRunde = {};
+      const stimmen = [];
       for (const r of (runden ?? [])) {
         if (!r?.id) continue;
         const eintraege = await store.getRoundEntries(r.id).catch(() => []);
         teile.push(bilanzAus({
           eintraege: eintraege ?? [], userId: user.id, rules: r.rules ?? DEFAULT_RULES,
         }));
+        // ⚠️ Nur für die EIGENEN Runden nachladen. Die Mitgliederzahl fremder
+        // Runden beantwortet keine Frage des Schranks, und jeder Aufruf kostet.
+        if (r.admin_id === user.id) {
+          mitgliederJeRunde[r.id] = await store.listMembers(r.id).catch(() => []);
+        }
+        const v = await store.listVotes({ roundId: r.id }).catch(() => []);
+        for (const s of (v ?? [])) stimmen.push({ ...s, round_id: s.round_id ?? r.id });
       }
-      if (live) { setBilanz(bilanzZusammen(teile)); setLaedt(false); }
+      // 🔴 Die Übernahmen stehen an den Presets, nicht an den Runden — ein
+      // Code kann übernommen worden sein, ohne dass der Übernehmer je in einer
+      // meiner Runden auftaucht. Genau deshalb ist es ein eigener Aufruf.
+      const presets = await (store.listPresets?.({ limit: 200 }) ?? Promise.resolve([]))
+        .catch(() => []);
+
+      const umfeld = bilanzAusUmfeld({
+        userId: user.id, runden: runden ?? [], mitgliederJeRunde, presets: presets ?? [], stimmen,
+      });
+      if (live) { setBilanz(bilanzZusammen([...teile, umfeld])); setLaedt(false); }
     })();
     return () => { live = false; };
   }, [user?.id]);

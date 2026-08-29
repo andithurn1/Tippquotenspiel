@@ -26,6 +26,7 @@ import { generateJoinCode } from "./joinCode";
 import { PRESETS } from "./presets";
 import { alleMatches } from "./ligen";
 import { sanitizeDisplayName, sanitizeAvatar, DEFAULT_AVATAR } from "./avatars";
+import { sanitizeBeschreibung } from "./beschreibung";
 import { namensSchluessel } from "./benutzername";
 import { sanitizeGeburtsdatum } from "./geburtsdatum";
 import { isPremium, applyEntitlements } from "./premium";
@@ -532,7 +533,7 @@ export function createMockStore() {
     },
     // Nur die übergebenen Felder ändern; beide werden gesäubert, damit weder
     // ein leerer Name noch eine unbekannte Avatar-id im Profil landet.
-    async updateProfile(userId, { displayName, avatar, geburtsdatum } = {}) {
+    async updateProfile(userId, { displayName, avatar, geburtsdatum, beschreibung } = {}) {
       const vorher = profiles.get(userId) ?? { id: userId, display_name: userId, avatar: DEFAULT_AVATAR };
       const name = displayName === undefined ? vorher.display_name : (sanitizeDisplayName(displayName) ?? vorher.display_name);
       const bild = avatar === undefined ? vorher.avatar : sanitizeAvatar(avatar);
@@ -542,7 +543,13 @@ export function createMockStore() {
       const geb = geburtsdatum === undefined
         ? (vorher.geburtsdatum ?? null)
         : sanitizeGeburtsdatum(geburtsdatum);
-      const neu = { ...vorher, display_name: name, avatar: bild, geburtsdatum: geb };
+      // ⚠️ Wie beim Geburtsdatum: `=== undefined` und nicht `!beschreibung`,
+      // sonst liesse sich eine einmal geschriebene Beschreibung nie wieder
+      // loeschen — ein leerer Text ist eine gueltige Angabe.
+      const text = beschreibung === undefined
+        ? (vorher.beschreibung ?? null)
+        : (sanitizeBeschreibung(beschreibung) || null);
+      const neu = { ...vorher, display_name: name, avatar: bild, geburtsdatum: geb, beschreibung: text };
       profiles.set(userId, neu);
       // Mitglieder-Liste mitziehen, damit Leaderboard/Runde sofort stimmen.
       for (const m of members) if (m.user_id === userId) { m.name = name; m.avatar = bild; }

@@ -11,7 +11,8 @@ import {
   getAvatar, avatarColor, sanitizeDisplayName,
 } from "@/lib/avatars";
 import { isPremium } from "@/lib/premium";
-import { C, SCHRIFT, RUND } from "@/lib/theme";
+import { beschreibungStand, BESCHREIBUNG_MAX } from "@/lib/beschreibung";
+import { C, SCHRIFT, RUND, MONO } from "@/lib/theme";
 import { TAPZIEL } from "@/lib/tapziel";
 import Link from "next/link";
 
@@ -43,6 +44,11 @@ export default function Profil() {
   const [belegt, setBelegt] = useState([]);        // fremde Namen, für Vorschläge
   const [frei, setFrei] = useState(null);          // null = noch nicht geprüft
   const [geburtsjahr, setGeburtsjahr] = useState(null);
+  // 🔴 KP3 (Andi, 29.08.2026): „der Benutzername samt nen kleinen
+  // Beschreibungstext über sich (den jeder selber einstellen kann)".
+  // ⚠️ ÖFFENTLICH — sie liegt in `profiles`, nicht in `profile_privat`. Wer
+  // sie schreibt, soll das wissen; deshalb steht es auch unter dem Feld.
+  const [beschreibung, setBeschreibung] = useState("");
 
   useEffect(() => {
     if (!user) { setStatus("bereit"); return; }
@@ -56,6 +62,7 @@ export default function Profil() {
         setPremium(isPremium(p));
         // Das Geburtsjahr entscheidet, ob „Andi95" unter den Vorschlägen ist.
         setGeburtsjahr(jahrVon(p?.geburtsdatum));
+        setBeschreibung(p?.beschreibung ?? "");
         setGeladen(true);
         setStatus("bereit");
       })
@@ -91,6 +98,10 @@ export default function Profil() {
     ? null
     : namensHinweis(name, belegt, { geburtsjahr, anzahl: 3 });
 
+  // ⚠️ Einmal gerechnet, dreimal gelesen (Zähler, Warnung, Vorschau). Drei
+  // Aufrufe im JSX wären drei Rechnungen je Tastendruck.
+  const stand = beschreibungStand(beschreibung);
+
   const speichern = async () => {
     // ⛔ Nicht speichern, wenn der Name nachweislich vergeben ist. Die
     // Datenbank weist es ohnehin ab (Eindeutigkeits-Index) — aber ein Fehler
@@ -98,7 +109,7 @@ export default function Profil() {
     if (!user || !nameOk || frei === false) return;
     setStatus("speichern");
     try {
-      await getStore().updateProfile(user.id, { displayName: name, avatar });
+      await getStore().updateProfile(user.id, { displayName: name, avatar, beschreibung });
       setStatus("ok");
       setTimeout(() => setStatus("bereit"), 1600);
     } catch {
@@ -253,6 +264,48 @@ export default function Profil() {
                 Eigene Fotos sind noch nicht freigeschaltet — das braucht erst eine
                 Melde- und Prüfmöglichkeit (Auflage der App-Stores für Nutzerbilder).
               </p>
+            </div>
+
+            {/* ── 🔴 KURZBESCHREIBUNG (KP3) ────────────────────
+                Andi, 29.08.2026: „der Benutzername samt nen kleinen
+                Beschreibungstext über sich (den jeder selber einstellen kann)".
+
+                🔴 Der Hinweis „für alle sichtbar" steht ÜBER dem Feld, nicht
+                darunter. Wer ihn erst nach dem Tippen liest, hat schon
+                geschrieben — und die Beschreibung ist genau deshalb harmlos,
+                weil man beim Schreiben weiß, wer mitliest. */}
+            <div style={{ marginTop: 22 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <label htmlFor="tqs-beschreibung" style={{ fontSize: "0.9375rem", fontWeight: 700 }}>
+                  Über mich
+                </label>
+                <span style={{ fontFamily: MONO, fontSize: "0.75rem", color: stand.uebrig < 20 ? C.coral : C.muted }}>
+                  {stand.uebrig}
+                </span>
+              </div>
+              <p style={{ fontSize: "0.75rem", color: C.muted, margin: "4px 0 8px", lineHeight: 1.45 }}>
+                Steht in deinem Profil und ist <strong>für alle sichtbar</strong>,
+                die mit dir in einer Runde sind.
+              </p>
+              <textarea id="tqs-beschreibung" value={beschreibung} rows={3}
+                maxLength={BESCHREIBUNG_MAX + 40}
+                onChange={(e) => setBeschreibung(e.target.value)}
+                placeholder="Tippe seit 2009 zu optimistisch auf meinen Verein."
+                style={{
+                  width: "100%", resize: "vertical", boxSizing: "border-box",
+                  background: C.surface, color: C.text, fontFamily: "inherit",
+                  fontSize: "0.875rem", lineHeight: 1.5, padding: "10px 12px",
+                  border: `1px solid ${C.line}`, borderRadius: RUND.karte,
+                }} />
+              {/* ⚠️ Was verschwinden WÜRDE, steht VOR dem Speichern da. Sonst
+                  liest man später etwas anderes, als man geschrieben hat, und
+                  merkt nie, woran es lag. */}
+              {stand.gekuerzt && (
+                <div style={{ fontSize: "0.6875rem", color: C.coral, marginTop: 6, lineHeight: 1.4 }}>
+                  Beim Speichern wird gekürzt oder aufgeräumt — gespeichert wird:
+                  „{stand.text}"
+                </div>
+              )}
             </div>
 
             <button onClick={speichern} disabled={!nameOk || status === "speichern" || !geladen} style={{

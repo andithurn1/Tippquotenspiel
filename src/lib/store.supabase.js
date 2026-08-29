@@ -14,6 +14,7 @@ import { verlaufPositionen } from "./spieltag";
 import { getSupabaseBrowserClient } from "./supabaseClient";
 import { generateJoinCode } from "./joinCode";
 import { sanitizeDisplayName, sanitizeAvatar } from "./avatars";
+import { sanitizeBeschreibung } from "./beschreibung";
 import { sanitizeGeburtsdatum } from "./geburtsdatum";
 import { isPremium, applyEntitlements } from "./premium";
 import { withSaisonPunkte } from "./saisonBoard";
@@ -384,13 +385,22 @@ export function createSupabaseStore() {
 
     // Nur übergebene Felder ändern. Gesäubert wird auch hier — die DB-Policy
     // erlaubt zwar nur das eigene Profil, prüft aber keine Inhalte.
-    async updateProfile(userId, { displayName, avatar, geburtsdatum } = {}) {
+    async updateProfile(userId, { displayName, avatar, geburtsdatum, beschreibung } = {}) {
       const patch = {};
       if (displayName !== undefined) {
         const name = sanitizeDisplayName(displayName);
         if (name) patch.display_name = name;
       }
       if (avatar !== undefined) patch.avatar = sanitizeAvatar(avatar);
+      // 🔴 Die Beschreibung liegt in `profiles` und damit OEFFENTLICH — anders
+      // als das Geburtsdatum direkt darunter. Das ist Absicht: wer sie
+      // schreibt, weiss, dass alle sie lesen. Eine private
+      // Selbstbeschreibung waere ein Widerspruch.
+      // ⚠️ Leerer Text wird zu `null`, damit sich eine Beschreibung wieder
+      // entfernen laesst.
+      if (beschreibung !== undefined) {
+        patch.beschreibung = sanitizeBeschreibung(beschreibung) || null;
+      }
       // ⛔ Kein Pflichtfeld (KT9): `null` muss durchgehen, damit sich eine
       // einmal gemachte Angabe wieder entfernen laesst.
       // 🔴 Das Geburtsdatum liegt in `profile_privat`, NICHT in `profiles` —
@@ -406,7 +416,7 @@ export function createSupabaseStore() {
       if (!Object.keys(patch).length) return this.getProfile(userId);
       const data = orThrow(await sb
         .from("profiles").update(patch).eq("id", userId)
-        .select("id, display_name, avatar").maybeSingle());
+        .select("id, display_name, avatar, beschreibung").maybeSingle());
       return data ? { ...data, avatar: sanitizeAvatar(data.avatar) } : null;
     },
     async listRoundsForUser(userId) {
