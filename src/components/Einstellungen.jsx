@@ -12,6 +12,7 @@ import {
   VORBELEGUNGEN, VORBELEGUNG_LABEL, VORBELEGUNG_HINWEIS,
   MAX_VERGLEICH, toggleVergleich, vergleichFuer,
 } from "@/lib/prefs";
+import { MEHRFACH_MODI } from "@/lib/mehrfachTipp";
 import { istMoeglich, spuere } from "@/lib/haptik";
 import { useAuth } from "@/components/AuthProvider";
 import BackLink from "@/components/BackLink";
@@ -109,6 +110,32 @@ export default function Einstellungen() {
               der Einblendung verlinkt genau hierher. */}
           <PrefSection meta={PREF_META.zwischenabrechnung} value={prefs.zwischenabrechnung}
             onChange={(v) => setPref("zwischenabrechnung", v)} art="zwischenabrechnung" />
+
+          <div style={{ height: 1, background: C.line, margin: "22px 0" }} />
+
+          {/* 🔴 Andi, 29.08.2026: „wenn man in mehreren Tipprunden gleichzeitig
+              drin ist, dass bei den Spielen wo sie sich überschneiden diese
+              Tippabgaben für alle Tipprunden eingetragen werden … den Schalter
+              kann man im Anzeigehauptmenü auch entfernen bzw diese Einstellung
+              auch abändern, sodass jede Tipprunde einzeln betippt wird auch
+              wenns die gleichen Spiele sind".
+
+              ⚠️ Zwei Einstellungen, weil es zwei Fragen sind: WAS soll
+              standardmäßig passieren, und will ich darüber überhaupt gefragt
+              werden. Sie hängen NICHT voneinander ab — wer „einzeln" bevorzugt
+              und den Schalter behält, kann im Einzelfall trotzdem verteilen.
+
+              ⚠️ Kein `art`: eine Vorschau gibt es hier bewusst nicht. Was
+              passiert, hängt an den anderen Runden des Nutzers, und die kennt
+              ein Vorschau-Bauteil nicht. Eine erfundene Beispielrunde wäre
+              schlechter als keine. */}
+          <PrefSection meta={PREF_META.mehrfachTipp} value={prefs.mehrfachTipp}
+            onChange={(v) => setPref("mehrfachTipp", v)}
+            stufen={MEHRFACH_MODI} labels={{ alle: "Für alle", einzeln: "Einzeln" }} />
+
+          <PrefSection meta={PREF_META.mehrfachSchalter} value={prefs.mehrfachSchalter}
+            onChange={(v) => setPref("mehrfachSchalter", v)}
+            stufen={["an", "aus"]} labels={{ an: "Anzeigen", aus: "Ausblenden" }} />
 
           {/* 🔴 Mit wem vergleiche ich mich? Eine PERSÖNLICHE Wahl und keine
               Regel der Runde — der Admin hat damit nichts zu tun, und zwei
@@ -309,18 +336,23 @@ export default function Einstellungen() {
   );
 }
 
-function PrefSection({ meta, value, onChange, art = null }) {
+// ⚠️ `stufen` und `labels` sind Parameter mit Vorgabe, damit hier KEINE
+// zweite, fast gleiche Fassung entsteht. Die neuen Einstellungen (Mehrfach-
+// Tipp) haben eigene Stufen — „alle/einzeln" statt „voll/dezent/aus" —,
+// sonst aber denselben Aufbau. Zwei Komponenten dafür wären zwei Stellen,
+// an denen man künftig dasselbe ändern muss.
+function PrefSection({ meta, value, onChange, art = null, stufen = LEVELS, labels = LEVEL_LABEL }) {
   return (
     <div style={{ marginTop: 22 }}>
       <div style={{ fontSize: "0.9375rem", fontWeight: 700 }}>{meta.title}</div>
       <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, lineHeight: 1.5 }}>{meta.hint}</div>
       <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-        {LEVELS.map((lv) => (
+        {stufen.map((lv) => (
           <button key={lv} onClick={() => onChange(lv)} style={{
             ...TAPZIEL, flex: 1, cursor: "pointer", fontSize: "0.8125rem", fontWeight: 700, padding: "9px 0", borderRadius: RUND.karte,
             background: value === lv ? C.akzent : C.surface, color: value === lv ? C.ink : C.muted,
             border: `1px solid ${value === lv ? C.akzent : C.line}`, fontFamily: "inherit",
-          }}>{LEVEL_LABEL[lv]}</button>
+          }}>{labels[lv] ?? lv}</button>
         ))}
       </div>
       <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 8, lineHeight: 1.5 }}>{meta.levels[value]}</div>

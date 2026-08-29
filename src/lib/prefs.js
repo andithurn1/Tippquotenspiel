@@ -132,10 +132,20 @@ export const HAPTIK_HINWEIS = {
 // Vorschlag, und wer schnell tippt, nimmt ihn. Andi hat „als option" gesagt.
 export { VORBELEGUNGEN, VORBELEGUNG_LABEL, VORBELEGUNG_HINWEIS } from "./vorbelegung";
 
+// 🔴 Die Modi kommen AUS `mehrfachTipp.js` und werden hier nicht noch einmal
+// aufgeschrieben. Zwei Listen derselben Möglichkeiten laufen irgendwann
+// auseinander, und dann nimmt die Einstellung einen Wert an, den die Logik
+// nicht kennt.
+import { MEHRFACH_MODI, DEFAULT_MEHRFACH } from "./mehrfachTipp";
+
+// Ob der Schalter in der Tippabgabe überhaupt auftaucht. Andi, 29.08.2026:
+// „den Schalter kann man im Anzeigehauptmenü auch entfernen".
+const MEHRFACH_SCHALTER = ["an", "aus"];
 export const DEFAULT_PREFS = {
   abrechnung: "voll", vorschau: "voll", zwischenabrechnung: "voll",
   startScreen: "menu", vergleich: {}, bewegung: "voll", rasterWeite: "raster",
   haptik: "an", vorbelegung: DEFAULT_VORBELEGUNG,
+  mehrfachTipp: DEFAULT_MEHRFACH, mehrfachSchalter: "an",
 };
 
 // Nur intern: `sanitizePrefs`, `toggleVergleich` und `vergleichFuer` benutzen
@@ -173,6 +183,33 @@ export const vergleichFuer = (prefs, roundId) =>
 
 // Texte für den Einstellungs-Screen.
 export const PREF_META = {
+  // 🔴 Andi, 29.08.2026: „wenn man in mehreren Tipprunden gleichzeitig drin
+  // ist, dass bei den Spielen wo sie sich überschneiden diese Tippabgaben für
+  // alle Tipprunden eingetragen werden … den Schalter kann man im
+  // Anzeigehauptmenü auch entfernen bzw diese Einstellung auch abändern,
+  // sodass jede Tipprunde einzeln betippt wird auch wenns die gleichen Spiele
+  // sind".
+  //
+  // ⚠️ ZWEI Einstellungen und nicht eine, weil es zwei verschiedene Fragen
+  // sind: WAS soll standardmäßig passieren, und will ich darüber überhaupt
+  // gefragt werden. Wer „einzeln" bevorzugt, aber den Schalter behält, kann
+  // im Einzelfall trotzdem verteilen — und umgekehrt.
+  mehrfachTipp: {
+    title: "Mehrere Tipprunden — dasselbe Spiel",
+    hint: "Wenn ein Spiel in mehreren deiner Runden läuft: ein Tipp für alle, oder jede Runde für sich.",
+    levels: {
+      alle: "Ein Tipp zählt in allen Runden, in denen das Spiel läuft und er dort zulässig ist.",
+      einzeln: "Jede Runde wird einzeln getippt, auch wenn es dieselben Spiele sind.",
+    },
+  },
+  mehrfachSchalter: {
+    title: "Der Schalter in der Tippabgabe",
+    hint: "Ob unter dem Tipp ein Schalter steht, mit dem du die Verteilung für DIESES eine Spiel umstellst.",
+    levels: {
+      an: "Schalter anzeigen — je Spiel entscheidbar.",
+      aus: "Kein Schalter. Es gilt still, was oben eingestellt ist.",
+    },
+  },
   abrechnung: {
     title: "Abrechnung — Punkte-Mathematik",
     hint: "Wie viel von der Berechnung du nach dem Spiel siehst (Sieger-Boden, Nähebonus, Kombi, Distanz-Leiter).",
@@ -219,5 +256,7 @@ export function sanitizePrefs(p = {}) {
     rasterWeite: RASTER_WEITEN.includes(src.rasterWeite) ? src.rasterWeite : DEFAULT_PREFS.rasterWeite,
     haptik: HAPTIK_STUFEN.includes(src.haptik) ? src.haptik : DEFAULT_PREFS.haptik,
     vorbelegung: _VORBELEGUNGEN.includes(src.vorbelegung) ? src.vorbelegung : DEFAULT_PREFS.vorbelegung,
+    mehrfachTipp: MEHRFACH_MODI.includes(src.mehrfachTipp) ? src.mehrfachTipp : DEFAULT_PREFS.mehrfachTipp,
+    mehrfachSchalter: MEHRFACH_SCHALTER.includes(src.mehrfachSchalter) ? src.mehrfachSchalter : DEFAULT_PREFS.mehrfachSchalter,
   };
 }

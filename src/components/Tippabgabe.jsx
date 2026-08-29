@@ -38,6 +38,8 @@ import { sperrenFuer, beschreibeEingriff, freischaltStand } from "@/lib/sperrEin
 import { wirkungsVorgaenge } from "@/lib/ereignisse";
 import { startErgebnis, FESTER_START } from "@/lib/vorbelegung";
 import { getStore } from "@/lib/store";
+import { spieltagStarts } from "@/lib/tippfenster";
+import { verteilung, sanitizeMehrfach, schalterText } from "@/lib/mehrfachTipp";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -313,6 +315,65 @@ export default function Tippabgabe({ matchId }) {
       .catch(() => {});
     return () => { live = false; };
   }, [roundId]);
+
+  // ── 🔴 MEHRFACH-TIPP: dasselbe Spiel in mehreren Runden ─────
+  //
+  // Andi, 29.08.2026: „wenn man in mehreren Tipprunden gleichzeitig drin ist,
+  // dass bei den Spielen wo sie sich überschneiden diese Tippabgaben für alle
+  // Tipprunden eingetragen werden … den Schalter kann man im Anzeigehauptmenü
+  // auch entfernen bzw diese Einstellung auch abändern, sodass jede Tipprunde
+  // einzeln betippt wird auch wenns die gleichen Spiele sind".
+  //
+  // ⚠️ Geladen wird EINMAL je Spiel: es sind `listRoundsForUser` plus je Runde
+  // die Spielliste, und die ändern sich während einer Tippabgabe nicht.
+  //
+  // ⚠️ Die Hooks stehen HIER OBEN und nicht unten beim Tipp-Aufbau — weiter
+  // unten liegt eine vorzeitige Rückgabe (Spiel nicht gefunden), und ein Hook
+  // dahinter wäre ein bedingter Hook.
+  const [andereRunden, setAndereRunden] = useState([]);
+  const [mehrfachHier, setMehrfachHier] = useState(null);
+  const [mehrfachBericht, setMehrfachBericht] = useState(null);
+  useEffect(() => {
+    let live = true;
+    const mid = match?.snapshot?.matchId ?? match?.id ?? null;
+    if (!user?.id || !mid) { setAndereRunden([]); return undefined; }
+    (async () => {
+      const store = getStore();
+      const alle = await store.listRoundsForUser(user.id).catch(() => []);
+      const treffer = [];
+      for (const r of (alle ?? [])) {
+        if (!r?.id || r.id === roundId) continue;
+        // ⚠️ VOLL geladen, obwohl hier nur Kennung und Anpfiff gebraucht
+        // werden — und das ist eine bewusste Entscheidung, keine
+        // Nachlässigkeit. `npm run schlank` prüft je DATEI, ob ein Screen
+        // schlank lädt und trotzdem den Schnappschuss anfasst. Tippabgabe
+        // braucht ihn für die eigene Runde zwingend (Raster, Torschützen,
+        // Nähe). Ein schlanker Ladeaufruf an DIESER Stelle machte die Datei für
+        // den Wächter zu einem Screen, der beides tut — und der Wächter
+        // könnte einen echten Fehler nicht mehr von diesem Sonderfall
+        // unterscheiden.
+        //
+        // 🔴 Einen Wächter weichzuklopfen, damit der eigene Code durchgeht,
+        // ist die teuerste Abkürzung im Haus. Der Preis hier ist klein und
+        // begrenzt: nur die Runden, in denen der Nutzer wirklich Mitglied
+        // ist, und nur beim Öffnen einer Tippkarte.
+        const spiele = await store.listRoundMatches(r.id).catch(() => []);
+        // Enthält DIESE Runde das Spiel überhaupt? Nur dann ist sie gemeint.
+        if (!(spiele ?? []).some((m) => (m.matchId ?? m.id) === mid)) continue;
+        treffer.push({
+          id: r.id, name: r.name ?? "",
+          rules: r.rules ?? DEFAULT_RULES,
+          // ⚠️ Die Spieltag-Starts DIESER Runde. `tippStatus` braucht sie für
+          // Runden, deren Fenster am Spieltag hängt statt am Anpfiff — ohne
+          // sie stünde in der Vorschau „wird eingetragen“, und `saveTip`
+          // lehnte danach ab. Eine Vorschau, die lügt, ist schlimmer als keine.
+          starts: spieltagStarts(spiele ?? []),
+        });
+      }
+      if (live) setAndereRunden(treffer);
+    })();
+    return () => { live = false; };
+  }, [user?.id, roundId, match?.snapshot?.matchId, match?.id]);
 
   // Eigene Tipps laden (für belegte Ranking-Gewichte am selben Spieltag) und
   // ein evtl. schon gesetztes Gewicht/den Joker dieses Spiels vorbelegen.
@@ -659,6 +720,22 @@ export default function Tippabgabe({ matchId }) {
     };
     return `linear-gradient(90deg, ${streifen(vf.heim.alle, 0, 50)}, ${streifen(vf.gast.alle, 50, 100)})`;
   })();
+
+  // Je Spiel umschaltbar; die Vorgabe kommt aus dem Anzeigemenü.
+  const mehrfachModus = mehrfachHier ?? sanitizeMehrfach(prefs.mehrfachTipp);
+  // ⚠️ Der VORSCHAU-Tipp trägt nur Ergebnis und Torschützen. Joker, Duell,
+  // Schutz und Freischaltung bleiben absichtlich draußen — sie hängen am
+  // Kontingent DIESER Runde. Ein mitgereister Joker würde in der anderen
+  // Runde still einen Joker verbrauchen, den man dort nie gesetzt hat.
+  const mehrfachTippObjekt = { home: h, away: a, goals: goalsAusPicks(picks, scorer) };
+  const verteilt = verteilung({
+    runden: andereRunden, match, tip: mehrfachTippObjekt, snap: SNAP,
+    jetzt: Date.now(), modus: mehrfachModus,
+  });
+  const mehrfachSatz = schalterText(verteilt);
+  // Der Schalter ist ausblendbar (Anzeigemenü) — dann gilt still, was oben
+  // eingestellt ist.
+  const zeigeMehrfachSchalter = prefs.mehrfachSchalter !== "aus" && andereRunden.length > 0;
 
 
   // 🔴 NICHT `SNAP.correctScore[h]?.[a]` — das war eine zweite Wahrheit.
@@ -1356,6 +1433,45 @@ export default function Tippabgabe({ matchId }) {
       });
       setSaveState("saved");
       melder.gespeichert("Tipp gespeichert");
+
+      // ── 🔴 Und jetzt die anderen Runden ───────────────────
+      //
+      // ⚠️ ERST NACHDEM die eigene Runde gespeichert ist. Ein Fehler hier darf
+      // den Haupt-Tipp nicht in Frage stellen — der steht, und das hat der
+      // Nutzer gerade gelesen.
+      //
+      // ⚠️ Es geht NUR das Nackte mit: Ergebnis und Torschützen. Joker, Duell,
+      // Schutz und Freischaltung bleiben hier — sie hängen am Kontingent
+      // DIESER Runde. Ein mitgereister Joker verbrauchte in der anderen Runde
+      // einen Joker, den dort nie jemand gesetzt hat.
+      //
+      // 🔴 Und jede Runde wird EINZELN über `saveTip` geschrieben, nicht in
+      // einem Rutsch: nur so laufen die dortigen Prüfungen (Tipp-Fenster,
+      // Duell-Regeln) wirklich. `mehrfachTipp.js` ist die Vorschau, `saveTip`
+      // die letzte Instanz — wenn beide sich uneinig sind, gewinnt `saveTip`,
+      // und der Nutzer erfährt es.
+      if (verteilt.mit.length) {
+        const gelungen = [], misslungen = [];
+        for (const ziel of verteilt.mit) {
+          try {
+            await getStore().saveTip({
+              roundId: ziel.roundId, matchId: SNAP.matchId, userId: user.id,
+              tip: { home: h, away: a, goals }, snapshot: SNAP,
+            });
+            gelungen.push(ziel.name || ziel.roundId);
+          } catch (e) {
+            misslungen.push({ name: ziel.name || ziel.roundId, grund: String(e?.message ?? e) });
+          }
+        }
+        setMehrfachBericht({ gelungen, misslungen });
+        // ⚠️ Die Meldung nennt ZAHLEN. „Auch anderswo gespeichert" wäre nicht
+        // überprüfbar; „in 2 weiteren Runden" ist es.
+        if (gelungen.length && !misslungen.length) {
+          melder.gespeichert(`Auch in ${gelungen.length} weitere${gelungen.length === 1 ? "r" : "n"} Runde${gelungen.length === 1 ? "" : "n"} eingetragen`);
+        } else if (misslungen.length) {
+          melder.fehler(`${misslungen.length} weitere Runde${misslungen.length === 1 ? "" : "n"} nicht eingetragen — siehe Hinweis`);
+        }
+      }
     } catch {
       setSaveState("error");
       // ⚠️ Der Text nennt die FOLGE, nicht den technischen Grund: „Tipp nicht
@@ -1672,6 +1788,94 @@ export default function Tippabgabe({ matchId }) {
                   Steht deine Erstwahl ~1 h vor Anpfiff nicht in der Aufstellung, rückt der Backup automatisch nach.
                 </p>
               </Section>
+            )}
+
+            {/* ── 🔴 MEHRFACH-TIPP ────────────────────────────
+                Andi, 29.08.2026: der Schalter gehört „unter dem Spielstand bzw
+                wenn mit Torschützen ist dann unter Torschützen".
+
+                ⚠️ Genau DESHALB steht er hier: direkt hinter dem
+                Torschützen-Abschnitt. Gibt es keine Torschützen, entfällt der
+                Abschnitt und der Schalter rutscht von selbst unter den
+                Spielstand — eine Stelle statt zwei Sonderfällen.
+
+                ⚠️ Er erscheint NUR, wenn dieses Spiel wirklich in einer
+                anderen Runde läuft. Ein Schalter ohne Wirkung ist schlimmer
+                als keiner: er behauptet eine Möglichkeit, die es nicht gibt. */}
+            {zeigeMehrfachSchalter && (
+              <div style={{
+                marginTop: 16, background: C.surface, border: `1px solid ${C.line}`,
+                borderRadius: RUND.karte, padding: "12px 14px",
+              }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                  <input type="checkbox" checked={mehrfachModus === "alle"} disabled={gesperrt}
+                    onChange={(e) => setMehrfachHier(e.target.checked ? "alle" : "einzeln")}
+                    style={{ width: 20, height: 20, accentColor: C.akzent, cursor: "pointer" }} />
+                  <span style={{ fontSize: "0.875rem", fontWeight: 700 }}>
+                    Für alle meine Runden eintragen
+                  </span>
+                </label>
+                {mehrfachSatz && (
+                  <div style={{ fontSize: "0.75rem", color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
+                    {mehrfachSatz}
+                  </div>
+                )}
+
+                {/* Runden, in denen das Spiel läuft, der Tipp aber gerade nicht
+                    angenommen wird — mit GRUND, nicht als stilles Weglassen. */}
+                {verteilt.zu.map((r) => (
+                  <div key={r.roundId} style={{
+                    fontSize: "0.75rem", color: C.muted, marginTop: 6, paddingLeft: 8,
+                    borderLeft: `2px solid ${C.line}`, lineHeight: 1.4,
+                  }}>
+                    <strong>{r.name}</strong>: {r.grund}
+                  </div>
+                ))}
+
+                {/* 🔴 Andi, 29.08.2026: „gut wenn s iwo ne ungültigkeit gibt,
+                    gibts nen hinweis dass der eben doch angepasst werden muss
+                    bzw. kriegt man dann die option direkt bei der anderen
+                    Tipprunde des einzustellen, sodass man maximal wenig
+                    wiederholen muss".
+
+                    ⚠️ Deshalb steht hier nicht nur die Absage, sondern was
+                    dort schon passen WÜRDE — und der Weg dorthin. Der
+                    Vorschlag wird NICHT gespeichert; er ist eine Vorbelegung. */}
+                {verteilt.unpassend.map((r) => (
+                  <div key={r.roundId} style={{
+                    fontSize: "0.75rem", marginTop: 8, paddingLeft: 8,
+                    borderLeft: `2px solid ${C.coral}`, lineHeight: 1.4,
+                  }}>
+                    <div style={{ color: C.coral, fontWeight: 700 }}>{r.name}</div>
+                    <div style={{ color: C.muted, marginTop: 2 }}>{r.grund}</div>
+                    <div style={{ color: C.muted, marginTop: 2 }}>
+                      {r.fehlt > 0
+                        ? `Dort anpassen — Ergebnis und ${r.vorschlag.goals.home.length + r.vorschlag.goals.away.length} Name(n) stehen schon, ${r.fehlt} fehlt noch.`
+                        : "Dort anpassen — Ergebnis und die dort zulässigen Namen stehen schon."}
+                    </div>
+                    <Link href={`/tippen?spiel=${SNAP.matchId}&runde=${r.roundId}`}
+                      style={{ ...TAPZIEL_QUADRAT, display: "inline-flex", alignItems: "center",
+                        marginTop: 6, fontSize: "0.75rem", fontWeight: 700, color: C.akzent }}>
+                      In „{r.name}" anpassen →
+                    </Link>
+                  </div>
+                ))}
+
+                {/* Was beim letzten Speichern wirklich passiert ist. ⚠️ Kommt
+                    aus dem Speichervorgang, nicht aus der Vorschau — `saveTip`
+                    ist die letzte Instanz, und wenn sie anders entscheidet als
+                    die Vorschau, steht das HIER und nicht in der Vorschau. */}
+                {mehrfachBericht?.misslungen?.length > 0 && (
+                  <div style={{
+                    fontSize: "0.75rem", color: C.coral, marginTop: 8, paddingLeft: 8,
+                    borderLeft: `2px solid ${C.coral}`, lineHeight: 1.4,
+                  }}>
+                    {mehrfachBericht.misslungen.map((m) => (
+                      <div key={m.name}><strong>{m.name}</strong>: {m.grund}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Tipp-Vorschau (je nach persönlicher Einstellung) */}

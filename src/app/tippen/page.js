@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Spielwahl from "@/components/Spielwahl";
 import Tippabgabe from "@/components/Tippabgabe";
+import { useCurrentRound } from "@/components/RoundProvider";
 
 // ============================================================
 //  EINE Seite für Spielwahl UND Tippabgabe (26.08.2026)
@@ -32,6 +33,25 @@ import Tippabgabe from "@/components/Tippabgabe";
 function Auswahl() {
   const params = useSearchParams();
   const spiel = params.get("spiel");
+  // 🔴 `runde` kommt aus dem Mehrfach-Tipp: „In ‚Büro' anpassen" springt zu
+  // DIESEM Spiel in EINER ANDEREN Runde (Andi, 29.08.2026, „sodass man
+  // maximal wenig wiederholen muss").
+  //
+  // ⚠️ Das wechselt die aktive Runde für die ganze App, nicht nur für diesen
+  // Screen — `setRoundId` merkt sie sich. Das ist gewollt: wer dort anpasst,
+  // ist danach in dieser Runde, und ein Screen, der heimlich eine andere Runde
+  // zeigt als das Menü, wäre schlimmer als der Wechsel.
+  const runde = params.get("runde");
+  const { roundId, setRoundId } = useCurrentRound();
+  useEffect(() => {
+    if (runde && runde !== roundId) setRoundId(runde);
+  }, [runde, roundId, setRoundId]);
+
+  // ⚠️ Solange die Runde noch nicht gewechselt ist, wird NICHT gerendert:
+  // sonst lädt die Tippabgabe einen Wimpernschlag lang die alte Runde und
+  // zeigt deren Regelwerk — genau die Verwechslung, die der Mehrfach-Tipp
+  // vermeiden soll.
+  if (runde && runde !== roundId) return null;
   return spiel ? <Tippabgabe matchId={spiel} /> : <Spielwahl />;
 }
 

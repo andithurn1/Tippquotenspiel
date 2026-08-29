@@ -21,6 +21,7 @@ describe("sanitizePrefs", () => {
           abrechnung: lv, vorschau: lv, zwischenabrechnung: lv, startScreen: "menu",
           vergleich: {}, bewegung: "voll", rasterWeite: "raster", haptik: "an",
           vorbelegung: "fest",
+          mehrfachTipp: "alle", mehrfachSchalter: "an",
         });
     }
   });
