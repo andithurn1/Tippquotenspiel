@@ -162,8 +162,15 @@ export default function Trophaeenschrank() {
       for (const r of (runden ?? [])) {
         if (!r?.id) continue;
         const eintraege = await store.getRoundEntries(r.id).catch(() => []);
+        // ⚠️ Der Rang-Verlauf kommt aus dem Store und wird NICHT hier
+        // nachgebaut: nur `scoreLeaderboardHistory` weiß, wie ein
+        // Zwischenstand zustande kommt (Saisonform, Aufholhilfe,
+        // Ereignis-Wirkungen, Duelle). Ohne ihn gäbe es Aufholjagd und
+        // Letzten Helden nie.
+        const verlauf = await store.getLeaderboardHistory(r.id).catch(() => null);
         teile.push(bilanzAus({
           eintraege: eintraege ?? [], userId: user.id, rules: r.rules ?? DEFAULT_RULES,
+          verlauf,
         }));
         // ⚠️ Nur für die EIGENEN Runden nachladen. Die Mitgliederzahl fremder
         // Runden beantwortet keine Frage des Schranks, und jeder Aufruf kostet.

@@ -34,8 +34,6 @@ import { spieltageChronologisch, spieltagKey } from "./spieltag";
 export const LUECKEN = {
   saisonsBeendet: "Es gibt noch keine einzige abgeschlossene Saison, an der man es ablesen könnte.",
   spottEmpfangen: "SP1 ist nicht gebaut.",
-  aufholsprung: "Braucht den Rang-Verlauf (`scoreLeaderboardHistory`).",
-  letzterUndWeiter: "Braucht den Spieltags-Letzten UND den Tipp danach — der Rang-Verlauf liegt nicht in den Einträgen.",
 };
 
 // Längste Folge, in der `gilt` für aufeinanderfolgende Spieltage wahr ist.
@@ -62,6 +60,7 @@ function laengsteFolge(reihenfolge, gilt) {
 // ============================================================
 export function bilanzAus({
   eintraege = [], userId, rules = DEFAULT_RULES, regelnFuer = null, schluessel = null,
+  verlauf = null,
 } = {}) {
   const bilanz = {};
   if (!userId) return bilanz;
@@ -216,6 +215,74 @@ export function bilanzAus({
     if (getippt !== 0 && getippt === favorit) aufFavorit.add(keyVon(b.e));
   }
   bilanz.favoritenSerie = laengsteFolge(reihenfolge, (s) => aufFavorit.has(s.key));
+
+
+  // ── 🔴 Der Rang-Verlauf ─────────────────────────────────
+  //
+  // ⚠️ Er kommt als Parameter herein und wird hier NICHT gerechnet:
+  // `scoreLeaderboardHistory` ist die eine Stelle, die weiß, wie ein
+  // Zwischenstand zustande kommt (Saisonform, Aufholhilfe, Ereignis-Wirkungen,
+  // Duelle). Ihn nachzubauen hieße, an all dem vorbeizurechnen.
+  //
+  // Form: `[{ wettbewerb, matchday, board: [{ userId, total }] }]`.
+  const stationen = (Array.isArray(verlauf) ? verlauf : [])
+    .filter((v) => Array.isArray(v?.board) && v.board.length);
+
+  if (stationen.length) {
+    // Position je Station: 0 ist Erster. Sortiert wird nach Punkten, nicht auf
+    // eine mitgelieferte Reihenfolge vertraut — ein Verlauf darf anders
+    // sortiert ankommen, ohne dass die Abzeichen still falsch werden.
+    //
+    // ⚠️ Der Schlüssel wird mit DERSELBEN Funktion gebaut wie bei den Tipps
+    // (`keyVon`). Ihn hier von Hand zusammenzusetzen war der erste Versuch —
+    // `"BL|2"` gegen `"BL#2"`, und „Letzter Held" wurde nie vergeben.
+    const platz = stationen.map((v) => {
+      const sortiert = [...v.board].sort((a, b) => (b.total ?? 0) - (a.total ?? 0));
+      const i = sortiert.findIndex((z) => z.userId === userId);
+      return { i, n: sortiert.length, key: keyVon(v) };
+    });
+
+    // 🔴 Aufholjagd — und hier steckte ein Denkfehler in der ersten Fassung.
+    //
+    // „War in der unteren Hälfte, ist später in der oberen" klingt richtig und
+    // ist wertlos: wer je unten war und irgendwann oben landet, erfüllt es
+    // IMMER, egal wie lange er gebraucht hat. Es gibt dann stets eine Station
+    // fünf Spieltage vor dem Überholen, an der er noch unten stand.
+    //
+    // ⚠️ Gemessen wird deshalb der SPRUNG selbst: mindestens das halbe Feld
+    // an Plätzen gutgemacht, innerhalb von fünf Stationen, und am Ende in der
+    // oberen Hälfte. Das ist eine Jagd; das andere war nur Ausdauer.
+    //
+    // ⏳ Die Schwelle war zuerst ein Drittel — nachgemessen war das zu weich:
+    // wer sich in einem Zwölferfeld Platz um Platz hocharbeitet, kam damit
+    // durch. Die Zahl selbst gehört ins Balancing und damit in die Endphase.
+    const FENSTER = 5, MIN_LEUTE = 4;
+    let sprung = false;
+    for (let i = 0; i < platz.length && !sprung; i += 1) {
+      const a = platz[i];
+      if (a.i < 0 || a.n < MIN_LEUTE) continue;
+      const noetig = Math.ceil(a.n / 2);
+      for (let j = i + 1; j <= i + FENSTER && j < platz.length; j += 1) {
+        const b = platz[j];
+        if (b.i < 0 || b.n < MIN_LEUTE) continue;
+        if (a.i - b.i >= noetig && b.i < b.n / 2) { sprung = true; break; }
+      }
+    }
+    bilanz.aufholsprung = sprung;
+
+    // Letzter Held: Spieltags-Letzter — und beim nächsten Mal wieder dabei.
+    // ⚠️ Auch hier eine Mindestgröße: zu zweit ist „Letzter" nur das andere
+    // Wort für „verloren".
+    let held = false;
+    for (let i = 0; i < platz.length - 1 && !held; i += 1) {
+      const a = platz[i];
+      if (a.i < 0 || a.n < 3 || a.i !== a.n - 1) continue;
+      // Hat er am NÄCHSTEN Spieltag wieder getippt? Das ist der Punkt des
+      // Abzeichens — nicht das Letztsein, sondern das Weitermachen.
+      if (getipptAn.has(platz[i + 1].key)) held = true;
+    }
+    bilanz.letzterUndWeiter = held;
+  }
 
   return bilanz;
 }

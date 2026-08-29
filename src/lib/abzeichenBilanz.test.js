@@ -12,7 +12,7 @@ let lauf = 0;
 const eintrag = ({ userId, matchday, tip, result = ERGEBNIS, ersatz = false }) => {
   lauf += 1;
   return {
-    userId, name: userId, matchday, matchId: `m${lauf}`,
+    userId, name: userId, matchday, matchId: `m${lauf}`, wettbewerb: "BL",
     snapshot: SNAP, result, tip, ersatz,
   };
 };
@@ -136,7 +136,7 @@ describe("Die Lücken", () => {
   // ⚠️ Die Zahl, die den Stand ehrlich hält. Sie darf nur SINKEN — wer ein
   // Signal anschließt, streicht die Lücke.
   it("⚠️ die Zahl der Lücken ist festgehalten und darf nur kleiner werden", () => {
-    expect(Object.keys(LUECKEN).length).toBeLessThanOrEqual(4);
+    expect(Object.keys(LUECKEN).length).toBeLessThanOrEqual(2);
   });
 });
 
@@ -411,5 +411,95 @@ describe("Torschützen und Außenseiter", () => {
       snapshot: SNAP_AUSSEN,
     }];
     expect(bilanzAus({ eintraege: e, userId: "a" }).favoritenSerie).toBe(0);
+  });
+});
+
+// ============================================================
+//  🔴 DER RANG-VERLAUF
+// ============================================================
+describe("Aufholjagd und Letzter Held", () => {
+  const station = (matchday, board) => ({ wettbewerb: "BL", matchday, board });
+  const vier = (a, b, c, d) => [
+    { userId: "a", total: a }, { userId: "b", total: b },
+    { userId: "c", total: c }, { userId: "d", total: d },
+  ];
+
+  it("ohne Verlauf bleibt beides bei nein", () => {
+    const b = bilanzAus({ eintraege: [], userId: "a" });
+    expect(b.aufholsprung).toBeUndefined();
+    expect(b.letzterUndWeiter).toBeUndefined();
+  });
+
+  it("erkennt den Sprung von unten nach oben", () => {
+    const verlauf = [
+      station(1, vier(0, 90, 80, 70)),     // a ist Letzter
+      station(2, vier(200, 95, 85, 75)),   // a ist Erster
+    ];
+    expect(bilanzAus({ eintraege: [], userId: "a", verlauf }).aufholsprung).toBe(true);
+  });
+
+  it("wer oben war, hat nichts aufgeholt", () => {
+    const verlauf = [station(1, vier(200, 90, 80, 70)), station(2, vier(300, 95, 85, 75))];
+    expect(bilanzAus({ eintraege: [], userId: "a", verlauf }).aufholsprung).toBe(false);
+  });
+
+  // 🔴 In einer Runde zu dritt ist „untere Hälfte" eine Person, und der Sprung
+  // passiert bei jedem Spieltag von allein. Dieselbe Überlegung wie die
+  // Mindestgröße beim Alleingang.
+  it("🔴 in einer Kleinstrunde gibt es keine Aufholjagd", () => {
+    const drei = (a, b, c) => [
+      { userId: "a", total: a }, { userId: "b", total: b }, { userId: "c", total: c },
+    ];
+    const verlauf = [station(1, drei(0, 90, 80)), station(2, drei(200, 95, 85))];
+    expect(bilanzAus({ eintraege: [], userId: "a", verlauf }).aufholsprung).toBe(false);
+  });
+
+  // 🔴 Die Prüfung, die den Denkfehler der ersten Fassung fängt: ein
+  // LANGSAMER Aufstieg ist keine Jagd. Wer sich über acht Spieltage Platz um
+  // Platz hocharbeitet, hat nichts aufgeholt — er hat weitergespielt.
+  // 🔴 Die Prüfung, die den Denkfehler der ersten Fassung fängt: ein
+  // LANGSAMER Aufstieg ist keine Jagd. Wer sich Platz um Platz hocharbeitet,
+  // hat nichts aufgeholt — er hat weitergespielt.
+  //
+  // ⚠️ Mit ZWÖLF Spielern, nicht mit vier: in einem Viererfeld ist ein
+  // Drittel gleich zwei Plätze, und die macht man dort an einem guten
+  // Spieltag. Der Unterschied zwischen Jagd und Ausdauer wird erst in einem
+  // größeren Feld überhaupt sichtbar.
+  it("🔴 ein langsamer Aufstieg ist keine Aufholjagd", () => {
+    const zwoelf = (meine) => [
+      { userId: "a", total: meine },
+      ...Array.from({ length: 11 }, (_, k) => ({ userId: `x${k}`, total: (k + 1) * 100 })),
+    ];
+    const verlauf = [];
+    // a klettert je Station um genau einen Platz: 0 → 50 → 150 → 250 …
+    for (let md = 1; md <= 12; md += 1) verlauf.push(station(md, zwoelf(md * 100 - 50)));
+    expect(bilanzAus({ eintraege: [], userId: "a", verlauf }).aufholsprung).toBe(false);
+  });
+  it("verlässt sich nicht auf die Reihenfolge im Board", () => {
+    // Absichtlich falsch herum sortiert — die Punkte entscheiden.
+    const verlauf = [
+      station(1, [{ userId: "a", total: 0 }, { userId: "b", total: 90 },
+        { userId: "c", total: 80 }, { userId: "d", total: 70 }].reverse()),
+      station(2, vier(500, 90, 80, 70)),
+    ];
+    expect(bilanzAus({ eintraege: [], userId: "a", verlauf }).aufholsprung).toBe(true);
+  });
+
+  // 🔴 Der Punkt des Abzeichens ist nicht das Letztsein, sondern das
+  // Weitermachen. Ohne Tipp am nächsten Spieltag gibt es nichts.
+  it("🔴 Letzter Held braucht den Tipp DANACH", () => {
+    const verlauf = [station(1, vier(0, 90, 80, 70)), station(2, vier(0, 95, 85, 75))];
+    // Ohne Einträge hat er am zweiten Spieltag nicht getippt.
+    expect(bilanzAus({ eintraege: [], userId: "a", verlauf }).letzterUndWeiter).toBe(false);
+
+    const e = [eintrag({ userId: "a", matchday: 2, tip: DANEBEN })];
+    const b = bilanzAus({ eintraege: e, userId: "a", verlauf });
+    expect(b.letzterUndWeiter).toBe(true);
+  });
+
+  it("verträgt kaputte Verlaufsdaten", () => {
+    expect(() => bilanzAus({ eintraege: [], userId: "a", verlauf: [null, {}, { board: [] }] }))
+      .not.toThrow();
+    expect(() => bilanzAus({ eintraege: [], userId: "a", verlauf: "kaputt" })).not.toThrow();
   });
 });
