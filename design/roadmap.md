@@ -520,7 +520,22 @@ Seite, kein Vorab-Rendern, und das Blättern aus KT5 funktioniert unverändert
 (es schiebt ohnehin nur die Adresse um). ⚠️ Alte Links müssen umgeleitet
 werden, sonst laufen geteilte Adressen ins Leere.
 
-### ⛔ Blocker 2 — vier API-Routen, die es weiterhin geben MUSS
+### ✅ Blocker 2 ERLEDIGT (nachgemessen 29.08.2026) — vier API-Routen, die es weiterhin geben MUSS
+
+🔴 **Dieser Abschnitt stand als offener Blocker da und ist keiner mehr.**
+Nachgesehen statt weitergeschrieben: `src/lib/apiBasis.js` gibt es, und ALLE
+drei Aufrufe laufen darüber — `AuthProvider.jsx:207` (`/api/account/delete`),
+`store.supabase.js:257` (`/api/matchday/open`) und `:299` (`/api/beitreten`).
+Eine relative `fetch("/api/…")` gibt es im ganzen `src/` nicht mehr.
+
+⚠️ **Was noch fehlt, ist keine Code-Arbeit:** `NEXT_PUBLIC_API_BASIS` muss für
+den App-Build gesetzt werden (im Web bleibt sie leer). `npm run bereit` führt
+sie heute als nicht gesetzt.
+
+*(Der ursprüngliche Text bleibt darunter stehen — er erklärt, warum die vier
+Routen nicht mitwandern können.)*
+
+#### Der ursprüngliche Befund
 
 `/api/account/delete` · `/api/odds` · `/api/matchday/open` ·
 `/api/matchday/auto`. Alle vier brauchen den **service_role-Key** bzw. den

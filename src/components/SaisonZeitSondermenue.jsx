@@ -102,6 +102,37 @@ export default function SaisonZeitSondermenue({ rules, teams = [], onChange }) {
           tippt, entscheidest du — und seit dem gemeinsamen Tippschluss auch,
           wie spät.
         </p>
+
+        {/* 🔴 Andi, 29.08.2026: bei „Ab wann tippbar" muss dabeistehen, dass
+            trotzdem von Hand abgegeben werden muss — das Fenster ist nur eine
+            Bedienhilfe; fürs Nachfüllen ist der Auto-Tipp da.
+
+            ⚠️ Der Satz gehört genau hierhin, weil das Fenster leicht als
+            Automatik missverstanden wird: „ab wann tippbar" klingt, als
+            passierte danach etwas von selbst. Es passiert nichts — es geht nur
+            auf. Wer das am ersten Spieltag merkt, hat ihn verloren.
+
+            ⚠️ Und der Auto-Tipp ist NICHT die Belohnung für eine gute Saison:
+            er hängt an `versaeumnis.maxProSaison`, also an einem festen
+            Kontingent je Spieler. Sonst wäre Nichtstun eine Strategie. */}
+        <div style={{
+          background: `${C.akzent}12`, border: `1px solid ${C.akzent}33`,
+          borderRadius: RUND.karte, padding: "8px 10px", marginBottom: 10,
+        }}>
+          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: C.text }}>
+            Abgegeben wird trotzdem von Hand
+          </div>
+          <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "3px 0 0", lineHeight: 1.45 }}>
+            Das Fenster sagt nur, WANN ein Spiel aufgeht — es tippt nichts für
+            euch. Wer nichts einträgt, hat nichts abgegeben. Für Vergessliche
+            gibt es den <strong>Auto-Tipp</strong> unter „Anschluss, Versäumnis
+            &amp; Saisonform": er füllt einen verpassten Spieltag mit dem
+            wahrscheinlichsten Ergebnis — dem zahmsten Tipp, den es gibt.
+            ⚠️ Er wird nicht über die Saison verdient, sondern hängt an einem
+            festen Kontingent je Spieler. Sonst wäre Nichtstun eine Strategie.
+          </p>
+        </div>
+
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {VORLAUF_STUFEN.map((st) => {
             const an = (rules.tippfenster?.vorlaufStunden ?? 168) === st.stunden;
