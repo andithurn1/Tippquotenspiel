@@ -160,6 +160,13 @@ export default function Account() {
             </span>
           ) : null} />
 
+        {/* 🔴 Andis Ort für die Abzeichen (29.08.2026): „Eingliederung dann
+            bei meinem Account und Fanfarben". Beides ist „das bin ich", im
+            Gegensatz zu „so spielt meine Runde" — deshalb steht der Schrank
+            direkt hinter den Fanfarben und nicht bei den Runden-Einstellungen. */}
+        <Zeile href="/schrank" titel="Trophäenschrank" farbe={C.mint}
+          stand="Abzeichen über alle deine Runden — ohne Punkte, zum Herzeigen" />
+
         {/* ⚠️ Hier stand kurz „Vorschau: voll · Stufe 1" — `prefs.stufe` gibt
             es GAR NICHT, der `?? 1`-Rückfall hat eine erfundene Zahl in die
             Übersicht geschrieben. Genau die Sorte zweite Wahrheit, vor der
