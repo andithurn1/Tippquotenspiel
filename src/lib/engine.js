@@ -51,6 +51,7 @@ import { vorgaengeAusRechten } from "./rechteAusuebung";
 import { sanitizeTippfenster, DEFAULT_TIPPFENSTER } from "./tippfenster";
 import { sanitizeZeitachse, DEFAULT_ZEITACHSE } from "./zeitachse";
 import { DEFAULT_SPOTT, sanitizeSpott } from "./spottPost";
+import { DEFAULT_WEITERKOMMEN, sanitizeWeiterkommen, scoreWeiterkommen } from "./weiterkommen";
 // Spieltags-Identität liegt in einem eigenen, importfreien Modul — sonst gäbe
 // es einen Kreis über `ereignisse.js`, das dieselben Helfer braucht. Die Engine
 // reicht sie weiter, damit bestehende Importe aus "./engine" gültig bleiben.
@@ -133,6 +134,13 @@ export const DEFAULT_RULES = {
       gewicht: 1,
       allowDouble: true, allowBackups: true,
     },
+    // ── Weiterkommen: der eigene Markt für K.-o.-Spiele (KO1) ──
+    // Andi, 29.08.2026, nach meinem Vorschlag: „bei Finalspielen bzw
+    // Rückspielen gibts noch die Tippmöglichkeit wer kommt weiter".
+    // 🔴 Er steht NEBEN dem Ergebnis und ändert es nicht: die Quoten oben
+    // beantworten die 90-Minuten-Frage, und daran wird nicht gerüttelt.
+    // Standard aus, Details in `weiterkommen.js`.
+    weiterkommen: { ...DEFAULT_WEITERKOMMEN },
   },
   oddsMode: "snapshot",
   // Underdog-Boost: zusätzlicher Multiplikator auf den Ergebnis-Teil, wenn das
@@ -612,6 +620,7 @@ export function sanitizeRules(partial = {}) {
         allowDouble: g.allowDouble !== false,
         allowBackups: g.allowBackups !== false,
       },
+      weiterkommen: sanitizeWeiterkommen(src.markets?.weiterkommen),
     },
     oddsMode: src.oddsMode === "average" ? "average" : "snapshot",
     underdogBoost: clamp(num(src.underdogBoost, D.underdogBoost), L.underdogBoost.min, L.underdogBoost.max),
@@ -1477,10 +1486,22 @@ export function scoreTip(tip, actual, snap, rules = DEFAULT_RULES) {
   const afterFlop = favFlop > 0 ? Math.max(0, combined - favFlop) : combined;
   // Modifikatoren ganz zuletzt: skalieren das fertige Ergebnis dieses Spiels.
   const mod = totalModifier(tip, snap, rules, actual);
-  const raw = afterFlop * mod.faktor;
+  // 🔴 Weiterkommen (KO1) kommt NACH den Modifikatoren dazu und wird nicht
+  // von ihnen multipliziert.
+  //
+  // ⚠️ Das ist Absicht und nicht Bequemlichkeit: ein Joker markiert EIN
+  // SPIEL als besonders wichtig — und „wer kommt weiter" ist keine Aussage
+  // über das Spiel, sondern über die Paarung. Ihn mitzuvervielfachen hieße,
+  // dass ein Joker auf das Rückspiel auch die Frage nach der ganzen Runde
+  // aufwertet, und dann hinge an einem Klick doppelt so viel wie gedacht.
+  //
+  // ⚠️ `perGameCap` greift trotzdem: es sitzt in `toDisplay`, also hinter
+  // dieser Addition. Der Markt macht keinen ungedeckelten Kanal auf.
+  const weiter = scoreWeiterkommen(tip, actual, snap, rules);
+  const raw = afterFlop * mod.faktor + weiter;
   return {
     total: toDisplay(raw, rules), raw: +raw.toFixed(1), favFlop: +favFlop.toFixed(1),
-    jokerMult: mod.faktor, modifier: mod,
+    jokerMult: mod.faktor, modifier: mod, weiterkommen: +weiter.toFixed(1),
     ...res, goals,
   };
 }

@@ -5,6 +5,7 @@ import { DEFAULT_RULES, RULE_LIMITS, REGLER_FEINHEITEN, reglerSchritt } from "@/
 import { TIPPEINFLUSS_LIMITS, beschreibeTippEinfluss } from "@/lib/tippEinfluss";
 import { KOMBI_STUFEN, KOMBI_LIMITS, DEFAULT_KOMBI, beschreibeKombi } from "@/lib/kombiBonus";
 import { C, RUND } from "@/lib/theme";
+import { WEITERKOMMEN_LIMITS, sanitizeWeiterkommen } from "@/lib/weiterkommen";
 import { fmtFaktor } from "@/lib/format";
 import { TAPZIEL } from "@/lib/tapziel";
 import { Slider, Toggle, Field, Stepper, GrosseZeile } from "@/components/Eingaben";
@@ -45,6 +46,12 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
 
   const L = RULE_LIMITS;
   const g = rules.markets.goals;
+  // ⚠️ Über `sanitizeWeiterkommen`: ein altes Regelwerk kennt das Feld noch
+  // gar nicht, und `wk.enabled` wäre dann `undefined`.
+  const wk = sanitizeWeiterkommen(rules?.markets?.weiterkommen);
+  const setzeWeiterkommen = (teil) => onChange({
+    markets: { ...rules.markets, weiterkommen: { ...wk, ...teil } },
+  });
   const te = rules.tippEinfluss || DEFAULT_RULES.tippEinfluss;
   const kombi = rules.kombi || DEFAULT_KOMBI;
 
@@ -179,6 +186,41 @@ export default function WertungSondermenue({ rules, empfohleneSkala, onChange })
             </div>
           </div>
         )}
+
+        {/* ── 🔴 WEITERKOMMEN (KO1, Andi 29.08.2026) ────────
+            „bei Finalspielen bzw Rückspielen gibts noch die Tippmöglichkeit
+             wer kommt weiter, und den Hinweis bei den Quoten nach 90 Minuten
+             (der ist bei Nicht-K.-o.-Spielen nicht da)."
+
+            🔴 Ein EIGENER Markt neben dem Ergebnis, kein Eingriff in dieses.
+            Alle Ergebnis-Quoten beantworten die 90-Minuten-Frage; zählte die
+            Verlängerung dort mit, würde gegen ein Raster bewertet, das für 90
+            Minuten gepreist wurde.
+
+            ⚠️ Eingeschaltet heißt „erlaubt", nicht „überall sichtbar": der
+            Tipp erscheint nur bei K.-o.-Spielen, für die es auch eine
+            Marktquote gibt. Ohne Quote gibt es ihn nicht — eine geschätzte
+            wäre eine erfundene Zahl in einer Wertung, die sonst nur
+            Marktpreise benutzt. */}
+        <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 10, paddingTop: 10 }}>
+          <Toggle label="Weiterkommen tippbar (K.-o.-Spiele)" on={wk.enabled === true}
+            onChange={(on) => setzeWeiterkommen({ enabled: on })} />
+          <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "6px 0 0", lineHeight: 1.45 }}>
+            Nur im Rückspiel bzw. Finale, und nur wenn eine Marktquote dafür
+            vorliegt. „Wer kommt weiter" schließt Verlängerung UND
+            Elfmeterschießen ein — anders gibt es diese Quote nicht zu kaufen.
+          </p>
+          {wk.enabled && (
+            <div style={{ marginTop: 10 }}>
+              <Slider label="Weiterkommen zählt" value={wk.gewicht ?? 1}
+                {...WEITERKOMMEN_LIMITS.gewicht}
+                step={reglerSchritt(rules, WEITERKOMMEN_LIMITS.gewicht)}
+                onChange={(v) => setzeWeiterkommen({ gewicht: v })}
+                fmt={(x) => `×${x.toFixed(2)}`}
+                hint="Wiegt den Weiterkommen-Gewinn. ⚠️ Er kommt NACH den Modifikatoren dazu — ein Joker auf das Rückspiel vervielfacht ihn nicht." />
+            </div>
+          )}
+        </div>
 
         {/* Kombi: was der Tor-Gewinn wert ist, hängt davon ab, wie gut das
             ERGEBNIS getroffen wurde. Steht deshalb in derselben Karte wie

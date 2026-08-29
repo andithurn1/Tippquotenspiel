@@ -219,6 +219,12 @@ export function schaufensterRegeln() {
         allowDouble: false,
         allowBackups: false,
       },
+      // ⚠️ Vorgeführt heißt ABWEICHEND von der Vorgabe (die ist `false`).
+      // 🔴 Der Markt taucht in der Schaurunde trotzdem nur dann bei einem
+      // Spiel auf, wenn es ein K.-o.-Spiel MIT Marktquote ist — `tippbar()`
+      // fragt beides. Eingeschaltet heißt hier also „erlaubt", nicht
+      // „überall sichtbar".
+      weiterkommen: { enabled: true, gewicht: 1.3 },
     },
 
     // ── Die Zeitachse der Runde ──

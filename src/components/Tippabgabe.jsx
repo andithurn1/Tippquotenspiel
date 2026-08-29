@@ -6,7 +6,7 @@ import {
   DEFAULT_RULES, projectTip, weightUsageForMatchday,
   einsatzPlanung, invalidEinsatzMatchdays, spieltagKey,
 } from "@/lib/engine";
-import { TAPZIEL_QUADRAT } from "@/lib/tapziel";
+import { TAPZIEL, TAPZIEL_QUADRAT } from "@/lib/tapziel";
 import { tippStatus } from "@/lib/tippfenster";
 import { jokerGiltFuerSpieltag } from "@/lib/voting";
 import { wettbewerbVon } from "@/lib/wettbewerbe";
@@ -40,6 +40,7 @@ import { startErgebnis, FESTER_START } from "@/lib/vorbelegung";
 import { getStore } from "@/lib/store";
 import { spieltagStarts } from "@/lib/tippfenster";
 import { verteilung, sanitizeMehrfach, schalterText } from "@/lib/mehrfachTipp";
+import { tippbar, braucht90MinutenHinweis, HINWEIS_90 } from "@/lib/weiterkommen";
 import { useAuth } from "@/components/AuthProvider";
 import { usePrefs } from "@/components/PrefsProvider";
 import { useCurrentRound } from "@/components/RoundProvider";
@@ -333,6 +334,9 @@ export default function Tippabgabe({ matchId }) {
   const [andereRunden, setAndereRunden] = useState([]);
   const [mehrfachHier, setMehrfachHier] = useState(null);
   const [mehrfachBericht, setMehrfachBericht] = useState(null);
+  // 🔴 Weiterkommen (KO1). `null` = nicht getippt; der Tipp ist freiwillig,
+  // auch wenn der Markt läuft — er ist ein Angebot, keine Pflicht.
+  const [weiter, setWeiter] = useState(null);
   useEffect(() => {
     let live = true;
     const mid = match?.snapshot?.matchId ?? match?.id ?? null;
@@ -733,6 +737,8 @@ export default function Tippabgabe({ matchId }) {
     jetzt: Date.now(), modus: mehrfachModus,
   });
   const mehrfachSatz = schalterText(verteilt);
+  // ⚠️ Alle drei Fragen auf einmal: Markt an, K.-o.-Spiel, Marktquote da.
+  const weiterTippbar = tippbar(match, SNAP, RULES);
   // Der Schalter ist ausblendbar (Anzeigemenü) — dann gilt still, was oben
   // eingestellt ist.
   const zeigeMehrfachSchalter = prefs.mehrfachSchalter !== "aus" && andereRunden.length > 0;
@@ -1428,6 +1434,10 @@ export default function Tippabgabe({ matchId }) {
           // ist. Eine Markierung, die ohnehin verworfen würde, gehört nicht
           // in die Datenbank.
           ...(freigeschaltet && freiMoeglich ? { frei: true } : {}),
+          // ⚠️ Nur mitschicken, wenn der Markt für DIESES Spiel läuft —
+          // dieselbe Regel wie bei Schutz und Freischaltung. Eine Angabe,
+          // die die Wertung ohnehin verwirft, gehört nicht in die Datenbank.
+          ...(weiterTippbar && weiter ? { weiter } : {}),
         },
         snapshot: SNAP,
       });
@@ -1787,6 +1797,66 @@ export default function Tippabgabe({ matchId }) {
                 <p style={{ fontSize: "0.75rem", color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
                   Steht deine Erstwahl ~1 h vor Anpfiff nicht in der Aufstellung, rückt der Backup automatisch nach.
                 </p>
+              </Section>
+            )}
+
+            {/* ── 🔴 90-MINUTEN-HINWEIS (KO1) ────────────────
+                Andi, 29.08.2026: „den Hinweis bei den Quoten nach 90 Minuten
+                (der ist bei Nicht-K.-o.-Spielen nicht da)."
+
+                ⚠️ Genau so gebaut: bei einem Bundesligaspiel steht er NICHT
+                da. Ein Satz „gilt nach 90 Minuten" erklärt dort nichts und
+                macht nur misstrauisch — es gibt keine Verlängerung, über die
+                man sich Gedanken machen müsste. */}
+            {braucht90MinutenHinweis(match) && (
+              <div style={{
+                marginTop: 12, background: `${C.violet}12`, border: `1px solid ${C.violet}44`,
+                borderRadius: RUND.karte, padding: "10px 12px",
+                fontSize: "0.75rem", color: C.muted, lineHeight: 1.45,
+              }}>
+                {HINWEIS_90}
+              </div>
+            )}
+
+            {/* ── 🔴 WEITERKOMMEN (KO1) ──────────────────────
+                ⚠️ Der Tipp erscheint nur, wenn `tippbar()` alle drei Fragen
+                mit ja beantwortet: Markt an, K.-o.-Spiel, UND Marktquote
+                vorhanden. Ohne Quote gibt es ihn nicht — eine geschätzte wäre
+                eine erfundene Zahl in einer Wertung, die sonst nur
+                Marktpreise benutzt. */}
+            {weiterTippbar && (
+              <Section title="Wer kommt weiter?">
+                <p style={{ fontSize: "0.75rem", color: C.muted, margin: "0 0 10px", lineHeight: 1.45 }}>
+                  Zählt <strong>mit Verlängerung und Elfmeterschießen</strong> — anders
+                  gibt es diese Quote nicht. Der Ergebnis-Tipp oben bleibt bei 90 Minuten.
+                </p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {[
+                    { seite: "home", name: SNAP.home },
+                    { seite: "away", name: SNAP.away },
+                  ].map(({ seite, name }) => {
+                    const an = weiter === seite;
+                    const q = SNAP.qualify?.[seite];
+                    return (
+                      <button key={seite} type="button" disabled={gesperrt}
+                        onClick={() => setWeiter(an ? null : seite)}
+                        aria-pressed={an}
+                        style={{
+                          ...TAPZIEL, flex: 1, cursor: gesperrt ? "default" : "pointer",
+                          padding: "10px 12px", borderRadius: RUND.karte, textAlign: "left",
+                          fontFamily: "inherit",
+                          background: an ? `${C.akzent}22` : C.surface,
+                          color: an ? C.akzent : C.text,
+                          border: `1px solid ${an ? `${C.akzent}66` : C.line}`,
+                        }}>
+                        <div style={{ fontSize: "0.8125rem", fontWeight: 700 }}>{name}</div>
+                        <div style={{ fontFamily: MONO, fontSize: "0.75rem", color: C.muted, marginTop: 2 }}>
+                          {Number.isFinite(q) ? q.toFixed(2) : "—"}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </Section>
             )}
 

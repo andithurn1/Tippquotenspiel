@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { createMockOddsSource, scoreTip, DEFAULT_RULES } from "@/lib/engine";
 import { getStore } from "@/lib/store";
@@ -13,6 +13,7 @@ import ReactionGif from "@/components/ReactionGif";
 import Ertragsquellen from "@/components/Ertragsquellen";
 import { tipScenario, rankReaction } from "@/lib/reactions";
 import { C, MONO, SCHRIFT, RUND } from "@/lib/theme";
+import { darfSpotten } from "@/lib/spottPost";
 import { TAPZIEL } from "@/lib/tapziel";
 
 // ── Farb-Tokens ─────────────────────────────────────────────
@@ -170,6 +171,62 @@ export default function Abrechnung() {
 
   const myRank = board?.find((b) => b.userId === meId)?.rank ?? null;
   const rankReact = rankReaction(myRank, board?.length ?? null); // Rollen-GIF (Sieger/…)
+  // ── 🔴 SPOTT (SP1) ────────────────────────────────────────
+  // ⚠️ Wer darf überhaupt? Das beantwortet `darfSpotten` — hier wird nichts
+  // nachgerechnet. Ein zweiter Weg zu „darf ich" wäre eine zweite Wahrheit,
+  // und ausgerechnet bei einer Funktion, die andere Leute trifft.
+  const [spottAn, setSpottAn] = useState(null);      // userId, den ich aufziehe
+  const [spottText, setSpottText] = useState("");
+  const [spottStand, setSpottStand] = useState(null);
+  const [gesendet, setGesendet] = useState([]);
+  // ⚠️ Spieltag und Regelwerk kommen aus DEM Stand, den die Abrechnung
+  // ohnehin anzeigt (`eigener`) — nicht aus einer zweiten Abfrage. Sonst
+  // könnte der Spott an einem anderen Spieltag hängen als die Tabelle
+  // darüber, und niemand verstünde, worauf er sich bezieht.
+  const spottSpieltag = eigener
+    ? { matchday: eigener.matchday, wettbewerb: eigener.snapshot?.wettbewerb ?? "" }
+    : null;
+  const spottRegeln = eigener?.rules?.spott ?? null;
+
+  useEffect(() => {
+    let live = true;
+    if (!meId || !roundId) return undefined;
+    getStore().listSpott?.({ userId: meId })
+      .then((p) => { if (live) setGesendet((p ?? []).filter((s) => s.von_id === meId)); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [meId, roundId]);
+
+  const spottZiele = useMemo(() => {
+    const ziele = new Set();
+    if (!board || !meId || !spottSpieltag) return ziele;
+    for (const z of board) {
+      if (z.userId === meId) continue;
+      const p = darfSpotten({
+        board, vonId: meId, aufId: z.userId, spieltag: spottSpieltag,
+        bereitsGesendet: gesendet, abgerechnet: true, spott: spottRegeln,
+      });
+      if (p.erlaubt) ziele.add(z.userId);
+    }
+    return ziele;
+  }, [board, meId, gesendet, spottSpieltag, spottRegeln]);
+
+  const spottSenden = async () => {
+    setSpottStand(null);
+    try {
+      await getStore().spottSenden({
+        vonId: meId, aufId: spottAn, roundId, spieltag: spottSpieltag, spruch: spottText,
+      });
+      setGesendet((v) => [...v, { von_id: meId, auf_id: spottAn, ...spottSpieltag }]);
+      setSpottAn(null);
+      setSpottText("");
+    } catch (e) {
+      // ⚠️ Der echte Grund. „Fehler" sagt dem Absender nichts darüber, ob er
+      // es gleich nochmal versuchen soll.
+      setSpottStand(String(e?.message ?? "Konnte nicht gesendet werden"));
+    }
+  };
+
   const min = board?.length ? Math.min(...board.map((b) => b.total)) : 0;
   const shown = (board ?? [])
     .map((b) => ({ ...b, disp: fair ? b.total - min : b.total }))
@@ -390,9 +447,79 @@ export default function Abrechnung() {
                 }}>
                   {b.disp > 0 && !fair ? "+" : ""}{b.disp}
                 </span>
+                {/* ── 🔴 SPOTTEN (SP1) ────────────────────────
+                    Der Knopf steht in der TABELLE, an der Zeile der Person —
+                    dort sieht man, wer weit hinten liegt, und dort ist der
+                    Gedanke. Eine eigene Seite dafür wäre ein Umweg um genau
+                    den Moment herum, um den es geht.
+
+                    ⚠️ Er erscheint nur, wenn `darfSpotten` JA sagt: Runde hat
+                    Spott an, Spieltag abgerechnet, ich weit vorn, die Person
+                    weit hinten, und heute noch keiner an sie. Ein Knopf, der
+                    beim Drücken absagt, ist schlechter als keiner. */}
+                {spottZiele.has(b.userId) && (
+                  <button type="button" onClick={() => setSpottAn(b.userId)}
+                    aria-label={`${b.name} aufziehen`}
+                    style={{
+                      ...TAPZIEL, cursor: "pointer", background: "transparent",
+                      border: `1px solid ${C.coral}55`, borderRadius: RUND.pille,
+                      color: C.coral, fontFamily: "inherit", fontSize: "0.6875rem",
+                      padding: "4px 10px", minHeight: 0,
+                    }}>
+                    aufziehen
+                  </button>
+                )}
               </div>
             ))}
           </div>
+
+          {/* ── 🔴 SPOTT SCHREIBEN (SP1) ────────────────────
+              ⚠️ Direkt unter der Tabelle, nicht in einem eigenen Fenster: der
+              Gedanke entsteht beim Blick auf die Namen, und ein Fenster
+              dazwischen macht aus einer Pointe eine Handlung.
+
+              ⚠️ Der Empfänger sieht den Absender. Das steht hier auch dran —
+              wer aufzieht, soll wissen, dass er dazu steht. */}
+          {spottAn && (
+            <div style={{
+              marginTop: 14, background: `${C.coral}10`, border: `1px solid ${C.coral}44`,
+              borderRadius: RUND.karte, padding: "12px 14px",
+            }}>
+              <div style={{ fontSize: "0.875rem", fontWeight: 700 }}>
+                {board?.find((b) => b.userId === spottAn)?.name ?? "Mitspieler"} aufziehen
+              </div>
+              <p style={{ fontSize: "0.6875rem", color: C.muted, margin: "4px 0 8px", lineHeight: 1.45 }}>
+                Erscheint in seiner Auswertung, sobald er das nächste Mal
+                reinschaut — <strong>mit deinem Namen</strong>. Einer je Person
+                und Spieltag.
+              </p>
+              <textarea value={spottText} rows={2} maxLength={180}
+                onChange={(e) => setSpottText(e.target.value)}
+                placeholder="Kurz und trocken ist besser als lang und gemein."
+                style={{
+                  width: "100%", boxSizing: "border-box", resize: "vertical",
+                  background: C.ink, color: C.text, fontFamily: "inherit",
+                  fontSize: "0.8125rem", padding: "8px 10px",
+                  border: `1px solid ${C.line}`, borderRadius: RUND.karte,
+                }} />
+              {spottStand && (
+                <div style={{ fontSize: "0.75rem", color: C.coral, marginTop: 6 }}>{spottStand}</div>
+              )}
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <button type="button" onClick={spottSenden} disabled={!spottText.trim()} style={{
+                  ...TAPZIEL, flex: 1, cursor: spottText.trim() ? "pointer" : "default",
+                  background: spottText.trim() ? C.coral : C.line, color: C.ink,
+                  border: "none", borderRadius: RUND.karte, fontFamily: "inherit",
+                  fontSize: "0.8125rem", fontWeight: 700,
+                }}>Abschicken</button>
+                <button type="button" onClick={() => { setSpottAn(null); setSpottStand(null); }} style={{
+                  ...TAPZIEL, flex: 1, cursor: "pointer", background: "transparent",
+                  color: C.muted, border: `1px solid ${C.line}`, borderRadius: RUND.karte,
+                  fontFamily: "inherit", fontSize: "0.8125rem",
+                }}>Abbrechen</button>
+              </div>
+            </div>
+          )}
 
           {/* Replay */}
           <button onClick={() => { setStage(0); setKey((k) => k + 1); }} style={{
