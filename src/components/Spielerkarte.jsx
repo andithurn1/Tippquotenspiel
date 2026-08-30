@@ -294,9 +294,21 @@ export default function Spielerkarte({ userId }) {
               {erspielt.length ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 14 }}>
                   {erspielt.map((a) => (
-                    <div key={a.key} style={{ width: SCHEIBE, textAlign: "center" }}>
+                    // 🔴 Die Zelle ist BREITER als die Scheibe. Im Browser
+                    // gemessen: bei `width: SCHEIBE` liefen die
+                    // Beschriftungen ineinander („Weltenbummler" über
+                    // „Neuling"), weil ein langes Wort aus einer 52-px-Zelle
+                    // einfach herausragt. Die Scheibe bleibt mittig, der Text
+                    // darf umbrechen.
+                    <div key={a.key} style={{
+                      width: 76, textAlign: "center",
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                    }}>
                       <Scheibe a={a} />
-                      <div style={{ fontSize: "0.625rem", color: C.muted, marginTop: 4, lineHeight: 1.2 }}>
+                      <div style={{
+                        fontSize: "0.625rem", color: C.muted, marginTop: 4, lineHeight: 1.2,
+                        overflowWrap: "anywhere", hyphens: "auto",
+                      }}>
                         {a.label}
                       </div>
                     </div>

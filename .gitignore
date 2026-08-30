@@ -24,3 +24,11 @@ npm-debug.log*
 out/
 scratch/
 supabase/_quoten-update.sql
+
+# 🔴 Auch SICHERUNGEN der Umgebungsdatei. Am 29.08.2026 lag ein
+# `.env.local.bak` als unverfolgte Datei da — mit den Supabase-Schlüsseln
+# darin. Ein `git add -A` hätte sie committet, und Schlüssel aus der
+# Historie zu entfernen ist ungleich aufwendiger, als sie gar nicht
+# hineinzulassen.
+.env.local.*
+.env.*.bak
