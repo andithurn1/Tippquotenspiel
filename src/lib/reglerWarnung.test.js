@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
+import * as url from "node:url";
 import {
   BAND_FELDER, band, pruefe, korrigieren, zusammenfassung, rohModifikator,
   KOMBINATIONEN, hinweiseFuer, hinweisStufe,
@@ -456,7 +457,9 @@ describe("Hinweise am Regler", () => {
 // ============================================================
 describe("Jedes Bandfeld hat eine Oberfläche", () => {
   it("🔴 kein Pfad aus BAND_FELDER bleibt ohne Anschluss", () => {
-    const ordner = path.join(process.cwd(), "src", "components");
+    // ⚠️ An der Lage DIESER Datei verankert, nicht am Arbeitsverzeichnis —
+    // dieselbe Wackelstelle wie in `schemaTabellen.test.js` (30.08.2026).
+    const ordner = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "..", "components");
     const text = fs.readdirSync(ordner)
       .filter((f) => f.endsWith(".jsx"))
       .map((f) => fs.readFileSync(path.join(ordner, f), "utf8"))

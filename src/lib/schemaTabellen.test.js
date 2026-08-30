@@ -1,6 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// 🔴 Am 30.08.2026 schlug dieser Test EINMAL im Gesamtlauf an und war
+// allein wieder grün. Ursache: `lauf("src")` und `readFileSync(
+// "supabase/schema.sql")` sind RELATIV — sie hängen am Arbeits-
+// verzeichnis, und das ist in einem Testlauf mit mehreren Arbeitern nichts,
+// worauf man sich verlassen sollte.
+//
+// ⚠️ Ein Wächter, der zufällig anschlägt, wird beim dritten Mal ignoriert —
+// und dann meldet er den echten Fund an niemanden mehr. Deshalb hängen die
+// Pfade jetzt an der LAGE DIESER DATEI und nicht am Aufrufort.
+const WURZEL = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+import { join, dirname } from "node:path";
 
 // ============================================================
 //  FRAGT DER CODE EINE TABELLE AB, DIE ES IM SCHEMA NICHT GIBT?
@@ -35,7 +47,7 @@ const lauf = (dir) => {
     else if ((n.endsWith(".js") || n.endsWith(".jsx")) && !n.endsWith(".test.js")) quellDateien.push(p);
   }
 };
-lauf("src");
+lauf(join(WURZEL, "src"));
 
 // `.from("…")` ist der einzige Weg, über den dieses Projekt eine Tabelle
 // anspricht — der Supabase-Client kennt keinen zweiten.
@@ -52,7 +64,7 @@ function tabellenImCode() {
 }
 
 function tabellenImSchema() {
-  const sql = readFileSync("supabase/schema.sql", "utf8");
+  const sql = readFileSync(join(WURZEL, "supabase", "schema.sql"), "utf8");
   return new Set(
     [...sql.matchAll(/create table if not exists public\.([a-z_]+)/g)].map((m) => m[1])
   );

@@ -1919,9 +1919,20 @@ export default function Tippabgabe({ matchId }) {
                     <div style={{ color: C.coral, fontWeight: 700 }}>{r.name}</div>
                     <div style={{ color: C.muted, marginTop: 2 }}>{r.grund}</div>
                     <div style={{ color: C.muted, marginTop: 2 }}>
-                      {r.fehlt > 0
-                        ? `Dort anpassen — Ergebnis und ${r.vorschlag.goals.home.length + r.vorschlag.goals.away.length} Name(n) stehen schon, ${r.fehlt} fehlt noch.`
-                        : "Dort anpassen — Ergebnis und die dort zulässigen Namen stehen schon."}
+                      {/* ⚠️ Einzahl und Mehrzahl ausgeschrieben. Im Browser
+                          stand „2 Name(n) stehen schon, 2 fehlt noch" — die
+                          Klammerform UND ein falsches Verb in einem Satz. Wer
+                          so etwas liest, merkt, dass hier niemand hingesehen
+                          hat. */}
+                      {(() => {
+                        const da = r.vorschlag.goals.home.length + r.vorschlag.goals.away.length;
+                        const teil = da === 1 ? "ein Name steht" : `${da} Namen stehen`;
+                        if (r.fehlt <= 0) return "Dort anpassen — Ergebnis und die dort zulässigen Namen stehen schon.";
+                        const fehlt = r.fehlt === 1 ? "einer fehlt noch" : `${r.fehlt} fehlen noch`;
+                        return da === 0
+                          ? `Dort anpassen — das Ergebnis steht schon, ${fehlt}.`
+                          : `Dort anpassen — Ergebnis und ${teil} schon, ${fehlt}.`;
+                      })()}
                     </div>
                     <Link href={`/tippen?spiel=${SNAP.matchId}&runde=${r.roundId}`}
                       style={{ ...TAPZIEL_QUADRAT, display: "inline-flex", alignItems: "center",
