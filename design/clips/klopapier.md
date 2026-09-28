@@ -165,6 +165,37 @@ Vorgaben für neue Bilder (Andi): Halter und Rolle in JEDEM Bild identisch; die
 5 Blätter an der fast leeren Rolle leicht mit Motiv bedruckt (verschwimmen eh im
 Bewegungsunschärfe); Fall nach unten nicht beschleunigen — die Strecke ist kurz.
 
+## Neuer Anlauf (Andi, 28.09.2026): wenige Keyframes, richtige Anweisung
+
+Andi: *„lass uns lieber ein neues erstellen mit den richtigen Anweisungen und
+Keyframes (eigentlich braucht es ja gar nicht so viele) … Schmarrn, dass das Modell
+auf einmal macht, dass sich die Rolle wieder in die andere Richtung dreht"*.
+
+Vorschlag (wartet auf Andis Ja):
+1. **Bild 8 · Stand nach links verschieben** — dorthin, wo die Rolle in `223e864d` von
+   selbst gelandet ist (Mitte x≈775 statt 916). Sonst zwingt das Endbild wieder ein
+   Rutschen nach rechts. 1 Bild-Edit, 4,5 Credits.
+2. **Ein Clip: 1 · Griff → 8 · Stand (neu)**, MiniMax H3, 5 s, 2K, 10 Credits.
+   Wenn der Flug danach noch ausschert: 5 · Absprung als Mittelbild dazu (+10).
+
+Die Anweisung für den Clip (Entwurf):
+
+> Black and white graphic-novel look, first-person view from the toilet. Locked-off
+> static camera. Black tiled wall, dark stone ledge and the chrome holder never move
+> or change. The white hand in the black tuxedo sleeve pulls the printed paper
+> straight DOWN in one smooth pull. The pull makes the thin roll spin in ONE direction
+> only (front surface moving down) and, already while the last sheets are coming off,
+> the drag pushes the roll to the LEFT along the arm. The now empty cardboard core
+> keeps spinning in the same direction and slides off the open left end of the arm
+> WITHOUT stopping. From there it keeps exactly the same leftward speed, drops a short
+> way down in a gentle arc parallel to the wall, and turns upright during the fall so
+> the printed portrait comes round to the front. It lands upright on the ledge with
+> one tiny wobble and then stays exactly where it landed.
+> Constant speed from the pull to the landing, no pause, no sudden acceleration.
+> Avoid: the core moving towards the camera, the core growing or shrinking, the spin
+> reversing, the core sliding to the right, the holder or roll changing shape,
+> morphing faces, colour.
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
