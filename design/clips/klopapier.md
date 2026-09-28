@@ -58,6 +58,52 @@ ohne Meldung gescheitert (Credits zurück), mit 5 s liefen sie durch —
 Zusammengeschnitten in der Higgsfield-Sandbox (ffmpeg, doppeltes Übergangsbild
 entfernt, 15,4 s): Medium `1f2d2a6c-6276-4609-9392-7a87ed9af9c7`.
 
+## Analyse 28.09.2026 — was fehlt, was nicht zusammenpasst
+
+Andis Ablauf: Hand zieht die Rolle (nur 5 Blätter) zu sich nach unten und reißt sie
+ab → der Drall schiebt die leere Papprolle drehend nach links → im Flug stellt sie
+sich auf → landet aufrecht, Porträt nach vorn. Ziel später ~3 s.
+
+**Gemessen** (Pixel bei 2000 px Bildbreite; Papierstreifen im Startbild 398 px ≈ 10 cm):
+
+| Bild | Moment | Länge | Dicke | Farbe (R−B) |
+|---|---|---|---|---|
+| `2cdc54a3` A | Rolle mit Papier auf dem Arm | ~435 auf dem Arm | ~80 | Papier 33 |
+| `874441ec` | Rolle kippt vom Armende | 438 | 82 | 39 braun |
+| `13f3a2d4` B | gerade vom Arm, fast waagerecht | 435 | 77 | 38 braun |
+| `f9a40f30` C | knapp über der Ablage (dick) | 412 | **109** | 29 |
+| `2445597d` | dasselbe, schlank | 402 | 75 | 30 |
+| `5f1c1a69` D | steht (dick) | 390 | **118** | 27 hell |
+| `08e4e319` | steht, schlank | 408 | 82 | 25 hell |
+
+- ⚠️ **Dicke:** C/D sind 40–50 % dicker als B — und dicker als die volle Rolle im
+  Startbild. Die schlanken Fassungen `2445597d`/`08e4e319` passen (75–82).
+- ⚠️ **Porträt:** C zeigt einen anderen Mann (Blätterkranz, KEINE Maske). D passt zum
+  Charakterblatt `6527ccc5` (Sonnenbrille, Maske, welliges Haar). `2445597d` ist aus C
+  abgeleitet und trägt laut Auftrag dessen Porträt.
+- ⚠️ **Material:** B und `874441ec` braunes Packpapier, D hell-grau mit Spiralnaht —
+  die Rolle würde im Flug „ausbleichen".
+- ⚠️ **Flugbahn:** Mitte B x=849 → Landung x≈916: die Rolle landet ~1,5 cm RECHTS vom
+  Absprung, obwohl der Drall nach links schiebt.
+- ✅ **Hintergrund:** Fliesen und Ablage in A–D deckungsgleich (mittlere Abweichung
+  1–6 von 255). Nur die Chrom-Rosette ist je Bild anders gespiegelt (11–19).
+- ✅ Alle vier gewählten Bilder sind schon auf schwarzen Fliesen. Marmor gibt es nur
+  noch bei Momenten, die in der Folge fehlen (z. B. `8df32631` Rolle rutscht auf dem Arm).
+
+**Vorschlag Keyframe-Folge:** K1 `2cdc54a3` · K2 NEU Ruck (Papier reißt ab, Rolle
+dreht) · K3 NEU leere Rolle auf dem Arm, nach links gerutscht · K4 `874441ec`
+(optional) · K5 `13f3a2d4` · K6 NEU Flugmitte ~45°, Porträt kommt links rein ·
+K7 `2445597d` mit korrigiertem Porträt · K8 `08e4e319`.
+
+Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
+weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
+Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
+
+Kosten (Stand Transaktionen): Bild-Edit GPT Image 2.5 Flare 4,5 Credits · MiniMax H3
+5 s 10 Credits (4 s scheiterte am 28.09. dreimal).
+
+⛔ Nichts davon ist beauftragt — wartet auf Andis Entscheidung.
+
 ## Offen
 
 - ❓ Urteil über den letzten Clip `223e864d` fehlt noch.
