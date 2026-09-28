@@ -120,6 +120,29 @@ die Nummern bleiben, nur das Bild wechselt.
 - ⛔ Erzeugen von 2 · Ruck, 3 · Rutschen, 6 · Flug und dem Porträt-Fix an 7 · Anflug:
   **noch nicht freigegeben.**
 
+## 🎯 Bewegung: Schub nach links schon beim Abreißen, dann gleichmäßig (Andi, 28.09.2026)
+
+Andi: *„das häufige Problem, dass die Papprolle wenn sie leer ist auf einmal nach
+vorne schießt. Dabei soll sie während dem Abreißen schon Schub nach links bekommen
+… der dann weiterhin gleichmäßig ist, bisher waren alle Ergebnisse eher beschleunigt"*.
+
+Gemessene Mitte der Rolle (x, Pixel bei 2000 px Breite): 1 · Griff ~1352 →
+4 · Kippen 1083 → 5 · Absprung 849 → 7 · Anflug 901 → 8 · Stand 916.
+⚠️ Nach dem Absprung läuft sie wieder NACH RECHTS — mit „gleichmäßig nach links"
+nicht vereinbar; vermutlich ein Teil des Ruckelns.
+
+Daraus für die Keyframes:
+- 2 · Ruck zeigt die Rolle schon ein Stück nach links gewandert, WÄHREND das Papier
+  noch abläuft (Schub beginnt beim Abreißen, nicht danach).
+- Die Rollen-Mitte wandert von Bild zu Bild nur nach links; Landung links vom
+  Absprung (Vorschlag ~x 650–700) → 7 · Anflug und 8 · Stand verschieben.
+- Größe der Rolle in allen Bildern gleich (±5 %) — wächst sie, liest das Modell
+  „kommt auf die Kamera zu".
+- Prompts: „moves only left and down, parallel to the wall, never towards the camera,
+  constant speed, no acceleration"; ⛔ nie wieder „towards the camera" beim Ruck.
+- Im Schnitt: jedes Teilstück so raffen, dass Weg ÷ Zeit überall gleich ist
+  (kostenlos, ffmpeg).
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
