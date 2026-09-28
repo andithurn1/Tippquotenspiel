@@ -83,6 +83,23 @@ einzuhalten sei. Wo Andi *entspannt* formuliert, ist das die Aussage — nicht
 der Anlass, eine Deadline zu rekonstruieren. **Im Zweifel nachfragen, nicht
 ableiten.**
 
+## 💸 HIGGSFIELD: NICHTS ERZEUGEN OHNE ANDIS JA (Andi, 28.09.2026)
+
+Wörtlich: *„mache keinen Clip ohne mich vorher zu fragen, ich habe doch die
+bilder nur hochgeladen. Du hast jetzt ohne ende Credits weggeschmissen"*.
+
+Der Fehlgriff: Andi hat vier Schlüsselbilder in den Chat gelegt, ohne Text.
+Ich habe daraus einen Auftrag gelesen und drei Clips erzeugt — 30 Credits,
+Ergebnis unbrauchbar, weil die Schlüsselbilder dafür noch gar nicht fertig waren.
+
+- ⛔ **Jede Generierung kostet sein Geld — Bild, Clip, Ton, Hochskalieren.**
+  Vorher: was genau, welches Modell, wie viele Credits (`get_cost`), dann sein Ja.
+- ⛔ **Hochgeladene Bilder ohne Text sind KEIN Auftrag.** Zeigen, einordnen,
+  fragen — nicht erzeugen.
+- ⚠️ Das steht NICHT im Widerspruch zu „Umfang nie kürzen": das gilt für Arbeit
+  am Repo, nicht für Ausgaben auf seinem Higgsfield-Konto.
+- Stand der Clip-Arbeit: `design/clips/klopapier.md`.
+
 ## ⏳ KEIN TERMINDRUCK MEHR (Andi, 20.08.2026)
 
 ⚠️ *Gilt unverändert weiter — der Zeitrahmen darüber nimmt nichts davon

@@ -48,7 +48,11 @@ Per Bild-Fingerabdruck gegen die Higgsfield-Bilder abgeglichen (Abweichung 6–1
 
 ⚠️ 3 und 4 sind die DICKEREN Fassungen, nicht die schlanken (`2445597d`/`08e4e319`).
 
-Erster Durchgang daraus: drei Übergänge, minimax_h3, 2K. Mit 4 s sind alle drei
+⛔ **Ohne Auftrag erzeugt — Andi: „jeder Clip ist beschissen".** Kosten 30 Credits
+(3 × 10; die 4-s-Versuche wurden erstattet). Vor dem nächsten Clip braucht es
+erst die fehlenden Keyframes, damit die Videogenerierung sie annimmt.
+
+Der Durchgang: drei Übergänge, minimax_h3, 2K. Mit 4 s sind alle drei
 ohne Meldung gescheitert (Credits zurück), mit 5 s liefen sie durch —
 1→2 `ba8cada4`, 2→3 `84434956`, 3→4 `9769513c`.
 Zusammengeschnitten in der Higgsfield-Sandbox (ffmpeg, doppeltes Übergangsbild
