@@ -48,8 +48,11 @@ Per Bild-Fingerabdruck gegen die Higgsfield-Bilder abgeglichen (Abweichung 6–1
 
 ⚠️ 3 und 4 sind die DICKEREN Fassungen, nicht die schlanken (`2445597d`/`08e4e319`).
 
-Erster Durchgang daraus: drei Übergänge à 4 s, minimax_h3, 2K —
-1→2 `07198e82`, 2→3 `082e7da7`, 3→4 `a467e61b`.
+Erster Durchgang daraus: drei Übergänge, minimax_h3, 2K. Mit 4 s sind alle drei
+ohne Meldung gescheitert (Credits zurück), mit 5 s liefen sie durch —
+1→2 `ba8cada4`, 2→3 `84434956`, 3→4 `9769513c`.
+Zusammengeschnitten in der Higgsfield-Sandbox (ffmpeg, doppeltes Übergangsbild
+entfernt, 15,4 s): Medium `1f2d2a6c-6276-4609-9392-7a87ed9af9c7`.
 
 ## Offen
 
