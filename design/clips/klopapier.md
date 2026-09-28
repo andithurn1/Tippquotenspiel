@@ -143,6 +143,28 @@ Daraus für die Keyframes:
 - Im Schnitt: jedes Teilstück so raffen, dass Weg ÷ Zeit überall gleich ist
   (kostenlos, ffmpeg).
 
+## Andis Favorit: `223e864d` (28.09.2026) — „nur das Beschleunigen ist Schmarrn"
+
+Vermessen (24 fps, 124 Bilder, Rollen-Mitte x in 2000er Maßstab):
+- 0–1,4 s Hand zieht, Papier geht ab.
+- **1,4–1,65 s Rolle steht still** auf dem Arm (x≈1240), dann **schießt sie los**:
+  Weg je Bild 5 → 11 → 18 → 32 → 50 → 54, danach langsamer (40, 28 …).
+- 2,75 s Landung bei x≈775 (links ✓), **danach 1,3 s Rutschen nach RECHTS** bis x≈950 —
+  vom Endbild erzwungen.
+
+Testfassung ohne Neuerzeugung (Sandbox, 0 Credits), Medium
+`5bfa9300-1225-4cea-add8-acdf6fecee04`, 2,9 s: Anfangshalten gekürzt, Stillstand
+raus, Flug auf gleichmäßig 29 px/Bild umgerechnet (791 px in 27 Bildern), Schluss
+bei der Landung + 0,5 s Halten. ⚠️ Gleichmäßig gemacht durch Auslassen/Doppeln von
+Bildern — kann leicht stottern; weicher ginge per Zwischenbild-Berechnung (ffmpeg
+`minterpolate`, auch kostenlos). ⚠️ Ob die Rolle bei der Landung schon mit dem
+Porträt nach vorn steht, ist ungeprüft — das Drehen passierte im Original teils
+während des Rechtsrutschens.
+
+Vorgaben für neue Bilder (Andi): Halter und Rolle in JEDEM Bild identisch; die
+5 Blätter an der fast leeren Rolle leicht mit Motiv bedruckt (verschwimmen eh im
+Bewegungsunschärfe); Fall nach unten nicht beschleunigen — die Strecke ist kurz.
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
