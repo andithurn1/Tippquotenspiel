@@ -90,10 +90,35 @@ sich auf → landet aufrecht, Porträt nach vorn. Ziel später ~3 s.
 - ✅ Alle vier gewählten Bilder sind schon auf schwarzen Fliesen. Marmor gibt es nur
   noch bei Momenten, die in der Folge fehlen (z. B. `8df32631` Rolle rutscht auf dem Arm).
 
-**Vorschlag Keyframe-Folge:** K1 `2cdc54a3` · K2 NEU Ruck (Papier reißt ab, Rolle
-dreht) · K3 NEU leere Rolle auf dem Arm, nach links gerutscht · K4 `874441ec`
-(optional) · K5 `13f3a2d4` · K6 NEU Flugmitte ~45°, Porträt kommt links rein ·
-K7 `2445597d` mit korrigiertem Porträt · K8 `08e4e319`.
+## 🔢 Die Bildnamen — so reden wir über die Bilder (Andi, 28.09.2026)
+
+Andi: *„du sagst immer K2 K3 aber ich weiss garnicht welches bild du meinst"*.
+Deshalb: **Nummer + Name**, sichtbar auf der **Storyboard-Tafel** (Higgsfield-Medium
+`2bbbf2d8-6c20-4691-b6a3-529b3bf1e2d2`, in der Sandbox gebaut, 0 Credits). Im Chat
+immer „Bild 6 · Flug", nie eine Job-ID allein und nie „K6".
+
+| Nr · Name | Moment | Bild | Stand |
+|---|---|---|---|
+| 1 · Griff | Hand hält den Muskelmann | `2cdc54a3` | vorhanden |
+| 2 · Ruck | Hand reißt das Papier ab, Rolle dreht | — | fehlt |
+| 3 · Rutschen | leere Rolle rutscht drehend nach links | — | fehlt (Marmor-Vorlage `8df32631`) |
+| 4 · Kippen | Rolle kippt vom Armende | `874441ec` | vorhanden, optional |
+| 5 · Absprung | Rolle gerade vom Arm, fast waagerecht | `13f3a2d4` | vorhanden |
+| 6 · Flug | Flugmitte, schräg ~45°, Porträt dreht links rein | — | fehlt |
+| 7 · Anflug | kurz vorm Aufsetzen | `2445597d` | Porträt korrigieren |
+| 8 · Stand | steht, Porträt vorn | `08e4e319` | vorhanden |
+
+Wird ein Bild ersetzt, wird die Tafel neu gebaut (Skript in der Sandbox, kostenlos) —
+die Nummern bleiben, nur das Bild wechselt.
+
+**Entschieden (Andi, 28.09.2026):**
+- ✅ **Schlanke Rolle** — *„meines Erachtens sind die groß genug"*. Also 7 · Anflug
+  `2445597d` und 8 · Stand `08e4e319` statt der dicken `f9a40f30`/`5f1c1a69`.
+- ✅ **Flugbahn:** *„müsste mit den Keyframes erstmal passen"* — vorerst keine eigene
+  Korrektur; 6 · Flug wird zwischen 5 · Absprung und 7 · Anflug gelegt.
+- ❓ Material angleichen (braun bei 4/5, hell bei 7/8) — offen.
+- ⛔ Erzeugen von 2 · Ruck, 3 · Rutschen, 6 · Flug und dem Porträt-Fix an 7 · Anflug:
+  **noch nicht freigegeben.**
 
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
