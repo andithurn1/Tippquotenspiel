@@ -211,6 +211,22 @@ Andi: *„ok schritt 1, und achte darauf dass einheitliche Größen verwendet we
 🔴 Lehre: Größen NIE dem Bild-Modell überlassen — erst maßgenau montieren, das Modell
 nur einpassen lassen, danach NACHMESSEN und notfalls die Rolle zurücklegen.
 
+## Idee Andi 28.09.2026: alles lassen, nur Rolle + Papprolle realistisch dick
+
+Andi: *„alle bisherigen Bilder … sonst alles gleich lassen, nur dass eben die Papprolle
+und dementsprechend auch die ganze Rolle deutlich dicker … so wie sie es eigentlich
+auch in echt sind"*.
+
+Maßstab: Papierbreite 398 px ≈ 10 cm → ~40 px/cm. Echte Papprolle ≈ 4,3 cm → **~175 px**
+(heute 75–82 px, also ~2,2×). 5 Blätter tragen kaum auf (<1 mm) → volle Rolle ~180 px.
+Chromarm ≈ 70 px (≈1,75 cm): eine echte Papprolle hängt LOCKER darauf und sitzt mit der
+Innenseite oben auf dem Arm → ihre Mitte liegt ~50 px tiefer als die Arm-Mitte.
+Betroffen: 1 · Griff, 4 · Kippen, 5 · Absprung, 7 · Anflug, 8 · Stand (+ die neuen).
+Zwischenstufe gibt es schon: die dicken Fassungen `f9a40f30` (109) / `5f1c1a69` (118).
+Am 27.09. ging es schon einmal hin und her (`8ce9f5e7` „viel dicker, Durchmesser halb
+so groß wie die Länge", danach wieder schlanker) — deshalb diesmal EIN Maß festlegen
+und in jedem Bild nachmessen. ⛔ Wartet auf Andis Ja.
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
