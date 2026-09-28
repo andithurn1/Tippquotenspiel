@@ -34,6 +34,23 @@ Banknoten-Stil (Lorbeer-Oval, Mann mit Sonnenbrille, kleine Maske, Fliege).
 Frühere Clip-Versuche: `f5d1d256`, `f6561587`, `818787bb`, `a1c7fd40`,
 `7a590013` (kling3_0), `495ee1b9` (seedance_2_0_mini), `4b40bc63` (minimax_h3).
 
+## Andis Auswahl (28.09.2026) — die vier Schlüsselbilder
+
+Per Bild-Fingerabdruck gegen die Higgsfield-Bilder abgeglichen (Abweichung 6–10 von
+~20 000 möglich, also identisch; das Startbild 550 wegen anderer Kompression):
+
+| # | Moment | Job |
+|---|---|---|
+| 1 | Hand hält unterstes Blatt (Muskelmann) | `2cdc54a3-a30f-4ac1-88b5-42ff937c39b9` |
+| 2 | Papprolle rutscht vom Armende, schräg in der Luft | `13f3a2d4-d56d-4abf-8a49-5cc95e8c81f6` |
+| 3 | Papprolle knapp über der Ablage, Porträt dreht rein | `f9a40f30-b793-4d13-a969-27d5f997adf0` |
+| 4 | Papprolle steht, Porträt vorn | `5f1c1a69-9de4-4565-a2ca-1790ccbe6323` |
+
+⚠️ 3 und 4 sind die DICKEREN Fassungen, nicht die schlanken (`2445597d`/`08e4e319`).
+
+Erster Durchgang daraus: drei Übergänge à 4 s, minimax_h3, 2K —
+1→2 `07198e82`, 2→3 `082e7da7`, 3→4 `a467e61b`.
+
 ## Offen
 
 - ❓ Urteil über den letzten Clip `223e864d` fehlt noch.
