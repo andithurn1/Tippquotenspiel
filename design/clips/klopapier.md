@@ -106,7 +106,7 @@ immer „Bild 6 · Flug", nie eine Job-ID allein und nie „K6".
 | 5 · Absprung | Rolle gerade vom Arm, fast waagerecht | `13f3a2d4` | vorhanden |
 | 6 · Flug | Flugmitte, schräg ~45°, Porträt dreht links rein | — | fehlt |
 | 7 · Anflug | kurz vorm Aufsetzen | `2445597d` | Porträt korrigieren |
-| 8 · Stand | steht, Porträt vorn | `08e4e319` | vorhanden |
+| 8 · Stand | steht, Porträt vorn | `bf4d4c4e` (Medium, links verschoben) | vorhanden — alt: `08e4e319` |
 
 Wird ein Bild ersetzt, wird die Tafel neu gebaut (Skript in der Sandbox, kostenlos) —
 die Nummern bleiben, nur das Bild wechselt.
@@ -195,6 +195,21 @@ Die Anweisung für den Clip (Entwurf):
 > Avoid: the core moving towards the camera, the core growing or shrinking, the spin
 > reversing, the core sliding to the right, the holder or roll changing shape,
 > morphing faces, colour.
+
+## Schritt 1 erledigt (28.09.2026): 8 · Stand nach links
+
+Andi: *„ok schritt 1, und achte darauf dass einheitliche Größen verwendet werden"*.
+1. Montage in der Sandbox (0 Credits): Rolle aus `08e4e319` maßgleich auf die leere
+   Kulisse `6d20f0fc` gesetzt, Mitte x 916 → ~772; Fußpunkt aus der gemessenen
+   Ablagen-Perspektive (Oberkante vorn 0,47, Wandfuge 0,35 px/px). Medium `c15f1719`.
+2. Bild-Edit GPT Image 2.5 (4,5 Credits, Job `e4936788`) nur für Schatten + Spiegelung.
+   ⚠️ **Das Modell hat die Rolle trotz Verbot 20 % schlanker gemacht** (66 statt 82 px).
+3. Deshalb Rolle aus der Montage wieder darübergelegt, Schatten/Spiegelung vom Modell
+   behalten (0 Credits). **Neues 8 · Stand = Medium `bf4d4c4e-9c81-4934-8b45-eb33f75a9eca`**:
+   Mitte x≈772, Dicke 81 px (Folge: 75–82), Wand/Halter unverändert (Abweichung 4–7).
+
+🔴 Lehre: Größen NIE dem Bild-Modell überlassen — erst maßgenau montieren, das Modell
+nur einpassen lassen, danach NACHMESSEN und notfalls die Rolle zurücklegen.
 
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
