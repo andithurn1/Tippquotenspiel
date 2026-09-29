@@ -326,6 +326,19 @@ einen Ticken weiter links steht als auf Bild 2"* → 3 · Rutschen.
 | 6 · Flug | 1,8 s | `932abcca` |
 | 8 · Stand | 2,5 s | `f5abe946` |
 
+## Umbau nach Andi (29.09.2026): 3 · Rutschen → 3 · Abriss + 4 · Fall
+
+Andi: *„fällt jetzt nur ein einzelnes Blatt ab — in dem Frame, den wir brauchen, sind die
+dreieinhalb letzten Blätter quasi noch im Bild, die Hand schon lange raus … und das letzte
+Blatt, der Pseudo-Poet, ist gerade noch dran wegen der Perforation; danach vielleicht noch
+ein Frame, wo das lose Blattgeflecht, also die 3 Seiten, gerade nach unten gezogen werden
+und die Rolle noch einen Ticken weiter nach links verschoben wird"*. Freigabe: *„erstmal
+das erste"*.
+- **3 · Abriss** `3346960f` (4,5 Credits, Vorlage `cd235797`: Rolle aus `45c86f19` auf
+  x≈1310, Papier-Platzhalter 300 px). Papier 276–301 px (unten 301 ✅, oben ~8 % schmaler),
+  Stange links 88 ✅, Hintergrund 5,6–5,9. Vergleichstafel Ruck/Abriss: `d1235f9d`.
+- 4 · Fall: offen (Vorlage wird `45c86f19`, Rolle ~x 1275).
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
