@@ -233,6 +233,15 @@ etwas dicker"* → Länge 9 cm (≈360 px) statt 10. Dicke noch offen: kostenlos
 ✅ **Entschieden (Andi 29.09.): 3,75 cm dick, 9 cm lang → 150 × 360 px** (2000er Maßstab).
 ⚠️ Wird die Rolle 9 cm lang, muss auch der Papierstreifen in 1 · Griff 9 cm breit werden.
 
+## Dicke Rolle, Durchgang 1 (29.09.2026, 9 Credits, freigegeben „jo")
+
+- **8 · Stand** `f5abe946` (Montage `8fd627e2` als Vorlage): Rolle **141 × 357 px**
+  (Soll 150 × 360), Mitte x 770 ✅, Hintergrund unverändert (4,6–8,1). ~6 % zu schlank.
+- **1 · Griff** `a1e16890`: ⚠️ Papierstreifen nach zwei Messarten nur **~230–250 px**
+  breit (Soll 360, vorher 398) — das Modell hat „10 % schmaler" als ~40 % ausgeführt.
+  Hintergrund/Hand unverändert (2–7, Rosette 11). Rollendicke nicht sauber messbar.
+  Ungeprüft, ob es im Bild so aussieht — Andi schaut.
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
