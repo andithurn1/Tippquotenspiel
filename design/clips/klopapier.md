@@ -492,3 +492,10 @@ rechts letztes Bild):
 links liegt bei etwa 35 → 30 → 25 px je 1/6 s und wird zur Landung hin etwas
 langsamer. Ob die Stange sichtbar in der Rolle bleibt, kann nur Andi am Bild
 beurteilen.
+
+### ✅ Abgenommen (Andi, 29.09.2026): *„gut, den nehmen wir"*
+
+- Original: Job `8dfdec27` (5 s, 2K).
+- **4-s-Schnitt: Medium `beedf786`**. Gleichmäßig 1,25× beschleunigt, 2560×1440, 30 fps,
+  ohne Ton, 0 Credits. Die Landung liegt bei ~3,1 s, danach ~0,9 s Standbild.
+- Andi: *„eigentlich haben wir jetzt alle Clips fürs Musikvideo zusammen"*.
