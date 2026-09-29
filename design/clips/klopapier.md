@@ -278,6 +278,27 @@ die Stange, danach alles außer einem Band um die Stange aus der Montage zurück
 85–88 px wie Kulisse (83–89); Papier/Figuren/Hand/Fliesen = Montage (Abweichung 0,0–0,1).
 Andi dazu: *„ja gut so! Hand muss auch nicht unbedingt farbig sein"*.
 
+## 🎬 Drehbuch 3 s (Stand 29.09.2026, zur Abnahme durch Andi)
+
+Andi: *„die Zwischen-Keyframes wären auch ganz gut … sag nochmal exakt und genauer, wie ich
+die Gesamtvideoszene haben will, die geht ja eigentlich nur 3 Sekunden"*.
+
+Maße (2000er Maßstab): Rollen-Mitte Start x≈1420 (an der Stange rechts) → Landung x≈770.
+Rolle überall 150 × 360 px. Waagerecht gleichmäßig ≈ 14 px je Bild (24 fps).
+
+| Zeit | Was passiert | Rollen-Mitte x | Keyframe |
+|---|---|---|---|
+| 0,0–0,2 s | Hand hält den Pumper, Stillstand | 1420 | 1 · Griff `a31fa69c` |
+| 0,2–0,8 s | Hand zieht nach unten zu sich, Papier läuft ab, Rolle dreht; ab 0,4 s rutscht sie schon nach links | 1420 → 1285 | 2 · Ruck (neu, bei 0,6 s) |
+| 0,8 s | letztes Blatt reißt ab, leere Papprolle dreht weiter | 1285 | — |
+| 0,8–1,3 s | Papprolle rutscht drehend bis zur Stangenspitze, gleiches Tempo | 1285 → 1110 | — |
+| 1,3–2,3 s | fliegt ohne Halt nach links, flacher Bogen nach unten, stellt sich auf, Porträt dreht nach vorn; Fall nicht beschleunigt | 1110 → 770 | 6 · Flug (neu, bei 1,8 s, ~45°) |
+| 2,3–2,5 s | landet aufrecht, kleiner Wackler | 770 | — |
+| 2,5–3,0 s | steht still, Porträt schaut in die Kamera | 770 | 8 · Stand `f5abe946` |
+
+Immer: Drehung nur in EINE Richtung, nie zur Kamera, Größe gleich, Halter/Wand unverändert.
+Vorschlag: 2 Zwischenbilder (Ruck, Flug) → 3 Teilstücke, danach kostenlos auf 3 s gerafft.
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
