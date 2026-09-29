@@ -386,3 +386,18 @@ von der Seite gesehen: nur der Umriss, keine Öffnung. Zusätzlich hat der Edit 
 Wandhalter bei x ≈ 1700 verändert (helles Band 200–326 statt 201–410).
 → Beim nächsten Versuch nur das linke Rollenende aus dem Ergebnis übernehmen
 (Composite auf `3234783c`).
+
+### 4 · Fall – Perspektive links, zweiter Versuch ✅ (29.09.2026, 4,5 Credits)
+
+Edit `4a7d6e0d` mit dem Prompt „Stirnseite von der Seite, nur Außenkante, keine Öffnung".
+Davon wurde nur das linke Rollenende (x 985–1250, y 185–440, 2000er-Maßstab, weich
+überblendet) in `3234783c` eingesetzt. Außerhalb dieses Kastens ist 0 px verändert, die
+Rollenkontur weicht ≤2 px ab. Andi: *„gut!"*
+→ **4 · Fall = Medium `25d4a9b3`**. Vergleichstafel: Medium `dddd246d`.
+
+Größen (Messung PCA/Scheibenbreite): 4 · Fall Röhre 343 × 126 px, Neigung 10,1°
+(Stange 9,6°). 8 · Stand 357 × 141, 6 · Flug ~142 dick. Damit ist 4 · Fall ~10 % dünner
+und ~4 % kürzer; in der Messung von 4 steckt zudem die Stange mit.
+
+Folge für den Clip: 1 · Griff `a31fa69c` → 2 · Ruck `cd9b74f0` → 3 · Abriss `3ca296e4` →
+**4 · Fall `25d4a9b3`** → 6 · Flug `932abcca` → 8 · Stand `f5abe946`.
