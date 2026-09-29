@@ -345,6 +345,8 @@ das erste"*.
 Folge für den Clip: 1 · Griff `a31fa69c` → 2 · Ruck `cd9b74f0` → 3 · Abriss `3ca296e4` →
 4 · Fall `45c86f19` → 6 · Flug `932abcca` → 8 · Stand `f5abe946` (5 Teilstücke).
 
+Tafel mit allen sechs Keyframes nebeneinander (3×2, beschriftet): Medium `3de09d5e`.
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
