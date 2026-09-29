@@ -242,6 +242,20 @@ etwas dicker"* → Länge 9 cm (≈360 px) statt 10. Dicke noch offen: kostenlos
   Hintergrund/Hand unverändert (2–7, Rosette 11). Rollendicke nicht sauber messbar.
   Ungeprüft, ob es im Bild so aussieht — Andi schaut.
 
+Andi zu Durchgang 1: *„Rolle ist nicht schlecht, aber das erste ist etwas zu schmal,
+der Pumper ist direkt zweimal und der Jogginganzugträger ist abgeschnitten"* → 1 · Griff
+muss neu (Streifen 360 px, jeder Charakter genau einmal).
+
+**Charakter-Vorlagen (Druckmotive):**
+
+| Figur | Job |
+|---|---|
+| Pumper (Goldketten-Muskelmann) | `402e0c30` (hängendes Blatt in der Szene) |
+| Jogginganzug-Gangster | `1dd7504d` |
+| Kiffer | `03710f3c` |
+| Autotune-Heulsuse | `2b3ba795` |
+| Pseudo-Poet | `7b795682` |
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
