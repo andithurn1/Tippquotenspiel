@@ -309,6 +309,23 @@ Flug `8772574d` (Rolle aus 8 · Stand, 45° gekippt, Mitte 940/483).
   Rolle reicht ~25 px weiter nach links als in der Vorlage. Stange links 80–81 px (Kulisse
   85–89). Bewegungsunschärfe verlangt — Andi prüft, ob es im Bild stört.
 
+## 5 Keyframes komplett (29.09.2026)
+
+Andi: *„man braucht evtl. noch eins, wo das letzte Blatt gerade abgerissen ist und die Rolle
+einen Ticken weiter links steht als auf Bild 2"* → 3 · Rutschen.
+- **3 · Rutschen** `45c86f19` (4,5 Credits, Vorlage `5ee8ff9b`): Mitte (1272, 327) Soll
+  (1285, 331) ✅, Winkel 9° ✅, Länge 330 (−7 %), Dicke 134 (−6 %). Hintergrund 5,0.
+- **6 · Flug** jetzt Medium `932abcca` — Rolle quer zur Achse ×1,19 gestreckt (0 Credits).
+- Tafel mit allen 5: Medium `2fd5bd9f`.
+
+| Nr · Name | Zeit | Bild |
+|---|---|---|
+| 1 · Griff | 0,0 s | `a31fa69c` |
+| 2 · Ruck | 0,6 s | `cd9b74f0` |
+| 3 · Rutschen | 0,8 s | `45c86f19` |
+| 6 · Flug | 1,8 s | `932abcca` |
+| 8 · Stand | 2,5 s | `f5abe946` |
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
