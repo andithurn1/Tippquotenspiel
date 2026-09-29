@@ -376,3 +376,13 @@ mit Ausschnitt) ist Medium `b80fe5ba`.
 ⚠️ Noch offen, Andi: *„die Rolle passt am linken Ende nicht ganz mit der
 Perspektive"*. Gemessen liegt sie mit der Neigung der Stange (~9,6°) und beginnt
 etwa 55 px vor der Spitze der Stange (bei x ≈ 1051, 2000er-Maßstab).
+
+### 4 · Fall – Perspektive links, erster Versuch verworfen (29.09.2026, 4,5 Credits)
+
+Edit `fc8043ba` (gpt_image_2_5) hat die Chromkappe entfernt, aber eine **offene
+Röhre mit dunklem Inneren** gezeichnet. Andi: *„man sieht von der Perspektive nur
+die Außenkante und nicht das Innere der Rolle"*. Bei dieser Kamera ist die Stirnseite
+von der Seite gesehen: nur der Umriss, keine Öffnung. Zusätzlich hat der Edit den
+Wandhalter bei x ≈ 1700 verändert (helles Band 200–326 statt 201–410).
+→ Beim nächsten Versuch nur das linke Rollenende aus dem Ergebnis übernehmen
+(Composite auf `3234783c`).
