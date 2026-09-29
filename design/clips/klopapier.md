@@ -299,6 +299,16 @@ Rolle überall 150 × 360 px. Waagerecht gleichmäßig ≈ 14 px je Bild (24 fps
 Immer: Drehung nur in EINE Richtung, nie zur Kamera, Größe gleich, Halter/Wand unverändert.
 Vorschlag: 2 Zwischenbilder (Ruck, Flug) → 3 Teilstücke, danach kostenlos auf 3 s gerafft.
 
+## Zwischenbilder 2 · Ruck und 6 · Flug (29.09.2026, 9 Credits, Andi „ok")
+
+Vorlagen (0 Credits): Ruck `25a64eb9` (1 · Griff um 70 px nach links entlang der Stange),
+Flug `8772574d` (Rolle aus 8 · Stand, 45° gekippt, Mitte 940/483).
+- **6 · Flug** `7584fec7`: Mitte (934, 474) ✅, Winkel 46° ✅, Länge 353 ✅, **Dicke 119
+  statt 142** (~16 % zu schlank). Hintergrund unverändert (4,9–9,3).
+- **2 · Ruck** `cd9b74f0`: Papier unterhalb der Rolle ~260 px statt 302 (~14 % schmaler),
+  Rolle reicht ~25 px weiter nach links als in der Vorlage. Stange links 80–81 px (Kulisse
+  85–89). Bewegungsunschärfe verlangt — Andi prüft, ob es im Bild stört.
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
