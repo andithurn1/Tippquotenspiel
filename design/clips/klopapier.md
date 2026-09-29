@@ -413,3 +413,17 @@ um 20 px nach links verschoben, weich überblendet (x 1330–1545). Das linke En
 
 ⚠️ Offen: 6 · Flug und 8 · Stand messen 357 px Länge. Sollen sie für einheitliche
 Größe ebenfalls um 20 px kürzer werden?
+
+### 6 · Flug und 8 · Stand ebenfalls 0,5 cm kürzer (29.09.2026, 0 Credits)
+
+Andi: *„ja gut"* (für einheitliche Länge). Die Röhre wird gemessen, ausgeschnitten,
+entlang ihrer Achse gestaucht und neu gesetzt. Die freie Fläche füllt die Platte
+`6d20f0fc` mit Helligkeitsausgleich.
+- **8 · Stand** (unten verankert, steht weiter auf der Ablage): 358 → 339 px hoch,
+  Breite 143 px unverändert → **Medium `d70a621d`**.
+- **6 · Flug** (um die Mitte, Achse 136°): 352 → 333 px lang, Dicke 129 px
+  unverändert → **Medium `4d6450c4`**.
+- Tafel 4 | 6 | 8: Medium `5dfcd05c`.
+
+**Folge für den Clip, Stand jetzt:** 1 · Griff `a31fa69c` → 2 · Ruck `cd9b74f0` →
+3 · Abriss `3ca296e4` → 4 · Fall `4a883f34` → 6 · Flug `4d6450c4` → 8 · Stand `d70a621d`.
