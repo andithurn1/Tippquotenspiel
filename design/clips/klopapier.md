@@ -99,7 +99,7 @@ immer „Bild 6 · Flug", nie eine Job-ID allein und nie „K6".
 
 | Nr · Name | Moment | Bild | Stand |
 |---|---|---|---|
-| 1 · Griff | Hand hält den Muskelmann | `cbf880c5` (Medium, dicke Rolle, rechts) | vorhanden — alt: `2cdc54a3` |
+| 1 · Griff | Hand hält den Muskelmann | `a31fa69c` (Medium, dicke Rolle, rechts, Stange repariert) | vorhanden — alt: `2cdc54a3` |
 | 2 · Ruck | Hand reißt das Papier ab, Rolle dreht | — | fehlt |
 | 3 · Rutschen | leere Rolle rutscht drehend nach links | — | fehlt (Marmor-Vorlage `8df32631`) |
 | 4 · Kippen | Rolle kippt vom Armende | `874441ec` | vorhanden, optional |
@@ -269,6 +269,14 @@ einen Ticken größer"* → Montage in der Sandbox (0 Credits): Rolle + Papier +
 (308 px ≈ 7,7 cm), rechtes Rollenende ~x 1590 (Rosette ab ~1600).
 ⚠️ Erster Montageversuch verworfen: der Chromarm wurde als Rolle erkannt → nach LINKS
 geschoben; die Kontrollmessung hat es gefangen.
+
+**Stange repariert (29.09.2026):** Andi *„beim neuesten passt die Chromstange leider
+nicht"* — Ursache gemessen: das KI-Bild hatte die Stange dünner gezeichnet (61 statt
+79 px), in der Montage steckten zwei Stangen. Bild-Edit `5369b7c6` (4,5 Credits) nur für
+die Stange, danach alles außer einem Band um die Stange aus der Montage zurückgelegt.
+**1 · Griff = Medium `a31fa69c-89dc-4c8c-b175-4f575a406e37`**: Stange links der Rolle
+85–88 px wie Kulisse (83–89); Papier/Figuren/Hand/Fliesen = Montage (Abweichung 0,0–0,1).
+Andi dazu: *„ja gut so! Hand muss auch nicht unbedingt farbig sein"*.
 
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
