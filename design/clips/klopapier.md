@@ -362,3 +362,17 @@ Kosten (Stand Transaktionen): Bild-Edit GPT Image 2.5 Flare 4,5 Credits · MiniM
 - ❓ Wo er in der App landet (Reaktion „letzter"/„daneben", Spott-Clip SP1?)
   ist nicht festgehalten. Format für die App steht in `public/reactions/README.md`
   (stumm, loopend, MP4, quadratisch empfohlen — dieser Clip ist 16:9).
+
+### 4 · Fall ohne Blatt (29.09.2026, 0 Credits)
+
+Andi: *„bei 4 muss das Blatt entfernt werden"*. Der Fetzen hing nicht mehr an der
+Rolle (Lücke von ~30 px zwischen Unterkante der Rolle und Fetzen). Deshalb wurde er
+mit der leeren Platte `6d20f0fc` überdeckt (Helligkeitsausgleich <1 Graustufe).
+Danach ist im Fetzenbereich keine Abweichung zur Platte mehr messbar, und an der
+Rolle haben sich nur 152 Randpixel verändert.
+→ **4 · Fall neu = Medium `3234783c`**. Die Vergleichstafel (3 · Abriss | 4 alt | 4 neu
+mit Ausschnitt) ist Medium `b80fe5ba`.
+
+⚠️ Noch offen, Andi: *„die Rolle passt am linken Ende nicht ganz mit der
+Perspektive"*. Gemessen liegt sie mit der Neigung der Stange (~9,6°) und beginnt
+etwa 55 px vor der Spitze der Stange (bei x ≈ 1051, 2000er-Maßstab).
