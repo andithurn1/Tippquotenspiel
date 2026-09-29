@@ -99,14 +99,14 @@ immer „Bild 6 · Flug", nie eine Job-ID allein und nie „K6".
 
 | Nr · Name | Moment | Bild | Stand |
 |---|---|---|---|
-| 1 · Griff | Hand hält den Muskelmann | `2cdc54a3` | vorhanden |
+| 1 · Griff | Hand hält den Muskelmann | `cbf880c5` (Medium, dicke Rolle, rechts) | vorhanden — alt: `2cdc54a3` |
 | 2 · Ruck | Hand reißt das Papier ab, Rolle dreht | — | fehlt |
 | 3 · Rutschen | leere Rolle rutscht drehend nach links | — | fehlt (Marmor-Vorlage `8df32631`) |
 | 4 · Kippen | Rolle kippt vom Armende | `874441ec` | vorhanden, optional |
 | 5 · Absprung | Rolle gerade vom Arm, fast waagerecht | `13f3a2d4` | vorhanden |
 | 6 · Flug | Flugmitte, schräg ~45°, Porträt dreht links rein | — | fehlt |
 | 7 · Anflug | kurz vorm Aufsetzen | `2445597d` | Porträt korrigieren |
-| 8 · Stand | steht, Porträt vorn | `bf4d4c4e` (Medium, links verschoben) | vorhanden — alt: `08e4e319` |
+| 8 · Stand | steht, Porträt vorn | `f5abe946` (dicke Rolle, links) | vorhanden — davor `bf4d4c4e`, `08e4e319` |
 
 Wird ein Bild ersetzt, wird die Tafel neu gebaut (Skript in der Sandbox, kostenlos) —
 die Nummern bleiben, nur das Bild wechselt.
@@ -260,6 +260,15 @@ muss neu (Streifen 360 px, jeder Charakter genau einmal).
 3/4/5 mitgegeben): Papier **~281 px** breit, gemessen über die Außenkanten (Soll 360,
 alt 407, Versuch 1 ~240). Wieder zu schmal, aber näher dran. Hand weicht ab (16).
 🔴 Muster: das Modell verschmälert Papier und Rolle bei jedem Edit mehr als verlangt.
+
+Andi: *„eigentlich gut so, nur muss die Rolle deutlich weiter rechts an der Stange sein,
+weil sie ja erst nach dem Abziehen der Papiere nach links bewegt wird, und vielleicht
+einen Ticken größer"* → Montage in der Sandbox (0 Credits): Rolle + Papier + Hand um
+154 px nach rechts und 26 px nach unten (entlang der Stangenneigung 0,17), ×1,1.
+**Neues 1 · Griff = Medium `cbf880c5-95b6-4a6a-a864-a612bb387707`**, Papier 1267–1576
+(308 px ≈ 7,7 cm), rechtes Rollenende ~x 1590 (Rosette ab ~1600).
+⚠️ Erster Montageversuch verworfen: der Chromarm wurde als Rolle erkannt → nach LINKS
+geschoben; die Kontrollmessung hat es gefangen.
 
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
