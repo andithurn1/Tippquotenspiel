@@ -469,3 +469,26 @@ Kostenprobe nimmt Start + 4 Zwischenbilder + Ende an: 5 s 1080p = 45 Credits,
 5 s 720p nur Start/Ende = 27,5. Ob die Zwischenbilder als zeitlich gesetzte
 Keyframes gelten oder nur als Stilvorlage, sagt der Katalog nicht. Von einer
 Grenze bei 12 steht dort nichts.
+
+### Großer Clip 5 s (29.09.2026, 10 Credits)
+
+Erster Versuch `ac4d80fa` nach 12 s abgebrochen (erstattet). Identischer zweiter
+Versuch **`8dfdec27` fertig** (minimax_h3, 5 s, 2K, 1 · Griff → 8 · Stand, Prompt
+mit Ablauf 0–0,75 / 0,75–1,25 / 1,25–2,0 / 2,0–4,0 / 4,0–5,0 s).
+Filmstreifen (alle 0,5 s): Medium `00dd4f6e`.
+
+Messung (Schwerpunkt oberer Bereich, 2000er-Maßstab, Hintergrund links Bild 1 /
+rechts letztes Bild):
+
+| t | x | y | |
+|---|---|---|---|
+| 0,0–0,8 s | 1427 → 1358 | ~400 | Abreißen, Rolle rutscht schon nach links |
+| 1,17–2,17 s | 1307 → 1092 | **316–325** | gleitet AUF Stangenhöhe nach links |
+| 2,33 s | 1048 | 348 | an der Spitze (x ≈ 1051) beginnt der Fall |
+| 2,5–3,83 s | 1006 → 796 | 357 → 489 | Bogen nach links unten |
+| 4,0–5,0 s | 772 | 492 | steht still |
+
+✅ Gemessen: die Reihenfolge stimmt, erst gleiten, dann fallen. Das Tempo nach
+links liegt bei etwa 35 → 30 → 25 px je 1/6 s und wird zur Landung hin etwas
+langsamer. Ob die Stange sichtbar in der Rolle bleibt, kann nur Andi am Bild
+beurteilen.
