@@ -427,3 +427,24 @@ entlang ihrer Achse gestaucht und neu gesetzt. Die freie Fläche füllt die Plat
 
 **Folge für den Clip, Stand jetzt:** 1 · Griff `a31fa69c` → 2 · Ruck `cd9b74f0` →
 3 · Abriss `3ca296e4` → 4 · Fall `4a883f34` → 6 · Flug `4d6450c4` → 8 · Stand `d70a621d`.
+
+## Probeclip D (29.09.2026, 10 Credits) – verworfen
+
+Job `5aabc0fc` (minimax_h3, 5 s, 2K), 4 · Fall `4a883f34` → 6 · Flug `4d6450c4`.
+Filmstreifen: Medium `924dc4f9`.
+
+Gemessen je Einzelbild (Hintergrund: links Bild 1, rechts letztes Bild; 2000er-Maßstab):
+- ✅ x läuft durchgehend nach links, 1265 → 936, mit fast gleichem Tempo
+  (10–15 px je 1/6 s). Kein Beschleunigen, kein Zurück.
+- ✅ Die Drehung geht nur in eine Richtung, 9° → 131°.
+- ❌ Die Rolle fällt sofort und fällt dabei **durch die Stange**: in den ersten 1,5 s
+  y 320 → 414, während die Mitte noch über der Stange ist (x 1265 → 1154, Spitze bei
+  x ≈ 1051). Andi: *„soll weiter nach links geschoben sein und danach erst
+  runterfallen, hier fällt die Rolle durch die Stange durch"*.
+- ⚠️ Am Ende steigt sie wieder um ~24 px (y 492 → 468).
+
+Ursache: 4 · Fall steht noch auf der Stange und 6 · Flug liegt links unten. Das Modell
+zieht die gerade Linie dazwischen, und die geht durch die Stange.
+
+Andi: *„man sollte einen großen Clip machen und nicht die Teilclips"*. minimax_h3
+kostet 2 Credits pro Sekunde (8 s = 16, 10 s = 20).
