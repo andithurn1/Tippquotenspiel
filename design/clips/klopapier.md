@@ -400,4 +400,16 @@ Größen (Messung PCA/Scheibenbreite): 4 · Fall Röhre 343 × 126 px, Neigung 1
 und ~4 % kürzer; in der Messung von 4 steckt zudem die Stange mit.
 
 Folge für den Clip: 1 · Griff `a31fa69c` → 2 · Ruck `cd9b74f0` → 3 · Abriss `3ca296e4` →
-**4 · Fall `25d4a9b3`** → 6 · Flug `932abcca` → 8 · Stand `f5abe946`.
+**4 · Fall `4a883f34`** → 6 · Flug `932abcca` → 8 · Stand `f5abe946`.
+
+### 4 · Fall 0,5 cm kürzer (29.09.2026, 0 Credits)
+
+Andi: *„Röhre gut getroffen, aber 0,5 cm zu lang"*. Bei 40 px/cm sind das 20 px.
+Umsetzung: das rechte Rollenende samt Stangenstück entlang der Rollenachse (10,1°)
+um 20 px nach links verschoben, weich überblendet (x 1330–1545). Das linke Ende
+(Perspektive) bleibt unberührt. Die volle Rollenhöhe endet jetzt bei x ≈ 1400 statt
+1420, die Stange rechts davon ist ab x 1480 unverändert.
+→ **4 · Fall = Medium `4a883f34`**. Tafel: Medium `900fc087`.
+
+⚠️ Offen: 6 · Flug und 8 · Stand messen 357 px Länge. Sollen sie für einheitliche
+Größe ebenfalls um 20 px kürzer werden?
