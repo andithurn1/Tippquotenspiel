@@ -256,6 +256,11 @@ muss neu (Streifen 360 px, jeder Charakter genau einmal).
 | Autotune-Heulsuse | `2b3ba795` |
 | Pseudo-Poet | `7b795682` |
 
+**1 · Griff, Versuch 2** `2e19de98` (4,5 Credits, Maßvorlage `dab8a683` + Figuren
+3/4/5 mitgegeben): Papier **~281 px** breit, gemessen über die Außenkanten (Soll 360,
+alt 407, Versuch 1 ~240). Wieder zu schmal, aber näher dran. Hand weicht ab (16).
+🔴 Muster: das Modell verschmälert Papier und Rolle bei jedem Edit mehr als verlangt.
+
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
 Sandbox zusammenschneiden und auf ~3 s raffen (kostenlos).
