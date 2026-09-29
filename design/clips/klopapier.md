@@ -454,3 +454,18 @@ doch auch nur 4"*). Der große Clip wird deshalb direkt 4 s lang erzeugt
 (8 Credits), ohne späteres Beschleunigen. ⚠️ 4 s ist früher dreimal ohne Ergebnis
 abgebrochen (ohne Kosten). Fällt es wieder aus, sind 5 s die Ausweichlänge
 (10 Credits, danach etwas beschleunigen).
+
+### Großer Clip 4 s – vom Anbieter abgebrochen (29.09.2026, 0 Credits)
+
+Job `542e8aa8` (minimax_h3, 4 s, 1 · Griff `a31fa69c` → 8 · Stand `d70a621d`), mit dem
+ausführlichen Ablauf 0,0–0,6 / 0,6–1,0 / 1,0–1,6 / 1,6–3,2 / 3,2–4,0 s im Prompt.
+Das Ergebnis war **„failed"**, die 8 Credits kamen zurück. Das ist der vierte Ausfall bei 4 s.
+⚠️ minimax_h3 lehnt Start-/Endbild zusammen mit `image_references` ab (422), deshalb
+lief der Clip ohne Stilvorlagen.
+
+**Modell mit mehreren Keyframes?** Im Katalog kommt nur **FLUX 3 Video** in Frage
+(„multi-frame image-to-video", Tag „storyboard"; 5–20 s, höchstens 1080p). Die
+Kostenprobe nimmt Start + 4 Zwischenbilder + Ende an: 5 s 1080p = 45 Credits,
+5 s 720p nur Start/Ende = 27,5. Ob die Zwischenbilder als zeitlich gesetzte
+Keyframes gelten oder nur als Stilvorlage, sagt der Katalog nicht. Von einer
+Grenze bei 12 steht dort nichts.
