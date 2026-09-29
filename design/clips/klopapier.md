@@ -337,7 +337,13 @@ das erste"*.
 - **3 · Abriss** `3346960f` (4,5 Credits, Vorlage `cd235797`: Rolle aus `45c86f19` auf
   x≈1310, Papier-Platzhalter 300 px). Papier 276–301 px (unten 301 ✅, oben ~8 % schmaler),
   Stange links 88 ✅, Hintergrund 5,6–5,9. Vergleichstafel Ruck/Abriss: `d1235f9d`.
-- 4 · Fall: offen (Vorlage wird `45c86f19`, Rolle ~x 1275).
+- Andi schickte das Marmor-Bild als Muster: Rolle schon LEER, Poet hängt als ganzes Blatt
+  darunter. → **3 · Abriss neu** `3ca296e4` (4,5 Credits, Grundlage `3346960f`): Papier
+  290–307 px, Stange 89 ✅, Hintergrund 6,6–7,8. Tafel `5cf3b447`. Andi: *„ja ganz gut"*.
+- **4 · Fall** = bisheriges `45c86f19` (leere Rolle, Papierfetzen), Rolle ~x 1272.
+
+Folge für den Clip: 1 · Griff `a31fa69c` → 2 · Ruck `cd9b74f0` → 3 · Abriss `3ca296e4` →
+4 · Fall `45c86f19` → 6 · Flug `932abcca` → 8 · Stand `f5abe946` (5 Teilstücke).
 
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
 weitere Bilder nur als Referenz). Also je Keyframe-Paar ein Teilstück, danach in der
