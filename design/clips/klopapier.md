@@ -448,3 +448,9 @@ zieht die gerade Linie dazwischen, und die geht durch die Stange.
 
 Andi: *„man sollte einen großen Clip machen und nicht die Teilclips"*. minimax_h3
 kostet 2 Credits pro Sekunde (8 s = 16, 10 s = 20).
+
+**Länge des fertigen Clips: ~4 s** (Andi, 29.09.2026: *„der Gesamtclip später geht
+doch auch nur 4"*). Der große Clip wird deshalb direkt 4 s lang erzeugt
+(8 Credits), ohne späteres Beschleunigen. ⚠️ 4 s ist früher dreimal ohne Ergebnis
+abgebrochen (ohne Kosten). Fällt es wieder aus, sind 5 s die Ausweichlänge
+(10 Credits, danach etwas beschleunigen).
