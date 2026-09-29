@@ -230,6 +230,7 @@ und in jedem Bild nachmessen. ⛔ Wartet auf Andis Ja.
 Andi 29.09.2026: *„vielleicht etwas schmaler die Rolle, so einen Zentimeter, und dafür
 etwas dicker"* → Länge 9 cm (≈360 px) statt 10. Dicke noch offen: kostenlose Vorschau
 (nur gestreckt) mit heute 2 cm · 2,9 · 3,75 · 4,3 cm, Medium `5fba6f23`.
+✅ **Entschieden (Andi 29.09.): 3,75 cm dick, 9 cm lang → 150 × 360 px** (2000er Maßstab).
 ⚠️ Wird die Rolle 9 cm lang, muss auch der Papierstreifen in 1 · Griff 9 cm breit werden.
 
 Kein Modell nimmt mehr als Start- + Endbild als Keyframe (FLUX 3 Video, MiniMax H3:
