@@ -304,3 +304,9 @@ meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem 
   | `kling_video_edit` pro | 1 Clip, 5 s | 10 |
   | `seedance_2_5` video_edit 1080p | 1 Clip, 5 s | 63 |
   | `topaz_video` | – | keine Kostenschätzung möglich |
+- Zepter-Schnitt **ohne** Graffiti und Standbild (für das Neurendern): Medium
+  `9ec917df`, 30,8 s.
+- **Neurendern gestartet:** `kling_video_edit` 4K, Job **`f96a7e08`**, 180 Credits
+  (Andi: „Credits reichlich"). Prompt: Handlung, Timing, Bildausschnitt und
+  Chromgeländer bleiben, nur die Darstellung wird aufgewertet. Kopf-Vorlage
+  `53238819`. Das Graffiti kommt danach wieder per ffmpeg drüber.
