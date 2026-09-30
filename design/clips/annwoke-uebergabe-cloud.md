@@ -310,3 +310,10 @@ meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem 
   (Andi: „Credits reichlich"). Prompt: Handlung, Timing, Bildausschnitt und
   Chromgeländer bleiben, nur die Darstellung wird aufgewertet. Kopf-Vorlage
   `53238819`. Das Graffiti kommt danach wieder per ffmpeg drüber.
+- ❌ Ganze Szene (30,8 s) in Kling Edit: Job `f96a7e08` nach 8 s abgelehnt und
+  erstattet. Vermutlich ist die Eingabe zu lang.
+- **Test mit einem Clip: z3 neu gerendert, Job `5c4900ec`** (Kling Edit 4K, 30 Credits).
+  Ergebnis 3840×2160, 24 fps, 5,04 s. ⚠️ Gemessen weicht das erste und das letzte
+  Bild um durchschnittlich **~80 Graustufen** vom Original ab (Vergleich bei 640×360).
+  Das ist kein Feinschliff mehr, das ist ein stark verändertes Bild; die Nähte zu z2
+  und z4 passen so nicht. Andis Urteil steht aus.
