@@ -295,3 +295,12 @@ meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem 
   2560×1440, 24 fps, ohne Ton. z1→z5→`226a317e`, an jeder Naht das doppelte Bild
   entfernt. Debussy blendet 1,0 s vor dem Clipende ein (0,4 s), danach 2 s
   Standbild mit Graffiti.
+- **Kostenprobe für die Aufwertung (30.09., ohne Erzeugung):**
+  | Werkzeug | Eingabe | Credits |
+  |---|---|---|
+  | `bytedance_video_upscale` 4K, pro, 48 fps, Preset aigc | ganzer Zepter-Schnitt 32,8 s | **8** |
+  | `kling_video_edit` (Kling 3.0 Omni Edit) 4K | 1 Clip, 5 s | 30 |
+  | `kling_video_edit` 4K | ganzer Schnitt | 192 |
+  | `kling_video_edit` pro | 1 Clip, 5 s | 10 |
+  | `seedance_2_5` video_edit 1080p | 1 Clip, 5 s | 63 |
+  | `topaz_video` | – | keine Kostenschätzung möglich |
