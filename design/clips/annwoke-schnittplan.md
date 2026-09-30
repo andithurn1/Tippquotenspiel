@@ -49,3 +49,32 @@ Die bisherigen Paare liegen in der Textfolge nicht mehr nebeneinander. Neu passt
 - ❓ „Scherzinfarkt" (V1) und „Reste weg zu wischen" (V3): gibt es dafür Clips?
 - ❓ „auf Orɔnche… als Gott lɔnche" (Anfang V1): Wolkendecke oder eigenes Bild?
 - Tennis-Stills: `SAETZE` → `SÄTZE`, danach den Clip neu
+
+## Übergänge (Entwurf)
+
+Zwei Sorten:
+- **Generierte Sprünge**: minimax_h3 mit Startbild = letztes Bild von Szene A und
+  Endbild = erstes Bild von Szene B. Kamera schnellt hoch über die Wolken und taucht
+  woanders wieder ein; erzeugt mit 5 s, im Schnitt auf ~1 s beschleunigt.
+  2 Credits/s → 10 Credits je Sprung. Die Nähte stimmen, weil Start und Ende feste
+  Bilder sind.
+- **Schnitt-Übergänge ohne Credits** (ffmpeg): Match-Cut, Wisch, Blitz, Farbfläche.
+
+| Naht | Art | Idee |
+|---|---|---|
+| Intro → Wolkenkratzer | Tauchgang 1 | klare Decke, Durchbruch zum Turm |
+| Wolkenkratzer → Tennis | **Sprung** | vom Turm hoch über die Wolken, Sturz aufs Stadion |
+| Tennis → Scrabble (V1→V2) | Match-Cut | Anzeigetafel-Raster → Scrabble-Raster |
+| Scrabble → Zähneputzen | Wisch | die wischende Hand ist die Blende |
+| Zähneputzen → Klopapier (V2→V3) | Match-Cut | beide im Bad |
+| Klopapier → Gewitter | Tauchgang 2 / **Sprung** | durch die Decke hoch ins Unwetter, „Schlechtwetter" |
+| Gewitter → Field Goal | Blitz | weißer Blitz-Frame |
+| Field Goal → Tank (V3→V4) | **Sprung** | der Ball fliegt in den Himmel, über die Wolken, Sturz ins Labor |
+| Tank → Zepter | Formenübergang | „Chromosom" → „Thron" |
+| Zepter/Debussy → Mafia (V5→V6) | Wisch | Graffiti-Farbe füllt das Bild |
+| Mafia → Jacuzzi | Blitz | Mündungsfeuer → Dampf |
+| Jacuzzi → Outro/Bar (V6→V7) | **Sprung** | hoch über die Wolken, Sturz in die nächtliche Stadt |
+| Outro → Ende | Tauchgang 3 | Ausklang |
+
+Generierte Sprünge: 4 × 10 = **40 Credits**. Vorschlag: zuerst den Test
+Wolkenkratzer → Tennis.
