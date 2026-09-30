@@ -317,3 +317,8 @@ meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem 
   Bild um durchschnittlich **~80 Graustufen** vom Original ab (Vergleich bei 640×360).
   Das ist kein Feinschliff mehr, das ist ein stark verändertes Bild; die Nähte zu z2
   und z4 passen so nicht. Andis Urteil steht aus.
+- **Tempo (Andi: „beim Ansetzen zum Wurf auf einmal Zeitlupe")**. Gemessen als
+  mittlere Bilddifferenz je 0,25 s: z2 liegt bei ~2, z3 nur bei 0,3–0,8, und z4
+  läuft in der zweiten Hälfte bis 0 aus.
+  → **Schnitt v2: Medium `afcfd589`**, 28,4 s: z3 2,5-mal so schnell, z4 ab 2,5 s
+  doppelt so schnell, danach Graffiti und 2 s Standbild. 0 Credits.
