@@ -335,3 +335,7 @@ meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem 
   Gelenken; Arme beugen sich in Ellbogen und Schulter, Hände klatschen und winken,
   Köpfe drehen sich, Körper bewegen sich in der Tiefe; dazu das Verbot flacher Aufsteller.
   **z1 → Job `d4e5a70d`** (Cinema Studio 1080p, 50 Credits).
+- Andi zu z1 Cinema Studio (`d4e5a70d`): *„Crowd komplett starr"*. Das Neuauflegen wird
+  **gestoppt**, die Credits bleiben für den Gesamtschnitt. Der bisherige Schnitt v2
+  (`afcfd589`, minimax-Clips) gilt als *„eigentlich nicht schlecht"*.
+- Nächstes Thema: Gesamtschnitt auf den Song (~2:15). Liedtext bzw. Audiodatei stehen aus.
