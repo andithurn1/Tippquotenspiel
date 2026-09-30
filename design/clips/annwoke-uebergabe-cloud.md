@@ -263,3 +263,17 @@ schiefgeht. Er will keine langen Erklärungen, sondern dass das Ergebnis sitzt.
 Was er ausdrücklich verlangt hat: vor jeder Generierung kurz bestätigen, dass man
 verstanden hat. Und: eigene Fehler benennen statt sie dem Modell zuzuschieben — die
 meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem Modell.
+
+---
+
+## Nachtrag Cloud-Session (30.09.2026)
+
+- Übergabe gelesen. `QUELLEN.md` und die lokalen Ordner (`nichnet\annwoke\…`) liegen
+  auf Andis Rechner und sind von hier aus nicht erreichbar.
+- Klopapier: der vollständige Take ist **`8dfdec27`** (bestätigt). Der 4-s-Schnitt ist
+  Medium `beedf786`. Alles Weitere steht in `design/clips/klopapier.md`.
+- **Debussy-Stencil freigestellt** (Weiß → transparent, 0 Credits):
+  Medium `2f63ea54` (2688×1520 RGBA, 79,5 % transparent).
+- Tafel mit Kandidaten für Endframe 2 (Clip `226a317e` bei 4,5 s, 4,9 s und
+  letztem Bild, dazu Platte `36b0a0fc`): Medium `390fbe0c`.
+  ⚠️ Offen: stammen gross-1/gross-2 aus `226a317e` oder aus dem z6-Clip?
