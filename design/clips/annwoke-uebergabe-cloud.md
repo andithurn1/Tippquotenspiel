@@ -322,3 +322,7 @@ meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem 
   läuft in der zweiten Hälfte bis 0 aus.
   → **Schnitt v2: Medium `afcfd589`**, 28,4 s: z3 2,5-mal so schnell, z4 ab 2,5 s
   doppelt so schnell, danach Graffiti und 2 s Standbild. 0 Credits.
+- **Neu auflegen mit Cinema Studio 3.0** (dem Modell der Scrabble-Bar), mit denselben
+  Keyframes als Start- und Endbild. Kosten: 4K 120 / 1080p 50 Credits pro 5-s-Clip.
+  Andi: 1080p reicht, die gesparten Credits lieber in andere Szenen.
+  Test **z2 → Job `b58e3a58`** (1080p, 50 Credits), mit ausdrücklich lebendiger Menge.
