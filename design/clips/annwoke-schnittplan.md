@@ -128,3 +128,10 @@ schaut über das Auto auf den Gehweg mit dem Mann, danach geht sie aufs Beifahre
 **Schnitt-Regel (Andi):** die Sprünge im Schnitt teilweise schneller machen.
 Geplant ist eine Tempo-Rampe, die in der Flugmitte am schnellsten ist; Anfang und Landung
 bleiben langsamer, damit man die Orte erkennt.
+
+**Sprung 2 `4b939726`: Andi *„exzellent"*, aber am Ende ein komischer Hüpfer.**
+Einzelbilder ab 3 s: Medium `854f98fd`. Gemessen als Bilddifferenz zum Vorbild:
+Flug bis Bild 96 (4,00 s) bei 21–32, Bremsen in Bild 97–98 (14 → 8), **ab Bild 99
+(4,12 s) steht die Kamera**. Danach wechseln sich Bilder mit ~0,1–0,4 und 1–4,6 ab: ein
+Zittern bzw. Hüpfen jedes zweite Bild bis zum Ende.
+→ **Schnitt nach Bild 99 (4,12 s)**, dann direkt ins Outro o1 `d0299e21`.
