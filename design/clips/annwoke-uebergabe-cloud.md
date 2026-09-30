@@ -326,3 +326,7 @@ meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem 
   Keyframes als Start- und Endbild. Kosten: 4K 120 / 1080p 50 Credits pro 5-s-Clip.
   Andi: 1080p reicht, die gesparten Credits lieber in andere Szenen.
   Test **z2 → Job `b58e3a58`** (1080p, 50 Credits), mit ausdrücklich lebendiger Menge.
+  Ergebnis `b58e3a58`: 1920×1080, 24 fps, 5,04 s. Das erste und das letzte Bild weichen
+  6–7 Graustufen von den Keyframes ab (minimax: ~3). Die Nähte sind also etwas weniger
+  exakt, aber brauchbar. Bewegung gesamt +36 %, im Publikumsband +35–48 %
+  gegenüber `252929ff`. Andis Urteil steht aus.
