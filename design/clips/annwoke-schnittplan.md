@@ -107,3 +107,12 @@ volle ID oder die Keyframes; der Sprung Field Goal → Tank wartet deshalb.
 o2 `7f93da00` (00897071→e4e9cf57), o3 `9c78eb53` (e4e9cf57→4bb9d9a7),
 o4 `70dd36c5` (4bb9d9a7→e4e9cf57); m1 `56b7ac47` (facdea02→7ccd12e4),
 m2 `df014da1` (7ccd12e4→d0438c72), m4 `7d3b80c6` (6c736cb0→444a8047).
+
+**Sprung 2 (`d9b47035`)**: Andi *„ganz nice"*, aber die Perspektive stimmt am Ende nicht.
+Die Kamera muss sich aufrichten und waagerecht vor dem geparkten Auto stehen, damit
+es in `5e95cb05` aufgeht. → **Neu: Job `87923753`** (10 Credits).
+
+**Sprung 3 (neu, Andi): Boxhandschuh → Jacuzzi, Job `d1a46dad`** (10 Credits).
+Start `444a8047` (Ende von Mafia m4 `7d3b80c6`), Ende `8143592f` (Anfang von Jacuzzi
+`7318f054`). Aus der Gasse senkrecht hoch, niedrig über die Dächer, am Ende senkrecht
+auf den Whirlpool hinunter. Ersetzt in der Tabelle den „Blitz Mafia → Jacuzzi".
