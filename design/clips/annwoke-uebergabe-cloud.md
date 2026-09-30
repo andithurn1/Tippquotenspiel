@@ -286,3 +286,12 @@ meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem 
   - 1,15× → Medium `0d082e90`
   - 1,30× → Medium `ab97de6b`
   - Tafel mit Endframe 1 und beiden Varianten samt Ausschnitt: Medium `1c3c44d9`
+- ❌ Montagen „vogelwild ausgeschnitten" (Andi), verworfen.
+- **Entscheidung Andi (30.09.):** Die Zepter-Szene endet mit Clip `226a317e`, darüber
+  kommt das Debussy-Graffiti. Endframe 2 und Platte 3 entfallen. Grund: auf
+  `36b0a0fc` stehen die zwei Frauen zu weit rechts und waren vorher nicht in der
+  ersten Reihe.
+- **Rohschnitt Zepter + Debussy (0 Credits): Medium `dfc90c93`**, 32,8 s,
+  2560×1440, 24 fps, ohne Ton. z1→z5→`226a317e`, an jeder Naht das doppelte Bild
+  entfernt. Debussy blendet 1,0 s vor dem Clipende ein (0,4 s), danach 2 s
+  Standbild mit Graffiti.
