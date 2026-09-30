@@ -93,3 +93,17 @@ Startbild `cbe5ec96` (Ende von `9a998d9a`), Endbild `c187c1aa` (Anfang von `d151
 `9a998d9a` Aufstieg → `0c6742ec` Gewitter (Start `cbe5ec96`, endet weiß) →
 `0e1b234d` Sturz vom Turm auf die Straße (Kabel-Knoten, Kick). Die passt genau zu V3
 („Schlechtwetter… Kopfhörer ent-heddern… Kick ich"). Der Turm kommt also zweimal vor.
+
+**Test 1 abgenommen** (Andi: *„ok gut"*), mit der Anmerkung *„musst nicht so weit wegzoomen"*.
+Die weiteren Sprünge bleiben deshalb niedrig über den Dächern, statt über die Wolken zu gehen.
+
+**Sprung 2: Jacuzzi → Outro, Job `d9b47035`** (minimax_h3, 5 s, 10 Credits).
+Start `b024f70f` (Ende von `7318f054`), Ende `5e95cb05` (Anfang von `d0299e21`).
+Flug knapp über die Dächer bei Nacht, dann in eine Straße zum geparkten Auto.
+
+⚠️ Der Field-Goal-Clip `26e67140` steht nicht in der Video-Historie. Es fehlen die
+volle ID oder die Keyframes; der Sprung Field Goal → Tank wartet deshalb.
+Übersicht der Outro- und Mafia-Keyframes: o1 `d0299e21` (5e95cb05→00897071),
+o2 `7f93da00` (00897071→e4e9cf57), o3 `9c78eb53` (e4e9cf57→4bb9d9a7),
+o4 `70dd36c5` (4bb9d9a7→e4e9cf57); m1 `56b7ac47` (facdea02→7ccd12e4),
+m2 `df014da1` (7ccd12e4→d0438c72), m4 `7d3b80c6` (6c736cb0→444a8047).
