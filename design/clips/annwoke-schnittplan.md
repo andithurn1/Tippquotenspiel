@@ -78,3 +78,18 @@ Zwei Sorten:
 
 Generierte Sprünge: 4 × 10 = **40 Credits**. Vorschlag: zuerst den Test
 Wolkenkratzer → Tennis.
+
+### Regel für die Sprünge (Andi, 30.09.)
+
+*„nicht immer wieder an die gleiche Position nach unten stürzen, der Film soll sich überall
+in der Stadt verteilen"*. Jeder Sprung fliegt deshalb über das Wolkenmeer in einen
+**anderen Stadtteil** und stürzt erst dort hinunter. Die Landepunkte ergeben sich aus den
+Szenen: Stadion (Tennis), Bad, Straße (Field Goal), Labor (Tank), Bühne, Stadt bei Nacht.
+
+**Test 1: Wolkenkratzer → Tennis, Job `6da5179f`** (minimax_h3, 5 s, 10 Credits).
+Startbild `cbe5ec96` (Ende von `9a998d9a`), Endbild `c187c1aa` (Anfang von `d1517b6b`).
+
+⚠️ Beim Durchsehen der Historie gefunden: es gibt schon eine Wolken-Kette am Turm,
+`9a998d9a` Aufstieg → `0c6742ec` Gewitter (Start `cbe5ec96`, endet weiß) →
+`0e1b234d` Sturz vom Turm auf die Straße (Kabel-Knoten, Kick). Die passt genau zu V3
+(„Schlechtwetter… Kopfhörer ent-heddern… Kick ich"). Der Turm kommt also zweimal vor.
