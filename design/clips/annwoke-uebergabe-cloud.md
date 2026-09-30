@@ -330,3 +330,8 @@ meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem 
   6–7 Graustufen von den Keyframes ab (minimax: ~3). Die Nähte sind also etwas weniger
   exakt, aber brauchbar. Bewegung gesamt +36 %, im Publikumsband +35–48 %
   gegenüber `252929ff`. Andis Urteil steht aus.
+- Andi: z2 neu ist *„bisschen besser"* → **z2 = `b58e3a58`**. Kritik: die Menge bewegt sich
+  teils *„wie Pappschilder"*. Neuer Prompt-Baustein dagegen: runde Menschen mit
+  Gelenken; Arme beugen sich in Ellbogen und Schulter, Hände klatschen und winken,
+  Köpfe drehen sich, Körper bewegen sich in der Tiefe; dazu das Verbot flacher Aufsteller.
+  **z1 → Job `d4e5a70d`** (Cinema Studio 1080p, 50 Credits).
