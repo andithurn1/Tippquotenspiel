@@ -116,3 +116,15 @@ es in `5e95cb05` aufgeht. → **Neu: Job `87923753`** (10 Credits).
 Start `444a8047` (Ende von Mafia m4 `7d3b80c6`), Ende `8143592f` (Anfang von Jacuzzi
 `7318f054`). Aus der Gasse senkrecht hoch, niedrig über die Dächer, am Ende senkrecht
 auf den Whirlpool hinunter. Ersetzt in der Tabelle den „Blitz Mafia → Jacuzzi".
+
+**Sprung 3 Boxhandschuh → Jacuzzi (`d1a46dad`): abgenommen** (Andi: *„sehr gelungen"*).
+Im Schnitt stellenweise beschleunigen.
+
+**Sprung 2, dritter Versuch: Job `4b939726`** (10 Credits). Andi zu `87923753`: das Auto muss
+**längs** am Straßenrand stehen, und im Anflug muss man ihn **~3 m vor dem Auto vom Gehweg
+her anstolpern** sehen. Neu im Prompt: die Kamera kommt von der Fahrbahnseite und
+schaut über das Auto auf den Gehweg mit dem Mann, danach geht sie aufs Beifahrerfenster.
+
+**Schnitt-Regel (Andi):** die Sprünge im Schnitt teilweise schneller machen.
+Geplant ist eine Tempo-Rampe, die in der Flugmitte am schnellsten ist; Anfang und Landung
+bleiben langsamer, damit man die Orte erkennt.
