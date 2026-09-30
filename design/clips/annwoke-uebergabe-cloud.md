@@ -277,3 +277,12 @@ meisten Fehlschläge in diesen Sessions kamen aus meinen Prompts, nicht aus dem 
 - Tafel mit Kandidaten für Endframe 2 (Clip `226a317e` bei 4,5 s, 4,9 s und
   letztem Bild, dazu Platte `36b0a0fc`): Medium `390fbe0c`.
   ⚠️ Offen: stammen gross-1/gross-2 aus `226a317e` oder aus dem z6-Clip?
+- **Endframe 2, zwei Montagen (0 Credits):** die Figur aus Endframe 1 (`d1553ae5`)
+  wurde über die Differenz zur Platte `7e7bdbab` gefunden, mit rembg
+  `u2net_human_seg` freigestellt und in Platte 3 `36b0a0fc` gesetzt. Der Kopf
+  bleibt auf derselben Höhe (y 430), die Mitte ebenfalls (x 747); nur die Füße
+  wandern nach unten, weil er näher kommt. Dazu eine Spiegelung (45 % Höhe,
+  Blur 5, Alpha 0,40 → 0).
+  - 1,15× → Medium `0d082e90`
+  - 1,30× → Medium `ab97de6b`
+  - Tafel mit Endframe 1 und beiden Varianten samt Ausschnitt: Medium `1c3c44d9`
