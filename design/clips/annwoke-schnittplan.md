@@ -135,3 +135,4 @@ Flug bis Bild 96 (4,00 s) bei 21–32, Bremsen in Bild 97–98 (14 → 8), **ab 
 (4,12 s) steht die Kamera**. Danach wechseln sich Bilder mit ~0,1–0,4 und 1–4,6 ab: ein
 Zittern bzw. Hüpfen jedes zweite Bild bis zum Ende.
 → **Schnitt nach Bild 99 (4,12 s)**, dann direkt ins Outro o1 `d0299e21`.
+Andi: *„ja guter Vorschlag"* → Schnitt nach Bild 99 ist gesetzt.
